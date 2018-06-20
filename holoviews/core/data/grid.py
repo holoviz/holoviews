@@ -139,6 +139,12 @@ class GridInterface(DictInterface):
         new_data[dim.name] = np.array(values)
         for vdim in vdims:
             arrays = [grid[vdim.name] for grid in grids]
+            shapes = set(arr.shape for arr in arrays)
+            if len(shapes) > 1:
+                raise DataError('When concatenating gridded data the shape '
+                                'of arrays must match. %s found that arrays '
+                                'along the %s dimension do not match.' %
+                                (cls.__name__, vdim.name))
             stack = np.stack if any(is_dask(arr) for arr in arrays) else da.stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
