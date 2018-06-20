@@ -297,11 +297,12 @@ class Interface(param.Parameterized):
                 return column[0], column[-1]
 
     @classmethod
-    def concatenate(cls, datasets, datatype=None):
+    def concatenate(cls, datasets, datatype=None, new_type=None):
         """
         Utility function to concatenate an NdMapping of Dataset objects.
         """
         from . import Dataset, default_datatype
+        new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
             datasets = datasets.data
@@ -324,7 +325,7 @@ class Interface(param.Parameterized):
         template = datasets[0]
         data = list(zip(keys, datasets)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
-        return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=Dataset)
+        return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):

@@ -430,10 +430,11 @@ class MultiDimensionalMapping(Dimensioned):
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
         from .data.interface import Interface
+        from ..element.tabular import Table
         new_data = [(key, value.table(datatype=datatype, **kwargs))
                     for key, value in self.data.items()]
         tables = self.clone(new_data)
-        return Interface.concatenate(tables)
+        return Interface.concatenate(tables, new_type=Table)
 
 
     def dframe(self):
