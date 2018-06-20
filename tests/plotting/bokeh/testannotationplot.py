@@ -1,4 +1,6 @@
-from holoviews.element import HLine, VLine, Text
+import numpy as np
+
+from holoviews.element import HLine, VLine, Text, Labels
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -47,3 +49,33 @@ class TestTextPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(text)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.text_font_size, '18Pt')
+
+    def test_text_plot_rotation(self):
+        text = Text(0, 0, 'Test', rotation=90)
+        plot = bokeh_renderer.get_plot(text)
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.angle, np.pi/2.)
+    
+    def test_text_plot_rotation_style(self):
+        text = Text(0, 0, 'Test').options(angle=90)
+        plot = bokeh_renderer.get_plot(text)
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.angle, np.pi/2.)
+
+
+
+class TestLabelsPlot(TestBokehPlot):
+
+    def test_labels_plot(self):
+        text = Labels([(0, 0, 'Test')])
+        plot = bokeh_renderer.get_plot(text)
+        source = plot.handles['source']
+        data = {'x': np.array([0]), 'y': np.array([0]), 'Label': ['Test']}
+        for c, col in source.data.items():
+            self.assertEqual(col, data[c])
+
+    def test_labels_plot_rotation_style(self):
+        text = Labels([(0, 0, 'Test')]).options(angle=90)
+        plot = bokeh_renderer.get_plot(text)
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.angle, np.pi/2.)
