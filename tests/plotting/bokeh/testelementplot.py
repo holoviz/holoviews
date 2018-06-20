@@ -5,6 +5,7 @@ import numpy as np
 from holoviews.core import Dimension, DynamicMap
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream
+from holoviews.plotting.util import process_cmap
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -150,12 +151,14 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, -3)
         self.assertEqual(cmapper.high, 3)
-
+     
     def test_colormapper_color_levels(self):
-        img = Image(np.array([[0, 1], [2, 3]])).options(color_levels=5)
+        cmap = process_cmap('viridis', provider='bokeh')
+        img = Image(np.array([[0, 1], [2, 3]])).options(color_levels=5, cmap=cmap)
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
         self.assertEqual(len(cmapper.palette), 5)
+        self.assertEqual(cmapper.palette, ['#440154', '#440255', '#440357', '#450558', '#45065A'])
 
     def test_colormapper_transparent_nan(self):
         img = Image(np.array([[0, 1], [2, 3]])).options(clipping_colors={'NaN': 'transparent'})
