@@ -305,13 +305,14 @@ class Interface(param.Parameterized):
         new_type = new_type or Dataset
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
-            datasets = datasets.data
-        if isinstance(datasets, (dict, OrderedDict)):
-            datasets = datasets.items()
-            keys, datasets = zip(*datasets)
-        elif isinstance(datasets, list) and not any(isinstance(v, tuple) for v in datasets):
-            keys = [()]*len(datasets)
-            dimensions = []
+            keys, datasets = zip(*datasets.data.items())
+        elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
+            # Allow concatenating list of datasets (by declaring no dimensions and keys)
+            dimensions, keys = [], [()]*len(datasets)
+        else:
+            raise DataError('Concatenation only supported for NdMappings '
+                            'and lists of Datasets, found %s.' % type(datasets).__name__)
+
         template = datasets[0]
         datatype = datatype or template.interface.datatype
 
@@ -320,6 +321,12 @@ class Interface(param.Parameterized):
             datatype = default_datatype
         elif datatype == 'image':
             datatype = 'grid'
+
+        if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
+            raise DataError('Datasets with %s datatype cannot be concatenated '
+                            'without defining the dimensions to concatenate along. '
+                            'Ensure you pass in a NdMapping (e.g. a HoloMap) '
+                            'of Dataset types, not a list.' % datatype)
 
         datasets = template.interface.cast(datasets, datatype)
         template = datasets[0]
