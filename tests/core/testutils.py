@@ -18,7 +18,7 @@ except:
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite, cross_index
+    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -699,7 +699,7 @@ class TestNumericUtilities(ComparisonTestCase):
         daily = pd.date_range('2017-1-1', '2017-1-3', freq='D')
         daily = pd.Series(list(daily)+[pd.NaT])
         self.assertEqual(isfinite(daily), np.array([True, True, True, False]))
-        
+
     def test_isfinite_datetime64_array(self):
         dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
         self.assertEqual(isfinite(dt64), np.array([True, True, True]))
@@ -765,9 +765,68 @@ class TestCrossIndex(ComparisonTestCase):
         cross_product = list(product(*values))
         for i, p in enumerate(cross_product):
             self.assertEqual(cross_index(values, i), p)
-    
+
     def test_cross_index_large(self):
         values = [[chr(65+i) for i in range(26)], list(range(500)),
                   [chr(97+i) for i in range(26)], [chr(48+i) for i in range(10)]]
         self.assertEqual(cross_index(values, 50001), ('A', 192, 'i', '1'))
         self.assertEqual(cross_index(values, 500001), ('D', 423, 'c', '1'))
+
+
+class TestClosestMatch(ComparisonTestCase):
+
+    def test_complete_match_overlay(self):
+        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
+        spec = ('Curve', 'Curve', 'I')
+        self.assertEqual(closest_match(spec, specs), 0)
+        spec = ('Points', 'Curve', 'I')
+        self.assertEqual(closest_match(spec, specs), 1)
+
+    def test_partial_match_overlay(self):
+        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
+        spec = ('Curve', 'Curve')
+        self.assertEqual(closest_match(spec, specs), 0)
+        spec = ('Points', 'Points')
+        self.assertEqual(closest_match(spec, specs), 1)
+
+    def test_partial_mismatch_overlay(self):
+        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
+        spec = ('Curve', 'Foo', 'II')
+        self.assertEqual(closest_match(spec, specs), 0)
+        spec = ('Points', 'Bar', 'III')
+        self.assertEqual(closest_match(spec, specs), 1)
+
+    def test_no_match_overlay(self):
+        specs = [(0, ('Curve', 'Curve', 'I')), (1, ('Points', 'Points', 'I'))]
+        spec = ('Scatter', 'Points', 'II')
+        self.assertEqual(closest_match(spec, specs), None)
+        spec = ('Path', 'Curve', 'III')
+        self.assertEqual(closest_match(spec, specs), None)
+
+    def test_complete_match_ndoverlay(self):
+        spec = ('Points', 'Points', '', 1)
+        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
+                 (2, ('Points', 'Points', '', 2))]
+        self.assertEqual(closest_match(spec, specs), 1)
+        spec = ('Points', 'Points', '', 2)
+        self.assertEqual(closest_match(spec, specs), 2)
+
+    def test_partial_match_ndoverlay(self):
+        spec = ('Points', 'Points', '', 5)
+        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
+                 (2, ('Points', 'Points', '', 2))]
+        self.assertEqual(closest_match(spec, specs), 2)
+        spec = ('Points', 'Points', 'Bar', 5)
+        self.assertEqual(closest_match(spec, specs), 0)
+        spec = ('Points', 'Foo', 'Bar', 5)
+        self.assertEqual(closest_match(spec, specs), 0)
+
+    def test_no_match_ndoverlay(self):
+        specs = [(0, ('Points', 'Points', '', 0)), (1, ('Points', 'Points', '', 1)),
+                 (2, ('Points', 'Points', '', 2))]
+        spec = ('Scatter', 'Points', '', 5)
+        self.assertEqual(closest_match(spec, specs), None)
+        spec = ('Scatter', 'Bar', 'Foo', 5)
+        self.assertEqual(closest_match(spec, specs), None)
+        spec = ('Scatter', 'Foo', 'Bar', 5)
+        self.assertEqual(closest_match(spec, specs), None)
