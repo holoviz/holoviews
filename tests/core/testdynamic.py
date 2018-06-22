@@ -3,11 +3,12 @@ from collections import deque
 import time
 
 import numpy as np
-from holoviews import Dimension, NdLayout, GridSpace, Layout
+from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.core.options import Store
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
+from holoviews.plotting.util import initialize_dynamic
 from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX, Buffer
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
@@ -245,7 +246,57 @@ class DynamicMapMethods(ComparisonTestCase):
         self.assertEqual(ndlayout[1][()], Scatter([(1, 1)]))
         self.assertEqual(ndlayout[2][()], Scatter([(2, 2)]))
 
+    def test_dynamic_split_overlays_on_ndoverlay(self):
+        dmap = DynamicMap(lambda: NdOverlay({i: Points([i]) for i in range(3)}))
+        initialize_dynamic(dmap)
+        keys, dmaps = dmap.split_overlays()
+        self.assertEqual(keys, [(0,), (1,), (2,)])
+        self.assertEqual(dmaps[0][()], Points([0]))
+        self.assertEqual(dmaps[1][()], Points([1]))
+        self.assertEqual(dmaps[2][()], Points([2]))
 
+    def test_dynamic_split_overlays_on_overlay(self):
+        dmap1 = DynamicMap(lambda: Points([]))
+        dmap2 = DynamicMap(lambda: Curve([]))
+        dmap = dmap1 * dmap2
+        initialize_dynamic(dmap)
+        keys, dmaps = dmap.split_overlays()
+        self.assertEqual(keys, [('Points', 'I'), ('Curve', 'I')])
+        self.assertEqual(dmaps[0][()], Points([]))
+        self.assertEqual(dmaps[1][()], Curve([]))
+
+    def test_dynamic_split_overlays_on_varying_order_overlay(self):
+        def cb(i):
+            if i%2 == 0:
+                return Curve([]) * Points([])
+            else:
+                return Points([]) * Curve([])
+        dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
+        initialize_dynamic(dmap)
+        keys, dmaps = dmap.split_overlays()
+        self.assertEqual(keys, [('Curve', 'I'), ('Points', 'I')])
+        self.assertEqual(dmaps[0][0], Curve([]))
+        self.assertEqual(dmaps[0][1], Curve([]))
+        self.assertEqual(dmaps[1][0], Points([]))
+        self.assertEqual(dmaps[1][1], Points([]))
+
+    def test_dynamic_split_overlays_on_missing_item_in_overlay(self):
+        def cb(i):
+            if i%2 == 0:
+                return Curve([]) * Points([])
+            else:
+                return Scatter([]) * Curve([])
+        dmap = DynamicMap(cb, kdims='i').redim.range(i=(0, 4))
+        initialize_dynamic(dmap)
+        keys, dmaps = dmap.split_overlays()
+        self.assertEqual(keys, [('Curve', 'I'), ('Points', 'I')])
+        self.assertEqual(dmaps[0][0], Curve([]))
+        self.assertEqual(dmaps[0][1], Curve([]))
+        self.assertEqual(dmaps[1][0], Points([]))
+        with self.assertRaises(KeyError):
+            dmaps[1][1]
+    
+        
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
 
