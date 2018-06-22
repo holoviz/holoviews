@@ -486,6 +486,12 @@ class histogram(Operation):
     bin_range = param.NumericTuple(default=None, length=2,  doc="""
       Specifies the range within which to compute the bins.""")
 
+    bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple), doc="""
+      An explicit set of bin edges.""")
+
+    cumulative = param.Boolean(default=False, doc="""
+      Whether to compute the cumulative histogram""")
+
     dimension = param.String(default=None, doc="""
       Along which dimension of the Element to compute the histogram.""")
 
@@ -494,9 +500,6 @@ class histogram(Operation):
 
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
-
-    individually = param.Boolean(default=True, doc="""
-      Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
     log = param.Boolean(default=False, doc="""
       Whether to use base 10 logarithmic samples for the bin edges.""")
@@ -555,15 +558,21 @@ class histogram(Operation):
             hist_range = (0, 1)
 
         datetimes = False
+        bins = None if self.p.bins is None else np.asarray(self.p.bins)
         steps = self.p.num_bins + 1
         start, end = hist_range
         if data.dtype.kind == 'M' or (data.dtype.kind == 'O' and isinstance(data[0], datetime_types)):
             start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             datetimes = True
             data = data.astype('datetime64[ns]').astype('int64') * 1000.
-            hist_range = start, end
+            if bins is not None:
+                bins = bins.astype('datetime64[ns]').astype('int64') * 1000.
+            else:
+                hist_range = start, end
 
-        if self.p.log:
+        if self.p.bins:
+            edges = bins
+        elif self.p.log:
             bin_min = max([abs(start), data[data>0].min()])
             edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
         else:
@@ -601,7 +610,11 @@ class histogram(Operation):
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
-        return Histogram((hist, edges), kdims=[view.get_dimension(selected_dim)],
+        if self.p.cumulative:
+            hist = np.cumsum(hist)
+            if self.p.normed in (True, 'integral'):
+                hist *= edges[1]-edges[0]
+        return Histogram((edges, hist), kdims=[view.get_dimension(selected_dim)],
                          label=view.label, **params)
 
 

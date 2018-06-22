@@ -421,8 +421,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
         for k, v in self.data.items():
-            hists = v.hist(adjoin=False, bin_range=bin_range,
-                           individually=individually, num_bins=num_bins,
+            hists = v.hist(adjoin=False, bin_range=bin_range, num_bins=num_bins,
                            style_prefix=style_prefix, **kwargs)
             if isinstance(hists, Layout):
                 for i, hist in enumerate(hists):
@@ -1421,7 +1420,7 @@ class DynamicMap(HoloMap):
         return self.groupby(dims, group_type=NdOverlay)
 
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, **kwargs):
         """
         Computes a histogram from the object and adjoins it by
         default.  By default the histogram is computed for the bottom

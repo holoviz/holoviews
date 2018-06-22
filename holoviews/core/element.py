@@ -23,7 +23,7 @@ class Element(ViewableElement, Composable, Overlayable):
     group = param.String(default='Element', constant=True)
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, individually=True, **kwargs):
+             adjoin=True, **kwargs):
         """
         The hist method generates a histogram to be adjoined to the
         Element in an AdjointLayout. By default the histogram is
@@ -37,7 +37,7 @@ class Element(ViewableElement, Composable, Overlayable):
         hists = []
         for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
-                             individually=individually, dimension=d, **kwargs)
+                             dimension=d, **kwargs)
             hists.append(hist)
         if adjoin:
             layout = self

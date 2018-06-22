@@ -127,6 +127,35 @@ class OperationTests(ComparisonTestCase):
         hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]))
         self.assertEqual(op_hist, hist)
 
+    def test_points_histogram_explicit_bins(self):
+        points = Points([float(i) for i in range(10)])
+        op_hist = histogram(points, bins=[0, 1, 3], normed=False)
+
+        # Make sure that the name and label are as desired
+        op_freq_dim = op_hist.get_dimension('x_frequency')
+        self.assertEqual(op_freq_dim.label, 'x Frequency')
+
+        # Because the operation labels are now different from the
+        #  default Element label, change back before comparing.
+        op_hist = op_hist.redim(x_frequency='Frequency')
+        hist = Histogram(([0, 1, 3], [1, 3]))
+        self.assertEqual(op_hist, hist)
+
+    def test_points_histogram_cumulative(self):
+        arr = np.arange(4)
+        points = Points(arr)
+        op_hist = histogram(points, cumulative=True, num_bins=3, normed=False)
+
+        # Make sure that the name and label are as desired
+        op_freq_dim = op_hist.get_dimension('x_frequency')
+        self.assertEqual(op_freq_dim.label, 'x Frequency')
+
+        # Because the operation labels are now different from the
+        #  default Element label, change back before comparing.
+        op_hist = op_hist.redim(x_frequency='Frequency')
+        hist = Histogram(([0, 1, 2, 3], [1, 2, 4]))
+        self.assertEqual(op_hist, hist)
+
     def test_points_histogram_not_normed(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, normed=False)
