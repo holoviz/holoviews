@@ -1236,12 +1236,20 @@ class DynamicMap(HoloMap):
         keys = list(self.last.data.keys())
         dmaps = []
         for key in keys:
-            def cb(obj, overlay_key=key, **kwargs):
+            el = self.last.data[key]
+            def split_overlay_callback(obj, overlay_key=key, overlay_el=el, **kwargs):
+                spec = util.get_overlay_spec(obj, overlay_key, overlay_el)
+                items = list(obj.data.items())
                 specs = [(i, util.get_overlay_spec(obj, k, v))
-                         for i, (k, v) in enumerate(obj.data.items())]
-                match = util.closest_match(overlay_key, specs)
-                return obj.data[match]
-            dmap = Dynamic(self, streams=self.streams, operation=cb)
+                         for i, (k, v) in enumerate(items)]
+                match = util.closest_match(spec, specs)
+                if match is None:
+                    raise KeyError('{spec} spec not found in {otype}. The split_overlays method '
+                                   'only works consistently for a DynamicMap where the '
+                                   'layers of the {otype} do not change.'.format(
+                                       spec=spec, otype=type(obj).__name__))
+                return items[match][1]
+            dmap = Dynamic(self, streams=self.streams, operation=split_overlay_callback)
             dmap.data = OrderedDict([(list(self.data.keys())[-1], self.last.data[key])])
             dmaps.append(dmap)
         return keys, dmaps
