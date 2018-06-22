@@ -13,7 +13,7 @@ import param
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label, pd)
+                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 
 class item_check(object):
@@ -429,16 +429,12 @@ class MultiDimensionalMapping(Dimensioned):
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
-        if datatype is None:
-            datatype = ['dataframe' if pd else 'dictionary']
-
-        tables = []
-        for key, value in self.data.items():
-            value = value.table(datatype=datatype, **kwargs)
-            for idx, (dim, val) in enumerate(zip(self.kdims, key)):
-                value = value.add_dimension(dim, idx, val)
-            tables.append(value)
-        return value.interface.concatenate(tables)
+        from .data.interface import Interface
+        from ..element.tabular import Table
+        new_data = [(key, value.table(datatype=datatype, **kwargs))
+                    for key, value in self.data.items()]
+        tables = self.clone(new_data)
+        return Interface.concatenate(tables, new_type=Table)
 
 
     def dframe(self):

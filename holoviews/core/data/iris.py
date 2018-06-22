@@ -4,6 +4,9 @@ import datetime
 from itertools import product
 
 import iris
+from iris.coords import DimCoord
+from iris.cube import CubeList
+from iris.experimental.equalise_cubes import equalise_attributes
 from iris.util import guess_coord_axis
 
 import numpy as np
@@ -230,6 +233,20 @@ class CubeInterface(GridInterface):
         else:
             return container_type(data)
 
+    @classmethod
+    def concat_dim(cls, datasets, dim, vdims):
+        """
+        Concatenates datasets along one dimension
+        """
+        cubes = []
+        for c, cube in datasets.items():
+            cube = cube.copy()
+            cube.add_aux_coord(DimCoord([c], var_name=dim.name))
+            cubes.append(cube)
+        cubes = CubeList(cubes)
+        equalise_attributes(cubes)
+        return cubes.merge_cube()
+
 
     @classmethod
     def range(cls, dataset, dimension):
@@ -261,7 +278,7 @@ class CubeInterface(GridInterface):
         """
         Returns the total number of samples in the dataset.
         """
-        return np.product([len(d.points) for d in dataset.data.coords()])
+        return np.product([len(d.points) for d in dataset.data.coords(dim_coords=True)])
 
 
     @classmethod

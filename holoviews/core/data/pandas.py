@@ -169,9 +169,14 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def concat(cls, columns_objs):
-        cast_objs = cls.cast(columns_objs)
-        return pd.concat([col.data for col in cast_objs])
+    def concat(cls, datasets, dimensions, vdims):
+        dataframes = []
+        for key, ds in datasets:
+            data = ds.data.copy()
+            for d, k in zip(dimensions, key):
+                data[d.name] = k
+            dataframes.append(data)
+        return pd.concat(dataframes)
 
 
     @classmethod

@@ -17,13 +17,15 @@ try:
 except ImportError:
     da = None
 
+def is_dask(array):
+    return da and isinstance(array, da.Array)
 
 from .dictionary import DictInterface
 from .interface import Interface, DataError
 from ..dimension import Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
-from ..ndmapping import NdMapping, item_check
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 
 
@@ -117,13 +119,46 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def concat(cls, datasets, dimensions, vdims):
+        from . import Dataset
+        with sorted_context(False):
+            datasets = NdMapping(datasets, kdims=dimensions)
+            datasets = datasets.clone([(k, v.data if isinstance(v, Dataset) else v)
+                                       for k, v in datasets.data.items()])
+        if len(datasets.kdims) > 1:
+            items = datasets.groupby(datasets.kdims[:-1]).data.items()
+            return cls.concat([(k, cls.concat(v, v.kdims, vdims=vdims)) for k, v in items],
+                              datasets.kdims[:-1], vdims)
+        return cls.concat_dim(datasets, datasets.kdims[0], vdims)
+
+
+    @classmethod
+    def concat_dim(cls, datasets, dim, vdims):
+        values, grids = zip(*datasets.items())
+        new_data = {k: v for k, v in grids[0].items() if k not in vdims}
+        new_data[dim.name] = np.array(values)
+        for vdim in vdims:
+            arrays = [grid[vdim.name] for grid in grids]
+            shapes = set(arr.shape for arr in arrays)
+            if len(shapes) > 1:
+                raise DataError('When concatenating gridded data the shape '
+                                'of arrays must match. %s found that arrays '
+                                'along the %s dimension do not match.' %
+                                (cls.__name__, vdim.name))
+            stack = np.stack if any(is_dask(arr) for arr in arrays) else da.stack
+            new_data[vdim.name] = stack(arrays, -1)
+        return new_data
+
+
+    @classmethod
     def irregular(cls, dataset, dim):
         return dataset.data[dim.name if isinstance(dim, Dimension) else dim].ndim > 1
 
 
     @classmethod
     def isscalar(cls, dataset, dim):
-        return np.unique(cls.values(dataset, dim, expanded=False)) == 1
+        values = cls.values(dataset, dim, expanded=False)
+        return values.shape in ((), (1,)) or len(np.unique(values)) == 1
 
 
     @classmethod
@@ -541,9 +576,9 @@ class GridInterface(DictInterface):
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
         for vdim in dataset.vdims:
-            data[vdim.name] = np.atleast_1d(function(dataset.data[vdim.name],
-                                                      axis=axes, **kwargs))
-
+            values = dataset.data[vdim.name]
+            atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
+            data[vdim.name] = atleast_1d(function(values, axis=axes, **kwargs))
         return data
 
 

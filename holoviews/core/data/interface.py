@@ -4,7 +4,7 @@ import param
 import numpy as np
 
 from ..element import Element
-from ..ndmapping import OrderedDict
+from ..ndmapping import OrderedDict, NdMapping
 from .. import util
 
 
@@ -107,30 +107,20 @@ class Interface(param.Parameterized):
     def register(cls, interface):
         cls.interfaces[interface.datatype] = interface
 
-
     @classmethod
-    def cast(cls, dataset, datatype=None, cast_type=None):
+    def cast(cls, datasets, datatype=None, cast_type=None):
         """
         Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
         """
-        if len({type(c) for c in dataset}) > 1 and cast_type is None:
-            raise Exception("Please supply the common cast type")
-
-        if datatype is None:
-           datatype = cls.datatype
-
-        unchanged = all({c.interface==cls for c in dataset})
-        if unchanged and cast_type is None:
-            return dataset
-        elif unchanged:
-            return [cast_type(co, **dict(util.get_param_values(co)))
-                    for co in dataset]
-
-        return [co.clone(co.columns(), datatype=[datatype], new_type=cast_type)
-                for co in dataset]
-
+        datatype = datatype or cls.datatype
+        cast = []
+        for ds in datasets:
+            if cast_type is not None or ds.interface.datatype != datatype:
+                ds = ds.clone(ds, datatype=[datatype], new_type=cast_type)
+            cast.append(ds)
+        return cast
 
     @classmethod
     def error(cls):
@@ -167,7 +157,7 @@ class Interface(param.Parameterized):
 
             if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
                 data = data.data
-            elif data.interface.gridded:
+            elif data.interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
                                        for kd in data.kdims])
                 for vd in data.vdims:
@@ -307,25 +297,42 @@ class Interface(param.Parameterized):
                 return column[0], column[-1]
 
     @classmethod
-    def concatenate(cls, dataset, datatype=None):
+    def concatenate(cls, datasets, datatype=None, new_type=None):
         """
-        Utility function to concatenate a list of Column objects,
-        returning a new Dataset object. Note that this is unlike the
-        .concat method which only concatenates the data.
+        Utility function to concatenate an NdMapping of Dataset objects.
         """
-        if len(set(type(c) for c in dataset)) != 1:
-               raise Exception("All inputs must be same type in order to concatenate")
-
-        interfaces = set(c.interface for c in dataset)
-        if len(interfaces)!=1 and datatype is None:
-            raise Exception("Please specify the concatenated datatype")
-        elif len(interfaces)!=1:
-            interface = cls.interfaces[datatype]
+        from . import Dataset, default_datatype
+        new_type = new_type or Dataset
+        if isinstance(datasets, NdMapping):
+            dimensions = datasets.kdims
+            keys, datasets = zip(*datasets.data.items())
+        elif isinstance(datasets, list) and all(not isinstance(v, tuple) for v in datasets):
+            # Allow concatenating list of datasets (by declaring no dimensions and keys)
+            dimensions, keys = [], [()]*len(datasets)
         else:
-            interface = interfaces.pop()
+            raise DataError('Concatenation only supported for NdMappings '
+                            'and lists of Datasets, found %s.' % type(datasets).__name__)
 
-        concat_data = interface.concat(dataset)
-        return dataset[0].clone(concat_data)
+        template = datasets[0]
+        datatype = datatype or template.interface.datatype
+
+        # Handle non-general datatypes by casting to general type
+        if datatype == 'array':
+            datatype = default_datatype
+        elif datatype == 'image':
+            datatype = 'grid'
+
+        if len(datasets) > 1 and not dimensions and cls.interfaces[datatype].gridded:
+            raise DataError('Datasets with %s datatype cannot be concatenated '
+                            'without defining the dimensions to concatenate along. '
+                            'Ensure you pass in a NdMapping (e.g. a HoloMap) '
+                            'of Dataset types, not a list.' % datatype)
+
+        datasets = template.interface.cast(datasets, datatype)
+        template = datasets[0]
+        data = list(zip(keys, datasets)) if keys else datasets
+        concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
+        return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):

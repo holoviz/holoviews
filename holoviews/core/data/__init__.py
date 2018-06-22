@@ -17,12 +17,14 @@ from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
 
+default_datatype = 'dictionary'
 datatypes = ['dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
-    datatypes = ['dataframe', 'dictionary', 'grid', 'array']
+    default_datatype = 'dataframe'
+    datatypes = ['dataframe', 'dictionary', 'grid']
     DFColumns = PandasInterface
 except ImportError:
     pd = None
@@ -62,6 +64,29 @@ from ..element import Element
 from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
 from .. import util
+
+
+def concat(datasets, datatype=None):
+    """
+    Concatenates multiple datasets wrapped in an NdMapping type along
+    all of its dimensions. Before concatenation all datasets are cast
+    to the same datatype, which may be explicitly defined or
+    implicitly derived from the first datatype that is
+    encountered. For columnar data concatenation adds the columns for
+    the dimensions being concatenated along and then concatenates all
+    the old and new columns. For gridded data a new axis is created
+    for each dimension being concatenated along and then
+    hierarchically concatenates along each dimension.
+
+    Signature
+    ---------
+
+    datasets: NdMapping of Datasets defining dimensions to concatenate on
+    datatype: Datatype to cast data to before concatenation
+
+    Returns: Dataset
+    """
+    return Interface.concatenate(datasets, datatype)
 
 
 class DataConversion(object):
@@ -291,7 +316,7 @@ class Dataset(Element):
             dimensions = dict(kdims=dims)
 
         if issubclass(self.interface, ArrayInterface) and np.asarray(dim_val).dtype != self.data.dtype:
-            element = self.clone(datatype=['pandas', 'dictionary'])
+            element = self.clone(datatype=[default_datatype])
             data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         else:
             data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)

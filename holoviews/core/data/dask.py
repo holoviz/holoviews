@@ -244,9 +244,14 @@ class DaskInterface(PandasInterface):
         return data
 
     @classmethod
-    def concat(cls, columns_objs):
-        cast_objs = cls.cast(columns_objs)
-        return dd.concat([col.data for col in cast_objs])
+    def concat(cls, datasets, dimensions, vdims):
+        dataframes = []
+        for key, ds in datasets:
+            data = ds.data.copy()
+            for d, k in zip(dimensions, key):
+                data[d.name] = k
+            dataframes.append(data)
+        return dd.concat(dataframes)
 
     @classmethod
     def dframe(cls, columns, dimensions):

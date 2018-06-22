@@ -1431,7 +1431,6 @@ def unpack_group(group, getter):
         if hasattr(obj, 'kdims'):
             yield (key, obj)
         else:
-            obj = tuple(v)
             yield (wrap_tuple(key), obj)
 
 
@@ -1532,7 +1531,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
         selects = get_unique_keys(ndmapping, dimensions)
         selects = group_select(list(selects))
         groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
-                                  else [((), (v,))]), **kwargs))
+                                  else [((), v)]), **kwargs))
                   for k, v in iterative_select(ndmapping, dim_names, selects)]
         return container_type(groups, kdims=dimensions)
 

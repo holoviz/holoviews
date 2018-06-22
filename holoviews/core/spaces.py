@@ -311,6 +311,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         on the HoloMap. Homogeneous Elements may be collapsed by
         supplying a function, inhomogeneous elements are merged.
         """
+        from .data import concat
         if not dimensions:
             dimensions = self.kdims
         if not isinstance(dimensions, list): dimensions = [dimensions]
@@ -324,16 +325,18 @@ class HoloMap(UniformNdMapping, Overlayable):
 
         collapsed = groups.clone(shared_data=False)
         for key, group in groups.items():
-            group_data = [el.data for el in group]
-            args = (group_data, function, group.last.kdims)
             if hasattr(group.last, 'interface'):
-                col_data = group.type(group.table().aggregate(group.last.kdims, function, spreadfn, **kwargs))
-
+                group_data = concat(group)
+                if function:
+                    agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
+                    group_data = group.type(agg)
             else:
+                group_data = [el.data for el in group]
+                args = (group_data, function, group.last.kdims)
                 data = group.type.collapse_data(*args, **kwargs)
-                col_data = group.last.clone(data)
-            collapsed[key] = col_data
-        return collapsed if self.ndims > 1 else collapsed.last
+                group_data = group.last.clone(data)
+            collapsed[key] = group_data
+        return collapsed if self.ndims-len(dimensions) else collapsed.last
 
 
     def sample(self, samples=[], bounds=None, **sample_values):

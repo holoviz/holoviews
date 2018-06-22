@@ -105,12 +105,6 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def concat(cls, dataset_objs):
-        cast_objs = cls.cast(dataset_objs)
-        return np.concatenate([col.data for col in cast_objs])
-
-
-    @classmethod
     def sort(cls, dataset, by=[], reverse=False):
         data = dataset.data
         if len(by) == 1:

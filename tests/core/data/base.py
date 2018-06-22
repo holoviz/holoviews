@@ -9,6 +9,8 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews import Dataset, HoloMap, Dimension
+from holoviews.core.data import concat
+from holoviews.core.data.interface import DataError
 from holoviews.element import Scatter, Curve
 from holoviews.element.comparison import ComparisonTestCase 
 
@@ -1081,3 +1083,23 @@ class GriddedInterfaceTests(object):
         agg = ds.aggregate('x', np.mean, np.std)
         example = Dataset((range(5), array.mean(axis=0), array.std(axis=0)), 'x', ['z', 'z_std'])
         self.assertEqual(agg, example)
+
+    def test_concat_grid_3d(self):
+        array = np.random.rand(4, 5, 3, 2)
+        orig = Dataset((range(2), range(3), range(5), range(4), array), ['A', 'B', 'x', 'y'], 'z')
+        hmap = HoloMap({(i, j): self.element((range(5), range(4), array[:, :, j, i]), ['x', 'y'], 'z')
+                        for i in range(2) for j in range(3)}, ['A', 'B'])
+        ds = concat(hmap)
+        self.assertEqual(ds, orig)
+
+    def test_concat_grid_3d_shape_mismatch(self):
+        ds1 = Dataset(([0, 1], [1, 2, 3], np.random.rand(3, 2)), ['x', 'y'], 'z')
+        ds2 = Dataset(([0, 1, 2], [1, 2], np.random.rand(2, 3)), ['x', 'y'], 'z')
+        hmap = HoloMap({1: ds1, 2: ds2})
+        with self.assertRaises(DataError):
+            concat(hmap)
+
+    def test_grid_3d_groupby_concat_roundtrip(self):
+        array = np.random.rand(4, 5, 3, 2)
+        orig = Dataset((range(2), range(3), range(5), range(4), array), ['A', 'B', 'x', 'y'], 'z')
+        self.assertEqual(concat(orig.groupby(['A', 'B'])), orig)
