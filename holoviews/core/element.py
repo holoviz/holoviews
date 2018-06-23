@@ -3,7 +3,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned, ViewableElement, as_dimension
+from .dimension import Dimensioned, ViewableElement, as_dimension
 from .layout import Composable, Layout, NdLayout
 from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay

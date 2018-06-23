@@ -6,7 +6,7 @@ except ImportError:
 import numpy as np
 
 from .interface import Interface, DataError
-from ..dimension import Dimension, dimension_name
+from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check
 from .. import util

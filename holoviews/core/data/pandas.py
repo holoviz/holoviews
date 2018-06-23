@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from .interface import Interface, DataError
-from ..dimension import Dimension, dimension_name
+from ..dimension import dimension_name
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check

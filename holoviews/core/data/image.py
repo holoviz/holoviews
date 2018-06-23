@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..boundingregion import BoundingBox
-from ..dimension import Dimension, dimension_name
+from ..dimension import dimension_name
 from ..element import Element
 from ..ndmapping import  NdMapping, item_check
 from ..sheetcoords import Slice, SheetCoordinateSystem
