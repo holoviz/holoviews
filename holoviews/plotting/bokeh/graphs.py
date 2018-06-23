@@ -246,7 +246,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 continue
             source = self._init_datasource(data.pop(key, {}))
             self.handles[key+'_source'] = source
-            glyph_props = self._glyph_properties(plot, element, source, ranges, style)
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+            glyph_props = self._glyph_properties(plot, element, source, ranges, style, style_group)
             properties.update(glyph_props)
             mappings.update(mapping.pop(key, {}))
         properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}

@@ -664,12 +664,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _apply_ops(self, element, source, ranges, style):
+    def _apply_ops(self, element, source, ranges, style, group=None):
         new_style = dict(style)
         for k, v in dict(style).items():
             if isinstance(v, util.basestring) and v in element:
                 v = op(v)
-            if not isinstance(v, op):
+            if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
             if dname not in element:
@@ -697,8 +697,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return new_style
 
 
-    def _glyph_properties(self, plot, element, source, ranges, style):
-        new_style = self._apply_ops(element, source, ranges, style)
+    def _glyph_properties(self, plot, element, source, ranges, style, group=None):
+        new_style = self._apply_ops(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend:
             if self.overlay_dims:
@@ -1020,7 +1020,8 @@ class CompositeElementPlot(ElementPlot):
                 source = self._init_datasource(ds_data)
                 source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
-            properties = self._glyph_properties(plot, element, source, ranges, style)
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+            properties = self._glyph_properties(plot, element, source, ranges, style, style_group)
             properties = self._process_properties(key, properties, mapping.get(key, {}))
             with abbreviated_exception():
                 renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
@@ -1074,7 +1075,8 @@ class CompositeElementPlot(ElementPlot):
             glyph = self.handles.get(key+'_glyph')
 
             if glyph:
-                properties = self._glyph_properties(plot, element, source, ranges, style)
+                style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+                properties = self._glyph_properties(plot, element, source, ranges, style, style_group)
                 properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
