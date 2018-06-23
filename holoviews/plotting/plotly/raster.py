@@ -2,7 +2,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from ...core.options import SkipRendering
-from ...element import Image
+from ...element import Image, Raster
 from .element import ColorbarPlot
 
 
@@ -27,6 +27,8 @@ class RasterPlot(ColorbarPlot):
         else:
             l, b, r, t = element.extents
         array = element.dimension_values(2, flat=False)
+        if type(element) is Raster:
+            array=array.T[::-1,...]
         ny, nx = array.shape
         dx, dy = float(r-l)/nx, float(t-b)/ny
         return (), dict(x0=l, y0=b, dx=dx, dy=dy, z=array)
