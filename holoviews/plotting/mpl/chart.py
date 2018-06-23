@@ -576,8 +576,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
                 ypos = np.searchsorted(categories, cs)
                 style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
-        elif color:
-            style['c'] = color
+        elif color is not None:
+            if np.isscalar(color):
+                style['c'] = color
+            else:
+                style['color'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         sdim = element.get_dimension(self.size_index)

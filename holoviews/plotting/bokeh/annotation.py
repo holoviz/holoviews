@@ -88,7 +88,8 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     def get_data(self, element, ranges, style):
         style = self.style[self.cyclic_index]
-        style['angle'] = np.deg2rad(style.get('angle', 0))
+        if 'angle' in style and isinstance(style['angle'], (int, float)):
+            style['angle'] = np.deg2rad(style.get('angle', 0))
 
         dims = element.dimensions()
         coords = (1, 0) if self.invert_axes else (0, 1)

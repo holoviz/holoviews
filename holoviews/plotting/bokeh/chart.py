@@ -43,7 +43,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
@@ -91,6 +91,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
         sdata, smapping = self._get_size_data(element, ranges, style)
         data.update(sdata)
         mapping.update(smapping)
+
+        if 'angle' in style and isinstance(style['angle'], (int, float)):
+            style['angle'] = np.deg2rad(style['angle'])
 
         if self.jitter:
             axrange = 'y_range' if self.invert_axes else 'x_range'

@@ -679,6 +679,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             vrange = ranges.get(dname)
             val = v.eval(element, ranges)
+            if len(np.unique(val)) == 1:
+                val = val if np.isscalar(val) else val[0]
+            if k == 'angle':
+                val = np.deg2rad(val)
             if np.isscalar(val):
                 key = val
             else:

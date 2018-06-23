@@ -522,6 +522,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if not isinstance(v, op):
                 continue
             val = v.eval(element, ranges)
+            if len(np.unique(val)) == 1:
+                val = val if np.isscalar(val) else val[0]
+            if k == 'alpha' and not np.isscalar(val):
+                self.warning('The matplotlib backend currently does not '
+                             'support scaling the alpha by a dimension.')
+                continue
+            if k == 'marker':
+                self.warning('The matplotlib backend currently does not '
+                             'support mapping a dimension to the marker type.')
+                continue
             new_style[k] = val
         return new_style
 
