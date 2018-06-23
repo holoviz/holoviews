@@ -86,7 +86,11 @@ class CubeInterface(GridInterface):
             ndims = len(kdim_names)
             vdim = as_dimension(vdims[0])
             vdims = [vdim]
-            if isinstance(data, tuple):
+            if isinstance(data, np.ndarray):
+                if data.ndim != 2 or data.shape[1] != 2 or len(kdims) != 1:
+                    raise ValueError('Iris interface could not interpret array data.')
+                data = {kdims[0].name: data[:, 0], vdim.name: data[:, 1]}
+            elif isinstance(data, tuple):
                 value_array = data[-1]
                 data = {d: vals for d, vals in zip(kdim_names + [vdim.name], data)}
             elif isinstance(data, list) and data == []:
