@@ -678,9 +678,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              'could not be found' % (k, v, v.dimension))
                 continue
             vrange = ranges.get(dname)
+
             val = v.eval(element, ranges)
+            length = [len(v) for v in source.data.values()][0]
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
+
+            if not np.isscalar(val) and len(val) != length:
+                continue
+
             if k == 'angle':
                 val = np.deg2rad(val)
             if np.isscalar(val):

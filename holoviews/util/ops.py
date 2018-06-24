@@ -72,7 +72,8 @@ class op(object):
 
     def eval(self, dataset, ranges={}):
         expanded = not (dataset.interface.gridded and self.dimension in dataset.kdims)
-        data = dataset.dimension_values(self.dimension, expanded=expanded, flat=False)
+        isscalar = dataset.interface.isscalar(dataset, self.dimension)
+        data = dataset.dimension_values(self.dimension, expanded=expanded and not isscalar, flat=False)
         for o in self.ops:
             other = o['other']
             if other is not None:
