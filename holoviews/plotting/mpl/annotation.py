@@ -99,7 +99,7 @@ class LabelsPlot(ColorbarPlot):
       Amount of offset to apply to labels along x-axis.""")
 
     style_opts = ['alpha', 'color', 'family', 'weight', 'size', 'visible',
-                  'horizontalalignment', 'verticalalignment', 'cmap']
+                  'horizontalalignment', 'verticalalignment', 'cmap', 'rotation']
 
     _plot_methods = dict(single='annotate')
 
@@ -131,8 +131,10 @@ class LabelsPlot(ColorbarPlot):
             cmap = None
             plot_args = plot_args[:-1]
 
+        vectorized = {k: v for k, v in plot_kwargs.items() if isinstance(v, np.ndarray)}
+
         texts = []
-        for item in zip(*plot_args):
+        for i, item in enumerate(zip(*plot_args)):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
@@ -142,7 +144,8 @@ class LabelsPlot(ColorbarPlot):
                 else:
                     color = colors.index(color) if color in colors else np.NaN
                     plot_kwargs['color'] = cmap(color)
-            texts.append(ax.text(x, y, text, **plot_kwargs))
+            kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
+            texts.append(ax.text(x, y, text, **kwargs))
         return {'artist': texts}
 
     def teardown_handles(self):
