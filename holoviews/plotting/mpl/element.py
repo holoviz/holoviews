@@ -524,13 +524,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             val = v.eval(element, ranges)
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
-            if k == 'alpha' and not np.isscalar(val):
+            if k == 'alpha' and not np.isscalar(val) and not self._plot_methods.get('single') == 'annotate':
                 self.warning('The matplotlib backend currently does not '
                              'support scaling the alpha by a dimension.')
+                new_style.pop('alpha')
                 continue
             if k == 'marker':
                 self.warning('The matplotlib backend currently does not '
                              'support mapping a dimension to the marker type.')
+                new_style.pop('marker')
                 continue
             new_style[k] = val
         return new_style
