@@ -2,7 +2,8 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Dimension, Element, Dataset, Tabular
+from ..core import OrderedDict, Element, Dataset, Tabular
+from ..core.dimension import Dimension, dimension_name
 
 
 class ItemTable(Element):
@@ -48,8 +49,7 @@ class ItemTable(Element):
             data = OrderedDict(list(data)) # Python 3
         if not 'vdims' in params:
             params['vdims'] = list(data.keys())
-        str_keys = OrderedDict((k.name if isinstance(k, Dimension)
-                                else k ,v) for (k,v) in data.items())
+        str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
         super(ItemTable, self).__init__(str_keys, **params)
 
 
@@ -127,8 +127,7 @@ class ItemTable(Element):
         Generates a Pandas dframe from the ItemTable.
         """
         from pandas import DataFrame
-        return DataFrame({(k.name if isinstance(k, Dimension)
-                           else k): [v] for k, v in self.data.items()})
+        return DataFrame({dimension_name(k): [v] for k, v in self.data.items()})
 
 
     def table(self, datatype=None):

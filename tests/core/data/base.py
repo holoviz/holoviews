@@ -102,6 +102,11 @@ class HomogeneousColumnTests(object):
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
+    def test_dataset_array_init_hm_tuple_dims(self):
+        dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
+                          kdims=[('x', 'X')], vdims=[('x2', 'X2')])
+        self.assertTrue(isinstance(dataset.data, self.data_type))
+
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
         if pd is None:
