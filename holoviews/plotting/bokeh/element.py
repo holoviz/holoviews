@@ -724,7 +724,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             self.handles['xaxis'] = plot.xaxis[0]
             self.handles['x_range'] = plot.x_range
-            self.handles['y_axis'] = plot.yaxis[0]
+            self.handles['yaxis'] = plot.yaxis[0]
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
@@ -1181,6 +1181,9 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
+    legend_muted = param.Boolean(default=False, doc="""
+        Controls whether the legend entries are muted by default.""")
+
     legend_offset = param.NumericTuple(default=(0, 0), doc="""
         If legend is placed outside the axis, this determines the
         (width, height) offset in pixels from the original position.""")
@@ -1217,6 +1220,13 @@ class LegendPlot(ElementPlot):
             else:
                 legend.location = pos
 
+            # Apply muting
+            for leg in plot.legend:
+                for item in leg.items:
+                    for r in item.renderers:
+                        r.muted = self.legend_muted
+
+
 
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
@@ -1235,7 +1245,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
-                          'legend_cols', 'gridstyle']
+                          'legend_cols', 'gridstyle', 'legend_muted']
 
     def _process_legend(self):
         plot = self.handles['plot']
@@ -1311,6 +1321,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.plot = None
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
+
+        # Apply muting
+        for leg in plot.legend:
+            for item in leg.items:
+                for r in item.renderers:
+                    r.muted = self.legend_muted
 
 
     def _init_tools(self, element, callbacks=[]):
