@@ -6,6 +6,7 @@ from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
 from ...core.util import dimension_sanitizer
+from ...links import Link, PathTableLink
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
@@ -966,3 +967,90 @@ callbacks[PolyEdit]    = PolyEditCallback
 callbacks[PositionXY]  = PointerXYCallback
 callbacks[PositionX]   = PointerXCallback
 callbacks[PositionY]   = PointerYCallback
+
+
+class LinkCallback(param.Parameterized):
+
+    source_model = None
+    target_model = None
+    source_handles = []
+    target_handles = []
+
+    on_source_events = []
+    on_source_changes = []
+
+    on_target_events = []
+    on_target_changes = []
+
+    def __init__(self, source_plot, target_plot):
+        self.validate(source_plot, target_plot)
+        self.source_plot = source_plot
+        self.target_plot = target_plot
+        references = {}
+        for sh in self.source_handles+[self.source_model]:
+            key = '_'.join(['source', sh])
+            references[key] = source_plot.handles[sh]
+
+        for sh in self.target_handles+[self.target_model]:
+            key = '_'.join(['target', sh])
+            references[key] = target_plot.handles[sh]
+
+        if self.source_model in source_plot.handles:
+            src_model = source_plot.handles[self.source_model]
+            src_cb = CustomJS(args=references, code=self.source_code)
+            for ch in self.on_source_changes:
+                src_model.js_on_change(ch, src_cb)
+            for ev in self.on_source_events:
+                src_model.js_on_event(ev, src_cb)
+
+        if self.target_model in target_plot.handles:
+            tgt_model = target_plot.handles[self.target_model]
+            tgt_cb = CustomJS(args=references, code=self.target_code)
+            for ch in self.on_target_changes:
+                tgt_model.js_on_change(ch, src_cb)
+            for ev in self.on_target_events:
+                tgt_model.js_on_event(ev, src_cb)
+
+
+class PathTableLinkCallback(LinkCallback):
+
+    source_model = 'source'
+    target_model = 'source'
+
+    on_source_changes = ['selected', 'data']
+    on_target_changes = ['data']
+
+    source_code = """
+    if (!source_source.selected.indices.length) { return }
+    index = source_source.selected.indices[0]
+    for (var k in source_source.data) {
+      column = source_source.data[k]
+      if (k in target_source.data) {
+        target_source.data[k] = column[index]
+      }
+    }
+    target_source.change.emit()
+    """
+
+    target_code = """
+    if (!source_source.selected.indices.length) { return }
+    index = source_source.selected.indices[0]
+    for (k in target_source.data) {
+      column = target_source.data[k];
+      console.log(k)
+      if (k in source_source.data) {
+        source_source.data[k][index] = column;
+      }
+    }
+    source_source.change.emit()
+    """
+
+    def validate(self, source_plot, target_plot):
+        source_cds = source_plot.handles['source']
+        target_cds = target_plot.handles['source']
+        for col in target_cds.data:
+            assert col in source_cds.data
+
+callbacks = Link._callbacks['bokeh']
+
+callbacks[PathTableLink] = PathTableLinkCallback

@@ -9,14 +9,15 @@ from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
-                     Empty, GridSpace, HoloMap, Element, DynamicMap)
+                     Empty, GridSpace, HoloMap, Element, DynamicMap, ViewableElement)
 from ...core.options import SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
+from ...links import Link
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
-from .callbacks import Callback
+from .callbacks import Callback, LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
@@ -330,6 +331,36 @@ class BokehPlot(DimensionedPlot):
         self.handles['shared_sources'] = shared_sources
         self.handles['source_cols'] = source_cols
 
+    def init_links(self):
+        links = self.find_links()
+        callbacks = []
+        for link, src_plot, tgt_plot in links:
+            cb = Link._callbacks['bokeh'][type(link)]
+            callbacks.append(cb(src_plot, tgt_plot))
+        return callbacks
+
+    def find_links(self):
+        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        potentials = [self.find_link(plot) for plot in plots]
+        links = [p for p in potentials if p is not None]
+        found = []
+        for plot, link in links:
+            potentials = [self.find_link(plot, link) for plot in plots]
+            links = [p for p in potentials if p is not None]
+            if links:
+                found.append((link, plot, links[0][0]))
+        return found
+
+    def find_link(self, plot, link=None):
+        sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
+        for src in sources:
+            if link is None:
+                if id(src) in Link.registry:
+                    return (plot, Link.registry[id(src)])
+            else:
+                if id(link.target) == id(src):
+                    return (plot, link)
+
 
 
 class CompositePlot(BokehPlot):
@@ -434,7 +465,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
-
 
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
@@ -541,6 +571,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
+
+        if self.top_level:
+            self.init_links()
+
         self.drawn = True
 
         return self.handles['plot']
@@ -880,6 +914,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
+
+        if self.top_level:
+            self.init_links()
 
         self.drawn = True
 
