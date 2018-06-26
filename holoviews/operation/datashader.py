@@ -346,9 +346,14 @@ class aggregate(AggregationOperation):
         x, y = element.last.dimensions()[0:2]
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        if xtype == 'datetime':
+            x_range = tuple((np.array(x_range)/10e5).astype('datetime64[us]'))
+        if ytype == 'datetime':
+            y_range = tuple((np.array(y_range)/10e5).astype('datetime64[us]'))
         agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
                            if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
+        bbox = BoundingBox(points=[(x_range[0], y_range[0]), (x_range[1], y_range[1])])
 
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
@@ -359,7 +364,11 @@ class aggregate(AggregationOperation):
             else:
                 grouped = element.groupby([agg_fn.column], container_type=NdOverlay,
                                           group_type=NdOverlay)
-            return grouped.clone({k: agg_fn1(v) for k, v in grouped.items()})
+            groups = []
+            for k, v in grouped.items():
+                agg = agg_fn1(v)
+                groups.append((k, agg.clone(agg.data, bounds=bbox)))
+            return grouped.clone(groups)
 
         # Create aggregate instance for sum, count operations, breaking mean
         # into two aggregates
@@ -402,7 +411,8 @@ class aggregate(AggregationOperation):
         # Fill masked with with NaNs
         if is_sum:
             agg.data[column].values[mask] = np.NaN
-        return agg
+
+        return agg.clone(bounds=bbox)
 
 
     def _process(self, element, key=None):
@@ -410,7 +420,8 @@ class aggregate(AggregationOperation):
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
         if (isinstance(element, NdOverlay) and
-            ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and agg_fn.column not in element.kdims) or
+            ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
+              (agg_fn.column is None or agg_fn.column not in element.kdims)) or
              (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims))):
             return self._aggregate_ndoverlay(element, agg_fn)
 
@@ -418,6 +429,7 @@ class aggregate(AggregationOperation):
             x, y, data, glyph = self._precomputed[element._plot_id]
         else:
             x, y, data, glyph = self.get_agg_data(element, category)
+
         if self.p.precompute:
             self._precomputed[element._plot_id] = x, y, data, glyph
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
