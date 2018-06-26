@@ -85,10 +85,12 @@ class BoxPlot(ChartPlot):
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        return ax.boxplot(*plot_args, **plot_kwargs)
 
     def teardown_handles(self):
-        for group in self.handles['artist'].values():
-            for v in group:
+        for g in ('whiskers', 'fliers', 'medians', 'boxes', 'caps', 'means'):
+            for v in self.handles.get(g, []):
                 v.remove()
 
 
@@ -155,23 +157,22 @@ class ViolinPlot(BoxPlot):
         alpha = plot_kwargs.pop('alpha', 1.)
         showmedians = self.inner == 'medians'
         bw_method = self.bandwidth or 'scott'
-        artist = ax.violinplot(*plot_args, bw_method=bw_method,
+        artists = ax.violinplot(*plot_args, bw_method=bw_method,
                                showmedians=showmedians, **plot_kwargs)
-        artists = {'artist': artist}
         if self.inner == 'box':
             box = ax.boxplot(*plot_args, positions=plot_kwargs['positions'],
                              showfliers=False, showcaps=False, patch_artist=True,
                              boxprops={'facecolor': box_color},
                              medianprops={'color': 'white'}, widths=0.1,
                              labels=labels)
-            artists['box'] = box
-        for body, color in zip(artist['bodies'], facecolors):
+            artists.update(box)
+        for body, color in zip(artists['bodies'], facecolors):
             body.set_facecolors(color)
             body.set_edgecolors(edgecolors)
             body.set_alpha(alpha)
         for stat in ['cmedians', 'cmeans', 'cmaxes', 'cmins', 'cbars']:
-            if stat in artist:
-                artist[stat].set_edgecolors(stats_color)
+            if stat in artists:
+                artists[stat].set_edgecolors(stats_color)
         return artists
 
     def get_data(self, element, ranges, style):
@@ -201,9 +202,8 @@ class ViolinPlot(BoxPlot):
         return (data,), style, dict(dimensions=[format_kdims, element.vdims[0]], **ticks)
 
     def teardown_handles(self):
-        for group in self.handles['artist'].values():
-            for v in group:
-                v.remove()
-        for group in self.handles['box'].values():
-            for v in group:
+        box_artists = ('cmedians', 'cmeans', 'cmaxes', 'cmins', 'cbars', 'bodies')
+        violin_artists = ('whiskers', 'fliers', 'medians', 'boxes', 'caps', 'means')
+        for group in box_artists+violin_artists:
+            for v in self.handles.get(group, []):
                 v.remove()
