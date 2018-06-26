@@ -86,7 +86,9 @@ class BoxPlot(ChartPlot):
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        return ax.boxplot(*plot_args, **plot_kwargs)
+        artists = ax.boxplot(*plot_args, **plot_kwargs)
+        artists['artist'] = artists['boxes']
+        return artists
 
     def teardown_handles(self):
         for g in ('whiskers', 'fliers', 'medians', 'boxes', 'caps', 'means'):
@@ -173,6 +175,7 @@ class ViolinPlot(BoxPlot):
         for stat in ['cmedians', 'cmeans', 'cmaxes', 'cmins', 'cbars']:
             if stat in artists:
                 artists[stat].set_edgecolors(stats_color)
+        artists['bodies'] = artists['bodies']
         return artists
 
     def get_data(self, element, ranges, style):
