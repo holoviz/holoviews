@@ -2,7 +2,7 @@ from nose.plugins.attrib import attr
 
 import numpy as np
 
-from holoviews.core import Dimension, DynamicMap
+from holoviews.core import Dimension, DynamicMap, NdOverlay
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream
 from holoviews.plotting.util import process_cmap
@@ -193,3 +193,16 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(plot.state.xgrid[0].grid_line_color, 'blue')
         self.assertEqual(plot.state.xgrid[0].grid_line_width, 2)
+
+    def test_ndoverlay_legend_muted(self):
+        overlay = NdOverlay({i: Curve(np.random.randn(10).cumsum()) for i in range(5)}).options(legend_muted=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        for sp in plot.subplots.values():
+            self.assertTrue(sp.handles['glyph_renderer'].muted)
+
+    def test_overlay_legend_muted(self):
+        overlay = (Curve(np.random.randn(10).cumsum(), label='A') *
+                   Curve(np.random.randn(10).cumsum(), label='B')).options(legend_muted=True)
+        plot = bokeh_renderer.get_plot(overlay)
+        for sp in plot.subplots.values():
+            self.assertTrue(sp.handles['glyph_renderer'].muted)
