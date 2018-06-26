@@ -12,7 +12,7 @@ except ImportError:
     dask = None
 
 from .. import util
-from ..dimension import Dimension, as_dimension, dimension_name
+from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
@@ -99,8 +99,8 @@ class XArrayInterface(GridInterface):
                 kdims = kdim_param.default
             if vdims is None:
                 vdims = vdim_param.default
-            kdims = [as_dimension(kd) for kd in kdims]
-            vdims = [as_dimension(vd) for vd in vdims]
+            kdims = [asdim(kd) for kd in kdims]
+            vdims = [asdim(vd) for vd in vdims]
             if isinstance(data, np.ndarray) and data.ndim == 2 and data.shape[1] == len(kdims+vdims):
                 data = tuple(data)
             if isinstance(data, tuple):
@@ -136,8 +136,8 @@ class XArrayInterface(GridInterface):
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
                 kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [as_dimension(vd) for vd in vdims]
-            kdims = [as_dimension(kd) for kd in kdims]
+            vdims = [asdim(vd) for vd in vdims]
+            kdims = [asdim(kd) for kd in kdims]
 
         not_found = []
         for d in kdims:

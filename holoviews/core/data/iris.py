@@ -13,7 +13,7 @@ import numpy as np
 
 from .interface import Interface, DataError
 from .grid import GridInterface
-from ..dimension import Dimension, as_dimension
+from ..dimension import Dimension, asdim
 from ..element import Element
 from ..ndmapping import (NdMapping, item_check, sorted_context)
 from ..spaces import HoloMap
@@ -74,7 +74,7 @@ class CubeInterface(GridInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims:
-            kdims = [as_dimension(kd) for kd in kdims]
+            kdims = [asdim(kd) for kd in kdims]
             kdim_names = [kd.name for kd in kdims]
         else:
             kdims = eltype.kdims
@@ -84,7 +84,7 @@ class CubeInterface(GridInterface):
             if vdims is None:
                 vdims = eltype.vdims
             ndims = len(kdim_names)
-            vdim = as_dimension(vdims[0])
+            vdim = asdim(vdims[0])
             vdims = [vdim]
             if isinstance(data, np.ndarray):
                 if data.ndim != 2 or data.shape[1] != 2 or len(kdims) != 1:

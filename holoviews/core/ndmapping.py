@@ -11,7 +11,7 @@ import numpy as np
 import param
 
 from . import util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, as_dimension
+from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
@@ -285,7 +285,7 @@ class MultiDimensionalMapping(Dimensioned):
         in the key dimensions and a key value scalar or sequence of
         the same length as the existing keys.
         """
-        dimension = as_dimension(dimension)
+        dimension = asdim(dimension)
 
         if dimension in self.dimensions():
             raise Exception('{dim} dimension already defined'.format(dim=dimension.name))

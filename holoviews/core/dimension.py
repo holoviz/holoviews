@@ -41,7 +41,7 @@ def param_aliases(d):
     return d
 
 
-def as_dimension(dimension):
+def asdim(dimension):
     """
     Converts tuple, dict and basestring types to Dimension and leaves
     Dimension types untouched.
@@ -97,7 +97,7 @@ def process_dimensions(kdims, vdims):
                 raise ValueError('Dimensions must be defined as a tuple, '
                                  'string, dictionary or Dimension instance, '
                                  'found a %s type.' % type(dim).__name__)
-        dimensions[group] = [as_dimension(d) for d in dims]
+        dimensions[group] = [asdim(d) for d in dims]
     return dimensions
 
 
