@@ -101,6 +101,8 @@ class XArrayInterface(GridInterface):
                 vdims = vdim_param.default
             kdims = [as_dimension(kd) for kd in kdims]
             vdims = [as_dimension(vd) for vd in vdims]
+            if isinstance(data, np.ndarray) and data.ndim == 2 and data.shape[1] == len(kdims+vdims):
+                data = tuple(data)
             if isinstance(data, tuple):
                 data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
             elif isinstance(data, list) and data == []:
