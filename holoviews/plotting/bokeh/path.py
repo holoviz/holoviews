@@ -133,7 +133,10 @@ class ContourPlot(LegendPlot, PathPlot):
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
-                data[dim] = element.dimension_values(d, expanded=False)
+                if element.interface.isscalar(element, d):
+                    data[dim] = element.dimension_values(d, expanded=False)
+                else:
+                    data[dim] = element.split(datatype='array', dimensions=[d])
             elif isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
                 data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
 
