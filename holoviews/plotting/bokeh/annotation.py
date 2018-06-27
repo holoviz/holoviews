@@ -115,7 +115,7 @@ class LabelsPlot(ColorbarPlot):
 
 class LineAnnotationPlot(ElementPlot):
 
-    style_opts = line_properties
+    style_opts = line_properties + ['level']
 
     _plot_methods = dict(single='Span')
 
@@ -135,7 +135,7 @@ class LineAnnotationPlot(ElementPlot):
         """
         Returns a Bokeh glyph object.
         """
-        box = Span(level='annotation', **mapping)
+        box = Span(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
         return None, box
 
