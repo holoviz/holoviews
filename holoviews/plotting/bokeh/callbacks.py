@@ -1007,9 +1007,9 @@ class LinkCallback(param.Parameterized):
             tgt_model = target_plot.handles[self.target_model]
             tgt_cb = CustomJS(args=references, code=self.target_code)
             for ch in self.on_target_changes:
-                tgt_model.js_on_change(ch, src_cb)
+                tgt_model.js_on_change(ch, tgt_cb)
             for ev in self.on_target_events:
-                tgt_model.js_on_event(ev, src_cb)
+                tgt_model.js_on_event(ev, tgt_cb)
 
 
 class PathTableLinkCallback(LinkCallback):
@@ -1037,7 +1037,6 @@ class PathTableLinkCallback(LinkCallback):
     index = source_source.selected.indices[0]
     for (k in target_source.data) {
       column = target_source.data[k];
-      console.log(k)
       if (k in source_source.data) {
         source_source.data[k][index] = column;
       }
