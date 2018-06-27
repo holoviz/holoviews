@@ -18,12 +18,10 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import attach_streams, displayable, collate
 from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
-                   update_shared_sources, empty_plot, decode_bytes,
-                   bokeh_version)
+                   update_shared_sources, empty_plot, decode_bytes)
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
-from bokeh.util.serialization import convert_datetime_array
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
