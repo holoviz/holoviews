@@ -982,16 +982,22 @@ class LinkCallback(param.Parameterized):
     on_target_events = []
     on_target_changes = []
 
-    def __init__(self, source_plot, target_plot):
+    source_code = None
+    target_code = None
+
+    def __init__(self, link, source_plot, target_plot):
         self.validate(source_plot, target_plot)
         self.source_plot = source_plot
         self.target_plot = target_plot
-        references = {}
+        references = {k: v for k, v in link.get_param_values()
+                      if k not in ('source', 'target', 'name')}
         for sh in self.source_handles+[self.source_model]:
             key = '_'.join(['source', sh])
             references[key] = source_plot.handles[sh]
 
         for sh in self.target_handles+[self.target_model]:
+            if target_plot is None:
+                continue
             key = '_'.join(['target', sh])
             references[key] = target_plot.handles[sh]
 
@@ -1003,13 +1009,19 @@ class LinkCallback(param.Parameterized):
             for ev in self.on_source_events:
                 src_model.js_on_event(ev, src_cb)
 
-        if self.target_model in target_plot.handles:
+        if target_plot is not None and self.target_model in target_plot.handles and self.target_code:
             tgt_model = target_plot.handles[self.target_model]
             tgt_cb = CustomJS(args=references, code=self.target_code)
             for ch in self.on_target_changes:
                 tgt_model.js_on_change(ch, tgt_cb)
             for ev in self.on_target_events:
                 tgt_model.js_on_event(ev, tgt_cb)
+
+    def validate(self, source_plot, target_plot):
+        """
+        Should be subclassed to check if the source and target plots
+        are compatible to perform the linking.
+        """
 
 
 class PathTableLinkCallback(LinkCallback):
