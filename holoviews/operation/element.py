@@ -438,23 +438,27 @@ class contours(Operation):
                     element.dimension_values(1, False, flat=False),
                     element.dimension_values(2, flat=False))
 
-        if isinstance(self.p.levels, int):
-            levels = self.p.levels+2 if self.p.filled else self.p.levels+3
-            zmin, zmax = element.range(2)
-            levels = np.linspace(zmin, zmax, levels)
-        else:
-            levels = self.p.levels
-
         xdim, ydim = element.dimensions('key', label=True)
-        fig = Figure()
-        ax = Axes(fig, [0, 0, 1, 1])
-        contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
-                                     extent=extent, levels=levels)
         if self.p.filled:
             contour_type = Polygons
         else:
             contour_type = Contours
         vdims = element.vdims[:1]
+
+        if isinstance(self.p.levels, int):
+            levels = self.p.levels+2 if self.p.filled else self.p.levels+3
+            zmin, zmax = element.range(2)
+            levels = np.linspace(zmin, zmax, levels)
+            if zmin == zmax:
+                contours = contour_type([], [xdim, ydim], vdims)
+                return (element * contours) if self.p.overlaid else contours
+        else:
+            levels = self.p.levels
+
+        fig = Figure()
+        ax = Axes(fig, [0, 0, 1, 1])
+        contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
+                                     extent=extent, levels=levels)
 
         paths = []
         empty = np.full((1, 2), np.NaN)
