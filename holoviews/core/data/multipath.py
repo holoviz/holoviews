@@ -219,7 +219,7 @@ class MultiInterface(Interface):
             else:
                 values.append(dvals)
         if not values:
-            return np.array()
+            return np.array([])
         elif expanded:
             return np.concatenate(values[:-1])
         else:
