@@ -550,3 +550,9 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                 'arc_1': data_ymarks}
 
         return data, mapping, style
+
+    def _init_glyph(self, plot, mapping, properties, key):
+        ret = super(RadialHeatMapPlot, self)._init_glyph(plot, mapping, properties, key)
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
+        return ret

@@ -8,6 +8,7 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
 
 try:
+    from bokeh.models import ColorBar
     from holoviews.plotting.bokeh import RadialHeatMapPlot
 except:
     pass
@@ -282,3 +283,9 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
         plot = bokeh_renderer.get_plot(hm.options(radial=True))
         self.assertIsInstance(plot, RadialHeatMapPlot)
+
+    def test_radial_heatmap_colorbar(self):
+        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).options(radial=True, colorbar=True)
+        plot = bokeh_renderer.get_plot(hm)
+        self.assertIsInstance(plot.handles.get('colorbar'), ColorBar)
+
