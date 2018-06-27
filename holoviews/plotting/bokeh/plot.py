@@ -200,32 +200,7 @@ class BokehPlot(DimensionedPlot):
             stream = self.streaming[0]
             if stream._triggering:
                 data = {k: v[-stream._chunk_length:] for k, v in data.items()}
-
-                # NOTE: Workaround for bug in bokeh 0.12.14, data conversion
-                # should be removed once fixed in bokeh (https://github.com/bokeh/bokeh/issues/7587)
-                converted_data = {}
-                for k, vals in data.items():
-                    cdata = source.data[k]
-                    odata = data[k]
-                    if (bokeh_version in ['0.12.14', '0.12.15dev1'] and
-                        isinstance(cdata, np.ndarray) and cdata.dtype.kind == 'M'
-                        and isinstance(vals, np.ndarray) and vals.dtype.kind == 'M'):
-                        cdata = convert_datetime_array(cdata)
-                        odata = convert_datetime_array(odata)
-                        if len(odata):
-                            cdata = np.concatenate([odata, cdata])
-                        converted_data[k] = cdata
-                if converted_data:
-                    for k, vals in data.items():
-                        cdata = source.data[k]
-                        odata = data[k]
-                        if k not in converted_data:
-                            if len(odata):
-                                cdata = np.concatenate([odata, cdata])
-                            converted_data[k] = cdata
-                    source.data.update(converted_data)
-                else:
-                    source.stream(data, stream.length)
+                source.stream(data, stream.length)
             return
 
         # Determine if the CDS.data requires a full replacement or simply needs
@@ -350,6 +325,8 @@ class BokehPlot(DimensionedPlot):
                 source_cols[id(new_source)] = [c for c in new_source.data]
         plot_id = self.id if self.top_level else None
         for plot in plots:
+            for hook in plot.finalize_hooks:
+                hook(plot, plot.current_frame)
             for callback in plot.callbacks:
                 callback.initialize(plot_id=plot_id)
         self.handles['shared_sources'] = shared_sources
