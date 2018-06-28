@@ -146,7 +146,11 @@ class DictInterface(Interface):
     def isscalar(cls, dataset, dim):
         name = dataset.get_dimension(dim, strict=True).name
         values = dataset.data[name]
-        return np.isscalar(values) or len(np.unique(values)) == 1
+        if np.isscalar(values):
+            return True
+        unique = set(values) if values.dtype.kind == 'O' else np.unique(values)
+        return len(unique) == 1
+
 
     @classmethod
     def shape(cls, dataset):
