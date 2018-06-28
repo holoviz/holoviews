@@ -17,7 +17,7 @@ from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
-from .callbacks import Callback, LinkCallback
+from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
@@ -336,7 +336,7 @@ class BokehPlot(DimensionedPlot):
         callbacks = []
         for link, src_plot, tgt_plot in links:
             cb = Link._callbacks['bokeh'][type(link)]
-            callbacks.append(cb(src_plot, tgt_plot))
+            callbacks.append(cb(self, link, src_plot, tgt_plot))
         return callbacks
 
     def find_links(self):
@@ -345,6 +345,9 @@ class BokehPlot(DimensionedPlot):
         links = [p for p in potentials if p is not None]
         found = []
         for plot, link in links:
+            if link.target is None:
+                found.append((link, plot, None))
+                continue
             potentials = [self.find_link(plot, link) for plot in plots]
             links = [p for p in potentials if p is not None]
             if links:

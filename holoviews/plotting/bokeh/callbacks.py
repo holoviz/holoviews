@@ -985,8 +985,9 @@ class LinkCallback(param.Parameterized):
     source_code = None
     target_code = None
 
-    def __init__(self, link, source_plot, target_plot):
-        self.validate(source_plot, target_plot)
+    def __init__(self, root_plot, link, source_plot, target_plot=None):
+        self.root_plot = root_plot
+        self.link = link
         self.source_plot = source_plot
         self.target_plot = target_plot
         references = {k: v for k, v in link.get_param_values()
@@ -995,11 +996,10 @@ class LinkCallback(param.Parameterized):
             key = '_'.join(['source', sh])
             references[key] = source_plot.handles[sh]
 
-        for sh in self.target_handles+[self.target_model]:
-            if target_plot is None:
-                continue
-            key = '_'.join(['target', sh])
-            references[key] = target_plot.handles[sh]
+        if target_plot is not None:
+            for sh in self.target_handles+[self.target_model]:
+                key = '_'.join(['target', sh])
+                references[key] = target_plot.handles[sh]
 
         if self.source_model in source_plot.handles:
             src_model = source_plot.handles[self.source_model]
@@ -1017,7 +1017,7 @@ class LinkCallback(param.Parameterized):
             for ev in self.on_target_events:
                 tgt_model.js_on_event(ev, tgt_cb)
 
-    def validate(self, source_plot, target_plot):
+    def validate(self):
         """
         Should be subclassed to check if the source and target plots
         are compatible to perform the linking.
@@ -1056,11 +1056,13 @@ class PathTableLinkCallback(LinkCallback):
     source_source.change.emit()
     """
 
-    def validate(self, source_plot, target_plot):
-        source_cds = source_plot.handles['source']
-        target_cds = target_plot.handles['source']
+    def validate(self):
+        source_cds = self.source_plot.handles['source']
+        target_cds = self.target_plot.handles['source']
         for col in target_cds.data:
             assert col in source_cds.data
+
+
 
 callbacks = Link._callbacks['bokeh']
 
