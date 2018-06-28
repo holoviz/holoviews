@@ -459,7 +459,7 @@ class aggregate(AggregationOperation):
         params['vdims'] = vdims
 
         if x is None or y is None or width == 0 or height == 0:
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+            xarray = xr.DataArray(np.full((height, width), np.NaN),
                                   dims=['y', 'x'], coords={'x': xs, 'y': ys})
             if width == 0:
                 params['xdensity'] = 1
@@ -472,7 +472,7 @@ class aggregate(AggregationOperation):
                 return NdOverlay({v: el for v in vals}, dim)
             return el
         elif not len(data):
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+            xarray = xr.DataArray(np.full((height, width), np.NaN),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray, **params)
 
