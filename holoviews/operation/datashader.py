@@ -445,22 +445,6 @@ class aggregate(AggregationOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        if x is None or y is None or width == 0 or height == 0:
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
-                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
-            if width == 0:
-                params['xdensity'] = 1
-            if height == 0:
-                params['ydensity'] = 1
-            return self.p.element_type(xarray, **params)
-        elif not len(data):
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
-                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
-            return self.p.element_type(xarray, **params)
-
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
-
         column = agg_fn.column if agg_fn else None
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
@@ -473,6 +457,27 @@ class aggregate(AggregationOperation):
         else:
             vdims = Dimension('Count')
         params['vdims'] = vdims
+
+        if x is None or y is None or width == 0 or height == 0:
+            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
+            if width == 0:
+                params['xdensity'] = 1
+            if height == 0:
+                params['ydensity'] = 1
+            el = self.p.element_type(xarray, **params)
+            if isinstance(agg_fn, ds.count_cat):
+                vals = element.dimension_values(agg_fn.column, expanded=False)
+                dim = element.get_dimension(agg_fn.column)
+                return NdOverlay({v: el for v in vals}, dim)
+            return el
+        elif not len(data):
+            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
+            return self.p.element_type(xarray, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
         agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)

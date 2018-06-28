@@ -34,7 +34,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_zero_range_points(self):
         p = Points([(0, 0), (1, 1)])
         agg = rasterize(p, x_range=(0, 0), y_range=(0, 1), expand=False, dynamic=False)
-        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1), xdensity=1)
+        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1), xdensity=1, vdims=['Count'])
         self.assertEqual(agg, img)
 
     def test_aggregate_points_target(self):
@@ -60,6 +60,18 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims='z Count'),
                               'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count'),
                               'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count')},
+                             kdims=['z'])
+        self.assertEqual(img, expected)
+
+    def test_aggregate_points_categorical_zero_range(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 0), y_range=(0, 1),
+                        aggregator=ds.count_cat('z'))
+        xs, ys = [], [0.25, 0.75]
+        params = dict(bounds=(0, 0, 0, 1), xdensity=1)
+        expected = NdOverlay({'A': Image((xs, ys, np.zeros((2, 0))), vdims='z Count', **params),
+                              'B': Image((xs, ys, np.zeros((2, 0))), vdims='z Count', **params),
+                              'C': Image((xs, ys, np.zeros((2, 0))), vdims='z Count', **params)},
                              kdims=['z'])
         self.assertEqual(img, expected)
 
