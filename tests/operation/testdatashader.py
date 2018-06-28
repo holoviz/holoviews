@@ -31,6 +31,12 @@ class DatashaderAggregateTests(ComparisonTestCase):
                          vdims=['Count'])
         self.assertEqual(img, expected)
 
+    def test_aggregate_zero_range_points(self):
+        p = Points([(0, 0), (1, 1)])
+        agg = rasterize(p, x_range=(0, 0), y_range=(0, 1), expand=False, dynamic=False)
+        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1), xdensity=1)
+        self.assertEqual(agg, img)
+
     def test_aggregate_points_target(self):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
