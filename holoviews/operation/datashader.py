@@ -682,17 +682,6 @@ class trimesh_rasterize(aggregate):
         info = self._get_sampling(element, x, y)
         (x_range, y_range), _, (width, height), (xtype, ytype) = info
 
-        params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], vdims=[vdim])
-
-        if width == 0 or height == 0:
-            if width == 0: params['xdensity'] = 1
-            if height == 0: params['ydensity'] = 1
-            return Image([], **params)
-
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
-
         agg = self.p.aggregator
         if not (element.vdims or element.nodes.vdims):
             if not isinstance(agg, (rd.count, rd.any)) and agg.column is not None:
@@ -705,13 +694,24 @@ class trimesh_rasterize(aggregate):
             precomputed = self._precomputed[element._plot_id]
         else:
             precomputed = self._precompute(element)
+
+        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
+        params = dict(get_param_values(element), kdims=[x, y],
+                      datatype=['xarray'], vdims=[vdim])
+
+        if width == 0 or height == 0:
+            if width == 0: params['xdensity'] = 1
+            if height == 0: params['ydensity'] = 1
+            return Image([], **params)
+
         simplices = precomputed['simplices']
         pts = precomputed['vertices']
         mesh = precomputed['mesh']
         if self.p.precompute:
             self._precomputed = {element._plot_id: precomputed}
 
-        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
         interpolate = bool(self.p.interpolation)
         agg = cvs.trimesh(pts, simplices, agg=self._get_aggregator(element),
                           interp=interpolate, mesh=mesh)
