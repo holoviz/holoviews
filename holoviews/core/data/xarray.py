@@ -183,7 +183,10 @@ class XArrayInterface(GridInterface):
             dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             data = dataset.data[dim]
-            dmin, dmax = data.min().data, data.max().data
+            if len(data):
+                dmin, dmax = data.min().data, data.max().data
+            else:
+                dmin, dmax = np.NaN, np.NaN
         if dask and isinstance(dmin, dask.array.Array):
             dmin, dmax = dask.array.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) else dmin.item()
