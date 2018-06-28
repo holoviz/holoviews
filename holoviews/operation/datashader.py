@@ -685,7 +685,7 @@ class trimesh_rasterize(aggregate):
         else:
             x, y = element.kdims
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), _, (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         agg = self.p.aggregator
         if not (element.vdims or element.nodes.vdims):
@@ -707,7 +707,8 @@ class trimesh_rasterize(aggregate):
         if width == 0 or height == 0:
             if width == 0: params['xdensity'] = 1
             if height == 0: params['ydensity'] = 1
-            return Image([], **params)
+            bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
+            return Image((xs, ys, np.zeros((height, width))), bounds=bounds, **params)
 
         simplices = precomputed['simplices']
         pts = precomputed['vertices']

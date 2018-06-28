@@ -291,6 +291,15 @@ class DatashaderRasterizeTests(ComparisonTestCase):
                       bounds=(0, 0, 1, 1), vdims='Count')
         self.assertEqual(img, image)
 
+    def test_rasterize_trimesh_no_vdims_zero_range(self):
+        simplices = [(0, 1, 2), (3, 2, 1)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices))
+        img = rasterize(trimesh, height=2, x_range=(0, 0), dynamic=False)
+        image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
+                      bounds=(0, 0, 0, 1), xdensity=1, vdims='Count')
+        self.assertEqual(img, image)
+
     def test_rasterize_trimesh(self):
         simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
         vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
@@ -298,6 +307,15 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
         image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
                       bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
+    def test_rasterize_trimesh_zero_range(self):
+        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        img = rasterize(trimesh, x_range=(0, 0), height=2, dynamic=False)
+        image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
+                      bounds=(0, 0, 0, 1), xdensity=1)
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_vertex_vdims(self):
