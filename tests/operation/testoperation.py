@@ -68,6 +68,13 @@ class OperationTests(ComparisonTestCase):
         self.assertEqual(op_contours, contour)
 
     @attr(optional=1) # Requires matplotlib
+    def test_image_contours_no_range(self):
+        img = Image(np.zeros((2, 2)))
+        op_contours = contours(img, levels=2)
+        contour = Contours([], vdims=img.vdims)
+        self.assertEqual(op_contours, contour)
+
+    @attr(optional=1) # Requires matplotlib
     def test_qmesh_contours(self):
         qmesh = QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])))
         op_contours = contours(qmesh, levels=[0.5])

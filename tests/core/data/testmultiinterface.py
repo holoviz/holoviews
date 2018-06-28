@@ -130,3 +130,7 @@ class MultiInterfaceTest(ComparisonTestCase):
     def test_multi_split_empty(self):
         mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(len(mds.split()), 0)
+
+    def test_multi_values_empty(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(mds.dimension_values(0), np.array([]))
