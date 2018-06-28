@@ -244,7 +244,7 @@ class MPLRenderer(Renderer):
         if not hasattr(anim, '_encoded_video'):
             with NamedTemporaryFile(suffix='.%s' % fmt) as f:
                 anim.save(f.name, writer=writer, **anim_kwargs)
-                video = open(f.name, "rb").read()
+                video = f.read()
         return video
 
 
