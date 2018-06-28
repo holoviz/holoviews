@@ -308,7 +308,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
 
-        if self.show_title:
+        if self.show_title and self.adjoined is None:
             title = self._format_title(key, separator=' ')
         else:
             title = ''
@@ -350,7 +350,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _title_properties(self, key, plot, element):
-        if self.show_title:
+        if self.show_title and self.adjoined is None:
             title = self._format_title(key, separator=' ')
         else:
             title = ''
