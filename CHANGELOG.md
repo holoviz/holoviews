@@ -27,7 +27,7 @@ Fixes:
   ([#2789](https://github.com/ioam/holoviews/pull/2789))
 - Fixes for datashading NdOverlays with datetime axis and data with
   zero range ([#2829](https://github.com/ioam/holoviews/pull/2829),
-  ([#2842](https://github.com/ioam/holoviews/pull/2842))
+  [#2842](https://github.com/ioam/holoviews/pull/2842))
 
 
 Version 1.10.5
