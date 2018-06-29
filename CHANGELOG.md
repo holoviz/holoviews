@@ -1,3 +1,35 @@
+Version 1.10.6
+==============
+
+This another minor bug fix release in the 1.10 series and is likely
+the last one unless any major issues requiring a hot fix crop up. In
+addition to some important fixes to datashading and handling of dask
+data this release also includes a number of enhancements.
+
+Enhancements:
+
+- Added the ability to specify color intervals using the color_levels
+  plot options ([#2797](https://github.com/ioam/holoviews/pull/2797))
+- Allow defining port and multiple websocket origins on BokehRenderer.app
+  ([#2801](https://github.com/ioam/holoviews/pull/2801))
+- Support for datetimes in Curve step interpolation
+  ([#2757](https://github.com/ioam/holoviews/pull/2757))
+- Add ability to mute legend by default
+  ([#2831](https://github.com/ioam/holoviews/pull/2831))
+- Implemented ability to collapse and concatenate gridded data
+  ([#2762](https://github.com/ioam/holoviews/pull/2762))
+- Add support for cumulative histogram and explicit bins
+  ([#2812](https://github.com/ioam/holoviews/pull/2812))
+
+Fixes:
+
+- Dataset discovers multi-indexes on dask dataframes
+  ([#2789](https://github.com/ioam/holoviews/pull/2789))
+- Fixes for datashading NdOverlays with datetime axis and data with
+  zero range ([#2829](https://github.com/ioam/holoviews/pull/2829),
+  ([#2842](https://github.com/ioam/holoviews/pull/2842))
+
+
 Version 1.10.5
 ==============
 
@@ -33,7 +65,7 @@ Fixes:
 - Fixed bugs laying out complex layouts in bokeh
   ([#2740](https://github.com/ioam/holoviews/pull/2740))
 - Fix for adding value dimensions to an xarray dataset
-  ([#2761](https://github.com/ioam/holoviews/pull/2761)
+  ([#2761](https://github.com/ioam/holoviews/pull/2761))
 
 Compatibility:
 
@@ -74,7 +106,7 @@ Enhancement:
 - The dimensions of elements may now be changed allowing updates to
   axis labels and table column headers
   ([#2666](https://github.com/ioam/holoviews/pull/2666))
-  
+
 Fixes:
 
 - Fix for ``labelled`` plot option
@@ -87,7 +119,7 @@ Fixes:
    [#2653](https://github.com/ioam/holoviews/pull/2653))
 - Fixed widget sorting issues when applying dynamic groupby
   ([#2641](https://github.com/ioam/holoviews/issues/2641))
-  
+
 API:
 
 - The PlotReset reset parameter was renamed to resetting to avoid
@@ -122,7 +154,7 @@ Fixes:
   ([#2587](https://github.com/ioam/holoviews/issues/2587)) and
   display_formats
   ([#2592](https://github.com/ioam/holoviews/issues/2592))
-  
+
 Deprecations:
 
 - BoxWhisker and Bars ``width`` bokeh style options and Arrow
@@ -185,32 +217,32 @@ New components:
 - Added [``Div`` element](http://holoviews.org/reference/elements/bokeh/Div.html)
   to add arbitrary HTML elements to a Bokeh layout
   ([#2221](https://github.com/ioam/holoviews/issues/2221))
-- Added 
-  [``PointDraw``](http://holoviews.org/reference/streams/bokeh/PointDraw.html), 
+- Added
+  [``PointDraw``](http://holoviews.org/reference/streams/bokeh/PointDraw.html),
   [``PolyDraw``](http://holoviews.org/reference/streams/bokeh/PolyDraw.html),
   [``BoxEdit``](http://holoviews.org/reference/streams/bokeh/BoxEdit.html), and
   [``PolyEdit``](http://holoviews.org/reference/streams/bokeh/PolyEdit.html)
   streams to allow drawing, editing, and annotating glyphs on a Bokeh
   plot, and syncing the resulting data to Python
   ([#2268](https://github.com/ioam/holoviews/issues/2459))
-  
+
 Features:
 
-- Added [radial ``HeatMap``](http://holoviews.org/reference/elements/bokeh/RadialHeatMap.html) 
+- Added [radial ``HeatMap``](http://holoviews.org/reference/elements/bokeh/RadialHeatMap.html)
   option to allow plotting heatmaps with a cyclic x-axis
   ([#2139](https://github.com/ioam/holoviews/pull/2139))
 - All elements now support declaring bin edges as well as centers
   allowing ``Histogram`` and ``QuadMesh`` to become first class
   ``Dataset`` types
   ([#547](https://github.com/ioam/holoviews/issues/547))
-- When using widgets, their initial or default value can now be 
+- When using widgets, their initial or default value can now be
   set via the `Dimension.default` parameter
   ([#704](https://github.com/ioam/holoviews/issues/704))
 - n-dimensional Dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/ioam/holoviews/pull/2305))
 - Added new [Styling Plots](http://holoviews.org/user_guide/Styling_Plots.html)
-  and [Colormaps](http://holoviews.org/user_guide/Colormaps.html) 
+  and [Colormaps](http://holoviews.org/user_guide/Colormaps.html)
   user guides, including new functionality for working with colormaps.
 
 Enhancements:
@@ -247,7 +279,7 @@ Enhancements:
 - ``DynamicMap`` may now return (``Nd``)``Overlay`` with varying
   number of elements
   ([#1388](https://github.com/ioam/holoviews/issues/1388))
-- In the notebook, deleting or re-executing a cell will now delete 
+- In the notebook, deleting or re-executing a cell will now delete
   the plot and clean up any attached streams
   ([#2141](https://github.com/ioam/holoviews/issues/2141))
 - Added ``color_levels`` plot option to set discrete number of levels
@@ -439,7 +471,7 @@ Fixes:
 -   Fixed handling of dimensions and empty elements in univariate_kde
     and bivariate_kde operations
     ([\#2103](https://github.com/ioam/holoviews/pull/2103))
-	
+
 Version 1.9.0
 =============
 
