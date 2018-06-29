@@ -14,6 +14,75 @@ Release notes
 *************
 
 
+Version 1.10.6
+==============
+
+This another minor bug fix release in the 1.10 series and likely the
+last one before the upcoming 1.11 release. In addition to some important
+fixes relating to datashading and the handling of dask data, this
+release includes a number of enhancements and fixes.
+
+Enhancements:
+
+- Added the ability to specify color intervals using the color_levels
+  plot options (`#2797 <https://github.com/ioam/holoviews/pull/2797>`_)
+- Allow defining port and multiple websocket origins on BokehRenderer.app
+  (`#2801 <https://github.com/ioam/holoviews/pull/2801>`_)
+- Support for datetimes in Curve step interpolation
+  (`#2757 <https://github.com/ioam/holoviews/pull/2757>`_)
+- Add ability to mute legend by default
+  (`#2831 <https://github.com/ioam/holoviews/pull/2831>`_)
+- Implemented ability to collapse and concatenate gridded data
+  (`#2762 <https://github.com/ioam/holoviews/pull/2762>`_)
+- Add support for cumulative histogram and explicit bins
+  (`#2812 <https://github.com/ioam/holoviews/pull/2812>`_)
+
+Fixes:
+
+- Dataset discovers multi-indexes on dask dataframes
+  (`#2789 <https://github.com/ioam/holoviews/pull/2789>`_)
+- Fixes for datashading NdOverlays with datetime axis and data with
+  zero range (`#2829 <https://github.com/ioam/holoviews/pull/2829>`_,
+  `#2842 <https://github.com/ioam/holoviews/pull/2842>`_)
+
+Version 1.10.5
+==============
+
+This is a minor bug fix release containing a mixture of small
+enhancements, a number of important fixes and improved compatibility
+with pandas 0.23.
+
+Enhancements:
+
+- Graph.from_networkx now extracts node and edge attributes from
+  networkx graphs
+  (`#2714 <https://github.com/ioam/holoviews/pull/2714>`_)
+- Added throttling support to scrubber widget
+  (`#2748 <https://github.com/ioam/holoviews/pull/2748>`_)
+- histogram operation now works on datetimes
+  (`#2719 <https://github.com/ioam/holoviews/pull/2719>`_)
+- Legends on NdOverlay containing overlays now supported
+  (`#2755 <https://github.com/ioam/holoviews/pull/2755>`_)
+- Dataframe indexes may now be referenced in ``.to`` conversion
+  (`#2739 <https://github.com/ioam/holoviews/pull/2739>`_)
+- Reindexing a gridded Dataset without arguments now behaves
+  consistently with NdMapping types and drops scalar dimensions making
+  it simpler to drop dimensions after selecting
+  (`#2746 <https://github.com/ioam/holoviews/pull/2746>`_)
+
+Fixes:
+
+- Various fixes for QuadMesh support including support for contours,
+  nan coordinates and inverted coordinates
+  (`#2691 <https://github.com/ioam/holoviews/pull/2691),
+  [#2702 <https://github.com/ioam/holoviews/pull/2702),
+  [#2771 <https://github.com/ioam/holoviews/pull/2771>`_)
+- Fixed bugs laying out complex layouts in bokeh
+  (`#2740 <https://github.com/ioam/holoviews/pull/2740>`_)
+- Fix for adding value dimensions to an xarray dataset
+  (`#2761 <https://github.com/ioam/holoviews/pull/2761>`_)
+
+
 Version 1.10.4
 --------------
 
@@ -137,7 +206,7 @@ New components:
 
 -  Added |Sankey|_ element to plot directed flow graphs
    (`#1123 <https://github.com/ioam/holoviews/issues/1123>`__)
--  Added |TriMesh|_ element 
+-  Added |TriMesh|_ element
    and datashading operation to plot small and large irregular meshes
    (`#2143 <https://github.com/ioam/holoviews/issues/2143>`__)
 -  Added a |Chord|_ element
