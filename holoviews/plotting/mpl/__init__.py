@@ -191,6 +191,7 @@ Store.register({Curve: CurvePlot,
 
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
+                          Area: SideAreaPlot,
                           GridSpace: GridPlot,
                           Spikes: SideSpikesPlot,
                           BoxWhisker: SideBoxPlot})
