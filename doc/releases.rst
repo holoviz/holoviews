@@ -17,10 +17,10 @@ Release notes
 Version 1.10.6
 ==============
 
-This another minor bug fix release in the 1.10 series and is likely
-the last one unless any major issues requiring a hot fix crop up. In
-addition to some important fixes to datashading and handling of dask
-data this release also includes a number of enhancements.
+This another minor bug fix release in the 1.10 series and likely the
+last one before the upcoming 1.11 release. In addition to some important
+fixes relating to datashading and the handling of dask data, this
+release includes a number of enhancements and fixes.
 
 Enhancements:
 
