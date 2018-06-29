@@ -122,6 +122,16 @@ class XArrayInterfaceTests(GridInterfaceTests):
         ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
         self.assertEqual(concat(hmap), ds)
 
+    def test_zero_sized_coordinates_range(self):
+        da = xr.DataArray(np.empty((2, 0)), dims=('y', 'x'), coords={'x': [], 'y': [0 ,1]}, name='A')
+        ds = Dataset(da)
+        x0, x1 = ds.range('x')
+        self.assertTrue(np.isnan(x0))
+        self.assertTrue(np.isnan(x1))
+        z0, z1 = ds.range('A')
+        self.assertTrue(np.isnan(z0))
+        self.assertTrue(np.isnan(z1))
+
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")

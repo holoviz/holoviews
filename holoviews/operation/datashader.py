@@ -126,16 +126,16 @@ class ResamplingOperation(LinkableOperation):
                 else:
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
-                    x_range = np.max([x0, ex0]), np.min([x1, ex1])
-                if x_range[0] == x_range[1]:
-                    x_range = (x_range[0]-0.5, x_range[0]+0.5)
+                    x_range = (np.min([np.max([x0, ex0]), ex1]),
+                               np.max([np.min([x1, ex1]), ex0]))
 
                 if self.p.expand or not self.p.y_range:
                     y_range = self.p.y_range or element.range(y)
                 else:
                     y0, y1 = self.p.y_range
                     ey0, ey1 = element.range(y)
-                    y_range = np.max([y0, ey0]), np.min([y1, ey1])
+                    y_range = (np.min([np.max([y0, ey0]), ey1]),
+                               np.max([np.min([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
@@ -149,8 +149,6 @@ class ResamplingOperation(LinkableOperation):
                 xtype = 'datetime'
             else:
                 xstart, xend = 0, 1
-        elif xstart == xend:
-            xstart, xend = (xstart-0.5, xend+0.5)
         x_range = (xstart, xend)
 
         ytype = 'numeric'
@@ -163,8 +161,6 @@ class ResamplingOperation(LinkableOperation):
                 ytype = 'datetime'
             else:
                 ystart, yend = 0, 1
-        elif ystart == yend:
-            ystart, yend = (ystart-0.5, yend+0.5)
         y_range = (ystart, yend)
 
         # Compute highest allowed sampling density
@@ -174,8 +170,14 @@ class ResamplingOperation(LinkableOperation):
             width = int(min([(xspan/self.p.x_sampling), width]))
         if self.p.y_sampling:
             height = int(min([(yspan/self.p.y_sampling), height]))
-        width, height = max([width, 1]), max([height, 1])
-        xunit, yunit = float(xspan)/width, float(yspan)/height
+        if xstart == xend or width == 0:
+            xunit, width = 0, 0
+        else:
+            xunit = float(xspan)/width
+        if ystart == yend or height == 0:
+            yunit, height = 0, 0
+        else:
+            yunit = float(yspan)/height
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
@@ -443,18 +445,6 @@ class aggregate(AggregationOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        if x is None or y is None:
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
-                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
-            return self.p.element_type(xarray)
-        elif not len(data):
-            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
-                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
-            return self.p.element_type(xarray, **params)
-
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
-
         column = agg_fn.column if agg_fn else None
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
@@ -467,6 +457,27 @@ class aggregate(AggregationOperation):
         else:
             vdims = Dimension('Count')
         params['vdims'] = vdims
+
+        if x is None or y is None or width == 0 or height == 0:
+            xarray = xr.DataArray(np.full((height, width), np.NaN),
+                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
+            if width == 0:
+                params['xdensity'] = 1
+            if height == 0:
+                params['ydensity'] = 1
+            el = self.p.element_type(xarray, **params)
+            if isinstance(agg_fn, ds.count_cat):
+                vals = element.dimension_values(agg_fn.column, expanded=False)
+                dim = element.get_dimension(agg_fn.column)
+                return NdOverlay({v: el for v in vals}, dim)
+            return el
+        elif not len(data):
+            xarray = xr.DataArray(np.full((height, width), np.NaN),
+                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
+            return self.p.element_type(xarray, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
         agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
@@ -583,7 +594,19 @@ class regrid(AggregationOperation):
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
             height = min([int((yspan/eyspan) * len(coords[1])), height])
-            width, height = max([width, 1]), max([height, 1])
+
+        # Compute bounds (converting datetimes)
+        if xtype == 'datetime':
+            xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
+        if ytype == 'datetime':
+            ystart, yend = (np.array([ystart, yend])/10e5).astype('datetime64[us]')
+        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
+
+        params = dict(bounds=bbox)
+        if width == 0 or height == 0:
+            if width == 0: params['xdensity'] = 1
+            if height == 0: params['ydensity'] = 1
+            return element.clone([], **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
@@ -604,14 +627,7 @@ class regrid(AggregationOperation):
             regridded[vd] = rarray
         regridded = xr.Dataset(regridded)
 
-        # Compute bounds (converting datetimes)
-        if xtype == 'datetime':
-            xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
-        if ytype == 'datetime':
-            ystart, yend = (np.array([ystart, yend])/10e5).astype('datetime64[us]')
-        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
-        return element.clone(regridded, bounds=bbox,
-                             datatype=['xarray']+element.datatype)
+        return element.clone(regridded, bounds=bbox, datatype=['xarray']+element.datatype)
 
 
 
@@ -669,9 +685,7 @@ class trimesh_rasterize(aggregate):
         else:
             x, y = element.kdims
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), _, (width, height), (xtype, ytype) = info
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         agg = self.p.aggregator
         if not (element.vdims or element.nodes.vdims):
@@ -685,18 +699,28 @@ class trimesh_rasterize(aggregate):
             precomputed = self._precomputed[element._plot_id]
         else:
             precomputed = self._precompute(element)
+
+        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
+        params = dict(get_param_values(element), kdims=[x, y],
+                      datatype=['xarray'], vdims=[vdim])
+
+        if width == 0 or height == 0:
+            if width == 0: params['xdensity'] = 1
+            if height == 0: params['ydensity'] = 1
+            bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
+            return Image((xs, ys, np.zeros((height, width))), bounds=bounds, **params)
+
         simplices = precomputed['simplices']
         pts = precomputed['vertices']
         mesh = precomputed['mesh']
         if self.p.precompute:
             self._precomputed = {element._plot_id: precomputed}
 
-        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
         interpolate = bool(self.p.interpolation)
         agg = cvs.trimesh(pts, simplices, agg=self._get_aggregator(element),
                           interp=interpolate, mesh=mesh)
-        params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], vdims=[vdim])
         return Image(agg, **params)
 
 
@@ -736,7 +760,7 @@ class rasterize(AggregationOperation):
     dimensions of the linked plot and the ranges of the axes.
     """
 
-    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
                                      default=None)
 
     interpolation = param.ObjectSelector(default='bilinear',

@@ -660,7 +660,7 @@ class GridInterface(DictInterface):
             expanded = cls.irregular(dataset, dimension)
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
-            column = cls.values(dataset, dimension, flat=False)
+            column = cls.values(dataset, dimension, expanded=False, flat=False)
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
             if da and isinstance(column, da.Array):
