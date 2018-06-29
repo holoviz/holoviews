@@ -175,7 +175,8 @@ class PandasInterface(Interface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        return pd.concat(dataframes)
+        kwargs = dict(sort=False) if util.pandas_version >= '0.23.0' else {}
+        return pd.concat(dataframes, **kwargs)
 
 
     @classmethod
