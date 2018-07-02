@@ -1106,7 +1106,7 @@ class DataLinkCallback(LinkCallback):
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
         for k, v in tgt_cds.data.items():
-            if k in src_cds.data and not np.allclose(v, src_cds.data[k]):
+            if k in src_cds.data and np.testing.assert_array_equal(v, src_cds.data[k]):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
                                  'does not match target' % k)
