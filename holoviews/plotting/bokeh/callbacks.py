@@ -1,18 +1,23 @@
 from collections import defaultdict
 
 import param
-from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection)
+from bokeh.models import (
+    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection,
+    ToolbarBox
+)
+
 from pyviz_comms import JS_CALLBACK
 
-from ...core import OrderedDict
+from ...core import OrderedDict, ViewableElement
 from ...core.util import dimension_sanitizer
-from ...links import Link, PathTableLink
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
+from ..links import Link, RangeToolLink, DataLink
+from ..plot import GenericElementPlot
 from .util import convert_timestamp
 
 
@@ -1017,6 +1022,40 @@ class LinkCallback(param.Parameterized):
             for ev in self.on_target_events:
                 tgt_model.js_on_event(ev, tgt_cb)
 
+    @classmethod
+    def find_links(cls, plot):
+        """
+        Traverses the supplied plot and searches for any Links on
+        the plotted objects.
+        """
+        plots = plot.traverse(lambda x: x, [GenericElementPlot])
+        potentials = [cls.find_link(plot) for plot in plots]
+        links = [p for p in potentials if p is not None]
+        found = []
+        for plot, link in links:
+            if link.target is None:
+                found.append((link, plot, None))
+                continue
+            potentials = [cls.find_link(plot, link) for plot in plots]
+            links = [p for p in potentials if p is not None]
+            if links:
+                found.append((link, plot, links[0][0]))
+        return found
+
+    @classmethod
+    def find_link(cls, plot, link=None):
+        """
+        Searches a GenericElementPlot for a Link.
+        """
+        sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
+        for src in sources:
+            if link is None:
+                if id(src) in Link.registry:
+                    return (plot, Link.registry[id(src)])
+            else:
+                if id(link.target) == id(src):
+                    return (plot, link)
+
     def validate(self):
         """
         Should be subclassed to check if the source and target plots
@@ -1024,46 +1063,61 @@ class LinkCallback(param.Parameterized):
         """
 
 
-class PathTableLinkCallback(LinkCallback):
-
-    source_model = 'source'
-    target_model = 'source'
-
-    on_source_changes = ['selected', 'data']
-    on_target_changes = ['data']
-
-    source_code = """
-    if (!source_source.selected.indices.length) { return }
-    index = source_source.selected.indices[0]
-    for (var k in source_source.data) {
-      column = source_source.data[k]
-      if (k in target_source.data) {
-        target_source.data[k] = column[index]
-      }
-    }
-    target_source.change.emit()
+class RangeToolLinkCallback(LinkCallback):
+    """
+    Attaches a RangeTool to the source plot and links it to the
+    specified axes on the target plot
     """
 
-    target_code = """
-    if (!source_source.selected.indices.length) { return }
-    index = source_source.selected.indices[0]
-    for (k in target_source.data) {
-      column = target_source.data[k];
-      if (k in source_source.data) {
-        source_source.data[k][index] = column;
-      }
-    }
-    source_source.change.emit()
+    def __init__(self, root_plot, link, source_plot, target_plot):
+        try:
+            from bokeh.models.tools import RangeTool
+        except:
+            raise Exception('RangeToolLink requires bokeh >= 0.13')
+        toolbar = [model for model in root_plot.state.children
+                   if isinstance(model, ToolbarBox)]
+        axes = {}
+        if 'x' in link.axes:
+            axes['x_range'] = target_plot.handles['x_range']
+        if 'y' in link.axes:
+            axes['y_range'] = target_plot.handles['y_range']
+        tool = RangeTool(**axes)
+        source_plot.state.add_tools(tool)
+        if toolbar:
+            toolbar = toolbar[0].toolbar
+            toolbar.tools.append(tool)
+
+
+class DataLinkCallback(LinkCallback):
+    """
+    Merges the source and target ColumnDataSource
     """
 
-    def validate(self):
-        source_cds = self.source_plot.handles['source']
-        target_cds = self.target_plot.handles['source']
-        for col in target_cds.data:
-            assert col in source_cds.data
-
+    def __init__(self, root_plot, link, source_plot, target_plot):
+        src_cds = source_plot.handles['source']
+        tgt_cds = target_plot.handles['source']
+        src_len = [len(v) for v in src_cds.data.values()]
+        tgt_len = [len(v) for v in tgt_cds.data.values()]
+        if src_len[0] != tgt_len[0]:
+            raise Exception('DataLink source data length must match target '
+                            'data length, found source length of %d and '
+                            'target length of %d.' % (src_len[0], tgt_len[0]))
+        src_cds.data.update(tgt_cds.data)
+        renderer = target_plot.handles.get('glyph_renderer')
+        if renderer is None:
+            pass
+        elif 'data_source' in renderer.properties():
+            renderer.update(data_source=src_cds)
+        else:
+            renderer.update(source=src_cds)
+        if hasattr(renderer, 'view'):
+            renderer.view.update(source=src_cds)
+        target_plot.handles['source'] = src_cds
+        for callback in target_plot.callbacks:
+            callback.initialize(plot_id=root_plot.id)
 
 
 callbacks = Link._callbacks['bokeh']
 
-callbacks[PathTableLink] = PathTableLinkCallback
+callbacks[RangeToolLink] = RangeToolLinkCallback
+callbacks[DataLink] = DataLinkCallback
