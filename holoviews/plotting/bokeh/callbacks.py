@@ -1,11 +1,11 @@
 from collections import defaultdict
 
 import param
+import numpy as np
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection,
     ToolbarBox
 )
-
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict, ViewableElement

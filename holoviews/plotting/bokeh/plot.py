@@ -9,7 +9,7 @@ from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
-                     Empty, GridSpace, HoloMap, Element, DynamicMap, ViewableElement)
+                     Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
 from ...streams import Stream
