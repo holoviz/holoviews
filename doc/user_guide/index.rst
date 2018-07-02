@@ -87,6 +87,9 @@ These guides provide detail about specific additional features in HoloViews:
 * `Deploying Bokeh Apps <Deploying_Bokeh_Apps.html>`_
    Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
+* `Link bokeh plots <Linking_Plots.html>`_
+   Using Links to define custom interactions on a plot without a Python server
+
 * `Plotting with matplotlib <Plotting_with_Matplotlib.html>`_
    Styling options and unique Matplotlib features such as GIF/MP4 support.
 
