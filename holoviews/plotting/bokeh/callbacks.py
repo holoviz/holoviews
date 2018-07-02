@@ -17,7 +17,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..links import Link, RangeToolLink, DataLink
-from ..plot import GenericElementPlot
+from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
 
@@ -997,6 +997,7 @@ class LinkCallback(param.Parameterized):
         self.target_plot = target_plot
         references = {k: v for k, v in link.get_param_values()
                       if k not in ('source', 'target', 'name')}
+
         for sh in self.source_handles+[self.source_model]:
             key = '_'.join(['source', sh])
             references[key] = source_plot.handles[sh]
@@ -1005,6 +1006,7 @@ class LinkCallback(param.Parameterized):
             for sh in self.target_handles+[self.target_model]:
                 key = '_'.join(['target', sh])
                 references[key] = target_plot.handles[sh]
+
 
         if self.source_model in source_plot.handles:
             src_model = source_plot.handles[self.source_model]
@@ -1028,7 +1030,8 @@ class LinkCallback(param.Parameterized):
         Traverses the supplied plot and searches for any Links on
         the plotted objects.
         """
-        plots = plot.traverse(lambda x: x, [GenericElementPlot])
+        plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
+        plots = plot.traverse(lambda x: x, [plot_fn])
         potentials = [cls.find_link(plot) for plot in plots]
         links = [p for p in potentials if p is not None]
         found = []
@@ -1102,6 +1105,12 @@ class DataLinkCallback(LinkCallback):
             raise Exception('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
+        for k, v in tgt_cds.data.items():
+            if k in src_cds.data and not np.allclose(v, src_cds.data[k]):
+                raise ValueError('DataLink can only be applied if overlapping '
+                                 'dimension values are equal, %s column on source '
+                                 'does not match target' % k)
+
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')
         if renderer is None:

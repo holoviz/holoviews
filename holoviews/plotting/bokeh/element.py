@@ -1247,6 +1247,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted']
 
+
     def _process_legend(self):
         plot = self.handles['plot']
         if not self.show_legend or len(plot.legend) == 0:
@@ -1450,6 +1451,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['y_range'] = plot.y_range
         for cb in self.callbacks:
             cb.initialize()
+
+        if self.top_level:
+            self.init_links()
 
         self._execute_hooks(element)
 
