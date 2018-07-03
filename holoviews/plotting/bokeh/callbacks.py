@@ -995,6 +995,8 @@ class LinkCallback(param.Parameterized):
         self.link = link
         self.source_plot = source_plot
         self.target_plot = target_plot
+        self.validate()
+
         references = {k: v for k, v in link.get_param_values()
                       if k not in ('source', 'target', 'name')}
 
