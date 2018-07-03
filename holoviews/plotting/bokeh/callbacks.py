@@ -1031,13 +1031,13 @@ class LinkCallback(param.Parameterized):
                 tgt_model.js_on_event(ev, tgt_cb)
 
     @classmethod
-    def find_links(cls, plot):
+    def find_links(cls, root_plot):
         """
         Traverses the supplied plot and searches for any Links on
         the plotted objects.
         """
         plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
-        plots = plot.traverse(lambda x: x, [plot_fn])
+        plots = root_plot.traverse(lambda x: x, [plot_fn])
         potentials = [cls.find_link(plot) for plot in plots]
         source_links = [p for p in potentials if p is not None]
         found = []
