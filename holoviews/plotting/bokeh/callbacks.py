@@ -1002,11 +1002,15 @@ class LinkCallback(param.Parameterized):
             key = '_'.join(['source', sh])
             references[key] = source_plot.handles[sh]
 
+        for p, value in link.get_param_values():
+            if p in ('name', 'source', 'target'):
+                continue
+            references[p] = value
+
         if target_plot is not None:
             for sh in self.target_handles+[self.target_model]:
                 key = '_'.join(['target', sh])
                 references[key] = target_plot.handles[sh]
-
 
         if self.source_model in source_plot.handles:
             src_model = source_plot.handles[self.source_model]
@@ -1033,16 +1037,17 @@ class LinkCallback(param.Parameterized):
         plot_fn = lambda x: isinstance(x, GenericElementPlot) and not isinstance(x, GenericOverlayPlot)
         plots = plot.traverse(lambda x: x, [plot_fn])
         potentials = [cls.find_link(plot) for plot in plots]
-        links = [p for p in potentials if p is not None]
+        source_links = [p for p in potentials if p is not None]
         found = []
-        for plot, link in links:
-            if link.target is None:
-                found.append((link, plot, None))
-                continue
-            potentials = [cls.find_link(plot, link) for plot in plots]
-            links = [p for p in potentials if p is not None]
-            if links:
-                found.append((link, plot, links[0][0]))
+        for plot, links in source_links:
+            for link in links:
+                if link.target is None:
+                    found.append((link, plot, None))
+                    continue
+                potentials = [cls.find_link(plot, link) for plot in plots]
+                tgt_links = [p for p in potentials if p is not None]
+                if tgt_links:
+                    found.append((link, plot, tgt_links[0][0]))
         return found
 
     @classmethod
@@ -1057,7 +1062,7 @@ class LinkCallback(param.Parameterized):
                     return (plot, Link.registry[id(src)])
             else:
                 if id(link.target) == id(src):
-                    return (plot, link)
+                    return (plot, [link])
 
     def validate(self):
         """

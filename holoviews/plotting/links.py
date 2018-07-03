@@ -29,7 +29,7 @@ class Link(param.Parameterized):
         The target object of the link (optional).""")
 
     # Mapping from a source id to a Link instance
-    registry = {}
+    registry = defaultdict(list)
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Link._callbacks['bokeh'][Stream] = Callback
@@ -39,7 +39,29 @@ class Link(param.Parameterized):
         if source is None:
             raise ValueError('%s must define a source' % type(self).__name__)
         super(Link, self).__init__(source=source, target=target, **params)
-        self.registry[id(source)] = self
+        self.link()
+
+    @classmethod
+    def register_callback(cls, backend, callback):
+        """
+        Register a LinkCallback providing the implementation for
+        the Link for a particular backend.
+        """
+        cls._callbacks[backend][cls] = callback
+
+    def link(self):
+        """
+        Registers the Link
+        """
+        self.registry[id(self.source)].append(self)
+
+    def unlink(self):
+        """
+        Unregisters the Link
+        """
+        links = self.registry.get(id(self.source))
+        if self in links:
+            links.pop(links.index(self))
 
 
 class RangeToolLink(Link):
