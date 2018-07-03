@@ -684,7 +684,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if source is None:
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
-        self.handles['source'] = source
+        self.handles['source'] = self.handles['cds'] = source
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
         with abbreviated_exception():
@@ -1247,6 +1247,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted']
 
+
     def _process_legend(self):
         plot = self.handles['plot']
         if not self.show_legend or len(plot.legend) == 0:
@@ -1450,6 +1451,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['y_range'] = plot.y_range
         for cb in self.callbacks:
             cb.initialize()
+
+        if self.top_level:
+            self.init_links()
 
         self._execute_hooks(element)
 

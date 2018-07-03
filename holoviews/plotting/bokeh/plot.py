@@ -13,10 +13,11 @@ from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
 from ...core.options import SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
 from ...streams import Stream
+from ..links import Link
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
-from .callbacks import Callback
+from .callbacks import Callback, LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
@@ -317,7 +318,7 @@ class BokehPlot(DimensionedPlot):
                         renderer.update(source=new_source)
                     if hasattr(renderer, 'view'):
                         renderer.view.update(source=new_source)
-                    plot.handles['source'] = new_source
+                    plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
@@ -329,6 +330,14 @@ class BokehPlot(DimensionedPlot):
                 callback.initialize(plot_id=plot_id)
         self.handles['shared_sources'] = shared_sources
         self.handles['source_cols'] = source_cols
+
+    def init_links(self):
+        links = LinkCallback.find_links(self)
+        callbacks = []
+        for link, src_plot, tgt_plot in links:
+            cb = Link._callbacks['bokeh'][type(link)]
+            callbacks.append(cb(self, link, src_plot, tgt_plot))
+        return callbacks
 
 
 
@@ -435,7 +444,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
-
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -541,6 +549,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
+
+        if self.top_level:
+            self.init_links()
+
         self.drawn = True
 
         return self.handles['plot']
@@ -880,6 +892,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
+
+        if self.top_level:
+            self.init_links()
 
         self.drawn = True
 
