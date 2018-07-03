@@ -411,6 +411,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         box_select, main_source = tools[0], sources[0]
         handles = {'color_mapper': self.handles['color_mapper'],
                    'source': self.handles['source'],
+                   'cds': self.handles['source'],
                    'main_source': main_source}
         axis = 'y' if self.invert_axes else 'x'
         callback = self._callback.format(axis=axis)

@@ -318,7 +318,7 @@ class BokehPlot(DimensionedPlot):
                         renderer.update(source=new_source)
                     if hasattr(renderer, 'view'):
                         renderer.view.update(source=new_source)
-                    plot.handles['source'] = new_source
+                    plot.handles['source'] = plot.handles['cds'] = new_source
                     plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]

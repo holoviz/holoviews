@@ -684,7 +684,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if source is None:
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
-        self.handles['source'] = source
+        self.handles['source'] = self.handles['cds'] = source
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
         with abbreviated_exception():
