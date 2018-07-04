@@ -249,7 +249,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 cdim = pane.vdims[0].name
-                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))
+                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))['combined']
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)

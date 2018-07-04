@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from ..util import dimension_range, unique_iterator
+from ..util import unique_iterator
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -281,6 +281,7 @@ class Dataset(Element):
         object.
         """
         dim = self.get_dimension(dim)
+
         if dim is None or (not data_range and not dimension_range):
             return (None, None)
         elif all(util.isfinite(v) for v in dim.range) and dimension_range:

@@ -151,7 +151,7 @@ class HexTilesPlot(ColorbarPlot):
             return data, mapping, style
         q, r = (element.dimension_values(i) for i in range(2))
         x, y = element.kdims[::-1] if self.invert_axes else element.kdims
-        (x0, x1), (y0, y1) = ranges[x.name], ranges[y.name]
+        (x0, x1), (y0, y1) = ranges[x.name]['combined'], ranges[y.name]['combined']
         if isinstance(self.gridsize, tuple):
             sx, sy = self.gridsize
         else:

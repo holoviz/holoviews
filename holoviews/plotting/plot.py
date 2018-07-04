@@ -448,7 +448,7 @@ class DimensionedPlot(Plot):
 
         dim_ranges = []
         for dim, values in group_ranges.items():
-            hard_range = util.max_range(values['hard'])
+            hard_range = util.max_range(values['hard'], combined=False)
             soft_range = util.max_range(values['soft'])
             data_range = util.max_range(values['data'])
             combined = util.dimension_range(data_range[0], data_range[1],

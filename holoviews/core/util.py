@@ -824,23 +824,28 @@ def is_finite(value):
         return True
 
 
-def max_range(ranges):
+def max_range(ranges, combined=True):
     """
     Computes the maximal lower and upper bounds from a list bounds.
     """
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            values = [r for r in ranges for v in r if v is not None]
+            values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
             if pd and all(isinstance(v, pd.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
-            if arr.dtype.kind in 'OSU':
-                arr = list(python2sort([v for v in arr.flat if not is_nan(v) and v is not None]))
+            if not len(arr):
+                return np.NaN, np.NaN
+            elif arr.dtype.kind in 'OSU':
+                arr = list(python2sort([v for r in values for v in r if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             elif arr.dtype.kind in 'M':
-                return arr.min(), arr.max()
-            return (np.nanmin(arr), np.nanmax(arr))
+                return (arr.min(), arr.max()) if combined else (arr[:, 0].min(), arr[:, 1].min())
+            if combined:
+                return (np.nanmin(arr), np.nanmax(arr))
+            else:
+                return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except:
         return (np.NaN, np.NaN)
 

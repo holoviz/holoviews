@@ -845,11 +845,11 @@ class DynamicMap(HoloMap):
         for ind, val in enumerate(key):
             kdim = self.kdims[ind]
             low, high = util.max_range([kdim.range, kdim.soft_range])
-            if low is not np.NaN:
+            if util.is_number(low) and util.isfinite(low):
                 if val < low:
                     raise KeyError("Key value %s below lower bound %s"
                                    % (val, low))
-            if high is not np.NaN:
+            if util.is_number(high) and util.isfinite(high):
                 if val > high:
                     raise KeyError("Key value %s above upper bound %s"
                                    % (val, high))
