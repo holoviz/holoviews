@@ -838,7 +838,7 @@ class GenericElementPlot(DimensionedPlot):
         else:
             range_extents = (np.NaN,) * num
 
-        if self.apply_extents:
+        if self.apply_extents and data:
             norm_opts = self.lookup_options(view, 'norm').options
             if norm_opts.get('framewise', False) or self.dynamic:
                 extents = view.extents
