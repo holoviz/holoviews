@@ -98,7 +98,7 @@ class DictInterface(Interface):
                             unpacked.append((sd, vals[:, i]))
                 else:
                     vals = vals if np.isscalar(vals) else np.asarray(vals)
-                    if not np.isscalar(vals) and not vals.ndim == 1:
+                    if not np.isscalar(vals) and not vals.ndim == 1 and d in dimensions:
                         raise ValueError('DictInterface expects data for each column to be flat.')
                     unpacked.append((d, vals))
             if not cls.expanded([d[1] for d in unpacked if not np.isscalar(d[1])]):
