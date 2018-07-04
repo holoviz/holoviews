@@ -205,7 +205,9 @@ class AreaPlot(ChartPlot):
             vranges = ranges[vdim]
             for r in vranges:
                 vrange = vranges[r]
-                new_range[r] = (np.nanmin([0, vrange[0]]), vrange[1])
+                if r != 'hard':
+                    vrange = (np.nanmin([0, vrange[0]]), vrange[1])
+                new_range[r] = vrange
         ranges[vdim] = new_range
         return super(AreaPlot, self).get_extents(element, ranges, data)
 
@@ -362,6 +364,8 @@ class HistogramPlot(ChartPlot):
     def get_extents(self, element, ranges, data=True):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges, data)
         ylow, yhigh = element.get_dimension(1).range
+        if not data:
+            return (x0, ylow, x1, yhigh)
         y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
         y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
         return (x0, y0, x1, y1)
