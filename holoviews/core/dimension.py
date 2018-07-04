@@ -11,11 +11,12 @@ from operator import itemgetter
 import numpy as np
 import param
 
+from ..core import util
 from ..core.util import (basestring, sanitize_identifier, isfinite,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins, config, dimension_range, disable_constant)
+                         builtins, config, disable_constant)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -1131,7 +1132,7 @@ class Dimensioned(LabelledData):
             lower, upper = (np.NaN, np.NaN)
         if not dimension_range:
             return lower, upper
-        return dimension_range(lower, upper, dimension.range, dimension.soft_range)
+        return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
 
 
     def __repr__(self):

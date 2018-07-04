@@ -291,7 +291,7 @@ class Dataset(Element):
             lower, upper = (np.NaN, np.NaN)
         if not dimension_range:
             return lower, upper
-        return dimension_range(lower, upper, dim.range, dim.soft_range)
+        return util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
