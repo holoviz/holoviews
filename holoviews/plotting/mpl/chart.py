@@ -971,6 +971,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
     def get_extents(self, element, ranges, data=True):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data)
+        if not data:
+            return l, b, r, t
         if len(element.dimensions()) == 1:
             b, t = self.position, self.position+self.spike_length
         else:

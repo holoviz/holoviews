@@ -588,7 +588,9 @@ class SpikesPlot(ColorbarPlot):
     _plot_methods = dict(single='segment')
 
     def get_extents(self, element, ranges, data=True):
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data=True)
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data)
+        if not data:
+            return l, b, r, t
         if len(element.dimensions()) == 1:
             if self.batched:
                 bs, ts = [], []
