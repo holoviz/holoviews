@@ -1104,7 +1104,7 @@ class Dimensioned(LabelledData):
                             (dimension, self.__class__.__name__))
 
 
-    def range(self, dimension, data_range=True):
+    def range(self, dimension, data_range=True, dimension_range=True):
         """
         Returns the range of values along the specified dimension.
 
@@ -1113,9 +1113,9 @@ class Dimensioned(LabelledData):
         indicate that no range is defined.
         """
         dimension = self.get_dimension(dimension)
-        if dimension is None:
+        if dimension is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(isfinite(v) for v in dimension.range):
+        elif all(isfinite(v) for v in dimension.range) and dimension_range:
             return dimension.range
         elif data_range:
             if dimension in self.kdims+self.vdims:
@@ -1129,8 +1129,8 @@ class Dimensioned(LabelledData):
                 lower, upper = max_range(ranges)
         else:
             lower, upper = (np.NaN, np.NaN)
-        if data_range == 'exclusive':
-            return (lower, upper)
+        if not dimension_range:
+            return lower, upper
         return dimension_range(lower, upper, dimension.range, dimension.soft_range)
 
 

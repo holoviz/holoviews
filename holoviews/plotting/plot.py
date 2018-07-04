@@ -440,7 +440,7 @@ class DimensionedPlot(Plot):
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
             for dim in el.dimensions('ranges'):
-                data_range = el.range(dim, data_range='exclusive')
+                data_range = el.range(dim, dimension_range=False)
                 if dim.name not in group_ranges:
                     group_ranges[dim.name] = {'data': [], 'hard': [], 'soft': []}
                 group_ranges[dim.name]['data'].append(data_range)
@@ -801,12 +801,12 @@ class GenericElementPlot(DimensionedPlot):
                 else:
                     z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
             else:
-                x0, x1 = view.range(0, data_range='exclusive')
+                x0, x1 = view.range(0, dimension_range=False)
                 xsrange = xdim.soft_range
                 xhrange = xdim.range
                 if ndims > 1:
                     ydim = dims[1]
-                    y0, y1 = view.range(1, data_range='exclusive')
+                    y0, y1 = view.range(1, dimension_range=False)
                     ysrange = ydim.soft_range
                     yhrange = ydim.range
                 else:

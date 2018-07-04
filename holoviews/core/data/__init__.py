@@ -274,23 +274,23 @@ class Dataset(Element):
         return self.clone(sorted_columns)
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         """
         Computes the range of values along a supplied dimension, taking
         into account the range and soft_range defined on the Dimension
         object.
         """
         dim = self.get_dimension(dim)
-        if dim is None:
+        if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(util.isfinite(v) for v in dim.range):
+        elif all(util.isfinite(v) for v in dim.range) and dimension_range:
             return dim.range
         elif dim in self.dimensions() and data_range and len(self):
             lower, upper = self.interface.range(self, dim)
         else:
             lower, upper = (np.NaN, np.NaN)
-        if data_range == 'exclusive':
-            return (lower, upper)
+        if not dimension_range:
+            return lower, upper
         return dimension_range(lower, upper, dim.range, dim.soft_range)
 
 

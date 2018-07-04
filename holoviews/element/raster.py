@@ -70,13 +70,15 @@ class Raster(Element2D):
                               extents=None)
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
             dimension = self.get_dimension(dim)
             lower, upper = np.nanmin(self.data), np.nanmax(self.data)
+            if not dimension_range:
+                return lower, upper
             return dimension_range(lower, upper, dimension.range, dimension.soft_range)
-        return super(Raster, self).range(dim, data_range)
+        return super(Raster, self).range(dim, data_range, dimension_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
@@ -521,7 +523,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             return [getter(self.closest_cell_center(*el)) for el in coords]
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
@@ -535,7 +537,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 halfd = np.timedelta64(int(round(halfd)), self._time_unit)
             return (low-halfd, high+halfd)
         else:
-            return super(Image, self).range(dim, data_range)
+            return super(Image, self).range(dim, data_range, dimension_range)
 
 
     def table(self, datatype=None):

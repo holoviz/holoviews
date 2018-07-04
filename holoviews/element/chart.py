@@ -91,7 +91,7 @@ class ErrorBars(Chart):
                        bounds=(1, 3), constant=True)
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         didx = self.get_dimension_index(dim)
         dim = self.get_dimension(dim)
         if didx == 1 and data_range and len(self):
@@ -103,7 +103,7 @@ class ErrorBars(Chart):
                 pos_error = neg_error
             lower = np.nanmin(mean-neg_error)
             upper = np.nanmax(mean+pos_error)
-            if data_range == 'exclusive':
+            if not dimension_range:
                 return (lower, upper)
             return util.dimension_range(lower, upper, dim.range, dim.soft_range)
         return super(ErrorBars, self).range(dim, data_range)
