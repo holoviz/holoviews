@@ -838,9 +838,9 @@ def max_range(ranges):
             if arr.dtype.kind in 'OSU':
                 arr = list(python2sort([v for v in arr.flat if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            elif values.dtype.kind in 'M':
-                return values.min(), values.max()
-            return (np.nanmin(values), np.nanmax(values))
+            elif arr.dtype.kind in 'M':
+                return arr.min(), arr.max()
+            return (np.nanmin(arr), np.nanmax(arr))
     except:
         return (np.NaN, np.NaN)
 
