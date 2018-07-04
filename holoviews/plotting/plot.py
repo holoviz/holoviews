@@ -818,11 +818,12 @@ class GenericElementPlot(DimensionedPlot):
                     zhrange = zdim.range
                 else:
                     z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
-            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, self.padding)
+            padding = 0 if self.overlaid else self.padding
+            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, padding)
             if ndims > 1:
-                y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, self.padding)
+                y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, padding)
             if self.projection == '3d':
-                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, self.padding)
+                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, padding)
                 range_extents = (x0, y0, z0, x1, y1, z1)
             else:
                 range_extents = (x0, y0, x1, y1)
@@ -1142,7 +1143,18 @@ class GenericOverlayPlot(GenericElementPlot):
                 else:
                     sp_ranges = util.match_spec(layer, ranges) if ranges else {}
                 extents.append(subplot.get_extents(layer, sp_ranges))
-        return util.max_extents(extents, self.projection == '3d')
+
+        max_extents = util.max_extents(extents, self.projection == '3d')
+        if len(max_extents) == 6:
+            x0, y0, z0, x1, y1, z1 = max_extents
+        else:
+            x0, y0, x1, y1 = max_extents
+        x0, x1 = util.range_pad(x0, x1, self.padding)
+        y0, y1 = util.range_pad(y0, y1, self.padding)
+        if len(max_extents) == 6:
+            z0, z1 = util.range_pad(z0, z1, self.padding)
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
 
 
 

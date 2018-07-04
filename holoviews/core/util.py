@@ -845,15 +845,23 @@ def max_range(ranges):
         return (np.NaN, np.NaN)
 
 
-def dimension_range(lower, upper, hard_range, soft_range, padding=0):
+def range_pad(lower, upper, padding=0):
     """
-    Computes the range along a dimension by combining the data range
-    with the Dimension soft_range and range.
+    Pads the range by a fraction of the interval
     """
     if is_number(lower) and is_number(upper) and padding != 0:
         pad = (upper - lower)*padding
         lower -= pad
         upper += pad
+    return lower, upper
+
+
+def dimension_range(lower, upper, hard_range, soft_range, padding=0):
+    """
+    Computes the range along a dimension by combining the data range
+    with the Dimension soft_range and range.
+    """
+    lower, upper = range_pad(lower, upper, padding)
     lower, upper = max_range([(lower, upper), soft_range])
     dmin, dmax = hard_range
     lower = lower if dmin is None or not np.isfinite(dmin) else dmin

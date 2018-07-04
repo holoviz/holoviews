@@ -1244,8 +1244,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
-                          'legend_cols', 'gridstyle', 'legend_muted']
-
+                          'legend_cols', 'gridstyle', 'legend_muted', 'padding']
 
     def _process_legend(self):
         plot = self.handles['plot']
