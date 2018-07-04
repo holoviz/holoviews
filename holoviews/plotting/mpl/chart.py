@@ -194,7 +194,7 @@ class AreaPlot(ChartPlot):
         stack = fill_fn(*plot_data, **plot_kwargs)
         return {'artist': stack}
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         vdims = element.vdims
         vdim = vdims[0].name
         new_range = {}
@@ -207,7 +207,7 @@ class AreaPlot(ChartPlot):
                 vrange = vranges[r]
                 new_range[r] = (np.nanmin([0, vrange[0]]), vrange[1])
         ranges[vdim] = new_range
-        return super(AreaPlot, self).get_extents(element, ranges)
+        return super(AreaPlot, self).get_extents(element, ranges, data)
 
 
 
@@ -254,8 +254,8 @@ class SpreadPlot(AreaPlot):
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
 
-    def get_extents(self, element, ranges):
-        return ChartPlot.get_extents(self, element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        return ChartPlot.get_extents(self, element, ranges, data)
 
 
 
@@ -359,8 +359,8 @@ class HistogramPlot(ChartPlot):
         return [xvals, labels]
 
 
-    def get_extents(self, element, ranges):
-        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges, data)
         ylow, yhigh = element.get_dimension(1).range
         y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
         y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
@@ -799,7 +799,7 @@ class BarPlot(LegendPlot):
         return style, color_groups, sopts
 
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
         if self.stack_index in range(element.ndims):
@@ -965,8 +965,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         return {'artist': line_segments}
 
 
-    def get_extents(self, element, ranges):
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data)
         if len(element.dimensions()) == 1:
             b, t = self.position, self.position+self.spike_length
         else:

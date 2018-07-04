@@ -40,8 +40,8 @@ class RasterPlot(ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
-    def get_extents(self, element, ranges):
-        extents = super(RasterPlot, self).get_extents(element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        extents = super(RasterPlot, self).get_extents(element, ranges, data)
         if self.situate_axes:
             return extents
         else:
@@ -216,7 +216,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _finalize_artist(self, key):
         pass
 
-    def get_extents(self, view, ranges):
+    def get_extents(self, view, ranges, data=True):
         width, height, _, _, _, _ = self.border_extents
         return (0, 0, width, height)
 

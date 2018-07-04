@@ -770,7 +770,7 @@ class GenericElementPlot(DimensionedPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def get_extents(self, view, ranges):
+    def get_extents(self, view, ranges, data=True):
         """
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
@@ -818,11 +818,20 @@ class GenericElementPlot(DimensionedPlot):
                 else:
                     z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
             padding = 0 if self.overlaid else self.padding
-            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, padding)
+            if data:
+                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, padding)
+            else:
+                x0, x1 = xhrange
             if ndims > 1:
-                y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, padding)
+                if data:
+                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, padding)
+                else:
+                    y0, y1 = yhrange
             if self.projection == '3d':
-                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, padding)
+                if data:
+                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, padding)
+                else:
+                    z0, z1 = zhrange
                 range_extents = (x0, y0, z0, x1, y1, z1)
             else:
                 range_extents = (x0, y0, x1, y1)
@@ -1116,14 +1125,15 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot.overlay_dims = util.OrderedDict(new_dims)
 
 
-    def get_extents(self, overlay, ranges):
-        extents = []
+    def get_extents(self, overlay, ranges, data=True):
+        extents, hard_extents = [], []
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()
+
         for key, subplot in subplots:
             found = False
             if subplot is None:
@@ -1141,9 +1151,14 @@ class GenericOverlayPlot(GenericElementPlot):
                     sp_ranges = ranges
                 else:
                     sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-                extents.append(subplot.get_extents(layer, sp_ranges))
+                extents.append(subplot.get_extents(layer, sp_ranges, data=data))
+                hard_extents.append(subplot.get_extents(layer, sp_ranges, data=False))
 
-        max_extents = util.max_extents(extents, self.projection == '3d')
+        zrange = self.projection == '3d'
+        max_extents = util.max_extents(extents, zrange)
+        hard_extent = util.max_extents(hard_extents, zrange)
+        if not data:
+            return hard_extent
         if len(max_extents) == 6:
             x0, y0, z0, x1, y1, z1 = max_extents
         else:
@@ -1152,8 +1167,10 @@ class GenericOverlayPlot(GenericElementPlot):
         y0, y1 = util.range_pad(y0, y1, self.padding)
         if len(max_extents) == 6:
             z0, z1 = util.range_pad(z0, z1, self.padding)
-            return (x0, y0, z0, x1, y1, z1)
-        return (x0, y0, x1, y1)
+            padded = (x0, y0, z0, x1, y1, z1)
+        else:
+            padded = (x0, y0, x1, y1)
+        return tuple(v1 if util.is_finite(v1) else v2 for v1, v2 in zip(hard_extent, padded))
 
 
 

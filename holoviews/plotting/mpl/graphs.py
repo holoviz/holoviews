@@ -97,13 +97,11 @@ class GraphPlot(ColorbarPlot):
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
 
-    def get_extents(self, element, ranges):
-        """
-        Extents are set to '' and None because x-axis is categorical and
-        y-axis auto-ranges.
-        """
-        x0, x1 = element.nodes.range(0)
-        y0, y1 = element.nodes.range(1)
+    def get_extents(self, element, ranges, data=True):
+        key = 'combined' if data else 'hard'
+        xdim, ydim = element.nodes.kdims[:2]
+        x0, x1 = ranges[xdim.name][key]
+        y0, y1 = ranges[ydim.name][key]
         return (x0, y0, x1, y1)
 
 
@@ -207,11 +205,13 @@ class ChordPlot(GraphPlot):
 
     _style_groups = ['edge', 'node', 'arc']
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         """
         A Chord plot is always drawn on a unit circle.
         """
         xdim, ydim = element.nodes.kdims[:2]
+        if not data:
+            return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
         rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
         y0, y1 = max_range([ydim.range, (-rng, rng)])

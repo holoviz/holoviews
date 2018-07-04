@@ -57,7 +57,7 @@ class HeatMapPlot(RasterPlot):
         ticks or function. If `None`, no ticks are shown.""")
 
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         ys, xs = element.gridded.interface.shape(element.gridded, gridded=True)
         return (0, 0, xs, ys)
 
@@ -312,7 +312,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         return ticks
 
 
-    def get_extents(self, view, ranges):
+    def get_extents(self, view, ranges, data=True):
         return (0, 0, np.pi*2, self.max_radius+self.radius_outer)
 
 

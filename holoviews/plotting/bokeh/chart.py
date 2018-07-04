@@ -341,8 +341,8 @@ class HistogramPlot(ElementPlot):
             self._get_hover_data(data, element)
         return (data, mapping, style)
 
-    def get_extents(self, element, ranges):
-        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges, data)
         ylow, yhigh = element.get_dimension(1).range
         y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
         y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
@@ -529,7 +529,7 @@ class AreaPlot(SpreadPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         vdims = element.vdims
         vdim = vdims[0].name
         new_range = {}
@@ -542,7 +542,7 @@ class AreaPlot(SpreadPlot):
                 vrange = vranges[r]
                 new_range[r] = (np.nanmin([0, vrange[0]]), vrange[1])
         ranges[vdim] = new_range
-        return super(AreaPlot, self).get_extents(element, ranges)
+        return super(AreaPlot, self).get_extents(element, ranges, data)
 
 
     def get_data(self, element, ranges, style):
@@ -583,8 +583,8 @@ class SpikesPlot(ColorbarPlot):
 
     _plot_methods = dict(single='segment')
 
-    def get_extents(self, element, ranges):
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
+    def get_extents(self, element, ranges, data=True):
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data=True)
         if len(element.dimensions()) == 1:
             if self.batched:
                 bs, ts = [], []
@@ -694,7 +694,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
     # Declare that y-range should auto-range if not bounded
     _y_range_type = Range1d
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         """
         Make adjustments to plot extents by computing
         stacked bar heights, adjusting the bar baseline

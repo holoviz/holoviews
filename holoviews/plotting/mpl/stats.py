@@ -60,7 +60,7 @@ class BoxPlot(ChartPlot):
 
     _plot_methods = dict(single='boxplot')
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         return (np.NaN,)*4
 
 

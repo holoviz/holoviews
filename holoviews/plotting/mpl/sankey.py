@@ -34,14 +34,15 @@ class SankeyPlot(GraphPlot):
 
     filled = True
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, data=True):
         """
         A Chord plot is always drawn on a unit circle.
         """
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
-        x0, x1 = ranges[xdim.name]['combined']
-        y0, y1 = ranges[ydim.name]['combined']
+        key = 'combined' if data else 'hard'
+        x0, x1 = ranges[xdim.name][key]
+        y0, y1 = ranges[ydim.name][key]
         xdiff = (x1-x0)
         ydiff = (y1-y0)
         if self.label_position == 'right':
