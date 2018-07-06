@@ -274,7 +274,7 @@ class DictInterface(Interface):
             grouped_data.append((unique_key, group_data))
 
         if issubclass(container_type, NdMapping):
-            with item_check(False):
+            with item_check(False), sorted_context(False):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)

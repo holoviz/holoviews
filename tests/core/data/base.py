@@ -586,7 +586,8 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'])
+                          kdims=['Gender'], sort=False)
+        print(grouped.keys())
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
     def test_dataset_groupby_alias(self):
@@ -596,14 +597,8 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                                          vdims=self.alias_vdims)),
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')])
+                          kdims=[('gender', 'Gender')], sort=False)
         self.assertEqual(self.alias_table.groupby('Gender'), grouped)
-
-        self.gender, self.age = np.array(['M','M','F']), np.array([10,16,12])
-        self.weight, self.height = np.array([15,18,10]), np.array([0.8,0.6,0.8])
-        self.table = Dataset({'Gender':self.gender, 'Age':self.age,
-                              'Weight':self.weight, 'Height':self.height},
-                             kdims=self.kdims, vdims=self.vdims)
 
     def test_dataset_groupby_second_dim(self):
         group1 = {'Gender':['M'], 'Weight':[15], 'Height':[0.8]}
@@ -612,7 +607,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
                            (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
                            (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
-                          kdims=['Age'])
+                          kdims=['Age'], sort=False)
         self.assertEqual(self.table.groupby(['Age']), grouped)
 
     def test_dataset_groupby_dynamic(self):
