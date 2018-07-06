@@ -355,6 +355,22 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         super(Dataset, self).__setstate__(state)
 
 
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        """
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original. May also supply
+        a new_type, which will inherit all shared parameters.
+        """
+        if data is None and (new_type is None or issubclass(new_type, Image)):
+            sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
+                                ydensity=self.ydensity)
+            overrides = dict(sheet_params, **overrides)
+        return super(Image, self).clone(data, shared_data, new_type, *args, **overrides)
+
+
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
         return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg

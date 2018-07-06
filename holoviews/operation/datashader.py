@@ -439,8 +439,10 @@ class aggregate(AggregationOperation):
         (x0, x1), (y0, y1) = x_range, y_range
         if xtype == 'datetime':
             x0, x1 = (np.array([x0, x1])/10e5).astype('datetime64[us]')
+            xs = (xs/10e5).astype('datetime64[us]')
         if ytype == 'datetime':
             y0, y1 = (np.array([y0, y1])/10e5).astype('datetime64[us]')
+            ys = (ys/10e5).astype('datetime64[us]')
         bounds = (x0, y0, x1, y1)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
@@ -459,8 +461,10 @@ class aggregate(AggregationOperation):
         params['vdims'] = vdims
 
         if x is None or y is None or width == 0 or height == 0:
+            x = x.name if x else 'x'
+            y = y.name if x else 'y'
             xarray = xr.DataArray(np.full((height, width), np.NaN),
-                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
+                                  dims=[y, x], coords={x: xs, y: ys})
             if width == 0:
                 params['xdensity'] = 1
             if height == 0:
@@ -888,10 +892,14 @@ class shade(LinkableOperation):
         element = element.map(self.to_xarray, Image)
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
+            xdensity = element.last.xdensity
+            ydensity = element.last.ydensity
             element = self.concatenate(element)
         elif isinstance(element, Overlay):
             return element.map(self._process, [Element])
         else:
+            xdensity = element.xdensity
+            ydensity = element.ydensity
             bounds = element.bounds
 
         vdim = element.vdims[0].name
@@ -940,7 +948,8 @@ class shade(LinkableOperation):
             else:
                 img = tf.shade(array, **shade_opts)
         params = dict(get_param_values(element), kdims=kdims,
-                      bounds=bounds, vdims=RGB.vdims[:])
+                      bounds=bounds, vdims=RGB.vdims[:],
+                      xdensity=xdensity, ydensity=ydensity)
         return RGB(self.uint32_to_uint8(img.data), **params)
 
 

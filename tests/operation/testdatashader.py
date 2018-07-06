@@ -129,6 +129,18 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(imgs[0], expected)
         self.assertEqual(imgs[1], expected2)
 
+    def test_aggregate_dt_xaxis_constant_yaxis(self):
+        df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
+        img = rasterize(Curve(df), dynamic=False)
+        xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
+                       '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
+        ys = np.array([])
+        bounds = (np.datetime64('1980-01-01T00:00:00.000000'), 1.0,
+                  np.datetime64('1980-01-01T01:39:00.000000'), 1.0)
+        expected = Image((xs, ys, np.empty((0, 3))), ['index', 'y'], 'Count',
+                         xdensity=1, ydensity=1, bounds=bounds)
+        self.assertEqual(img, expected)
+
     def test_aggregate_ndoverlay(self):
         ds = Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
         ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
