@@ -10,7 +10,7 @@ from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
-from ..ndmapping import NdMapping, item_check
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 
 
@@ -270,7 +270,7 @@ class DictInterface(Interface):
             grouped_data.append((unique_key, group_data))
 
         if issubclass(container_type, NdMapping):
-            with item_check(False):
+            with item_check(False), sorted_context(False):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)

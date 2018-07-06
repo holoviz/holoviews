@@ -14,7 +14,7 @@ from .interface import Interface, DataError
 from ..dimension import dimension_name
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
-from ..ndmapping import NdMapping, item_check
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
 
 
@@ -195,7 +195,7 @@ class PandasInterface(Interface):
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 columns.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
-            with item_check(False):
+            with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
         else:
             return container_type(data)
