@@ -101,7 +101,7 @@ class DictInterface(Interface):
                     if not np.isscalar(vals) and not vals.ndim == 1 and d in dimensions:
                         raise ValueError('DictInterface expects data for each column to be flat.')
                     unpacked.append((d, vals))
-            if not cls.expanded([d[1] for d in unpacked if not np.isscalar(d[1])]):
+            if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not np.isscalar(vs)]):
                 raise ValueError('DictInterface expects data to be of uniform shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
@@ -158,7 +158,8 @@ class DictInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
-        lengths = [len(vals) for vals in dataset.data.values() if not np.isscalar(vals)]
+        lengths = [len(vals) for d, vals in dataset.data.items()
+                   if d in dataset.dimensions() and not np.isscalar(vals)]
         return max(lengths) if lengths else 1
 
     @classmethod
