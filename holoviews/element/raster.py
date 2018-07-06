@@ -365,7 +365,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         a new_type, which will inherit all shared parameters.
         """
         if data is None and (new_type is None or issubclass(new_type, Image)):
-            sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity
+            sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
                                 ydensity=self.ydensity)
             overrides = dict(sheet_params, **overrides)
         return super(Image, self).clone(data, shared_data, new_type, *args, **overrides)
