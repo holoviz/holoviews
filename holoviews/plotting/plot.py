@@ -23,7 +23,7 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay)
+                   split_dmap_overlay, get_axis_padding)
 
 
 class Plot(param.Parameterized):
@@ -612,7 +612,7 @@ class GenericElementPlot(DimensionedPlot):
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
 
-    padding = param.Number(default=0, doc="""
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
         Amount of padding to apply to data ranges.""")
 
     show_legend = param.Boolean(default=True, doc="""
@@ -817,19 +817,22 @@ class GenericElementPlot(DimensionedPlot):
                     zhrange = zdim.range
                 else:
                     z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
+
             padding = 0 if self.overlaid else self.padding
+            xpad, ypad, zpad = get_axis_padding(padding)
+
             if data:
-                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, padding)
+                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad)
             else:
                 x0, x1 = xhrange
             if ndims > 1:
                 if data:
-                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, padding)
+                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad)
                 else:
                     y0, y1 = yhrange
             if self.projection == '3d':
                 if data:
-                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, padding)
+                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad)
                 else:
                     z0, z1 = zhrange
                 range_extents = (x0, y0, z0, x1, y1, z1)
@@ -1163,10 +1166,13 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, z0, x1, y1, z1 = max_extents
         else:
             x0, y0, x1, y1 = max_extents
-        x0, x1 = util.range_pad(x0, x1, self.padding)
-        y0, y1 = util.range_pad(y0, y1, self.padding)
+
+        padding = 0 if self.overlaid else self.padding
+        xpad, ypad, zpad = get_axis_padding(padding)
+        x0, x1 = util.range_pad(x0, x1, xpad)
+        y0, y1 = util.range_pad(y0, y1, ypad)
         if len(max_extents) == 6:
-            z0, z1 = util.range_pad(z0, z1, self.padding)
+            z0, z1 = util.range_pad(z0, z1, zpad)
             padded = (x0, y0, z0, x1, y1, z1)
         else:
             padded = (x0, y0, x1, y1)
