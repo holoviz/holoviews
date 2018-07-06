@@ -252,7 +252,7 @@ def get_plot_frame(map_obj, key_map, cached=False):
     if map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame':
         # Special handling for static plots
         return map_obj.last
-    key = tuple(key_map[kd.name] for kd in map_obj.kdims)
+    key = tuple(key_map[kd.name] for kd in map_obj.kdims if kd.name in key_map)
     if key in map_obj.data and cached:
         return map_obj.data[key]
     else:
