@@ -1027,7 +1027,7 @@ class ColorbarPlot(ElementPlot):
     def _draw_colorbar(self, plot, color_mapper):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
-        if LogColorMapper and isinstance(color_mapper, LogColorMapper):
+        if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
