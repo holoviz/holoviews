@@ -14,6 +14,24 @@ Release notes
 *************
 
 
+Version 1.10.7
+==============
+
+This a very minor hotfix release mostly containing fixes for datashader
+aggregation of empty datasets:
+
+Fixes:
+
+- Fix datashader aggregation of empty and zero-range data
+  (`#2860 <https://github.com/ioam/holoviews/pull/2860>`_,
+  `#2863 <https://github.com/ioam/holoviews/pull/2863>`_)
+- Disable validation for additional, non-referenced keys in the
+  DictInterface (`#2860 <https://github.com/ioam/holoviews/pull/2860>`_)
+- Fixed frame lookup for non-overlapping dimensions
+  (`#2861 <https://github.com/ioam/holoviews/pull/2861>`_)
+- Fixed ticks on log Colorbar if low value <= 0
+  (`#2865 <https://github.com/ioam/holoviews/pull/2865>`_)
+
 Version 1.10.6
 ==============
 
