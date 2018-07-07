@@ -144,11 +144,9 @@ class ResamplingOperation(LinkableOperation):
             xstart, xend = dt_to_int(xstart, 'ns'), dt_to_int(xend, 'ns')
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
+            xstart, xend = 0, 0
             if element.get_dimension_type(x) in datetime_types:
-                xstart, xend = 0, 10000
                 xtype = 'datetime'
-            else:
-                xstart, xend = 0, 1
         x_range = (xstart, xend)
 
         ytype = 'numeric'
@@ -156,11 +154,9 @@ class ResamplingOperation(LinkableOperation):
             ystart, yend = dt_to_int(ystart, 'ns'), dt_to_int(yend, 'ns')
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
+            ystart, yend = 0, 0
             if element.get_dimension_type(y) in datetime_types:
-                ystart, yend = 0, 10000
                 ytype = 'datetime'
-            else:
-                ystart, yend = 0, 1
         y_range = (ystart, yend)
 
         # Compute highest allowed sampling density
