@@ -107,6 +107,9 @@ class RGBPlot(RasterPlot):
             b, t = t, b
         dh, dw = t-b, r-l
 
+        if 0 in img.shape:
+            img = np.zeros((1, 1), dtype=np.uint32)
+
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping, style)
 
