@@ -1,5 +1,3 @@
-from unittest import SkipTest
-
 from holoviews.element import ErrorBars
 
 from .testplot import TestBokehPlot, bokeh_renderer

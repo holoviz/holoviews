@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import datetime as dt
 from itertools import product
 from distutils.version import LooseVersion
 
@@ -7,7 +8,7 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import cm
 from matplotlib.collections import LineCollection
-from matplotlib.dates import DateFormatter, date2num
+from matplotlib.dates import DateFormatter
 
 mpl_version = LooseVersion(mpl.__version__)
 
@@ -15,7 +16,8 @@ import param
 
 from ...core import OrderedDict, Dimension, Store
 from ...core.util import (
-    match_spec, unique_iterator, basestring, max_range, isfinite, datetime_types
+    match_spec, unique_iterator, basestring, max_range, isfinite,
+    datetime_types, dt_to_int
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -334,8 +336,8 @@ class HistogramPlot(ChartPlot):
         ylim = hist.range(1)
         isdatetime = False
         if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
-            edges = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in edges])
-            xlim = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in xlim])
+            edges = np.array([dt_to_int(e, 'D') for e in edges])
+            xlim = tuple(dt_to_int(v, 'D') for v in xlim)
             isdatetime = True
         widths = np.diff(edges)
         return edges[:-1], hist_vals, widths, xlim+ylim, isdatetime
@@ -1005,7 +1007,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                 if vs.dtype.kind == 'M' and i < len(dims):
                     dt_format = Dimension.type_formatters[np.datetime64]
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))
-                    vs = date2num(vs)
+                    vs = np.array([dt_to_int(v, 'D') for v in vs])
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 

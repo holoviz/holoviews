@@ -94,7 +94,7 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0)
         self.assertEqual(y_range.end, 3.2)
 
-    def test_bars_padding_square_positive(self):
+    def test_bars_padding_square_negative(self):
         points = Bars([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
