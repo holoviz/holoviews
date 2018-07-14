@@ -243,3 +243,88 @@ class TestCurvePlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
+
+    def test_curve_padding_square(self):
+        curve = Curve([1, 2, 3]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, -0.2)
+        self.assertEqual(x_range.end, 2.2)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_hard_xrange(self):
+        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0)
+        self.assertEqual(x_range.end, 3)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_soft_xrange(self):
+        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, -0.2)
+        self.assertEqual(x_range.end, 3)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_unequal(self):
+        curve = Curve([1, 2, 3]).options(padding=(0.1, 0.2))
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, -0.1)
+        self.assertEqual(x_range.end, 2.1)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_nonsquare(self):
+        curve = Curve([1, 2, 3]).options(padding=0.2, width=600)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, -0.1)
+        self.assertEqual(x_range.end, 2.1)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_logx(self):
+        curve = Curve([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.89595845984076228)
+        self.assertEqual(x_range.end, 3.3483695221017129)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_logy(self):
+        curve = Curve([1, 2, 3]).options(padding=0.2, logy=True)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, -0.2)
+        self.assertEqual(x_range.end, 2.2)
+        self.assertEqual(y_range.start, 0.89595845984076228)
+        self.assertEqual(y_range.end, 3.3483695221017129)
+
+    def test_curve_padding_datetime_square(self):
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+            padding=0.2
+        )
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, np.datetime64('2016-03-31T19:12:00.000000000'))
+        self.assertEqual(x_range.end, np.datetime64('2016-04-03T04:48:00.000000000'))
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_curve_padding_datetime_nonsquare(self):
+        curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
+            padding=0.2, width=600
+        )
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, np.datetime64('2016-03-31T21:36:00.000000000'))
+        self.assertEqual(x_range.end, np.datetime64('2016-04-03T02:24:00.000000000'))
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.2)
