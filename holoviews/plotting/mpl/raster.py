@@ -159,6 +159,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_ticks = param.Parameter(precedence=-1)
     batched = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
+    default_span = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)

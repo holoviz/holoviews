@@ -519,7 +519,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if shared:
                 shared = (axis_range.start, axis_range.end)
                 low, high = util.max_range([(low, high), shared])
-            if log and (low is None or low <= 0):
+            if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)

@@ -855,17 +855,19 @@ def range_pad(lower, upper, padding=0, log=False):
     Pads the range by a fraction of the interval
     """
     if is_number(lower) and is_number(upper) and padding != 0:
-        if log:
+        if not isinstance(lower, datetime_types) and log and lower > 0 and upper > 0:
             log_min = np.log(lower) / np.log(10)
             log_max = np.log(upper) / np.log(10)
             span = (log_max-log_min)*(1+padding)
             center = (log_min+log_max) / 2.0
-            lower, upper = [np.power(10, center-span / 2.0), np.power(10, center+span / 2.0)]
+            start, end = np.power(10, center-span / 2.0), np.power(10, center+span / 2.0)
         else:
-            span = (upper-lower)*(1+padding)
-            center = (lower+upper) / 2.0
-            lower, upper = [center-span / 2.0, center+span / 2.0]
-    return lower, upper
+            span = (upper-lower)
+            pad = span*(padding/2.)
+            start, end = lower-pad, upper+pad
+    else:
+        start, end = lower, upper
+    return start, end
 
 
 def dimension_range(lower, upper, hard_range, soft_range, padding=0, log=False):

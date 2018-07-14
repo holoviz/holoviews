@@ -597,6 +597,9 @@ class GenericElementPlot(DimensionedPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
+    default_span = param.ClassSelector(default=2.0, class_=(int, float, tuple), doc="""
+        Default span if the spans zero range.""")
+
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
 
@@ -826,8 +829,14 @@ class GenericElementPlot(DimensionedPlot):
 
             padding = 0 if self.overlaid else self.padding
             xpad, ypad, zpad = get_axis_padding(padding)
-            if not self.overlaid:
-                aspect = self.get_aspect(x1-x0, y0-y1)
+            if not self.overlaid and not self.batched:
+                xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+                if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
+                if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
+                if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
+                xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
+                yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
+                aspect = self.get_aspect(xspan, yspan)
                 if aspect > 1:
                     xpad = xpad/aspect
                 else:
@@ -837,6 +846,7 @@ class GenericElementPlot(DimensionedPlot):
                 x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
             else:
                 x0, x1 = xhrange
+
             if ndims > 1:
                 if data:
                     y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
@@ -1180,12 +1190,20 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = max_extents
 
         padding = 0 if self.overlaid else self.padding
-        aspect = self.get_aspect(x1-x0, y0-y1)
+        xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
+        yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
+        aspect = self.get_aspect(xspan, yspan)
         xpad, ypad, zpad = get_axis_padding(padding)
         if aspect > 1:
             xpad = xpad/aspect
         else:
             ypad = ypad*aspect
+        xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+        if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
+        if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
+        if len(max_extents) == 6 and util.is_number(z0) and z0 == z1:
+            z0, z1 = z0-zspan, z1+zspan
+
         x0, x1 = util.range_pad(x0, x1, xpad, self.logx)
         y0, y1 = util.range_pad(y0, y1, ypad, self.logy)
         if len(max_extents) == 6:
