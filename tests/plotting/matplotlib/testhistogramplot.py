@@ -37,7 +37,7 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
 
-    def test_histogram_padding_square_positive(self):
+    def test_histogram_padding_square_negative(self):
         points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
         plot = mpl_renderer.get_plot(points)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()

@@ -1,6 +1,5 @@
 from __future__ import unicode_literals
 
-import datetime as dt
 from itertools import product
 from distutils.version import LooseVersion
 

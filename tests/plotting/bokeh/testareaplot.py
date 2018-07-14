@@ -41,15 +41,6 @@ class TestAreaPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.25)
         self.assertEqual(y_range.end, 3.25)
 
-    def test_area_padding_square(self):
-        area = Area([(1, 1, 0.5), (2, 2, 1.5), (3, 3, 2.5)]).options(padding=0.2)
-        plot = bokeh_renderer.get_plot(area)
-        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, 0.8)
-        self.assertEqual(x_range.end, 3.2)
-        self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 3.2999999999999998)
-        
     def test_area_padding_negative(self):
         area = Area([(1, -1), (2, -2), (3, -3)]).options(padding=0.2)
         plot = bokeh_renderer.get_plot(area)
