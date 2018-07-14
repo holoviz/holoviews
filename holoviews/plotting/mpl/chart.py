@@ -211,7 +211,16 @@ class AreaPlot(ChartPlot):
                     vrange = (np.nanmin([0, vrange[0]]), vrange[1])
                 new_range[r] = vrange
         ranges[vdim] = new_range
-        return super(AreaPlot, self).get_extents(element, ranges, data)
+        (x0, y0, x1, y1) = super(AreaPlot, self).get_extents(element, ranges, data)
+        if not data or len(vdims) > 1:
+            return x0, y0, x1, y1
+
+        b, t = new_range['combined']
+        if b < 0:
+            y1 = np.nanmax([y1, 0])
+        else:
+            y0 = np.nanmin([0, b])
+        return (x0, y0, x1, y1)
 
 
 
