@@ -2,7 +2,7 @@ import datetime as dt
 
 import numpy as np
 
-from holoviews.element import Image, Points, Dataset
+from holoviews.element import Image, Points, Dataset, Histogram
 from holoviews.operation import histogram
 
 from bokeh.models import DatetimeAxis
@@ -72,3 +72,79 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertIsInstance(xaxis, DatetimeAxis)
         self.assertEqual(range_x.start, np.datetime64('2017-01-01T00:00:00.000000', 'us'))
         self.assertEqual(range_x.end, np.datetime64('2017-01-04T00:00:00.000000', 'us'))
+
+    def test_histogram_padding_square(self):
+        points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.19999999999999996)
+        self.assertEqual(x_range.end, 3.8)
+        self.assertEqual(y_range.start, -1.4)
+        self.assertEqual(y_range.end, 3.4)
+
+    def test_histogram_padding_square_positive(self):
+        points = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.19999999999999996)
+        self.assertEqual(x_range.end, 3.8)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_histogram_padding_square_positive(self):
+        points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.19999999999999996)
+        self.assertEqual(x_range.end, 3.8)
+        self.assertEqual(y_range.start, -3.2)
+        self.assertEqual(y_range.end, 0)
+
+    def test_histogram_padding_nonsquare(self):
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, width=600)
+        plot = bokeh_renderer.get_plot(histogram)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.35)
+        self.assertEqual(x_range.end, 3.65)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_histogram_padding_logx(self):
+        histogram = Histogram([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        plot = bokeh_renderer.get_plot(histogram)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.41158562699652224)
+        self.assertEqual(x_range.end, 4.2518491541367327)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_histogram_padding_logy(self):
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, logy=True)
+        plot = bokeh_renderer.get_plot(histogram)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0.19999999999999996)
+        self.assertEqual(x_range.end, 3.8)
+        self.assertEqual(y_range.start, 0.033483695221017122)
+        self.assertEqual(y_range.end, 3.3483695221017129)
+
+    def test_histogram_padding_datetime_square(self):
+        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
+            padding=0.2
+        )
+        plot = bokeh_renderer.get_plot(histogram)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, np.datetime64('2016-03-31T04:48:00.000000000'))
+        self.assertEqual(x_range.end, np.datetime64('2016-04-03T19:12:00.000000000'))
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_histogram_padding_datetime_nonsquare(self):
+        histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
+            padding=0.2, width=600
+        )
+        plot = bokeh_renderer.get_plot(histogram)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, np.datetime64('2016-03-31T08:24:00.000000000'))
+        self.assertEqual(x_range.end, np.datetime64('2016-04-03T15:36:00.000000000'))
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
