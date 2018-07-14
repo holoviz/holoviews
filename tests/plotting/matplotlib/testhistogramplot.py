@@ -8,7 +8,7 @@ from holoviews.operation import histogram
 from .testplot import TestMPLPlot, mpl_renderer
 
 
-class TestCurvePlot(TestMPLPlot):
+class TestHistogramPlot(TestMPLPlot):
 
     def test_histogram_datetime64_plot(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
@@ -17,7 +17,8 @@ class TestCurvePlot(TestMPLPlot):
         artist = plot.handles['artist']
         ax = plot.handles['axis']
         self.assertEqual(ax.get_xlim(), (736330.0, 736333.0))
-        self.assertEqual([p.get_x() for p in artist.patches], [736330.0, 736330.75, 736331.5, 736332.25])
+        bounds = [17166.999999999967, 17167.749999999956, 17168.499999999967, 17169.249999999967]
+        self.assertEqual([p.get_x() for p in artist.patches], bounds)
 
     def test_histogram_padding_square(self):
         points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.2)
