@@ -7,10 +7,10 @@ from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
 from ...core import Dataset, OrderedDict
-from ...core.util import max_range, basestring, dimension_sanitizer, isfinite
+from ...core.util import max_range, basestring, dimension_sanitizer, isfinite, range_pad
 from ...element import Bars
 from ...operation import interpolate_curve
-from ..util import compute_sizes, get_min_distance, dim_axis_label
+from ..util import compute_sizes, get_min_distance, dim_axis_label, get_axis_padding
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .util import expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
@@ -714,7 +714,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 ranges[kd.name]['combined'] = overlay.range(kd)
 
         stacked = element.get_dimension(self.stack_index)
-        extents = super(BarPlot, self).get_extents(element, ranges)
+        extents = super(BarPlot, self).get_extents(element, ranges, data)
         xdim = element.kdims[0]
         ydim = element.vdims[0]
 
@@ -726,6 +726,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
             y0, y1 = max_range([pos_range, neg_range])
         else:
             y0, y1 = ranges[ydim.name]['combined']
+
+        padding = 0 if self.overlaid else self.padding
+        _, ypad, _ = get_axis_padding(padding)
+        y0, y1 = range_pad(y0, y1, ypad, self.logy)
 
         # Set y-baseline
         if y0 < 0:

@@ -79,3 +79,46 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(glyph.bottom, 0.001)
         self.assertEqual(y_range.start, 0.001)
         self.assertEqual(y_range.end, 3.)
+
+    def test_bars_padding_square(self):
+        points = Bars([(1, 2), (2, -1), (3, 3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, -1.4)
+        self.assertEqual(y_range.end, 3.4)
+
+    def test_bars_padding_square_positive(self):
+        points = Bars([(1, 2), (2, 1), (3, 3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_bars_padding_square_positive(self):
+        points = Bars([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
+        plot = bokeh_renderer.get_plot(points)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, -3.2)
+        self.assertEqual(y_range.end, 0)
+
+    def test_bars_padding_nonsquare(self):
+        bars = Bars([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, width=600)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_bars_padding_logx(self):
+        bars = Bars([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3.2)
+
+    def test_bars_padding_logy(self):
+        bars = Bars([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, logy=True)
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0.033483695221017122)
+        self.assertEqual(y_range.end, 3.3483695221017129)
+
