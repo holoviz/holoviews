@@ -1005,7 +1005,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                 if vs.dtype.kind == 'M' and i < len(dims):
                     dt_format = Dimension.type_formatters[np.datetime64]
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))
-                    vs = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in vs])
+                    vs = date2num(vs)
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 
