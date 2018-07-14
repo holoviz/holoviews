@@ -1690,6 +1690,8 @@ def bound_range(vals, density, time_unit='us'):
     assumed to be evenly spaced. Density is rounded to machine precision
     using significant digits reported by sys.float_info.dig.
     """
+    if not len(vals):
+        return(np.nan, np.nan, density, False)
     low, high = vals.min(), vals.max()
     invert = False
     if len(vals) > 1 and vals[0] > vals[1]:
