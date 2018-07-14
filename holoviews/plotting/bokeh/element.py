@@ -495,6 +495,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or xfactors is not None)
         yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
+
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
@@ -558,6 +559,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if (isinstance(ranges[i], FactorRange) and
                 (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
+
+
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        return self.width/self.height
+
 
     def _get_factors(self, element):
         """

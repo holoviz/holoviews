@@ -236,6 +236,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.set_major_formatter(wrap_formatter(formatter))
 
 
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        if isinstance(self.aspect, (int, float)):
+            return self.aspect
+        elif self.aspect == 'square':
+            return 1
+        elif self.aspect == 'equal':
+            return xspan/yspan
+        return 1
+
+
     def _set_aspect(self, axes, aspect):
         """
         Set the aspect on the axes based on the aspect setting.

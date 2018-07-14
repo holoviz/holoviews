@@ -770,6 +770,12 @@ class GenericElementPlot(DimensionedPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
+    def get_aspect(self, xspan, yspan):
+        """
+        Should define the aspect ratio of the plot.
+        """
+
+
     def get_extents(self, view, ranges, data=True):
         """
         Gets the extents for the axes from the current View. The globally
@@ -820,19 +826,25 @@ class GenericElementPlot(DimensionedPlot):
 
             padding = 0 if self.overlaid else self.padding
             xpad, ypad, zpad = get_axis_padding(padding)
+            if not self.overlaid:
+                aspect = self.get_aspect(x1-x0, y0-y1)
+                if aspect > 1:
+                    xpad = xpad/aspect
+                else:
+                    ypad = ypad*aspect
 
             if data:
-                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad)
+                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
             else:
                 x0, x1 = xhrange
             if ndims > 1:
                 if data:
-                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad)
+                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
                 else:
                     y0, y1 = yhrange
             if self.projection == '3d':
                 if data:
-                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad)
+                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
                 else:
                     z0, z1 = zhrange
                 range_extents = (x0, y0, z0, x1, y1, z1)
@@ -1168,9 +1180,14 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = max_extents
 
         padding = 0 if self.overlaid else self.padding
+        aspect = self.get_aspect(x1-x0, y0-y1)
         xpad, ypad, zpad = get_axis_padding(padding)
-        x0, x1 = util.range_pad(x0, x1, xpad)
-        y0, y1 = util.range_pad(y0, y1, ypad)
+        if aspect > 1:
+            xpad = xpad/aspect
+        else:
+            ypad = ypad*aspect
+        x0, x1 = util.range_pad(x0, x1, xpad, self.logx)
+        y0, y1 = util.range_pad(y0, y1, ypad, self.logy)
         if len(max_extents) == 6:
             z0, z1 = util.range_pad(z0, z1, zpad)
             padded = (x0, y0, z0, x1, y1, z1)

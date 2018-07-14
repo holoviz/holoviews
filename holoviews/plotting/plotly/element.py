@@ -149,6 +149,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return {}
 
 
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        return self.width/self.height
+
+
     def init_layout(self, key, element, ranges, xdim=None, ydim=None):
         l, b, r, t = self.get_extents(element, ranges)
 
@@ -180,7 +187,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             options['yaxis'] = yaxis
 
         l, b, r, t = self.margins
-        margin = go.Margin(l=l, r=r,b=b, t=t, pad=4)
+        margin = go.Margin(l=l, r=r, b=b, t=t, pad=4)
         return go.Layout(width=self.width, height=self.height,
                          title=self._format_title(key, separator=' '),
                          plot_bgcolor=self.bgcolor, margin=margin,

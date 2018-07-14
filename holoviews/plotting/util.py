@@ -325,7 +325,7 @@ def get_axis_padding(padding):
                              'to all axes or a length two or three tuple '
                              'corresponding to the x-, y- and optionally z-axis')
     else:
-        xpad, ypad, zpad = padding
+        xpad, ypad, zpad = (padding,)*3
     return (xpad, ypad, zpad)
 
 

@@ -850,23 +850,30 @@ def max_range(ranges, combined=True):
         return (np.NaN, np.NaN)
 
 
-def range_pad(lower, upper, padding=0):
+def range_pad(lower, upper, padding=0, log=False):
     """
     Pads the range by a fraction of the interval
     """
     if is_number(lower) and is_number(upper) and padding != 0:
-        pad = (upper - lower)*padding
-        lower -= pad
-        upper += pad
+        if log:
+            log_min = np.log(lower) / np.log(10)
+            log_max = np.log(upper) / np.log(10)
+            span = (log_max-log_min)*(1+padding)
+            center = (log_min+log_max) / 2.0
+            lower, upper = [np.power(10, center-span / 2.0), np.power(10, center+span / 2.0)]
+        else:
+            span = (upper-lower)*(1+padding)
+            center = (lower+upper) / 2.0
+            lower, upper = [center-span / 2.0, center+span / 2.0]
     return lower, upper
 
 
-def dimension_range(lower, upper, hard_range, soft_range, padding=0):
+def dimension_range(lower, upper, hard_range, soft_range, padding=0, log=False):
     """
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = range_pad(lower, upper, padding)
+    lower, upper = range_pad(lower, upper, padding, log)
     lower, upper = max_range([(lower, upper), soft_range])
     dmin, dmax = hard_range
     lower = lower if dmin is None or not np.isfinite(dmin) else dmin
