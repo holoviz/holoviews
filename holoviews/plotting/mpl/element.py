@@ -765,7 +765,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
-                          'invert_zaxis', 'title_format', 'padding']
+                          'invert_zaxis', 'title_format', 'padding',
+                          'xlim', 'ylim', 'zlim']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

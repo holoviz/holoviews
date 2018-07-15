@@ -638,6 +638,15 @@ class GenericElementPlot(DimensionedPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
+    xlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       The x-range limits of the plot. Takes precedence over data and dimension ranges.""")
+
+    ylim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       The y-range limits of the plot. Takes precedence over data and dimension ranges.""")
+
+    zlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       The z-range limits of the plot. Takes precedence over data and dimension ranges.""")
+
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
@@ -889,7 +898,7 @@ class GenericElementPlot(DimensionedPlot):
             return extents
 
         if getattr(self, 'shared_axes', False) and self.subplot:
-            return util.max_extents([range_extents, extents], self.projection == '3d')
+            combined = util.max_extents([range_extents, extents], self.projection == '3d')
         else:
             max_extent = []
             for l1, l2 in zip(range_extents, extents):
@@ -897,8 +906,20 @@ class GenericElementPlot(DimensionedPlot):
                     max_extent.append(l2)
                 else:
                     max_extent.append(l1)
-            return tuple(max_extent)
+            combined = tuple(max_extent)
 
+        if self.projection == '3d':
+            x0, y0, z0, x1, y1, z1 = combined
+        else:
+            x0, y0, x1, y1 = combined
+
+        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if self.projection == '3d':
+            z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
+            
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
         if dimensions and xlabel is None:
@@ -1243,8 +1264,18 @@ class GenericOverlayPlot(GenericElementPlot):
         else:
             padded = (x0, y0, x1, y1)
 
-        return util.max_extents([padded, extent], zrange)
+        combined = util.max_extents([padded, extent], zrange)
+        if self.projection == '3d':
+            x0, y0, z0, x1, y1, z1 = combined
+        else:
+            x0, y0, x1, y1 = combined
 
+        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if self.projection == '3d':
+            z0, z1 = util.dimension_range(z0, z1, getattr(self, 'zlim', (None, None)), (None, None))
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
 
 
 class GenericCompositePlot(DimensionedPlot):
