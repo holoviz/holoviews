@@ -38,6 +38,8 @@ class SankeyPlot(GraphPlot):
         """
         A Chord plot is always drawn on a unit circle.
         """
+        if range_type == 'extents':
+            return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
         x0, x1 = ranges[xdim.name][range_type]

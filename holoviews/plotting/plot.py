@@ -875,7 +875,7 @@ class GenericElementPlot(DimensionedPlot):
         else:
             range_extents = (np.NaN,) * num
 
-        if self.apply_extents and range_type == 'combined':
+        if self.apply_extents and range_type in ('combined', 'extents'):
             norm_opts = self.lookup_options(view, 'norm').options
             if norm_opts.get('framewise', False) or self.dynamic:
                 extents = view.extents
@@ -884,6 +884,9 @@ class GenericElementPlot(DimensionedPlot):
                 extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
+
+        if range_type == 'extents':
+            return extents
 
         if getattr(self, 'shared_axes', False) and self.subplot:
             return util.max_extents([range_extents, extents], self.projection == '3d')
@@ -1163,7 +1166,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
     def get_extents(self, overlay, ranges, range_type='combined'):
-        extents, hard_extents, soft_extents = [], [], []
+        extents, data_extents, hard_extents, soft_extents = [], [], [], []
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
@@ -1188,28 +1191,32 @@ class GenericOverlayPlot(GenericElementPlot):
                     sp_ranges = ranges
                 else:
                     sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-                extents.append(subplot.get_extents(layer, sp_ranges, range_type='data'))
+                extents.append(subplot.get_extents(layer, sp_ranges, range_type='extents'))
+                data_extents.append(subplot.get_extents(layer, sp_ranges, range_type='data'))
                 soft_extents.append(subplot.get_extents(layer, sp_ranges, range_type='soft'))
                 hard_extents.append(subplot.get_extents(layer, sp_ranges, range_type='hard'))
 
         zrange = self.projection == '3d'
-        max_extents = util.max_extents(extents, zrange)
+        extent = util.max_extents(extents, zrange)
+        data_extent = util.max_extents(data_extents, zrange)
         soft_extent = util.max_extents(soft_extents, zrange)
         hard_extent = util.max_extents(hard_extents, zrange)
 
+        if range_type == 'extent':
+            return extent
         if range_type == 'data':
-            return max_extents
+            return data_extent
         elif range_type == 'soft':
             return soft_extent
         elif range_type == 'hard':
             return hard_extent
 
-        if len(max_extents) == 6:
-            x0, y0, z0, x1, y1, z1 = max_extents
+        if len(data_extent) == 6:
+            x0, y0, z0, x1, y1, z1 = data_extent
             sx0, sy0, sz0, sx1, sy1, sz1 = soft_extent
             hx0, hy0, hz0, hx1, hy1, hz1 = hard_extent
         else:
-            x0, y0, x1, y1 = max_extents
+            x0, y0, x1, y1 = data_extent
             sx0, sy0, sx1, sy1 = soft_extent
             hx0, hy0, hx1, hy1 = hard_extent
 
@@ -1225,17 +1232,18 @@ class GenericOverlayPlot(GenericElementPlot):
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
         if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
         if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
-        if len(max_extents) == 6 and util.is_number(z0) and z0 == z1:
+        if len(data_extent) == 6 and util.is_number(z0) and z0 == z1:
             z0, z1 = z0-zspan, z1+zspan
 
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
-        if len(max_extents) == 6:
+        if len(data_extent) == 6:
             z0, z1 = util.dimension_range(z0, z1, (hz0, hz1), (sz0, sz1), zpad, self.logz)
             padded = (x0, y0, z0, x1, y1, z1)
         else:
             padded = (x0, y0, x1, y1)
-        return padded
+
+        return util.max_extents([padded, extent], zrange)
 
 
 

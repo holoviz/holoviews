@@ -137,6 +137,8 @@ class SankeyPlot(GraphPlot):
         data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
     def get_extents(self, element, ranges, range_type='combined'):
+        if range_type == 'extents':
+            return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
         x0, x1 = ranges[xdim.name][range_type]

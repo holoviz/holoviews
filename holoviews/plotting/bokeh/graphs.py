@@ -319,7 +319,7 @@ class ChordPlot(GraphPlot):
         A Chord plot is always drawn on a unit circle.
         """
         xdim, ydim = element.nodes.kdims[:2]
-        if range_type not in ('combined', 'data'):
+        if range_type not in ('combined', 'data', 'extents'):
             return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
         rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
