@@ -150,6 +150,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
+    padding = param.Number(default=0.1, doc="""
+        The amount of padding as a fraction of the total Grid size""")
+
     # Parameters inherited from OverlayPlot that are not part of the
     # GridPlot interface. Some of these may be enabled in future in
     # conjunction with GridPlot.
