@@ -279,11 +279,11 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
             super(RadialHeatMapPlot, self)._postprocess_hover(renderer, source)
 
 
-    def get_extents(self, view, ranges, data=True):
+    def get_extents(self, view, ranges, range_type='combined'):
         """Supply custom, static extents because radial heatmaps always have
         the same boundaries.
         """
-        if not data:
+        if range_type not in ('data', 'combined'):
             return (None,)*4
         lower = -self.radius_outer
         upper = 2 * self.max_radius + self.radius_outer

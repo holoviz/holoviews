@@ -79,13 +79,12 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    def get_extents(self, element, ranges, data=True):
+    def get_extents(self, element, ranges, range_type='combined'):
         """
         Extents are set to '' and None because x-axis is categorical and
         y-axis auto-ranges.
         """
-        key = 'combined' if data else 'hard'
-        yrange = ranges.get(element.vdims[0].name)[key]
+        yrange = ranges.get(element.vdims[0].name, {}).get(range_type, (np.nan, np.nan))
         return ('', yrange[0], '', yrange[1])
 
     def _get_axis_labels(self, *args, **kwargs):

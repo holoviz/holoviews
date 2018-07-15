@@ -36,7 +36,7 @@ class RasterPlot(ColorbarPlot):
 
 class HeatMapPlot(RasterPlot):
 
-    def get_extents(self, element, ranges, data=True):
+    def get_extents(self, element, ranges, range_type='combined'):
         return (np.NaN,)*4
 
     def get_data(self, element, ranges):

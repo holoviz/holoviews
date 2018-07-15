@@ -12,7 +12,7 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(x_range[0], 0.8)
         self.assertEqual(x_range[1], 3.2)
         self.assertEqual(y_range[0], 0)
-        self.assertEqual(y_range[1], 3.2999999999999998)
+        self.assertEqual(y_range[1], 3.2)
 
     def test_area_with_lower_vdim(self):
         area = Area([(1, 0.5, 1), (2, 1.5, 2), (3, 2.5, 3)], vdims=['y', 'y2']).options(padding=0.2)
@@ -66,7 +66,7 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(x_range[0], 0.9)
         self.assertEqual(x_range[1], 3.1)
         self.assertEqual(y_range[0], 0)
-        self.assertEqual(y_range[1], 3.2999999999999998)
+        self.assertEqual(y_range[1], 3.2)
 
     def test_area_padding_logx(self):
         area = Area([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
@@ -75,7 +75,7 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(x_range[0], 0.89595845984076228)
         self.assertEqual(x_range[1], 3.3483695221017129)
         self.assertEqual(y_range[0], 0)
-        self.assertEqual(y_range[1], 3.3)
+        self.assertEqual(y_range[1], 3.2)
     
     def test_area_padding_logy(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).options(padding=0.2, logy=True)
@@ -84,4 +84,4 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(x_range[0], 0.8)
         self.assertEqual(x_range[1], 3.2)
         self.assertEqual(y_range[0], 1)
-        self.assertEqual(y_range[1], 3.2999999999999998)
+        self.assertEqual(y_range[1], 3.3483695221017129)

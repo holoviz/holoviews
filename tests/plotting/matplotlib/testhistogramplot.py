@@ -17,7 +17,7 @@ class TestHistogramPlot(TestMPLPlot):
         artist = plot.handles['artist']
         ax = plot.handles['axis']
         self.assertEqual(ax.get_xlim(), (736330.0, 736333.0))
-        bounds = [17166.999999999967, 17167.749999999956, 17168.499999999967, 17169.249999999967]
+        bounds = [736330.0, 736330.75, 736331.5, 736332.25]
         self.assertEqual([p.get_x() for p in artist.patches], bounds)
 
     def test_histogram_padding_square(self):

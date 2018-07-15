@@ -221,5 +221,5 @@ class BoxWhiskerPlot(ElementPlot):
         self.handles['fig'] = fig
         return fig
 
-    def get_extents(self, element, ranges, data=True):
+    def get_extents(self, element, ranges, range_type='combined'):
         return (None, None, None, None)

@@ -341,14 +341,13 @@ class HistogramPlot(ElementPlot):
             self._get_hover_data(data, element)
         return (data, mapping, style)
 
-    def get_extents(self, element, ranges, data=True):
-        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges, data)
-        ylow, yhigh = element.get_dimension(1).range
-        if not data:
-            return (x0, ylow, x1, yhigh)
-        y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
-        y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
-        return (x0, y0, x1, y1)
+    def get_extents(self, element, ranges, range_type='combined'):
+        ydim = element.get_dimension(1)
+        s0, s1 = ranges[ydim.name]['soft']
+        s0 = min(s0, 0) if isfinite(s0) else 0
+        s0 = max(s1, 0) if isfinite(s1) else 0
+        ranges[ydim.name]['soft'] = (s0, s1)
+        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
 
 
 
@@ -531,31 +530,20 @@ class AreaPlot(SpreadPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    def get_extents(self, element, ranges, data=True):
-        vdims = element.vdims
+    def get_extents(self, element, ranges, range_type='combined'):
+        vdims = element.vdims[:2]
         vdim = vdims[0].name
-        new_range = {}
         if len(vdims) > 1:
+            new_range = {}
             for r in ranges[vdim]:
                 new_range[r] = max_range([ranges[vd.name][r] for vd in vdims])
+            ranges[vdim] = new_range
         else:
-            vranges = ranges[vdim]
-            for r in vranges:
-                vrange = vranges[r]
-                if r != 'hard':
-                    vrange = (np.nanmin([0, vrange[0]]), vrange[1])
-                new_range[r] = vrange
-        ranges[vdim] = new_range
-        (x0, y0, x1, y1) = super(AreaPlot, self).get_extents(element, ranges, data)
-        if not data or len(vdims) > 1:
-            return x0, y0, x1, y1
-
-        b, t = new_range['combined']
-        if b < 0:
-            y1 = np.nanmax([y1, 0])
-        else:
-            y0 = np.nanmin([0, b])
-        return (x0, y0, x1, y1)
+            s0, s1 = ranges[vdim]['soft']
+            s0 = min(s0, 0) if isfinite(s0) else 0
+            s1 = max(s1, 0) if isfinite(s1) else 0
+            ranges[vdim]['soft'] = (s0, s1)
+        return super(AreaPlot, self).get_extents(element, ranges, range_type)
 
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y')
@@ -595,11 +583,15 @@ class SpikesPlot(ColorbarPlot):
 
     _plot_methods = dict(single='segment')
 
-    def get_extents(self, element, ranges, data=True):
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, data)
-        if not data:
-            return l, b, r, t
-        if len(element.dimensions()) == 1:
+    def get_extents(self, element, ranges, range_type='combined'):
+        if len(element.dimensions()) > 1:
+            ydim = element.get_dimension(1)
+            s0, s1 = ranges[ydim.name]['soft']
+            s0 = min(s0, 0) if isfinite(s0) else 0
+            s0 = max(s1, 0) if isfinite(s1) else 0
+            ranges[ydim.name]['soft'] = (s0, s1)
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
+        if len(element.dimensions()) == 1 and range_type != 'hard':
             if self.batched:
                 bs, ts = [], []
                 # Iterate over current NdOverlay and compute extents
@@ -611,13 +603,9 @@ class SpikesPlot(ColorbarPlot):
                     length = opts.get('spike_length', self.spike_length)
                     bs.append(pos)
                     ts.append(pos+length)
-                b = np.nanmin(bs)
-                t = np.nanmax(ts)
+                b, t = (np.nanmin(bs), np.nanmax(ts))
             else:
                 b, t = self.position, self.position+self.spike_length
-        else:
-            b = np.nanmin([0, b])
-            t = np.nanmax([0, t])
         return l, b, r, t
 
     def get_data(self, element, ranges, style):
@@ -708,7 +696,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
     # Declare that y-range should auto-range if not bounded
     _y_range_type = Range1d
 
-    def get_extents(self, element, ranges, data=True):
+    def get_extents(self, element, ranges, range_type='combined'):
         """
         Make adjustments to plot extents by computing
         stacked bar heights, adjusting the bar baseline
@@ -722,7 +710,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 ranges[kd.name]['combined'] = overlay.range(kd)
 
         stacked = element.get_dimension(self.stack_index)
-        extents = super(BarPlot, self).get_extents(element, ranges, data)
+        extents = super(BarPlot, self).get_extents(element, ranges, range_type)
         xdim = element.kdims[0]
         ydim = element.vdims[0]
 

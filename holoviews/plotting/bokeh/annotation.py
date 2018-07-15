@@ -61,7 +61,7 @@ class TextPlot(ElementPlot):
                 data[k].extend(eld)
         return data, elmapping, style
 
-    def get_extents(self, element, ranges=None, data=True):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 
@@ -139,7 +139,7 @@ class LineAnnotationPlot(ElementPlot):
         plot.renderers.append(box)
         return None, box
 
-    def get_extents(self, element, ranges=None, data=True):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 
@@ -241,7 +241,7 @@ class ArrowPlot(CompositeElementPlot):
         plot.renderers.append(glyph)
         return None, glyph
 
-    def get_extents(self, element, ranges=None, data=True):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 
