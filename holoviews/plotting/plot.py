@@ -616,7 +616,23 @@ class GenericElementPlot(DimensionedPlot):
         Whether the y-axis of the plot will be a log axis.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
-        Amount of padding to apply to data ranges.""")
+        Fraction by which to increase auto-ranged extents to make
+        datapoints more visible around borders.
+
+        To compute padding, the axis whose screen size is largest is chosen,
+        and the range of that axis is increased by the specified fraction.
+        Other axes are then padded ensuring that the amount of screen space
+        devoted to padding is equal for all axes. If specified as a tuple,
+        the int or float values in the tuple will be used for padding in
+        each axis, in order (x,y or x,y,z).
+
+        For example, for padding=0.2 on a 800x800-pixel plot, an x-axis
+        with the range [0,10] will be padded by 20% to be [-1,11], while
+        a y-axis with a range [0,1000] will be padded to be [-100,1100],
+        which should make the padding be approximately the same number of
+        pixels. But if the same plot is changed to have a height of only
+        200, the y-range will then be [-400,1400] so that the y-axis
+        padding will match that of the x-axis.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
@@ -919,7 +935,7 @@ class GenericElementPlot(DimensionedPlot):
             z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
             return (x0, y0, z0, x1, y1, z1)
         return (x0, y0, x1, y1)
-            
+
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
         if dimensions and xlabel is None:
