@@ -178,17 +178,17 @@ class DimensionedPlot(Plot):
     """
 
     fontsize = param.Parameter(default=None, allow_None=True,  doc="""
-       Specifies various fontsizes of the displayed text.
+       Specifies various font sizes of the displayed text.
 
        Finer control is available by supplying a dictionary where any
-       unmentioned keys reverts to the default sizes, e.g:
+       unmentioned keys revert to the default sizes, e.g:
 
           {'ticks':20, 'title':15,
            'ylabel':5, 'xlabel':5, 'zlabel':5,
            'legend':8, 'legend_title':13}
 
-       You can set the fontsize of 'zlabel', 'ylabel' and 'xlabel' together
-       using the 'labels' key.""")
+       You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
+       together using the 'labels' key.""")
 
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'labels', 'ticks',
@@ -211,7 +211,7 @@ class DimensionedPlot(Plot):
         Allows supplying a custom projection to transform the axis
         coordinates during display. Example projections include '3d'
         and 'polar' projections supported by some backends. Depending
-        on the backend custom projection objects may be supplied.""")
+        on the backend custom, projection objects may be supplied.""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
@@ -342,7 +342,7 @@ class DimensionedPlot(Plot):
 
     def compute_ranges(self, obj, key, ranges):
         """
-        Given an object, a specific key and the normalization options
+        Given an object, a specific key, and the normalization options,
         this method will find the specified normalization options on
         the appropriate OptionTree, group the elements according to
         the selected normalization option (i.e. either per frame or
@@ -387,7 +387,7 @@ class DimensionedPlot(Plot):
     def _get_norm_opts(self, obj):
         """
         Gets the normalization options for a LabelledData object by
-        traversing the object for to find elements and their ids.
+        traversing the object to find elements and their ids.
         The id is then used to select the appropriate OptionsTree,
         accumulating the normalization options into a dictionary.
         Returns a dictionary of normalization options for each
@@ -470,7 +470,7 @@ class DimensionedPlot(Plot):
         """
         def lookup(x):
             """
-            Looks up options for object, including plot defaults,
+            Looks up options for object, including plot defaults.
             keyfn determines returned key otherwise None key is used.
             """
             options = cls.lookup_options(x, opt_type)
@@ -632,7 +632,7 @@ class GenericElementPlot(DimensionedPlot):
         which should make the padding be approximately the same number of
         pixels. But if the same plot is changed to have a height of only
         200, the y-range will then be [-400,1400] so that the y-axis
-        padding will match that of the x-axis.""")
+        padding will still match that of the x-axis.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
@@ -643,25 +643,28 @@ class GenericElementPlot(DimensionedPlot):
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None, True, False], doc="""
-        Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel. Valid options are 'top',
-        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+        Whether and where to display the xaxis.
+        The "bare" options allow suppressing all axis labels, including ticks and xlabel.
+        Valid options are 'top', 'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None, True, False], doc="""
-        Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel. Valid options are 'left',
-        'right', 'bare' 'left-bare' and 'right-bare'.""")
+        Whether and where to display the yaxis.
+        The "bare" options allow suppressing all axis labels, including ticks and ylabel.
+        Valid options are 'left', 'right', 'bare', 'left-bare' and 'right-bare'.""")
 
     xlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       The x-range limits of the plot. Takes precedence over data and dimension ranges.""")
+       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
 
     ylim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       The y-range limits of the plot. Takes precedence over data and dimension ranges.""")
+       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
 
     zlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       The z-range limits of the plot. Takes precedence over data and dimension ranges.""")
+       User-specified z-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
 
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -671,12 +674,12 @@ class GenericElementPlot(DimensionedPlot):
 
     xticks = param.Parameter(default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None default
+        tick locations, or bokeh Ticker object. If set to None default
         bokeh ticking behavior is applied.""")
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None
+        tick locations, or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
 
     # A dictionary mapping of the plot methods used to draw the
