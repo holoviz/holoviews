@@ -16,7 +16,7 @@ import param
 from ...core import OrderedDict, Dimension, Store
 from ...core.util import (
     match_spec, unique_iterator, basestring, max_range, isfinite,
-    datetime_types, dt_to_int
+    datetime_types, dt_to_int, dt64_to_dt
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -334,7 +334,8 @@ class HistogramPlot(ChartPlot):
         ylim = hist.range(1)
         isdatetime = False
         if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
-            edges = np.array([date2num(e) for e in edges])
+            edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
+            edges = date2num(edges)
             xlim = tuple(dt_to_int(v, 'D') for v in xlim)
             isdatetime = True
         widths = np.diff(edges)
