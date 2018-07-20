@@ -765,7 +765,7 @@ class QuadMesh(Dataset, Element2D):
         ys = self.interface.coords(self, 1, edges=True)
         if xs.ndim == 1:
             xs, ys = (np.tile(xs[:, np.newaxis], len(ys)).T,
-                      np.tile(ys[:, np.newaxis], len(xs)))
+                      np.tile(ys[::-1, np.newaxis], len(xs)))
         vertices = (xs.T.flatten(), ys.T.flatten())
 
         # Generate triangle simplexes
