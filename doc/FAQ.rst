@@ -110,7 +110,7 @@ shows an example of an ``NdOverlay`` in action.
 **Q: I wish to use special characters in my title, but then attribute
 access becomes confusing.**
 
-**A:** The title default of ``"{label} {group}"`` is simply a default
+**A:** The title format ``"{label} {group} {dimensions}"`` is simply a default
 that you can override. If you want to use a lot of special characters
 in your titles, you can pick simple ``group`` and ``label`` strings
 that let you refer to the object easily in the code, and then you can
