@@ -443,7 +443,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims])
+        return np.product([len(dataset.data[d.name]) for d in dataset.kdims],dtype=np.intp)
 
     @classmethod
     def dframe(cls, dataset, dimensions):
