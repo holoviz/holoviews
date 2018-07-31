@@ -50,7 +50,7 @@ class XArrayInterface(GridInterface):
         if gridded:
             return shape
         else:
-            return (np.product(shape), len(dataset.dimensions()))
+            return (np.product(shape,dtype=np.intp), len(dataset.dimensions()))
 
 
     @classmethod
