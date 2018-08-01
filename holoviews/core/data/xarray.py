@@ -50,7 +50,7 @@ class XArrayInterface(GridInterface):
         if gridded:
             return shape
         else:
-            return (np.product(shape,dtype=np.intp), len(dataset.dimensions()))
+            return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
 
 
     @classmethod
@@ -443,7 +443,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims],dtype=np.intp)
+        return np.product([len(dataset.data[d.name]) for d in dataset.kdims], dtype=np.intp)
 
     @classmethod
     def dframe(cls, dataset, dimensions):

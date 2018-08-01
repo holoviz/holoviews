@@ -280,7 +280,7 @@ class CubeInterface(GridInterface):
         """
         Returns the total number of samples in the dataset.
         """
-        return np.product([len(d.points) for d in dataset.data.coords(dim_coords=True)],dtype=np.intp)
+        return np.product([len(d.points) for d in dataset.data.coords(dim_coords=True)], dtype=np.intp)
 
 
     @classmethod
