@@ -754,7 +754,6 @@ class LabelledData(param.Parameterized):
         When unpickled, restore the saved style and plotting options
         to ViewableElement.options.
         """
-        self.param.self = self # TODO: super's setstate not called?
         d = param_aliases(d)
         try:
             load_options = Store.load_counter_offset is not None
@@ -781,7 +780,7 @@ class LabelledData(param.Parameterized):
         except:
             self.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)
-
+        self.param.self = self # TODO: super's setstate not called?
 
 
 class Dimensioned(LabelledData):
