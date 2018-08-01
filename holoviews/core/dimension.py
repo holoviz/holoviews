@@ -782,7 +782,7 @@ class LabelledData(param.Parameterized):
         self.__dict__.update(d)
         # TODO: super's setstate not called?
         if "param" not in self.__dict__:
-            self.param = type(self.param)(self.__class__, self=self)
+            self.__dict__["param"] = type(self.param)(self.__class__, self=self)
 
 
 class Dimensioned(LabelledData):
