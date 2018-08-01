@@ -169,11 +169,11 @@ if not config.style_17:
 
 options.Histogram = Options('style', line_color='black', fill_color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
-options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
-options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8)
+options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
+options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8, muted_alpha=0.2)
 
 options.Spikes = Options('style', color='black', cmap='fire')
-options.Area = Options('style', color=Cycle(), alpha=1, line_color='black')
+options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', muted_alpha=0.2)
 options.VectorField = Options('style', color='black')
 
 # Paths
@@ -278,3 +278,4 @@ options.Violin = Options(
     violin_fill_alpha=0.5, stats_color='black', box_color='black',
     median_color='white'
 )
+options.HexTiles = Options('style', muted_alpha=0.2)
