@@ -780,7 +780,9 @@ class LabelledData(param.Parameterized):
         except:
             self.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)
-        self.param.self = self # TODO: super's setstate not called?
+        # TODO: super's setstate not called?
+        if "param" not in self.__dict__:
+            self.param = type(self.param)(self.__class__, self=self)
 
 
 class Dimensioned(LabelledData):
