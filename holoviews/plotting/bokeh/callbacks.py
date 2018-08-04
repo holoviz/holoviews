@@ -811,6 +811,7 @@ class CDSCallback(Callback):
             stream.update(data=self.plot_handles['source'].data)
 
     def _process_msg(self, msg):
+        msg['data'] = dict(msg['data'])
         for col, values in msg['data'].items():
             if isinstance(values, dict):
                 items = sorted([(int(k), v) for k, v in values.items()])
