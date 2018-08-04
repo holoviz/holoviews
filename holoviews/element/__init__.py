@@ -90,6 +90,21 @@ class ElementConversion(DataConversion):
     def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Violin, kdims, vdims, groupby, **kwargs)
 
+    def labels(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Labels, kdims, vdims, groupby, **kwargs)
+
+    def chord(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Chord, kdims, vdims, groupby, **kwargs)
+
+    def hextiles(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(HexTiles, kdims, vdims, groupby, **kwargs)
+
+    def area(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Area, kdims, vdims, groupby, **kwargs)
+
+    def table(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Table, kdims, vdims, groupby, **kwargs)
+
 
 Dataset._conversion_interface = ElementConversion
 
