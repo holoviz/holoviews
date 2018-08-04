@@ -79,7 +79,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product(dataset.data.shape[:2])
+        return np.product(dataset.data.shape[:2], dtype=np.intp)
 
 
     @classmethod
