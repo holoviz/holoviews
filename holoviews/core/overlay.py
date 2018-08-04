@@ -11,7 +11,7 @@ from functools import reduce
 import numpy as np
 
 import param
-from .dimension import Dimension, Dimensioned, ViewableElement, DimensionedTree
+from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
 from .util import sanitize_identifier, unique_array
@@ -89,7 +89,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return vals if expanded else unique_array(vals)
 
 
-class Overlay(DimensionedTree, CompositeOverlay):
+class Overlay(ViewableTree, CompositeOverlay):
     """
     An Overlay consists of multiple Elements (potentially of
     heterogeneous type) presented one on top each other with a
@@ -106,8 +106,8 @@ class Overlay(DimensionedTree, CompositeOverlay):
         self.__dict__['_fixed'] = False
         self.__dict__['_group'] = group
         self.__dict__['_label'] = label
-        DimensionedTree.__init__(self, items,
-                                 **{k:v for k,v in params.items() if k not in view_params})
+        ViewableTree.__init__(self, items,
+                              **{k:v for k,v in params.items() if k not in view_params})
         ViewableElement.__init__(self, self.data,
                                  **{k:v for k,v in params.items() if k in view_params})
 

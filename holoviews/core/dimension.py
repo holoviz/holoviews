@@ -1313,15 +1313,15 @@ class ViewableElement(Dimensioned):
 
 
 
-class DimensionedTree(AttrTree, Dimensioned):
+class ViewableTree(AttrTree, Dimensioned):
     """
-    A DimensionedTree is an AttrTree with Viewable objects as its leaf
+    A ViewableTree is an AttrTree with Viewable objects as its leaf
     nodes. It combines the tree like data structure of a tree while
     extending it with the deep indexable properties of Dimensioned
     and LabelledData objects.
     """
 
-    group = param.String(default='DimensionedTree', constant=True)
+    group = param.String(default='ViewableTree', constant=True)
 
     _deep_indexable = True
 
@@ -1336,7 +1336,7 @@ class DimensionedTree(AttrTree, Dimensioned):
     @classmethod
     def from_values(cls, vals):
         """
-        Returns a DimensionedTree given a list (or tuple) of viewable
+        Returns a ViewableTree given a list (or tuple) of viewable
         elements or just a single viewable element.
         """
         return cls(items=cls._process_items(vals))
@@ -1346,7 +1346,7 @@ class DimensionedTree(AttrTree, Dimensioned):
     def _process_items(cls, vals):
         """
         Processes a list of Labelled types unpacking any objects of
-        the same type (e.g. a DimensionedTree) and finding unique paths for
+        the same type (e.g. a ViewableTree) and finding unique paths for
         all the items in the list.
         """
         if type(vals) is cls:
@@ -1385,7 +1385,7 @@ class DimensionedTree(AttrTree, Dimensioned):
     @classmethod
     def _unpack_paths(cls, objs, items, counts):
         """
-        Recursively unpacks lists and DimensionedTree-like objects, accumulating
+        Recursively unpacks lists and ViewableTree-like objects, accumulating
         into the supplied list of items.
         """
         if type(objs) is cls:
@@ -1417,7 +1417,7 @@ class DimensionedTree(AttrTree, Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else unique_array(vals)
         else:
-            return super(DimensionedTree, self).dimension_values(dimension,
+            return super(ViewableTree, self).dimension_values(dimension,
                                                                  expanded, flat)
 
 

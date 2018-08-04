@@ -8,7 +8,7 @@ to act as supplementary elements.
 import param
 import numpy as np
 
-from .dimension import Dimension, Dimensioned, ViewableElement, DimensionedTree
+from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from . import traversal
 
@@ -348,12 +348,12 @@ class NdLayout(UniformNdMapping):
 class Warning(param.Parameterized): pass
 collate_deprecation = Warning(name='Deprecation Warning')
 
-class Layout(DimensionedTree):
+class Layout(ViewableTree):
     """
-    A Layout is an DimensionedTree with ViewableElement objects as leaf
-    values. Unlike DimensionedTree, a Layout supports a rich display,
+    A Layout is an ViewableTree with ViewableElement objects as leaf
+    values. Unlike ViewableTree, a Layout supports a rich display,
     displaying leaf items in a grid style layout. In addition to the
-    usual DimensionedTree indexing, Layout supports indexing of items by
+    usual ViewableTree indexing, Layout supports indexing of items by
     their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
@@ -366,7 +366,7 @@ class Layout(DimensionedTree):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
-        super(DimensionedTree, self).__init__(items, identifier, parent, **kwargs)
+        super(ViewableTree, self).__init__(items, identifier, parent, **kwargs)
 
     @property
     def shape(self):
