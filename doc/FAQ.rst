@@ -4,6 +4,117 @@ FAQ
 Here is a list of questions we have either been asked by users or
 potential pitfalls we hope to help users avoid:
 
+**Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
+
+**A:** Pass an unpacked dictionary containing the kdims/vdims' names as
+keys and a tuple of the bounds as values into obj.redim.range().
+
+This constrains the bounds of x_col to (0, max(x_col)).
+
+.. code:: python
+
+  curve = hv.Curve(df, 'x_col', 'y_col')
+  curve = curve.redim.range(x_col=(0, None), z_col=(None, 10))
+
+If your column names have spaces, you may predefine a dictionary
+and unpack it in obj.redim.range(). This same method is applicable to
+adjust the range of a color bar.
+
+.. code:: python
+
+  bounds = {'x col': (0, None), 'z col': (None, 10)}
+  curve = hv.Curve(df, 'x col', ['y col', 'z col']).options(color_index='z col')
+  curve = curve.redim.range(**bounds)
+
+**Q: How do I export a figure?**
+
+**A:** Create a renderer object by passing a backend (matplotlib / bokeh)
+and pass the object and name of file without any suffix into the .save method.
+
+.. code:: python
+
+  backend = 'bokeh'
+  renderer = hv.renderer(backend)
+  renderer.save(obj, 'name_of_file')
+
+Just note that if have used Jupyter magic (%%opts) to customize your plot
+and you try to export it, the customizations will not be retained in the export.
+
+.. code:: python
+
+  %%opts Curve [width=1000]
+  curve = hv.Curve([1, 2, 3])
+  hv.renderer('bokeh').save(curve, 'example_curve')  # width will not be saved
+
+You'll have to pass the keyword arguments into .options().
+
+.. code:: python
+
+  curve = hv.Curve([1, 2, 3]).options(width=1000)
+  hv.renderer('bokeh').save(curve, 'example_curve')
+
+**Q: How do I provide axes labels?**
+
+**A:** Pass a tuple containing the column name and label.
+
+This will relabel 'x_col' to 'X Label'
+.. code:: python
+  curve = hv.Curve(df, ('x_col', 'X Label'), 'y_col')
+
+You may also label after the fact by passing an unpacked dictionary
+to .redim.label()
+.. code:: python
+  curve = hv.Curve(df, 'x_col', 'y_col')
+  curve = curve.redim.label(x_col='X Label', **{'y_col': 'Label for Y'})
+
+**Q: How can I access all the options that aren't exposed in HoloViews,
+but are available in the backend?**
+
+**A:** There are two approaches you can take.
+
+The first is converting HoloViews objects as bokeh/matplotlib figures,
+and then continuing to work on those figures natively in the selected backend.
+
+.. code:: python
+  backend = 'matplotlib'
+  hv_obj = hv.Curve(df, 'x_col', 'y_col')
+  fig = hv.renderer(backend).get_plot(hv_obj).state
+  # this is just a demonstration; you can directly relabel in HoloViews
+  fig.axes[0].set_xlabel('X Label')
+
+The second is through finalize_hooks (bokeh) / final_hooks (matplotlib)
+which helps retain a HoloViews object.
+
+.. code:: python
+   def relabel(plot, element):
+       # this is for demonstration purposes
+       # use the .redim.label() method instead!
+       fig = plot.state
+       fig.axes[0].set_xlabel('X Label')
+
+  backend = 'matplotlib'
+  hv_obj = hv.Curve(df, 'x_col', 'y_col')
+  hv_obj = hv_obj.options(final_hooks=[relabel])
+
+**Q: The default figure size is so tiny! How do I enlarge it?**
+
+**A:** Depending on the selected backend...
+
+.. code:: python
+    # for matplotlib:
+    hv_obj = hv_obj.options(fig_size=500)
+
+    # for bokeh:
+    hv_obj = hv_obj.options(width=1000, height=500)
+
+**Q: How do I plot data without storing it first as a pandas dataframe?**
+
+**A:** Add an extra level of parentheses like this:
+
+.. code:: python
+  x = [1, 2, 3]
+  y = [4, 5, 6]
+  curve = hv.Curve((x, y))
 
 **Q: Can I use HoloViews without IPython/Jupyter?**
 
@@ -26,7 +137,7 @@ notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 
 **Q: How should I use HoloViews as a short qualified import?**
 
-We recommend importing HoloViews using ``import holoviews as hv``.
+**A:** We recommend importing HoloViews using ``import holoviews as hv``.
 
 **Q: My output looks different from what is shown on the website**
 
@@ -56,7 +167,6 @@ an explanation of how this information helps you index into your
 object, see our `Composing Elements <user_guides/Composing_Elements.html>`_
 user guide.
 
-
 **Q: Help! How do I find out the options for customizing the
 appearance of my object?**
 
@@ -68,7 +178,6 @@ The same information is also available in any Python session using
 ``hv.help(obj)``. For more information on customizing the display
 of an object, see our `Customizing Plots <user_guides/Customizing_Plots.html>`_
 user guide.
-
 
 **Q: Why don't you let me pass** *matplotlib_option* **as a style
 through to matplotlib?**
@@ -95,7 +204,7 @@ The parameters provided by HoloViews should normally cover the most
 common plotting options needed.  In case you need further control, you
 can always subclass any HoloViews object and modify any of its
 behavior, and the object will still normally interact with other
-HoloViews objects (e.g. in Layout or Overlay configurations).  
+HoloViews objects (e.g. in Layout or Overlay configurations).
 
 **Q: How do I get a legend on my overlay figure?**
 
@@ -156,7 +265,6 @@ server to be running alongside the viewable web page.  Such pages are
 more difficult to share by email or on web sites, but much more feasible
 for large datasets.
 
-  
 **Q: How do I create a Layout or Overlay object from an arbitrary list?**
 
 You can supply a list of ``elements`` directly to the ``Layout`` and
