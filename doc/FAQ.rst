@@ -46,10 +46,25 @@ and pass the object and name of file without any suffix into the .save method.
   renderer = hv.renderer(backend)
   renderer.save(obj, 'name_of_file')
 
-Just note that if you have used Jupyter magic (%%opts) to customize your plot
-and you try to export it within the same cell of the Jupyter magic,
-the customizations will not be retained in the export unless you put
-hv.renderer(backend).save() in the following cell.
+**Q: Why isn't my %%opts cell magic being applied to my HoloViews object?**
+
+**A:** %%opts is convenient because it tab-completes, but it can be confusing
+because of the "magic" way that it works. Specifically, if you use it at
+the top of a Jupyter notebook cell, the indicated options will be applied
+to the return value of that cell, if it's a HoloViews object. So, if you
+want a given object to get customized, you need to make sure it is
+returned from the cell, or the options won't ever be applied, and you
+should only access it after it has been returned, or the options won't
+yet have been applied. For instance, if you use renderer.save()
+to export an object and only then return that object as the output of
+a cell, the exported object won't have the options applied, because
+they don't get applied until the object is returned
+(during IPython's "display hooks" processing). So to make sure that
+options get applied, (a) return the object from a cell, and then (b)
+access it (e.g. for exporting) after the object has been returned.
+To avoid confusion, you may prefer to use .options() directly on the
+object to ensure that the options have been applied before exporting.
+Example code below:
 
 .. code:: python
   %%opts Curve [width=1000]
@@ -60,12 +75,15 @@ hv.renderer(backend).save() in the following cell.
   # next cell
   hv.renderer('bokeh').save(curve, 'example_curve')
 
-You'll have to pass the keyword arguments into .options().
+**Q: Why are my .options() settings not having any effect?**
 
-.. code:: python
-
-  curve = hv.Curve([1, 2, 3]).options(width=1000)
-  hv.renderer('bokeh').save(curve, 'example_curve')
+**A:** By default, .options() returns a copy of your object,
+rather than modifying your original object. In HoloViews,
+making a copy of the object is cheap, because only the metadata
+is copied, not the data, and returning a copy makes it simple
+to work with a variety of differently customized versions of
+any given object. You can pass clone=False to .options()
+if you wish to modify the object in place.
 
 **Q: How do I provide axes labels?**
 
