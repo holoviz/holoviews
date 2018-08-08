@@ -14,16 +14,25 @@ This constrains the bounds of x_col to (0, max(x_col)).
 .. code:: python
 
   curve = hv.Curve(df, 'x_col', 'y_col')
-  curve = curve.redim.range(x_col=(0, None), z_col=(None, 10))
+  curve = curve.redim.range(x_col=(0, None))
 
-If your column names have spaces, you may predefine a dictionary
-and unpack it in obj.redim.range(). This same method is applicable to
-adjust the range of a color bar.
+This same method is applicable to adjust the range of a color bar. Here
+z_col is the color bar value dimension and is bounded from 0 to 5.
+
+.. code:: python
+
+  curve = hv.Curve(df, 'x_col', ['y_col', 'z_col'])
+  curve = curve.redim.range(z_col=(0, 5))
+
+**Q: How do I provide keyword arguments for items with spaces?**
+
+**A:** If your column names have spaces, you may predefine a dictionary
+using curly braces and unpack it.
 
 .. code:: python
 
   bounds = {'x col': (0, None), 'z col': (None, 10)}
-  curve = hv.Curve(df, 'x col', ['y col', 'z col']).options(color_index='z col')
+  curve = hv.Curve(df, 'x col', ['y col', 'z col'])
   curve = curve.redim.range(**bounds)
 
 **Q: How do I export a figure?**
@@ -37,14 +46,19 @@ and pass the object and name of file without any suffix into the .save method.
   renderer = hv.renderer(backend)
   renderer.save(obj, 'name_of_file')
 
-Just note that if have used Jupyter magic (%%opts) to customize your plot
-and you try to export it, the customizations will not be retained in the export.
+Just note that if you have used Jupyter magic (%%opts) to customize your plot
+and you try to export it within the same cell of the Jupyter magic,
+the customizations will not be retained in the export unless you put
+hv.renderer(backend).save() in the following cell.
 
 .. code:: python
-
   %%opts Curve [width=1000]
+  # preceding cell
   curve = hv.Curve([1, 2, 3])
-  hv.renderer('bokeh').save(curve, 'example_curve')  # width will not be saved
+
+.. code:: python
+  # next cell
+  hv.renderer('bokeh').save(curve, 'example_curve')
 
 You'll have to pass the keyword arguments into .options().
 
@@ -55,17 +69,18 @@ You'll have to pass the keyword arguments into .options().
 
 **Q: How do I provide axes labels?**
 
-**A:** Pass a tuple containing the column name and label.
+**A:** One convenient way is to pass a tuple containing the column
+name and label.
 
 This will relabel 'x_col' to 'X Label'
 .. code:: python
   curve = hv.Curve(df, ('x_col', 'X Label'), 'y_col')
 
 You may also label after the fact by passing an unpacked dictionary
-to .redim.label()
+to .redim.label().
 .. code:: python
   curve = hv.Curve(df, 'x_col', 'y_col')
-  curve = curve.redim.label(x_col='X Label', **{'y_col': 'Label for Y'})
+  curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
 
 **Q: How can I access all the options that aren't exposed in HoloViews,
 but are available in the backend?**
@@ -107,14 +122,22 @@ which helps retain a HoloViews object.
     # for bokeh:
     hv_obj = hv_obj.options(width=1000, height=500)
 
-**Q: How do I plot data without storing it first as a pandas dataframe?**
+**Q: Why are the sizing options so different between the Matplotlib
+and Bokeh backends?"**
 
-**A:** Add an extra level of parentheses like this:
+**"A:** The way plot sizes are computed is handled in radically
+different ways by these backends, with Matplotlib building plots 'inside
+out (from plot components with their own sizes)' and Bokeh building
+them 'outside in' (fitting plot components into a given overall size).
 
-.. code:: python
-  x = [1, 2, 3]
-  y = [4, 5, 6]
-  curve = hv.Curve((x, y))
+**Q: How do I plot data without storing it first as a pandas/xarray objects?**
+
+ **A:** HoloViews typically uses pandas and xarray objects in its examples,
+ but it can accept standard Python data structures as well.
+ Whatever data type is used, it needs to be provided to the first
+ argument of the Element as a single object, so if you are using a
+ pair of lists, be sure to pass them as a tuple, not as two separate
+ arguments.
 
 **Q: Can I use HoloViews without IPython/Jupyter?**
 
