@@ -582,9 +582,7 @@ class Callable(param.Parameterized):
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
             message = ("Callable raised \"{e}\".\n"
                        "Invoked as {name}({argstr})")
-            self.warning(message.format(name=self.name,
-                                        ctype = type(self.callable).__name__,
-                                        argstr=argstr, e=repr(e)))
+            self.warning(message.format(name=self.name, argstr=argstr, e=repr(e)))
             raise
 
         if hashed_key is not None:
