@@ -957,7 +957,7 @@ class BoxEditCallback(CDSCallback):
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
-        box_tool = BoxEditTool(num_objects=stream.num_objects, renderers=[r1])
+        box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
         self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         super(BoxEditCallback, self).initialize()
