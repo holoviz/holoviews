@@ -850,27 +850,31 @@ def max_range(ranges, combined=True):
         return (np.NaN, np.NaN)
 
 
-def range_pad(lower, upper, padding=0, log=False):
+def range_pad(lower, upper, padding=None, log=False):
     """
     Pads the range by a fraction of the interval
     """
-    if is_number(lower) and is_number(upper) and padding != 0:
+    if padding is not None and not isinstance(padding, tuple):
+        padding = (padding/2., padding/2.)
+    if is_number(lower) and is_number(upper) and padding is not None:
         if not isinstance(lower, datetime_types) and log and lower > 0 and upper > 0:
             log_min = np.log(lower) / np.log(10)
             log_max = np.log(upper) / np.log(10)
-            span = (log_max-log_min)*(1+padding)
+            lspan = (log_max-log_min)*(1+padding[0])
+            uspan = (log_max-log_min)*(1+padding[1])
             center = (log_min+log_max) / 2.0
-            start, end = np.power(10, center-span / 2.0), np.power(10, center+span / 2.0)
+            start, end = np.power(10, center-lspan / 2.0), np.power(10, center+uspan / 2.0)
         else:
             span = (upper-lower)
-            pad = span*(padding/2.)
-            start, end = lower-pad, upper+pad
+            lpad = span*(padding[0])
+            upad = span*(padding[1])
+            start, end = lower-lpad, upper+upad
     else:
         start, end = lower, upper
     return start, end
 
 
-def dimension_range(lower, upper, hard_range, soft_range, padding=0, log=False):
+def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=False):
     """
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
@@ -1712,8 +1716,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     Returns a boolean indicating whether the sampling is regular.
     """
     diffs = np.diff(values)
-    vals = np.unique(diffs)
-    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > abs(diffs.min()*rtol))
+    return abs(diffs.min()-diffs.max()) < abs(diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):
