@@ -855,7 +855,7 @@ def range_pad(lower, upper, padding=None, log=False):
     Pads the range by a fraction of the interval
     """
     if padding is not None and not isinstance(padding, tuple):
-        padding = (padding/2., padding/2.)
+        padding = (padding, padding)
     if is_number(lower) and is_number(upper) and padding is not None:
         if not isinstance(lower, datetime_types) and log and lower > 0 and upper > 0:
             log_min = np.log(lower) / np.log(10)

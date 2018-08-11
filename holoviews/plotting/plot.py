@@ -619,11 +619,12 @@ class GenericElementPlot(DimensionedPlot):
         Fraction by which to increase auto-ranged extents to make
         datapoints more visible around borders.
 
-        To compute padding, the axis whose screen size is largest is chosen,
-        and the range of that axis is increased by the specified fraction.
-        Other axes are then padded ensuring that the amount of screen space
-        devoted to padding is equal for all axes. If specified as a tuple,
-        the int or float values in the tuple will be used for padding in
+        To compute padding, the axis whose screen size is largest is
+        chosen, and the range of that axis is increased by the
+        specified fraction along each axis.  Other axes are then
+        padded ensuring that the amount of screen space devoted to
+        padding is equal for all axes. If specified as a tuple, the
+        int or float values in the tuple will be used for padding in
         each axis, in order (x,y or x,y,z).
 
         For example, for padding=0.2 on a 800x800-pixel plot, an x-axis
@@ -632,7 +633,13 @@ class GenericElementPlot(DimensionedPlot):
         which should make the padding be approximately the same number of
         pixels. But if the same plot is changed to have a height of only
         200, the y-range will then be [-400,1400] so that the y-axis
-        padding will still match that of the x-axis.""")
+        padding will still match that of the x-axis.
+
+        It is also possible to declare non-equal padding value for the
+        lower and upper bound of an axis by supplying nested tuples,
+        e.g. padding=(0.1, (0, 0.1)) will pad the x-axis lower and
+        upper bound as well as the y-axis upper bound by a fraction of
+        0.1 while the y-axis lower bound is not padded at all.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
