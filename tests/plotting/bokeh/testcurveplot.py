@@ -245,7 +245,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
 
     def test_curve_padding_square(self):
-        curve = Curve([1, 2, 3]).options(padding=0.2)
+        curve = Curve([1, 2, 3]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -254,7 +254,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_hard_xrange(self):
-        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.2)
+        curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0)
@@ -263,7 +263,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_soft_xrange(self):
-        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.2)
+        curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -272,7 +272,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_unequal(self):
-        curve = Curve([1, 2, 3]).options(padding=(0.1, 0.2))
+        curve = Curve([1, 2, 3]).options(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -281,7 +281,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_nonsquare(self):
-        curve = Curve([1, 2, 3]).options(padding=0.2, width=600)
+        curve = Curve([1, 2, 3]).options(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.1)
@@ -290,7 +290,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_logx(self):
-        curve = Curve([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        curve = Curve([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.89595845984076228)
@@ -299,7 +299,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_curve_padding_logy(self):
-        curve = Curve([1, 2, 3]).options(padding=0.2, logy=True)
+        curve = Curve([1, 2, 3]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, -0.2)
@@ -309,7 +309,7 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_curve_padding_datetime_square(self):
         curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
-            padding=0.2
+            padding=0.1
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
@@ -320,7 +320,7 @@ class TestCurvePlot(TestBokehPlot):
 
     def test_curve_padding_datetime_nonsquare(self):
         curve = Curve([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
-            padding=0.2, width=600
+            padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']

@@ -860,10 +860,10 @@ def range_pad(lower, upper, padding=None, log=False):
         if not isinstance(lower, datetime_types) and log and lower > 0 and upper > 0:
             log_min = np.log(lower) / np.log(10)
             log_max = np.log(upper) / np.log(10)
-            lspan = (log_max-log_min)*(1+padding[0])
-            uspan = (log_max-log_min)*(1+padding[1])
+            lspan = (log_max-log_min)*(1+padding[0]*2)
+            uspan = (log_max-log_min)*(1+padding[1]*2)
             center = (log_min+log_max) / 2.0
-            start, end = np.power(10, center-lspan / 2.0), np.power(10, center+uspan / 2.0)
+            start, end = np.power(10, center-lspan/2.), np.power(10, center+uspan/2.)
         else:
             span = (upper-lower)
             lpad = span*(padding[0])

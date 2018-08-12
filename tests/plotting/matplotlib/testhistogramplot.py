@@ -21,7 +21,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual([p.get_x() for p in artist.patches], bounds)
 
     def test_histogram_padding_square(self):
-        points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.2)
+        points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.1)
         plot = mpl_renderer.get_plot(points)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
@@ -30,7 +30,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.4)
 
     def test_histogram_padding_square_positive(self):
-        points = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2)
+        points = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1)
         plot = mpl_renderer.get_plot(points)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
@@ -39,7 +39,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_histogram_padding_square_negative(self):
-        points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
+        points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.1)
         plot = mpl_renderer.get_plot(points)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
@@ -48,7 +48,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 0)
 
     def test_histogram_padding_nonsquare(self):
-        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, aspect=2)
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1, aspect=2)
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.35)
@@ -57,7 +57,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_histogram_padding_logx(self):
-        histogram = Histogram([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        histogram = Histogram([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.41158562699652224)
@@ -66,7 +66,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(y_range[1], 3.2)
 
     def test_histogram_padding_logy(self):
-        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, logy=True)
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1, logy=True)
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
@@ -76,7 +76,7 @@ class TestHistogramPlot(TestMPLPlot):
 
     def test_histogram_padding_datetime_square(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
-            padding=0.2
+            padding=0.1
         )
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
@@ -87,7 +87,7 @@ class TestHistogramPlot(TestMPLPlot):
 
     def test_histogram_padding_datetime_nonsquare(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
-            padding=0.2, aspect=2
+            padding=0.1, aspect=2
         )
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()

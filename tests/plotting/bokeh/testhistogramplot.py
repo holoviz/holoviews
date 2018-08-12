@@ -74,7 +74,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(range_x.end, np.datetime64('2017-01-04T00:00:00.000000', 'us'))
 
     def test_histogram_padding_square(self):
-        points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.2)
+        points = Histogram([(1, 2), (2, -1), (3, 3)]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.19999999999999996)
@@ -83,7 +83,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.4)
 
     def test_histogram_padding_square_positive(self):
-        points = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2)
+        points = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.19999999999999996)
@@ -92,7 +92,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_histogram_padding_square_negative(self):
-        points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.2)
+        points = Histogram([(1, -2), (2, -1), (3, -3)]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.19999999999999996)
@@ -101,7 +101,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 0)
 
     def test_histogram_padding_nonsquare(self):
-        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, width=600)
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1, width=600)
         plot = bokeh_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.35)
@@ -110,7 +110,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_histogram_padding_logx(self):
-        histogram = Histogram([(1, 1), (2, 2), (3,3)]).options(padding=0.2, logx=True)
+        histogram = Histogram([(1, 1), (2, 2), (3,3)]).options(padding=0.1, logx=True)
         plot = bokeh_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.41158562699652224)
@@ -119,7 +119,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(y_range.end, 3.2)
 
     def test_histogram_padding_logy(self):
-        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.2, logy=True)
+        histogram = Histogram([(1, 2), (2, 1), (3, 3)]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual(x_range.start, 0.19999999999999996)
@@ -129,7 +129,7 @@ class TestSideHistogramPlot(TestBokehPlot):
 
     def test_histogram_padding_datetime_square(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
-            padding=0.2
+            padding=0.1
         )
         plot = bokeh_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
@@ -140,7 +140,7 @@ class TestSideHistogramPlot(TestBokehPlot):
 
     def test_histogram_padding_datetime_nonsquare(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(
-            padding=0.2, width=600
+            padding=0.1, width=600
         )
         plot = bokeh_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
