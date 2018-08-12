@@ -1716,7 +1716,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     Returns a boolean indicating whether the sampling is regular.
     """
     diffs = np.diff(values)
-    return abs(diffs.min()-diffs.max()) < abs(diffs.min()*rtol)
+    return (len(diffs) < 1) or abs(diffs.min()-diffs.max()) < abs(diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):
