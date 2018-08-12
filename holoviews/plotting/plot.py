@@ -853,30 +853,36 @@ class GenericElementPlot(DimensionedPlot):
             if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
-        if range_type == 'combined':
-            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
-        elif range_type == 'soft':
+        if range_type == 'soft':
             x0, x1 = xsrange
         elif range_type == 'hard':
             x0, x1 = xhrange
-
-        if ydim is None:
-            y0, y1 = np.NaN, np.NaN
+        elif xdim == 'categorical':
+            x0, x1 = '', ''
         elif range_type == 'combined':
-            y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
-        elif range_type == 'soft':
+            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
+
+        if range_type == 'soft':
             y0, y1 = ysrange
         elif range_type == 'hard':
             y0, y1 = yhrange
+        elif range_type == 'combined':
+            y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
+        elif ydim == 'categorical':
+            y0, y1 = '', ''
+        elif ydim is None:
+            y0, y1 = np.NaN, np.NaN
 
-        if zdim is None:
-            z0, z1 = np.NaN, np.NaN
-        elif range_type=='combined':
-            z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
-        elif range_type == 'soft':
+        if range_type == 'soft':
             z0, z1 = zsrange
         elif range_type == 'data':
             z0, z1 = zhrange
+        elif range_type=='combined':
+            z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
+        elif zdim == 'categorical':
+            z0, z1 = '', ''
+        elif zdim is None:
+            z0, z1 = np.NaN, np.NaN
 
         return (x0, y0, z0, x1, y1, z1) if self.projection == '3d' else (x0, y0, x1, y1)
 
@@ -1248,22 +1254,15 @@ class GenericOverlayPlot(GenericElementPlot):
             x0, y0, x1, y1 = data_extent
             sx0, sy0, sx1, sy1 = soft_extent
             hx0, hy0, hx1, hy1 = hard_extent
+            z0, z1 = np.NaN, np.NaN
 
-        padding = 0 if self.overlaid else self.padding
-        xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
-        yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
-        aspect = self.get_aspect(xspan, yspan)
-        xpad, ypad, zpad = get_axis_padding(padding)
-        if aspect > 1:
-            xpad = tuple(xp/aspect for xp in xpad) if isinstance(xpad, tuple) else xpad/aspect
-        else:
-            ypad = tuple(yp*aspect for yp in ypad) if isinstance(ypad, tuple) else ypad*aspect
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
         if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
         if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
-        if len(data_extent) == 6 and util.is_number(z0) and z0 == z1:
-            z0, z1 = z0-zspan, z1+zspan
+        if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
+        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
+        print('<<<', hard_extents)
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
         if len(data_extent) == 6:

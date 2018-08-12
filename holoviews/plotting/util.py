@@ -334,7 +334,7 @@ def get_range(element, ranges, dimension):
     Computes the data, soft- and hard-range along a dimension given
     an element and a dictionary of ranges.
     """
-    if dimension:
+    if dimension and dimension != 'categorical':
         if ranges and dimension.name in ranges:
             drange = ranges[dimension.name]['data']
             srange = ranges[dimension.name]['soft']
