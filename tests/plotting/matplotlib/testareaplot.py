@@ -14,6 +14,15 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
 
+    def test_area_padding_square_per_axis(self):
+        area = Area([(1, 1), (2, 2), (3, 3)]).options(padding=((0, 0.1), (0.1, 0.2)))
+        plot = mpl_renderer.get_plot(area)
+        x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
+        self.assertEqual(x_range[0], 1)
+        self.assertEqual(x_range[1], 3.2)
+        self.assertEqual(y_range[0], 0)
+        self.assertEqual(y_range[1], 3.4)
+
     def test_area_with_lower_vdim(self):
         area = Area([(1, 0.5, 1), (2, 1.5, 2), (3, 2.5, 3)], vdims=['y', 'y2']).options(padding=0.1)
         plot = mpl_renderer.get_plot(area)

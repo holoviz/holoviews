@@ -226,6 +226,15 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)
 
+    def test_curve_padding_square_per_axis(self):
+        curve = Points([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0)
+        self.assertEqual(x_range.end, 2.2)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.4)
+
     def test_points_padding_unequal(self):
         points = Points([1, 2, 3]).options(padding=(0.05, 0.1))
         plot = bokeh_renderer.get_plot(points)

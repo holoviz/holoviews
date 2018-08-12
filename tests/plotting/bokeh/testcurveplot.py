@@ -253,6 +253,15 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)
 
+    def test_curve_padding_square_per_axis(self):
+        curve = Curve([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        plot = bokeh_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual(x_range.start, 0)
+        self.assertEqual(x_range.end, 2.2)
+        self.assertEqual(y_range.start, 0.8)
+        self.assertEqual(y_range.end, 3.4)
+
     def test_curve_padding_hard_xrange(self):
         curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)

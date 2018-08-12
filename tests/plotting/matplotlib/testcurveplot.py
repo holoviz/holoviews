@@ -60,6 +60,15 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)
 
+    def test_curve_padding_square_per_axis(self):
+        curve = Curve([1, 2, 3]).options(padding=((0, 0.1), (0.1, 0.2)))
+        plot = mpl_renderer.get_plot(curve)
+        x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
+        self.assertEqual(x_range[0], 0)
+        self.assertEqual(x_range[1], 2.2)
+        self.assertEqual(y_range[0], 0.8)
+        self.assertEqual(y_range[1], 3.4)
+
     def test_curve_padding_hard_xrange(self):
         curve = Curve([1, 2, 3]).redim.range(x=(0, 3)).options(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
