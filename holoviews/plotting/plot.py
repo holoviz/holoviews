@@ -23,7 +23,7 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay, get_axis_padding)
+                   split_dmap_overlay, get_axis_padding, get_range)
 
 
 class Plot(param.Parameterized):
@@ -814,106 +814,83 @@ class GenericElementPlot(DimensionedPlot):
         """
 
 
-    def get_extents(self, view, ranges, range_type='combined'):
+    def get_padding(self, extents):
         """
-        Gets the extents for the axes from the current View. The globally
+        Computes padding along the axes taking into account the plot aspect.
+        """
+        (x0, y0, z0, x1, y1, z1) = extents
+        padding = 0 if self.overlaid else self.padding
+        xpad, ypad, zpad = get_axis_padding(padding)
+        if not self.overlaid and not self.batched:
+            xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
+            yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
+            aspect = self.get_aspect(xspan, yspan)
+            if aspect > 1:
+                xpad = tuple(xp/aspect for xp in xpad) if isinstance(xpad, tuple) else xpad/aspect
+            else:
+                ypad = tuple(yp*aspect for yp in ypad) if isinstance(ypad, tuple) else ypad*aspect
+        return xpad, ypad, zpad
+
+
+    def _get_range_extents(self, element, ranges, range_type, xdim, ydim, zdim):
+        dims = element.dimensions()
+        ndims = len(dims)
+        xdim = xdim or (dims[0] if ndims else None)
+        ydim = ydim or (dims[1] if ndims > 1 else None)
+        if self.projection == '3d':
+            zdim = zdim or (dims[2] if ndims > 2 else None)
+        else:
+            zdim = None
+
+        (x0, x1), xsrange, xhrange = get_range(element, ranges, xdim)
+        (y0, y1), ysrange, yhrange = get_range(element, ranges, ydim)
+        (z0, z1), zsrange, zhrange = get_range(element, ranges, zdim)
+
+        if not self.overlaid and not self.batched:
+            xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+            if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
+            if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
+            if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
+        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+
+        if range_type == 'combined':
+            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
+        elif range_type == 'soft':
+            x0, x1 = xsrange
+        elif range_type == 'hard':
+            x0, x1 = xhrange
+
+        if ydim is None:
+            y0, y1 = np.NaN, np.NaN
+        elif range_type == 'combined':
+            y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
+        elif range_type == 'soft':
+            y0, y1 = ysrange
+        elif range_type == 'hard':
+            y0, y1 = yhrange
+
+        if zdim is None:
+            z0, z1 = np.NaN, np.NaN
+        elif range_type=='combined':
+            z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
+        elif range_type == 'soft':
+            z0, z1 = zsrange
+        elif range_type == 'data':
+            z0, z1 = zhrange
+
+        return (x0, y0, z0, x1, y1, z1) if self.projection == '3d' else (x0, y0, x1, y1)
+
+
+    def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
+        """
+        Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
         """
-        dims = view.dimensions()
-        ndims = len(dims)
         num = 6 if self.projection == '3d' else 4
-        if self.apply_ranges:
-            xdim = dims[0]
-            if ranges:
-                x0, x1 = ranges[xdim.name]['data']
-                xsrange = ranges[xdim.name]['soft']
-                xhrange = ranges[xdim.name]['hard']
-                if ndims > 1:
-                    ydim = dims[1].name
-                    y0, y1 = ranges[ydim]['data']
-                    ysrange = ranges[ydim]['soft']
-                    yhrange = ranges[ydim]['hard']
-                else:
-                    y0, y1 = ysrange = yhrange = (np.NaN, np.NaN)
-
-                if self.projection == '3d' and ndims > 2:
-                    zdim = dims[2].name
-                    z0, z1 = ranges[zdim]['data']
-                    zsrange = ranges[zdim]['soft']
-                    zhrange = ranges[zdim]['hard']
-                else:
-                    z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
-            else:
-                x0, x1 = view.range(0, dimension_range=False)
-                xsrange = xdim.soft_range
-                xhrange = xdim.range
-                if ndims > 1:
-                    ydim = dims[1]
-                    y0, y1 = view.range(1, dimension_range=False)
-                    ysrange = ydim.soft_range
-                    yhrange = ydim.range
-                else:
-                    y0, y1 = ysrange = yhrange = (np.NaN, np.NaN)
-                if self.projection == '3d' and ndims > 2:
-                    zdim = dims[2]
-                    z0, z1 = view.range(2)
-                    zsrange = zdim.soft_range
-                    zhrange = zdim.range
-                else:
-                    z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
-
-            padding = 0 if self.overlaid else self.padding
-            xpad, ypad, zpad = get_axis_padding(padding)
-            if not self.overlaid and not self.batched:
-                xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
-                if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
-                if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
-                if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
-                xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
-                yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
-                aspect = self.get_aspect(xspan, yspan)
-                if aspect > 1:
-                    xpad = tuple(xp/aspect for xp in xpad) if isinstance(xpad, tuple) else xpad/aspect
-                else:
-                    ypad = tuple(yp*aspect for yp in ypad) if isinstance(ypad, tuple) else ypad*aspect
-
-            if range_type == 'combined':
-                x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
-            elif range_type == 'data':
-                x0, x1 = x0, x1
-            elif range_type == 'soft':
-                x0, x1 = xsrange
-            else:
-                x0, x1 = xhrange
-
-            if ndims > 1:
-                if range_type == 'combined':
-                    y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
-                elif range_type == 'data':
-                    y0, y1 = y0, y1
-                elif range_type == 'soft':
-                    y0, y1 = ysrange
-                else:
-                    y0, y1 = yhrange
-            if self.projection == '3d':
-                if range_type=='combined':
-                    z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
-                elif range_type == 'data':
-                    z0, z1 = z0, z1
-                elif range_type == 'soft':
-                    z0, z1 = zsrange
-                else:
-                    z0, z1 = zhrange
-                range_extents = (x0, y0, z0, x1, y1, z1)
-            else:
-                range_extents = (x0, y0, x1, y1)
-        else:
-            range_extents = (np.NaN,) * num
-
         if self.apply_extents and range_type in ('combined', 'extents'):
-            norm_opts = self.lookup_options(view, 'norm').options
+            norm_opts = self.lookup_options(element, 'norm').options
             if norm_opts.get('framewise', False) or self.dynamic:
-                extents = view.extents
+                extents = element.extents
             else:
                 extent_list = self.hmap.traverse(lambda x: x.extents, [Element])
                 extents = util.max_extents(extent_list, self.projection == '3d')
@@ -922,6 +899,11 @@ class GenericElementPlot(DimensionedPlot):
 
         if range_type == 'extents':
             return extents
+
+        if self.apply_ranges:
+            range_extents = self._get_range_extents(element, ranges, range_type, xdim, ydim, zdim)
+        else:
+            range_extents = (np.NaN,) * num
 
         if getattr(self, 'shared_axes', False) and self.subplot:
             combined = util.max_extents([range_extents, extents], self.projection == '3d')

@@ -329,6 +329,25 @@ def get_axis_padding(padding):
     return (xpad, ypad, zpad)
 
 
+def get_range(element, ranges, dimension):
+    """
+    Computes the data, soft- and hard-range along a dimension given
+    an element and a dictionary of ranges.
+    """
+    if dimension:
+        if ranges and dimension.name in ranges:
+            drange = ranges[dimension.name]['data']
+            srange = ranges[dimension.name]['soft']
+            hrange = ranges[dimension.name]['hard']
+        else:
+            drange = element.range(dimension, dimension_range=False)
+            srange = dimension.soft_range
+            hrange = dimension.range
+    else:
+        drange = srange = hrange = (np.NaN, np.NaN)
+    return drange, srange, hrange
+
+
 def get_sideplot_ranges(plot, element, main, ranges):
     """
     Utility to find the range for an adjoined
