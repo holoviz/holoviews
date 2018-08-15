@@ -929,6 +929,7 @@ class BoxEditCallback(CDSCallback):
             return
 
         plot = self.plot
+        data = plot.handles['cds'].data
         element = self.plot.current_frame
         stream = self.streams[0]
         kwargs = {}
@@ -939,15 +940,15 @@ class BoxEditCallback(CDSCallback):
                 param.main.warning('Specifying num_objects to BoxEdit stream '
                                    'only supported for bokeh versions >=1.0.0.')
         xs, ys, widths, heights = [], [], [], []
-        for el in element.split():
-            x0, x1 = el.range(0)
-            y0, y1 = el.range(1)
+        for x, y in zip(data['xs'], data['ys']):
+            x0, x1 = (np.nanmin(x), np.nanmax(x))
+            y0, y1 = (np.nanmin(y), np.nanmax(y))
             xs.append((x0+x1)/2.)
             ys.append((y0+y1)/2.)
             widths.append(x1-x0)
             heights.append(y1-y0)
         data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
-        data.update({vd.name: [] for vd in element.vdims})
+        data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
         rect_source = ColumnDataSource(data=data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
@@ -960,7 +961,6 @@ class BoxEditCallback(CDSCallback):
         data = self._process_msg({'data': data})['data']
         for stream in self.streams:
             stream.update(data=data)
-
 
 
     def _process_msg(self, msg):
