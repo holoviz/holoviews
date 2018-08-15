@@ -1173,9 +1173,9 @@ class DataLinkCallback(LinkCallback):
 
         # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
-            col = src_cds.data[k]
             if k not in src_cds.data:
                 continue
+            col = src_cds.data[k]
             if not ((isscalar(v) and v == col) or
                     (v.dtype.kind not in 'iufc' and np.equal(v, col).all()) or
                     np.allclose(v, src_cds.data[k])):
