@@ -892,7 +892,7 @@ class PolyDrawCallback(CDSCallback):
                                  renderers=[plot.handles['glyph_renderer']],
                                  **kwargs)
         plot.state.tools.append(poly_tool)
-        data = dict(plot.handles['source'].data)
+        data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
             stream.update(data=data)
         super(CDSCallback, self).initialize(plot_id)
@@ -914,7 +914,7 @@ class FreehandDrawCallback(CDSCallback):
             renderers=[plot.handles['glyph_renderer']],
         )
         plot.state.tools.append(poly_tool)
-        data = dict(plot.handles['source'].data)
+        data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
             stream.update(data=data)
         super(CDSCallback, self).initialize(plot_id)
