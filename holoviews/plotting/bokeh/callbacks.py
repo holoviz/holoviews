@@ -807,8 +807,10 @@ class CDSCallback(Callback):
 
     def initialize(self, plot_id=None):
         super(CDSCallback, self).initialize(plot_id)
+        plot = self.plot
+        data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
-            stream.update(data=self.plot_handles['source'].data)
+            stream.update(data=data)
 
     def _process_msg(self, msg):
         msg['data'] = dict(msg['data'])
@@ -892,10 +894,7 @@ class PolyDrawCallback(CDSCallback):
                                  renderers=[plot.handles['glyph_renderer']],
                                  **kwargs)
         plot.state.tools.append(poly_tool)
-        data = self._process_msg({'data': plot.handles['source'].data})['data']
-        for stream in self.streams:
-            stream.update(data=data)
-        super(CDSCallback, self).initialize(plot_id)
+        super(PolyDrawCallback, self).initialize(plot_id)
 
 
 class FreehandDrawCallback(CDSCallback):
@@ -914,10 +913,7 @@ class FreehandDrawCallback(CDSCallback):
             renderers=[plot.handles['glyph_renderer']],
         )
         plot.state.tools.append(poly_tool)
-        data = self._process_msg({'data': plot.handles['source'].data})['data']
-        for stream in self.streams:
-            stream.update(data=data)
-        super(CDSCallback, self).initialize(plot_id)
+        super(FreehandDrawCallback, self).initialize(plot_id)
 
 
 class BoxEditCallback(CDSCallback):
@@ -960,8 +956,11 @@ class BoxEditCallback(CDSCallback):
         box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
         self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        super(BoxEditCallback, self).initialize()
-        stream.update(data=self._process_msg({'data': data})['data'])
+        super(CDSCallback, self).initialize()
+        data = self._process_msg({'data': data})['data']
+        for stream in self.streams:
+            stream.update(data=data)
+
 
 
     def _process_msg(self, msg):
