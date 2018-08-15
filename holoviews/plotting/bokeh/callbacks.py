@@ -1170,6 +1170,8 @@ class DataLinkCallback(LinkCallback):
             raise Exception('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
+
+        # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
             col = src_cds.data[k]
             if k not in src_cds.data:
@@ -1180,6 +1182,7 @@ class DataLinkCallback(LinkCallback):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
                                  'does not match target' % k)
+
         src_cds.data.update(tgt_cds.data)
         renderer = target_plot.handles.get('glyph_renderer')
         if renderer is None:
