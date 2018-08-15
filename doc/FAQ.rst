@@ -308,6 +308,24 @@ for large datasets.
 
 **Q: How do I create a Layout or Overlay object from an arbitrary list?**
 
-You can supply a list of ``elements`` directly to the ``Layout`` and
+**A:** You can supply a list of ``elements`` directly to the ``Layout`` and
 ``Overlay`` constructors. For instance, you can use
 ``hv.Layout(elements)`` or ``hv.Overlay(elements)``.
+
+
+**Q: Why do my HoloViews and GeoViews objects work fine separately but
+are mismatched when overlaid?
+
+**A:** GeoViews works precisely the same as HoloViews, except that
+GeoViews is aware of geographic projections.  If you take an
+``hv.Points()`` object in lon,lat coordinates and overlay it on a
+GeoViews map in Web Mercator, the HoloViews object will be in
+entirely the wrong coordinate system, with the HoloViews object all
+appearing at one tiny spot on the globe.  If you declare the same
+object as ``gv.Points``, then GeoViews will (a) assume it is in
+lon,lat coordinates (which HoloViews cannot assume, as it knows
+nothing of geography), and (b) convert it in to the coordinates
+needed for display (e.g. Web Mercator).  So, just make sure that
+anything with geographic coordinates is defined as a GeoViews object,
+and make sure to declare the coordinates (``crs=...``) if the data is
+in anything other than lon,lat.
