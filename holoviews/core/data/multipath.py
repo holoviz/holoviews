@@ -263,9 +263,14 @@ class MultiInterface(Interface):
             raise ValueError('Added dimension values must be scalar or '
                              'match the length of the data.')
         new_data = []
-        ds = cls._inner_dataset_template(dataset)
+        template = cls._inner_dataset_template(dataset)
+        array_type = template.interface.datatype == 'array'
         for d, v in zip(dataset.data, values):
-            ds.data = d
+            template.data = d
+            if array_type:
+                ds = template.clone(template.columns())
+            else:
+                ds = template
             new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
         return new_data
 
