@@ -290,7 +290,7 @@ whenever object ``h`` is viewed.
 **Q: What I want to change is about how HoloViews works, not about the
 underlying backend.  Is that possible?**
 
-Sure, if you need more customization and configurability than is
+**A:** Sure, if you need more customization and configurability than is
 possible with either HoloViews options or with extra backend-specific
 code as above, then you can always subclass the plotting class used
 for a HoloViews element and modify any of its behavior.  You can also
