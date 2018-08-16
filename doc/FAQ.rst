@@ -264,10 +264,15 @@ for that HoloViews object:
   
 .. code:: python
 
+  import holoviews as hv
+  from bokeh.models.tickers import FixedTicker
+  hv.extension('bokeh')
+  
   def update_axis(plot, element):
       b = plot.state
       b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
   
+  h = hv.Curve([1,2,7], 'x_col', 'y_col')
   h = h.options(finalize_hooks=[update_axis])
   h
 
