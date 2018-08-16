@@ -257,15 +257,23 @@ class MultiInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        if values is None or np.isscalar(values):
+        if not len(dataset.data):
+            return dataset.data
+        elif values is None or np.isscalar(values):
             values = [values]*len(dataset.data)
         elif not len(values) == len(dataset.data):
             raise ValueError('Added dimension values must be scalar or '
                              'match the length of the data.')
+
         new_data = []
-        ds = cls._inner_dataset_template(dataset)
+        template = cls._inner_dataset_template(dataset)
+        array_type = template.interface.datatype == 'array'
         for d, v in zip(dataset.data, values):
-            ds.data = d
+            template.data = d
+            if array_type:
+                ds = template.clone(template.columns())
+            else:
+                ds = template
             new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
         return new_data
 
