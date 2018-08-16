@@ -78,7 +78,8 @@ Example code below:
   hv.renderer('bokeh').save(curve, 'example_curve')
 
 
-**Q: Why are my .options(), .relabel(), .redim(), and similar settings not having any effect?**
+**Q: Why are my .options(), .relabel(), .redim(), and similar settings
+not having any effect?**
 
 **A:** By default, HoloViews object methods like .options and
 .redim return a _copy_ of your object,
@@ -96,10 +97,10 @@ reassign the new object to the old name (as in
 
 **A:** Axes are labeled with the label of the corresponding Dimension,
 which for a Pandas dataframe will default to the name of that column.
-If you want to define your own labels, you can a tuple containing the
-column name and your preferred label for it for that dimension.  For
-instance, if the column is named `x_col`, you can make the label 'X
-Label' using:
+If you want to define your own specific label to display for a
+dimension, you can provide a tuple containing the column name and your
+preferred label for it.  For instance, if the column is named `x_col`,
+you can make the label 'X Label' using:
 
 .. code:: python
 
@@ -286,7 +287,8 @@ supplied that to HoloViews so that it can be run automatically
 whenever object ``h`` is viewed.
 
   
-**Q: What I want to change is about how HoloViews works, not about the underlying backend.  Is that possible?**
+**Q: What I want to change is about how HoloViews works, not about the
+underlying backend.  Is that possible?**
 
 Sure, if you need more customization and configurability than is
 possible with either HoloViews options or with extra backend-specific
@@ -382,7 +384,7 @@ entirely the wrong coordinate system, with the HoloViews object all
 appearing at one tiny spot on the globe.  If you declare the same
 object as ``gv.Points``, then GeoViews will (a) assume it is in
 lon,lat coordinates (which HoloViews cannot assume, as it knows
-nothing of geography), and (b) convert it in to the coordinates
+nothing of geography), and (b) convert it into the coordinates
 needed for display (e.g. Web Mercator).  So, just make sure that
 anything with geographic coordinates is defined as a GeoViews object,
 and make sure to declare the coordinates (``crs=...``) if the data is
