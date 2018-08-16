@@ -92,18 +92,23 @@ reassign the new object to the old name (as in
 ``e=e.relabel("New Label")``).
 
 
-**Q: How do I provide axis labels?**
+**Q: How do I specify axis labels?**
 
-**A:** One convenient way is to pass a tuple containing the column
-name and label.
+**A:** Axes are labeled with the label of the corresponding Dimension,
+which for a Pandas dataframe will default to the name of that column.
+If you want to define your own labels, you can a tuple containing the
+column name and your preferred label for it for that dimension.  For
+instance, if the column is named `x_col`, you can make the label 'X
+Label' using:
 
-This will relabel 'x_col' to 'X Label'
 .. code:: python
 
   curve = hv.Curve(df, ('x_col', 'X Label'), 'y_col')
 
-You may also relabel after the fact by passing arguments (or an
-unpacked dictionary) to .redim.label().
+You can also change the labels later, even after the object has been
+defined, by passing arguments (or an unpacked dictionary) to
+.redim.label():
+
 .. code:: python
 
   curve = hv.Curve(df, 'x_col', 'y_col')
