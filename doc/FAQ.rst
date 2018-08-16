@@ -74,9 +74,6 @@ Example code below:
   %%opts Curve [width=1000]
   # preceding cell
   curve = hv.Curve([1, 2, 3])
-
-.. code:: python
-
   # next cell
   hv.renderer('bokeh').save(curve, 'example_curve')
 
@@ -187,7 +184,7 @@ directly to disk, with custom options, like this:
 
   import holoviews as hv
   renderer = hv.renderer('matplotlib').instance(fig='svg', holomap='gif')
-  renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
+  renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'RdBu_r'}))
 
 This process is described in detail in the
 `Customizing Plots <user_guide/Customizing_Plots.html>`_ user guide.
