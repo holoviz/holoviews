@@ -693,6 +693,12 @@ group_sanitizer = sanitize_identifier_fn.instance()
 label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
+def isscalar(val):
+    """
+    Value is scalar or None
+    """
+    return val is None or np.isscalar(val)
+
 
 def isnumeric(val):
     if isinstance(val, (basestring, bool, np.bool_)):

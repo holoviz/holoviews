@@ -255,5 +255,20 @@ class MultiInterface(Interface):
             objs.append(obj)
         return objs
 
+    @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        if values is None or np.isscalar(values):
+            values = [values]*len(dataset.data)
+        elif not len(values) == len(dataset.data):
+            raise ValueError('Added dimension values must be scalar or '
+                             'match the length of the data.')
+        new_data = []
+        ds = cls._inner_dataset_template(dataset)
+        for d, v in zip(dataset.data, values):
+            ds.data = d
+            new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
+        return new_data
+
+
 
 Interface.register(MultiInterface)

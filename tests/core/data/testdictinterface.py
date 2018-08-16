@@ -30,6 +30,14 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         ds2 = Dataset({'x': [], 'y': []}, kdims=['x', 'y'])
         self.assertEqual(ds, ds2)
 
+    def test_dataset_allow_none_value(self):
+        ds = Dataset({'x': None, 'y': [1]}, kdims=['x', 'y'])
+        self.assertEqual(ds.dimension_values(0), np.array([None]))
+
+    def test_dataset_allow_none_values(self):
+        ds = Dataset({'x': None, 'y': [0, 1]}, kdims=['x', 'y'])
+        self.assertEqual(ds.dimension_values(0), np.array([None, None]))
+
     def test_dataset_ignore_non_dimensions(self):
         ds = Dataset({'x': [0, 1], 'y': [1, 2], 'ignore_scalar': 1,
                       'ignore_array': np.array([2, 3]), 'ignore_None': None},

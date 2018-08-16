@@ -9,7 +9,7 @@ from bokeh.models import (
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict, ViewableElement
-from ...core.util import dimension_sanitizer
+from ...core.util import dimension_sanitizer, isscalar
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
@@ -1169,8 +1169,15 @@ class DataLinkCallback(LinkCallback):
             raise Exception('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
+
+        # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
-            if k in src_cds.data and np.testing.assert_array_equal(v, src_cds.data[k]):
+            if k not in src_cds.data:
+                continue
+            col = src_cds.data[k]
+            if not ((isscalar(v) and v == col) or
+                    (v.dtype.kind not in 'iufc' and np.equal(v, col).all()) or
+                    np.allclose(v, src_cds.data[k])):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
                                  'does not match target' % k)
