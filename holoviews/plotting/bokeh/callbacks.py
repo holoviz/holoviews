@@ -1176,7 +1176,7 @@ class DataLinkCallback(LinkCallback):
                 continue
             col = src_cds.data[k]
             if not ((isscalar(v) and v == col) or
-                    (v.dtype.kind not in 'iufc' and np.equal(v, col).all()) or
+                    (v.dtype.kind not in 'iufc' and (v==col).all()) or
                     np.allclose(v, src_cds.data[k])):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
