@@ -78,15 +78,18 @@ Example code below:
   hv.renderer('bokeh').save(curve, 'example_curve')
 
 
-**Q: Why are my .options() or .redim settings not having any effect?**
+**Q: Why are my .options(), .relabel(), .redim(), and similar settings not having any effect?**
 
-**A:** By default, .options() and .redim return a copy of your object,
+**A:** By default, HoloViews object methods like .options and
+.redim return a _copy_ of your object,
 rather than modifying your original object. In HoloViews,
 making a copy of the object is cheap, because only the metadata
 is copied, not the data, and returning a copy makes it simple
 to work with a variety of differently customized versions of
 any given object. You can pass clone=False to .options()
-if you wish to modify the object in place.
+if you wish to modify the object in place, or you can just
+reassign the new object to the old name (as in
+``e=e.relabel("New Label")``).
 
 
 **Q: How do I provide axis labels?**
@@ -105,37 +108,6 @@ unpacked dictionary) to .redim.label().
 
   curve = hv.Curve(df, 'x_col', 'y_col')
   curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
-
-**Q: How can I access all the options that aren't exposed in HoloViews,
-but are available in the backend?**
-
-**A:** There are two approaches you can take.
-
-The first is converting HoloViews objects as bokeh/matplotlib figures,
-and then continuing to work on those figures natively in the selected backend.
-
-.. code:: python
-
-  backend = 'matplotlib'
-  hv_obj = hv.Curve(df, 'x_col', 'y_col')
-  fig = hv.renderer(backend).get_plot(hv_obj).state
-  # this is just a demonstration; you can directly relabel in HoloViews
-  fig.axes[0].set_xlabel('X Label')
-
-The second is through finalize_hooks (bokeh) / final_hooks (matplotlib)
-which helps retain a HoloViews object.
-
-.. code:: python
-
-   def relabel(plot, element):
-       # this is for demonstration purposes
-       # use the .redim.label() method instead!
-       fig = plot.state
-       fig.axes[0].set_xlabel('X Label')
-
-  backend = 'matplotlib'
-  hv_obj = hv.Curve(df, 'x_col', 'y_col')
-  hv_obj = hv_obj.options(final_hooks=[relabel])
 
 
 **Q: The default figure size is so tiny! How do I enlarge it?**
@@ -253,21 +225,67 @@ to matplotlib's ``imshow`` command when displaying an ``Image``
 element:
 
 .. code:: python
-
+  import holoviews as hv
   from holoviews import Store
-  Store.add_style_opts(Image, ['filternorm'], backend='matplotlib')
 
-Now you can freely use ``'filternorm'`` in the ``%opts`` line/cell
-magic, including tab-completion!
+  hv.extension('matplotlib')
+  Store.add_style_opts(hv.Image, ['filternorm'], backend='matplotlib')
+
+Now you can freely use ``'filternorm'`` in ``.options()`` and in the
+``%opts`` line/cell magic, including tab-completion!
 
 
-**Q: I still can't tweak my figure in exactly the way I want. What can I do?**
+**Q: What if I need to do more complex customization supported by the
+backend but not exposed in HoloViews?
 
-The parameters provided by HoloViews should normally cover the most
-common plotting options needed.  In case you need further control, you
-can always subclass any HoloViews object and modify any of its
-behavior, and the object will still normally interact with other
-HoloViews objects (e.g. in Layout or Overlay configurations).
+**A:** If you need to, you can easily access the underlying Bokeh or
+Matplotlib figure and then use Bokeh or Matplotlib's API directly on
+that object.  For instance, if you want to force Bokeh to use a
+fixed list of tick labels for a HoloViews object ``h``, you can
+grab the corresponding Bokeh figure ``b``, edit it to your heart's
+content as a Bokeh figure, and then show it as for any other Bokeh
+figure:
+
+.. code:: python
+  import holoviews as hv
+  hv.extension('bokeh')
+  h = hv.Curve([1,2,7], 'x_col', 'y_col')
+  
+  from bokeh.io import show
+  from bokeh.models.tickers import FixedTicker
+  
+  b=hv.renderer('bokeh').get_plot(h).state
+  b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
+  show(b)
+
+Once you debug a modification like this manually as above, you'll probably
+want to set it up to apply automatically whenever a Bokeh plot is generated
+for that HoloViews object:
+  
+.. code:: python
+
+  def update_axis(plot, element):
+      b = plot.state
+      b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
+  
+  h = h.options(finalize_hooks=[update_axis])
+  h
+
+Here, you've wrapped your Bokeh-API calls into a function, then
+supplied that to HoloViews so that it can be run automatically
+whenever object ``h`` is viewed.
+
+  
+**Q: What I want to change is about how HoloViews works, not about the underlying backend.  Is that possible?**
+
+Sure, if you need more customization and configurability than is
+possible with either HoloViews options or with extra backend-specific
+code as above, then you can always subclass the plotting class used
+for a HoloViews element and modify any of its behavior.  You can also
+add your own Element types, which need corresponding plotting classes
+before they will be viewable in a given backend. The resulting objects
+will still interact normally with other HoloViews objects (e.g. in
+Layout or Overlay configurations).
 
 
 **Q: How do I get a legend on my overlay figure?**
