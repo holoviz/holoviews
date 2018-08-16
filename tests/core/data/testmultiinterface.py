@@ -55,6 +55,20 @@ class MultiInterfaceTest(ComparisonTestCase):
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dask']))
 
+    def test_multi_dict_dataset_add_dimension_scalar(self):
+        arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular']).add_dimension('A', 0, 'Scalar', True)
+        for i, ds in enumerate(mds.split()):
+            self.assertEqual(ds, Path(dict(arrays[i], A='Scalar'), ['x', 'y'],
+                                      'A', datatype=['dictionary']))
+
+    def test_multi_dict_dataset_add_dimension_values(self):
+        arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular']).add_dimension('A', 0, [0,1], True)
+        for i, ds in enumerate(mds.split()):
+            self.assertEqual(ds, Path(dict(arrays[i], A=i), ['x', 'y'],
+                                      'A', datatype=['dictionary']))
+
     def test_multi_array_length(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
