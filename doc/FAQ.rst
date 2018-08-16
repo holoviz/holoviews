@@ -70,11 +70,13 @@ object to ensure that the options have been applied before exporting.
 Example code below:
 
 .. code:: python
+
   %%opts Curve [width=1000]
   # preceding cell
   curve = hv.Curve([1, 2, 3])
 
 .. code:: python
+
   # next cell
   hv.renderer('bokeh').save(curve, 'example_curve')
 
@@ -97,11 +99,13 @@ name and label.
 
 This will relabel 'x_col' to 'X Label'
 .. code:: python
+
   curve = hv.Curve(df, ('x_col', 'X Label'), 'y_col')
 
 You may also relabel after the fact by passing arguments (or an
 unpacked dictionary) to .redim.label().
 .. code:: python
+
   curve = hv.Curve(df, 'x_col', 'y_col')
   curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
 
@@ -114,6 +118,7 @@ The first is converting HoloViews objects as bokeh/matplotlib figures,
 and then continuing to work on those figures natively in the selected backend.
 
 .. code:: python
+
   backend = 'matplotlib'
   hv_obj = hv.Curve(df, 'x_col', 'y_col')
   fig = hv.renderer(backend).get_plot(hv_obj).state
@@ -124,6 +129,7 @@ The second is through finalize_hooks (bokeh) / final_hooks (matplotlib)
 which helps retain a HoloViews object.
 
 .. code:: python
+
    def relabel(plot, element):
        # this is for demonstration purposes
        # use the .redim.label() method instead!
@@ -140,11 +146,12 @@ which helps retain a HoloViews object.
 **A:** Depending on the selected backend...
 
 .. code:: python
-    # for matplotlib:
-    hv_obj = hv_obj.options(fig_size=500)
 
-    # for bokeh:
-    hv_obj = hv_obj.options(width=1000, height=500)
+  # for matplotlib:
+  hv_obj = hv_obj.options(fig_size=500)
+
+  # for bokeh:
+  hv_obj = hv_obj.options(width=1000, height=500)
 
 
 **Q: Why are the sizing options so different between the Matplotlib
