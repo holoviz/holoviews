@@ -179,13 +179,14 @@ class ViolinPlot(BoxPlot):
         return artists
 
     def get_data(self, element, ranges, style):
-        with sorted_context(False):
-            groups = element.groupby(element.kdims)
+        if element.kdims:
+            with sorted_context(False):
+                groups = element.groupby(element.kdims).data.items()
+        else:
+            groups = [(element.label, element)]
 
         data, labels, colors = [], [], []
         elstyle = self.lookup_options(element, 'style')
-
-        groups = groups.data.items() if element.kdims else [(element.label, element)]
         for i, (key, group) in enumerate(groups):
             if element.kdims:
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])

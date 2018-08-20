@@ -66,6 +66,7 @@ class univariate_kde(Operation):
 
         try:
             from scipy import stats
+            from scipy.linalg import LinAlgError
         except ImportError:
             raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
 
@@ -100,8 +101,13 @@ class univariate_kde(Operation):
         elif bin_range[0] == bin_range[1]:
             bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
 
+        element_type = Area if self.p.filled else Curve
         data = data[np.isfinite(data)] if len(data) else []
         if len(data) > 1:
+            try:
+                kde = stats.gaussian_kde(data)
+            except LinAlgError:
+                return element_type([], selected_dim, vdims, **params)
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
@@ -115,7 +121,6 @@ class univariate_kde(Operation):
             xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
             ys = np.full_like(xs, 0)
 
-        element_type = Area if self.p.filled else Curve
         return element_type((xs, ys), kdims=[selected_dim], vdims=vdims, **params)
 
 

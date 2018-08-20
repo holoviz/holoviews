@@ -34,6 +34,12 @@ class KDEOperationTests(ComparisonTestCase):
         area = Area((xs, ys), 'Value', ('Value_density', 'Value Density'))
         self.assertEqual(kde, area)
 
+    def test_univariate_kde_flat_distribution(self):
+        dist = Distribution([1, 1, 1])
+        kde = univariate_kde(dist, n_samples=5, bin_range=(0, 4))
+        area = Area([], 'Value', ('Value_density', 'Value Density'))
+        self.assertEqual(kde, area)
+
     def test_univariate_kde_nans(self):
         kde = univariate_kde(self.dist_nans, n_samples=5, bin_range=(0, 4))
         xs = np.arange(5)
