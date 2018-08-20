@@ -490,3 +490,9 @@ class TestBufferStream(ComparisonTestCase):
         error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
         with self.assertRaisesRegexp(IndexError, error):
             buff.send(pd.DataFrame({'x': np.array([2])}))
+
+    def test_clear_buffer_dframe_with_index(self):
+        data = pd.DataFrame({'a': [1, 2, 3]})
+        buff = Buffer(data)
+        buff.clear()
+        self.assertEqual(buff.data, data.iloc[:0, :].reset_index())
