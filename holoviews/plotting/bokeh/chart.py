@@ -482,6 +482,8 @@ class SpreadPlot(ElementPlot):
     style_opts = line_properties + fill_properties
     _plot_methods = dict(single='patch')
 
+    _stream_data = False # Plot does not support streaming data
+
     def get_data(self, element, ranges, style):
          mapping = dict(x='x', y='y')
          xvals = element.dimension_values(0)
