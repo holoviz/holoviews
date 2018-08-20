@@ -34,7 +34,6 @@ install:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
-  - rm -r $SITE_PACKAGES/numpy*
   - python setup.py develop
   - pip install path.py
   - pip install coveralls awscli deepdiff

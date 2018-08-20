@@ -844,11 +844,16 @@ class PointDraw(CDSStream):
 
     empty_value: int/float/string/None
         The value to insert on non-position columns when adding a new polygon
+
+    num_objects: int
+        The number of polygons that can be drawn before overwriting
+        the oldest polygon.
     """
 
-    def __init__(self, empty_value=None, drag=True, **params):
+    def __init__(self, empty_value=None, drag=True, num_objects=0, **params):
         self.drag = drag
         self.empty_value = empty_value
+        self.num_objects = num_objects
         super(PointDraw, self).__init__(**params)
 
     @property
@@ -876,11 +881,27 @@ class PolyDraw(CDSStream):
 
     empty_value: int/float/string/None
         The value to insert on non-position columns when adding a new polygon
+
+    num_objects: int
+        The number of polygons that can be drawn before overwriting
+        the oldest polygon.
+
+    show_vertices: boolean
+        Whether to show the vertices when a polygon is selected
+
+    vertex_style: dict
+        A dictionary specifying the style options for the vertices.
+        The usual bokeh style options apply, e.g. fill_color,
+        line_alpha, size, etc.
     """
 
-    def __init__(self, empty_value=None, drag=True, **params):
+    def __init__(self, empty_value=None, drag=True, num_objects=0,
+                 show_vertices=False, vertex_style={}, **params):
         self.drag = drag
         self.empty_value = empty_value
+        self.num_objects = num_objects
+        self.show_vertices = show_vertices
+        self.vertex_style = vertex_style
         super(PolyDraw, self).__init__(**params)
 
     @property
@@ -904,11 +925,57 @@ class PolyDraw(CDSStream):
         return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
 
 
+class FreehandDraw(CDSStream):
+    """
+    Attaches a FreehandDrawTool and syncs the datasource.
+
+    empty_value: int/float/string/None
+        The value to insert on non-position columns when adding a new polygon
+
+    num_objects: int
+        The number of polygons that can be drawn before overwriting
+        the oldest polygon.
+    """
+
+    def __init__(self, empty_value=None, num_objects=0, **params):
+        self.empty_value = empty_value
+        self.num_objects = num_objects
+        super(FreehandDraw, self).__init__(**params)
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        data = self.data
+        if not data:
+            return source.clone([])
+        cols = list(self.data)
+        x, y = source.kdims
+        lookup = {'xs': x.name, 'ys': y.name}
+        data = [{lookup.get(c, c): data[c][i] for c in self.data}
+                for i in range(len(data[cols[0]]))]
+        return source.clone(data)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+    
+
 
 class BoxEdit(CDSStream):
     """
     Attaches a BoxEditTool and syncs the datasource.
+
+    num_objects: int
+        The number of boxes that can be drawn before overwriting the
+        oldest drawn box.
     """
+
+    def __init__(self, num_objects=0, **params):
+        self.num_objects = num_objects
+        super(BoxEdit, self).__init__(**params)
 
     @property
     def element(self):

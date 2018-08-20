@@ -9,16 +9,16 @@ from bokeh.models import (
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict, ViewableElement
-from ...core.util import dimension_sanitizer
+from ...core.util import dimension_sanitizer, isscalar
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
-                        PointDraw, PolyDraw, PolyEdit, CDSStream)
+                        PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..links import Link, RangeToolLink, DataLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import convert_timestamp
+from .util import convert_timestamp, bokeh_version
 
 
 class MessageCallback(object):
@@ -807,8 +807,10 @@ class CDSCallback(Callback):
 
     def initialize(self, plot_id=None):
         super(CDSCallback, self).initialize(plot_id)
+        plot = self.plot
+        data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
-            stream.update(data=self.plot_handles['source'].data)
+            stream.update(data=data)
 
     def _process_msg(self, msg):
         msg['data'] = dict(msg['data'])
@@ -836,10 +838,19 @@ class PointDrawCallback(CDSCallback):
         except Exception:
             param.main.warning('PointDraw requires bokeh >= 0.12.14')
             return
+
+        stream = self.streams[0]
         renderers = [self.plot.handles['glyph_renderer']]
+        kwargs = {}
+        if stream.num_objects:
+            if bokeh_version >= '1.0.0':
+                kwargs['num_objects'] = stream.num_objects
+            else:
+                param.main.warning('Specifying num_objects to PointDraw stream '
+                                   'only supported for bokeh version >= 1.0.0.')
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
-                                   empty_value=self.streams[0].empty_value,
-                                   renderers=renderers)
+                                   empty_value=stream.empty_value,
+                                   renderers=renderers, **kwargs)
         self.plot.state.tools.append(point_tool)
         source = self.plot.handles['source']
 
@@ -862,14 +873,47 @@ class PolyDrawCallback(CDSCallback):
             param.main.warning('PolyDraw requires bokeh >= 0.12.14')
             return
         plot = self.plot
+        stream = self.streams[0]
+        kwargs = {}
+        if stream.num_objects:
+            if bokeh_version >= '1.0.0':
+                kwargs['num_objects'] = stream.num_objects
+            else:
+                param.main.warning('Specifying num_objects to PointDraw stream '
+                                   'only supported for bokeh versions >=1.0.0.')
+        if stream.show_vertices:
+            if bokeh_version >= '1.0.0':
+                vertex_style = dict({'size': 10}, **stream.vertex_style)
+                r1 = plot.state.scatter([], [], **vertex_style)
+                kwargs['vertex_renderer'] = r1
+            else:
+                param.main.warning('Enabling vertices on the PointDraw stream '
+                             'only supported for bokeh versions >=1.0.0.')
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
-                                 empty_value=self.streams[0].empty_value,
-                                 renderers=[plot.handles['glyph_renderer']])
+                                 empty_value=stream.empty_value,
+                                 renderers=[plot.handles['glyph_renderer']],
+                                 **kwargs)
         plot.state.tools.append(poly_tool)
-        data = dict(plot.handles['source'].data)
-        for stream in self.streams:
-            stream.update(data=data)
-        super(CDSCallback, self).initialize(plot_id)
+        super(PolyDrawCallback, self).initialize(plot_id)
+
+
+class FreehandDrawCallback(CDSCallback):
+
+    def initialize(self, plot_id=None):
+        try:
+            from bokeh.models import FreehandDrawTool
+        except:
+            param.main.warning('FreehandDraw requires bokeh >= 0.13.0')
+            return
+        plot = self.plot
+        stream = self.streams[0]
+        poly_tool = FreehandDrawTool(
+            empty_value=stream.empty_value,
+            num_objects=stream.num_objects,
+            renderers=[plot.handles['glyph_renderer']],
+        )
+        plot.state.tools.append(poly_tool)
+        super(FreehandDrawCallback, self).initialize(plot_id)
 
 
 class BoxEditCallback(CDSCallback):
@@ -883,29 +927,40 @@ class BoxEditCallback(CDSCallback):
         except:
             param.main.warning('BoxEdit requires bokeh >= 0.12.14')
             return
+
         plot = self.plot
+        data = plot.handles['cds'].data
         element = self.plot.current_frame
+        stream = self.streams[0]
+        kwargs = {}
+        if stream.num_objects:
+            if bokeh_version >= '1.0.0':
+                kwargs['num_objects'] = stream.num_objects
+            else:
+                param.main.warning('Specifying num_objects to BoxEdit stream '
+                                   'only supported for bokeh versions >=1.0.0.')
         xs, ys, widths, heights = [], [], [], []
-        for el in element.split():
-            x0, x1 = el.range(0)
-            y0, y1 = el.range(1)
+        for x, y in zip(data['xs'], data['ys']):
+            x0, x1 = (np.nanmin(x), np.nanmax(x))
+            y0, y1 = (np.nanmin(y), np.nanmax(y))
             xs.append((x0+x1)/2.)
             ys.append((y0+y1)/2.)
             widths.append(x1-x0)
             heights.append(y1-y0)
         data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
-        data.update({vd.name: [] for vd in element.vdims})
+        data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
         rect_source = ColumnDataSource(data=data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
-        box_tool = BoxEditTool(renderers=[r1])
+        box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
         self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        super(BoxEditCallback, self).initialize()
+        super(CDSCallback, self).initialize()
+        data = self._process_msg({'data': data})['data']
         for stream in self.streams:
-            stream.update(data=self._process_msg({'data': data})['data'])
+            stream.update(data=data)
 
 
     def _process_msg(self, msg):
@@ -933,7 +988,7 @@ class PolyEditCallback(CDSCallback):
             tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
             vertex_tool = tools[0] if tools else None
         if vertex_tool is None:
-            vertex_style = dict(size=10, **self.streams[0].vertex_style)
+            vertex_style = dict({'size': 10}, **self.streams[0].vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             vertex_tool = PolyEditTool(vertex_renderer=r1)
             plot.state.tools.append(vertex_tool)
@@ -966,6 +1021,7 @@ callbacks[PlotReset]   = ResetCallback
 callbacks[CDSStream]   = CDSCallback
 callbacks[BoxEdit]     = BoxEditCallback
 callbacks[PointDraw]   = PointDrawCallback
+callbacks[FreehandDraw]   = FreehandDrawCallback
 callbacks[PolyDraw]    = PolyDrawCallback
 callbacks[PolyEdit]    = PolyEditCallback
 
@@ -1113,8 +1169,15 @@ class DataLinkCallback(LinkCallback):
             raise Exception('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
+
+        # Ensure the data sources are compatible (i.e. overlapping columns are equal)
         for k, v in tgt_cds.data.items():
-            if k in src_cds.data and np.testing.assert_array_equal(v, src_cds.data[k]):
+            if k not in src_cds.data:
+                continue
+            col = src_cds.data[k]
+            if not ((isscalar(v) and v == col) or
+                    (v.dtype.kind not in 'iufc' and (v==col).all()) or
+                    np.allclose(v, src_cds.data[k])):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
                                  'does not match target' % k)
