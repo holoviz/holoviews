@@ -70,3 +70,10 @@ class TestBokehViolinPlot(TestBokehPlot):
         r1, r2 = violin.range(1)
         plot = bokeh_renderer.get_plot(violin)
         self.assertEqual(plot.handles['x_range'].factors, ['0', '1'])
+
+    def test_violin_empty(self):
+        violin = Violin([])
+        plot = bokeh_renderer.get_plot(violin)
+        patch_source = plot.handles['patch_0_source']
+        self.assertEqual(patch_source.data['x'], np.array([]))
+        self.assertEqual(patch_source.data['y'], [])
