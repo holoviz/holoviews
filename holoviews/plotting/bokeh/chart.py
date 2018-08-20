@@ -484,23 +484,43 @@ class SpreadPlot(ElementPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    def get_data(self, element, ranges, style):
-         mapping = dict(x='x', y='y')
-         xvals = element.dimension_values(0)
-         mean = element.dimension_values(1)
-         neg_error = element.dimension_values(2)
-         pos_idx = 3 if len(element.dimensions()) > 3 else 2
-         pos_error = element.dimension_values(pos_idx)
+    def _split_area(self, xs, lower, upper):
+        """
+        Splits area plots at nans and returns x- and y-coordinates for
+        each area separated by nans.
+        """
+        split = np.where(np.isnan(xs) | np.isnan(lower) | np.isnan(upper))[0]
+        xvals = np.split(xs, split)
+        lower = np.split(lower, split)
+        upper = np.split(upper, split)
+        band_x, band_y = [], []
+        for i, (x, l, u) in enumerate(zip(xvals, lower, upper)):
+            if i:
+                x, l, u = x[1:], l[1:], u[1:]
+            if not len(x):
+                continue
+            band_x += [np.append(x, x[::-1]), np.array([np.nan])]
+            band_y += [np.append(l, u[::-1]), np.array([np.nan])]
+        if len(band_x):
+            return np.concatenate(band_x[:-1]), np.concatenate(band_y[:-1])
+        return [], []
 
-         lower = mean - neg_error
-         upper = mean + pos_error
-         band_x = np.append(xvals, xvals[::-1])
-         band_y = np.append(lower, upper[::-1])
-         if self.invert_axes:
-             data = dict(x=band_y, y=band_x)
-         else:
-             data = dict(x=band_x, y=band_y)
-         return data, mapping, style
+    def get_data(self, element, ranges, style):
+        mapping = dict(x='x', y='y')
+        xvals = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+        lower = mean - neg_error
+        upper = mean + pos_error
+
+        band_x, band_y = self._split_area(xvals, lower, upper)
+        if self.invert_axes:
+            data = dict(x=band_y, y=band_x)
+        else:
+            data = dict(x=band_x, y=band_y)
+        return data, mapping, style
 
 
 
@@ -522,18 +542,18 @@ class AreaPlot(SpreadPlot):
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y')
         xs = element.dimension_values(0)
-        x2 = np.hstack((xs[::-1], xs))
 
         if len(element.vdims) > 1:
             bottom = element.dimension_values(2)
         else:
             bottom = np.zeros(len(element))
-        ys = np.hstack((bottom[::-1], element.dimension_values(1)))
+        top = element.dimension_values(1)
 
+        band_xs, band_ys = self._split_area(xs, bottom, top)
         if self.invert_axes:
-            data = dict(x=ys, y=x2)
+            data = dict(x=band_ys, y=band_xs)
         else:
-            data = dict(x=x2, y=ys)
+            data = dict(x=band_xs, y=band_ys)
         return data, mapping, style
 
 
