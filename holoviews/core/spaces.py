@@ -576,15 +576,13 @@ class Callable(param.Parameterized):
             # KeyError is caught separately because it is used to signal
             # invalid keys on DynamicMap and should not warn
             raise
-        except:
+        except Exception as e:
             posstr = ', '.join(['%r' % el for el in self.args]) if self.args else ''
             kwstr = ', '.join('%s=%r' % (k,v) for k,v in self.kwargs.items())
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
-            message = ("Exception raised in callable '{name}' of type '{ctype}'.\n"
+            message = ("Callable raised \"{e}\".\n"
                        "Invoked as {name}({argstr})")
-            self.warning(message.format(name=self.name,
-                                        ctype = type(self.callable).__name__,
-                                        argstr=argstr))
+            self.warning(message.format(name=self.name, argstr=argstr, e=repr(e)))
             raise
 
         if hashed_key is not None:
