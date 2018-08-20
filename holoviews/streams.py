@@ -532,7 +532,8 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
-            if util.pd and isinstance(data, util.pd.DataFrame) and self._index:
+            if (util.pd and isinstance(data, util.pd.DataFrame) and
+                list(data.columns) != list(self.data.columns) and self._index):
                 data = data.reset_index()
             self.verify(data)
             kwargs['data'] = self._concat(data)
