@@ -324,14 +324,19 @@ class ViolinPlot(BoxWhiskerPlot):
             el = el.clone(vdims=[vdim])
         kde = univariate_kde(el, dimension=vdim, **kwargs)
         xs, ys = (kde.dimension_values(i) for i in range(2))
+        mask = np.isfinite(ys) & (ys>0) # Mask out non-finite and zero values
+        xs, ys = xs[mask], ys[mask]
         ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
         ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
-        kde =  {'x': np.concatenate([xs, xs[::-1]]), 'y': ys}
+        xs = np.concatenate([xs, xs[::-1]])
+        kde =  {'x': xs, 'y': ys}
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
         values = values[np.isfinite(values)]
-        if self.inner == 'quartiles':
+        if not len(values):
+            pass
+        elif self.inner == 'quartiles':
             for stat_fn in self._stat_fns:
                 stat = stat_fn(values)
                 sidx = np.argmin(np.abs(xs-stat))
