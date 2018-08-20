@@ -65,3 +65,15 @@ class DaskDatasetTest(PandasInterfaceTests):
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
         self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
+
+    def test_dataset_range_categorical_dimension(self):
+        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ds = Dataset(ddf)
+        self.assertEqual(ds.range(0), ('1', '3'))
+
+    def test_dataset_range_categorical_dimension_empty(self):
+        ddf = dd.from_pandas(pd.DataFrame({'a': ['1', '2', '3']}), 1)
+        ds = Dataset(ddf).iloc[:0]
+        ds_range = ds.range(0)
+        self.assertTrue(np.isnan(ds_range[0]))
+        self.assertTrue(np.isnan(ds_range[1]))
