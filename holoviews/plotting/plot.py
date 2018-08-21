@@ -873,18 +873,19 @@ class GenericElementPlot(DimensionedPlot):
         elif ydim is None:
             y0, y1 = np.NaN, np.NaN
 
-        if range_type == 'soft':
-            z0, z1 = zsrange
-        elif range_type == 'data':
-            z0, z1 = zhrange
-        elif range_type=='combined':
-            z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
-        elif zdim == 'categorical':
-            z0, z1 = '', ''
-        elif zdim is None:
-            z0, z1 = np.NaN, np.NaN
-
-        return (x0, y0, z0, x1, y1, z1) if self.projection == '3d' else (x0, y0, x1, y1)
+        if self.projection == '3d':
+            if range_type == 'soft':
+                z0, z1 = zsrange
+            elif range_type == 'data':
+                z0, z1 = zhrange
+            elif range_type=='combined':
+                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
+            elif zdim == 'categorical':
+                z0, z1 = '', ''
+            elif zdim is None:
+                z0, z1 = np.NaN, np.NaN
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
 
 
     def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
