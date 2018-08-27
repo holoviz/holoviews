@@ -1,11 +1,12 @@
 import itertools
 import types
+import inspect
+
 from numbers import Number
 from itertools import groupby
 from functools import partial
 from collections import defaultdict
 from contextlib import contextmanager
-from inspect import ArgSpec
 
 import numpy as np
 import param
@@ -16,7 +17,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, ParameterizedStream
 
 
 
@@ -521,7 +522,7 @@ class Callable(param.Parameterized):
     @property
     def noargs(self):
         "Returns True if the callable takes no arguments"
-        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        noargs = inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
         return self.argspec == noargs
 
 
@@ -737,8 +738,10 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
-    def __init__(self, callback, initial_items=None, **params):
-
+    def __init__(self, callback, initial_items=None, streams=None, **params):
+        streams = (streams or [])
+        if util.is_param_method(callback):
+            streams.append(callback)
         if isinstance(callback, types.GeneratorType):
             callback = Generator(callback)
         elif not isinstance(callback, Callable):
@@ -749,14 +752,24 @@ class DynamicMap(HoloMap):
                          'and no longer needs to be specified.')
             del params['sampled']
 
-        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
-        invalid = [s for s in self.streams if not isinstance(s, Stream)]
+        valid, invalid = [], []
+        for s in streams:
+            if not isinstance(s, Stream):
+                if isinstance(s, param.Parameterized) or util.is_param_method(s):
+                    s = ParameterizedStream(s)
+                else:
+                    invalid.append(s)
+                    continue
+            valid.append(s)
+        
+
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
-
+        super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
+        
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:

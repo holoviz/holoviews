@@ -1021,3 +1021,46 @@ class PolyEdit(PolyDraw):
         self.shared = shared
         self.vertex_style = vertex_style
         super(PolyEdit, self).__init__(**params)
+
+
+class ParameterizedStream(Stream):
+    """
+    A Stream that watches the changes in the parameters of the supplied
+    Parameterized objects or the dependencies of a method on a Parameterized
+    object.
+    """
+
+    parameterized = param.ClassSelector(class_=param.Parameterized)
+
+    parameters = param.List([])
+
+    def __init__(self, parameterized, parameters=None, **params):
+        self.is_method = util.is_param_method(parameterized)
+        if self.is_method:
+            method = parameterized
+            parameterized = util.get_method_owner(parameterized)
+            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
+        elif parameters is None:
+            parameters = [p for p in parameterized.params()]
+
+        super(ParameterizedStream, self).__init__(
+            parameterized=parameterized,
+            parameters=parameters, **params
+        )
+        for p in self.parameters:
+            self.parameterized.param.watch(p, fn=self._listener)
+
+    def _listener(self, change):
+        self.trigger([self])
+
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self.parameterized, k, v)
+
+    @property
+    def contents(self):
+        if self.is_method: return {}
+        filtered = {k: v for k, v in self.parameterized.get_param_values()
+                    if k in self.parameters}
+        return {self._rename.get(k, k): v for (k, v) in filtered.items()
+                if self._rename.get(k, True) is not None}
