@@ -604,7 +604,7 @@ class Generator(Callable):
 
     @property
     def argspec(self):
-        return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
         try:
