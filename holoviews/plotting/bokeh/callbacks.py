@@ -894,6 +894,20 @@ class PolyDrawCallback(CDSCallback):
                                  renderers=[plot.handles['glyph_renderer']],
                                  **kwargs)
         plot.state.tools.append(poly_tool)
+
+        # Add any value dimensions not already in the CDS data
+        # ensuring the element can be reconstituted in entirety
+        element = self.plot.current_frame
+        source = plot.handles['cds']
+        for d in element.vdims:
+            scalar = element.interface.isscalar(element, d)
+            dim = dimension_sanitizer(d.name)
+            if dim not in source.data:
+                if scalar:
+                    source.data[dim] = element.dimension_values(d, not scalar)
+                else:
+                    source.data[dim] = element.split(datatype='array')
+
         super(PolyDrawCallback, self).initialize(plot_id)
 
 
