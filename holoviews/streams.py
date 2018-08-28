@@ -1030,9 +1030,11 @@ class ParameterizedStream(Stream):
     object.
     """
 
-    parameterized = param.ClassSelector(class_=param.Parameterized)
+    parameterized = param.ClassSelector(class_=param.Parameterized, constant=True, doc="""
+        Parameterized instance to watch for parameter changes.""")
 
-    parameters = param.List([])
+    parameters = param.List([], constant=True, doc="""
+        Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, **params):
         self.is_method = util.is_param_method(parameterized)
