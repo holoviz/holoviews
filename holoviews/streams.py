@@ -1048,7 +1048,7 @@ class ParameterizedStream(Stream):
             parameters=parameters, **params
         )
         for p in self.parameters:
-            self.parameterized.param.watch(p, fn=self._listener)
+            self.parameterized.param.watch(self._listener, p)
 
     def _listener(self, change):
         self.trigger([self])
