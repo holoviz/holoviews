@@ -158,6 +158,33 @@ class Stream(param.Parameterized):
                 if stream.transient:
                     stream.reset()
 
+    @classmethod
+    def _process_streams(cls, streams):
+        """
+        Processes a list of streams promoting Parameterized objects and
+        methods to Param based streams.
+        """
+        param_watch_support = util.param_version >= '1.8.0'
+        parameterizeds = [s.parameterized for s in streams if isinstance(s, Params)]
+        valid, invalid = [], []
+        for s in streams:
+            if not isinstance(s, Stream):
+                if isinstance(s, param.Parameterized) and param_watch_support:
+                    if s not in parameterizeds:
+                        s = Params(s)
+                    else:
+                        continue
+                elif util.is_param_method(s) and param_watch_support:
+                    if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
+                        continue
+                    else:
+                        s = ParamMethod(s)
+                else:
+                    invalid.append(s)
+                    continue
+            valid.append(s)
+        return valid, invalid
+
 
     def __init__(self, rename={}, source=None, subscribers=[], linked=False,
                  transient=False, **params):
@@ -562,7 +589,7 @@ class Params(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
-        if util.param_version < '1.7.0' and watch:
+        if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         parameters = [p for p in parameterized.params() if p != 'name']
@@ -617,7 +644,7 @@ class ParamMethod(Params):
 
 # Backward compatibility
 def ParamValues(*args, **kwargs):
-    param.main.warning('ParamValues stream is deprecated, use ParamStream instead.')
+    param.main.warning('ParamValues stream is deprecated, use Params stream instead.')
     kwargs['watch'] = False
     return Params(*args, **kwargs)
 

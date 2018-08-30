@@ -17,7 +17,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream, Params, ParamMethod
+from ..streams import Stream
 
 
 
@@ -756,27 +756,7 @@ class DynamicMap(HoloMap):
                          'and no longer needs to be specified.')
             del params['sampled']
 
-        # Validate streams by ensuring parameterized objects and methods are wrapped in ParamStream
-        valid, invalid = [], []
-        parameterizeds = [s.parameterized for s in streams if isinstance(s, Params)]
-        for s in streams:
-            if not isinstance(s, Stream):
-                if isinstance(s, param.Parameterized) and param_watch_support:
-                    if s not in parameterizeds:
-                        s = Params(s)
-                    else:
-                        continue
-                elif util.is_param_method(s) and param_watch_support:
-                    if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
-                        continue
-                    else:
-                        s = ParamMethod(s)
-                else:
-                    invalid.append(s)
-                    continue
-            valid.append(s)
-        
-
+        valid, invalid = Stream._process_streams(streams)
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
