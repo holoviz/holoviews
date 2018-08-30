@@ -278,15 +278,14 @@ class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
 
     def test_dataarray_with_some_coords(self):
         xs = [4.2, 1]
-        expected_ys = list(range(3))
         zs = np.arange(6).reshape(2, 3)
         xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
 
         with self.assertRaises(ValueError):
-            img = Image(xrarr)
+            Image(xrarr)
 
         with self.assertRaises(ValueError):
-            img = Image(xrarr, kdims=['x', 'y'])
+            Image(xrarr, kdims=['x', 'y'])
 
 
 @attr(optional=1)
