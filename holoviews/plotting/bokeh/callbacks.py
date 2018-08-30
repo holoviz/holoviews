@@ -894,24 +894,25 @@ class PolyDrawCallback(CDSCallback):
                                  renderers=[plot.handles['glyph_renderer']],
                                  **kwargs)
         plot.state.tools.append(poly_tool)
+        self._update_cds_vdims()
+        super(PolyDrawCallback, self).initialize(plot_id)
 
+    def _update_cds_vdims(self):
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
         element = self.plot.current_frame
-        source = plot.handles['cds']
+        cds = self.plot.handles['cds']
         for d in element.vdims:
             scalar = element.interface.isscalar(element, d)
             dim = dimension_sanitizer(d.name)
-            if dim not in source.data:
+            if dim not in cds.data:
                 if scalar:
-                    source.data[dim] = element.dimension_values(d, not scalar)
+                    cds.data[dim] = element.dimension_values(d, not scalar)
                 else:
-                    source.data[dim] = element.split(datatype='array')
-
-        super(PolyDrawCallback, self).initialize(plot_id)
+                    cds.data[dim] = element.split(datatype='array')
 
 
-class FreehandDrawCallback(CDSCallback):
+class FreehandDrawCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
         try:
@@ -927,7 +928,8 @@ class FreehandDrawCallback(CDSCallback):
             renderers=[plot.handles['glyph_renderer']],
         )
         plot.state.tools.append(poly_tool)
-        super(FreehandDrawCallback, self).initialize(plot_id)
+        self._update_cds_vdims()
+        CDSCallback.initialize(self, plot_id)
 
 
 class BoxEditCallback(CDSCallback):
