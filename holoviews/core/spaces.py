@@ -742,7 +742,8 @@ class DynamicMap(HoloMap):
         streams = (streams or [])
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if util.is_param_method(callback) and params.get('watch', True):
+        param_watch_support = util.param_version >= '1.8.0'
+        if util.is_param_method(callback) and params.get('watch', param_watch_support):
             streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):
@@ -760,12 +761,12 @@ class DynamicMap(HoloMap):
         parameterizeds = [s.parameterized for s in streams if isinstance(s, ParamStream)]
         for s in streams:
             if not isinstance(s, Stream):
-                if isinstance(s, param.Parameterized):
+                if isinstance(s, param.Parameterized) and param_watch_support:
                     if s not in parameterizeds:
                         s = ParamStream(s)
                     else:
                         continue
-                elif util.is_param_method(s):
+                elif util.is_param_method(s) and param_watch_support:
                     if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
                         continue
                     else:

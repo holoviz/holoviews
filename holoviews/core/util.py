@@ -38,6 +38,7 @@ except AttributeError:
     get_keywords = operator.attrgetter('keywords')
 
 numpy_version = LooseVersion(np.__version__)
+param_version = LooseVersion(param.__version__)
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)

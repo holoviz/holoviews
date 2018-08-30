@@ -555,27 +555,33 @@ class ParamStream(Stream):
     object.
     """
 
-    parameterized = param.ClassSelector(class_=param.Parameterized, constant=True, doc="""
+    parameterized = param.ClassSelector(class_=(param.Parameterized,
+                                                param.parameterized.ParameterizedMetaclass),
+                                        constant=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized, parameters=None, **params):
+    def __init__(self, parameterized, parameters=None, watch=True, **params):
+        if util.param_version < '1.8.0' and watch:
+            raise RuntimeError('ParamStream requires param version >= 1.8.0, '
+                               'to support watching parameters.')
         self.is_method = util.is_param_method(parameterized)
         if self.is_method:
             method = parameterized
             parameterized = util.get_method_owner(parameterized)
             parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
         elif parameters is None:
-            parameters = [p for p in parameterized.params()]
+            parameters = [p for p in parameterized.params() if p != 'name']
 
         super(ParamStream, self).__init__(
             parameterized=parameterized,
             parameters=parameters, **params
         )
-        for p in self.parameters:
-            self.parameterized.param.watch(self._listener, p)
+        if watch:
+            for p in self.parameters:
+                self.parameterized.param.watch(self._listener, p)
 
     def _listener(self, change):
         self.trigger([self])
@@ -594,7 +600,11 @@ class ParamStream(Stream):
 
 
 # Backward compatibility
-ParamValues = ParamStream
+def ParamValues(*args, **kwargs):
+    param.main.warning('ParamValues stream is deprecated, use ParamStream instead.')
+    kwargs['watch'] = False
+    return ParamStream(*args, **kwargs)
+
 
 
 class LinkedStream(Stream):
