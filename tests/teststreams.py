@@ -305,6 +305,7 @@ class TestParameterRenaming(ComparisonTestCase):
         self.assertEquals(reenabled.contents, {'foo':0, 'y':0})
 
 
+        
 class TestPlotSizeTransform(ComparisonTestCase):
 
     def test_plotsize_initial_contents_1(self):
