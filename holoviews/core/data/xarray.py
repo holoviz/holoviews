@@ -121,6 +121,8 @@ class XArrayInterface(GridInterface):
                 arrays[vdim.name] = arr
             data = xr.Dataset(arrays)
         else:
+            if not data.coords:
+                data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
             if vdims is None:
                 vdims = list(data.data_vars.keys())
                 vdims = [retrieve_unit_and_label(vd) for vd in vdims]

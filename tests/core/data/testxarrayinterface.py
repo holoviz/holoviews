@@ -204,7 +204,7 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         self.dataset_grid_inv = self.element((self.grid_xs[::-1], self.grid_ys[::-1],
                                              dask_zs), kdims=['x', 'y'],
                                             vdims=['z'])
-        
+
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         import dask.array
         xs = [0, 1]
@@ -262,6 +262,31 @@ class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
         img = Image(array)[1:3]
         self.assertEqual(img['z'], Image(array.sel(x=slice(1, 3)))['z'])
 
+    def test_dataarray_with_no_coords(self):
+        expected_xs = list(range(2))
+        expected_ys = list(range(3))
+        zs = np.arange(6).reshape(2, 3)
+        xrarr = xr.DataArray(zs, dims=('x','y'))
+
+        img = Image(xrarr)
+        self.assertTrue(all(img.data.x == expected_xs))
+        self.assertTrue(all(img.data.y == expected_ys))
+
+        img = Image(xrarr, kdims=['x', 'y'])
+        self.assertTrue(all(img.data.x == expected_xs))
+        self.assertTrue(all(img.data.y == expected_ys))
+
+    def test_dataarray_with_some_coords(self):
+        xs = [4.2, 1]
+        expected_ys = list(range(3))
+        zs = np.arange(6).reshape(2, 3)
+        xrarr = xr.DataArray(zs, dims=('x','y'), coords={'x': xs})
+
+        with self.assertRaises(ValueError):
+            img = Image(xrarr)
+
+        with self.assertRaises(ValueError):
+            img = Image(xrarr, kdims=['x', 'y'])
 
 
 @attr(optional=1)
