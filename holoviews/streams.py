@@ -547,12 +547,10 @@ class Buffer(Pipe):
 
 
 
-
-class ParamStream(Stream):
+class Params(Stream):
     """
     A Stream that watches the changes in the parameters of the supplied
-    Parameterized objects or the dependencies of a method on a Parameterized
-    object.
+    Parameterized objects and triggers when they change.
     """
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
@@ -564,21 +562,11 @@ class ParamStream(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
-        if util.param_version < '1.8.0' and watch:
-            raise RuntimeError('ParamStream requires param version >= 1.8.0, '
+        if util.param_version < '1.7.0' and watch:
+            raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
-        self.is_method = util.is_param_method(parameterized)
-        if self.is_method:
-            method = parameterized
-            parameterized = util.get_method_owner(parameterized)
-            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
-        elif parameters is None:
-            parameters = [p for p in parameterized.params() if p != 'name']
-
-        super(ParamStream, self).__init__(
-            parameterized=parameterized,
-            parameters=parameters, **params
-        )
+        parameters = [p for p in parameterized.params() if p != 'name']
+        super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         if watch:
             for p in self.parameters:
                 self.parameterized.param.watch(self._listener, p)
@@ -592,19 +580,46 @@ class ParamStream(Stream):
 
     @property
     def contents(self):
-        if self.is_method: return {}
         filtered = {k: v for k, v in self.parameterized.get_param_values()
                     if k in self.parameters}
         return {self._rename.get(k, k): v for (k, v) in filtered.items()
                 if self._rename.get(k, True) is not None}
 
 
+
+class ParamMethod(Params):
+    """
+    A Stream that watches the parameter dependencies on a method of
+    a parameterized class and triggers when one of the parameters
+    change.
+    """
+
+    def __init__(self, parameterized, parameters=None, watch=True, **params):
+        if not util.is_param_method(parameterized):
+            raise ValueError('ParamMethodStream expects a method on a '
+                             'parameterized class, found %s.'
+                             % type(parameterized).__name__)
+        method = parameterized
+        parameterized = util.get_method_owner(parameterized)
+        if not parameters:
+            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
+        super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
+
+    @property
+    def hashkey(self):
+        return {'hash': Params.contents.fget(self)}
+
+    @property
+    def contents(self):
+        return {}
+
+
+
 # Backward compatibility
 def ParamValues(*args, **kwargs):
     param.main.warning('ParamValues stream is deprecated, use ParamStream instead.')
     kwargs['watch'] = False
-    return ParamStream(*args, **kwargs)
-
+    return Params(*args, **kwargs)
 
 
 class LinkedStream(Stream):

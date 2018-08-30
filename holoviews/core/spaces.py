@@ -17,7 +17,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream, ParamStream
+from ..streams import Stream, Params, ParamMethod
 
 
 
@@ -758,19 +758,19 @@ class DynamicMap(HoloMap):
 
         # Validate streams by ensuring parameterized objects and methods are wrapped in ParamStream
         valid, invalid = [], []
-        parameterizeds = [s.parameterized for s in streams if isinstance(s, ParamStream)]
+        parameterizeds = [s.parameterized for s in streams if isinstance(s, Params)]
         for s in streams:
             if not isinstance(s, Stream):
                 if isinstance(s, param.Parameterized) and param_watch_support:
                     if s not in parameterizeds:
-                        s = ParamStream(s)
+                        s = Params(s)
                     else:
                         continue
                 elif util.is_param_method(s) and param_watch_support:
                     if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
                         continue
                     else:
-                        s = ParamStream(s)
+                        s = ParamMethod(s)
                 else:
                     invalid.append(s)
                     continue
