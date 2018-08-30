@@ -990,7 +990,7 @@ class BoxEditCallback(CDSCallback):
         return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
 
 
-class PolyEditCallback(CDSCallback):
+class PolyEditCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
         try:
@@ -1009,7 +1009,8 @@ class PolyEditCallback(CDSCallback):
             vertex_tool = PolyEditTool(vertex_renderer=r1)
             plot.state.tools.append(vertex_tool)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
-        super(PolyEditCallback, self).initialize(plot_id)
+        self._update_cds_vdims()
+        CDSCallback.initialize(self, plot_id)
 
 
 
