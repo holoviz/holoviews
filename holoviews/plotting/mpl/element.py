@@ -185,7 +185,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
                                  rotation=self.zrotation)
 
-        for ax, ax_obj in zip('xy', [axis.xaxis, axis.yaxis]):
+        axes_str = 'xy'
+        axes_list = [axis.xaxis, axis.yaxis]
+
+        if hasattr(axis, 'zaxis'):
+            axes_str += 'z'
+            axes_list.append(axis.zaxis)
+
+        for ax, ax_obj in zip(axes_str, axes_list):
             tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
