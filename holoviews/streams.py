@@ -547,6 +547,56 @@ class Buffer(Pipe):
 
 
 
+
+class ParamStream(Stream):
+    """
+    A Stream that watches the changes in the parameters of the supplied
+    Parameterized objects or the dependencies of a method on a Parameterized
+    object.
+    """
+
+    parameterized = param.ClassSelector(class_=param.Parameterized, constant=True, doc="""
+        Parameterized instance to watch for parameter changes.""")
+
+    parameters = param.List([], constant=True, doc="""
+        Parameters on the parameterized to watch.""")
+
+    def __init__(self, parameterized, parameters=None, **params):
+        self.is_method = util.is_param_method(parameterized)
+        if self.is_method:
+            method = parameterized
+            parameterized = util.get_method_owner(parameterized)
+            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
+        elif parameters is None:
+            parameters = [p for p in parameterized.params()]
+
+        super(ParamStream, self).__init__(
+            parameterized=parameterized,
+            parameters=parameters, **params
+        )
+        for p in self.parameters:
+            self.parameterized.param.watch(self._listener, p)
+
+    def _listener(self, change):
+        self.trigger([self])
+
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self.parameterized, k, v)
+
+    @property
+    def contents(self):
+        if self.is_method: return {}
+        filtered = {k: v for k, v in self.parameterized.get_param_values()
+                    if k in self.parameters}
+        return {self._rename.get(k, k): v for (k, v) in filtered.items()
+                if self._rename.get(k, True) is not None}
+
+
+# Backward compatibility
+ParamValues = ParamStream
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
@@ -757,53 +807,6 @@ class PlotReset(LinkedStream):
     def __init__(self, *args, **params):
         super(PlotReset, self).__init__(self, *args, **dict(params, transient=True))
 
-
-class ParamValues(Stream):
-    """
-    A Stream based on the parameter values of some other parameterized
-    object, whether it is a parameterized class or a parameterized
-    instance.
-
-    The update method enables the stream to update the parameters of the
-    specified object.
-    """
-
-    def __init__(self, obj, **params):
-        self._obj = obj
-        super(ParamValues, self).__init__(**params)
-
-
-    @property
-    def contents(self):
-        if isinstance(self._obj, type):
-            remapped = {k: getattr(self._obj, k)
-                        for k in self._obj.params().keys() if k != 'name'}
-        else:
-            remapped = {k: v for k, v in self._obj.get_param_values() if k != 'name'}
-        return remapped
-
-
-    def update(self, **kwargs):
-        """
-        The update method updates the parameters of the specified object.
-
-        If trigger is enabled, the trigger classmethod is invoked on
-        this Stream instance to execute its subscribers.
-        """
-        if isinstance(self._obj, type):
-            for name in self._obj.params().keys():
-                if name in kwargs:
-                    setattr(self._obj, name, kwargs[name])
-        else:
-            self._obj.set_param(**kwargs)
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        return '%s(%r)' % (cls_name, self._obj)
-
-
-    def __str__(self):
-        return repr(self)
 
 
 class PositionX(PointerX):
@@ -1021,48 +1024,3 @@ class PolyEdit(PolyDraw):
         self.shared = shared
         self.vertex_style = vertex_style
         super(PolyEdit, self).__init__(**params)
-
-
-class ParameterizedStream(Stream):
-    """
-    A Stream that watches the changes in the parameters of the supplied
-    Parameterized objects or the dependencies of a method on a Parameterized
-    object.
-    """
-
-    parameterized = param.ClassSelector(class_=param.Parameterized, constant=True, doc="""
-        Parameterized instance to watch for parameter changes.""")
-
-    parameters = param.List([], constant=True, doc="""
-        Parameters on the parameterized to watch.""")
-
-    def __init__(self, parameterized, parameters=None, **params):
-        self.is_method = util.is_param_method(parameterized)
-        if self.is_method:
-            method = parameterized
-            parameterized = util.get_method_owner(parameterized)
-            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
-        elif parameters is None:
-            parameters = [p for p in parameterized.params()]
-
-        super(ParameterizedStream, self).__init__(
-            parameterized=parameterized,
-            parameters=parameters, **params
-        )
-        for p in self.parameters:
-            self.parameterized.param.watch(self._listener, p)
-
-    def _listener(self, change):
-        self.trigger([self])
-
-    def update(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self.parameterized, k, v)
-
-    @property
-    def contents(self):
-        if self.is_method: return {}
-        filtered = {k: v for k, v in self.parameterized.get_param_values()
-                    if k in self.parameters}
-        return {self._rename.get(k, k): v for (k, v) in filtered.items()
-                if self._rename.get(k, True) is not None}

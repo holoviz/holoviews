@@ -17,7 +17,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream, ParameterizedStream
+from ..streams import Stream, ParamStream
 
 
 
@@ -740,8 +740,11 @@ class DynamicMap(HoloMap):
 
     def __init__(self, callback, initial_items=None, streams=None, **params):
         streams = (streams or [])
-        if util.is_param_method(callback):
+
+        # If callback is a parameterized method and watch is disabled add as stream
+        if util.is_param_method(callback) and params.get('watch', True):
             streams.append(callback)
+
         if isinstance(callback, types.GeneratorType):
             callback = Generator(callback)
         elif not isinstance(callback, Callable):
@@ -752,11 +755,21 @@ class DynamicMap(HoloMap):
                          'and no longer needs to be specified.')
             del params['sampled']
 
+        # Validate streams by ensuring parameterized objects and methods are wrapped in ParamStream
         valid, invalid = [], []
+        parameterizeds = [s.parameterized for s in streams if isinstance(s, ParamStream)]
         for s in streams:
             if not isinstance(s, Stream):
-                if isinstance(s, param.Parameterized) or util.is_param_method(s):
-                    s = ParameterizedStream(s)
+                if isinstance(s, param.Parameterized):
+                    if s not in parameterizeds:
+                        s = ParamStream(s)
+                    else:
+                        continue
+                elif util.is_param_method(s):
+                    if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
+                        continue
+                    else:
+                        s = ParamStream(s)
                 else:
                     invalid.append(s)
                     continue
