@@ -66,7 +66,7 @@ if (comm_msg != null) {{
 
 class BokehRenderer(Renderer):
 
-    theme = param.ClassSelector(default=None, class_=Theme, allow_None=True, doc="""
+    theme = param.ClassSelector(default=None, class_=(Theme, str), allow_None=True, doc="""
        The applicable Bokeh Theme object (if any).""")
 
     backend = param.String(default='bokeh', doc="The backend name.")
