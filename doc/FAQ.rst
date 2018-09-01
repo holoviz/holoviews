@@ -4,93 +4,9 @@ FAQ
 Here is a list of questions we have either been asked by users or
 potential pitfalls we hope to help users avoid:
 
-**Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
+**Q: How should I use HoloViews as a short qualified import?**
 
-**A:** Pass an unpacked dictionary containing the kdims/vdims' names as
-keys and a tuple of the bounds as values into obj.redim.range().
-
-This constrains the bounds of x_col to (0, max(x_col)).
-
-.. code:: python
-
-  curve = hv.Curve(df, 'x_col', 'y_col')
-  curve = curve.redim.range(x_col=(0, None))
-
-This same method is applicable to adjust the range of a color bar. Here
-z_col is the color bar value dimension and is bounded from 0 to 5.
-
-.. code:: python
-
-  curve = hv.Curve(df, 'x_col', ['y_col', 'z_col'])
-  curve = curve.redim.range(z_col=(0, 5))
-
-
-**Q: How do I provide keyword arguments for items with spaces?**
-
-**A:** If your column names have spaces, you may predefine a dictionary
-using curly braces and unpack it.
-
-.. code:: python
-
-  bounds = {'x col': (0, None), 'z col': (None, 10)}
-  curve = hv.Curve(df, 'x col', ['y col', 'z col'])
-  curve = curve.redim.range(**bounds)
-
-
-**Q: How do I export a figure?**
-
-**A:** Create a renderer object by passing a backend (matplotlib / bokeh)
-and pass the object and name of file without any suffix into the .save method.
-
-.. code:: python
-
-  backend = 'bokeh'
-  renderer = hv.renderer(backend)
-  renderer.save(obj, 'name_of_file')
-
-
-**Q: Why isn't my %%opts cell magic being applied to my HoloViews object?**
-
-**A:** %%opts is convenient because it tab-completes, but it can be confusing
-because of the "magic" way that it works. Specifically, if you use it at
-the top of a Jupyter notebook cell, the indicated options will be applied
-to the return value of that cell, if it's a HoloViews object. So, if you
-want a given object to get customized, you need to make sure it is
-returned from the cell, or the options won't ever be applied, and you
-should only access it after it has been returned, or the options won't
-_yet_ have been applied. For instance, if you use `renderer.save()`
-to export an object and only then return that object as the output of
-a cell, the exported object won't have the options applied, because
-they don't get applied until the object is returned
-(during IPython's "display hooks" processing). So to make sure that
-options get applied, (a) return the object from a cell, and then (b)
-access it (e.g. for exporting) after the object has been returned.
-To avoid confusion, you may prefer to use .options() directly on the
-object to ensure that the options have been applied before exporting.
-Example code below:
-
-.. code:: python
-
-  %%opts Curve [width=1000]
-  # preceding cell
-  curve = hv.Curve([1, 2, 3])
-  # next cell
-  hv.renderer('bokeh').save(curve, 'example_curve')
-
-
-**Q: Why are my .options(), .relabel(), .redim(), and similar settings
-not having any effect?**
-
-**A:** By default, HoloViews object methods like .options and
-.redim return a _copy_ of your object,
-rather than modifying your original object. In HoloViews,
-making a copy of the object is cheap, because only the metadata
-is copied, not the data, and returning a copy makes it simple
-to work with a variety of differently customized versions of
-any given object. You can pass clone=False to .options()
-if you wish to modify the object in place, or you can just
-reassign the new object to the old name (as in
-``e=e.relabel("New Label")``).
+**A:** We recommend importing HoloViews using ``import holoviews as hv``.
 
 
 **Q: How do I specify axis labels?**
@@ -116,6 +32,22 @@ defined, by passing arguments (or an unpacked dictionary) to
   curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
 
 
+**Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
+
+**A:** Pass an unpacked dictionary containing the kdims/vdims' names as
+keys and a tuple of the bounds as values into obj.redim.range().
+
+This constrains the bounds of x_col to (0, max(x_col)).
+
+.. code:: python
+
+  curve = hv.Curve(df, 'x_col', 'y_col')
+  curve = curve.redim.range(x_col=(0, None))
+
+This same method is applicable to adjust the range of a color bar. Here
+z_col is the color bar value dimension and is bounded from 0 to 5.
+
+
 **Q: The default figure size is so tiny! How do I enlarge it?**
 
 **A:** Depending on the selected backend...
@@ -129,15 +61,104 @@ defined, by passing arguments (or an unpacked dictionary) to
   hv_obj = hv_obj.options(width=1000, height=500)
 
 
-**Q: Why are the sizing options so different between the Matplotlib
-and Bokeh backends?"**
+**Q: How do I get a legend on my overlay figure?**
 
-**"A:** The way plot sizes are computed is handled in radically
-different ways by these backends, with Matplotlib building plots 'inside
-out' (from plot components with their own sizes) and Bokeh building
-them 'outside in' (fitting plot components into a given overall size).
-Thus there is not currently any way to specify sizes in a way that is
-comparable between the two backends.
+**A:** Legends are generated in two different ways, depending on the
+``Overlay`` type you are using. When using ``*`` to generate a normal ``Overlay``,
+the legends are generated from the labels of the Elements.
+Alternatively, you can construct an ``NdOverlay``, where the key dimensions
+and values will become part of the legend. The
+`Dimensioned Containers <user_guides/Dimensioned_Containers.html>`_ user guide
+shows an example of an ``NdOverlay`` in action.
+
+
+**Q: How do I export a figure?**
+
+**A:** Create a renderer object by passing a backend (matplotlib / bokeh)
+and pass the object and name of file without any suffix into the .save method.
+
+.. code:: python
+
+  backend = 'bokeh'
+  renderer = hv.renderer(backend)
+  renderer.save(obj, 'name_of_file')
+
+.. code:: python
+
+  curve = hv.Curve(df, 'x_col', ['y_col', 'z_col'])
+  curve = curve.redim.range(z_col=(0, 5))
+
+
+**Q: Can I avoid generating extremely large HTML files when exporting
+my notebook?**
+
+**A:** It is very easy to visualize large volumes of data with
+HoloMaps, and all available display data is embedded in the HTML
+snapshot when sliders are used so that the result can be viewed
+without using a Python server process. It is therefore worth being
+aware of file size when authoring a notebook or web page to be
+published on the web. Useful tricks to reduce file size of HoloMaps
+include:
+
+* Reducing the figure size.
+* Selecting fewer frames for display (e.g selecting a smaller number
+  of keys in any displayed ``HoloMap`` object)
+* Displaying your data in a more highly compressed format such as
+  ``webm``, ``mp4`` or animated ``gif``, while being aware that those
+  formats may introduce visible artifacts.
+* Replace figures with lots of data with images prerendered
+  by `datashade() <user_guides/Large_Data.html>`_.
+
+It is also possible to generate web pages that do not actually include
+all of the data shown, by specifying a `DynamicMap`` as described in
+`Live Data <user_guides/Live_Data.html>`_ rather than a HoloMap.  The
+DynamicMap will request data only as needed, and so requires a Python
+server to be running alongside the viewable web page.  Such pages are
+more difficult to share by email or on web sites, but much more feasible
+for large datasets.
+
+
+**Q: I wish to use special characters in my title, but then attribute
+access becomes confusing.**
+
+**A:** The title format ``"{label} {group} {dimensions}"`` is simply a default
+that you can override. If you want to use a lot of special characters
+in your titles, you can pick simple ``group`` and ``label`` strings
+that let you refer to the object easily in the code, and then you can
+set the plot title directly, using the plot option
+``title_format="my new title"``.
+
+You can also use 2-tuples when specifying ``group`` and ``label`` where
+the first item is the short name used for attribute access and the
+second name is the long descriptive name used in the title.
+
+
+**Q: Help! I don't know how to index into my object!**
+
+**A:**  In any Python session, you can look at ``print(obj)`` to see
+the structure of ``obj``. For
+an explanation of how this information helps you index into your
+object, see our `Composing Elements <user_guides/Composing_Elements.html>`_
+user guide.
+
+
+**Q: How do I create a Layout or Overlay object from an arbitrary list?**
+
+**A:** You can supply a list of ``elements`` directly to the ``Layout`` and
+``Overlay`` constructors. For instance, you can use
+``hv.Layout(elements)`` or ``hv.Overlay(elements)``.
+
+
+**Q: How do I provide keyword arguments for items with spaces?**
+
+**A:** If your column names have spaces, you may predefine a dictionary
+using curly braces and unpack it.
+
+.. code:: python
+
+  bounds = {'x col': (0, None), 'z col': (None, 10)}
+  curve = hv.Curve(df, 'x col', ['y col', 'z col'])
+  curve = curve.redim.range(**bounds)
 
 
 **Q: How do I plot data without storing it first as a pandas/xarray objects?**
@@ -170,9 +191,61 @@ Of course, notebook-specific functionality like capturing the data in
 notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 
 
-**Q: How should I use HoloViews as a short qualified import?**
+**Q: Help! How do I find out the options for customizing the
+appearance of my object?**
 
-**A:** We recommend importing HoloViews using ``import holoviews as hv``.
+**A:** If you are in the IPython/Jupyter Notebook you can use the cell magic
+``%%output info=True`` at the top of your code cell. This will
+present the available style and plotting options for that object.
+
+The same information is also available in any Python session using
+``hv.help(obj)``. For more information on customizing the display
+of an object, see our `Customizing Plots <user_guides/Customizing_Plots.html>`_
+user guide.
+
+
+**Q: Why are my .options(), .relabel(), .redim(), and similar settings
+not having any effect?**
+
+**A:** By default, HoloViews object methods like .options and
+.redim return a _copy_ of your object,
+rather than modifying your original object. In HoloViews,
+making a copy of the object is cheap, because only the metadata
+is copied, not the data, and returning a copy makes it simple
+to work with a variety of differently customized versions of
+any given object. You can pass clone=False to .options()
+if you wish to modify the object in place, or you can just
+reassign the new object to the old name (as in
+``e=e.relabel("New Label")``).
+
+
+**Q: Why isn't my %%opts cell magic being applied to my HoloViews object?**
+
+**A:** %%opts is convenient because it tab-completes, but it can be confusing
+because of the "magic" way that it works. Specifically, if you use it at
+the top of a Jupyter notebook cell, the indicated options will be applied
+to the return value of that cell, if it's a HoloViews object. So, if you
+want a given object to get customized, you need to make sure it is
+returned from the cell, or the options won't ever be applied, and you
+should only access it after it has been returned, or the options won't
+_yet_ have been applied. For instance, if you use `renderer.save()`
+to export an object and only then return that object as the output of
+a cell, the exported object won't have the options applied, because
+they don't get applied until the object is returned
+(during IPython's "display hooks" processing). So to make sure that
+options get applied, (a) return the object from a cell, and then (b)
+access it (e.g. for exporting) after the object has been returned.
+To avoid confusion, you may prefer to use .options() directly on the
+object to ensure that the options have been applied before exporting.
+Example code below:
+
+.. code:: python
+
+  %%opts Curve [width=1000]
+  # preceding cell
+  curve = hv.Curve([1, 2, 3])
+  # next cell
+  hv.renderer('bokeh').save(curve, 'example_curve')
 
 
 **Q: My output looks different from what is shown on the website**
@@ -197,26 +270,44 @@ consistent across HoloViews backends, but in general HoloViews tries
 to use each backend's defaults where possible.
 
 
-**Q: Help! I don't know how to index into my object!**
+**Q: Why do my HoloViews and GeoViews objects work fine separately but
+are mismatched when overlaid?
 
-**A:**  In any Python session, you can look at ``print(obj)`` to see
-the structure of ``obj``. For
-an explanation of how this information helps you index into your
-object, see our `Composing Elements <user_guides/Composing_Elements.html>`_
-user guide.
+**A:** GeoViews works precisely the same as HoloViews, except that
+GeoViews is aware of geographic projections.  If you take an
+``hv.Points()`` object in lon,lat coordinates and overlay it on a
+GeoViews map in Web Mercator, the HoloViews object will be in
+entirely the wrong coordinate system, with the HoloViews object all
+appearing at one tiny spot on the globe.  If you declare the same
+object as ``gv.Points``, then GeoViews will (a) assume it is in
+lon,lat coordinates (which HoloViews cannot assume, as it knows
+nothing of geography), and (b) convert it into the coordinates
+needed for display (e.g. Web Mercator).  So, just make sure that
+anything with geographic coordinates is defined as a GeoViews object,
+and make sure to declare the coordinates (``crs=...``) if the data is
+in anything other than lon,lat.
 
 
-**Q: Help! How do I find out the options for customizing the
-appearance of my object?**
+**Q: Where have my custom styles gone after unpickling my object?**
 
-**A:** If you are in the IPython/Jupyter Notebook you can use the cell magic
-``%%output info=True`` at the top of your code cell. This will
-present the available style and plotting options for that object.
+**A:** HoloViews objects are designed to pickle and unpickle your core
+data only, if you use Python's ``pickle.load`` and
+``pickle.dump``. Because custom options are kept separate from
+your data, you need to use the corresponding methods ``Store.dump`` and
+``Store.load`` if you also want to save and restore per-object
+customization. You can import ``Store`` from the main namespace with
+``from holoviews import Store``.
 
-The same information is also available in any Python session using
-``hv.help(obj)``. For more information on customizing the display
-of an object, see our `Customizing Plots <user_guides/Customizing_Plots.html>`_
-user guide.
+
+**Q: Why are the sizing options so different between the Matplotlib
+and Bokeh backends?"**
+
+**"A:** The way plot sizes are computed is handled in radically
+different ways by these backends, with Matplotlib building plots 'inside
+out' (from plot components with their own sizes) and Bokeh building
+them 'outside in' (fitting plot components into a given overall size).
+Thus there is not currently any way to specify sizes in a way that is
+comparable between the two backends.
 
 
 **Q: Why don't you let me pass** *matplotlib_option* **as a style
@@ -256,10 +347,10 @@ figure:
   import holoviews as hv
   hv.extension('bokeh')
   h = hv.Curve([1,2,7], 'x_col', 'y_col')
-  
+
   from bokeh.io import show
   from bokeh.models.tickers import FixedTicker
-  
+
   b=hv.renderer('bokeh').get_plot(h).state
   b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
   show(b)
@@ -267,17 +358,17 @@ figure:
 Once you debug a modification like this manually as above, you'll probably
 want to set it up to apply automatically whenever a Bokeh plot is generated
 for that HoloViews object:
-  
+
 .. code:: python
 
   import holoviews as hv
   from bokeh.models.tickers import FixedTicker
   hv.extension('bokeh')
-  
+
   def update_axis(plot, element):
       b = plot.state
       b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
-  
+
   h = hv.Curve([1,2,7], 'x_col', 'y_col')
   h = h.options(finalize_hooks=[update_axis])
   h
@@ -286,7 +377,7 @@ Here, you've wrapped your Bokeh-API calls into a function, then
 supplied that to HoloViews so that it can be run automatically
 whenever object ``h`` is viewed.
 
-  
+
 **Q: What I want to change is about how HoloViews works, not about the
 underlying backend.  Is that possible?**
 
@@ -298,94 +389,3 @@ add your own Element types, which need corresponding plotting classes
 before they will be viewable in a given backend. The resulting objects
 will still interact normally with other HoloViews objects (e.g. in
 Layout or Overlay configurations).
-
-
-**Q: How do I get a legend on my overlay figure?**
-
-**A:** Legends are generated in two different ways, depending on the
-``Overlay`` type you are using. When using ``*`` to generate a normal ``Overlay``,
-the legends are generated from the labels of the Elements.
-Alternatively, you can construct an ``NdOverlay``, where the key dimensions
-and values will become part of the legend. The
-`Dimensioned Containers <user_guides/Dimensioned_Containers.html>`_ user guide
-shows an example of an ``NdOverlay`` in action.
-
-
-**Q: I wish to use special characters in my title, but then attribute
-access becomes confusing.**
-
-**A:** The title format ``"{label} {group} {dimensions}"`` is simply a default
-that you can override. If you want to use a lot of special characters
-in your titles, you can pick simple ``group`` and ``label`` strings
-that let you refer to the object easily in the code, and then you can
-set the plot title directly, using the plot option
-``title_format="my new title"``.
-
-You can also use 2-tuples when specifying ``group`` and ``label`` where
-the first item is the short name used for attribute access and the
-second name is the long descriptive name used in the title.
-
-
-**Q: Where have my custom styles gone after unpickling my object?**
-
-**A:** HoloViews objects are designed to pickle and unpickle your core
-data only, if you use Python's ``pickle.load`` and
-``pickle.dump``. Because custom options are kept separate from
-your data, you need to use the corresponding methods ``Store.dump`` and
-``Store.load`` if you also want to save and restore per-object
-customization. You can import ``Store`` from the main namespace with
-``from holoviews import Store``.
-
-
-**Q: Can I avoid generating extremely large HTML files when exporting
-my notebook?**
-
-**A:** It is very easy to visualize large volumes of data with
-HoloMaps, and all available display data is embedded in the HTML
-snapshot when sliders are used so that the result can be viewed
-without using a Python server process. It is therefore worth being
-aware of file size when authoring a notebook or web page to be
-published on the web. Useful tricks to reduce file size of HoloMaps
-include:
-
-* Reducing the figure size.
-* Selecting fewer frames for display (e.g selecting a smaller number
-  of keys in any displayed ``HoloMap`` object)
-* Displaying your data in a more highly compressed format such as
-  ``webm``, ``mp4`` or animated ``gif``, while being aware that those
-  formats may introduce visible artifacts.
-* Replace figures with lots of data with images prerendered
-  by `datashade() <user_guides/Large_Data.html>`_.
-
-It is also possible to generate web pages that do not actually include
-all of the data shown, by specifying a `DynamicMap`` as described in
-`Live Data <user_guides/Live_Data.html>`_ rather than a HoloMap.  The
-DynamicMap will request data only as needed, and so requires a Python
-server to be running alongside the viewable web page.  Such pages are
-more difficult to share by email or on web sites, but much more feasible
-for large datasets.
-
-
-**Q: How do I create a Layout or Overlay object from an arbitrary list?**
-
-**A:** You can supply a list of ``elements`` directly to the ``Layout`` and
-``Overlay`` constructors. For instance, you can use
-``hv.Layout(elements)`` or ``hv.Overlay(elements)``.
-
-
-**Q: Why do my HoloViews and GeoViews objects work fine separately but
-are mismatched when overlaid?
-
-**A:** GeoViews works precisely the same as HoloViews, except that
-GeoViews is aware of geographic projections.  If you take an
-``hv.Points()`` object in lon,lat coordinates and overlay it on a
-GeoViews map in Web Mercator, the HoloViews object will be in
-entirely the wrong coordinate system, with the HoloViews object all
-appearing at one tiny spot on the globe.  If you declare the same
-object as ``gv.Points``, then GeoViews will (a) assume it is in
-lon,lat coordinates (which HoloViews cannot assume, as it knows
-nothing of geography), and (b) convert it into the coordinates
-needed for display (e.g. Web Mercator).  So, just make sure that
-anything with geographic coordinates is defined as a GeoViews object,
-and make sure to declare the coordinates (``crs=...``) if the data is
-in anything other than lon,lat.
