@@ -10,6 +10,7 @@ from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
+from bokeh.themes import built_in_themes
 try:
     from bokeh.models import ColorBar
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
@@ -355,11 +356,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        opts = dict(text=title, text_color='black')
+        theme = self.renderer.theme
+        if theme is not None:
+            if theme in built_in_themes:  # built-in-theme name
+                opts = built_in_themes[theme]._json['attrs']['Title']
+            else:  # theme object
+                opts = theme._json['attrs']['Title']
+            opts['text'] = title
+        else:
+            opts = dict(text=title, text_color='black')
+
+        # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
-        if title_font:
+        if title_font != '12pt':
             opts['text_font_size'] = value(title_font)
+
         return opts
+
 
     def _init_axes(self, plot):
         if self.xaxis is None:
