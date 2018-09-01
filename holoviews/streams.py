@@ -158,6 +158,33 @@ class Stream(param.Parameterized):
                 if stream.transient:
                     stream.reset()
 
+    @classmethod
+    def _process_streams(cls, streams):
+        """
+        Processes a list of streams promoting Parameterized objects and
+        methods to Param based streams.
+        """
+        param_watch_support = util.param_version >= '1.8.0'
+        parameterizeds = [s.parameterized for s in streams if isinstance(s, Params)]
+        valid, invalid = [], []
+        for s in streams:
+            if not isinstance(s, Stream):
+                if isinstance(s, param.Parameterized) and param_watch_support:
+                    if s not in parameterizeds:
+                        s = Params(s)
+                    else:
+                        continue
+                elif util.is_param_method(s) and param_watch_support:
+                    if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
+                        continue
+                    else:
+                        s = ParamMethod(s)
+                else:
+                    invalid.append(s)
+                    continue
+            valid.append(s)
+        return valid, invalid
+
 
     def __init__(self, rename={}, source=None, subscribers=[], linked=False,
                  transient=False, **params):
@@ -547,6 +574,81 @@ class Buffer(Pipe):
 
 
 
+class Params(Stream):
+    """
+    A Stream that watches the changes in the parameters of the supplied
+    Parameterized objects and triggers when they change.
+    """
+
+    parameterized = param.ClassSelector(class_=(param.Parameterized,
+                                                param.parameterized.ParameterizedMetaclass),
+                                        constant=True, doc="""
+        Parameterized instance to watch for parameter changes.""")
+
+    parameters = param.List([], constant=True, doc="""
+        Parameters on the parameterized to watch.""")
+
+    def __init__(self, parameterized, parameters=None, watch=True, **params):
+        if util.param_version < '1.8.0' and watch:
+            raise RuntimeError('Params stream requires param version >= 1.8.0, '
+                               'to support watching parameters.')
+        parameters = [p for p in parameterized.params() if p != 'name']
+        super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        if watch:
+            for p in self.parameters:
+                self.parameterized.param.watch(self._listener, p)
+
+    def _listener(self, change):
+        self.trigger([self])
+
+    def update(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self.parameterized, k, v)
+
+    @property
+    def contents(self):
+        filtered = {k: v for k, v in self.parameterized.get_param_values()
+                    if k in self.parameters}
+        return {self._rename.get(k, k): v for (k, v) in filtered.items()
+                if self._rename.get(k, True) is not None}
+
+
+
+class ParamMethod(Params):
+    """
+    A Stream that watches the parameter dependencies on a method of
+    a parameterized class and triggers when one of the parameters
+    change.
+    """
+
+    def __init__(self, parameterized, parameters=None, watch=True, **params):
+        if not util.is_param_method(parameterized):
+            raise ValueError('ParamMethodStream expects a method on a '
+                             'parameterized class, found %s.'
+                             % type(parameterized).__name__)
+        method = parameterized
+        parameterized = util.get_method_owner(parameterized)
+        if not parameters:
+            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
+        super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
+
+    @property
+    def hashkey(self):
+        return {'hash': Params.contents.fget(self)}
+
+    @property
+    def contents(self):
+        return {}
+
+
+
+# Backward compatibility
+def ParamValues(*args, **kwargs):
+    param.main.warning('ParamValues stream is deprecated, use Params stream instead.')
+    kwargs['watch'] = False
+    return Params(*args, **kwargs)
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
@@ -757,53 +859,6 @@ class PlotReset(LinkedStream):
     def __init__(self, *args, **params):
         super(PlotReset, self).__init__(self, *args, **dict(params, transient=True))
 
-
-class ParamValues(Stream):
-    """
-    A Stream based on the parameter values of some other parameterized
-    object, whether it is a parameterized class or a parameterized
-    instance.
-
-    The update method enables the stream to update the parameters of the
-    specified object.
-    """
-
-    def __init__(self, obj, **params):
-        self._obj = obj
-        super(ParamValues, self).__init__(**params)
-
-
-    @property
-    def contents(self):
-        if isinstance(self._obj, type):
-            remapped = {k: getattr(self._obj, k)
-                        for k in self._obj.params().keys() if k != 'name'}
-        else:
-            remapped = {k: v for k, v in self._obj.get_param_values() if k != 'name'}
-        return remapped
-
-
-    def update(self, **kwargs):
-        """
-        The update method updates the parameters of the specified object.
-
-        If trigger is enabled, the trigger classmethod is invoked on
-        this Stream instance to execute its subscribers.
-        """
-        if isinstance(self._obj, type):
-            for name in self._obj.params().keys():
-                if name in kwargs:
-                    setattr(self._obj, name, kwargs[name])
-        else:
-            self._obj.set_param(**kwargs)
-
-    def __repr__(self):
-        cls_name = self.__class__.__name__
-        return '%s(%r)' % (cls_name, self._obj)
-
-
-    def __str__(self):
-        return repr(self)
 
 
 class PositionX(PointerX):

@@ -38,6 +38,7 @@ except AttributeError:
     get_keywords = operator.attrgetter('keywords')
 
 numpy_version = LooseVersion(np.__version__)
+param_version = LooseVersion(param.__version__)
 
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)
@@ -1261,6 +1262,13 @@ def get_param_values(data):
         isinstance(type(data).group, property)):
         params['group'] = data.group
     return params
+
+
+def is_param_method(obj):
+    """
+    Whether the object is a method on a parameterized object.
+    """
+    return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
 
 
 @contextmanager

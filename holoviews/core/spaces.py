@@ -1,11 +1,12 @@
 import itertools
 import types
+import inspect
+
 from numbers import Number
 from itertools import groupby
 from functools import partial
 from collections import defaultdict
 from contextlib import contextmanager
-from inspect import ArgSpec
 
 import numpy as np
 import param
@@ -521,7 +522,7 @@ class Callable(param.Parameterized):
     @property
     def noargs(self):
         "Returns True if the callable takes no arguments"
-        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        noargs = inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
         return self.argspec == noargs
 
 
@@ -603,7 +604,7 @@ class Generator(Callable):
 
     @property
     def argspec(self):
-        return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return inspect.ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
         try:
@@ -737,7 +738,13 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
-    def __init__(self, callback, initial_items=None, **params):
+    def __init__(self, callback, initial_items=None, streams=None, **params):
+        streams = (streams or [])
+
+        # If callback is a parameterized method and watch is disabled add as stream
+        param_watch_support = util.param_version >= '1.8.0'
+        if util.is_param_method(callback) and params.get('watch', param_watch_support):
+            streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):
             callback = Generator(callback)
@@ -749,14 +756,14 @@ class DynamicMap(HoloMap):
                          'and no longer needs to be specified.')
             del params['sampled']
 
-        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
-        invalid = [s for s in self.streams if not isinstance(s, Stream)]
+        valid, invalid = Stream._process_streams(streams)
         if invalid:
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
-
+        super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
+        
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
