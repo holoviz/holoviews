@@ -160,7 +160,7 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='black',
+options.BoxWhisker = Options('style', box_fill_color='lightgray', whisker_color='black',
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
