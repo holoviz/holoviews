@@ -272,6 +272,7 @@ class BokehPlot(DimensionedPlot):
                 callbacks = {k: cb for k, cb in callback._callbacks.items()
                             if cb is not callback}
                 Callback._callbacks = callbacks
+                callback.cleanup()
 
 
     def _fontsize(self, key, label='fontsize', common=True):
