@@ -76,6 +76,8 @@ class Plot(param.Parameterized):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if util.get_method_owner(subscriber) not in plots]
+        if self.comm:
+            self.comm.close()
 
 
     @property
