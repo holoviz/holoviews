@@ -1,4 +1,5 @@
 from io import BytesIO
+import os
 import base64
 import logging
 import signal
@@ -132,7 +133,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             return self.diff(plot), info
         elif fmt == 'svg':
-            return self._save_to_svg(plot), info
+            return 'hi'
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
@@ -392,26 +393,8 @@ class BokehRenderer(Renderer):
         bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
         bokeh.io.notebook.curstate().output_notebook()
 
-    def _flatten(container):
-        """
-        Flattens a list/tuple with ANY number of levels of nesting, not just one.
-        Adapted from: https://stackoverflow.com/questions/10823877/
-        what-is-the-fastest-way-to-flatten-arbitrarily-nested-lists-in-python
 
-        Args:
-            container (list/tuple): a nested list or tuple
-
-        Returns:
-            cmap (generator): generator of unnested container
-        """
-        for i in container:
-            if isinstance(i, (list, tuple)):
-                for j in flatten(i):
-                    yield j
-            else:
-                yield i
-
-
+    @staticmethod
     def _tidy_fn(fn):
         """
         Cleans up a string to be used as a valid file name
@@ -426,38 +409,59 @@ class BokehRenderer(Renderer):
         return fn.lower().replace(' ', '_').replace(':', '')
 
 
-    def _get_figures_core(objs):
+    def _flatten(self_or_cls, container):
+        """
+        Flattens a list/tuple with ANY number of levels of nesting, not just one.
+        Adapted from: https://stackoverflow.com/questions/10823877/
+        what-is-the-fastest-way-to-flatten-arbitrarily-nested-lists-in-python
+
+        Args:
+            container (list/tuple): a nested list or tuple
+
+        Returns:
+            cmap (generator): generator of unnested container
+        """
+        for i in container:
+            if isinstance(i, (list, tuple)):
+                for j in self_or_cls._flatten(i):
+                    yield j
+            else:
+                yield i
+
+
+    def _get_figures_core(self_or_cls, objs):
         if isinstance(objs, list):
-            objs = [_get_figures_core(plot) for plot in objs]
-        elif isinstance(objs, (models.Column, models.Row)):
-            objs = [_get_figures_core(child) for child in objs.children
-                    if not isinstance(child, (models.ToolbarBox,
-                                              models.WidgetBox))]
+            objs = [self_or_cls._get_figures_core(plot) for plot in objs]
+        elif isinstance(objs, (Column, Row)):
+            objs = [self_or_cls._get_figures_core(child) for child in objs.children
+                    if not isinstance(child, (ToolbarBox,
+                                              WidgetBox))]
         return objs
 
 
-    def _get_figures(objs):
+    def _get_figures(self_or_cls, objs):
         try:
-            return list(_flatten(_get_figures_core(objs)))
+            return list(self_or_cls._flatten(
+                self_or_cls._get_figures_core(objs)))
         except TypeError:
-            return [_get_figures_core(objs)]
+            return [self_or_cls._get_figures_core(objs)]
 
 
-    def _save_to_svg(self, hv_obj, save):
-        bokeh_obj = self.get_plot(hv_obj).state
-        figures = _get_figures(bokeh_obj)
+    @bothmethod
+    def _save_to_svg(self_or_cls, bokeh_fig, basename):
+        figures = self_or_cls._get_figures(bokeh_fig)
 
         for i, figure in enumerate(figures):
             figure.output_backend = 'svg'
 
             if len(figures) != 1:
-                if not os.path.exists(save):
-                    os.mkdir(save)
-                tidied_title = _tidy_fn(figure.title.text)
+                if not os.path.exists(basename):
+                    os.mkdir(basename)
+                tidied_title = self_or_cls._tidy_fn(figure.title.text)
                 save_fp = os.path.join(
-                    save, '{0}_{1}'.format(tidied_title, i))
+                    basename, '{0}_{1}'.format(tidied_title, i))
             else:
-                save_fp = save
+                save_fp = basename
 
             if not save_fp.endswith('svg'):
                 save_fp = '{0}.{1}'.format(save_fp, 'svg')

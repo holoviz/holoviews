@@ -563,20 +563,23 @@ class Renderer(Exporter):
                 self_or_cls.export_widgets(plot, basename, fmt)
             return
 
-        rendered = self_or_cls(plot, fmt)
-        if rendered is None: return
-        (data, info) = rendered
-        encoded = self_or_cls.encode(rendered)
-        prefix = self_or_cls._save_prefix(info['file-ext'])
-        if prefix:
-            encoded = prefix + encoded
-        if isinstance(basename, BytesIO):
-            basename.write(encoded)
-            basename.seek(0)
+        if fmt == 'svg' and self_or_cls.backend == 'bokeh':
+            self_or_cls._save_to_svg(plot.state, basename)
         else:
-            filename ='%s.%s' % (basename, info['file-ext'])
-            with open(filename, 'wb') as f:
-                f.write(encoded)
+            rendered = self_or_cls(plot, fmt)
+            if rendered is None: return
+            (data, info) = rendered
+            encoded = self_or_cls.encode(rendered)
+            prefix = self_or_cls._save_prefix(info['file-ext'])
+            if prefix:
+                encoded = prefix + encoded
+            if isinstance(basename, BytesIO):
+                basename.write(encoded)
+                basename.seek(0)
+            else:
+                filename ='%s.%s' % (basename, info['file-ext'])
+                with open(filename, 'wb') as f:
+                    f.write(encoded)
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
