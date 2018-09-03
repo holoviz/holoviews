@@ -2,8 +2,9 @@ import os
 from unittest import SkipTest
 
 import param
-from IPython import version_info
+import pyviz_comms
 import holoviews
+from IPython import version_info
 from param import ipython as param_ext
 from IPython.display import HTML, publish_display_data
 
@@ -237,6 +238,12 @@ class notebook_extension(extension):
             widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[], script=True)
         else:
             widgetjs, widgetcss = '', ''
+
+        # Add classic notebook MIME renderer
+        comm_path = os.path.dirname(os.path.abspath(pyviz_comms.__file__))
+        with open(os.path.join(comm_path, 'notebook.js')) as f:
+            widgetjs += '\n\n' + f.read()
+
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
