@@ -11,7 +11,8 @@ from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.io import curdoc, show as bkshow
-from bokeh.models import Model
+from bokeh.models import Model, Column, Row, ToolbarBox, WidgetBox
+from bokeh.io import export_svgs
 from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
 
@@ -71,7 +72,7 @@ class BokehRenderer(Renderer):
 
     backend = param.String(default='bokeh', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png', 'svg'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
@@ -88,7 +89,7 @@ class BokehRenderer(Renderer):
         bokeh server app. By default renders all output is rendered to HTML.""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json', 'auto', 'png'],
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto', 'png', 'svg'],
                             'server': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
                                 'server': ['server', 'auto', None]}}
@@ -130,6 +131,8 @@ class BokehRenderer(Renderer):
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             return self.diff(plot), info
+        elif fmt == 'svg':
+            return self._save_to_svg(plot), info
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
@@ -388,3 +391,75 @@ class BokehRenderer(Renderer):
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
         bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
         bokeh.io.notebook.curstate().output_notebook()
+
+    def _flatten(container):
+        """
+        Flattens a list/tuple with ANY number of levels of nesting, not just one.
+        Adapted from: https://stackoverflow.com/questions/10823877/
+        what-is-the-fastest-way-to-flatten-arbitrarily-nested-lists-in-python
+
+        Args:
+            container (list/tuple): a nested list or tuple
+
+        Returns:
+            cmap (generator): generator of unnested container
+        """
+        for i in container:
+            if isinstance(i, (list, tuple)):
+                for j in flatten(i):
+                    yield j
+            else:
+                yield i
+
+
+    def _tidy_fn(fn):
+        """
+        Cleans up a string to be used as a valid file name
+
+        Args:
+            fn (str): file name to be cleansed
+
+        Returns:
+            tidied_fn (str): tidied file name
+        """
+        fn = ''.join(x for x in fn if (x.isalnum() or x in "[]()._- "))
+        return fn.lower().replace(' ', '_').replace(':', '')
+
+
+    def _get_figures_core(objs):
+        if isinstance(objs, list):
+            objs = [_get_figures_core(plot) for plot in objs]
+        elif isinstance(objs, (models.Column, models.Row)):
+            objs = [_get_figures_core(child) for child in objs.children
+                    if not isinstance(child, (models.ToolbarBox,
+                                              models.WidgetBox))]
+        return objs
+
+
+    def _get_figures(objs):
+        try:
+            return list(_flatten(_get_figures_core(objs)))
+        except TypeError:
+            return [_get_figures_core(objs)]
+
+
+    def _save_to_svg(self, hv_obj, save):
+        bokeh_obj = self.get_plot(hv_obj).state
+        figures = _get_figures(bokeh_obj)
+
+        for i, figure in enumerate(figures):
+            figure.output_backend = 'svg'
+
+            if len(figures) != 1:
+                if not os.path.exists(save):
+                    os.mkdir(save)
+                tidied_title = _tidy_fn(figure.title.text)
+                save_fp = os.path.join(
+                    save, '{0}_{1}'.format(tidied_title, i))
+            else:
+                save_fp = save
+
+            if not save_fp.endswith('svg'):
+                save_fp = '{0}.{1}'.format(save_fp, 'svg')
+
+            export_svgs(figure, save_fp)
