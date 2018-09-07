@@ -65,6 +65,8 @@ class PathPlot(ColorbarPlot):
             paths, vals = [], {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
             for path in element.split(datatype='array'):
                 splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
+                if len(splits) == 1:
+                    splits.append(len(path))
                 for (s1, s2) in zip(splits[:-1], splits[1:]):
                     for i, vd in enumerate(element.vdims):
                         vals[util.dimension_sanitizer(vd.name)].append(path[s1, i+2])
