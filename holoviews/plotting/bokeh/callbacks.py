@@ -916,7 +916,7 @@ class PolyDrawCallback(CDSCallback):
                 if scalar:
                     cds.data[dim] = element.dimension_values(d, not scalar)
                 else:
-                    cds.data[dim] = element.split(datatype='array')
+                    cds.data[dim] = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
 
 
 class FreehandDrawCallback(PolyDrawCallback):
