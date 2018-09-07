@@ -62,7 +62,7 @@ class PathPlot(ColorbarPlot):
 
         dim_name = util.dimension_sanitizer(cdim.name)
         if not self.static_source:
-            paths, vals = [], defaultdict(list)
+            paths, vals = [], {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
             for path in element.split(datatype='array'):
                 splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
                 for (s1, s2) in zip(splits[:-1], splits[1:]):
