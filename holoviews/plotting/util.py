@@ -822,7 +822,10 @@ def color_intervals(colors, levels, clip=None, N=255):
         clmin, clmax = clip
         lidx = int(round(N*((clmin-cmin)/interval)))
         uidx = int(round(N*((cmax-clmax)/interval)))
-        cmap = cmap[lidx:N-uidx]
+        uidx = N-uidx
+        if lidx == uidx:
+            uidx = lidx+1
+        cmap = cmap[lidx:uidx]
     return cmap
 
 

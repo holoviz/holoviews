@@ -691,6 +691,9 @@ class ColorbarPlot(ElementPlot):
                 palette = process_cmap(cmap, ncolors, categorical=categorical)
                 if isinstance(self.color_levels, list):
                     palette = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
+                    if vmin == vmax:
+                        idx = np.argmin(np.array(self.color_levels)-vmin)
+                        low, high = self.color_levels[idx: idx+2]
             cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
