@@ -826,7 +826,10 @@ def color_intervals(colors, levels, clip=None, N=255):
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
-    return cmap
+        if clmin == clmax:
+            idx = np.argmin(np.abs(np.array(levels)-clmin))
+            clip = levels[idx: idx+2] if len(levels) > idx+2 else levels[idx-1: idx+1]
+    return cmap, clip
 
 
 def dim_axis_label(dimensions, separator=', '):

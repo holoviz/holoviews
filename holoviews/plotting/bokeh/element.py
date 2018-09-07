@@ -1092,10 +1092,7 @@ class ColorbarPlot(ElementPlot):
                                      % (ncolors, len(cmap)))
             palette = process_cmap(cmap, ncolors, categorical=categorical)
             if isinstance(self.color_levels, list):
-                palette = color_intervals(palette, self.color_levels, clip=(low, high))
-                if low == high:
-                    idx = np.argmin(np.array(self.color_levels)-low)
-                    low, high = self.color_levels[idx: idx+2]
+                palette, (low, high) = color_intervals(palette, self.color_levels, clip=(low, high))
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)
