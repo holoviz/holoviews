@@ -1109,9 +1109,14 @@ class Dimensioned(LabelledData):
         """
         Returns the range of values along the specified dimension.
 
-        If data_range is True, the data may be used to try and infer
-        the appropriate range. Otherwise, (None,None) is returned to
-        indicate that no range is defined.
+        dimension: str or int or Dimension
+            The dimension to compute the range on.
+        data_range: bool (optional)
+            Whether the range should include the data range or only
+            the dimension ranges
+        dimension_range: bool (optional)
+            Whether to compute the range including the Dimension range
+            and soft_range.
         """
         dimension = self.get_dimension(dimension)
         if dimension is None or (not data_range and not dimension_range):

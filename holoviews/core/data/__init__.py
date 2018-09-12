@@ -276,9 +276,16 @@ class Dataset(Element):
 
     def range(self, dim, data_range=True, dimension_range=True):
         """
-        Computes the range of values along a supplied dimension, taking
-        into account the range and soft_range defined on the Dimension
-        object.
+        Returns the range of values along the specified dimension.
+
+        dimension: str/int/Dimension
+            The dimension to compute the range on.
+        data_range: bool
+            Whether the range should include the data range or only
+            the dimension ranges
+        dimension_range:
+            Whether to compute the range including the Dimension range
+            and soft_range
         """
         dim = self.get_dimension(dim)
 
