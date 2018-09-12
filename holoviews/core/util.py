@@ -812,9 +812,9 @@ def find_range(values, soft_range=[]):
 
 def is_finite(value):
     """
-    Safe check whether a value is finite, only None and NaN values are
-    considered non-finite and allows checking all types not restricted
-    to numeric types.
+    Safe check whether a value is finite, only None, NaN and inf
+    values are considered non-finite and allows checking all types not
+    restricted to numeric types.
     """
     if value is None:
         return False

@@ -598,7 +598,10 @@ class GenericElementPlot(DimensionedPlot):
         If set bgcolor overrides the background color of the axis.""")
 
     default_span = param.ClassSelector(default=2.0, class_=(int, float, tuple), doc="""
-        Default span if the spans zero range.""")
+        Defines the span of an axis if the axis range is zero, i.e. if
+        the lower and upper end of an axis are equal. For example if
+        there is a single datapoint at 0 a default_span of 2.0 will
+        result in axis ranges spanning from -1 to 1.""")
 
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
@@ -892,6 +895,23 @@ class GenericElementPlot(DimensionedPlot):
         """
         Gets the extents for the axes from the current Element. The globally
         computed ranges can optionally override the extents.
+
+        The extents are computed by combining the data ranges, extents
+        and dimension ranges. Each of these can be obtained individually
+        by setting the range_type to one of:
+
+        * 'data': Just the data ranges
+        * 'extents': Element.extents
+        * 'soft': Dimension.soft_range values
+        * 'hard': Dimension.range values
+
+        To obtain the combined range, which includes range padding the
+        default may be used:
+
+        * 'combined': All the range types combined and padding applied
+
+        This allows Overlay plots to obtain each range and combine them
+        appropriately for all the objects in the overlay.
         """
         num = 6 if self.projection == '3d' else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
@@ -1263,7 +1283,6 @@ class GenericOverlayPlot(GenericElementPlot):
         if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
-        print('<<<', hard_extents)
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
         if len(data_extent) == 6:
