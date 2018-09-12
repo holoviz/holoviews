@@ -319,7 +319,7 @@ def get_axis_padding(padding):
             xpad, ypad = padding
             zpad = 0
         elif len(padding) == 3:
-            xpad, ypad, zpad = (padding, padding, padding)
+            xpad, ypad, zpad = padding
         else:
             raise ValueError('Padding must be supplied as an number applied '
                              'to all axes or a length two or three tuple '
