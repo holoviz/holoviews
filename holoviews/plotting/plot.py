@@ -599,9 +599,10 @@ class GenericElementPlot(DimensionedPlot):
 
     default_span = param.ClassSelector(default=2.0, class_=(int, float, tuple), doc="""
         Defines the span of an axis if the axis range is zero, i.e. if
-        the lower and upper end of an axis are equal. For example if
-        there is a single datapoint at 0 a default_span of 2.0 will
-        result in axis ranges spanning from -1 to 1.""")
+        the lower and upper end of an axis are equal or no range is
+        defined at all. For example if there is a single datapoint at
+        0 a default_span of 2.0 will result in axis ranges spanning
+        from -1 to 1.""")
 
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
