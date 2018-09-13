@@ -569,7 +569,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
     def test_color_intervals(self):
         levels = [0, 38, 73, 95, 110, 130, 156]  
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20']
-        cmap = color_intervals(colors, levels, N=10)
+        cmap, lims = color_intervals(colors, levels, N=10)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#00faf4',
                                 '#00faf4', '#ffffcc', '#ffe775',
                                 '#ffc140', '#ff8f20', '#ff8f20'])
@@ -577,9 +577,10 @@ class TestBokehPaletteUtils(ComparisonTestCase):
     def test_color_intervals_clipped(self):
         levels = [0, 38, 73, 95, 110, 130, 156, 999]  
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        cmap = color_intervals(colors, levels, clip=(10, 90), N=100) 
+        cmap, lims = color_intervals(colors, levels, clip=(10, 90), N=100)
         self.assertEqual(cmap, ['#5ebaff', '#5ebaff', '#5ebaff', '#00faf4', '#00faf4',
                                 '#00faf4', '#00faf4', '#ffffcc'])
+        self.assertEqual(lims, (10, 90))
 
 
 class TestPlotUtils(ComparisonTestCase):

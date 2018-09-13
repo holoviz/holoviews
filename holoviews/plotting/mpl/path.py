@@ -36,6 +36,8 @@ class PathPlot(ColorbarPlot):
         paths, cvals = [], []
         for path in element.split(datatype='array'):
             splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
+            if len(splits) == 1:
+                splits.append(len(path))
             for (s1, s2) in zip(splits[:-1], splits[1:]):
                 cvals.append(path[s1, cidx])
                 paths.append(path[s1:s2+1, :2])
