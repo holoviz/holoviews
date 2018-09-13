@@ -309,6 +309,45 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     return (base_size*scaling_factor*sizes)
 
 
+def get_axis_padding(padding):
+    """
+    Process a padding value supplied as a tuple or number and returns
+    padding values for x-, y- and z-axis.
+    """
+    if isinstance(padding, tuple):
+        if len(padding) == 2:
+            xpad, ypad = padding
+            zpad = 0
+        elif len(padding) == 3:
+            xpad, ypad, zpad = padding
+        else:
+            raise ValueError('Padding must be supplied as an number applied '
+                             'to all axes or a length two or three tuple '
+                             'corresponding to the x-, y- and optionally z-axis')
+    else:
+        xpad, ypad, zpad = (padding,)*3
+    return (xpad, ypad, zpad)
+
+
+def get_range(element, ranges, dimension):
+    """
+    Computes the data, soft- and hard-range along a dimension given
+    an element and a dictionary of ranges.
+    """
+    if dimension and dimension != 'categorical':
+        if ranges and dimension.name in ranges:
+            drange = ranges[dimension.name]['data']
+            srange = ranges[dimension.name]['soft']
+            hrange = ranges[dimension.name]['hard']
+        else:
+            drange = element.range(dimension, dimension_range=False)
+            srange = dimension.soft_range
+            hrange = dimension.range
+    else:
+        drange = srange = hrange = (np.NaN, np.NaN)
+    return drange, srange, hrange
+
+
 def get_sideplot_ranges(plot, element, main, ranges):
     """
     Utility to find the range for an adjoined
@@ -329,7 +368,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
         ranges = match_spec(range_item.last, ranges)
 
     if dim.name in ranges:
-        main_range = ranges[dim.name]
+        main_range = ranges[dim.name]['combined']
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):

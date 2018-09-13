@@ -495,6 +495,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or xfactors is not None)
         yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
+
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
@@ -518,7 +519,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if shared:
                 shared = (axis_range.start, axis_range.end)
                 low, high = util.max_range([(low, high), shared])
-            if log and (low is None or low <= 0):
+            if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
@@ -558,6 +559,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if (isinstance(ranges[i], FactorRange) and
                 (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
+
+
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        return self.width/self.height
+
 
     def _get_factors(self, element):
         """
@@ -716,7 +725,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_key = key
         style_element = element.last if self.batched else element
         ranges = util.match_spec(style_element, ranges)
-
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
@@ -1066,7 +1074,7 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         if dim:
             if dim.name in ranges:
-                low, high = ranges.get(dim.name)
+                low, high = ranges[dim.name]['combined']
             else:
                 low, high = element.range(dim.name)
             if self.symmetric:
@@ -1245,8 +1253,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
-                          'legend_cols', 'gridstyle', 'legend_muted']
-
+                          'legend_cols', 'gridstyle', 'legend_muted', 'padding',
+                          'xlim', 'ylim', 'zlim']
 
     def _process_legend(self):
         plot = self.handles['plot']

@@ -1,5 +1,4 @@
 import param
-import numpy as np
 
 from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot
@@ -44,7 +43,6 @@ class BivariatePlot(PolygonPlot):
 
 
 
-
 class BoxPlot(ChartPlot):
     """
     BoxPlot plots the ErrorBar Element type and supporting
@@ -60,17 +58,19 @@ class BoxPlot(ChartPlot):
 
     _plot_methods = dict(single='boxplot')
 
-    def get_extents(self, element, ranges):
-        return (np.NaN,)*4
-
+    def get_extents(self, element, ranges, range_type='combined'):
+        return super(BoxPlot, self).get_extents(
+            element, ranges, range_type, 'categorical', element.vdims[0]
+        )
 
     def get_data(self, element, ranges, style):
-        with sorted_context(False):
-            groups = element.groupby(element.kdims)
+        if element.kdims:
+            with sorted_context(False):
+                groups = element.groupby(element.kdims).data.items()
+        else:
+            groups = [(element.label, element)]
 
         data, labels = [], []
-
-        groups = groups.data.items() if element.kdims else [(element.label, element)]
         for key, group in groups:
             if element.kdims:
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])

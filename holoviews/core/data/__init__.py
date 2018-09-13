@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from ..util import dimension_range, unique_iterator
+from ..util import unique_iterator
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -274,22 +274,32 @@ class Dataset(Element):
         return self.clone(sorted_columns)
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         """
-        Computes the range of values along a supplied dimension, taking
-        into account the range and soft_range defined on the Dimension
-        object.
+        Returns the range of values along the specified dimension.
+
+        dimension: str/int/Dimension
+            The dimension to compute the range on.
+        data_range: bool
+            Whether the range should include the data range or only
+            the dimension ranges
+        dimension_range:
+            Whether to compute the range including the Dimension range
+            and soft_range
         """
         dim = self.get_dimension(dim)
-        if dim is None:
+
+        if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(util.isfinite(v) for v in dim.range):
+        elif all(util.isfinite(v) for v in dim.range) and dimension_range:
             return dim.range
         elif dim in self.dimensions() and data_range and len(self):
             lower, upper = self.interface.range(self, dim)
         else:
             lower, upper = (np.NaN, np.NaN)
-        return dimension_range(lower, upper, dim)
+        if not dimension_range:
+            return lower, upper
+        return util.dimension_range(lower, upper, dim.range, dim.soft_range)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):

@@ -15,7 +15,8 @@ from holoviews.operation import operation
 from holoviews.plotting.util import (
     compute_overlayable_zorders, get_min_distance, process_cmap,
     initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy,
-    bokeh_palette_to_palette, mplcmap_to_palette, color_intervals)
+    bokeh_palette_to_palette, mplcmap_to_palette, color_intervals,
+    get_range, get_axis_padding)
 from holoviews.streams import PointerX
 
 try:
@@ -610,6 +611,39 @@ class TestPlotUtils(ComparisonTestCase):
         X, Y = np.meshgrid(xs, ys)
         dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
         self.assertEqual(dist, 1.0)
+
+
+class TestRangeUtilities(ComparisonTestCase):
+
+    def test_get_axis_padding_scalar(self):
+        padding = get_axis_padding(0.1)
+        self.assertEqual(padding, (0.1, 0.1, 0.1))
+
+    def test_get_axis_padding_tuple(self):
+        padding = get_axis_padding((0.1, 0.2))
+        self.assertEqual(padding, (0.1, 0.2, 0))
+
+    def test_get_axis_padding_tuple_3d(self):
+        padding = get_axis_padding((0.1, 0.2, 0.3))
+        self.assertEqual(padding, (0.1, 0.2, 0.3))
+
+    def test_get_range_from_element(self):
+        dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
+        element = Scatter([1, 2, 3], vdims=dim)
+        drange, srange, hrange = get_range(element, {}, dim)
+        self.assertEqual(drange, (1, 3))
+        self.assertEqual(srange, (0, 3))
+        self.assertEqual(hrange, (0, 2))
+
+    def test_get_range_from_ranges(self):
+        dim = Dimension('y', soft_range=(0, 3), range=(0, 2))
+        element = Scatter([1, 2, 3], vdims=dim)
+        ranges = {'y': {'soft': (-1, 4), 'hard': (-1, 3), 'data': (-0.5, 2.5)}}
+        drange, srange, hrange = get_range(element, ranges, dim)
+        self.assertEqual(drange, (-0.5, 2.5))
+        self.assertEqual(srange, (-1, 4))
+        self.assertEqual(hrange, (-1, 3))
+
 
 
 @attr(optional=1)  # Flexx is optional

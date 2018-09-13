@@ -10,7 +10,6 @@ from ..core.data.interface import DataError
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .graphs import TriMesh
 from .tabular import Table
@@ -70,13 +69,15 @@ class Raster(Element2D):
                               extents=None)
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
             dimension = self.get_dimension(dim)
             lower, upper = np.nanmin(self.data), np.nanmax(self.data)
-            return dimension_range(lower, upper, dimension)
-        return super(Raster, self).range(dim, data_range)
+            if not dimension_range:
+                return lower, upper
+            return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
+        return super(Raster, self).range(dim, data_range, dimension_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
@@ -277,8 +278,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if self.interface is ImageInterface and not isinstance(data, np.ndarray):
             data_bounds = self.bounds.lbrt()
         l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
-        ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
+        xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
+        ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
         if not np.isfinite(xdensity) or not np.isfinite(ydensity):
             raise ValueError('Density along Image axes could not be determined. '
                              'If the data contains only one coordinate along the '
@@ -329,9 +330,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
         not_close = False
         for r, c in zip(bounds, self.bounds.lbrt()):
-            if isinstance(r, datetime_types):
+            if isinstance(r, util.datetime_types):
                 r = util.dt_to_int(r)
-            if isinstance(c, datetime_types):
+            if isinstance(c, util.datetime_types):
                 c = util.dt_to_int(c)
             if util.isfinite(r) and not np.isclose(r, c, rtol=self.rtol):
                 not_close = True
@@ -521,7 +522,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             return [getter(self.closest_cell_center(*el)) for el in coords]
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
@@ -531,11 +532,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             low, high = super(Image, self).range(dim, data_range)
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
-            if isinstance(low, datetime_types):
+            if isinstance(low, util.datetime_types):
                 halfd = np.timedelta64(int(round(halfd)), self._time_unit)
             return (low-halfd, high+halfd)
         else:
-            return super(Image, self).range(dim, data_range)
+            return super(Image, self).range(dim, data_range, dimension_range)
 
 
     def table(self, datatype=None):

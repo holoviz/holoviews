@@ -236,6 +236,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.set_major_formatter(wrap_formatter(formatter))
 
 
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        if isinstance(self.aspect, (int, float)):
+            return self.aspect
+        elif self.aspect == 'square':
+            return 1
+        elif self.aspect == 'equal':
+            return xspan/yspan
+        return 1
+
+
     def _set_aspect(self, axes, aspect):
         """
         Set the aspect on the axes based on the aspect setting.
@@ -612,7 +625,10 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, 0)
                 categorical = False
             elif values.dtype.kind in 'uif':
-                clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
+                if vdim.name in ranges:
+                    clim = ranges[vdim.name]['combined']
+                else:
+                    clim = element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value
@@ -749,7 +765,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
-                          'invert_zaxis', 'title_format']
+                          'invert_zaxis', 'title_format', 'padding',
+                          'xlim', 'ylim', 'zlim']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
