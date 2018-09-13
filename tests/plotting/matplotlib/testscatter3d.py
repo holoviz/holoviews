@@ -1,14 +1,6 @@
-import numpy as np
-
 from holoviews.element import Scatter3D
 
 from .testplot import TestMPLPlot, mpl_renderer
-from ..utils import ParamLogStream
-
-try:
-    from matplotlib import pyplot
-except:
-    pass
 
 
 class TestPointPlot(TestMPLPlot):
