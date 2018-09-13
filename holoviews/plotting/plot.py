@@ -1221,8 +1221,11 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot.overlay_dims = util.OrderedDict(new_dims)
 
 
-    def get_extents(self, overlay, ranges, range_type='combined'):
-        extents, data_extents, hard_extents, soft_extents = [], [], [], []
+    def _get_subplot_extents(self, overlay, ranges, range_type):
+        """
+        Iterates over all subplots and collects the extents of each.
+        """
+        extents = defaultdict(list)
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
@@ -1242,61 +1245,61 @@ class GenericOverlayPlot(GenericElementPlot):
                         break
                 if not found:
                     layer = None
-            if layer is not None and subplot.apply_ranges:
-                if isinstance(layer, CompositeOverlay):
-                    sp_ranges = ranges
-                else:
-                    sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-                extents.append(subplot.get_extents(layer, sp_ranges, range_type='extents'))
-                data_extents.append(subplot.get_extents(layer, sp_ranges, range_type='data'))
-                soft_extents.append(subplot.get_extents(layer, sp_ranges, range_type='soft'))
-                hard_extents.append(subplot.get_extents(layer, sp_ranges, range_type='hard'))
+            if layer is None or not subplot.apply_ranges:
+                continue
 
+            if isinstance(layer, CompositeOverlay):
+                sp_ranges = ranges
+            else:
+                sp_ranges = util.match_spec(layer, ranges) if ranges else {}
+            range_types = ('extents', 'soft', 'hard', 'data') if range_type == 'combined' else (range_type,)
+            for rt in range_types:
+                extents[rt].append(subplot.get_extents(layer, sp_ranges, range_type=rt))
+        return extents
+
+
+    def get_extents(self, overlay, ranges, range_type='combined'):
+        subplot_extents = self._get_subplot_extents(overlay, ranges, range_type)
         zrange = self.projection == '3d'
-        extent = util.max_extents(extents, zrange)
-        data_extent = util.max_extents(data_extents, zrange)
-        soft_extent = util.max_extents(soft_extents, zrange)
-        hard_extent = util.max_extents(hard_extents, zrange)
+        extents = {k: util.max_extents(rs, zrange) for k, rs in subplot_extents.items()}
+        if range_type != 'combined':
+            return extents[range_type]
 
-        if range_type == 'extent':
-            return extent
-        if range_type == 'data':
-            return data_extent
-        elif range_type == 'soft':
-            return soft_extent
-        elif range_type == 'hard':
-            return hard_extent
-
-        if len(data_extent) == 6:
-            x0, y0, z0, x1, y1, z1 = data_extent
-            sx0, sy0, sz0, sx1, sy1, sz1 = soft_extent
-            hx0, hy0, hz0, hx1, hy1, hz1 = hard_extent
+        # Unpack extents
+        if len(extents['data']) == 6:
+            x0, y0, z0, x1, y1, z1 = extents['data']
+            sx0, sy0, sz0, sx1, sy1, sz1 = extents['soft']
+            hx0, hy0, hz0, hx1, hy1, hz1 = extents['hard']
         else:
-            x0, y0, x1, y1 = data_extent
-            sx0, sy0, sx1, sy1 = soft_extent
-            hx0, hy0, hx1, hy1 = hard_extent
+            x0, y0, x1, y1 = extents['data']
+            sx0, sy0, sx1, sy1 = extents['soft']
+            hx0, hy0, hx1, hy1 = extents['hard']
             z0, z1 = np.NaN, np.NaN
 
+        # Apply minimum span
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
         if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
         if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
         if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
+        # Apply padding
+        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
-        if len(data_extent) == 6:
+        if len(extents['data']) == 6:
             z0, z1 = util.dimension_range(z0, z1, (hz0, hz1), (sz0, sz1), zpad, self.logz)
             padded = (x0, y0, z0, x1, y1, z1)
         else:
             padded = (x0, y0, x1, y1)
 
-        combined = util.max_extents([padded, extent], zrange)
+        # Combine with Element.extents
+        combined = util.max_extents([padded, extents['extents']], zrange)
         if self.projection == '3d':
             x0, y0, z0, x1, y1, z1 = combined
         else:
             x0, y0, x1, y1 = combined
 
+        # Apply xlim, ylim, zlim plot option
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
         if self.projection == '3d':
