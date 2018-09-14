@@ -354,12 +354,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             title = self._format_title(key, separator=' ')
         else:
             title = ''
+        opts = dict(text=title)
 
-        opts = dict(text=title, text_color='black')
+        # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
-        if title_font:
+        if title_font != '12pt':
             opts['text_font_size'] = value(title_font)
         return opts
+
 
     def _init_axes(self, plot):
         if self.xaxis is None:
