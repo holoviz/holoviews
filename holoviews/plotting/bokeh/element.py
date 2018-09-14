@@ -355,22 +355,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             title = self._format_title(key, separator=' ')
         else:
             title = ''
-
-        theme = self.renderer.theme
-        if theme is not None:
-            if theme in built_in_themes:  # built-in-theme name
-                opts = built_in_themes[theme]._json['attrs']['Title']
-            else:  # theme object
-                opts = theme._json['attrs']['Title']
-            opts['text'] = title
-        else:
-            opts = dict(text=title, text_color='black')
+        opts = dict(text=title)
 
         # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
         if title_font != '12pt':
             opts['text_font_size'] = value(title_font)
-
         return opts
 
 
