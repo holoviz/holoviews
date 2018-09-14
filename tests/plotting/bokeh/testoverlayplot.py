@@ -20,6 +20,11 @@ class TestOverlayPlot(TestBokehPlot):
         legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
         self.assertEqual(legend_labels, ['A', 'B'])
 
+    def test_overlay_apply_ranges_disabled(self):
+        overlay = (Curve(range(10)) * Curve(range(10))).options('Curve', apply_ranges=False)
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertTrue(all(np.isnan(e) for e in plot.get_extents(overlay, {})))
+
     def test_overlay_update_sources(self):
         hmap = HoloMap({i: (Curve(np.arange(i), label='A') *
                             Curve(np.arange(i)*2, label='B'))
