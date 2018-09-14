@@ -63,10 +63,17 @@ if (comm_msg != null) {{
 }}
 """
 
+default_theme = Theme(json={
+    'attrs': {
+        'Title': {'text_color': 'black', 'text_font_size': '12pt'}
+    }
+})
+
 
 class BokehRenderer(Renderer):
 
-    theme = param.ClassSelector(default=None, class_=(Theme, str), allow_None=True, doc="""
+    theme = param.ClassSelector(default=default_theme, class_=(Theme, str),
+                                allow_None=True, doc="""
        The applicable Bokeh Theme object (if any).""")
 
     backend = param.String(default='bokeh', doc="The backend name.")
