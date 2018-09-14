@@ -10,7 +10,6 @@ from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
-from bokeh.themes import built_in_themes
 try:
     from bokeh.models import ColorBar
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
