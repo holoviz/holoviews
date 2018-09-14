@@ -22,7 +22,7 @@ requirements:
   run:
     - python
     - param >=1.6.1,<2.0
-    - pyviz_comms >= 0.6.0
+    - pyviz_comms >=0.6.0
     - numpy
     - matplotlib>=2.1
     - bokeh >=0.12.15,<=1.0
