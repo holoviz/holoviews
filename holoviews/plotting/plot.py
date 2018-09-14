@@ -1226,7 +1226,10 @@ class GenericOverlayPlot(GenericElementPlot):
         """
         Iterates over all subplots and collects the extents of each.
         """
-        extents = defaultdict(list)
+        if range_type == 'combined':
+            extents = {'extents': [], 'soft': [], 'hard': [], 'data': []}
+        else:
+            extents = {range_type: []}
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
@@ -1253,9 +1256,9 @@ class GenericOverlayPlot(GenericElementPlot):
                 sp_ranges = ranges
             else:
                 sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-            range_types = ('extents', 'soft', 'hard', 'data') if range_type == 'combined' else (range_type,)
-            for rt in range_types:
-                extents[rt].append(subplot.get_extents(layer, sp_ranges, range_type=rt))
+            for rt in extents:
+                extent = subplot.get_extents(layer, sp_ranges, range_type=rt)
+                extents[rt].append(extent)
         return extents
 
 
