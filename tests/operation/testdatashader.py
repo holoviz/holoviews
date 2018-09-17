@@ -283,6 +283,15 @@ class DatashaderRegridTests(ComparisonTestCase):
                            dynamic=False)
         self.assertEqual(regridded, img)
 
+    def test_regrid_zero_range(self):
+        ls = np.linspace(0, 10, 200)
+        xx, yy = np.meshgrid(ls, ls)
+        img = Image(np.sin(xx)*np.cos(yy), bounds=(0, 0, 1, 1))
+        regridded = regrid(img, x_range=(-1, -0.5), y_range=(-1, -0.5), dynamic=False)
+        expected = Image(np.zeros((0, 0)), bounds=(0, 0, 0, 0), xdensity=1, ydensity=1)
+        self.assertEqual(regridded, expected)
+
+
 
 @attr(optional=1)
 class DatashaderRasterizeTests(ComparisonTestCase):

@@ -156,14 +156,14 @@ class ImageInterface(GridInterface):
             l, b, r, t = dataset.bounds.lbrt()
             dim2, dim1 = dataset.data.shape[:2]
             xdate, ydate = isinstance(l, util.datetime_types), isinstance(b, util.datetime_types)
-            if l == r:
+            if l == r or dim1 == 0:
                 xlin = np.full((dim1,), l, dtype=('datetime64[us]' if xdate else 'float'))
             elif xdate:
                 xlin = util.date_range(l, r, dim1, dataset._time_unit)
             else:
                 xstep = float(r - l)/dim1
                 xlin = np.linspace(l+(xstep/2.), r-(xstep/2.), dim1)
-            if b == t:
+            if b == t or dim2 == 0:
                 ylin = np.full((dim2,), b, dtype=('datetime64[us]' if ydate else 'float'))
             elif ydate:
                 ylin = util.date_range(b, t, dim2, dataset._time_unit)
