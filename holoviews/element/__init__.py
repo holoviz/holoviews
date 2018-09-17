@@ -28,10 +28,10 @@ class ElementConversion(DataConversion):
         return self(Bivariate, kdims, vdims, groupby, **kwargs)
 
     def curve(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(Curve, kdims, vdims, groupby, sort=True, **kwargs)
+        return self(Curve, kdims, vdims, groupby, **kwargs)
 
     def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(ErrorBars, kdims, vdims, groupby, sort=True, **kwargs)
+        return self(ErrorBars, kdims, vdims, groupby, **kwargs)
 
     def distribution(self, dim=None, groupby=[], **kwargs):
         if dim is None:
@@ -75,7 +75,7 @@ class ElementConversion(DataConversion):
         return self(Spikes, kdims, vdims, groupby, **kwargs)
 
     def spread(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(Spread, kdims, vdims, groupby, sort=True, **kwargs)
+        return self(Spread, kdims, vdims, groupby, **kwargs)
 
     def surface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
