@@ -248,7 +248,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)
             or (isinstance(data, np.ndarray) and data.size == 0)):
-            data = np.zeros((2, 2))
+            data = data if isinstance(data, np.ndarray) and data.ndim == 2 else np.zeros((0, 0))
+            bounds = 0
+            if not xdensity: xdensity = 1
+            if not ydensity: ydensity = 1
+
         if rtol is not None:
             params['rtol'] = rtol
         else:

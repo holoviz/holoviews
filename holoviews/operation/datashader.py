@@ -580,7 +580,7 @@ class regrid(AggregationOperation):
         x, y = element.kdims
         coords = tuple(element.dimension_values(d, expanded=False) for d in [x, y])
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), _, (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         # Disable upsampling by clipping size and ranges
         (xstart, xend), (ystart, yend) = (x_range, y_range)
@@ -592,21 +592,33 @@ class regrid(AggregationOperation):
             if isinstance(y0, datetime_types):
                 y0, y1 = dt_to_int(y0, 'ns'), dt_to_int(y1, 'ns')
             exspan, eyspan = (x1-x0), (y1-y0)
-            width = min([int((xspan/exspan) * len(coords[0])), width])
-            height = min([int((yspan/eyspan) * len(coords[1])), height])
+            if np.isfinite(exspan) and exspan > 0:
+                width = min([int((xspan/exspan) * len(coords[0])), width])
+            else:
+                width = 0
+            if np.isfinite(eyspan) and eyspan > 0:
+                height = min([int((yspan/eyspan) * len(coords[1])), height])
+            else:
+                height = 0
+            xunit = float(xspan)/width if width else 0
+            yunit = float(yspan)/height if height else 0
+            xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
+                      np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
         # Compute bounds (converting datetimes)
         if xtype == 'datetime':
             xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
+            xs = (xs/10e5).astype('datetime64[us]')
         if ytype == 'datetime':
             ystart, yend = (np.array([ystart, yend])/10e5).astype('datetime64[us]')
+            ys = (ys/10e5).astype('datetime64[us]')
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
 
         params = dict(bounds=bbox)
         if width == 0 or height == 0:
             if width == 0: params['xdensity'] = 1
             if height == 0: params['ydensity'] = 1
-            return element.clone([], **params)
+            return element.clone((xs, ys, np.zeros((height, width))), **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
@@ -881,7 +893,10 @@ class shade(LinkableOperation):
         data += tuple(element.dimension_values(vd, flat=False)
                       for vd in element.vdims)
         dtypes = [dt for dt in element.datatype if dt != 'xarray']
-        return element.clone(data, datatype=['xarray']+dtypes)
+        return element.clone(data, datatype=['xarray']+dtypes,
+                             bounds=element.bounds,
+                             xdensity=element.xdensity,
+                             ydensity=element.ydensity)
 
 
     def _process(self, element, key=None):
