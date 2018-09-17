@@ -48,7 +48,6 @@ class PathPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
-        if cdim: cidx = element.get_dimension_index(cdim)
         inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
         if not cdim:
@@ -62,7 +61,8 @@ class PathPlot(ColorbarPlot):
 
         dim_name = util.dimension_sanitizer(cdim.name)
         if not self.static_source:
-            paths, vals = [], defaultdict(list)
+            paths = []
+            vals = {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
             for path in element.split():
                 cvals = path.dimension_values(cdim)
                 splits = [0]+list(np.where(np.diff(cvals)!=0)[0]+1)
@@ -72,9 +72,12 @@ class PathPlot(ColorbarPlot):
                     for i, vd in enumerate(element.vdims):
                         path_val = path.iloc[s1, i+2]
                         vd_column = util.dimension_sanitizer(vd.name)
+                        dt_column = vd_column+'_dt_strings'
                         vals[vd_column].append(path_val)
                         if isinstance(path_val, util.datetime_types):
-                            vals[vd_column+'_dt_strings'].append(vd.pprint_value(path_val))
+                            if dt_column not in vals:
+                                vals[dt_column] = []
+                            vals[dt_column].append(vd.pprint_value(path_val))
                     paths.append(path.iloc[s1:s2+1, :2].array())
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             data = dict(xs=xs, ys=ys, **{d: np.array(vs) for d, vs in vals.items()})
