@@ -601,7 +601,7 @@ class SpikesPlot(ColorbarPlot):
         return l, b, r, t
 
     def get_data(self, element, ranges, style):
-        dims = element.dimensions(label=True)
+        dims = element.dimensions()
 
         data = {}
         pos = self.position
@@ -626,9 +626,7 @@ class SpikesPlot(ColorbarPlot):
             mapping['color'] = {'field': cdim.name,
                                 'transform': cmapper}
 
-        if 'hover' in self.handles and not self.static_source:
-            for d in dims:
-                data[dimension_sanitizer(d)] = element.dimension_values(d)
+        self._get_hover_data(data, element)
 
         return data, mapping, style
 
