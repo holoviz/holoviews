@@ -1,3 +1,10 @@
+Version 1.11.0
+==============
+
+Backward incompatible changes:
+
+- The `.to` interface no longer sorts `Curve` data by default ([#3001](https://github.com/ioam/holoviews/pull/3001))
+
 Version 1.10.6
 ==============
 
