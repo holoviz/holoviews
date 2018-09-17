@@ -23,7 +23,8 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay, get_axis_padding, get_range)
+                   split_dmap_overlay, get_axis_padding, get_range,
+                   get_minimum_span)
 
 
 class Plot(param.Parameterized):
@@ -852,9 +853,9 @@ class GenericElementPlot(DimensionedPlot):
 
         if not self.overlaid and not self.batched:
             xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
-            if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
-            if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
-            if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
+            x0, x1 = get_minimum_span(x0, x1, xspan)
+            y0, y1 = get_minimum_span(y0, y1, yspan)
+            z0, z1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
@@ -1282,9 +1283,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
         # Apply minimum span
         xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
-        if util.is_number(x0) and x0 == x1: x0, x1 = x0-xspan, x1+xspan
-        if util.is_number(x0) and y0 == y1: y0, y1 = y0-yspan, y1+yspan
-        if util.is_number(z0) and z0 == z1: z0, z1 = z0-zspan, z1+zspan
+        x0, x1 = get_minimum_span(x0, x1, xspan)
+        y0, y1 = get_minimum_span(y0, y1, yspan)
+        z0, z1 = get_minimum_span(z0, z1, zspan)
 
         # Apply padding
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))

@@ -1,5 +1,6 @@
-import numpy as np
+import datetime as dt
 
+import numpy as np
 from holoviews.core import NdOverlay
 from holoviews.element import Spikes
 
@@ -108,3 +109,21 @@ class TestSpikesPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.start, np.datetime64('2016-03-31T21:36:00.000000000'))
         self.assertEqual(x_range.end, np.datetime64('2016-04-03T02:24:00.000000000'))
+
+    def test_spikes_datetime_vdim_hover(self):
+        points = Spikes([(0, 1, dt.datetime(2017, 1, 1))], vdims=['value', 'date']).options(tools=['hover'])
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['date'], np.array([1483228800000000000]))
+        self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
+        hover = plot.handles['hover']
+        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('value', '@{value}'), ('date', '@{date_dt_strings}')])
+
+    def test_spikes_datetime_kdim_hover(self):
+        points = Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').options(tools=['hover'])
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['x'], np.array([1483228800000000000]))
+        self.assertEqual(cds.data['x_dt_strings'], ['2017-01-01 00:00:00'])
+        hover = plot.handles['hover']
+        self.assertEqual(hover.tooltips, [('x', '@{x_dt_strings}'), ('y', '@{y}')])

@@ -1,5 +1,6 @@
-import numpy as np
+import datetime as dt
 
+import numpy as np
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
@@ -88,10 +89,11 @@ class TestPathPlot(TestBokehPlot):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
         color = [998, 998, 998, 998]
-        data = {'x': xs, 'y': ys, 'color': color}
+        date = np.datetime64(dt.datetime(2018, 8, 1))
+        data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color']).options(color_index='color', color_levels=levels, cmap=colors)
+        path = Path([data], vdims=['color', 'date']).options(color_index='color', color_levels=levels, cmap=colors)
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         cmapper = plot.handles['color_mapper']
@@ -99,9 +101,12 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['xs'], [np.array([1, 2, 3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3, 2, 1])])
         self.assertEqual(source.data['color'], np.array([998]))
+        self.assertEqual(source.data['date'], np.array([1533081600000000000]))
+        self.assertEqual(source.data['date_dt_strings'], np.array(['2018-08-01 00:00:00']))
         self.assertEqual(cmapper.low, 156)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
+
 
 
 class TestPolygonPlot(TestBokehPlot):
