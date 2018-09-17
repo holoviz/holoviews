@@ -14,7 +14,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match)
+                         unique_iterator, closest_match, is_number)
 from ..streams import LinkedStream
 
 def displayable(obj):
@@ -327,6 +327,18 @@ def get_axis_padding(padding):
     else:
         xpad, ypad, zpad = (padding,)*3
     return (xpad, ypad, zpad)
+
+
+def get_minimum_span(low, high, span):
+    """
+    If lower and high values are equal ensures they are separated by
+    the defined span.
+    """
+    if is_number(low) and low == high:
+        if isinstance(low, np.datetime64):
+            span = span * np.timedelta64(1, 's')
+        low, high = low-span, high+span
+    return low, high
 
 
 def get_range(element, ranges, dimension):
