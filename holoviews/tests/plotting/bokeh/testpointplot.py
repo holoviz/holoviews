@@ -4,7 +4,7 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews.core import NdOverlay
-from holoviews.core.options import Cycle
+from holoviews.core.options import Cycle, AbbreviatedException
 from holoviews.core.util import pd
 from holoviews.element import Points
 
@@ -320,3 +320,95 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])
+
+    def test_point_color_op(self):
+        points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                        vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.fill_color, 'color')
+        self.assertEqual(glyph.line_color, 'color')
+
+    def test_point_line_color_op(self):
+        points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                        vdims='color').options(line_color='color')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertNotEqual(glyph.fill_color, 'line_color')
+        self.assertEqual(glyph.line_color, 'line_color')
+
+    def test_point_line_color_op(self):
+        points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                        vdims='color').options(fill_color='color')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.fill_color, 'fill_color')
+        self.assertNotEqual(glyph.line_color, 'fill_color')
+
+    def test_point_angle_op(self):
+        points = Points([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
+                        vdims='angle').options(angle='angle')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['angle'], np.array([0, 0.785398, 1.570796]))
+        self.assertEqual(glyph.angle, 'angle')
+
+    def test_point_alpha_op(self):
+        points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.fill_alpha, 'alpha')
+
+    def test_point_line_alpha_op(self):
+        points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(line_alpha='alpha')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.line_alpha, 'line_alpha')
+        self.assertNotEqual(glyph.fill_alpha, 'line_alpha')
+
+    def test_point_fill_alpha_op(self):
+        points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(fill_alpha='alpha')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertNotEqual(glyph.line_alpha, 'fill_alpha')
+        self.assertEqual(glyph.fill_alpha, 'fill_alpha')
+
+    def test_point_size_op(self):
+        points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                        vdims='size').options(size='size')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['size'], np.array([1, 4, 8]))
+        self.assertEqual(glyph.size, 'size')
+
+    def test_point_line_width_op(self):
+        points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                        vdims='line_width').options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
+        self.assertEqual(glyph.line_width, 'line_width')
+
+    def test_point_marker_op(self):
+        points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
+                        vdims='marker').options(marker='marker')
+        with self.assertRaises(AbbreviatedException):
+            plot = bokeh_renderer.get_plot(points)
