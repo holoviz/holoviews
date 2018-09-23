@@ -17,7 +17,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot)
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect
+from .util import compute_ratios, fix_aspect, mpl_version
 
 
 @contextmanager
@@ -25,7 +25,9 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    old_rcparams = mpl.rcParams.copy()
+    deprecated = ['text.latex.unicode', 'examples.directory']
+    old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
+                    if mpl_version < '3.0' or k not in deprecated}
     mpl.rcParams.update(rcparams)
     try:
         yield
