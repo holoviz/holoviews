@@ -1,9 +1,13 @@
 import re
 import warnings
+from distutils.version import LooseVersion
 
 import numpy as np
+import matplotlib
 from matplotlib import ticker
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
+
+mpl_version = LooseVersion(matplotlib.__version__)  # noqa
 
 from ...core.util import basestring, _getargspec
 from ...element import Raster, RGB
