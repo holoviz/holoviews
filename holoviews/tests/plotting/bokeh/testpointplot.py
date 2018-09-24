@@ -369,7 +369,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertNotEqual(glyph.fill_color, 'line_color')
         self.assertEqual(glyph.line_color, 'line_color')
 
-    def test_point_line_color_op(self):
+    def test_point_fill_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                         vdims='color').options(fill_color='color')
         plot = bokeh_renderer.get_plot(points)
@@ -439,7 +439,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
                         vdims='marker').options(marker='marker')
         with self.assertRaises(ValueError):
-            plot = bokeh_renderer.get_plot(points)
+            bokeh_renderer.get_plot(points)
 
     def test_op_ndoverlay_value(self):
         overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(['circle', 'triangle'])}, 'Marker').options('Points', marker='Marker')

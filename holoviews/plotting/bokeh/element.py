@@ -679,13 +679,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
-            print(v.dimension)
             if dname not in element and v.dimension not in self.overlay_dims:
                 new_style.pop(k)
                 self.warning('Specified %s op %r could not be applied, %s dimension '
                              'could not be found' % (k, v, v.dimension))
                 continue
-            vrange = ranges.get(dname)
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
@@ -696,7 +694,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val):
-                lengths = [len(v) for v in source.data.values()]
                 if k in no_op_styles:
                     raise ValueError('Mapping the a dimension to the "{style}" '
                                      'style option is not supported. To '

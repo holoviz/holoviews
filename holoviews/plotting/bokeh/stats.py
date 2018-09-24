@@ -93,8 +93,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         ylabel = element.vdims[0].pprint_label
         return xlabel, ylabel, None
 
-    def _glyph_properties(self, plot, element, source, ranges, style):
-        properties = dict(style, source=source)
+    def _glyph_properties(self, plot, element, source, ranges, style, group=None):
+        new_style = self._apply_ops(element, source, ranges, style, group)
+        properties = dict(new_style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label
         return properties

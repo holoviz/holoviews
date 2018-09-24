@@ -67,7 +67,6 @@ class op(object):
     def min(self, **kwargs): return op(self, np.min, **kwargs)
     def sum(self, **kwargs): return op(self, np.sum, **kwargs)
     def std(self, **kwargs): return op(self, np.std, **kwargs)
-    def std(self, **kwargs): return op(self, np.std, **kwargs)
     def var(self, **kwargs): return op(self, np.var, **kwargs)
 
     def eval(self, dataset, ranges={}):

@@ -20,6 +20,8 @@ from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter
 from distutils.version import LooseVersion
 
+no_op_styles = ['marker', 'alpha', 'cmap', 'angle']
+
 
 class ElementPlot(GenericElementPlot, MPLPlot):
 
@@ -517,23 +519,38 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_ops(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if (isinstance(v, util.basestring) and v in element):
-                v = op(v)
+            if isinstance(v, util.basestring):
+                if v in element:
+                    v = op(v)
+                elif any(d==v for d in self.overlay_dims):
+                    v = op([d for d in self.overlay_dims if d==v][0])
+
             if not isinstance(v, op):
                 continue
-            val = v.eval(element, ranges)
+
+            dname = v.dimension.name
+            if dname not in element and v.dimension not in self.overlay_dims:
+                new_style.pop(k)
+                self.warning('Specified %s op %r could not be applied, %s dimension '
+                             'could not be found' % (k, v, v.dimension))
+                continue
+
+            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
+                val = self.overlay_dims[v.dimension]
+            else:
+                val = v.eval(element, ranges)
+
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
-            if k == 'alpha' and not np.isscalar(val) and not self._plot_methods.get('single') == 'annotate':
-                self.warning('The matplotlib backend currently does not '
-                             'support scaling the alpha by a dimension.')
-                new_style.pop('alpha')
-                continue
-            if k == 'marker':
-                self.warning('The matplotlib backend currently does not '
-                             'support mapping a dimension to the marker type.')
-                new_style.pop('marker')
-                continue
+
+            if not np.isscalar(val) and k in no_op_styles:
+                    raise ValueError('Mapping the a dimension to the "{style}" '
+                                     'style option is not supported. To '
+                                     'map the {dim} dimension to the {style} '
+                                     'use a groupby operation to overlay '
+                                     'your data along the dimension.'.format(
+                                         style=k, dim=v.dimension))
+
             new_style[k] = val
         return new_style
 
