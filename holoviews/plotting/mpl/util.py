@@ -5,6 +5,7 @@ from distutils.version import LooseVersion
 import numpy as np
 import matplotlib
 from matplotlib import ticker
+from matplotlib.colors import cnames
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
@@ -12,6 +13,34 @@ mpl_version = LooseVersion(matplotlib.__version__)  # noqa
 
 from ...core.util import basestring, _getargspec
 from ...element import Raster, RGB, Polygons
+from ...element import Raster, RGB
+from ..util import COLOR_ALIASES, RGB_HEX_REGEX
+
+
+def is_color(color):
+    """
+    Checks if supplied object is a valid color spec.
+    """
+    if not isinstance(color, basestring):
+        return False
+    elif RGB_HEX_REGEX.match(color):
+        return True
+    elif color in COLOR_ALIASES:
+        return True
+    elif color in cnames:
+        return True
+    return False
+
+
+def categorize_colors(colors, categories=None):
+    """
+    Takes a list of categorical values and turns them into integers
+    which can be colormapped.
+    """
+    categories = np.unique(colors) if categories is None else categories
+    sorted_colors = np.argsort(categories)
+    positions = np.searchsorted(categories, colors)
+    return sorted_colors[positions]
 
 
 def wrap_formatter(formatter):

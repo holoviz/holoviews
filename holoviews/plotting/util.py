@@ -2,6 +2,7 @@ from __future__ import unicode_literals, absolute_import, division
 
 from collections import defaultdict, namedtuple
 
+import re
 import traceback
 import warnings
 import bisect
@@ -972,6 +973,8 @@ def hex2rgb(hex):
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
+
+RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
 COLOR_ALIASES = {
     'b': (0, 0, 1),

@@ -25,6 +25,7 @@ from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
+from .util import categorize_colors
 
 
 class ChartPlot(ElementPlot):
@@ -571,10 +572,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if cs.dtype.kind in 'uif':
                 style['c'] = cs
             else:
-                categories = np.unique(cs)
-                xsorted = np.argsort(categories)
-                ypos = np.searchsorted(categories, cs)
-                style['c'] = xsorted[ypos]
+                style['c'] = categorize_colors(cs)
             self._norm_kwargs(element, ranges, style, cdim)
         elif color is not None:
             if np.isscalar(color):

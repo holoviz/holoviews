@@ -17,7 +17,7 @@ from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
-from .util import wrap_formatter
+from .util import wrap_formatter, is_color, categorize_colors
 from distutils.version import LooseVersion
 
 no_op_styles = ['marker', 'alpha', 'cmap', 'angle']
@@ -551,7 +551,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                      'your data along the dimension.'.format(
                                          style=k, dim=v.dimension))
 
+            if 'color' == k and (isinstance(val, np.ndarray) and all(not is_color(c) for c in val)):
+                new_style.pop(k)
+                self._norm_kwargs(element, ranges, new_style, v.dimension, val)
+                if val.dtype.kind in 'OSUM':
+                    val = categorize_colors(val)
+                k = 'c'
+
+            if k == 'facecolors':
+                # Color overrides facecolors if defined
+                new_style.pop('color')
+
             new_style[k] = val
+
         return new_style
 
 
