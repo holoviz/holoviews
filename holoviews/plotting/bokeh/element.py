@@ -5,6 +5,7 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
+
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
@@ -30,10 +31,11 @@ from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
-from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
-                   rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version, theme_attr_json,
-                   cds_column_replace, hold_policy)
+from .util import (
+    mpl_to_bokeh, get_tab_title,  py2js_tickformatter, rgba_tuple,
+    recursive_model_update, glyph_order, decode_bytes, bokeh_version,
+    theme_attr_json, is_color, cds_column_replace, hold_policy
+)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -52,6 +54,8 @@ text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color
 
 legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
                      'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
+
+no_op_styles = ['cmap', 'palette', 'marker']
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -667,25 +671,41 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _apply_ops(self, element, source, ranges, style, group=None):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring) and v in element:
-                v = op(v)
+            if isinstance(v, util.basestring):
+                if v in element:
+                    v = op(v)
+                elif any(d==v for d in self.overlay_dims):
+                    v = op([d for d in self.overlay_dims if d==v][0])
             if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
-            if dname not in element:
+            print(v.dimension)
+            if dname not in element and v.dimension not in self.overlay_dims:
                 new_style.pop(k)
                 self.warning('Specified %s op %r could not be applied, %s dimension '
                              'could not be found' % (k, v, v.dimension))
                 continue
             vrange = ranges.get(dname)
 
-            val = v.eval(element, ranges)
-            length = [len(v) for v in source.data.values()][0]
+            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
+                val = self.overlay_dims[v.dimension]
+            else:
+                val = v.eval(element, ranges)
+
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
-            if not np.isscalar(val) and len(val) != length:
-                continue
+            if not np.isscalar(val):
+                lengths = [len(v) for v in source.data.values()]
+                if k in no_op_styles:
+                    raise ValueError('Mapping the a dimension to the "{style}" '
+                                     'style option is not supported. To '
+                                     'map the {dim} dimension to the {style} '
+                                     'use a groupby operation to overlay '
+                                     'your data along the dimension.'.format(
+                                         style=k, dim=v.dimension))
+                elif source.data and len(val) != len(list(source.data.values())[0]):
+                    continue
 
             if k == 'angle':
                 val = np.deg2rad(val)
@@ -694,10 +714,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 key = k
                 source.data[k] = val
+
+            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and
-                val.dtype.kind in 'if'):
+                (numeric or not all(is_color(v) for v in val))):
+                kwargs = {}
+                if val.dtype.kind not in 'if':
+                    kwargs['factors'] = np.unique(val)
                 cmapper = self._get_colormapper(v.dimension, element, ranges,
-                                                style, name=dname+'_color_mapper')
+                                                style, name=dname+'_color_mapper', **kwargs)
                 key = {'field': k, 'transform': cmapper}
             new_style[k] = key
         return new_style

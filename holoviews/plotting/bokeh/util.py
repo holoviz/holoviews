@@ -17,6 +17,7 @@ import bokeh
 
 bokeh_version = LooseVersion(bokeh.__version__)  # noqa
 
+from bokeh.colors.named import __all__ as named_colors
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
@@ -57,6 +58,8 @@ markers = {'s': {'marker': 'square'},
            '3': {'marker': 'triangle', 'angle': np.pi},
            '4': {'marker': 'triangle', 'angle': np.pi/2}}
 
+RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
+
 
 def convert_timestamp(timestamp):
     """
@@ -74,6 +77,21 @@ def rgba_tuple(rgba):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
     else:
         return COLOR_ALIASES.get(rgba, rgba)
+
+
+def is_color(color):
+    """
+    Checks if a color
+    """
+    if not isinstance(color, basestring):
+        return False
+    elif RGB_HEX_REGEX.match(color):
+        return True
+    elif color in COLOR_ALIASES:
+        return True
+    elif color in named_colors:
+        return True
+    return False
 
 
 def decode_bytes(array):

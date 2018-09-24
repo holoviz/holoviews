@@ -4,7 +4,7 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews.core import NdOverlay
-from holoviews.core.options import Cycle, AbbreviatedException
+from holoviews.core.options import Cycle
 from holoviews.core.util import pd
 from holoviews.element import Points
 
@@ -12,7 +12,8 @@ from .testplot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
 
 try:
-    from bokeh.models import FactorRange, CategoricalColorMapper
+    from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
+    from bokeh.models.glyphs import Circle, Triangle
 except:
     pass
 
@@ -331,6 +332,33 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, 'color')
         self.assertEqual(glyph.line_color, 'color')
 
+    def test_point_linear_color_op(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
+    def test_point_categorical_color_op(self):
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                        vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, np.array(['A', 'B', 'C']))
+        self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
     def test_point_line_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                         vdims='color').options(line_color='color')
@@ -410,5 +438,11 @@ class TestPointPlot(TestBokehPlot):
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
                         vdims='marker').options(marker='marker')
-        with self.assertRaises(AbbreviatedException):
+        with self.assertRaises(ValueError):
             plot = bokeh_renderer.get_plot(points)
+
+    def test_op_ndoverlay_value(self):
+        overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(['circle', 'triangle'])}, 'Marker').options('Points', marker='Marker')
+        plot = bokeh_renderer.get_plot(overlay)
+        for subplot, glyph_type in zip(plot.subplots.values(), [Circle, Triangle]):
+            self.assertIsInstance(subplot.handles['glyph'], glyph_type)
