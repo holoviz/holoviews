@@ -113,6 +113,8 @@ class XArrayInterface(GridInterface):
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
+            data = {d: np.asarray(values) if d in kdims else values
+                    for d, values in data.items()}
             coord_dims = [data[kd.name].ndim for kd in kdims]
             dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
             coords = OrderedDict()
