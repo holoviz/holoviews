@@ -27,7 +27,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION flake8 scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=5.4.1 param matplotlib=2.1.2 xarray networkx
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION flake8 scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=5.4.1 param matplotlib=2.1.2 xarray networkx affine
   - source activate test-environment
   - conda install -c conda-forge filelock iris plotly=2.7 flexx=0.4.1 ffmpeg netcdf4=1.3.1 --quiet
   - conda install -c bokeh datashader dask bokeh=0.12.15 selenium
