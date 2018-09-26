@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import sys
 import types
+from collections import OrderedDict
 
 import numpy as np
 import xarray as xr
@@ -112,12 +113,18 @@ class XArrayInterface(GridInterface):
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
-            coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
+            coord_dims = [data[kd.name].ndim for kd in kdims]
+            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            coords = []
+            for kd in kdims:
+                coord_vals = data[kd.name]
+                dim = dims[:coord_vals.ndim]
+                coords.append((kd.name, (dim, coord_vals)))
             arrays = {}
             for vdim in vdims:
                 arr = data[vdim.name]
                 if not isinstance(arr, xr.DataArray):
-                    arr = xr.DataArray(arr, coords=coords)
+                    arr = xr.DataArray(arr, coords=OrderedDict(coords), dims=dims)
                 arrays[vdim.name] = arr
             data = xr.Dataset(arrays)
         else:
