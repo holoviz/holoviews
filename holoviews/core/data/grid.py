@@ -266,7 +266,7 @@ class GridInterface(DictInterface):
         slices = []
         for d in data_coords:
             coords = cls.coords(dataset, d)
-            if np.all(coords[1:] < coords[:-1]):
+            if np.all(coords[1:] < coords[:-1]) and not coords.ndim > 1:
                 slices.append(slice(None, None, -1))
                 invert = True
             else:
