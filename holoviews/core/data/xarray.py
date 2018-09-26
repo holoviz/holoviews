@@ -115,16 +115,20 @@ class XArrayInterface(GridInterface):
                 raise TypeError('XArrayInterface could not interpret data type')
             coord_dims = [data[kd.name].ndim for kd in kdims]
             dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
-            coords = []
+            coords = OrderedDict()
             for kd in kdims:
                 coord_vals = data[kd.name]
-                dim = dims[:coord_vals.ndim]
-                coords.append((kd.name, (dim, coord_vals)))
+                if coord_vals.ndim > 1:
+                    coord = (dims[:coord_vals.ndim], coord_vals)
+                else:
+                    coord = coord_vals
+                coords[kd.name] = coord
+            xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             arrays = {}
             for vdim in vdims:
                 arr = data[vdim.name]
                 if not isinstance(arr, xr.DataArray):
-                    arr = xr.DataArray(arr, coords=OrderedDict(coords), dims=dims)
+                    arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                 arrays[vdim.name] = arr
             data = xr.Dataset(arrays)
         else:
