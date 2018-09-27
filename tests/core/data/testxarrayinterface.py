@@ -30,18 +30,18 @@ class XArrayInterfaceTests(GridInterfaceTests):
     data_type = xr.Dataset
 
     def get_irregular_dataarray(self, invert_y=True):
-        from affine import Affine
         multiplier = -1 if invert_y else 1
+        x = np.arange(2, 62, 3)
+        y = np.arange(2, 12, 2) * multiplier
         da = xr.DataArray(
             data=[np.arange(100).reshape(5, 20)],
-            coords={'band': [1], 'x': np.arange(2, 62, 3), 'y': np.arange(2, 12, 2) * multiplier},
+            coords=OrderedDict([('band', [1]), ('x', x), ('y', y)]),
             dims=['band', 'y','x'],
             attrs={'transform': (3, 0, 2, 0, -2, -2)})
-        transform = Affine(*da.transform)
-        nx, ny = da.sizes['x'], da.sizes['y']
-        x, y = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5) * transform
-        return da.assign_coords(**{'xc': xr.DataArray(x, dims=('y','x')),
-                                   'yc': xr.DataArray(y, dims=('y','x')),})
+        xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
+                  np.tile(y[:, np.newaxis], len(x)))
+        return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
+                                   'yc': xr.DataArray(ys, dims=('y','x')),})
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
@@ -123,17 +123,6 @@ class XArrayInterfaceTests(GridInterfaceTests):
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)
         self.assertEqual(ds.kdims, ['b', 'c', 'a'])
-
-    def test_irregular_grid_data_values(self):
-        from affine import Affine
-        transform = Affine(3, 0, 2, 0, -2, -2)
-        nx, ny = 20, 5
-        xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5) * transform
-        zs = np.arange(100).reshape(5, 20)
-        ds = Dataset((xs, ys, zs), ['x', 'y'], 'z')
-        self.assertEqual(ds.dimension_values(2, flat=False), zs)
-        self.assertEqual(ds.interface.coords(ds, 'x').values, xs)
-        self.assertEqual(ds.interface.coords(ds, 'y').values, ys)
 
     def test_irregular_and_regular_coordinate_inference(self):
         data = self.get_irregular_dataarray()

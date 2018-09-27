@@ -268,7 +268,8 @@ class XArrayInterface(GridInterface):
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
-            return data
+
+            return data.values if isinstance(data, xr.DataArray) else data
 
         data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
@@ -285,7 +286,8 @@ class XArrayInterface(GridInterface):
             data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
             data = np.convolve(data, [0.5, 0.5], 'valid')
-        return data
+
+        return data.values if isinstance(data, xr.DataArray) else data
 
 
     @classmethod
