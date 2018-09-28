@@ -48,6 +48,24 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
+    def test_irregular_grid_data_values(self):
+        nx, ny = 20, 5
+        xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5)
+        zs = np.arange(100).reshape(5, 20)
+        ds = Dataset((xs, ys, zs), ['x', 'y'], 'z')
+        self.assertEqual(ds.dimension_values(2, flat=False), zs)
+        self.assertEqual(ds.interface.coords(ds, 'x'), xs)
+        self.assertEqual(ds.interface.coords(ds, 'y'), ys)
+
+    def test_irregular_grid_data_values_inverted_y(self):
+        nx, ny = 20, 5
+        xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)*-1+0.5)
+        zs = np.arange(100).reshape(5, 20)
+        ds = Dataset((xs, ys, zs), ['x', 'y'], 'z')
+        self.assertEqual(ds.dimension_values(2, flat=False), zs)
+        self.assertEqual(ds.interface.coords(ds, 'x'), xs)
+        self.assertEqual(ds.interface.coords(ds, 'y'), ys)
+
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 

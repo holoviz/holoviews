@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 import sys
 import types
+from collections import OrderedDict
 
 import numpy as np
 import xarray as xr
@@ -112,12 +113,24 @@ class XArrayInterface(GridInterface):
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
-            coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
+            data = {d: np.asarray(values) if d in kdims else values
+                    for d, values in data.items()}
+            coord_dims = [data[kd.name].ndim for kd in kdims]
+            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            coords = OrderedDict()
+            for kd in kdims:
+                coord_vals = data[kd.name]
+                if coord_vals.ndim > 1:
+                    coord = (dims[:coord_vals.ndim], coord_vals)
+                else:
+                    coord = coord_vals
+                coords[kd.name] = coord
+            xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             arrays = {}
             for vdim in vdims:
                 arr = data[vdim.name]
                 if not isinstance(arr, xr.DataArray):
-                    arr = xr.DataArray(arr, coords=coords)
+                    arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                 arrays[vdim.name] = arr
             data = xr.Dataset(arrays)
         else:
@@ -255,7 +268,8 @@ class XArrayInterface(GridInterface):
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
-            return data
+
+            return data.values if isinstance(data, xr.DataArray) else data
 
         data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
@@ -272,7 +286,8 @@ class XArrayInterface(GridInterface):
             data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
             data = np.convolve(data, [0.5, 0.5], 'valid')
-        return data
+
+        return data.values if isinstance(data, xr.DataArray) else data
 
 
     @classmethod
