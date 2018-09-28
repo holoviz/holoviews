@@ -261,18 +261,6 @@ class GridInterface(DictInterface):
         if data_coords is None:
             data_coords = dataset.dimensions('key', label='name')[::-1]
 
-        # Reorient data
-        invert = False
-        slices = []
-        for d in data_coords:
-            coords = cls.coords(dataset, d)
-            if np.all(coords[1:] < coords[:-1]):
-                slices.append(slice(None, None, -1))
-                invert = True
-            else:
-                slices.append(slice(None))
-        data = data[tuple(slices)] if invert else data
-
         # Transpose data
         dims = [name for name in data_coords
                 if isinstance(cls.coords(dataset, name), array_types)]
@@ -286,6 +274,18 @@ class GridInterface(DictInterface):
             inds = [i - sum([1 for d in dropped if i>=d]) for i in inds]
             if inds:
                 data = data.transpose(inds[::-1])
+
+        # Reorient data
+        invert = False
+        slices = []
+        for d in dataset.kdims[::-1]:
+            coords = cls.coords(dataset, d)
+            if np.all(coords[1:] < coords[:-1]) and not coords.ndim > 1:
+                slices.append(slice(None, None, -1))
+                invert = True
+            else:
+                slices.append(slice(None))
+        data = data[tuple(slices)] if invert else data
 
         # Allow lower dimensional views into data
         if len(dataset.kdims) < 2:

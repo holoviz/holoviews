@@ -190,6 +190,12 @@ class IrisInterfaceTests(GridInterfaceTests):
         cube = Dataset(self.cube)
         self.assertEqual(cube[0, 0], 5)
 
+    def test_irregular_grid_data_values(self):
+        raise SkipTest('Irregular mesh data not supported by IrisInterface')
+
+    def test_irregular_grid_data_values_inverted_y(self):
+        raise SkipTest('Irregular mesh data not supported by IrisInterface')
+
 
 @attr(optional=1)
 class Image_IrisInterfaceTests(Image_ImageInterfaceTests):

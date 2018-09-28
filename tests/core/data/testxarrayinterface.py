@@ -29,6 +29,20 @@ class XArrayInterfaceTests(GridInterfaceTests):
     datatype = 'xarray'
     data_type = xr.Dataset
 
+    def get_irregular_dataarray(self, invert_y=True):
+        multiplier = -1 if invert_y else 1
+        x = np.arange(2, 62, 3)
+        y = np.arange(2, 12, 2) * multiplier
+        da = xr.DataArray(
+            data=[np.arange(100).reshape(5, 20)],
+            coords=OrderedDict([('band', [1]), ('x', x), ('y', y)]),
+            dims=['band', 'y','x'],
+            attrs={'transform': (3, 0, 2, 0, -2, -2)})
+        xs, ys = (np.tile(x[:, np.newaxis], len(y)).T,
+                  np.tile(y[:, np.newaxis], len(x)))
+        return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
+                                   'yc': xr.DataArray(ys, dims=('y','x')),})
+
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
         ys = [0.1, 0.2, 0.3]
@@ -109,6 +123,41 @@ class XArrayInterfaceTests(GridInterfaceTests):
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)
         self.assertEqual(ds.kdims, ['b', 'c', 'a'])
+
+    def test_irregular_and_regular_coordinate_inference(self):
+        data = self.get_irregular_dataarray()
+        ds = Dataset(data, vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('band'), Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.dimension_values(3, flat=False), data.values[:, ::-1].transpose([1, 2, 0]))
+
+    def test_irregular_and_regular_coordinate_inference_inverted(self):
+        data = self.get_irregular_dataarray(False)
+        ds = Dataset(data, vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('band'), Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.dimension_values(3, flat=False), data.values.transpose([1, 2, 0]))
+    def test_irregular_and_regular_coordinate_explicit_regular_coords(self):
+        data = self.get_irregular_dataarray()
+        ds = Dataset(data, ['x', 'y'], vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0, ::-1])
+
+    def test_irregular_and_regular_coordinate_explicit_regular_coords_inverted(self):
+        data = self.get_irregular_dataarray(False)
+        ds = Dataset(data, ['x', 'y'], vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
+
+    def test_irregular_and_regular_coordinate_explicit_irregular_coords(self):
+        data = self.get_irregular_dataarray()
+        ds = Dataset(data, ['xc', 'yc'], vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('xc'), Dimension('yc')])
+        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
+
+    def test_irregular_and_regular_coordinate_explicit_irregular_coords_inverted(self):
+        data = self.get_irregular_dataarray(False)
+        ds = Dataset(data, ['xc', 'yc'], vdims='Value')
+        self.assertEqual(ds.kdims, [Dimension('xc'), Dimension('yc')])
+        self.assertEqual(ds.dimension_values(2, flat=False), data.values[0])
 
     def test_concat_grid_3d_shape_mismatch(self):
         arr1 = np.random.rand(3, 2)

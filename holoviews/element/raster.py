@@ -767,7 +767,12 @@ class QuadMesh(Dataset, Element2D):
         # Generate vertices
         xs = self.interface.coords(self, 0, edges=True)
         ys = self.interface.coords(self, 1, edges=True)
+
         if xs.ndim == 1:
+            if np.all(xs[1:] < xs[:-1]):
+                xs = xs[::-1]
+            if np.all(ys[1:] < ys[:-1]):
+                ys = ys[::-1]
             xs, ys = (np.tile(xs[:, np.newaxis], len(ys)).T,
                       np.tile(ys[:, np.newaxis], len(xs)))
         vertices = (xs.T.flatten(), ys.T.flatten())
