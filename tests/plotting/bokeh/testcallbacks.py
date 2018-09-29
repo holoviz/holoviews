@@ -306,7 +306,7 @@ class TestServerCallbacks(ComparisonTestCase):
 
     def test_selection1d_resolves(self):
         points = Points([1, 2, 3])
-        stream = Selection1D(source=points)
+        Selection1D(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         cds = plot.handles['cds']
         cds.selected.indices = [0, 2]
@@ -317,7 +317,7 @@ class TestServerCallbacks(ComparisonTestCase):
 
     def test_rangexy_resolves(self):
         points = Points([1, 2, 3])
-        stream = RangeXY(source=points)
+        RangeXY(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
@@ -337,7 +337,7 @@ class TestServerCallbacks(ComparisonTestCase):
 
     def test_plotsize_resolves(self):
         points = Points([1, 2, 3])
-        stream = PlotSize(source=points)
+        PlotSize(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         callback = plot.callbacks[0]
         model = namedtuple('Plot', 'inner_width inner_height ref')(400, 300, {'id': 'Test'})
@@ -350,7 +350,7 @@ class TestServerCallbacks(ComparisonTestCase):
 
     def test_cds_resolves(self):
         points = Points([1, 2, 3])
-        stream = CDSStream(source=points)
+        CDSStream(source=points)
         plot = bokeh_server_renderer.get_plot(points)
         cds = plot.handles['cds']
         callback = plot.callbacks[0]
