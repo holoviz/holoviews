@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
@@ -8,7 +8,8 @@ from holoviews.core.options import Store
 from holoviews.element import Points, Polygons, Box, Curve, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
-                               PointerXY, PointerX, PlotReset)
+                               PointerXY, PointerX, PlotReset, Selection1D,
+                               RangeXY, PlotSize, CDSStream)
 import pyviz_comms as comms
 
 try:
@@ -24,6 +25,7 @@ try:
 except:
     bokeh_renderer = None
     bokeh_server_renderer = None
+
 
 
 class TestCallbacks(ComparisonTestCase):
@@ -293,3 +295,67 @@ class TestEditToolCallbacks(ComparisonTestCase):
         self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
         self.assertIn(plot.id, point_plot.callbacks[0].callbacks[0].code)
         self.assertNotIn('PLACEHOLDER_PLOT_ID', point_plot.callbacks[0].callbacks[0].code)
+
+
+
+class TestServerCallbacks(ComparisonTestCase):
+
+    def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'bokeh'
+
+    def test_selection1d_resolves(self):
+        points = Points([1, 2, 3])
+        stream = Selection1D(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        cds.selected.indices = [0, 2]
+        callback = plot.callbacks[0]
+        spec = callback.attributes['index']
+        resolved = callback.resolve_attr_spec(spec, cds, model=cds)
+        self.assertEqual(resolved, {'id': cds.ref['id'], 'value': [0, 2]})
+
+    def test_rangexy_resolves(self):
+        points = Points([1, 2, 3])
+        stream = RangeXY(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        callback = plot.callbacks[0]
+        x0_range_spec = callback.attributes['x0']
+        x1_range_spec = callback.attributes['x1']
+        y0_range_spec = callback.attributes['y0']
+        y1_range_spec = callback.attributes['y1']
+        resolved = callback.resolve_attr_spec(x0_range_spec, x_range, model=x_range)
+        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 0})
+        resolved = callback.resolve_attr_spec(x1_range_spec, x_range, model=x_range)
+        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 2})
+        resolved = callback.resolve_attr_spec(y0_range_spec, y_range, model=y_range)
+        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 1})
+        resolved = callback.resolve_attr_spec(y1_range_spec, y_range, model=y_range)
+        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 3})
+
+    def test_plotsize_resolves(self):
+        points = Points([1, 2, 3])
+        stream = PlotSize(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        callback = plot.callbacks[0]
+        model = namedtuple('Plot', 'inner_width inner_height ref')(400, 300, {'id': 'Test'})
+        width_spec = callback.attributes['width']
+        height_spec = callback.attributes['height']
+        resolved = callback.resolve_attr_spec(width_spec, model, model=model)
+        self.assertEqual(resolved, {'id': 'Test', 'value': 400})
+        resolved = callback.resolve_attr_spec(height_spec, model, model=model)
+        self.assertEqual(resolved, {'id': 'Test', 'value': 300})
+
+    def test_cds_resolves(self):
+        points = Points([1, 2, 3])
+        stream = CDSStream(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        callback = plot.callbacks[0]
+        data_spec = callback.attributes['data']
+        resolved = callback.resolve_attr_spec(data_spec, cds, model=cds)
+        self.assertEqual(resolved, {'id': cds.ref['id'],
+                                    'value': points.columns()})
+
