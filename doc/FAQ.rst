@@ -48,6 +48,22 @@ This same method is applicable to adjust the range of a color bar. Here
 z_col is the color bar value dimension and is bounded from 0 to 5.
 
 
+**Q: How do I keep all the axes limits consistent/normalized across
+all frames in a HoloMap/all elements in a layout?
+
+**A:** You may use the use the normalization options as specified below:
+
+..code:: python
+    # for consistent limits across frames
+    your_holomap.options(framewise=False)
+
+    # for consistent limits across elements
+    your_layout.options(axiswise=False)
+
+If these options do not work, chances are, you have a DynamicMap, and so
+you have to utilize the ``.redim.range()`` method aforementioned to manually
+set the axes limits.
+
 **Q: The default figure size is so tiny! How do I enlarge it?**
 
 **A:** Depending on the selected backend...
