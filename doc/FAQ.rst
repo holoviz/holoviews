@@ -71,17 +71,17 @@ independently by changing ``framewise`` to True:
     your_holomap.options(framewise=True)
 
 
-**Q: Why doesn't my DynamicMap respect the `framewise` option for 
+**Q: Why doesn't my DynamicMap respect the ``framewise`` option for 
 axis normalization across frames?**
 
 **A:** Unfortunately, HoloViews has no way of knowing the axis ranges
 of objects that might be returned by future calls to a DynamicMap's 
 callback function, and so there is no way for it to implement 
-`axiswise=False` normalization (even though such normalization 
+``axiswise=False`` normalization (even though such normalization 
 is otherwise normally the default in HoloViews). Thus as a special 
 case, a DynamicMap (whether created specifically or as the return
-value of various operations that accept a `dynamic=True` argument)
-always acts as if `axiswise=True` has been set on it.  If you want
+value of various operations that accept a ``dynamic=True`` argument)
+always acts as if ``axiswise=True`` has been set on it.  If you want
 to normalize across all frames of a DynamicMap, you will need to manually
 determine the appropriate axis range yourself and set that, e.g. with 
 ``.redim.range()`` as described above.
