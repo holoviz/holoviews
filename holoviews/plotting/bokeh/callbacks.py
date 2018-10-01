@@ -3,8 +3,7 @@ from collections import defaultdict
 import param
 import numpy as np
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection,
-    ToolbarBox
+    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox
 )
 from pyviz_comms import JS_CALLBACK
 
@@ -296,9 +295,6 @@ class ServerCallback(MessageCallback):
                 continue
             if isinstance(resolved, dict):
                 resolved = resolved.get(p)
-            elif isinstance(resolved, Selection) and p in ['1d', 'indices']:
-                # Handle resolving bokeh Selection 1d indices
-                resolved = resolved[p]
             else:
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
@@ -779,7 +775,7 @@ class Selection1DCallback(Callback):
     Returns the current selection on a ColumnDataSource.
     """
 
-    attributes = {'index': 'cb_obj.selected.1d.indices'}
+    attributes = {'index': 'cb_obj.selected.indices'}
     models = ['source']
     on_changes = ['selected']
 
@@ -944,7 +940,7 @@ class BoxEditCallback(CDSCallback):
     attributes = {'data': 'rect_source.data'}
     models = ['rect_source']
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         try:
             from bokeh.models import BoxEditTool
         except:
