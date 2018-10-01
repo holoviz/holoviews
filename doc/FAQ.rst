@@ -48,21 +48,42 @@ This same method is applicable to adjust the range of a color bar. Here
 z_col is the color bar value dimension and is bounded from 0 to 5.
 
 
-**Q: How do I keep all the axes limits consistent/normalized across
-all frames in a HoloMap/all elements in a layout?
+**Q: How do I control the auto-ranging/normalization of axis limits 
+across frames in a HoloMap or objects in a Layout?**
 
-**A:** You may use the use the normalization options as specified below:
+**A:** Where feasible, HoloViews defaults to normalizing axis ranges
+across all objects that are presented together, so that they can be 
+compared directly. If you don't want objects that share a dimension to 
+be normalized together in your layout, you can change the `axiswise`
+normalization option to True, making each object be normalized 
+independently:
 
 ..code:: python
-    # for consistent limits across frames
-    your_holomap.options(framewise=False)
+    your_layout.options(axiswise=True)
 
-    # for consistent limits across elements
-    your_layout.options(axiswise=False)
+Similarly, if you have a HoloMap composed of multiple frames in an
+animation or controlled with widgets, you can make each frame be normalized
+independently by changing `framewise` to True:
 
-If these options do not work, chances are, you have a DynamicMap, and so
-you have to utilize the ``.redim.range()`` method aforementioned to manually
-set the axes limits.
+..code:: python
+    your_holomap.options(framewise=True)
+
+
+**Q: Why doesn't my DynamicMap respect the `framewise` option for 
+axis normalization across frames?**
+
+**A:** Unfortunately, HoloViews has no way of knowing the axis ranges
+of objects that might be returned by future calls to a DynamicMap's 
+callback function, and so there is no way for it to implement 
+`axiswise=False` normalization (even though such normalization 
+is otherwise normally the default in HoloViews). Thus as a special 
+case, a DynamicMap (whether created specifically or as the return
+value of various operations that accept a `dynamic=True` argument)
+always acts as if `axiswise=True` has been set on it.  If you want
+to normalize across all frames of a DynamicMap, you will need to manually
+determine the appropriate axis range yourself and set that, e.g. with 
+``.redim.range()`` as described above.
+
 
 **Q: The default figure size is so tiny! How do I enlarge it?**
 
