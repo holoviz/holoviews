@@ -205,7 +205,6 @@ class Stream(param.Parameterized):
             self.add_subscriber(subscriber)
 
         self.linked = linked
-        self._rename = self._validate_rename(rename)
         self.transient = transient
 
         # Whether this stream is currently triggering its subscribers
@@ -217,6 +216,7 @@ class Stream(param.Parameterized):
         self._metadata = {}
 
         super(Stream, self).__init__(**params)
+        self._rename = self._validate_rename(rename)
         if source is not None:
             self.registry[id(source)].append(self)
 
@@ -592,11 +592,21 @@ class Params(Stream):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
-        parameters = [p for p in parameterized.params() if p != 'name']
+        if parameters is None:
+            parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         if watch:
             for p in self.parameters:
                 self.parameterized.param.watch(self._listener, p)
+
+    def _validate_rename(self, mapping):
+        for k, v in mapping.items():
+            if k not in self.parameters:
+                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+            if v in self.parameters:
+                raise KeyError('Cannot rename to %r as it clashes with a '
+                               'stream parameter of the same name' % v)
+        return mapping
 
     def _listener(self, change):
         self.trigger([self])
