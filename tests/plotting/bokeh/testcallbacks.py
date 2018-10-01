@@ -1,24 +1,24 @@
-from collections import deque
-from unittest import SkipTest
+from collections import deque, namedtuple
 
 import numpy as np
 
-from holoviews.core import DynamicMap
+from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store
 from holoviews.element import Points, Polygons, Box, Curve, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
-                               PointerXY, PointerX, PlotReset)
+                               PointerXY, PointerX, PlotReset, Selection1D,
+                               RangeXY, PlotSize, CDSStream)
 import pyviz_comms as comms
 
 try:
-    from bokeh.models import PolyEditTool
+    from bokeh.events import Tap
+    from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
     from holoviews.plotting.bokeh.callbacks import (
         Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback
+        BoxEditCallback, Selection1DCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
-    from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_server_renderer = BokehRenderer.instance(mode='server')
     bokeh_renderer = BokehRenderer.instance()
 except:
@@ -26,17 +26,23 @@ except:
     bokeh_server_renderer = None
 
 
-class TestCallbacks(ComparisonTestCase):
+class CallbackTestCase(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
+        self.comm_manager = bokeh_renderer.comm_manager
+        bokeh_renderer.comm_manager = comms.CommManager
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         bokeh_server_renderer.last_plot = None
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
+        bokeh_renderer.comm_manager = self.comm_manager
+
+
+class TestCallbacks(CallbackTestCase):
 
     def test_stream_callback(self):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
@@ -83,13 +89,7 @@ class TestCallbacks(ComparisonTestCase):
         self.assertFalse(bool(Callback._callbacks))
 
 
-class TestResetCallback(ComparisonTestCase):
-
-    def setUp(self):
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
-        self.comm_manager = bokeh_renderer.comm_manager
-        bokeh_renderer.comm_manager = comms.CommManager
+class TestResetCallback(CallbackTestCase):
 
     def test_reset_callback(self):
         resets = []
@@ -102,22 +102,7 @@ class TestResetCallback(ComparisonTestCase):
         self.assertEqual(resets, [True])
 
         
-class TestEditToolCallbacks(ComparisonTestCase):
-
-    def setUp(self):
-        self.previous_backend = Store.current_backend
-        if not bokeh_server_renderer or bokeh_version < '0.12.14':
-            raise SkipTest("Bokeh >= 0.12.14 required to test edit tool streams")
-        Store.current_backend = 'bokeh'
-        self.comm_manager = bokeh_renderer.comm_manager
-        bokeh_renderer.comm_manager = comms.CommManager
-
-    def tearDown(self):
-        Store.current_backend = self.previous_backend
-        bokeh_server_renderer.last_plot = None
-        bokeh_renderer.last_plot = None
-        Callback._callbacks = {}
-        bokeh_renderer.comm_manager = self.comm_manager
+class TestEditToolCallbacks(CallbackTestCase):
 
     def test_point_draw_callback(self):
         points = Points([(0, 1)])
@@ -281,3 +266,126 @@ class TestEditToolCallbacks(ComparisonTestCase):
         self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
         self.assertIn(plot.id, point_plot.callbacks[0].callbacks[0].code)
         self.assertNotIn('PLACEHOLDER_PLOT_ID', point_plot.callbacks[0].callbacks[0].code)
+
+
+
+class TestServerCallbacks(CallbackTestCase):
+
+    def test_server_callback_resolve_attr_spec_range1d_start(self):
+        range1d = Range1d(start=0, end=10)
+        msg = Callback.resolve_attr_spec('x_range.attributes.start', range1d)
+        self.assertEqual(msg, {'id': range1d.ref['id'], 'value': 0})
+
+    def test_server_callback_resolve_attr_spec_range1d_end(self):
+        range1d = Range1d(start=0, end=10)
+        msg = Callback.resolve_attr_spec('x_range.attributes.end', range1d)
+        self.assertEqual(msg, {'id': range1d.ref['id'], 'value': 10})
+
+    def test_server_callback_resolve_attr_spec_source_selected(self):
+        source = ColumnDataSource()
+        source.selected = Selection(indices=[1, 2, 3])
+        msg = Callback.resolve_attr_spec('cb_obj.selected.indices', source)
+        self.assertEqual(msg, {'id': source.ref['id'], 'value': [1, 2, 3]})
+
+    def test_server_callback_resolve_attr_spec_tap_event(self):
+        plot = Plot()
+        event = Tap(plot, x=42)
+        msg = Callback.resolve_attr_spec('cb_obj.x', event, plot)
+        self.assertEqual(msg, {'id': plot.ref['id'], 'value': 42})
+
+    def test_selection1d_resolves(self):
+        points = Points([1, 2, 3])
+        Selection1D(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        cds.selected = Selection(indices=[0, 2])
+        callback = plot.callbacks[0]
+        spec = callback.attributes['index']
+        resolved = callback.resolve_attr_spec(spec, cds, model=cds)
+        self.assertEqual(resolved, {'id': cds.ref['id'], 'value': [0, 2]})
+
+    def test_rangexy_resolves(self):
+        points = Points([1, 2, 3])
+        RangeXY(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        callback = plot.callbacks[0]
+        x0_range_spec = callback.attributes['x0']
+        x1_range_spec = callback.attributes['x1']
+        y0_range_spec = callback.attributes['y0']
+        y1_range_spec = callback.attributes['y1']
+        resolved = callback.resolve_attr_spec(x0_range_spec, x_range, model=x_range)
+        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 0})
+        resolved = callback.resolve_attr_spec(x1_range_spec, x_range, model=x_range)
+        self.assertEqual(resolved, {'id': x_range.ref['id'], 'value': 2})
+        resolved = callback.resolve_attr_spec(y0_range_spec, y_range, model=y_range)
+        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 1})
+        resolved = callback.resolve_attr_spec(y1_range_spec, y_range, model=y_range)
+        self.assertEqual(resolved, {'id': y_range.ref['id'], 'value': 3})
+
+    def test_plotsize_resolves(self):
+        points = Points([1, 2, 3])
+        PlotSize(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        callback = plot.callbacks[0]
+        model = namedtuple('Plot', 'inner_width inner_height ref')(400, 300, {'id': 'Test'})
+        width_spec = callback.attributes['width']
+        height_spec = callback.attributes['height']
+        resolved = callback.resolve_attr_spec(width_spec, model, model=model)
+        self.assertEqual(resolved, {'id': 'Test', 'value': 400})
+        resolved = callback.resolve_attr_spec(height_spec, model, model=model)
+        self.assertEqual(resolved, {'id': 'Test', 'value': 300})
+
+    def test_cds_resolves(self):
+        points = Points([1, 2, 3])
+        CDSStream(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        callback = plot.callbacks[0]
+        data_spec = callback.attributes['data']
+        resolved = callback.resolve_attr_spec(data_spec, cds, model=cds)
+        self.assertEqual(resolved, {'id': cds.ref['id'],
+                                    'value': points.columns()})
+
+
+
+
+class TestBokehCustomJSCallbacks(CallbackTestCase):
+
+    def test_customjs_callback_attributes_js_for_model(self):
+        js_code = Callback.attributes_js({'x0': 'x_range.attributes.start',
+                                          'x1': 'x_range.attributes.end'})
+
+        code = (
+            'if ((x_range != undefined)) { data["x0"] = {id: x_range["id"], value: '
+            'x_range["attributes"]["start"]};\n }'
+            'if ((x_range != undefined)) { data["x1"] = {id: x_range["id"], value: '
+            'x_range["attributes"]["end"]};\n }'
+        )
+        self.assertEqual(js_code, code)
+
+    def test_customjs_callback_attributes_js_for_cb_obj(self):
+        js_code = Callback.attributes_js({'x': 'cb_obj.x',
+                                          'y': 'cb_obj.y'})
+        code = 'data["x"] = cb_obj["x"];\ndata["y"] = cb_obj["y"];\n'
+        self.assertEqual(js_code, code)
+
+    def test_customjs_callback_attributes_js_for_cb_data(self):
+        js_code = Callback.attributes_js({'x0': 'cb_data.geometry.x0',
+                                          'x1': 'cb_data.geometry.x1',
+                                          'y0': 'cb_data.geometry.y0',
+                                          'y1': 'cb_data.geometry.y1'})
+        code = ('data["x0"] = cb_data["geometry"]["x0"];\n'
+                'data["x1"] = cb_data["geometry"]["x1"];\n'
+                'data["y0"] = cb_data["geometry"]["y0"];\n'
+                'data["y1"] = cb_data["geometry"]["y1"];\n')
+        self.assertEqual(js_code, code)
+
+    def test_callback_on_ndoverlay_is_attached(self):
+        ndoverlay = NdOverlay({i: Curve([i]) for i in range(5)})
+        selection = Selection1D(source=ndoverlay)
+        plot = bokeh_renderer.get_plot(ndoverlay)
+        self.assertEqual(len(plot.callbacks), 1)
+        self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
+        self.assertIn(selection, plot.callbacks[0].streams)
