@@ -54,7 +54,7 @@ across frames in a HoloMap or objects in a Layout?**
 **A:** Where feasible, HoloViews defaults to normalizing axis ranges
 across all objects that are presented together, so that they can be 
 compared directly. If you don't want objects that share a dimension to 
-be normalized together in your layout, you can change the `axiswise`
+be normalized together in your layout, you can change the ``axiswise``
 normalization option to True, making each object be normalized 
 independently:
 
@@ -64,7 +64,7 @@ independently:
 
 Similarly, if you have a HoloMap composed of multiple frames in an
 animation or controlled with widgets, you can make each frame be normalized
-independently by changing `framewise` to True:
+independently by changing ``framewise`` to True:
 
 .. code:: python
 
