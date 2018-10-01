@@ -2,8 +2,11 @@
 Unit test of the streams system
 """
 from collections import defaultdict
+from distutils.version import LooseVersion
+from unittest import SkipTest
 
 import param
+from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
@@ -172,6 +175,149 @@ class TestParamValuesStream(ComparisonTestCase):
 
 
 
+class TestParamsStream(ComparisonTestCase):
+
+    def setUp(self):
+        if LooseVersion(param.__version__) < '1.8.0':
+            raise SkipTest('Params stream requires param >= 1.8.0')
+
+        class Inner(param.Parameterized):
+
+            x = param.Number(default = 0)
+            y = param.Number(default = 0)
+
+        self.inner = Inner
+
+    def test_param_stream_class(self):
+        stream = Params(self.inner)
+        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(stream.contents, {'x': 0, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        self.inner.x = 1
+        self.assertEqual(values, [{'x': 1, 'y': 0}])
+
+    def test_param_stream_instance(self):
+        inner = self.inner(x=2)
+        stream = Params(inner)
+        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(stream.contents, {'x': 2, 'y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.y = 2
+        self.assertEqual(values, [{'x': 2, 'y': 2}])
+
+    def test_param_stream_parameter_override(self):
+        inner = self.inner(x=2)
+        stream = Params(inner, parameters=['x'])
+        self.assertEqual(stream.parameters, ['x'])
+        self.assertEqual(stream.contents, {'x': 2})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.x = 3
+        self.assertEqual(values, [{'x': 3}])
+
+    def test_param_stream_rename(self):
+        inner = self.inner(x=2)
+        stream = Params(inner, rename={'x': 'X', 'y': 'Y'})
+        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(stream.contents, {'X': 2, 'Y': 0})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.y = 2
+        self.assertEqual(values, [{'X': 2, 'Y': 2}])
+
+
+class TestParamMethodStream(ComparisonTestCase):
+
+    def setUp(self):
+        if LooseVersion(param.__version__) < '1.8.0':
+            raise SkipTest('Params stream requires param >= 1.8.0')
+
+        class Inner(param.Parameterized):
+
+            x = param.Number(default = 0)
+            y = param.Number(default = 0)
+
+            @param.depends('x')
+            def method(self):
+                pass
+
+            def method_no_deps(self):
+                pass
+
+        self.inner = Inner
+
+    def test_param_method_depends(self):
+        inner = self.inner()
+        stream = ParamMethod(inner.method)
+        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.x = 2
+        inner.y = 2
+        self.assertEqual(values, [{}])
+
+    def test_param_method_depends_no_deps(self):
+        inner = self.inner()
+        stream = ParamMethod(inner.method_no_deps)
+        self.assertEqual(set(stream.parameters), {'x', 'y', 'name'})
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.x = 2
+        inner.y = 2
+        self.assertEqual(values, [{}, {}])
+
+    def test_dynamicmap_param_method_deps(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.method)
+        self.assertEqual(len(dmap.streams), 1)
+        stream = dmap.streams[0]
+        self.assertIsInstance(stream, ParamMethod)
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.x = 2
+        inner.y = 2
+        self.assertEqual(values, [{}])
+
+    def test_dynamicmap_param_method_no_deps(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.method_no_deps)
+        self.assertEqual(dmap.streams, [])
+
+
+        
 class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):
