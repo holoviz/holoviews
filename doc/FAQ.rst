@@ -58,14 +58,14 @@ be normalized together in your layout, you can change the `axiswise`
 normalization option to True, making each object be normalized 
 independently:
 
-..code:: python
+.. code:: python
     your_layout.options(axiswise=True)
 
 Similarly, if you have a HoloMap composed of multiple frames in an
 animation or controlled with widgets, you can make each frame be normalized
 independently by changing `framewise` to True:
 
-..code:: python
+.. code:: python
     your_holomap.options(framewise=True)
 
 
