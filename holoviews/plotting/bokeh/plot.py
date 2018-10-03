@@ -23,7 +23,8 @@ from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
-if bokeh_version < '0.13.0':
+from holoviews.plotting.bokeh.util import bokeh_version
+if bokeh_version <= '0.13.0':
     built_in_themes = {}
 else:
     from bokeh.themes import built_in_themes
