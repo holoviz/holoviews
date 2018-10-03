@@ -21,9 +21,12 @@ from .callbacks import Callback, LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
-from bokeh.themes import built_in_themes
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
+try:
+    from bokeh.themes import built_in_themes
+except ImportError:
+    built_in_themes = {}
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -369,36 +372,39 @@ class CompositePlot(BokehPlot):
     def _get_title(self, key):
         title_div = None
         title = self._format_title(key) if self.show_title else ''
-        if title:
-            try:
-                title_json = (built_in_themes[self.renderer.theme]
-                              ._json['attrs'].get('Title', {}))
-            except KeyError:
-                title_json = {}
+        if not title:
+            return title_div
 
-            color = title_json.get('text_color', None)
-            font = title_json.get('text_font', 'Arial')
-            fontstyle = title_json.get('text_font_style', 'bold')
+        try:
+            title_json = (built_in_themes[self.renderer.theme]
+                          ._json['attrs'].get('Title', {}))
+        except KeyError:
+            title_json = {}
 
-            fontsize = self._fontsize('title')['fontsize']
-            if fontsize == '15pt':
-                fontsize = title_json.get('text_font_size', '15pt')
-                if 'em' in fontsize:
-                    # it's smaller than it shosuld be so add 0.25
-                    fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
+        color = title_json.get('text_color', None)
+        font = title_json.get('text_font', 'Arial')
+        fontstyle = title_json.get('text_font_style', 'bold')
 
-            title_tags = self._title_template.format(
-                color=color,
-                font=font,
-                fontstyle=fontstyle,
-                fontsize=fontsize,
-                title=title)
+        fontsize = self._fontsize('title')['fontsize']
+        if fontsize == '15pt':
+            fontsize = title_json.get('text_font_size', '15pt')
+            if 'em' in fontsize:
+                # it's smaller than it shosuld be so add 0.25
+                fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
 
-            if 'title' in self.handles:
-                title_div = self.handles['title']
-            else:
-                title_div = Div()
-            title_div.text = title_tags
+        title_tags = self._title_template.format(
+            color=color,
+            font=font,
+            fontstyle=fontstyle,
+            fontsize=fontsize,
+            title=title)
+
+        if 'title' in self.handles:
+            title_div = self.handles['title']
+        else:
+            title_div = Div(width=450)  # so it won't wrap long titles easily
+        title_div.text = title_tags
+
         return title_div
 
     @property
