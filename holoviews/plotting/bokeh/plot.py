@@ -21,6 +21,7 @@ from .callbacks import Callback, LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
+from bokeh.themes import built_in_themes
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
 from holoviews.plotting.bokeh.util import theme_attr_json
