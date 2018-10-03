@@ -21,6 +21,7 @@ from .callbacks import Callback, LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
+from bokeh.themes import built_in_themes
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
 
@@ -349,7 +350,7 @@ class CompositePlot(BokehPlot):
     to such a plot.
     """
 
-    fontsize = param.Parameter(default={'title': '16pt'}, allow_None=True,  doc="""
+    fontsize = param.Parameter(default={'title': '15pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
        Finer control is available by supplying a dictionary where any
@@ -357,15 +358,42 @@ class CompositePlot(BokehPlot):
 
           {'title': '15pt'}""")
 
-    _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
+    _title_template = (
+        '<span style='
+        '"color:{color};font-family:{font};'
+        'font-style:{fontstyle};font-weight:{fontstyle};'  # italic/bold
+        'font-size:{fontsize}">'
+        '{title}</span>'
+    )
 
     def _get_title(self, key):
         title_div = None
         title = self._format_title(key) if self.show_title else ''
         if title:
-            fontsize = self._fontsize('title')
-            title_tags = self._title_template.format(title=title,
-                                                     **fontsize)
+            try:
+                title_json = (built_in_themes[self.renderer.theme]
+                              ._json['attrs'].get('Title', {}))
+            except KeyError:
+                title_json = {}
+
+            color = title_json.get('text_color', None)
+            font = title_json.get('text_font', 'Arial')
+            fontstyle = title_json.get('text_font_style', 'bold')
+
+            fontsize = self._fontsize('title')['fontsize']
+            if fontsize == '15pt':
+                fontsize = title_json.get('text_font_size', '15pt')
+                if 'em' in fontsize:
+                    # it's smaller than it shosuld be so add 0.25
+                    fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
+
+            title_tags = self._title_template.format(
+                color=color,
+                font=font,
+                fontstyle=fontstyle,
+                fontsize=fontsize,
+                title=title)
+
             if 'title' in self.handles:
                 title_div = self.handles['title']
             else:
