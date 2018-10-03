@@ -180,10 +180,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     ylim = param.Parameter(precedence=-1)
     zlim = param.Parameter(precedence=-1)
     xticks = param.Parameter(precedence=-1)
+    xformatter = param.Parameter(precedence=-1)
     yticks = param.Parameter(precedence=-1)
+    yformatter = param.Parameter(precedence=-1)
     zticks = param.Parameter(precedence=-1)
     zaxis = param.Parameter(precedence=-1)
     zrotation = param.Parameter(precedence=-1)
+    zformatter = param.Parameter(precedence=-1)
 
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,

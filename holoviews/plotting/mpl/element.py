@@ -1,4 +1,5 @@
 import math
+from types import FunctionType
 
 import param
 import numpy as np
@@ -39,6 +40,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
+
+    xformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
+
+    yformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the y-axis.""")
+
+    zformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the z-axis.""")
 
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
@@ -164,13 +177,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         # Tick formatting
         if xdim:
-            self._set_axis_formatter(axis.xaxis, xdim)
+            self._set_axis_formatter(axis.xaxis, xdim, self.xformatter)
         if ydim:
-            self._set_axis_formatter(axis.yaxis, ydim)
+            self._set_axis_formatter(axis.yaxis, ydim, self.yformatter)
         if self.projection == '3d':
             zdim = dimensions[2] if ndims > 2 else None
             if zdim:
-                self._set_axis_formatter(axis.zaxis, zdim)
+                self._set_axis_formatter(axis.zaxis, zdim, self.zformatter)
 
         xticks = xticks if xticks else self.xticks
         self._set_axis_ticks(axis.xaxis, xticks, log=self.logx,
@@ -222,13 +235,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes.set_zlabel(zlabel, **self._fontsize('zlabel'))
 
 
-    def _set_axis_formatter(self, axis, dim):
+    def _set_axis_formatter(self, axis, dim, formatter):
         """
         Set axis formatter based on dimension formatter.
         """
         if isinstance(dim, list): dim = dim[0]
-        formatter = None
-        if dim.value_format:
+        if formatter is not None:
+            pass
+        elif dim.value_format:
             formatter = dim.value_format
         elif dim.type in dim.type_formatters:
             formatter = dim.type_formatters[dim.type]
