@@ -23,10 +23,10 @@ from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
-try:
-    from bokeh.themes import built_in_themes
-except ImportError:
+if bokeh_version < '0.13.0':
     built_in_themes = {}
+else:
+    from bokeh.themes import built_in_themes
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
