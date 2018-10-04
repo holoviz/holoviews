@@ -810,20 +810,6 @@ def find_range(values, soft_range=[]):
             return (None, None)
 
 
-def is_finite(value):
-    """
-    Safe check whether a value is finite, only None, NaN and inf
-    values are considered non-finite and allows checking all types not
-    restricted to numeric types.
-    """
-    if value is None:
-        return False
-    try:
-        return np.isfinite(value)
-    except:
-        return True
-
-
 def max_range(ranges, combined=True):
     """
     Computes the maximal lower and upper bounds from a list bounds.
@@ -882,8 +868,8 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     lower, upper = range_pad(lower, upper, padding, log)
     lower, upper = max_range([(lower, upper), soft_range])
     dmin, dmax = hard_range
-    lower = lower if dmin is None or not np.isfinite(dmin) else dmin
-    upper = upper if dmax is None or not np.isfinite(dmax) else dmax
+    lower = lower if dmin is None or not isfinite(dmin) else dmin
+    upper = upper if dmax is None or not isfinite(dmax) else dmax
     return lower, upper
 
 
