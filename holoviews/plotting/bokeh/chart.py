@@ -491,7 +491,7 @@ class SpreadPlot(ElementPlot):
         Splits area plots at nans and returns x- and y-coordinates for
         each area separated by nans.
         """
-        split = np.where(np.isnan(xs) | np.isnan(lower) | np.isnan(upper))[0]
+        split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
         upper = np.split(upper, split)
