@@ -608,9 +608,9 @@ class Params(Stream):
                                'stream parameter of the same name' % v)
         return mapping
 
-    def _listener(self, *changes):
+    def _listener(self, *events):
         params = self.parameterized.params()
-        self._memoize = not any(isinstance(params[c.name], param.Action) for c in changes)
+        self._memoize = not any(e.type == 'triggered' for e in events)
         self.trigger([self])
         self._memoize = True
 
