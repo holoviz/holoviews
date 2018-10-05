@@ -19,7 +19,7 @@ try:
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
-from holoviews.plotting.bokeh.util import theme_attr_json
+
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
@@ -31,7 +31,7 @@ from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version)
+                   decode_bytes, bokeh_version, theme_attr_json)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
