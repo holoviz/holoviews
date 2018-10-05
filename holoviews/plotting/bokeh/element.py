@@ -1,4 +1,5 @@
 import warnings
+from types import FunctionType
 
 import param
 import numpy as np
@@ -6,7 +7,8 @@ import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
-                          FactorRange, FuncTickFormatter, Tool, Legend)
+                          FactorRange, FuncTickFormatter, Tool, Legend,
+                          TickFormatter, PrintfTickFormatter)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -106,6 +108,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
+
+    xformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
+
+    yformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
 
     _categorical = False
 
@@ -421,7 +431,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
-        if FuncTickFormatter is not None and ax_mapping and dimension:
+        formatter = self.xformatter if axis == 'x' else self.yformatter
+        if formatter:
+            if isinstance(formatter, TickFormatter):
+                pass
+            elif isinstance(formatter, FunctionType):
+                msg = ('%sformatter could not be '
+                       'converted to tick formatter. ' % axis)
+                jsfunc = py2js_tickformatter(formatter, msg)
+                if jsfunc:
+                    formatter = FuncTickFormatter(code=jsfunc)
+                else:
+                    formatter = None
+            else:
+                formatter = PrintfTickFormatter(format=formatter)
+            if formatter is not None:
+                axis_props['formatter'] = formatter
+        elif FuncTickFormatter is not None and ax_mapping and dimension:
             formatter = None
             if dimension.value_format:
                 formatter = dimension.value_format

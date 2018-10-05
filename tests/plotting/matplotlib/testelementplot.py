@@ -1,11 +1,15 @@
 import numpy as np
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve, Scatter
+from holoviews.element import Image, Curve, Scatter, Scatter3D
 from holoviews.streams import Stream
 
 from .testplot import TestMPLPlot, mpl_renderer
 
+try:
+    from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter
+except:
+    pass
 
 class TestElementPlot(TestMPLPlot):
 
@@ -17,6 +21,82 @@ class TestElementPlot(TestMPLPlot):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
 
+    def test_element_xformatter_string(self):
+        curve = Curve(range(10)).options(xformatter='%d')
+        plot = mpl_renderer.get_plot(curve)
+        xaxis = plot.handles['axis'].xaxis
+        xformatter = xaxis.get_major_formatter()
+        self.assertIsInstance(xformatter, FormatStrFormatter)
+        self.assertEqual(xformatter.fmt, '%d')
+
+    def test_element_yformatter_string(self):
+        curve = Curve(range(10)).options(yformatter='%d')
+        plot = mpl_renderer.get_plot(curve)
+        yaxis = plot.handles['axis'].yaxis
+        yformatter = yaxis.get_major_formatter()
+        self.assertIsInstance(yformatter, FormatStrFormatter)
+        self.assertEqual(yformatter.fmt, '%d')
+
+    def test_element_zformatter_string(self):
+        curve = Scatter3D([]).options(zformatter='%d')
+        plot = mpl_renderer.get_plot(curve)
+        zaxis = plot.handles['axis'].zaxis
+        zformatter = zaxis.get_major_formatter()
+        self.assertIsInstance(zformatter, FormatStrFormatter)
+        self.assertEqual(zformatter.fmt, '%d')
+
+    def test_element_xformatter_function(self):
+        def formatter(value):
+            return str(value) + ' %'
+        curve = Curve(range(10)).options(xformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        xaxis = plot.handles['axis'].xaxis
+        xformatter = xaxis.get_major_formatter()
+        self.assertIsInstance(xformatter, FuncFormatter)
+
+    def test_element_yformatter_function(self):
+        def formatter(value):
+            return str(value) + ' %'
+        curve = Curve(range(10)).options(yformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        yaxis = plot.handles['axis'].yaxis
+        yformatter = yaxis.get_major_formatter()
+        self.assertIsInstance(yformatter, FuncFormatter)
+
+    def test_element_zformatter_function(self):
+        def formatter(value):
+            return str(value) + ' %'
+        curve = Scatter3D([]).options(zformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        zaxis = plot.handles['axis'].zaxis
+        zformatter = zaxis.get_major_formatter()
+        self.assertIsInstance(zformatter, FuncFormatter)
+
+    def test_element_xformatter_instance(self):
+        formatter = PercentFormatter()
+        curve = Curve(range(10)).options(xformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        xaxis = plot.handles['axis'].xaxis
+        xformatter = xaxis.get_major_formatter()
+        self.assertIs(xformatter, formatter)
+
+    def test_element_yformatter_instance(self):
+        formatter = PercentFormatter()
+        curve = Curve(range(10)).options(yformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        yaxis = plot.handles['axis'].yaxis
+        yformatter = yaxis.get_major_formatter()
+        self.assertIs(yformatter, formatter)
+
+    def test_element_zformatter_instance(self):
+        formatter = PercentFormatter()
+        curve = Scatter3D([]).options(zformatter=formatter)
+        plot = mpl_renderer.get_plot(curve)
+        zaxis = plot.handles['axis'].zaxis
+        zformatter = zaxis.get_major_formatter()
+        self.assertIs(zformatter, formatter)
+
+        
 
 class TestColorbarPlot(TestMPLPlot):
 
