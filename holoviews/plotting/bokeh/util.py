@@ -344,8 +344,7 @@ def pad_plots(plots):
         widths.append(row_widths)
     plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
-    total_width = np.max([np.sum(row) for row in widths])
-    return plots, total_width
+    return plots
 
 
 def filter_toolboxes(plots):

@@ -865,8 +865,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         else:
             plot_grid = layout_padding(plot_grid, self.renderer)
             plot_grid = filter_toolboxes(plot_grid)
-            plot_grid, width = pad_plots(plot_grid)
-            layout_plot = gridplot(children=plot_grid, width=width,
+            plot_grid = pad_plots(plot_grid)
+            layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools, **kwargs)
 
