@@ -224,10 +224,10 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % type(self).__name__)
             inner_element = elements[0]
-            if inner_element.vdims:
-                field = inner_element.vdims[0].name
-            elif isinstance(inner_element, TriMesh) and inner_element.nodes.kdims:
+            if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
+            elif inner_element.vdims:
+                field = inner_element.vdims[0].name
             elif isinstance(element, NdOverlay):
                 field = element.kdims[0].name
             else:
@@ -676,9 +676,9 @@ class trimesh_rasterize(aggregate):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
-    def _precompute(self, element):
+    def _precompute(self, element, agg):
         from datashader.utils import mesh
-        if element.vdims:
+        if element.vdims and getattr(agg, 'column', None) not in element.nodes.vdims:
             simplices = element.dframe([0, 1, 2, 3])
             verts = element.nodes.dframe([0, 1])
         elif element.nodes.vdims:
@@ -700,19 +700,29 @@ class trimesh_rasterize(aggregate):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         agg = self.p.aggregator
-        if not (element.vdims or element.nodes.vdims):
-            if not isinstance(agg, (rd.count, rd.any)) and agg.column is not None:
-                raise ValueError("Aggregation column %s not found on TriMesh element. "
-                                 "The supplied TriMesh does not define any value "
-                                 "dimensions.")
+        if getattr(agg, 'column', None):
+            if agg.column in element.vdims:
+                vdim = element.get_dimension(agg.column)
+            elif isinstance(element, TriMesh) and agg.column in element.nodes.vdims:
+                vdim = element.nodes.get_dimension(agg.column)
+            else:
+                raise ValueError("Aggregation column %s not found on TriMesh element."
+                                 % agg.column)
+        elif not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims)):
             self.p.aggregator = ds.count() if not isinstance(agg, ds.any) else agg
             return aggregate._process(self, element, key)
-        elif element._plot_id in self._precomputed:
+        else:
+            if isinstance(element, TriMesh) and element.nodes.vdims:
+                vdim = element.nodes.vdims[0]
+            else:
+                vdim = element.vdims[0]
+            agg = self._get_aggregator(element)
+
+        if element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
         else:
-            precomputed = self._precompute(element)
+            precomputed = self._precompute(element, agg)
 
-        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
 
@@ -731,7 +741,7 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         interpolate = bool(self.p.interpolation)
-        agg = cvs.trimesh(pts, simplices, agg=self._get_aggregator(element),
+        agg = cvs.trimesh(pts, simplices, agg=agg,
                           interp=interpolate, mesh=mesh)
         return Image(agg, **params)
 
@@ -744,8 +754,8 @@ class quadmesh_rasterize(trimesh_rasterize):
     handle the actual rasterization.
     """
 
-    def _precompute(self, element):
-        return super(quadmesh_rasterize, self)._precompute(element.trimesh())
+    def _precompute(self, element, agg):
+        return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
 
 
 
