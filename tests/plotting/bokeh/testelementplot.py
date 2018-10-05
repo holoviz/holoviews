@@ -11,7 +11,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.document import Document
-    from bokeh.models import FuncTickFormatter
+    from bokeh.models import FuncTickFormatter, PrintfTickFormatter, NumeralTickFormatter
 except:
     pass
 
@@ -23,6 +23,50 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve(range(10)).opts(plot=dict(show_frame=False))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.outline_line_alpha, 0)
+
+    def test_element_xformatter_string(self):
+        curve = Curve(range(10)).options(xformatter='%d')
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertIsInstance(xaxis.formatter, PrintfTickFormatter)
+        self.assertEqual(xaxis.formatter.format, '%d')
+
+    def test_element_yformatter_string(self):
+        curve = Curve(range(10)).options(yformatter='%d')
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertIsInstance(yaxis.formatter, PrintfTickFormatter)
+        self.assertEqual(yaxis.formatter.format, '%d')
+
+    def test_element_xformatter_function(self):
+        def formatter(value):
+            return str(value) + ' %'
+        curve = Curve(range(10)).options(xformatter=formatter)
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertIsInstance(xaxis.formatter, FuncTickFormatter)
+
+    def test_element_yformatter_function(self):
+        def formatter(value):
+            return str(value) + ' %'
+        curve = Curve(range(10)).options(yformatter=formatter)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertIsInstance(yaxis.formatter, FuncTickFormatter)
+
+    def test_element_xformatter_instance(self):
+        formatter = NumeralTickFormatter()
+        curve = Curve(range(10)).options(xformatter=formatter)
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertIs(xaxis.formatter, formatter)
+
+    def test_element_yformatter_instance(self):
+        formatter = NumeralTickFormatter()
+        curve = Curve(range(10)).options(yformatter=formatter)
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertIs(yaxis.formatter, formatter)
 
     def test_empty_element_visibility(self):
         curve = Curve([])
@@ -151,7 +195,7 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, -3)
         self.assertEqual(cmapper.high, 3)
-     
+
     def test_colormapper_color_levels(self):
         cmap = process_cmap('viridis', provider='bokeh')
         img = Image(np.array([[0, 1], [2, 3]])).options(color_levels=5, cmap=cmap)
