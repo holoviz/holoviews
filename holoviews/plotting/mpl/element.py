@@ -124,7 +124,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
 
             # Apply axis options if axes are enabled
-            if element and not any(not sp._has_axes for sp in [self] + subplots):
+            if element is not None and not any(not sp._has_axes for sp in [self] + subplots):
                 # Set axis labels
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
@@ -182,7 +182,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_formatter(axis.yaxis, ydim, self.yformatter)
         if self.projection == '3d':
             zdim = dimensions[2] if ndims > 2 else None
-            if zdim:
+            if zdim or self.zformatter is not None:
                 self._set_axis_formatter(axis.zaxis, zdim, self.zformatter)
 
         xticks = xticks if xticks else self.xticks
