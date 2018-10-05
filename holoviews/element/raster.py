@@ -281,9 +281,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if self.interface is ImageInterface and not isinstance(data, np.ndarray):
             data_bounds = self.bounds.lbrt()
         l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
-        ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
-        if not np.isfinite(xdensity) or not np.isfinite(ydensity):
+        xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
+        ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
+        if not util.isfinite(xdensity) or not util.isfinite(ydensity):
             raise ValueError('Density along Image axes could not be determined. '
                              'If the data contains only one coordinate along the '
                              'x- or y-axis ensure you declare the bounds and/or '

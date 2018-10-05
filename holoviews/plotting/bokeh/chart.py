@@ -489,7 +489,9 @@ class SpreadPlot(ElementPlot):
         Splits area plots at nans and returns x- and y-coordinates for
         each area separated by nans.
         """
-        split = np.where(np.isnan(xs) | np.isnan(lower) | np.isnan(upper))[0]
+        xnan = np.array([np.datetime64('nat') if xs.dtype.kind == 'M' else np.nan])
+        ynan = np.array([np.datetime64('nat') if lower.dtype.kind == 'M' else np.nan])
+        split = np.where(~isfinite(xs) | ~isfinite(lower) | ~isfinite(upper))[0]
         xvals = np.split(xs, split)
         lower = np.split(lower, split)
         upper = np.split(upper, split)
@@ -499,10 +501,12 @@ class SpreadPlot(ElementPlot):
                 x, l, u = x[1:], l[1:], u[1:]
             if not len(x):
                 continue
-            band_x += [np.append(x, x[::-1]), np.array([np.nan])]
-            band_y += [np.append(l, u[::-1]), np.array([np.nan])]
+            band_x += [np.append(x, x[::-1]), xnan]
+            band_y += [np.append(l, u[::-1]), ynan]
         if len(band_x):
-            return np.concatenate(band_x[:-1]), np.concatenate(band_y[:-1])
+            xs = np.concatenate(band_x[:-1])
+            ys = np.concatenate(band_y[:-1])
+            return xs, ys
         return [], []
 
     def get_data(self, element, ranges, style):

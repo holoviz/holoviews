@@ -1,7 +1,7 @@
 import numpy as np
 import param
 
-from ...core.util import cartesian_product, dimension_sanitizer
+from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster, RGB, HSV
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 from .util import mpl_to_bokeh, colormesh, bokeh_version
@@ -168,7 +168,7 @@ class QuadMeshPlot(ColorbarPlot):
             xc, yc = [], []
             for xs, ys, zval in zip(X, Y, zvals):
                 xs, ys = xs[:-1], ys[:-1]
-                if np.isfinite(zval) and all(np.isfinite(xs)) and all(np.isfinite(ys)):
+                if isfinite(zval) and all(isfinite(xs)) and all(isfinite(ys)):
                     XS.append(list(xs))
                     YS.append(list(ys))
                     mask.append(True)
