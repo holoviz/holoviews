@@ -102,7 +102,7 @@ class univariate_kde(Operation):
             bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
 
         element_type = Area if self.p.filled else Curve
-        data = data[np.isfinite(data)] if len(data) else []
+        data = data[isfinite(data)] if len(data) else []
         if len(data) > 1:
             try:
                 kde = stats.gaussian_kde(data)

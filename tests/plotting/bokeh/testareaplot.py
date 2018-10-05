@@ -1,3 +1,5 @@
+import datetime as dt
+
 import numpy as np
 
 from holoviews.element import Area
@@ -22,6 +24,28 @@ class TestAreaPlot(TestBokehPlot):
         cds = plot.handles['cds']
         self.assertEqual(cds.data['x'], [])
         self.assertEqual(cds.data['y'], [])
+
+    def test_area_datetime_nat(self):
+        values = [(np.datetime64(dt.datetime(2017, 1, i)), i) for i in range(1, 4)]
+        values.append((np.datetime64('nat'), np.nan))
+        values += [(np.datetime64(dt.datetime(2017, 1, i)), i) for i in range(4, 6)]
+        area = Area(values)
+        plot = bokeh_renderer.get_plot(area)
+        cds = plot.handles['cds']
+        xs = np.array([
+            '2017-01-01T00:00:00.000000000', '2017-01-02T00:00:00.000000000',
+            '2017-01-03T00:00:00.000000000', '2017-01-03T00:00:00.000000000',
+            '2017-01-02T00:00:00.000000000', '2017-01-01T00:00:00.000000000',
+            'NaT', '2017-01-04T00:00:00.000000000',
+            '2017-01-05T00:00:00.000000000', '2017-01-05T00:00:00.000000000',
+            '2017-01-04T00:00:00.000000000'
+        ], dtype='datetime64[ns]')
+
+        ys = np.array([
+            0.,  0.,  0.,  3.,  2.,  1., np.nan,  0.,  0.,  5.,  4.
+        ])
+        self.assertEqual(cds.data['x'], xs)
+        self.assertEqual(cds.data['y'], ys)
 
     def test_area_padding_square(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).options(padding=0.1)

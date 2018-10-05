@@ -18,7 +18,8 @@ except:
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match
+    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
+    dimension_range
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -403,6 +404,28 @@ class TestFindRange(unittest.TestCase):
 
     def test_soft_range(self):
         self.assertEqual(find_range(self.float_vals, soft_range=(np.NaN, 100)), (-0.1424, 100))
+
+
+class TestDimensionRange(unittest.TestCase):
+    """
+    Tests for dimension_range function.
+    """
+
+    def setUp(self):
+        self.date_range = (np.datetime64(datetime.datetime(2017, 1, 1)),
+                           np.datetime64(datetime.datetime(2017, 1, 2)))
+        self.date_range2 = (np.datetime64(datetime.datetime(2016, 12, 31)),
+                            np.datetime64(datetime.datetime(2017, 1, 3)))
+
+    def test_dimension_range_date_hard_range(self):
+        drange = dimension_range(self.date_range2[0], self.date_range2[1],
+                                 self.date_range, (None, None))
+        self.assertEqual(drange, self.date_range)
+
+    def test_dimension_range_date_soft_range(self):
+        drange = dimension_range(self.date_range[0], self.date_range[1],
+                                 (None, None), self.date_range2)
+        self.assertEqual(drange, self.date_range2)
 
 
 class TestMaxRange(unittest.TestCase):
