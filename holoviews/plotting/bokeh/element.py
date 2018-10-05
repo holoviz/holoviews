@@ -5,6 +5,7 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
+from holoviews.plotting.bokeh.util import bokeh_version
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend,
@@ -12,11 +13,16 @@ from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
+from bokeh.models import CategoricalAxis
 try:
     from bokeh.models import ColorBar
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
+if bokeh_version <= '0.13.0':
+    built_in_themes = {}
+else:
+    from bokeh.themes import built_in_themes
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
@@ -399,7 +405,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        axis_props = {}
+        try:
+            axis_props = (built_in_themes[self.renderer.theme]
+                          ._json['attrs'].get('Axis', {}))
+        except KeyError:
+            axis_props = {}
+
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
             axis_props['axis_label_text_font_size'] = value('0pt')
@@ -460,6 +471,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if jsfunc:
                     formatter = FuncTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
+
+        if axis == 'x':
+            xaxis = plot.xaxis[0]
+            if isinstance(xaxis, CategoricalAxis):
+                # can't just dump this with the rest of axis_props
+                # always complains about LinearAxis does not have
+                # 'group_...' attribute
+                group_label_props = {}
+                for key in list(axis_props):
+                    if key.startswith('major_label'):
+                        new_key = key.replace('major_label', 'group')
+                        group_label_props[new_key] = axis_props[key]
+                xaxis.update(**group_label_props)
+
         return axis_props
 
 
@@ -517,6 +542,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xfactors, yfactors = None, None
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
+
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
         xupdate = ((not self.model_changed(x_range) and (framewise or streaming))
