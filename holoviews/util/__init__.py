@@ -409,7 +409,17 @@ class Dynamic(param.ParameterizedFunction):
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)
             streams = list(util.unique_iterator(streams + dim_streams))
-        return streams
+
+        # If callback is a parameterized method and watch is disabled add as stream
+        param_watch_support = util.param_version >= '1.8.0'
+        if util.is_param_method(self.p.operation) and param_watch_support:
+            streams.append(self.p.operation)
+        valid, invalid = Stream._process_streams(streams)
+        if invalid:
+            msg = ('The supplied streams list contains objects that '
+                   'are not Stream instances: {objs}')
+            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+        return valid
 
 
     def _process(self, element, key=None):
