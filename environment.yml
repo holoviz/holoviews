@@ -1,17 +1,28 @@
 name: holoviews
 
-channels:
-  - conda-forge
-
 dependencies:
-  - python=3.6
-  - holoviews
   - numpy
   - notebook
-  - matplotlib
-  - bokeh
+  - matplotlib=2.1.2
+  - pillow=5.2.0
   - pandas
-  - scipy
+  - scipy=1.0.0
   - xarray
-  - datashader
   - networkx
+  - scipy=1.0.0
+  - pandas=0.22.0
+  - ipython=5.4.1
+  - pyviz::param
+  - pyviz::pyviz_comms=0.6.0
+  - pyviz::datashader
+  - conda-forge::iris
+  - conda-forge::netcdf4=1.3.1
+  - conda-forge::ffmpeg
+  - conda-forge::flexx=0.4.1
+  - conda-forge::plotly=2.7
+  - bokeh::bokeh=0.12.15
+  - bokeh::selenium
+  # Testing requirements
+  - flake8
+  - nose
+  - pytest

@@ -27,16 +27,11 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION flake8 scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=5.4.1 param xarray networkx
-  - source activate test-environment
-  - conda install -c conda-forge filelock matplotlib=2.1.2 iris plotly=2.7 flexx=0.4.1 ffmpeg netcdf4=1.3.1 --quiet
-  - conda install -c bokeh datashader dask bokeh=0.12.15 selenium
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
-      conda install python=3.4.3;
-    fi
+  - conda env create -q -f environment.yml
+  - source activate holoviews
   - python setup.py develop
-  - pip install path.py
-  - pip install coveralls awscli deepdiff
+  - pip install coveralls awscli deepdiff path.py
+  - conda env export
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
