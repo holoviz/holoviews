@@ -597,7 +597,7 @@ class Params(Stream):
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize = True
         if watch:
-            self.parameterized.param.watch(self._listener, self.parameters)
+            self.parameterized.param.watch(self._watcher, self.parameters)
 
     def _validate_rename(self, mapping):
         for k, v in mapping.items():
@@ -608,7 +608,7 @@ class Params(Stream):
                                'stream parameter of the same name' % v)
         return mapping
 
-    def _listener(self, *events):
+    def _watcher(self, *events):
         self._memoize = not any(e.type == 'triggered' for e in events)
         self.trigger([self])
         self._memoize = True
