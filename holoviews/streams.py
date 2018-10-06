@@ -609,7 +609,6 @@ class Params(Stream):
         return mapping
 
     def _listener(self, *events):
-        params = self.parameterized.params()
         self._memoize = not any(e.type == 'triggered' for e in events)
         self.trigger([self])
         self._memoize = True
