@@ -5,7 +5,6 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
-from holoviews.plotting.bokeh.util import bokeh_version
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend,
@@ -19,7 +18,6 @@ try:
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
-
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
