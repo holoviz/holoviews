@@ -19,10 +19,7 @@ try:
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
-if bokeh_version <= '0.13.0':
-    built_in_themes = {}
-else:
-    from bokeh.themes import built_in_themes
+from holoviews.plotting.bokeh.util import theme_attr_json
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
@@ -405,11 +402,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        try:
-            axis_props = (built_in_themes[self.renderer.theme]
-                          ._json['attrs'].get('Axis', {}))
-        except KeyError:
-            axis_props = {}
+        # need to copy dictionary
+        axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
@@ -473,17 +467,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     axis_props['formatter'] = formatter
 
         if axis == 'x':
-            xaxis = plot.xaxis[0]
-            if isinstance(xaxis, CategoricalAxis):
-                # can't just dump this with the rest of axis_props
-                # always complains about LinearAxis does not have
-                # 'group_...' attribute
-                group_label_props = {}
-                for key in list(axis_props):
-                    if key.startswith('major_label'):
-                        new_key = key.replace('major_label', 'group')
-                        group_label_props[new_key] = axis_props[key]
-                xaxis.update(**group_label_props)
+            axis_obj = plot.xaxis[0]
+        elif axis == 'y':
+            axis_obj = plot.yaxis[0]
+
+        if isinstance(axis_obj, CategoricalAxis):
+            for key in list(axis_props):
+                if key.startswith('major_label'):
+                    new_key = key.replace('major_label', 'group')
+                    axis_props[new_key] = axis_props[key]
 
         return axis_props
 
@@ -500,10 +492,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
+
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
         if self.invert_axes: xlabel, ylabel = ylabel, xlabel
         props['x']['axis_label'] = xlabel if 'x' in self.labelled else ''
         props['y']['axis_label'] = ylabel if 'y' in self.labelled else ''
+
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
