@@ -34,7 +34,6 @@ except Exception as e:
                        'following error: %s' % e)
 
 try:
-    import xarray # noqa (Availability import)
     from .xarray import XArrayInterface # noqa (Conditional API import)
     datatypes.append('xarray')
 except ImportError:

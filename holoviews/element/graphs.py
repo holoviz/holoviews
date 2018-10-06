@@ -12,11 +12,6 @@ from .path import Path
 from .util import (split_path, pd, circular_layout, connect_edges,
                    connect_edges_pd, quadratic_bezier)
 
-try:
-    from datashader.layout import LayoutAlgorithm as ds_layout
-except:
-    ds_layout = None
-
 
 class redim_graph(redim):
     """

@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+import sys
 try:
     import itertools.izip as zip
 except ImportError:
@@ -7,8 +8,6 @@ except ImportError:
 
 import numpy as np
 import pandas as pd
-import dask.dataframe as dd
-from dask.dataframe import DataFrame, Series
 
 from .. import util
 from ..dimension import Dimension
@@ -37,16 +36,29 @@ class DaskInterface(PandasInterface):
        some functions applied with aggregate and reduce will not work.
     """
 
-    types = (DataFrame, Series)
+    types = ()
 
     datatype = 'dask'
 
     default_partitions = 100
 
     @classmethod
+    def loaded(cls):
+        return 'dask' in sys.modules
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        import dask.dataframe as dd
+        return isinstance(obj, (dd.DataFrame, dd.Series))
+
+    @classmethod
     def init(cls, eltype, data, kdims, vdims):
+        import dask.dataframe as dd
+
         data, dims, extra = PandasInterface.init(eltype, data, kdims, vdims)
-        if not isinstance(data, DataFrame):
+        if not isinstance(data, dd.DataFrame):
             data = dd.from_pandas(data, npartitions=cls.default_partitions, sort=False)
         kdims = [d.name if isinstance(d, Dimension) else d for d in dims['kdims']]
 
@@ -64,6 +76,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def range(cls, columns, dimension):
+        import dask.dataframe as dd
         column = columns.data[columns.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
@@ -211,6 +224,7 @@ class DaskInterface(PandasInterface):
         Given a columns object and data in the appropriate format for
         the interface, return a simple scalar.
         """
+        import dask.dataframe as dd
         if len(data.columns) > 1 or len(data) != 1:
             return data
         if isinstance(data, dd.DataFrame):
@@ -245,6 +259,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def concat(cls, datasets, dimensions, vdims):
+        import dask.dataframe as dd
         dataframes = []
         for key, ds in datasets:
             data = ds.data.copy()

@@ -64,11 +64,6 @@ try:
 except ImportError:
     pd = None
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 
 class VersionError(Exception):
     "Raised when there is a library version mismatch."
@@ -1274,6 +1269,10 @@ def is_dataframe(data):
     """
     Checks whether the supplied data is of DataFrame type.
     """
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
+    else:
+        dd = None
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
 
@@ -1282,6 +1281,10 @@ def is_series(data):
     """
     Checks whether the supplied data is of Series type.
     """
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
+    else:
+        dd = None
     return((pd is not None and isinstance(data, pd.Series)) or
           (dd is not None and isinstance(data, dd.Series)))
 

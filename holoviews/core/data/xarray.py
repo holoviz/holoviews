@@ -4,13 +4,6 @@ import types
 from collections import OrderedDict
 
 import numpy as np
-import xarray as xr
-
-try:
-    import dask
-    import dask.array
-except ImportError:
-    dask = None
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
@@ -18,13 +11,26 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
 from .interface import Interface, DataError
+from .util import get_dask_array
+
 
 
 class XArrayInterface(GridInterface):
 
-    types = (xr.Dataset, xr.DataArray)
+    types = ()
 
     datatype = 'xarray'
+
+    @classmethod
+    def loaded(cls):
+        return 'xarray' in sys.modules
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        import xarray as xr
+        return isinstance(obj, (xr.Dataset, xr.DataArray))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -56,6 +62,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
+        import xarray as xr
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
@@ -202,8 +209,10 @@ class XArrayInterface(GridInterface):
                 dmin, dmax = data.min().data, data.max().data
             else:
                 dmin, dmax = np.NaN, np.NaN
-        if dask and isinstance(dmin, dask.array.Array):
-            dmin, dmax = dask.array.compute(dmin, dmax)
+
+        da = get_dask_array()
+        if da and isinstance(dmin, da.Array):
+            dmin, dmax = da.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) else dmin.item()
         dmax = dmax if np.isscalar(dmax) else dmax.item()
         return dmin, dmax
@@ -257,6 +266,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+        import xarray as xr
         dim = dataset.get_dimension(dimension)
         dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
@@ -302,7 +312,8 @@ class XArrayInterface(GridInterface):
             virtual_coords = []
         if dim in dataset.vdims or irregular:
             data_coords = list(dataset.data[dim.name].dims)
-            if compute and dask and isinstance(data, dask.array.Array):
+            da = get_dask_array()
+            if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                     virtual_coords=virtual_coords)
@@ -381,6 +392,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
+        import xarray as xr
         return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
                          dim=dim.name)
 
@@ -442,17 +454,18 @@ class XArrayInterface(GridInterface):
         if dropped and not indexed:
             data = data.assign_coords(**dropped)
 
+        da = get_dask_array()
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
             value = data[dataset.vdims[0].name]
-            if dask and isinstance(value.data, dask.array.Array):
+            if da and isinstance(value.data, da.Array):
                 value = value.compute()
             return value.item()
         elif indexed:
             values = []
             for vd in dataset.vdims:
                 value = data[vd.name]
-                if dask and isinstance(value.data, dask.array.Array):
+                if da and isinstance(value.data, da.Array):
                     value = value.compute()
                 values.append(value.item())
             return np.array(values)
@@ -475,6 +488,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        import xarray as xr
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension_name(dimension)

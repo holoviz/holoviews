@@ -104,6 +104,20 @@ class Interface(param.Parameterized):
     multi = False
 
     @classmethod
+    def loaded(cls):
+        """
+        Indicates whether the required dependencies are loaded.
+        """
+        return True
+
+    @classmethod
+    def applies(cls, obj):
+        """
+        Whether the Interface can operate on the supplied data object.
+        """
+        return False
+
+    @classmethod
     def register(cls, interface):
         cls.interfaces[interface.datatype] = interface
 
@@ -176,7 +190,7 @@ class Interface(param.Parameterized):
         # Set interface priority order
         prioritized = [cls.interfaces[p] for p in datatype
                        if p in cls.interfaces]
-        head = [intfc for intfc in prioritized if type(data) in intfc.types]
+        head = [intfc for intfc in prioritized if (intfc.types != () and type(data) in intfc.types) or intfc.applies(data)]
         if head:
             # Prioritize interfaces which have matching types
             prioritized = head + [el for el in prioritized if el != head[0]]
@@ -184,6 +198,9 @@ class Interface(param.Parameterized):
         # Iterate over interfaces until one can interpret the input
         priority_errors = []
         for interface in prioritized:
+            if not interface.loaded() and len(datatype) != 1:
+                # Skip interface if it is not loaded and was not explicitly requested
+                continue
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
