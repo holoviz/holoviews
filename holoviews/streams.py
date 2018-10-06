@@ -595,9 +595,9 @@ class Params(Stream):
         if parameters is None:
             parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        self._memoize = True
         if watch:
-            for p in self.parameters:
-                self.parameterized.param.watch(self._listener, p)
+            self.parameterized.param.watch(self._watcher, self.parameters)
 
     def _validate_rename(self, mapping):
         for k, v in mapping.items():
@@ -608,8 +608,21 @@ class Params(Stream):
                                'stream parameter of the same name' % v)
         return mapping
 
-    def _listener(self, change):
+    def _watcher(self, *events):
+        self._memoize = not any(e.type == 'triggered' for e in events)
         self.trigger([self])
+        self._memoize = True
+
+    @property
+    def hashkey(self):
+        if self._memoize:
+            return {p: v for p, v in self.parameterized.get_param_values()
+                    if p in self.parameters}
+        else:
+            return {'hash': uuid.uuid4().hex}
+
+    def reset(self):
+        pass
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -641,10 +654,6 @@ class ParamMethod(Params):
         if not parameters:
             parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
-
-    @property
-    def hashkey(self):
-        return {'hash': Params.contents.fget(self)}
 
     @property
     def contents(self):

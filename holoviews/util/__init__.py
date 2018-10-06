@@ -348,7 +348,11 @@ class Dynamic(param.ParameterizedFunction):
     to a DynamicMap.
 
     Any supplied kwargs will be passed to the callable and any streams
-    will be instantiated on the returned DynamicMap.
+    will be instantiated on the returned DynamicMap. If the supplied
+    operation is a method on a parameterized object which was
+    decorated with parameter dependencies Dynamic will automatically
+    create a stream to watch the parameter changes. This default
+    behavior may be disabled by setting watch=False.
     """
 
     operation = param.Callable(default=lambda x: x, doc="""
@@ -374,9 +378,10 @@ class Dynamic(param.ParameterizedFunction):
         List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
+        watch = params.pop('watch', True)
         self.p = param.ParamOverrides(self, params)
         callback = self._dynamic_operation(map_obj)
-        streams = self._get_streams(map_obj)
+        streams = self._get_streams(map_obj, watch)
         if isinstance(map_obj, DynamicMap):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
@@ -385,7 +390,7 @@ class Dynamic(param.ParameterizedFunction):
         return dmap
 
 
-    def _get_streams(self, map_obj):
+    def _get_streams(self, map_obj, watch=True):
         """
         Generates a list of streams to attach to the returned DynamicMap.
         If the input is a DynamicMap any streams that are supplying values
@@ -409,7 +414,17 @@ class Dynamic(param.ParameterizedFunction):
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)
             streams = list(util.unique_iterator(streams + dim_streams))
-        return streams
+
+        # If callback is a parameterized method and watch is disabled add as stream
+        param_watch_support = util.param_version >= '1.8.0' and watch
+        if util.is_param_method(self.p.operation) and param_watch_support:
+            streams.append(self.p.operation)
+        valid, invalid = Stream._process_streams(streams)
+        if invalid:
+            msg = ('The supplied streams list contains objects that '
+                   'are not Stream instances: {objs}')
+            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+        return valid
 
 
     def _process(self, element, key=None):

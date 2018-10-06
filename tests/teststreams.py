@@ -11,6 +11,7 @@ from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
+from holoviews.util import Dynamic
 
 def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
@@ -186,7 +187,12 @@ class TestParamsStream(ComparisonTestCase):
             x = param.Number(default = 0)
             y = param.Number(default = 0)
 
+        class InnerAction(Inner):
+
+            action = param.Action(lambda o: o.param.trigger('action'))
+
         self.inner = Inner
+        self.inner_action = InnerAction
 
     def test_param_stream_class(self):
         stream = Params(self.inner)
@@ -243,6 +249,21 @@ class TestParamsStream(ComparisonTestCase):
         inner.y = 2
         self.assertEqual(values, [{'X': 2, 'Y': 2}])
 
+    def test_param_stream_action(self):
+        inner = self.inner_action()
+        stream = Params(inner, ['action'])
+        self.assertEqual(set(stream.parameters), {'action'})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(list(stream.hashkey), ['hash'])
+
+        stream.add_subscriber(subscriber)
+        inner.action(inner)
+        self.assertEqual(values, [{'action': inner.action}])
+
+        
 
 class TestParamMethodStream(ComparisonTestCase):
 
@@ -252,11 +273,20 @@ class TestParamMethodStream(ComparisonTestCase):
 
         class Inner(param.Parameterized):
 
+            action = param.Action(lambda o: o.param.trigger('action'))
             x = param.Number(default = 0)
             y = param.Number(default = 0)
 
             @param.depends('x')
             def method(self):
+                pass
+
+            @param.depends('action')
+            def action_method(self):
+                pass
+
+            @param.depends('y')
+            def op_method(self, obj):
                 pass
 
             def method_no_deps(self):
@@ -282,7 +312,7 @@ class TestParamMethodStream(ComparisonTestCase):
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
-        self.assertEqual(set(stream.parameters), {'x', 'y', 'name'})
+        self.assertEqual(set(stream.parameters), {'x', 'y', 'action', 'name'})
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -315,6 +345,48 @@ class TestParamMethodStream(ComparisonTestCase):
         inner = self.inner()
         dmap = DynamicMap(inner.method_no_deps)
         self.assertEqual(dmap.streams, [])
+
+    def test_dynamicmap_param_method_action_param(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.action_method)
+        self.assertEqual(len(dmap.streams), 1)
+        stream = dmap.streams[0]
+        self.assertEqual(set(stream.parameters), {'action'})
+        self.assertIsInstance(stream, ParamMethod)
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(list(stream.hashkey), ['hash'])
+
+        stream.add_subscriber(subscriber)
+        inner.action(inner)
+        self.assertEqual(values, [{}])
+    
+    def test_dynamicmap_param_method_dynamic_operation(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.method)
+        inner_stream = dmap.streams[0]
+        op_dmap = Dynamic(dmap, operation=inner.op_method)
+        self.assertEqual(len(op_dmap.streams), 1)
+        stream = op_dmap.streams[0]
+        self.assertEqual(set(stream.parameters), {'y'})
+        self.assertIsInstance(stream, ParamMethod)
+        self.assertEqual(stream.contents, {})
+
+        values_x, values_y = [], []
+        def subscriber_x(**kwargs):
+            values_x.append(kwargs)
+
+        def subscriber_y(**kwargs):
+            values_y.append(kwargs)
+
+        inner_stream.add_subscriber(subscriber_x)
+        stream.add_subscriber(subscriber_y)
+        inner.y = 3
+        self.assertEqual(values_x, [])
+        self.assertEqual(values_y, [{}])
 
 
         
