@@ -23,11 +23,7 @@ from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
-from holoviews.plotting.bokeh.util import bokeh_version
-if bokeh_version <= '0.13.0':
-    built_in_themes = {}
-else:
-    from bokeh.themes import built_in_themes
+from holoviews.plotting.bokeh.util import theme_attr_json
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -376,18 +372,12 @@ class CompositePlot(BokehPlot):
         if not title:
             return title_div
 
-        try:
-            title_json = (built_in_themes[self.renderer.theme]
-                          ._json['attrs'].get('Title', {}))
-        except KeyError:
-            title_json = {}
-
+        title_json = theme_attr_json(self.renderer.theme, 'Title')
         color = title_json.get('text_color', None)
         font = title_json.get('text_font', 'Arial')
         fontstyle = title_json.get('text_font_style', 'bold')
-
         fontsize = self._fontsize('title')['fontsize']
-        if fontsize == '15pt':
+        if fontsize == '15pt':  # if default
             fontsize = title_json.get('text_font_size', '15pt')
             if 'em' in fontsize:
                 # it's smaller than it shosuld be so add 0.25

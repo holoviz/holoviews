@@ -34,7 +34,8 @@ class TestLayoutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap1+hmap2)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
-        text = "<span style='font-size: 16pt'><b>Default: 0</b></font>"
+        text = ('<span style="color:black;font-family:Arial;font-style:bold;'
+                'font-weight:bold;font-size:12pt">Default: 0</span>')
         self.assertEqual(title.text, text)
 
     def test_layout_title_fontsize(self):
@@ -44,7 +45,8 @@ class TestLayoutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
-        text = "<span style='font-size: 12pt'><b>Default: 0</b></font>"
+        text = ('<span style="color:black;font-family:Arial;font-style:bold;'
+                'font-weight:bold;font-size:12pt">Default: 0</span>')
         self.assertEqual(title.text, text)
 
     def test_layout_title_show_title_false(self):
@@ -61,7 +63,8 @@ class TestLayoutPlot(TestBokehPlot):
         plot.update(1)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
-        text = "<span style='font-size: 16pt'><b>Default: 1</b></font>"
+        text = ('<span style="color:black;font-family:Arial;font-style:bold;'
+                'font-weight:bold;font-size:12pt">Default: 1</span>')
         self.assertEqual(title.text, text)
 
     def test_layout_gridspaces(self):
@@ -164,7 +167,7 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertIsInstance(panel2, Panel)
         self.assertEqual(panel1.title, 'Curve I')
         self.assertEqual(panel2.title, 'AdjointLayout I')
-        
+
     def test_layout_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
                                     for j in range(4)}, kdims=['A', 'B', 'C', 'D'])
