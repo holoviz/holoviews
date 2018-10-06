@@ -147,8 +147,8 @@ class MPLPlot(DimensionedPlot):
         self.handles['axis'] = axis
 
         if self.final_hooks and self.finalize_hooks:
-            self.warning('Set either final_hooks or deprecated '
-                         'finalize_hooks, not both.')
+            self.warning('Set either finalize_hooks or deprecated '
+                         'final_hooks, not both.')
         self.finalize_hooks = self.final_hooks
         self.handles['bbox_extra_artists'] = []
 
