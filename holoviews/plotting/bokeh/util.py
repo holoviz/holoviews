@@ -23,6 +23,11 @@ from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
+from bokeh.themes.theme import Theme
+if bokeh_version <= '0.13.0':
+    built_in_themes = {}
+else:
+    from bokeh.themes import built_in_themes
 
 try:
     from bkcharts import Chart
@@ -660,3 +665,12 @@ def colormesh(X, Y):
     X = np.column_stack([X1, X2, X3, X4, X1])
     Y = np.column_stack([Y1, Y2, Y3, Y4, Y1])
     return X, Y
+
+
+def theme_attr_json(theme, attr):
+    if isinstance(theme, str) and theme in built_in_themes:
+        return built_in_themes[theme]._json['attrs'].get(attr, {})
+    elif isinstance(theme, Theme):
+        return theme._json['attrs'].get(attr, {})
+    else:
+        return {}
