@@ -16,7 +16,7 @@ from ...core.options import Store
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
-from .util import get_tight_bbox
+from .util import get_tight_bbox, mpl_version
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -275,8 +275,12 @@ class MPLRenderer(Renderer):
     @classmethod
     @contextmanager
     def state(cls):
+        deprecated = ['text.latex.unicode', 'examples.directory']
+        old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
+                        if mpl_version < '3.0' or k not in deprecated}
+    
         try:
-            cls._rcParams = dict(mpl.rcParams)
+            cls._rcParams = old_rcparams
             yield
         finally:
             mpl.rcParams.clear()
