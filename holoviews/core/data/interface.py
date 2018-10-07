@@ -97,6 +97,8 @@ class Interface(param.Parameterized):
 
     datatype = None
 
+    types = ()
+
     # Denotes whether the interface expects gridded data
     gridded = False
 
@@ -113,9 +115,13 @@ class Interface(param.Parameterized):
     @classmethod
     def applies(cls, obj):
         """
-        Whether the Interface can operate on the supplied data object.
+        Indicates whether the interface is designed specifically to
+        handle the supplied object's type. By default simply checks
+        if the object is one of the types declared on the class,
+        however if the type is expensive to import at load time the
+        method may be overridden.
         """
-        return False
+        return any(isinstance(obj, t) for t in cls.types)
 
     @classmethod
     def register(cls, interface):
@@ -190,7 +196,7 @@ class Interface(param.Parameterized):
         # Set interface priority order
         prioritized = [cls.interfaces[p] for p in datatype
                        if p in cls.interfaces]
-        head = [intfc for intfc in prioritized if (intfc.types != () and type(data) in intfc.types) or intfc.applies(data)]
+        head = [intfc for intfc in prioritized if intfc.applies(data)]
         if head:
             # Prioritize interfaces which have matching types
             prioritized = head + [el for el in prioritized if el != head[0]]
