@@ -472,8 +472,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
+                    # set the group labels equal to major (actually minor)
                     new_key = key.replace('major_label', 'group')
                     axis_props[new_key] = axis_props[key]
+
+                    if 'font_size' in key:
+                        # major ticks are actually minor ticks in a categorical
+                        # so if user inputs minor ticks sizes, then use that;
+                        # else keep major (group) == minor (subgroup)
+                        msize = self._fontsize('minor_{0}ticks'.format(axis),
+                            common=False).get('fontsize')
+                        if msize is not None:
+                            axis_props[key] = msize
 
         return axis_props
 
