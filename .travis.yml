@@ -30,7 +30,6 @@ install:
   - conda env create -q -f environment.yml
   - source activate holoviews
   - python setup.py develop
-  - pip install coveralls awscli deepdiff path.py
   - conda env export
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
