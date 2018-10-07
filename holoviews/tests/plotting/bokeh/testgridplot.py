@@ -23,7 +23,8 @@ class TestGridPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(grid)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
-        text = "<span style='font-size: 16pt'><b>X: 0</b></font>"
+        text = ('<span style="color:black;font-family:Arial;'
+                'font-style:bold;font-weight:bold;font-size:16pt">X: 0</span>')
         self.assertEqual(title.text, text)
 
     def test_grid_title_update(self):
@@ -34,7 +35,8 @@ class TestGridPlot(TestBokehPlot):
         plot.update(1)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
-        text = "<span style='font-size: 16pt'><b>X: 1</b></font>"
+        text = ('<span style="color:black;font-family:Arial;'
+                'font-style:bold;font-weight:bold;font-size:16pt">X: 1</span>')
         self.assertEqual(title.text, text)
 
     def test_gridmatrix_overlaid_batched(self):

@@ -23,6 +23,7 @@ from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
+from holoviews.plotting.bokeh.util import theme_attr_json
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -349,7 +350,7 @@ class CompositePlot(BokehPlot):
     to such a plot.
     """
 
-    fontsize = param.Parameter(default={'title': '16pt'}, allow_None=True,  doc="""
+    fontsize = param.Parameter(default={'title': '15pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
        Finer control is available by supplying a dictionary where any
@@ -357,20 +358,44 @@ class CompositePlot(BokehPlot):
 
           {'title': '15pt'}""")
 
-    _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
+    _title_template = (
+        '<span style='
+        '"color:{color};font-family:{font};'
+        'font-style:{fontstyle};font-weight:{fontstyle};'  # italic/bold
+        'font-size:{fontsize}">'
+        '{title}</span>'
+    )
 
     def _get_title(self, key):
         title_div = None
         title = self._format_title(key) if self.show_title else ''
-        if title:
-            fontsize = self._fontsize('title')
-            title_tags = self._title_template.format(title=title,
-                                                     **fontsize)
-            if 'title' in self.handles:
-                title_div = self.handles['title']
-            else:
-                title_div = Div()
-            title_div.text = title_tags
+        if not title:
+            return title_div
+
+        title_json = theme_attr_json(self.renderer.theme, 'Title')
+        color = title_json.get('text_color', None)
+        font = title_json.get('text_font', 'Arial')
+        fontstyle = title_json.get('text_font_style', 'bold')
+        fontsize = self._fontsize('title')['fontsize']
+        if fontsize == '15pt':  # if default
+            fontsize = title_json.get('text_font_size', '15pt')
+            if 'em' in fontsize:
+                # it's smaller than it shosuld be so add 0.25
+                fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
+
+        title_tags = self._title_template.format(
+            color=color,
+            font=font,
+            fontstyle=fontstyle,
+            fontsize=fontsize,
+            title=title)
+
+        if 'title' in self.handles:
+            title_div = self.handles['title']
+        else:
+            title_div = Div(width=450)  # so it won't wrap long titles easily
+        title_div.text = title_tags
+
         return title_div
 
     @property
