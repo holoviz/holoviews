@@ -24,6 +24,9 @@ dependencies:
   # Testing requirements
   - flake8
   - nose
+  - pytest
+  - pytest-cov
+  - nbsmoke
   - path.py
   - conda-forge::deepdiff
   - conda-forge::awscli
