@@ -28,7 +28,8 @@ def _rc_context(rcparams):
     deprecated = ['text.latex.unicode', 'examples.directory']
     old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
                     if mpl_version < '3.0' or k not in deprecated}
-    mpl.rcParams.update(rcparams)
+    mpl.rcParams.clear()
+    mpl.rcParams.update(dict(old_rcparams, **rcparams))
     try:
         yield
     finally:
