@@ -8,8 +8,12 @@ except ImportError:
 import numpy as np
 import param
 
-from ..dimension import redim
-from ..util import unique_iterator
+from ..dimension import redim, Dimension, process_dimensions
+from ..element import Element
+from ..ndmapping import OrderedDict
+from ..spaces import HoloMap, DynamicMap
+from ..util import (basestring, dimension_range as d_range, get_param_values,
+                    isfinite, process_ellipses, unique_iterator, wrap_tuple)
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -48,11 +52,6 @@ except ImportError:
 if 'array' not in datatypes:
     datatypes.append('array')
 
-from ..dimension import Dimension, process_dimensions
-from ..element import Element
-from ..ndmapping import OrderedDict
-from ..spaces import HoloMap, DynamicMap
-from .. import util
 
 
 def concat(datasets, datatype=None):
@@ -209,7 +208,7 @@ class Dataset(Element):
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         if isinstance(data, Element):
-            pvals = util.get_param_values(data)
+            pvals = get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
         kwargs.update(process_dimensions(kdims, vdims))
@@ -280,7 +279,7 @@ class Dataset(Element):
 
         if dim is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(util.isfinite(v) for v in dim.range) and dimension_range:
+        elif all(isfinite(v) for v in dim.range) and dimension_range:
             return dim.range
         elif dim in self.dimensions() and data_range and len(self):
             lower, upper = self.interface.range(self, dim)
@@ -288,7 +287,7 @@ class Dataset(Element):
             lower, upper = (np.NaN, np.NaN)
         if not dimension_range:
             return lower, upper
-        return util.dimension_range(lower, upper, dim.range, dim.soft_range)
+        return d_range(lower, upper, dim.range, dim.soft_range)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -298,7 +297,7 @@ class Dataset(Element):
         dimensions and a key value scalar or sequence of the same length
         as the existing keys.
         """
-        if isinstance(dimension, (util.basestring, tuple)):
+        if isinstance(dimension, (basestring, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
@@ -397,7 +396,7 @@ class Dataset(Element):
            (4) A boolean array index matching the length of the Dataset
                object.
         """
-        slices = util.process_ellipses(self, slices, vdim_selection=True)
+        slices = process_ellipses(self, slices, vdim_selection=True)
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
@@ -465,11 +464,11 @@ class Dataset(Element):
                 reindexed = selection.clone(new_type=Dataset).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
-            datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
+            datatype = list(unique_iterator(self.datatype+['dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
                               datatype=datatype)
 
-        lens = set(len(util.wrap_tuple(s)) for s in samples)
+        lens = set(len(wrap_tuple(s)) for s in samples)
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
@@ -478,7 +477,7 @@ class Dataset(Element):
                 samples = self.closest(samples)
             except NotImplementedError:
                 pass
-        samples = [util.wrap_tuple(s) for s in samples]
+        samples = [wrap_tuple(s) for s in samples]
         return self.clone(self.interface.sample(self, samples), new_type=Table)
 
 
@@ -573,7 +572,7 @@ class Dataset(Element):
             group_dims = [kd for kd in self.kdims if kd not in dimensions]
             kdims = [self.get_dimension(d) for d in kwargs.pop('kdims', group_dims)]
             drop_dim = len(group_dims) != len(kdims)
-            group_kwargs = dict(util.get_param_values(self), kdims=kdims)
+            group_kwargs = dict(get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
