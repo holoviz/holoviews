@@ -22,7 +22,8 @@ class KDEOperationTests(ComparisonTestCase):
         self.values = np.arange(4)
         self.dist = Distribution(self.values)
         self.nans = np.full(5, np.NaN)
-        self.values2d = [(i, i/10) for i in np.linspace(0, 4, 10)]
+        self.values2d = [(i, j) for i in np.linspace(0, 4, 10)
+                         for j in np.linspace(0, 4, 10)]
         self.bivariate = Bivariate(self.values2d)
         self.dist_nans = Distribution(self.nans)
         self.bivariate_nans = Bivariate(np.column_stack([self.nans, self.nans]))
@@ -50,7 +51,7 @@ class KDEOperationTests(ComparisonTestCase):
     def test_bivariate_kde(self):
         kde = bivariate_kde(self.bivariate, n_samples=2, x_range=(0, 4),
                             y_range=(0, 4), contours=False)
-        img = Image(np.array([[0, 0], [27711861.782675, 0]]),
+        img = Image(np.array([[0.021315, 0.021315], [0.021315, 0.021315]]),
                     bounds=(-2, -2, 6, 6), vdims=['Density'])
         self.assertEqual(kde, img)
 
@@ -59,7 +60,7 @@ class KDEOperationTests(ComparisonTestCase):
         kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
                             y_range=(0, 1), contours=True, levels=10)
         self.assertIsInstance(kde, Contours)
-        self.assertEqual(len(kde.data), 10)
+        self.assertEqual(len(kde.data), 12)
 
     def test_bivariate_kde_contours_filled(self):
         bivariate = Bivariate(np.random.rand(100, 2))
