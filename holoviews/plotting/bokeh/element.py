@@ -400,7 +400,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        # need to copy dictionary
+        # need to copy dictionary by calling dict() on it
         axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
@@ -500,12 +500,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
-
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
         if self.invert_axes: xlabel, ylabel = ylabel, xlabel
         props['x']['axis_label'] = xlabel if 'x' in self.labelled else ''
         props['y']['axis_label'] = ylabel if 'y' in self.labelled else ''
-
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
@@ -544,7 +542,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xfactors, yfactors = None, None
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
-
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
         xupdate = ((not self.model_changed(x_range) and (framewise or streaming))
