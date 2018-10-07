@@ -6,7 +6,7 @@ dependencies:
   - matplotlib=2.1.2
   - pillow=5.2.0
   - pandas
-  - scipy=1.0.0
+  - scipy
   - xarray
   - networkx
   - scipy=1.0.0
