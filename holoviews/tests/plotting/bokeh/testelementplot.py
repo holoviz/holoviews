@@ -141,6 +141,21 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a', 'b', 'y'])
         self.assertEqual(plot.state.xaxis[0].axis_label, 'b')
 
+    def test_categorical_axis_fontsize(self):
+        curve = Curve([('A', 1), ('B', 2)]).options(fontsize={'minor_xticks': '6pt', 'xticks': 18})
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        print(xaxis.properties_with_values())
+        self.assertEqual(xaxis.major_label_text_font_size, '6pt')
+        self.assertEqual(xaxis.group_text_font_size, {'value': '18pt'})
+
+    def test_categorical_axis_fontsize_both(self):
+        curve = Curve([('A', 1), ('B', 2)]).options(fontsize={'xticks': 18})
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertEqual(xaxis.major_label_text_font_size, {'value': '18pt'})
+        self.assertEqual(xaxis.group_text_font_size, {'value': '18pt'})
+
 
 
 class TestColorbarPlot(TestBokehPlot):
