@@ -10,9 +10,7 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface, DataError
-from .util import get_dask_array
-
+from .interface import Interface, DataError, dask_array_module
 
 
 class XArrayInterface(GridInterface):
@@ -210,7 +208,7 @@ class XArrayInterface(GridInterface):
             else:
                 dmin, dmax = np.NaN, np.NaN
 
-        da = get_dask_array()
+        da = dask_array_module()
         if da and isinstance(dmin, da.Array):
             dmin, dmax = da.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) else dmin.item()
@@ -312,7 +310,7 @@ class XArrayInterface(GridInterface):
             virtual_coords = []
         if dim in dataset.vdims or irregular:
             data_coords = list(dataset.data[dim.name].dims)
-            da = get_dask_array()
+            da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             data = cls.canonicalize(dataset, data, data_coords=data_coords,
@@ -454,7 +452,7 @@ class XArrayInterface(GridInterface):
         if dropped and not indexed:
             data = data.assign_coords(**dropped)
 
-        da = get_dask_array()
+        da = dask_array_module()
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
             value = data[dataset.vdims[0].name]
