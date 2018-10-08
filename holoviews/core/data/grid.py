@@ -16,7 +16,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
-from .util import is_dask, get_dask_array, get_array_types
+from .interface import is_dask, dask_array_module, get_array_types
 
 
 
@@ -134,7 +134,7 @@ class GridInterface(DictInterface):
                                 'of arrays must match. %s found that arrays '
                                 'along the %s dimension do not match.' %
                                 (cls.__name__, vdim.name))
-            stack = np.stack if any(is_dask(arr) for arr in arrays) else get_dask_array().stack
+            stack = np.stack if any(is_dask(arr) for arr in arrays) else dask_array_module().stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
 
@@ -336,7 +336,7 @@ class GridInterface(DictInterface):
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
-            da = get_dask_array()
+            da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             return data.T.flatten() if flat else data
@@ -502,14 +502,14 @@ class GridInterface(DictInterface):
 
         for kdim in dataset.kdims:
             if cls.irregular(dataset, dim):
-                da = get_dask_array()
+                da = dask_array_module()
                 if da and isinstance(dataset.data[kdim.name], da.Array):
                     data[kdim.name] = dataset.data[kdim.name].vindex[index]
                 else:
                     data[kdim.name] = np.asarray(data[kdim.name])[index]
 
         for vdim in dataset.vdims:
-            da = get_dask_array()
+            da = dask_array_module()
             if da and isinstance(dataset.data[vdim.name], da.Array):
                 data[vdim.name] = dataset.data[vdim.name].vindex[index]
             else:
@@ -517,7 +517,7 @@ class GridInterface(DictInterface):
 
         if indexed:
             if len(dataset.vdims) == 1:
-                da = get_dask_array()
+                da = dask_array_module()
                 arr = np.squeeze(data[dataset.vdims[0].name])
                 if da and isinstance(arr, da.Array):
                     arr = arr.compute()
@@ -553,7 +553,7 @@ class GridInterface(DictInterface):
             for d, arr in zip(dimensions, np.meshgrid(*sampled)):
                 data[d].append(arr)
             for vdim, array in zip(dataset.vdims, arrays):
-                da = get_dask_array()
+                da = dask_array_module()
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 if da and isinstance(array, da.Array):
                     data[vdim.name].append(array.flatten().vindex[tuple(flat_index)])
@@ -569,7 +569,7 @@ class GridInterface(DictInterface):
         data = {kdim: dataset.data[kdim] for kdim in kdims}
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
-        da = get_dask_array()
+        da = dask_array_module()
         for vdim in dataset.vdims:
             values = dataset.data[vdim.name]
             atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
@@ -645,7 +645,7 @@ class GridInterface(DictInterface):
             new_data.append(cls.values(dataset, d, compute=False)[rows])
 
         if scalar:
-            da = get_dask_array()
+            da = dask_array_module()
             if new_data and isinstance(new_data[0], da.Array):
                 return new_data[0].compute()[0]
             return new_data[0][0]
@@ -659,7 +659,7 @@ class GridInterface(DictInterface):
         else:
             column = cls.values(dataset, dimension, expanded=False, flat=False)
 
-        da = get_dask_array()
+        da = dask_array_module()
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
             if da and isinstance(column, da.Array):

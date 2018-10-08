@@ -1,11 +1,36 @@
+from __future__ import absolute_import
+
+import sys
 import warnings
 
 import param
 import numpy as np
 
+from .. import util
 from ..element import Element
 from ..ndmapping import OrderedDict, NdMapping
-from .. import util
+
+
+def get_array_types():
+    array_types = (np.ndarray,)
+    if 'dask' in sys.modules:
+        import dask.array as da
+        array_types += (da.Array,)
+    return array_types
+
+def dask_array_module():
+    try:
+        import dask.array as da
+        return da
+    except:
+        return None
+
+def is_dask(array):
+    if 'dask' in sys.modules:
+        import dask.array as da
+    else:
+        return False
+    return da and isinstance(array, da.Array)
 
 
 class DataError(ValueError):
