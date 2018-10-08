@@ -24,10 +24,11 @@ from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, 
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
-if bokeh_version <= '0.13.0':
-    built_in_themes = {}
-else:
+
+try:
     from bokeh.themes import built_in_themes
+except:
+    built_in_themes = {}
 
 try:
     from bkcharts import Chart
