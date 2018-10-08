@@ -8,8 +8,11 @@ except ImportError:
 import numpy as np
 import param
 
-from ..dimension import redim
-from ..util import unique_iterator
+from .. import util
+from ..dimension import redim, Dimension, process_dimensions
+from ..element import Element
+from ..ndmapping import OrderedDict
+from ..spaces import HoloMap, DynamicMap
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -34,7 +37,6 @@ except Exception as e:
                        'following error: %s' % e)
 
 try:
-    import xarray # noqa (Availability import)
     from .xarray import XArrayInterface # noqa (Conditional API import)
     datatypes.append('xarray')
 except ImportError:
@@ -49,11 +51,6 @@ except ImportError:
 if 'array' not in datatypes:
     datatypes.append('array')
 
-from ..dimension import Dimension, process_dimensions
-from ..element import Element
-from ..ndmapping import OrderedDict
-from ..spaces import HoloMap, DynamicMap
-from .. import util
 
 
 def concat(datasets, datatype=None):
@@ -670,7 +667,7 @@ class Dataset(Element):
         """
         if 'datatype' not in overrides:
             datatypes = [self.interface.datatype] + self.datatype
-            overrides['datatype'] = list(unique_iterator(datatypes))
+            overrides['datatype'] = list(util.unique_iterator(datatypes))
         return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
 

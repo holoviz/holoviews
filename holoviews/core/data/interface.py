@@ -1,11 +1,36 @@
+from __future__ import absolute_import
+
+import sys
 import warnings
 
 import param
 import numpy as np
 
+from .. import util
 from ..element import Element
 from ..ndmapping import OrderedDict, NdMapping
-from .. import util
+
+
+def get_array_types():
+    array_types = (np.ndarray,)
+    if 'dask' in sys.modules:
+        import dask.array as da
+        array_types += (da.Array,)
+    return array_types
+
+def dask_array_module():
+    try:
+        import dask.array as da
+        return da
+    except:
+        return None
+
+def is_dask(array):
+    if 'dask' in sys.modules:
+        import dask.array as da
+    else:
+        return False
+    return da and isinstance(array, da.Array)
 
 
 class DataError(ValueError):
@@ -97,11 +122,31 @@ class Interface(param.Parameterized):
 
     datatype = None
 
+    types = ()
+
     # Denotes whether the interface expects gridded data
     gridded = False
 
     # Denotes whether the interface expects ragged data
     multi = False
+
+    @classmethod
+    def loaded(cls):
+        """
+        Indicates whether the required dependencies are loaded.
+        """
+        return True
+
+    @classmethod
+    def applies(cls, obj):
+        """
+        Indicates whether the interface is designed specifically to
+        handle the supplied object's type. By default simply checks
+        if the object is one of the types declared on the class,
+        however if the type is expensive to import at load time the
+        method may be overridden.
+        """
+        return any(isinstance(obj, t) for t in cls.types)
 
     @classmethod
     def register(cls, interface):
@@ -176,7 +221,7 @@ class Interface(param.Parameterized):
         # Set interface priority order
         prioritized = [cls.interfaces[p] for p in datatype
                        if p in cls.interfaces]
-        head = [intfc for intfc in prioritized if type(data) in intfc.types]
+        head = [intfc for intfc in prioritized if intfc.applies(data)]
         if head:
             # Prioritize interfaces which have matching types
             prioritized = head + [el for el in prioritized if el != head[0]]
@@ -184,6 +229,9 @@ class Interface(param.Parameterized):
         # Iterate over interfaces until one can interpret the input
         priority_errors = []
         for interface in prioritized:
+            if not interface.loaded() and len(datatype) != 1:
+                # Skip interface if it is not loaded and was not explicitly requested
+                continue
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
