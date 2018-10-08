@@ -852,6 +852,7 @@ def range_pad(lower, upper, padding=None, log=False):
             start, end = lower-lpad, upper+upad
     else:
         start, end = lower, upper
+
     return start, end
 
 
@@ -861,7 +862,8 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     with the Dimension soft_range and range.
     """
     lower, upper = range_pad(lower, upper, padding, log)
-    lower, upper = max_range([(lower, upper), soft_range])
+    lower = max_range([(lower, None), (soft_range[0], None)])[0]
+    upper = max_range([(None, upper), (None, soft_range[1])])[1]
     dmin, dmax = hard_range
     lower = lower if dmin is None or not isfinite(dmin) else dmin
     upper = upper if dmax is None or not isfinite(dmax) else dmax
