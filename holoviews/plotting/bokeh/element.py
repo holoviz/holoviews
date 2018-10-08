@@ -12,6 +12,7 @@ from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
+from bokeh.models import CategoricalAxis
 try:
     from bokeh.models import ColorBar
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
@@ -28,7 +29,7 @@ from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version)
+                   decode_bytes, bokeh_version, theme_attr_json)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -399,7 +400,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        axis_props = {}
+        # need to copy dictionary by calling dict() on it
+        axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
+
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
             axis_props['axis_label_text_font_size'] = value('0pt')
@@ -460,6 +463,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if jsfunc:
                     formatter = FuncTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
+
+        if axis == 'x':
+            axis_obj = plot.xaxis[0]
+        elif axis == 'y':
+            axis_obj = plot.yaxis[0]
+
+        if isinstance(axis_obj, CategoricalAxis):
+            for key in list(axis_props):
+                if key.startswith('major_label'):
+                    # set the group labels equal to major (actually minor)
+                    new_key = key.replace('major_label', 'group')
+                    axis_props[new_key] = axis_props[key]
+
+            # major ticks are actually minor ticks in a categorical
+            # so if user inputs minor ticks sizes, then use that;
+            # else keep major (group) == minor (subgroup)
+            msize = self._fontsize('minor_{0}ticks'.format(axis),
+                common=False).get('fontsize')
+            if msize is not None:
+                axis_props['major_label_text_font_size'] = msize
+
         return axis_props
 
 
