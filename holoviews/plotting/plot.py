@@ -218,7 +218,8 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, renderer=None, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None,
+                 comm=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -236,7 +237,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
-        self.comm = None
+        self.comm = comm
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
 
@@ -572,6 +573,8 @@ class DimensionedPlot(Plot):
         """
         Initializes comm and attaches streams.
         """
+        if self.comm:
+            return self.comm
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
             comm = self.renderer.comm_manager.get_server_comm()

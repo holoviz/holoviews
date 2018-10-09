@@ -147,7 +147,7 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj, doc=None, renderer=None):
+    def get_plot(self_or_cls, obj, doc=None, renderer=None, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         Allows supplying a document attach the plot to, useful when
@@ -159,7 +159,7 @@ class BokehRenderer(Renderer):
         if self_or_cls.notebook_context:
             curdoc().theme = self_or_cls.theme
         doc.theme = self_or_cls.theme
-        plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
+        plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer, **kwargs)
         plot.document = doc
         return plot
 
