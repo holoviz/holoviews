@@ -236,7 +236,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
-        self.comm = None
+        self.comm = params.pop('comm', None)
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
 
@@ -753,7 +753,8 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
         if self.top_level:
-            self.comm = self.init_comm()
+            if not self.comm:
+                self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1048,7 +1049,8 @@ class GenericOverlayPlot(GenericElementPlot):
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
         self.top_level = keys is None
         if self.top_level:
-            self.comm = self.init_comm()
+            if not self.comm:
+                self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])

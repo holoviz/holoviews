@@ -230,7 +230,7 @@ class CustomJSCallback(MessageCallback):
         """
         # Generate callback JS code to get all the requested data
         if plot_id is None:
-            plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
+            plot_id = self.plot.id or 'PLACEHOLDER_PLOT_ID'
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce,
