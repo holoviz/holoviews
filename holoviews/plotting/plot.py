@@ -218,7 +218,8 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, renderer=None, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None,
+                 comm=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -236,7 +237,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
-        self.comm = params.pop('comm', None)
+        self.comm = comm
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
 
