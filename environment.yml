@@ -9,8 +9,6 @@ dependencies:
   - scipy
   - xarray
   - networkx
-  - scipy=1.0.0
-  - pandas=0.22.0
   - ipython=5.4.1
   - pyviz/label/dev::param=1.8.0a10
   - pyviz::pyviz_comms=0.6.0
