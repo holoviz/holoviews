@@ -1308,6 +1308,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlim', 'ylim', 'zlim']
 
+    _passed_handles = ['root']
+
     def _process_legend(self):
         plot = self.handles['plot']
         if not self.show_legend or len(plot.legend) == 0:

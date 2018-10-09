@@ -88,11 +88,13 @@ class BokehPlot(DimensionedPlot):
     def document(self):
         return self._document
 
-
     @property
     def id(self):
-        return self.state.ref['id']
+        return self.root.ref['id']
 
+    @property
+    def root(self):
+        return self._root or self.state
 
     @document.setter
     def document(self, doc):
@@ -104,9 +106,12 @@ class BokehPlot(DimensionedPlot):
 
 
     def __init__(self, *args, **params):
+        root = params.pop('root', None)
         super(BokehPlot, self).__init__(*args, **params)
         self._document = None
-        self.root = None
+        self._root = root
+        if self._root:
+            self.handles['root'] = root
 
 
     def get_data(self, element, ranges, style):
@@ -175,10 +180,10 @@ class BokehPlot(DimensionedPlot):
 
     def set_root(self, root):
         """
-        Sets the current document on all subplots.
+        Sets the root model on all subplots.
         """
         for plot in self.traverse(lambda x: x):
-            plot.root = root
+            plot._root = root
 
 
     def _init_datasource(self, data):
@@ -338,7 +343,7 @@ class BokehPlot(DimensionedPlot):
         callbacks = []
         for link, src_plot, tgt_plot in links:
             cb = Link._callbacks['bokeh'][type(link)]
-            callbacks.append(cb(self, link, src_plot, tgt_plot))
+            callbacks.append(cb(self.root, link, src_plot, tgt_plot))
         return callbacks
 
 
@@ -535,7 +540,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
-                                         renderer=self.renderer,
+                                         renderer=self.renderer, root=self.root,
                                          ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
@@ -786,7 +791,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                 layout_dimensions=layout_dimensions,
                                 ranges=ranges, subplot=True,
                                 uniform=self.uniform, layout_num=num,
-                                renderer=self.renderer,
+                                renderer=self.renderer, root=self.root,
                                 **dict({'shared_axes': self.shared_axes},
                                        **plotopts))
             subplots[pos] = subplot
