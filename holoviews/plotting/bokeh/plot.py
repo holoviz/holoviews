@@ -475,8 +475,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.subplots, self.layout = self._create_subplots(layout, ranges)
         self.set_root(params.pop('root', None))
         if self.top_level:
-            if not self.comm:
-                self.comm = self.init_comm()
+            self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
@@ -677,8 +676,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self.layout, self.subplots, self.paths = self._init_layout(layout)
         self.set_root(params.pop('root', None))
         if self.top_level:
-            if not self.comm:
-                self.comm = self.init_comm()
+            self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
