@@ -1067,8 +1067,8 @@ class LinkCallback(param.Parameterized):
     source_code = None
     target_code = None
 
-    def __init__(self, root_plot, link, source_plot, target_plot=None):
-        self.root_plot = root_plot
+    def __init__(self, root_model, link, source_plot, target_plot=None):
+        self.root_model = root_model
         self.link = link
         self.source_plot = source_plot
         self.target_plot = target_plot
@@ -1121,6 +1121,7 @@ class LinkCallback(param.Parameterized):
         for plot, links in source_links:
             for link in links:
                 if link.target is None:
+                    # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
                 potentials = [cls.find_link(plot, link) for plot in plots]
@@ -1156,13 +1157,12 @@ class RangeToolLinkCallback(LinkCallback):
     specified axes on the target plot
     """
 
-    def __init__(self, root_plot, link, source_plot, target_plot):
+    def __init__(self, root_model, link, source_plot, target_plot):
         try:
             from bokeh.models.tools import RangeTool
         except:
             raise Exception('RangeToolLink requires bokeh >= 0.13')
-        toolbar = [model for model in root_plot.state.children
-                   if isinstance(model, ToolbarBox)]
+        toolbars = list(root_model.select({'type': ToolbarBox}))
         axes = {}
         if 'x' in link.axes:
             axes['x_range'] = target_plot.handles['x_range']
@@ -1170,8 +1170,8 @@ class RangeToolLinkCallback(LinkCallback):
             axes['y_range'] = target_plot.handles['y_range']
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
-        if toolbar:
-            toolbar = toolbar[0].toolbar
+        if toolbars:
+            toolbar = toolbars[0].toolbar
             toolbar.tools.append(tool)
 
 
@@ -1180,7 +1180,7 @@ class DataLinkCallback(LinkCallback):
     Merges the source and target ColumnDataSource
     """
 
-    def __init__(self, root_plot, link, source_plot, target_plot):
+    def __init__(self, root_model, link, source_plot, target_plot):
         src_cds = source_plot.handles['source']
         tgt_cds = target_plot.handles['source']
         src_len = [len(v) for v in src_cds.data.values()]
@@ -1214,7 +1214,7 @@ class DataLinkCallback(LinkCallback):
             renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         for callback in target_plot.callbacks:
-            callback.initialize(plot_id=root_plot.id)
+            callback.initialize(plot_id=root_model.ref['id'])
 
 
 callbacks = Link._callbacks['bokeh']

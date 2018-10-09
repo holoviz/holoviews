@@ -90,11 +90,16 @@ class BokehPlot(DimensionedPlot):
 
     @property
     def id(self):
-        return self.root.ref['id']
+        return self.root.ref['id'] if self.root else None
 
     @property
     def root(self):
-        return self._root or self.state
+        if self._root:
+            return self._root
+        elif 'plot' in self.handles and self.top_level:
+            return self.state
+        else:
+            return None
 
     @document.setter
     def document(self, doc):
@@ -577,12 +582,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
         if self.top_level:
+            self.set_root(plot)
             self.init_links()
+        self._update_callbacks(plot)
 
         self.drawn = True
 
@@ -917,15 +923,17 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot, **kwargs)
 
+
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
         if self.top_level:
+            self.set_root(layout_plot)
             self.init_links()
+        self._update_callbacks(layout_plot)
 
         self.drawn = True
 
