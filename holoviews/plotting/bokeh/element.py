@@ -1273,6 +1273,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted']
 
+    def __init__(self, overlay, **params):
+        super(OverlayPlot, self).__init__(overlay, **params)
+        self.set_root(params.pop('root', None))
+
     def _process_legend(self):
         plot = self.handles['plot']
         if not self.show_legend or len(plot.legend) == 0:

@@ -87,11 +87,18 @@ class BokehPlot(DimensionedPlot):
     def document(self):
         return self._document
 
-
     @property
     def id(self):
-        return self.state.ref['id']
+        return self.root.ref['id'] if self.root else None
 
+    @property
+    def root(self):
+        if self._root:
+            return self._root
+        elif 'plot' in self.handles and self.top_level:
+            return self.state
+        else:
+            return None
 
     @document.setter
     def document(self, doc):
@@ -103,9 +110,10 @@ class BokehPlot(DimensionedPlot):
 
 
     def __init__(self, *args, **params):
+        root = params.pop('root', None)
         super(BokehPlot, self).__init__(*args, **params)
         self._document = None
-        self.root = None
+        self._root = root
 
 
     def get_data(self, element, ranges, style):
@@ -174,10 +182,12 @@ class BokehPlot(DimensionedPlot):
 
     def set_root(self, root):
         """
-        Sets the current document on all subplots.
+        Sets the root model on all subplots.
         """
+        if root is None:
+            return
         for plot in self.traverse(lambda x: x):
-            plot.root = root
+            plot._root = root
 
 
     def _init_datasource(self, data):
@@ -323,12 +333,11 @@ class BokehPlot(DimensionedPlot):
                     plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
-        plot_id = self.id if self.top_level else None
         for plot in plots:
             for hook in plot.finalize_hooks:
                 hook(plot, plot.current_frame)
             for callback in plot.callbacks:
-                callback.initialize(plot_id=plot_id)
+                callback.initialize(plot_id=self.id)
         self.handles['shared_sources'] = shared_sources
         self.handles['source_cols'] = source_cols
 
@@ -455,6 +464,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
+        self.set_root(params.pop('root', None))
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
@@ -652,6 +662,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     def __init__(self, layout, keys=None, **params):
         super(LayoutPlot, self).__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
+        self.set_root(params.pop('root', None))
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
