@@ -345,7 +345,7 @@ class HistogramPlot(ElementPlot):
         ydim = element.get_dimension(1)
         s0, s1 = ranges[ydim.name]['soft']
         s0 = min(s0, 0) if isfinite(s0) else 0
-        s0 = max(s1, 0) if isfinite(s1) else 0
+        s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.name]['soft'] = (s0, s1)
         return super(HistogramPlot, self).get_extents(element, ranges, range_type)
 
@@ -592,7 +592,7 @@ class SpikesPlot(ColorbarPlot):
             ydim = element.get_dimension(1)
             s0, s1 = ranges[ydim.name]['soft']
             s0 = min(s0, 0) if isfinite(s0) else 0
-            s0 = max(s1, 0) if isfinite(s1) else 0
+            s1 = max(s1, 0) if isfinite(s1) else 0
             ranges[ydim.name]['soft'] = (s0, s1)
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
         if len(element.dimensions()) == 1 and range_type != 'hard':
