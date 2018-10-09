@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap
 from holoviews.core.options import Cycle
-from holoviews.element import Curve, Points, ErrorBars, Text
+from holoviews.element import Curve, Points, ErrorBars, Text, VLine
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -169,3 +169,15 @@ class TestOverlayPlot(TestBokehPlot):
         self.assertEqual(len(plot.subplots), 3)
         for i, subplot in enumerate(plot.subplots.values()):
             self.assertEqual(subplot.cyclic_index, i)
+
+    def test_complex_range_example(self):
+        errors = [(0.1*i, np.sin(0.1*i), (i+1)/3., (i+1)/5.) for i in np.linspace(0, 100, 11)]
+        errors = ErrorBars(errors, vdims=['y', 'yerrneg', 'yerrpos']).redim.range(y=(0, None))
+        overlay = Curve(errors) * errors * VLine(4)
+        plot = bokeh_renderer.get_plot(overlay)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertEqual(x_range.start, 0)
+        self.assertEqual(x_range.end, 10.0)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 19.655978889110628)
