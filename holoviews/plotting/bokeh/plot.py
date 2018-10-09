@@ -546,7 +546,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
-                                         renderer=self.renderer, root=self.root,
+                                         renderer=self.renderer,
                                          ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
@@ -583,13 +583,12 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
+        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
         if self.top_level:
-            self.set_root(plot)
             self.init_links()
-        self._update_callbacks(plot)
 
         self.drawn = True
 
@@ -800,7 +799,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                 layout_dimensions=layout_dimensions,
                                 ranges=ranges, subplot=True,
                                 uniform=self.uniform, layout_num=num,
-                                renderer=self.renderer, root=self.root,
+                                renderer=self.renderer,
                                 **dict({'shared_axes': self.shared_axes},
                                        **plotopts))
             subplots[pos] = subplot
@@ -926,17 +925,15 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot, **kwargs)
 
-
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
+        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
         if self.top_level:
-            self.set_root(layout_plot)
             self.init_links()
-        self._update_callbacks(layout_plot)
 
         self.drawn = True
 

@@ -787,8 +787,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['yaxis'] = plot.yaxis[0]
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
-        if self.top_level and not self._root:
-            self.set_root(plot)
 
         self._init_glyphs(plot, element, ranges, source)
         if not self.overlaid:
@@ -1477,13 +1475,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
-
-        if self.tabs:
-            self.handles['plot'] = Tabs()
-        else:
-            self.handles['plot'] = plot
-        if self.top_level and not self._root:
-            self.set_root(self.handles['plot'])
+        self.handles['plot'] = plot
 
         if plot and not self.overlaid:
             self._update_plot(key, plot, element)
@@ -1508,13 +1500,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._merge_tools(subplot)
 
         if self.tabs:
-            self.handles['plot'].tabs = panels
-
+            self.handles['plot'] = Tabs(tabs=panels)
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
         self.handles['plots'] = plots
 
+        self._update_callbacks(self.handles['plot'])
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
             self.handles['xaxis'] = plot.xaxis[0]
@@ -1526,7 +1518,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if self.top_level:
             self.init_links()
-        self._update_callbacks(self.handles['plot'])
 
         self._execute_hooks(element)
 
