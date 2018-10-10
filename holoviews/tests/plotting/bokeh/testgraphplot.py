@@ -142,8 +142,8 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         factors = ['0', '1', '2', '3', '4', '5', '6', '7']
         self.assertEqual(cmapper.factors, factors)
-        self.assertEqual(edge_source.data['start_str'], factors)
-        self.assertEqual(glyph.line_color, {'field': 'start_str', 'transform': cmapper})
+        self.assertEqual(edge_source.data['start_str__'], factors)
+        self.assertEqual(glyph.line_color, {'field': 'start_str__', 'transform': cmapper})
 
     def test_graph_edges_numerically_colormapped(self):
         g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
@@ -202,8 +202,8 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         factors = ['0', '1', '2', '3']
         self.assertEqual(cmapper.factors, factors)
-        self.assertEqual(edge_source.data['node1_str'], ['0', '1'])
-        self.assertEqual(glyph.line_color, {'field': 'node1_str', 'transform': cmapper})
+        self.assertEqual(edge_source.data['node1_str__'], ['0', '1'])
+        self.assertEqual(glyph.line_color, {'field': 'node1_str__', 'transform': cmapper})
 
     def test_graph_nodes_numerically_colormapped(self):
         g = self.trimesh_weighted.opts(plot=dict(edge_color_index='weight'),
@@ -258,6 +258,6 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
         self.assertEqual(cmapper.factors, ['0', '1', '2'])
-        self.assertEqual(edge_source.data['start_str'], ['0', '0', '1'])
-        self.assertEqual(glyph.line_color, {'field': 'start_str', 'transform': cmapper})
+        self.assertEqual(edge_source.data['start_str__'], ['0', '0', '1'])
+        self.assertEqual(glyph.line_color, {'field': 'start_str__', 'transform': cmapper})
 

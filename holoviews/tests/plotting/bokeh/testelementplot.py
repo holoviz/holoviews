@@ -241,7 +241,7 @@ class TestColorbarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         cmapper = plot.handles['color_mapper']
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['Category_str'], ['0', '1', '2', '3'])
+        self.assertEqual(cds.data['Category_str__'], ['0', '1', '2', '3'])
         self.assertEqual(cmapper.factors, ['0', '1', '2', '3'])
         self.assertEqual(cmapper.palette, ['blue', 'red', 'green', 'purple'])
 
