@@ -236,7 +236,7 @@ if sys.version_info.major >= 3:
     unicode = str
     long = int
     generator_types = (zip, range, types.GeneratorType)
-    RecursionError = RecursionError # noqa
+    RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
 else:
     basestring = basestring
     unicode = unicode
