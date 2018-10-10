@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from nose.plugins.attrib import attr
 
 import numpy as np
@@ -231,6 +232,18 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low_color, 'red')
         self.assertEqual(cmapper.high_color, 'blue')
+
+    def test_explicit_categorical_cmap_on_integer_data(self):
+        explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
+        points = Scatter(([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=['y', 'Category']).options(
+            color_index='Category', cmap=explicit_mapping
+        )
+        plot = bokeh_renderer.get_plot(points)
+        cmapper = plot.handles['color_mapper']
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['Category_str__'], ['0', '1', '2', '3'])
+        self.assertEqual(cmapper.factors, ['0', '1', '2', '3'])
+        self.assertEqual(cmapper.palette, ['blue', 'red', 'green', 'purple'])
 
 
 class TestOverlayPlot(TestBokehPlot):

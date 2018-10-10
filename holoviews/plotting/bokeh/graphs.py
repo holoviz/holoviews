@@ -111,7 +111,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 cvals = cvals.astype(np.int32)
                 factors = factors.astype(np.int32)
             if factors.dtype.kind not in 'SU':
-                field += '_str'
+                field += '_str__'
                 cvals = [str(f) for f in cvals]
                 factors = (str(f) for f in factors)
             factors = list(factors)

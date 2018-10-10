@@ -1137,8 +1137,11 @@ class ColorbarPlot(ElementPlot):
 
         cmap = colors or style.pop('cmap', 'viridis')
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if isinstance(cmap, dict) and factors:
+        if isinstance(cmap, dict):
+            if not factors:
+                factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
+            factors = [dim.pprint_value(f) for f in factors]
         else:
             categorical = ncolors is not None
             if isinstance(self.color_levels, int):
@@ -1183,12 +1186,17 @@ class ColorbarPlot(ElementPlot):
         if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
             factors = list(util.unique_array(cdata))
         if factors and int_categories and cdata.dtype.kind == 'i':
-            field += '_str'
+            field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]
 
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
+        if not factors and isinstance(mapper, CategoricalColorMapper):
+            field += '_str__'
+            cdata = [cdim.pprint_value(c) for c in cdata]
+            factors = mapper.factors
+
         data[field] = cdata
         if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
