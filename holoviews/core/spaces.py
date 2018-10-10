@@ -540,9 +540,9 @@ class Callable(param.Parameterized):
 
     def __call__(self, *args, **kwargs):
         # Nothing to do for callbacks that accept no arguments
-        kwarg_hash = kwargs.pop('memoization_hash', ())
+        kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
-        if not args and not kwargs: return self.callable()
+        if not args and not kwargs and not any(kwarg_hash): return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
@@ -912,7 +912,7 @@ class DynamicMap(HoloMap):
         else:
             kwargs = dict(flattened)
         if not isinstance(self.callback, Generator):
-            kwargs['memoization_hash'] = hash_items
+            kwargs['_memoization_hash_'] = hash_items
 
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)

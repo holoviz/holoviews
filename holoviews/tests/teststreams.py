@@ -276,10 +276,12 @@ class TestParamMethodStream(ComparisonTestCase):
             action = param.Action(lambda o: o.param.trigger('action'))
             x = param.Number(default = 0)
             y = param.Number(default = 0)
+            count = param.Integer(default=0)
 
             @param.depends('x')
             def method(self):
-                pass
+                self.count += 1
+                return Points([])
 
             @param.depends('action')
             def action_method(self):
@@ -312,7 +314,7 @@ class TestParamMethodStream(ComparisonTestCase):
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
-        self.assertEqual(set(stream.parameters), {'x', 'y', 'action', 'name'})
+        self.assertEqual(set(stream.parameters), {'x', 'y', 'action', 'name', 'count'})
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -341,6 +343,32 @@ class TestParamMethodStream(ComparisonTestCase):
         inner.y = 2
         self.assertEqual(values, [{}])
 
+    def test_param_method_depends_trigger_no_memoization(self):
+        inner = self.inner()
+        stream = ParamMethod(inner.method)
+        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.x = 2
+        inner.param.trigger('x')
+        self.assertEqual(values, [{}, {}])
+
+    def test_dynamicmap_param_method_deps_memoization(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.method)
+        stream = dmap.streams[0]
+        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(stream.contents, {})
+
+        dmap[()]
+        dmap[()]
+        self.assertEqual(inner.count, 1)
+        
     def test_dynamicmap_param_method_no_deps(self):
         inner = self.inner()
         dmap = DynamicMap(inner.method_no_deps)
