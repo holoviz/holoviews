@@ -1287,6 +1287,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif not self.static_source:
             self._update_datasource(source, data)
 
+        if not self.static_source:
+            self._update_datasource(source, data)
+
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
@@ -1657,7 +1660,7 @@ class ColorbarPlot(ElementPlot):
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)
-        if cmapper is not None:
+        if cmapper is not None and type(cmapper) is colormapper:
             if cmapper.palette != palette:
                 cmapper.palette = palette
             opts = {k: opt for k, opt in opts.items()
