@@ -146,7 +146,7 @@ class Interface(param.Parameterized):
         however if the type is expensive to import at load time the
         method may be overridden.
         """
-        return any(isinstance(obj, t) for t in cls.types)
+        return type(obj) in cls.types
 
     @classmethod
     def register(cls, interface):
