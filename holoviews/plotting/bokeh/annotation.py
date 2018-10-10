@@ -14,13 +14,13 @@ except:
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
 
-from ...core.util import datetime_types, dimension_sanitizer, basestring
+from ...core.util import dimension_sanitizer, basestring
 from ...element import HLine
 from ..plot import GenericElementPlot
 from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
                       text_properties, line_properties)
 from .plot import BokehPlot
-from .util import date_to_integer
+
 
 
 class TextPlot(ElementPlot):
@@ -126,8 +126,6 @@ class LineAnnotationPlot(ElementPlot):
             dim = 'width' if dim == 'height' else 'height'
         mapping['dimension'] = dim
         loc = element.data
-        if isinstance(loc, datetime_types):
-            loc = date_to_integer(loc)
         mapping['location'] = loc
         return (data, mapping, style)
 
