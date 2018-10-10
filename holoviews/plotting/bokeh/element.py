@@ -103,7 +103,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     toolbar = param.ObjectSelector(default='right',
                                    objects=["above", "below",
-                                            "left", "right", None],
+                                            "left", "right", "disable", None],
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
@@ -314,7 +314,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        if self.toolbar:
+        if self.toolbar != 'disable':
             tools = self._init_tools(element)
             properties['tools'] = tools
         properties['toolbar_location'] = self.toolbar
