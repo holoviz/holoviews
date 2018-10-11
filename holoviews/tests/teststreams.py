@@ -172,7 +172,6 @@ class TestParamValuesStream(ComparisonTestCase):
 
 
 
-
 class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):

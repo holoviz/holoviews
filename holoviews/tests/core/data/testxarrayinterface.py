@@ -1,3 +1,4 @@
+import datetime as dt
 from collections import OrderedDict
 from nose.plugins.attrib import attr
 from unittest import SkipTest
@@ -12,7 +13,7 @@ except:
 from holoviews.core.data import Dataset, concat
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Image, RGB, HSV
+from holoviews.element import Image, RGB, HSV, QuadMesh
 
 from .testimageinterface import (
     Image_ImageInterfaceTests, RGB_ImageInterfaceTests, HSV_ImageInterfaceTests
@@ -181,6 +182,25 @@ class XArrayInterfaceTests(GridInterfaceTests):
         self.assertTrue(np.isnan(z0))
         self.assertTrue(np.isnan(z1))
 
+    def test_datetime_bins_range(self):
+        xs = [dt.datetime(2018, 1, i) for i in range(1, 11)]
+        ys = np.arange(10)
+        array = np.random.rand(10, 10)
+        ds = QuadMesh((xs, ys, array))
+        self.assertEqual(ds.interface.datatype, 'xarray')
+        expected = (dt.datetime(2017, 12, 31, 12, 0), dt.datetime(2018, 1, 10, 12, 0))
+        self.assertEqual(ds.range('x'), expected)
+
+    def test_datetime64_bins_range(self):
+        xs = [np.datetime64(dt.datetime(2018, 1, i)) for i in range(1, 11)]
+        ys = np.arange(10)
+        array = np.random.rand(10, 10)
+        ds = QuadMesh((xs, ys, array))
+        self.assertEqual(ds.interface.datatype, 'xarray')
+        expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
+                    np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
+        self.assertEqual(ds.range('x'), expected)
+        
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")

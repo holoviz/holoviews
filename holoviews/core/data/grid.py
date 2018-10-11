@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import sys
+import datetime as dt
 from collections import OrderedDict, defaultdict, Iterable
 
 try:
@@ -198,6 +200,9 @@ class GridInterface(DictInterface):
                [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
+        if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
+            # np.diff does not work on datetimes in python 2
+            coord = coord.astype('datetime64')
         deltas = 0.5 * np.diff(coord, axis=axis)
         first = np.take(coord, [0], axis=axis) - np.take(deltas, [0], axis=axis)
         last = np.take(coord, [-1], axis=axis) + np.take(deltas, [-1], axis=axis)

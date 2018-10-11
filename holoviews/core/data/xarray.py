@@ -195,7 +195,10 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dimension, strict=True).name
         if dataset._binned and dimension in dataset.kdims:
             data = cls.coords(dataset, dim, edges=True)
-            dmin, dmax = np.nanmin(data), np.nanmax(data)
+            if data.dtype.kind == 'M':
+                dmin, dmax = data.min(), data.max()
+            else:
+                dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             data = dataset.data[dim]
             if len(data):
@@ -206,6 +209,14 @@ class XArrayInterface(GridInterface):
             dmin, dmax = dask.array.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) else dmin.item()
         dmax = dmax if np.isscalar(dmax) else dmax.item()
+=======
+
+        da = dask_array_module()
+        if da and isinstance(dmin, da.Array):
+            dmin, dmax = da.compute(dmin, dmax)
+        dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
+        dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
+>>>>>>> a65ef977b... Ensure QuadMesh with xarray handles datetime range (#3081)
         return dmin, dmax
 
 
