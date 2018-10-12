@@ -66,7 +66,7 @@ html_context = {
     ),
     # Social links
     'SOCIAL': (
-        ('Gitter', '//gitter.im/ioam/holoviews'),
+        ('Gitter', '//gitter.im/pyviz/pyviz'),
         ('Twitter', '//twitter.com/holoviews'),
         ('Github', '//github.com/ioam/holoviews'),
     ),
