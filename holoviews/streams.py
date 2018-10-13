@@ -588,12 +588,15 @@ class Params(Stream):
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized, parameters=None, watch=True, **params):
+    def __init__(self, parameterized, parameters=None, watch=True, contents_transforms={}, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:
             parameters = [p for p in parameterized.params() if p != 'name']
+
+        self.contents_transforms = contents_transforms
+
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize = True
         if watch:
@@ -632,8 +635,18 @@ class Params(Stream):
     def contents(self):
         filtered = {k: v for k, v in self.parameterized.get_param_values()
                     if k in self.parameters}
-        return {self._rename.get(k, k): v for (k, v) in filtered.items()
-                if self._rename.get(k, True) is not None}
+
+        renamed = {self._rename.get(k, k): v for (k, v) in filtered.items()
+                   if self._rename.get(k, True) is not None}
+
+        transforms = self.contents_transforms
+
+        transformed = {
+            k: transforms[k](v) if k in transforms else v
+            for k, v in renamed.items()
+        }
+
+        return transformed
 
 
 
