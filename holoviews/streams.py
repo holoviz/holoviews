@@ -187,7 +187,7 @@ class Stream(param.Parameterized):
 
 
     def __init__(self, rename={}, source=None, subscribers=[], linked=False,
-                 transient=False, **params):
+                 transient=False, transforms={}, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -217,6 +217,7 @@ class Stream(param.Parameterized):
 
         super(Stream, self).__init__(**params)
         self._rename = self._validate_rename(rename)
+        self._transforms = transforms
         if source is not None:
             self.registry[id(source)].append(self)
 
@@ -326,8 +327,14 @@ class Stream(param.Parameterized):
     @property
     def contents(self):
         filtered = {k: v for k, v in self.get_param_values() if k != 'name'}
-        return {self._rename.get(k, k): v for (k, v) in filtered.items()
-                if self._rename.get(k, True) is not None}
+
+        renamed = {self._rename.get(k, k): v for (k, v) in filtered.items()
+                   if self._rename.get(k, True) is not None}
+
+        transformed = {k: self._transforms[k](v) if k in self._transforms else v
+                       for k, v in renamed.items()}
+
+        return transformed
 
     @property
     def hashkey(self):
@@ -588,16 +595,15 @@ class Params(Stream):
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized, parameters=None, watch=True, contents_transforms={}, **params):
+    def __init__(self, parameterized, parameters=None, watch=True, transforms={}, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:
             parameters = [p for p in parameterized.params() if p != 'name']
 
-        self.contents_transforms = contents_transforms
-
-        super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        super(Params, self).__init__(parameterized=parameterized, parameters=parameters,
+                                     transforms=transforms, **params)
         self._memoize = True
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
@@ -639,9 +645,7 @@ class Params(Stream):
         renamed = {self._rename.get(k, k): v for (k, v) in filtered.items()
                    if self._rename.get(k, True) is not None}
 
-        transforms = self.contents_transforms
-
-        transformed = {k: transforms[k](v) if k in transforms else v
+        transformed = {k: self._transforms[k](v) if k in self._transforms else v
                        for k, v in renamed.items()}
 
         return transformed
