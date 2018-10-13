@@ -641,10 +641,8 @@ class Params(Stream):
 
         transforms = self.contents_transforms
 
-        transformed = {
-            k: transforms[k](v) if k in transforms else v
-            for k, v in renamed.items()
-        }
+        transformed = {k: transforms[k](v) if k in transforms else v
+                       for k, v in renamed.items()}
 
         return transformed
 
