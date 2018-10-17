@@ -239,3 +239,11 @@ class TestLayoutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         self.assertIsInstance(plot.state, Column)
         self.assertEqual(len(plot.state.children), 1)
+
+    def test_layout_shared_inverted_yaxis(self):
+        layout = (Curve([]) + Curve([])).options('Curve', invert_yaxis=True)
+        plot = bokeh_renderer.get_plot(layout)
+        subplot = list(plot.subplots.values())[0].subplots['main']
+        self.assertEqual(subplot.handles['y_range'].start, 1)
+        self.assertEqual(subplot.handles['y_range'].end, 0)
+
