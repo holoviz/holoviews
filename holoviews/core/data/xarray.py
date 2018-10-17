@@ -207,16 +207,9 @@ class XArrayInterface(GridInterface):
                 dmin, dmax = np.NaN, np.NaN
         if dask and isinstance(dmin, dask.array.Array):
             dmin, dmax = dask.array.compute(dmin, dmax)
-        dmin = dmin if np.isscalar(dmin) else dmin.item()
-        dmax = dmax if np.isscalar(dmax) else dmax.item()
-=======
-
-        da = dask_array_module()
-        if da and isinstance(dmin, da.Array):
-            dmin, dmax = da.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
->>>>>>> a65ef977b... Ensure QuadMesh with xarray handles datetime range (#3081)
+
         return dmin, dmax
 
 
