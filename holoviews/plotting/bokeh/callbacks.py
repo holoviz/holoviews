@@ -113,9 +113,14 @@ class MessageCallback(object):
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
             streams.append(stream)
-        Stream.trigger(streams)
-        for stream in streams:
-            stream._metadata = {}
+
+        try:
+            Stream.trigger(streams)
+        except Exception as e:
+            raise e
+        finally:
+            for stream in streams:
+                stream._metadata = {}
 
 
     def _init_plot_handles(self):
