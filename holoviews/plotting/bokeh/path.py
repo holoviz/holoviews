@@ -4,8 +4,9 @@ import param
 import numpy as np
 
 from ...core import util
+from ...element import Polygons
 from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
-from .util import expand_batched_style
+from .util import expand_batched_style, mpl_to_bokeh
 
 
 class PathPlot(ColorbarPlot):
@@ -158,13 +159,20 @@ class ContourPlot(LegendPlot, PathPlot):
 
     def get_data(self, element, ranges, style):
         paths = element.split(datatype='array', dimensions=element.kdims)
+        has_holes = isinstance(element, Polygons) and element.interface.has_holes(element)
+        holes = element.interface.holes(element) if has_holes else None
         if self.static_source:
             data = dict()
         else:
             inds = (1, 0) if self.invert_axes else (0, 1)
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+            if has_holes:
+                hole_xs, hole_ys = ([[list(h[:, idx]) for h in hole] for hole in holes] for idx in inds)
+                xs = [[[list(x)]+hx] for x, hx in zip(xs, hole_xs)]
+                ys = [[[list(y)]+hy] for y, hy in zip(ys, hole_ys)]
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
+        style['has_holes'] = has_holes
 
         if None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
@@ -188,6 +196,21 @@ class ContourPlot(LegendPlot, PathPlot):
         if self.show_legend:
             mapping['legend'] = dim_name
         return data, mapping, style
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        has_holes = properties.pop('has_holes')
+        properties = mpl_to_bokeh(properties)
+        data = dict(properties, **mapping)
+        if has_holes:
+            renderer = plot.multi_polygons(**data)
+        else:
+            plot_method = self._plot_methods.get('single')
+            renderer = getattr(plot, plot_method)(**data)
+        return renderer, renderer.glyph
+
 
 
 class PolygonPlot(ContourPlot):
