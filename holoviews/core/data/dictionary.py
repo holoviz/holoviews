@@ -87,7 +87,9 @@ class DictInterface(Interface):
         elif isinstance(data, dict):
             unpacked = []
             for d, vals in data.items():
-                if isinstance(d, tuple):
+                if d not in dimensions:
+                    unpacked.append((d, vals))
+                elif isinstance(d, tuple):
                     vals = np.asarray(vals)
                     if vals.shape == (0,):
                         for sd in d:
