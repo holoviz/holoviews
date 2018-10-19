@@ -72,6 +72,20 @@ class MultiInterface(Interface):
                        kdims=dataset.kdims, vdims=vdims)
 
     @classmethod
+    def has_holes(cls, dataset):
+        return any(d for d in dataset.data if isinstance(d, dict) and 'holes' in d)
+
+    @classmethod
+    def holes(cls, dataset):
+        holes = []
+        for d in dataset.data:
+            if isinstance(d, dict) and 'holes' in d:
+                holes.append(d['holes'])
+            else:
+                holes.append([])
+        return holes
+
+    @classmethod
     def dimension_type(cls, dataset, dim):
         if not dataset.data:
             # Note: Required to make empty datasets work at all (should fix)
