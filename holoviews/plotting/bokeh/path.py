@@ -210,6 +210,8 @@ class ContourPlot(LegendPlot, PathPlot):
         elif plot_method is None:
             plot_method = self._plot_methods.get('single')
         renderer = getattr(plot, plot_method)(**data)
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
         return renderer, renderer.glyph
 
 
