@@ -337,7 +337,9 @@ class Interface(param.Parameterized):
         else:
             try:
                 assert column.dtype.kind not in 'SUO'
-                return (np.nanmin(column), np.nanmax(column))
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                    return (np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
