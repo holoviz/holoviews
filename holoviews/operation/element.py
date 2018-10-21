@@ -429,15 +429,9 @@ class contours(Operation):
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]
 
-        if type(element) is Raster:
-            data = [np.flipud(element.data)]
-        elif isinstance(element, Image):
-            data = [np.flipud(element.dimension_values(2, flat=False))]
-        elif isinstance(element, QuadMesh):
-            data = (element.dimension_values(0, False, flat=False),
-                    element.dimension_values(1, False, flat=False),
-                    element.dimension_values(2, flat=False))
-
+        data = (element.dimension_values(0, False, flat=False),
+                element.dimension_values(1, False, flat=False),
+                element.dimension_values(2, flat=False))
         xdim, ydim = element.dimensions('key', label=True)
         if self.p.filled:
             contour_type = Polygons
