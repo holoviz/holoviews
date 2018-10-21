@@ -80,7 +80,7 @@ class MultiInterface(Interface):
         holes = []
         for d in dataset.data:
             if isinstance(d, dict) and 'holes' in d:
-                holes.append(d['holes'])
+                holes.append([np.asarray(h) for h in d['holes']])
             else:
                 holes.append([])
         return holes
