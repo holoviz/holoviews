@@ -84,34 +84,39 @@ class DictInterface(Interface):
 
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.""")
-        elif isinstance(data, dict):
-            unpacked = []
-            for d, vals in data.items():
-                if d not in dimensions:
-                    unpacked.append((d, vals))
-                elif isinstance(d, tuple):
-                    vals = np.asarray(vals)
-                    if vals.shape == (0,):
-                        for sd in d:
-                            unpacked.append((sd, np.array([], dtype=vals.dtype)))
-                    elif not vals.ndim == 2 and vals.shape[1] == len(d):
-                        raise ValueError("Values for %s dimensions did not have "
-                                         "the expected shape.")
-                    else:
-                        for i, sd in enumerate(d):
-                            unpacked.append((sd, vals[:, i]))
+
+        unpacked = []
+        for d, vals in data.items():
+            if isinstance(d, tuple):
+                vals = np.asarray(vals)
+                if vals.shape == (0,):
+                    for sd in d:
+                        unpacked.append((sd, np.array([], dtype=vals.dtype)))
+                elif not vals.ndim == 2 and vals.shape[1] == len(d):
+                    raise ValueError("Values for %s dimensions did not have "
+                                     "the expected shape.")
                 else:
-                    if not isscalar(vals):
-                        vals = np.asarray(vals)
-                        if not vals.ndim == 1 and d in dimensions:
-                            raise ValueError('DictInterface expects data for each column to be flat.')
-                    unpacked.append((d, vals))
-            if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
-                raise ValueError('DictInterface expects data to be of uniform shape.')
-            if isinstance(data, odict_types):
-                data.update(unpacked)
+                    for i, sd in enumerate(d):
+                        unpacked.append((sd, vals[:, i]))
+            elif d not in dimensions:
+                unpacked.append((d, vals))
             else:
-                data = OrderedDict(unpacked)
+                if not isscalar(vals):
+                    vals = np.asarray(vals)
+                    if not vals.ndim == 1 and d in dimensions:
+                        raise ValueError('DictInterface expects data for each column to be flat.')
+                unpacked.append((d, vals))
+
+        if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
+            raise ValueError('DictInterface expects data to be of uniform shape.')
+        if isinstance(data, odict_types):
+            data.update(unpacked)
+        else:
+            data = OrderedDict(unpacked)
+
+        if 'geometry' in data:
+            raise ValueError
+
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
