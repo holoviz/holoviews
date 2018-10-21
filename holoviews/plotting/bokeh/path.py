@@ -201,14 +201,15 @@ class ContourPlot(LegendPlot, PathPlot):
         """
         Returns a Bokeh glyph object.
         """
-        has_holes = properties.pop('has_holes')
+        has_holes = properties.pop('has_holes', False)
+        plot_method = properties.pop('plot_method', None)
         properties = mpl_to_bokeh(properties)
         data = dict(properties, **mapping)
         if has_holes:
-            renderer = plot.multi_polygons(**data)
-        else:
+            plot_method = 'multi_polygons'
+        elif plot_method is None:
             plot_method = self._plot_methods.get('single')
-            renderer = getattr(plot, plot_method)(**data)
+        renderer = getattr(plot, plot_method)(**data)
         return renderer, renderer.glyph
 
 
