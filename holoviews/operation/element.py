@@ -439,35 +439,39 @@ class contours(Operation):
             contour_type = Contours
         vdims = element.vdims[:1]
 
-        if isinstance(self.p.levels, int):
-            levels = self.p.levels+2 if self.p.filled else self.p.levels+3
-            zmin, zmax = element.range(2)
-            levels = np.linspace(zmin, zmax, levels)
-            if zmin == zmax:
-                contours = contour_type([], [xdim, ydim], vdims)
-                return (element * contours) if self.p.overlaid else contours
-        else:
-            levels = self.p.levels
+        levels = self.p.levels
+        zmin, zmax = element.range(2)
+        if zmin == zmax:
+            contours = contour_type([], [xdim, ydim], vdims)
+            return (element * contours) if self.p.overlaid else contours
 
         fig = Figure()
         ax = Axes(fig, [0, 0, 1, 1])
         contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
                                      extent=extent, levels=levels)
+        levels = contour_set.get_array()
+        crange = levels.min(), levels.max()
+        if self.p.filled:
+            levels = levels[:-1] + np.diff(levels)/2.
+            vdims = [vdims[0].clone(range=crange)]
 
         paths = []
-        empty = np.full((1, 2), np.NaN)
-        for level, cset in zip(contour_set.get_array(), contour_set.collections):
-            subpaths = []
-            for path in cset.get_paths():
-                if path.codes is None:
-                    subpaths.append(path.vertices)
-                else:
-                    subpaths += np.split(path.vertices, np.where(path.codes==1)[0][1:])
-            if len(subpaths):
-                subpath = np.concatenate([p for sp in subpaths for p in (sp, empty)][:-1])
-            else:
-                subpath = np.array([])
-            paths.append({(xdim, ydim): subpath, element.vdims[0].name: level})
+        for level, cset in zip(levels, contour_set.collections):
+            for geom in cset.get_paths():
+                exterior = None
+                interiors = []
+                for ncp, cp in enumerate(geom.to_polygons(closed_only=False)):
+                    if ncp == 0:
+                        exterior = cp
+                    else:
+                        interiors.append(cp)
+                if exterior is None:
+                    continue
+                geom = {element.vdims[0].name: level, (xdim, ydim): exterior}
+                if self.p.filled:
+                    geom['holes'] = interiors
+                paths.append(geom)
+
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
             contours = element * contours
