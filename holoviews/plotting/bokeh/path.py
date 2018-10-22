@@ -6,7 +6,7 @@ import numpy as np
 from ...core import util
 from ...element import Polygons
 from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
-from .util import expand_batched_style, mpl_to_bokeh
+from .util import expand_batched_style, mpl_to_bokeh, bokeh_version
 
 
 class PathPlot(ColorbarPlot):
@@ -168,7 +168,7 @@ class ContourPlot(LegendPlot, PathPlot):
         else:
             inds = (1, 0) if self.invert_axes else (0, 1)
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
-            if has_holes:
+            if has_holes and bokeh_version >= '1.0':
                 xsh = []
                 ysh = []
                 for x, y, multi_hole in zip(xs, ys, holes):
