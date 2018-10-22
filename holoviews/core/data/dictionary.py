@@ -115,9 +115,6 @@ class DictInterface(Interface):
         else:
             data = OrderedDict(unpacked)
 
-        if 'geometry' in data:
-            raise ValueError
-
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
