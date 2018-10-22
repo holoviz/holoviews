@@ -441,14 +441,18 @@ class contours(Operation):
 
         levels = self.p.levels
         zmin, zmax = element.range(2)
-        if zmin == zmax:
-            contours = contour_type([], [xdim, ydim], vdims)
-            return (element * contours) if self.p.overlaid else contours
+        if isinstance(self.p.levels, int):
+            if zmin == zmax:
+                contours = contour_type([], [xdim, ydim], vdims)
+                return (element * contours) if self.p.overlaid else contours
+            kwargs = {'N': self.p.levels}
+        else:
+            kwargs = {'levels': levels}
 
         fig = Figure()
         ax = Axes(fig, [0, 0, 1, 1])
         contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
-                                     extent=extent, levels=levels)
+                                     extent=extent, **kwargs)
         levels = np.array(contour_set.get_array())
         crange = levels.min(), levels.max()
         if self.p.filled:
