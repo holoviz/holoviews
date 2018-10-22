@@ -182,7 +182,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
         dist = Bivariate(np.random.rand(10, 2)).opts(plot=dict(filled=True))
         contours = Compositor.collapse_element(dist)
         self.assertIsInstance(contours, Polygons)
-        self.assertEqual(contours.vdims, [Dimension('Density')])
+        self.assertEqual(contours.vdims, [Dimension('Density', range=(0, 1.1))])
 
     def test_bivariate_composite_empty_filled(self):
         dist = Bivariate([]).opts(plot=dict(filled=True))
