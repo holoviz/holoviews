@@ -386,7 +386,12 @@ class DictInterface(Interface):
 
     @classmethod
     def holes(cls, dataset):
-        return [[[np.asarray(h) for h in hs] for hs in dataset.data.get('holes', [[]])]]
+        if 'holes' in dataset.data:
+            return [[[np.asarray(h) for h in hs] for hs in dataset.data['holes']]]
+        else:
+            coords = dataset.data[dataset.kdims[0].name]
+            splits = np.where(np.isnan(coords.astype('float')))[0]
+            return [[]]*(len(splits)+1)
 
 
 Interface.register(DictInterface)

@@ -416,3 +416,13 @@ class Interface(param.Parameterized):
     @classmethod
     def redim(cls, dataset, dimensions):
         return dataset.data
+
+    @classmethod
+    def has_holes(cls, dataset):
+        return False
+
+    @classmethod
+    def holes(cls, dataset):
+        coords = cls.values(dataset.kdims[0])
+        splits = np.where(np.isnan(coords.astype('float')))[0]
+        return [[]]*(len(splits)+1)

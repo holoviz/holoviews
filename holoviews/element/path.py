@@ -30,7 +30,7 @@ class Path(Dataset, Element2D):
     MultiLineString geometries with associated values.
 
     Like all other elements a Path may be defined through an
-    extensible list of interfaces. Natively HoloViews provides the
+    extensible list of interfaces. Natively, HoloViews provides the
     MultiInterface which allows representing paths as lists of regular
     columnar data objects including arrays, dataframes and
     dictionaries of column arrays and scalars.
