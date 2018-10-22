@@ -1,9 +1,11 @@
-from matplotlib.collections import PolyCollection, LineCollection
-import numpy as np
 import param
+import numpy as np
+from matplotlib.collections import PatchCollection, LineCollection
 
 from ...core import util
+from ...element import Polygons
 from .element import ColorbarPlot
+from .util import pathify
 
 
 class PathPlot(ColorbarPlot):
@@ -82,9 +84,16 @@ class ContourPlot(PathPlot):
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
-        paths = element.split(datatype='array', dimensions=element.kdims)
-        if self.invert_axes:
-            paths = [p[:, ::-1] for p in paths]
+
+        if isinstance(element, Polygons):
+            paths = pathify(element)
+            if self.invert_axes:
+                for p in paths:
+                    p._path.vertices = p._path.vertices[:, ::-1]
+        else:
+            paths = element.split(datatype='array', dimensions=element.kdims)
+            if self.invert_axes:
+                paths = [p[:, ::-1] for p in paths]
 
         if cdim is None:
             return (paths,), style, {}
@@ -117,6 +126,6 @@ class PolygonPlot(ContourPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        polys = PolyCollection(*plot_args, **plot_kwargs)
+        polys = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(polys)
         return {'artist': polys}
