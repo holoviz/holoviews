@@ -390,9 +390,7 @@ class DictInterface(Interface):
         if key in dataset.data:
             return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
         else:
-            coords = dataset.data[dataset.kdims[0].name]
-            splits = np.isnan(coords.astype('float')).sum()
-            return [[[]]*(splits+1)]
+            return super(DictInterface, cls).holes(dataset)
 
 
 Interface.register(DictInterface)

@@ -255,6 +255,25 @@ class Polygons(Contours):
     # Defines which key the DictInterface uses to look for holes
     _hole_key = 'holes'
 
+    @property
+    def has_holes(self):
+        """
+        Detects whether any polygon in the Polygons element defines
+        holes. Useful to avoid expanding Polygons unless necessary.
+        """
+        return self.interface.has_holes(self)
+
+    def holes(self):
+        """
+        Returns a list-of-lists-of-lists of hole arrays. The three levels
+        of nesting reflects the structure of the polygons:
+
+          1. The first level of nesting corresponds to the list of geometries
+          2. The second level corresponds to each Polygon in a MultiPolygon
+          3. The third level of nesting allows for multiple holes per Polygon
+        """
+        return self.interface.holes(self)
+
 
 class BaseShape(Path):
     """

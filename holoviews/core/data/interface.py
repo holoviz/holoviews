@@ -423,6 +423,6 @@ class Interface(param.Parameterized):
 
     @classmethod
     def holes(cls, dataset):
-        coords = cls.values(dataset.kdims[0])
+        coords = cls.values(dataset, dataset.kdims[0])
         splits = np.where(np.isnan(coords.astype('float')))[0]
         return [[]]*(len(splits)+1)

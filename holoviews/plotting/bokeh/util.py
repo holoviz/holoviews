@@ -675,3 +675,30 @@ def theme_attr_json(theme, attr):
         return theme._json['attrs'].get(attr, {})
     else:
         return {}
+
+
+def multi_polygons_data(element):
+    """
+    Expands polygon data which contains holes to a bokeh multi_polygons
+    representation. Multi-polygons split by nans are expanded and the
+    correct list of holes is assigned to each sub-polygon.
+    """
+    paths = element.split(datatype='array', dimensions=element.kdims)
+    xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+    holes = element.holes()
+    xsh, ysh = [], []
+    for x, y, multi_hole in zip(xs, ys, holes):
+        xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
+        yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
+        array = np.column_stack([x, y])
+        splits = np.where(np.isnan(array[:, :2].astype('float')).sum(axis=1))[0]
+        arrays = np.split(array, splits+1) if len(splits) else [array]
+        multi_xs, multi_ys = [], []
+        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs)):
+            if i != (len(arrays)-1):
+                path = path[:-1]
+            multi_xs.append([path[:, 0]]+hx)
+            multi_ys.append([path[:, 1]]+hy)
+        xsh.append(multi_xs)
+        ysh.append(multi_ys)
+    return xsh, ysh
