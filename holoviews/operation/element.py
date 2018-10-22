@@ -468,7 +468,7 @@ class contours(Operation):
                 if exterior is None:
                     continue
                 geom = {element.vdims[0].name: level, (xdim, ydim): exterior}
-                if self.p.filled:
+                if self.p.filled and interiors:
                     geom['holes'] = interiors
                 paths.append(geom)
 
