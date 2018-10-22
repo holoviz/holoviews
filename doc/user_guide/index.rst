@@ -39,6 +39,9 @@ concepts in HoloViews:
 * `Gridded Datasets <Gridded_Datasets.html>`_
    Explore gridded data (n-dimensional arrays) with `NumPy <http://www.numpy.org/>`_ and `XArray <http://xarray.pydata.org/>`_.
 
+* `Geometry Data <Geometry_Data.html>`_
+   Working with and representing geometry data such as lines, multi-lines, polygons, multi-polygons and contours.
+
 * `Indexing and Selecting Data <Indexing_and_Selecting_Data.html>`_
    Select and index subsets of your data with HoloViews.
 
@@ -119,6 +122,7 @@ These guides provide detail about specific additional features in HoloViews:
     Live Data <Live_Data>
     Tabular Datasets <Tabular_Datasets>
     Gridded Datasets <Gridded_Datasets>
+    Geometry Data <Geometry_Data>
     Indexing and Selecting Data <Indexing_and_Selecting_Data>
     Transforming Elements <Transforming_Elements>
     Responding to Events <Responding_to_Events>
