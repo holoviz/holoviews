@@ -167,13 +167,29 @@ class ContourPlot(LegendPlot, PathPlot):
             inds = (1, 0) if self.invert_axes else (0, 1)
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             if has_holes:
-                hole_xs, hole_ys = ([[list(h[:, idx]) for h in hole] for hole in holes] for idx in inds)
-                xs = [[[list(x)]+hx] for x, hx in zip(xs, hole_xs)]
-                ys = [[[list(y)]+hy] for y, hy in zip(ys, hole_ys)]
+                xsh = []
+                ysh = []
+                for x, y, multi_hole in zip(xs, ys, holes):
+                    xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
+                    yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
+                    if util.isfinite(x).all():
+                        xsh.append([[x]+xhs[0]])
+                        ysh.append([[y]+yhs[0]])
+                    else:
+                        array = np.column_stack([x, y])
+                        splits = np.where(np.isnan(array[:, :2].astype('float')).sum(axis=1))[0]
+                        arrays = np.split(array, splits+1) if len(splits) else [array]
+                        multi_xs, multi_ys = [], []
+                        for (path, hx, hy) in zip(arrays, xhs, yhs):
+                            multi_xs.append([path[:, 0]]+hx)
+                            multi_ys.append([path[:, 1]]+hy)
+                        xsh.append(multi_xs)
+                        ysh.append(multi_ys)
+                xs = xsh
+                ys = ysh
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
         style['has_holes'] = has_holes
-
         if None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:

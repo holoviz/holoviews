@@ -370,5 +370,13 @@ class DictInterface(Interface):
             return arr if isscalar(arr) else arr[0]
         return new_data
 
+    @classmethod
+    def has_holes(cls, dataset):
+        return 'holes' in dataset.data and isinstance(dataset.data['holes'], list)
+
+    @classmethod
+    def holes(cls, dataset):
+        return [[[np.asarray(h) for h in hs] for hs in dataset.data.get('holes', [[]])]]
+
 
 Interface.register(DictInterface)
