@@ -66,12 +66,14 @@ class PathPlot(ColorbarPlot):
             vals = {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
             for path in element.split():
                 cvals = path.dimension_values(cdim)
+                array = path.array(path.kdims)
                 splits = [0]+list(np.where(np.diff(cvals)!=0)[0]+1)
+                cols = {vd.name: path.dimension_values(vd) for vd in element.vdims}
                 if len(splits) == 1:
                     splits.append(len(path))
                 for (s1, s2) in zip(splits[:-1], splits[1:]):
                     for i, vd in enumerate(element.vdims):
-                        path_val = path.iloc[s1, i+2]
+                        path_val = cols[vd.name][s1]
                         vd_column = util.dimension_sanitizer(vd.name)
                         dt_column = vd_column+'_dt_strings'
                         vals[vd_column].append(path_val)
@@ -79,7 +81,7 @@ class PathPlot(ColorbarPlot):
                             if dt_column not in vals:
                                 vals[dt_column] = []
                             vals[dt_column].append(vd.pprint_value(path_val))
-                    paths.append(path.iloc[s1:s2+1, :2].array())
+                    paths.append(array[s1:s2+1])
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             data = dict(xs=xs, ys=ys, **{d: np.array(vs) for d, vs in vals.items()})
         cmapper = self._get_colormapper(cdim, element, ranges, style)
