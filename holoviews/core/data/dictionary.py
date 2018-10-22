@@ -1,3 +1,4 @@
+import warnings
 from collections import OrderedDict, defaultdict
 try:
     import itertools.izip as zip
@@ -231,6 +232,15 @@ class DictInterface(Interface):
             sorting = util.arglexsort(arrays)
         return OrderedDict([(d, v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting]))
                             for d, v in dataset.data.items()])
+
+
+    @classmethod
+    def range(cls, dataset, dimension):
+        dim = dataset.get_dimension(dimension)
+        column = dataset.data[dim.name]
+        if isscalar(column):
+            return column, column
+        return Interface.range(dataset, dimension)
 
 
     @classmethod
