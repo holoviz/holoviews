@@ -456,22 +456,29 @@ class contours(Operation):
             vdims = [vdims[0].clone(range=crange)]
 
         paths = []
+        empty = np.array([[np.nan, np.nan]])
         for level, cset in zip(levels, contour_set.collections):
+            exteriors = []
+            interiors = []
             for geom in cset.get_paths():
-                exterior = None
-                interiors = []
-                for ncp, cp in enumerate(geom.to_polygons(closed_only=False)):
+                interior = []
+                polys = geom.to_polygons(closed_only=False)
+                for ncp, cp in enumerate(polys):
                     if ncp == 0:
-                        exterior = cp
+                        exteriors.append(cp)
+                        exteriors.append(empty)
                     else:
-                        interiors.append(cp)
-                if exterior is None:
-                    continue
-                geom = {element.vdims[0].name: level, (xdim, ydim): exterior}
-                if self.p.filled and interiors:
-                    geom['holes'] = interiors
-                paths.append(geom)
-
+                        interior.append(cp)
+                if len(polys):
+                    if not interior:
+                        interior.append([])
+                    interiors.append(interior)
+            if not exteriors:
+                continue
+            geom = {element.vdims[0].name: level, (xdim, ydim): np.concatenate(exteriors[:-1])}
+            if self.p.filled and interiors:
+                geom['holes'] = interiors
+            paths.append(geom)
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
             contours = element * contours

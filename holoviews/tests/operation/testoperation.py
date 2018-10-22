@@ -61,9 +61,9 @@ class OperationTests(ComparisonTestCase):
     def test_image_contours(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, levels=[0.5])
-        contour = Contours([[(-0.5,  0.416667, 0.5), (-0.25, 0.5, 0.5),
-                             (np.NaN, np.NaN, 0.5), (0.25, 0.5, 0.5),
-                             (0.5, 0.45, 0.5)]],
+        contour = Contours([[(-0.166667,  0.333333, 0.5), (-0.333333, 0.277778, 0.5),
+                             (np.NaN, np.NaN, 0.5), (0.333333, 0.3, 0.5),
+                             (0.166667, 0.333333, 0.5)]],
                             vdims=img.vdims)
         self.assertEqual(op_contours, contour)
 
@@ -101,9 +101,9 @@ class OperationTests(ComparisonTestCase):
     def test_image_contours_filled(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, filled=True, levels=[2, 2.5])
-        data = [[(0., 0.333333, 2), (0.5, 0.3, 2), (0.5, 0.25, 2), (0., 0.25, 2),
-                 (-0.5, 0.08333333, 2), (-0.5, 0.16666667, 2), (0., 0.33333333, 2)]]
-        polys = Polygons(data, vdims=img.vdims)
+        data = [[(0., 0.166667, 2.25), (0.333333, 0.166667, 2.25), (0.333333, 0.2, 2.25), (0., 0.222222, 2.25),
+                 (-0.333333, 0.111111, 2.25), (-0.333333, 0.055556, 2.25), (0., 0.166667, 2.25)]]
+        polys = Polygons(data, vdims=img.vdims[0].clone(range=(2, 2.5)))
         self.assertEqual(op_contours, polys)
 
     def test_points_histogram(self):
