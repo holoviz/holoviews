@@ -470,8 +470,6 @@ class contours(Operation):
                     else:
                         interior.append(cp)
                 if len(polys):
-                    if not interior:
-                        interior.append([])
                     interiors.append(interior)
             if not exteriors:
                 continue
