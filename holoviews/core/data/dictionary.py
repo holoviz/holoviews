@@ -382,12 +382,16 @@ class DictInterface(Interface):
 
     @classmethod
     def has_holes(cls, dataset):
-        return 'holes' in dataset.data and isinstance(dataset.data['holes'], list)
+        from holoviews.element import Polygons
+        key = Polygons._hole_key
+        return key in dataset.data and isinstance(dataset.data[key], list)
 
     @classmethod
     def holes(cls, dataset):
-        if 'holes' in dataset.data:
-            return [[[np.asarray(h) for h in hs] for hs in dataset.data['holes']]]
+        from holoviews.element import Polygons
+        key = Polygons._hole_key
+        if key in dataset.data:
+            return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
         else:
             coords = dataset.data[dataset.kdims[0].name]
             splits = np.where(np.isnan(coords.astype('float')))[0]

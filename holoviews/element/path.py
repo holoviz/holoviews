@@ -252,6 +252,9 @@ class Polygons(Contours):
 
     _level_vdim = Dimension('Value')
 
+    # Defines which key the DictInterface uses to look for holes
+    _hole_key = 'holes'
+
 
 class BaseShape(Path):
     """
