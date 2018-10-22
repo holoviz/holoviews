@@ -62,8 +62,6 @@ class MultiInterface(Interface):
             ds.data = d
             ds.interface.validate(ds, vdims)
             if isinstance(dataset, Polygons) and ds.interface is DictInterface:
-                if not ds.interface.has_holes(ds):
-                    return
                 holes = ds.interface.holes(ds)
                 if not isinstance(holes, list):
                     raise DataError('Polygons holes must be declared as a list-of-lists.', cls)

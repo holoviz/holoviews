@@ -5,7 +5,7 @@ from matplotlib.collections import PatchCollection, LineCollection
 from ...core import util
 from ...element import Polygons
 from .element import ColorbarPlot
-from .util import pathify
+from .util import polygons_to_path_patches
 
 
 class PathPlot(ColorbarPlot):
@@ -86,7 +86,8 @@ class ContourPlot(PathPlot):
             cdim = element.get_dimension(cidx)
 
         if isinstance(element, Polygons):
-            paths = pathify(element)
+            subpaths = polygons_to_path_patches(element)
+            paths = [path for subpath in subpaths for path in subpath]
             if self.invert_axes:
                 for p in paths:
                     p._path.vertices = p._path.vertices[:, ::-1]
@@ -102,9 +103,15 @@ class ContourPlot(PathPlot):
             array = np.full(len(paths), element.level)
         else:
             array = element.dimension_values(cdim, expanded=False)
+            if len(paths) != len(array):
+                # If there are multi-geometries the list of scalar values
+                # will not match the list of paths and has to be expanded
+                array = np.array([v for v, sps in zip(array, subpaths)
+                                  for _ in range(len(sps))])
+
         if array.dtype.kind not in 'uif':
             array = np.searchsorted(np.unique(array), array)
-        style['array']= array
+        style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
         style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}

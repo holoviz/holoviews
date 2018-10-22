@@ -166,6 +166,7 @@ class ContourPlot(LegendPlot, PathPlot):
         else:
             if has_holes and bokeh_version >= '1.0':
                 xs, ys = multi_polygons_data(element)
+                style['has_holes'] = has_holes
             else:
                 paths = element.split(datatype='array', dimensions=element.kdims)
                 xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
@@ -173,7 +174,6 @@ class ContourPlot(LegendPlot, PathPlot):
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-        style['has_holes'] = has_holes
         if None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
@@ -182,7 +182,7 @@ class ContourPlot(LegendPlot, PathPlot):
         if cdim is None:
             return data, mapping, style
 
-        ncontours = len(paths)
+        ncontours = len(xs)
         dim_name = util.dimension_sanitizer(cdim.name)
         if element.level is not None:
             values = np.full(ncontours, float(element.level))

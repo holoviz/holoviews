@@ -187,9 +187,11 @@ def get_raster_array(image):
             data = np.flipud(data)
     return data
 
+
 def ring_coding(array):
     """
-    Produces matplotlib Path codes for array of coordinates
+    Produces matplotlib Path codes for exterior and interior rings
+    of a polygon geometry.
     """
     # The codes will be all "LINETO" commands, except for "MOVETO"s at the
     # beginning of each subpath
@@ -198,10 +200,12 @@ def ring_coding(array):
     codes[0] = Path.MOVETO
     return codes
 
-def pathify(element):
+
+def polygons_to_path_patches(element):
     """
-    Converts Polygons into list of matplotlib.patches.PathPatch objects
-    including any specified holes.
+    Converts Polygons into list of lists of matplotlib.patches.PathPatch
+    objects including any specified holes. Each list represents one
+    (multi-)polygon.
     """
     paths = element.split(datatype='array', dimensions=element.kdims)
     has_holes = isinstance(element, Polygons) and element.interface.has_holes(element)
@@ -210,9 +214,14 @@ def pathify(element):
     for i, path in enumerate(paths):
         splits = np.where(np.isnan(path[:, :2].astype('float')).sum(axis=1))[0]
         arrays = np.split(path, splits+1) if len(splits) else [path]
+        subpath = []
         for j, array in enumerate(arrays):
+            if j != (len(arrays)-1):
+                array = array[:-1]
             interiors = holes[i][j] if has_holes else []
             vertices = np.concatenate([array]+interiors)
-            codes = np.concatenate([ring_coding(array)]+[ring_coding(h) for h in interiors])
-            mpl_paths.append(PathPatch(Path(vertices, codes)))
+            codes = np.concatenate([ring_coding(array)]+
+                                   [ring_coding(h) for h in interiors])
+            subpath.append(PathPatch(Path(vertices, codes)))
+        mpl_paths.append(subpath)
     return mpl_paths
