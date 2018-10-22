@@ -449,7 +449,7 @@ class contours(Operation):
         ax = Axes(fig, [0, 0, 1, 1])
         contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
                                      extent=extent, levels=levels)
-        levels = contour_set.get_array()
+        levels = np.array(contour_set.get_array())
         crange = levels.min(), levels.max()
         if self.p.filled:
             levels = levels[:-1] + np.diff(levels)/2.
