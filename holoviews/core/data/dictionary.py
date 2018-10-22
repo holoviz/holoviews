@@ -1,4 +1,3 @@
-import warnings
 from collections import OrderedDict, defaultdict
 try:
     import itertools.izip as zip

@@ -15,7 +15,7 @@ from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int)
 from ..element.chart import Histogram, Scatter
-from ..element.raster import Raster, Image, RGB, QuadMesh
+from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
