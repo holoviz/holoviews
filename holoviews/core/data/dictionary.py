@@ -391,7 +391,7 @@ class DictInterface(Interface):
         else:
             coords = dataset.data[dataset.kdims[0].name]
             splits = np.where(np.isnan(coords.astype('float')))[0]
-            return [[]]*(len(splits)+1)
+            return [[[]]*(len(splits)+1)]
 
 
 Interface.register(DictInterface)
