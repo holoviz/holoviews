@@ -50,7 +50,8 @@ except ImportError:
 
 if 'array' not in datatypes:
     datatypes.append('array')
-
+if 'multitabular' not in datatypes:
+    datatypes.append('multitabular')
 
 
 def concat(datasets, datatype=None):
