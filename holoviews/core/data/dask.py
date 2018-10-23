@@ -75,9 +75,9 @@ class DaskInterface(PandasInterface):
         return (len(dataset.data), len(dataset.data.columns))
 
     @classmethod
-    def range(cls, columns, dimension):
+    def range(cls, dataset, dimension):
         import dask.dataframe as dd
-        column = columns.data[columns.get_dimension(dimension).name]
+        column = dataset.data[dataset.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
             return (column[0], column[-1]) if len(column) else (None, None)
@@ -85,14 +85,14 @@ class DaskInterface(PandasInterface):
             return dd.compute(column.min(), column.max())
 
     @classmethod
-    def sort(cls, columns, by=[], reverse=False):
-        columns.warning('Dask dataframes do not support sorting')
-        return columns.data
+    def sort(cls, dataset, by=[], reverse=False):
+        dataset.warning('Dask dataframes do not support sorting')
+        return dataset.data
 
     @classmethod
-    def values(cls, columns, dim, expanded=True, flat=True):
-        dim = columns.get_dimension(dim)
-        data = columns.data[dim.name]
+    def values(cls, dataset, dim, expanded=True, flat=True):
+        dim = dataset.get_dimension(dim)
+        data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
         return data.compute().values
@@ -141,34 +141,34 @@ class DaskInterface(PandasInterface):
         return select_mask
 
     @classmethod
-    def select(cls, columns, selection_mask=None, **selection):
-        df = columns.data
+    def select(cls, dataset, selection_mask=None, **selection):
+        df = dataset.data
         if selection_mask is not None:
             return df[selection_mask]
-        selection_mask = cls.select_mask(columns, selection)
-        indexed = cls.indexed(columns, selection)
+        selection_mask = cls.select_mask(dataset, selection)
+        indexed = cls.indexed(dataset, selection)
         df = df if selection_mask is None else df[selection_mask]
-        if indexed and len(df) == 1 and len(columns.vdims) == 1:
-            return df[columns.vdims[0].name].compute().iloc[0]
+        if indexed and len(df) == 1 and len(dataset.vdims) == 1:
+            return df[dataset.vdims[0].name].compute().iloc[0]
         return df
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        index_dims = [columns.get_dimension(d) for d in dimensions]
-        element_dims = [kdim for kdim in columns.kdims
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        index_dims = [dataset.get_dimension(d) for d in dimensions]
+        element_dims = [kdim for kdim in dataset.kdims
                         if kdim not in index_dims]
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):
-            group_kwargs = dict(util.get_param_values(columns),
+            group_kwargs = dict(util.get_param_values(dataset),
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
         data = []
         group_by = [d.name for d in index_dims]
-        groupby = columns.data.groupby(group_by)
+        groupby = dataset.data.groupby(group_by)
         if len(group_by) == 1:
-            column = columns.data[group_by[0]]
+            column = dataset.data[group_by[0]]
             if column.dtype.name == 'category':
                 try:
                     indices = ((ind,) for ind in column.cat.categories)
@@ -177,7 +177,7 @@ class DaskInterface(PandasInterface):
             else:
                 indices = ((ind,) for ind in column.unique().compute())
         else:
-            group_tuples = columns.data[group_by].itertuples()
+            group_tuples = dataset.data[group_by].itertuples()
             indices = util.unique_iterator(ind[1:] for ind in group_tuples)
         for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
@@ -193,10 +193,10 @@ class DaskInterface(PandasInterface):
             return container_type(data)
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
-        data = columns.data
-        cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', label='name')
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        data = dataset.data
+        cols = [d.name for d in dataset.kdims if d in dimensions]
+        vdims = dataset.dimensions('value', label='name')
         dtypes = data.dtypes
         numeric = [c for c, dtype in zip(dtypes.index, dtypes.values)
                    if dtype.kind in 'iufc' and c in vdims]
@@ -219,9 +219,9 @@ class DaskInterface(PandasInterface):
             return pd.DataFrame(agg.compute()).T
 
     @classmethod
-    def unpack_scalar(cls, columns, data):
+    def unpack_scalar(cls, dataset, data):
         """
-        Given a columns object and data in the appropriate format for
+        Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
         import dask.dataframe as dd
@@ -232,9 +232,9 @@ class DaskInterface(PandasInterface):
         return data.iat[0,0]
 
     @classmethod
-    def sample(cls, columns, samples=[]):
-        data = columns.data
-        dims = columns.dimensions('key', label='name')
+    def sample(cls, dataset, samples=[]):
+        data = dataset.data
+        dims = dataset.dimensions('key', label='name')
         mask = None
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
@@ -247,8 +247,8 @@ class DaskInterface(PandasInterface):
         return data[mask]
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
-        data = columns.data
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        data = dataset.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
                 err = ('Dask dataframe does not support assigning '
@@ -269,11 +269,11 @@ class DaskInterface(PandasInterface):
         return dd.concat(dataframes)
 
     @classmethod
-    def dframe(cls, columns, dimensions):
+    def dframe(cls, dataset, dimensions):
         if dimensions:
-            return columns.data[dimensions].compute()
+            return dataset.data[dimensions].compute()
         else:
-            return columns.data.compute()
+            return dataset.data.compute()
 
     @classmethod
     def nonzero(cls, dataset):

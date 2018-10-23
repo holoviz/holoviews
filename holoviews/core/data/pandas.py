@@ -25,10 +25,10 @@ class PandasInterface(Interface):
     datatype = 'dataframe'
 
     @classmethod
-    def dimension_type(cls, columns, dim):
-        name = columns.get_dimension(dim, strict=True).name
-        idx = list(columns.data.columns).index(name)
-        return columns.data.dtypes[idx].type
+    def dimension_type(cls, dataset, dim):
+        name = dataset.get_dimension(dim, strict=True).name
+        idx = list(dataset.data.columns).index(name)
+        return dataset.data.dtypes[idx].type
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -151,10 +151,10 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def range(cls, columns, dimension):
-        column = columns.data[columns.get_dimension(dimension, strict=True).name]
+    def range(cls, dataset, dimension):
+        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
         if column.dtype.kind == 'O':
-            if (not isinstance(columns.data, pd.DataFrame) or
+            if (not isinstance(dataset.data, pd.DataFrame) or
                         LooseVersion(pd.__version__) < '0.17.0'):
                 column = column.sort(inplace=False)
             else:
@@ -180,20 +180,20 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        index_dims = [columns.get_dimension(d, strict=True) for d in dimensions]
-        element_dims = [kdim for kdim in columns.kdims
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
+        element_dims = [kdim for kdim in dataset.kdims
                         if kdim not in index_dims]
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):
-            group_kwargs = dict(util.get_param_values(columns),
+            group_kwargs = dict(util.get_param_values(dataset),
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
         group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(group_by, sort=False)]
+                dataset.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
@@ -202,10 +202,10 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
-        data = columns.data
-        cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', label='name')
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        data = dataset.data
+        cols = [d.name for d in dataset.kdims if d in dimensions]
+        vdims = dataset.dimensions('value', label='name')
         reindexed = data[cols+vdims]
         if function in [np.std, np.var]:
             # Fix for consistency with other backend
@@ -223,9 +223,9 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def unpack_scalar(cls, columns, data):
+    def unpack_scalar(cls, dataset, data):
         """
-        Given a columns object and data in the appropriate format for
+        Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
         if len(data) != 1 or len(data.columns) > 1:
@@ -234,9 +234,9 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def reindex(cls, columns, kdims=None, vdims=None):
+    def reindex(cls, dataset, kdims=None, vdims=None):
         # DataFrame based tables don't need to be reindexed
-        return columns.data
+        return dataset.data
 
 
     @classmethod
@@ -246,40 +246,40 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def sort(cls, columns, by=[], reverse=False):
+    def sort(cls, dataset, by=[], reverse=False):
         import pandas as pd
-        cols = [columns.get_dimension(d, strict=True).name for d in by]
+        cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
-        if (not isinstance(columns.data, pd.DataFrame) or
+        if (not isinstance(dataset.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
-            return columns.data.sort(columns=cols, ascending=not reverse)
-        return columns.data.sort_values(by=cols, ascending=not reverse)
+            return dataset.data.sort(columns=cols, ascending=not reverse)
+        return dataset.data.sort_values(by=cols, ascending=not reverse)
 
 
     @classmethod
-    def select(cls, columns, selection_mask=None, **selection):
-        df = columns.data
+    def select(cls, dataset, selection_mask=None, **selection):
+        df = dataset.data
         if selection_mask is None:
-            selection_mask = cls.select_mask(columns, selection)
-        indexed = cls.indexed(columns, selection)
+            selection_mask = cls.select_mask(dataset, selection)
+        indexed = cls.indexed(dataset, selection)
         df = df.iloc[selection_mask]
-        if indexed and len(df) == 1 and len(columns.vdims) == 1:
-            return df[columns.vdims[0].name].iloc[0]
+        if indexed and len(df) == 1 and len(dataset.vdims) == 1:
+            return df[dataset.vdims[0].name].iloc[0]
         return df
 
 
     @classmethod
-    def values(cls, columns, dim, expanded=True, flat=True):
-        dim = columns.get_dimension(dim, strict=True)
-        data = columns.data[dim.name]
+    def values(cls, dataset, dim, expanded=True, flat=True):
+        dim = dataset.get_dimension(dim, strict=True)
+        data = dataset.data[dim.name]
         if not expanded:
             return data.unique()
         return data.values
 
 
     @classmethod
-    def sample(cls, columns, samples=[]):
-        data = columns.data
+    def sample(cls, dataset, samples=[]):
+        data = dataset.data
         mask = False
         for sample in samples:
             sample_mask = True
@@ -291,8 +291,8 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
-        data = columns.data.copy()
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        data = dataset.data.copy()
         if dimension.name not in data:
             data.insert(dim_pos, dimension.name, values)
         return data
@@ -311,11 +311,11 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def dframe(cls, columns, dimensions):
+    def dframe(cls, dataset, dimensions):
         if dimensions:
-            return columns.data[dimensions]
+            return dataset.data[dimensions]
         else:
-            return columns.data.copy()
+            return dataset.data.copy()
 
 
     @classmethod

@@ -484,7 +484,7 @@ class XArrayInterface(GridInterface):
         return data
 
     @classmethod
-    def sample(cls, columns, samples=[]):
+    def sample(cls, dataset, samples=[]):
         raise NotImplementedError
 
     @classmethod

@@ -172,15 +172,15 @@ class MultiInterface(Interface):
         return [s[0] for s in np.array([{0: p} for p in dataset.data])[selection]]
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError('Aggregation currently not implemented')
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         raise NotImplementedError('Grouping currently not implemented')
 
     @classmethod
-    def sample(cls, columns, samples=[]):
+    def sample(cls, dataset, samples=[]):
         raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
