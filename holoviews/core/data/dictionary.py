@@ -43,7 +43,10 @@ class DictInterface(Interface):
             vdims = eltype.vdims
 
         dimensions = [dimension_name(d) for d in kdims + vdims]
-        if isinstance(data, tuple):
+        if (isinstance(data, list) and all(isinstance(d, dict) for d in data) and
+            not all(c in d for d in data for c in dimensions)):
+            raise ValueError('DictInterface could not find specified dimensions in the data.')
+        elif isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}

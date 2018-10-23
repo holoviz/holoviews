@@ -126,7 +126,8 @@ class PandasInterface(Interface):
                 if not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
-            elif isinstance(data, dict) and any(c not in data for c in columns):
+            elif ((isinstance(data, dict) and any(c not in data for c in columns)) or
+                  (isinstance(data, list) and any(isinstance(d, dict) and c not in d for d in data for c in columns))):
                 raise ValueError('PandasInterface could not find specified dimensions in the data.')
             else:
                 data = pd.DataFrame(data, columns=columns)
