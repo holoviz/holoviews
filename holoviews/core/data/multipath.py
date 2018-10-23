@@ -182,7 +182,6 @@ class MultiInterface(Interface):
         # Get dimensions information
         dimensions = [dataset.get_dimension(d) for d in dimensions]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
-        vdims = dataset.vdims
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
