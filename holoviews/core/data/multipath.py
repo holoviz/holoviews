@@ -1,8 +1,8 @@
 import numpy as np
 
+from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from ..util import max_range, get_param_values, unique_iterator, isscalar
 from .dictionary import DictInterface
 from .interface import Interface, DataError
 
@@ -112,7 +112,7 @@ class MultiInterface(Interface):
         for d in dataset.data:
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
-        return max_range(ranges)
+        return util.max_range(ranges)
 
 
     @classmethod
@@ -188,7 +188,7 @@ class MultiInterface(Interface):
         group_kwargs = {}
         group_type = list if group_type == 'raw' else group_type
         if issubclass(group_type, Element):
-            group_kwargs.update(get_param_values(dataset))
+            group_kwargs.update(util.get_param_values(dataset))
             group_kwargs['kdims'] = kdims
         group_kwargs.update(kwargs)
 
@@ -208,7 +208,7 @@ class MultiInterface(Interface):
         ds = Dataset(values, dimensions)
         keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
         grouped_data = []
-        for unique_key in unique_iterator(keys):
+        for unique_key in util.unique_iterator(keys):
             mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key)))
             selection = [data for data, m in zip(dataset.data, mask) if m]
             group_data = group_type(selection, **group_kwargs)
@@ -334,7 +334,7 @@ class MultiInterface(Interface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not len(dataset.data):
             return dataset.data
-        elif values is None or np.isscalar(values):
+        elif values is None or util.isscalar(values):
             values = [values]*len(dataset.data)
         elif not len(values) == len(dataset.data):
             raise ValueError('Added dimension values must be scalar or '
