@@ -5,6 +5,7 @@ Tests for the Dataset Element types.
 from unittest import SkipTest
 
 import numpy as np
+from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path
 from holoviews.element.comparison import ComparisonTestCase
@@ -155,3 +156,30 @@ class MultiInterfaceTest(ComparisonTestCase):
     def test_multi_values_empty(self):
         mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.dimension_values(0), np.array([]))
+
+    def test_multi_dict_groupby(self):
+        arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
+        mds = Dataset(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        for i, (k, ds) in enumerate(mds.groupby('y').items()):
+            self.assertEqual(k, arrays[i]['y'])
+            self.assertEqual(ds, Dataset([arrays[i]], kdims=['x']))
+
+    def test_multi_dict_groupby_non_scalar(self):
+        arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
+        mds = Dataset(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        with self.assertRaises(ValueError):
+            mds.groupby('x')
+
+    def test_multi_array_groupby(self):
+        arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
+        mds = Dataset(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        for i, (k, ds) in enumerate(mds.groupby('y').items()):
+            self.assertEqual(k, arrays[i][0, 1])
+            self.assertEqual(ds, Dataset([arrays[i]], kdims=['x']))
+
+    def test_multi_array_groupby_non_scalar(self):
+        arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
+        mds = Dataset(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        with self.assertRaises(ValueError):
+            mds.groupby('x')
+
