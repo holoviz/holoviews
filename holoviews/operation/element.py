@@ -439,13 +439,14 @@ class contours(Operation):
             contour_type = Contours
         vdims = element.vdims[:1]
 
+        kwargs = {}
         levels = self.p.levels
         zmin, zmax = element.range(2)
         if isinstance(self.p.levels, int):
             if zmin == zmax:
                 contours = contour_type([], [xdim, ydim], vdims)
                 return (element * contours) if self.p.overlaid else contours
-            kwargs = {'N': self.p.levels}
+            data += (levels,)
         else:
             kwargs = {'levels': levels}
 
