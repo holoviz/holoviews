@@ -1,6 +1,8 @@
 import numpy as np
 
-from ..util import max_range
+from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
+from ..util import max_range, get_param_values, unique_iterator, isscalar
 from .dictionary import DictInterface
 from .interface import Interface, DataError
 
@@ -177,7 +179,46 @@ class MultiInterface(Interface):
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        raise NotImplementedError('Grouping currently not implemented')
+        # Get dimensions information
+        dimensions = [dataset.get_dimension(d) for d in dimensions]
+        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+        vdims = dataset.vdims
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = list if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(get_param_values(dataset))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        # Find all the keys along supplied dimensions
+        values = []
+        for d in dimensions:
+            if not cls.isscalar(dataset, d):
+                raise ValueError('MultiInterface can only apply groupby '
+                                 'on scalar dimensions, %s dimension'
+                                 'is not scalar' % d)
+            vals = cls.values(dataset, d, False, True)
+            values.append(vals)
+        values = tuple(values)
+
+        # Iterate over the unique entries applying selection masks
+        from . import Dataset
+        ds = Dataset(values, dimensions)
+        keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
+        grouped_data = []
+        for unique_key in unique_iterator(keys):
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key)))
+            selection = [data for data, m in zip(dataset.data, mask) if m]
+            group_data = group_type(selection, **group_kwargs)
+            grouped_data.append((unique_key, group_data))
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
 
     @classmethod
     def sample(cls, dataset, samples=[]):
