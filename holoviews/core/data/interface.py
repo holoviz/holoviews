@@ -337,7 +337,9 @@ class Interface(param.Parameterized):
         else:
             try:
                 assert column.dtype.kind not in 'SUO'
-                return (np.nanmin(column), np.nanmax(column))
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                    return (np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):
@@ -414,3 +416,13 @@ class Interface(param.Parameterized):
     @classmethod
     def redim(cls, dataset, dimensions):
         return dataset.data
+
+    @classmethod
+    def has_holes(cls, dataset):
+        return False
+
+    @classmethod
+    def holes(cls, dataset):
+        coords = cls.values(dataset, dataset.kdims[0])
+        splits = np.where(np.isnan(coords.astype('float')))[0]
+        return [[[]]*(len(splits)+1)]

@@ -4,8 +4,9 @@ import param
 import numpy as np
 
 from ...core import util
+from ...element import Polygons
 from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
-from .util import expand_batched_style
+from .util import expand_batched_style, mpl_to_bokeh, bokeh_version, multi_polygons_data
 
 
 class PathPlot(ColorbarPlot):
@@ -65,12 +66,14 @@ class PathPlot(ColorbarPlot):
             vals = {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
             for path in element.split():
                 cvals = path.dimension_values(cdim)
+                array = path.array(path.kdims)
                 splits = [0]+list(np.where(np.diff(cvals)!=0)[0]+1)
+                cols = {vd.name: path.dimension_values(vd) for vd in element.vdims}
                 if len(splits) == 1:
                     splits.append(len(path))
                 for (s1, s2) in zip(splits[:-1], splits[1:]):
                     for i, vd in enumerate(element.vdims):
-                        path_val = path.iloc[s1, i+2]
+                        path_val = cols[vd.name][s1]
                         vd_column = util.dimension_sanitizer(vd.name)
                         dt_column = vd_column+'_dt_strings'
                         vals[vd_column].append(path_val)
@@ -78,7 +81,7 @@ class PathPlot(ColorbarPlot):
                             if dt_column not in vals:
                                 vals[dt_column] = []
                             vals[dt_column].append(vd.pprint_value(path_val))
-                    paths.append(path.iloc[s1:s2+1, :2].array())
+                    paths.append(array[s1:s2+1])
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             data = dict(xs=xs, ys=ys, **{d: np.array(vs) for d, vs in vals.items()})
         cmapper = self._get_colormapper(cdim, element, ranges, style)
@@ -157,15 +160,20 @@ class ContourPlot(LegendPlot, PathPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
     def get_data(self, element, ranges, style):
-        paths = element.split(datatype='array', dimensions=element.kdims)
+        has_holes = isinstance(element, Polygons) and element.has_holes
         if self.static_source:
             data = dict()
         else:
-            inds = (1, 0) if self.invert_axes else (0, 1)
-            xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+            if has_holes and bokeh_version >= '1.0':
+                xs, ys = multi_polygons_data(element)
+                style['has_holes'] = has_holes
+            else:
+                paths = element.split(datatype='array', dimensions=element.kdims)
+                xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+            if self.invert_axes:
+                xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-
         if None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
@@ -174,7 +182,7 @@ class ContourPlot(LegendPlot, PathPlot):
         if cdim is None:
             return data, mapping, style
 
-        ncontours = len(paths)
+        ncontours = len(xs)
         dim_name = util.dimension_sanitizer(cdim.name)
         if element.level is not None:
             values = np.full(ncontours, float(element.level))
@@ -188,6 +196,24 @@ class ContourPlot(LegendPlot, PathPlot):
         if self.show_legend:
             mapping['legend'] = dim_name
         return data, mapping, style
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        has_holes = properties.pop('has_holes', False)
+        plot_method = properties.pop('plot_method', None)
+        properties = mpl_to_bokeh(properties)
+        data = dict(properties, **mapping)
+        if has_holes:
+            plot_method = 'multi_polygons'
+        elif plot_method is None:
+            plot_method = self._plot_methods.get('single')
+        renderer = getattr(plot, plot_method)(**data)
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
+        return renderer, renderer.glyph
+
 
 
 class PolygonPlot(ContourPlot):

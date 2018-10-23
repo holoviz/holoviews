@@ -1,6 +1,7 @@
 import numpy as np
 
 from ..util import max_range
+from .dictionary import DictInterface
 from .interface import Interface, DataError
 
 
@@ -54,10 +55,22 @@ class MultiInterface(Interface):
     def validate(cls, dataset, vdims=True):
         if not dataset.data:
             return
+
+        from holoviews.element import Polygons
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             ds.interface.validate(ds, vdims)
+            if isinstance(dataset, Polygons) and ds.interface is DictInterface:
+                holes = ds.interface.holes(ds)
+                if not isinstance(holes, list):
+                    raise DataError('Polygons holes must be declared as a list-of-lists.', cls)
+                subholes = holes[0]
+                coords = ds.data[ds.kdims[0].name]
+                splits = np.isnan(coords.astype('float')).sum()
+                if len(subholes) != (splits+1):
+                    raise DataError('Polygons with holes containing multi-geometries '
+                                    'must declare a list of holes for each geometry.', cls)
 
 
     @classmethod
@@ -98,6 +111,27 @@ class MultiInterface(Interface):
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
         return max_range(ranges)
+
+
+    @classmethod
+    def has_holes(cls, dataset):
+        if not dataset.data:
+            return False
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            if ds.interface.has_holes(ds):
+                return True
+        return False
+
+    @classmethod
+    def holes(cls, dataset):
+        holes = []
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            holes += ds.interface.holes(ds)
+        return holes
 
 
     @classmethod

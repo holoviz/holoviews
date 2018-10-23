@@ -1,9 +1,11 @@
 import datetime as dt
+from unittest import SkipTest
 
 import numpy as np
 from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
+from holoviews.plotting.bokeh.util import bokeh_version
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -161,6 +163,36 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(len(source.data['ys']), 0)
         self.assertEqual(len(source.data['Intensity']), 0)
 
+    def test_polygon_with_hole_plot(self):
+        if bokeh_version < '1.0':
+            raise SkipTest('Plotting Polygons with holes requires bokeh >= 1.0')
+        xs = [1, 2, 3]
+        ys = [2, 0, 7]
+        holes = [[[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        plot = bokeh_renderer.get_plot(poly)
+        source = plot.handles['source']
+        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3]), np.array([1.5, 2, 1.6]),
+                                              np.array([2.1, 2.5, 2.3])]]])
+        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
+                                              np.array([4.5, 5, 3.5])]]])
+
+    def test_multi_polygon_hole_plot(self):
+        if bokeh_version < '1.0':
+            raise SkipTest('Plotting Polygons with holes requires bokeh >= 1.0')
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
+        plot = bokeh_renderer.get_plot(poly)
+        source = plot.handles['source']
+        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3]), np.array([1.5, 2, 1.6]),
+                                               np.array([2.1, 2.5, 2.3])], [np.array([6, 7, 3])]]])
+        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
+                                               np.array([4.5, 5, 3.5])], [np.array([7, 5, 2])]]])
 
 
 class TestContoursPlot(TestBokehPlot):

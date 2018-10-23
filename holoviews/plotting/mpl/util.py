@@ -5,12 +5,13 @@ from distutils.version import LooseVersion
 import numpy as np
 import matplotlib
 from matplotlib import ticker
+from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
 mpl_version = LooseVersion(matplotlib.__version__)  # noqa
 
 from ...core.util import basestring, _getargspec
-from ...element import Raster, RGB
+from ...element import Raster, RGB, Polygons
 
 
 def wrap_formatter(formatter):
@@ -185,3 +186,42 @@ def get_raster_array(image):
         else:
             data = np.flipud(data)
     return data
+
+
+def ring_coding(array):
+    """
+    Produces matplotlib Path codes for exterior and interior rings
+    of a polygon geometry.
+    """
+    # The codes will be all "LINETO" commands, except for "MOVETO"s at the
+    # beginning of each subpath
+    n = len(array)
+    codes = np.ones(n, dtype=Path.code_type) * Path.LINETO
+    codes[0] = Path.MOVETO
+    return codes
+
+
+def polygons_to_path_patches(element):
+    """
+    Converts Polygons into list of lists of matplotlib.patches.PathPatch
+    objects including any specified holes. Each list represents one
+    (multi-)polygon.
+    """
+    paths = element.split(datatype='array', dimensions=element.kdims)
+    has_holes = isinstance(element, Polygons) and element.interface.has_holes(element)
+    holes = element.interface.holes(element) if has_holes else None
+    mpl_paths = []
+    for i, path in enumerate(paths):
+        splits = np.where(np.isnan(path[:, :2].astype('float')).sum(axis=1))[0]
+        arrays = np.split(path, splits+1) if len(splits) else [path]
+        subpath = []
+        for j, array in enumerate(arrays):
+            if j != (len(arrays)-1):
+                array = array[:-1]
+            interiors = holes[i][j] if has_holes else []
+            vertices = np.concatenate([array]+interiors)
+            codes = np.concatenate([ring_coding(array)]+
+                                   [ring_coding(h) for h in interiors])
+            subpath.append(PathPatch(Path(vertices, codes)))
+        mpl_paths.append(subpath)
+    return mpl_paths
