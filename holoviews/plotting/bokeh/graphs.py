@@ -12,10 +12,13 @@ from ...core.options import Cycle
 from .chart import ColorbarPlot, PointPlot
 from .element import (CompositeElementPlot, LegendPlot, line_properties,
                       fill_properties, text_properties)
-from ..util import process_cmap
+from ..util import process_cmap, compute_sizes
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+      Index of the dimension from which the size will the drawn""")
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -32,6 +35,20 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     inspection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when hovering over connected edges and nodes respectively.""")
+
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
+
+    size_fn = param.Callable(default=np.abs, doc="""
+      Function applied to size values before applying scaling,
+      to remove values lower than zero.""")
 
     tools = param.List(default=['hover', 'tap'], doc="""
         A list of plugin tools to use on the plot.""")
@@ -143,6 +160,29 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return path_data, mapping
 
 
+    def _get_size_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        sdim = element.get_dimension(self.size_index)
+        if not sdim or self.static_source:
+            return data, mapping
+
+        map_key = 'size_' + sdim.name
+        ms = style.get('size', np.sqrt(6))**2
+        sizes = element.dimension_values(self.size_index)
+        sizes = compute_sizes(sizes, self.size_fn,
+                              self.scaling_factor,
+                              self.scaling_method, ms)
+        if sizes is None:
+            eltype = type(element).__name__
+            self.warning('%s dimension is not numeric, cannot '
+                         'use to scale %s size.' % (sdim.pprint_label, eltype))
+        else:
+            data[map_key] = np.sqrt(sizes)
+            mapping['size'] = map_key
+
+        return data, mapping
+
+
     def get_data(self, element, ranges, style):
         # Force static source to False
         static = self.static_source
@@ -163,6 +203,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             layout = {str(k): (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
         point_data = {'index': index}
+
         cycle = self.lookup_options(element, 'style').kwargs.get('node_color')
         if isinstance(cycle, Cycle):
             style.pop('node_color', None)
@@ -175,6 +216,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         )
         point_data.update(cdata)
         point_mapping = cmapping
+
+        sdata, smapping = self._get_size_data(element.nodes, ranges, style)
+        point_data.update(sdata)
+        point_mapping.update(smapping)
+
         if 'node_fill_color' in point_mapping:
             style = {k: v for k, v in style.items() if k not in
                      ['node_fill_color', 'node_nonselection_fill_color']}

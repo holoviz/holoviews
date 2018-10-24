@@ -82,7 +82,7 @@ class Nodes(Points):
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y'),
-                                Dimension('index')], bounds=(3, 3))
+                                Dimension('index')], bounds=(3, None))
 
     group = param.String(default='Nodes', constant=True)
 
@@ -114,7 +114,7 @@ class Graph(Dataset, Element2D):
     group = param.String(default='Graph', constant=True)
 
     kdims = param.List(default=[Dimension('start'), Dimension('end')],
-                       bounds=(2, 2))
+                       bounds=(2, None))
 
     node_type = Nodes
 
@@ -133,7 +133,7 @@ class Graph(Dataset, Element2D):
             node_info = None
             if isinstance(nodes, self.node_type):
                 pass
-            elif not isinstance(nodes, Dataset) or nodes.ndims == 3:
+            elif not isinstance(nodes, Dataset) or nodes.ndims >= 3:
                 nodes = self.node_type(nodes)
             else:
                 node_info = nodes
