@@ -46,6 +46,7 @@ from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
            'd': {'marker': 'diamond'},
+           '+': {'marker': 'cross'},
            '^': {'marker': 'triangle', 'angle': 0},
            '>': {'marker': 'triangle', 'angle': -np.pi/2},
            'v': {'marker': 'triangle', 'angle': np.pi},
