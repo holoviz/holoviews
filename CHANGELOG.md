@@ -1,9 +1,93 @@
-Version 1.11.0
+Version 1.10.8
 ==============
 
-Backward incompatible changes:
+This a likely the last hotfix release in the 1.10.x series containing
+fixes for compatibility with bokeh 1.0 and matplotlib 3.0. It also
+contains a wide array of fixes contributed and reported by users:
 
-- The `.to` interface no longer sorts `Curve` data by default ([#3001](https://github.com/ioam/holoviews/pull/3001))
+Special thanks for the contributions by Andrew Huang (@ahuang11),
+Julia Signell (@jsignell), and Zachary Barry (@zbarry).
+
+Enhancements:
+
+- Add support for labels, choord, hextiles and area in `.to` interface
+  ([#2924](https://github.com/ioam/holoviews/pull/2923))
+- Allow defining default bokeh themes as strings on Renderer
+  ([#2972](https://github.com/ioam/holoviews/pull/2972))
+- Allow specifying fontsize for categorical axis ticks in bokeh
+  ([#3047](https://github.com/ioam/holoviews/pull/3047))
+- Allow hiding toolbar without disabling tools
+  ([#3074](https://github.com/ioam/holoviews/pull/3074))
+- Allow specifying explicit colormapping on non-categorical data
+  ([#3071](https://github.com/ioam/holoviews/pull/3071))
+- Support for displaying xarray without explicit coordinates
+  ([#2968](https://github.com/ioam/holoviews/pull/2968))
+
+Fixes:
+
+- Allow dictionary data to reference values which are not dimensions
+  ([#2855](https://github.com/ioam/holoviews/pull/2855),
+  [#2859](https://github.com/ioam/holoviews/pull/2859))
+- Fixes for zero and non-finite ranges in datashader operation
+  ([#2860](https://github.com/ioam/holoviews/pull/2860),
+  [#2863](https://github.com/ioam/holoviews/pull/2863),
+  [#2869](https://github.com/ioam/holoviews/pull/2869))
+- Fixes for CDSStream and drawing tools on bokeh server
+  ([#2915](https://github.com/ioam/holoviews/pull/2915))
+- Fixed issues with nans, datetimes and streaming on Area and Spread
+  elements ([#2951](https://github.com/ioam/holoviews/pull/2951),
+  c55b044](https://github.com/ioam/holoviews/commit/c55b044)
+- General fixes for datetime handling
+  ([#3005](https://github.com/ioam/holoviews/pull/3005),
+  [#3045](https://github.com/ioam/holoviews/pull/3045),
+  [#3075](https://github.com/ioam/holoviews/pull/3074))
+- Fixed handling of curvilinear and datetime coordinates on QuadMesh
+  ([#3017](https://github.com/ioam/holoviews/pull/3017),
+  [#3081](https://github.com/ioam/holoviews/pull/3081))
+- Fixed issue when inverting a shared axis in bokeh
+  ([#3083](https://github.com/ioam/holoviews/pull/3083))
+- Fixed formatting of values in HoloMap widgets
+  ([#2954](https://github.com/ioam/holoviews/pull/2954))
+- Fixed setting fontsize for z-axis label
+  ([#2967](https://github.com/ioam/holoviews/pull/2967))
+
+Compatibility:
+
+- Suppress warnings about rcParams in matplotlib 3.0
+  ([#3013](https://github.com/ioam/holoviews/pull/3013),
+  [#3058](https://github.com/ioam/holoviews/pull/3058),
+  [#3104](https://github.com/ioam/holoviews/pull/3104))
+- Fixed incompatibility with Python <=3.5
+  ([#3073](https://github.com/ioam/holoviews/pull/3073)
+- Fixed incompatibility with bokeh >=1.0
+  ([#3051](https://github.com/ioam/holoviews/pull/3051))
+
+Documentation:
+
+- Completely overhauled the FAQ
+  ([#2928](https://github.com/ioam/holoviews/pull/2928),
+  [#2941](https://github.com/ioam/holoviews/pull/2941),
+  [#2959](https://github.com/ioam/holoviews/pull/2959),
+  [#3025](https://github.com/ioam/holoviews/pull/3025))
+
+Version 1.10.7
+==============
+
+This a very minor hotfix release mostly containing fixes for datashader
+aggregation of empty datasets:
+
+Fixes:
+
+- Fix datashader aggregation of empty and zero-range data
+  ([#2860](https://github.com/ioam/holoviews/pull/2860),
+  [#2863](https://github.com/ioam/holoviews/pull/2863))
+- Disable validation for additional, non-referenced keys in the
+  DictInterface ([#2860](https://github.com/ioam/holoviews/pull/2860))
+- Fixed frame lookup for non-overlapping dimensions
+  ([#2861](https://github.com/ioam/holoviews/pull/2861))
+- Fixed ticks on log Colorbar if low value <= 0
+  ([#2865](https://github.com/ioam/holoviews/pull/2865))
+
 
 Version 1.10.6
 ==============
