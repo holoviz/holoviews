@@ -1,11 +1,11 @@
 from collections import defaultdict
 
 import param
-from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection)
+from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
-from ...core.util import dimension_sanitizer, isscalar
+from ...core.util import dimension_sanitizer
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,

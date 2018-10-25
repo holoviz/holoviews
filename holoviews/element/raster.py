@@ -10,7 +10,7 @@ from ..core.data.interface import DataError
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import dimension_range, compute_density, datetime_types
+from ..core.util import dimension_range, datetime_types
 from .chart import Curve
 from .graphs import TriMesh
 from .tabular import Table

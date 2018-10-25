@@ -1,5 +1,3 @@
-import datetime as dt
-
 import numpy as np
 from holoviews.core import NdOverlay
 from holoviews.element import Spikes

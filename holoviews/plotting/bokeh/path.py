@@ -60,6 +60,7 @@ class PathPlot(ColorbarPlot):
             return data, mapping, style
 
         dim_name = util.dimension_sanitizer(cdim.name)
+        cidx = element.get_dimension_index(cdim)
         if not self.static_source:
             paths, cvals = [], []
             for path in element.split(datatype='array'):

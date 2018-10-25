@@ -1,4 +1,3 @@
-import datetime as dt
 from unittest import SkipTest
 
 import numpy as np
