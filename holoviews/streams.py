@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+import weakref
 from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
@@ -72,7 +73,7 @@ class Stream(param.Parameterized):
     """
 
     # Mapping from a source id to a list of streams
-    registry = defaultdict(list)
+    registry = weakref.WeakKeyDictionary()
 
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
@@ -199,7 +200,7 @@ class Stream(param.Parameterized):
         Some streams are configured to automatically link to the source
         plot, to disable this set linked=False
         """
-        self._source = source
+        self._source = weakref.ref(source) if source else None
         self._subscribers = []
         for subscriber in subscribers:
             self.add_subscriber(subscriber)
@@ -218,7 +219,10 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
-            self.registry[id(source)].append(self)
+            if sid in self.registry:
+                self.registry[source].append(self)
+            else:
+                self.registry[source] = [self]
 
 
     @property
@@ -296,22 +300,26 @@ class Stream(param.Parameterized):
         """
         params = {k: v for k, v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
-                              source=self._source,
+                              source=(self._source() if self._source else None),
                               linked=self.linked, **params)
 
     @property
     def source(self):
-        return self._source
+        return self._source() if self._source else None
 
 
     @source.setter
     def source(self, source):
-        if self._source:
-            source_list = self.registry[id(self._source)]
+        old_source = self._source() if self._source else None
+        if old_source:
+            source_list = self.registry[old_source]
             if self in source_list:
                 source_list.remove(self)
-        self._source = source
-        self.registry[id(source)].append(self)
+        self._source = weakref.ref(source)
+        if source in self.registry:
+            self.registry[source].append(self)
+        else:
+            self.registry[source] = [self]
 
 
     def transform(self):

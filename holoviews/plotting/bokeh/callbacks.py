@@ -68,8 +68,15 @@ class MessageCallback(object):
 
 
     def cleanup(self):
+        self.reset()
+        self.handle_ids = None
+        self.plot = None
+        self.source = None
+        self.streams = []
         if self.comm:
             self.comm.close()
+        Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
+                               if cb is not self}
 
 
     def reset(self):
