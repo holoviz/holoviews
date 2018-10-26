@@ -78,6 +78,9 @@ class BokehServerWidgets(param.Parameterized):
         self._queue = []
         self._active = False
 
+        if hasattr(self.plot.document, 'on_session_destroyed'):
+            self.plot.document.on_session_destroyed(self.plot._session_destroy)
+
 
     @classmethod
     def create_widget(self, dim, holomap=None, editable=False):

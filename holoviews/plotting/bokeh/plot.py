@@ -103,11 +103,20 @@ class BokehPlot(DimensionedPlot):
 
     @document.setter
     def document(self, doc):
+        if hasattr(doc, 'on_session_destroyed') and self.root is self.handles.get('plot'):
+            doc.on_session_destroyed(self._session_destroy)
+            if self._document:
+                self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
+
         self._document = doc
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
+
+    def _session_destroy(self, session_context):
+        self.cleanup()
+        self._document = None
 
 
     def __init__(self, *args, **params):
