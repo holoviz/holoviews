@@ -72,7 +72,9 @@ class Stream(param.Parameterized):
     respectively.
     """
 
-    # Mapping from a source id to a list of streams
+    # Mapping from a source to a list of streams
+    # WeakKeyDictionary to allow garbage collection
+    # of unreferenced sources
     registry = weakref.WeakKeyDictionary()
 
     # Mapping to define callbacks by backend and Stream type.
@@ -200,7 +202,10 @@ class Stream(param.Parameterized):
         Some streams are configured to automatically link to the source
         plot, to disable this set linked=False
         """
+
+        # Source is stored as a weakref to allow it to be garbage collected
         self._source = weakref.ref(source) if source else None
+
         self._subscribers = []
         for subscriber in subscribers:
             self.add_subscriber(subscriber)
