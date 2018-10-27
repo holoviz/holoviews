@@ -198,6 +198,14 @@ class Stream(param.Parameterized):
 
         Some streams are configured to automatically link to the source
         plot, to disable this set linked=False
+
+        Transforms: an optional dictionary of functions/callables where keys
+        correspond to (renamed) stream parameters and values are functions
+        to be applied to particular parameters whenever the stream's contents
+        are accessed. These functions transform their corresponding parameters'
+        values (e.g., string to int casting), which can be useful when elements
+        like HeatMap convert their supplied kdims to strings from numeric values
+        (Unrelated to transform() function.)
         """
         self._source = source
         self._subscribers = []
