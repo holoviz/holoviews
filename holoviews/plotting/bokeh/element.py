@@ -1282,8 +1282,6 @@ class LegendPlot(ElementPlot):
                 plot.legend[:] = []
                 legend.plot = None
                 legend.location = self.legend_offset
-                if pos in ['top', 'bottom']:
-                    plot.legend.orientation = 'horizontal'
                 plot.add_layout(legend, self.legend_specs[pos])
             else:
                 legend.location = pos
