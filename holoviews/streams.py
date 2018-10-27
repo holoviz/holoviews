@@ -217,6 +217,11 @@ class Stream(param.Parameterized):
 
         super(Stream, self).__init__(**params)
         self._rename = self._validate_rename(rename)
+
+        if transforms:
+            if not isinstance(transforms, dict) or any(not callable(v) for v in transforms.values()):
+                raise TypeError('transforms must be dict of callables')
+
         self._transforms = transforms
         if source is not None:
             self.registry[id(source)].append(self)
