@@ -17,7 +17,7 @@ from ..links import Link
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
-from .callbacks import Callback, LinkCallback
+from .callbacks import LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
@@ -281,6 +281,7 @@ class BokehPlot(DimensionedPlot):
                 continue
             streams = list(plot.streams)
             plot.streams = []
+            plot._document = None
             if isinstance(plot, GenericElementPlot):
                 for callback in plot.callbacks:
                     streams += callback.streams

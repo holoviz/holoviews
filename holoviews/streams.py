@@ -224,7 +224,7 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
-            if sid in self.registry:
+            if source in self.registry:
                 self.registry[source].append(self)
             else:
                 self.registry[source] = [self]
