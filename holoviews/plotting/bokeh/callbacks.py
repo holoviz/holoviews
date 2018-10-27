@@ -1150,10 +1150,10 @@ class LinkCallback(param.Parameterized):
         sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
         for src in sources:
             if link is None:
-                if id(src) in Link.registry:
-                    return (plot, Link.registry[id(src)])
+                if src in Link.registry:
+                    return (plot, Link.registry[src])
             else:
-                if id(link.target) == id(src):
+                if link.target is src:
                     return (plot, [link])
 
     def validate(self):
