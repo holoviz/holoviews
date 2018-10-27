@@ -282,6 +282,10 @@ class BokehPlot(DimensionedPlot):
             streams = list(plot.streams)
             plot.streams = []
             plot._document = None
+
+            if plot.subplots:
+                plot.subplots.clear()
+
             if isinstance(plot, GenericElementPlot):
                 for callback in plot.callbacks:
                     streams += callback.streams
@@ -293,7 +297,6 @@ class BokehPlot(DimensionedPlot):
                     if get_method_owner(subscriber) not in plots
                 ]
 
-        self.subplots.clear()
         if self.comm:
             self.comm.close()
 

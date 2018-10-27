@@ -484,12 +484,12 @@ class TestStreamSource(ComparisonTestCase):
     def test_source_registry(self):
         points = Points([(0, 0)])
         PointerX(source=points)
-        self.assertIn(id(points), Stream.registry)
+        self.assertIn(points, Stream.registry)
 
     def test_source_registry_empty_element(self):
         points = Points([])
         PointerX(source=points)
-        self.assertIn(id(points), Stream.registry)
+        self.assertIn(points, Stream.registry)
 
 
 class TestParameterRenaming(ComparisonTestCase):
