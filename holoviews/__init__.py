@@ -38,7 +38,7 @@ try:
     import IPython                 # noqa (API import)
     from .ipython import notebook_extension
     extension = notebook_extension # noqa (name remapping)
-except ImportError as e:
+except ImportError:
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **opts): # noqa (dummy signature)
             raise Exception("IPython notebook not available: use hv.extension instead.")
