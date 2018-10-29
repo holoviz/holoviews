@@ -13,6 +13,24 @@ Announcements
 Release notes
 *************
 
+Version 1.10.9
+==============
+
+A very minor release to fix a regression in linked Stream handling in
+1.10.8.
+
+Fixes:
+
+- Fixes regression defining linked streams on empty Element or DynamicMap
+  (`#3113 <https://github.com/ioam/holoviews/pull/3113>`_)
+- Fixed bug colormapping Labels element
+  (`#3114 <https://github.com/ioam/holoviews/pull/3114>`_)
+
+Compatibility:
+
+- Relaxed pinned bokeh version to include all versions up to 1.1.0
+  (`#3115 <https://github.com/ioam/holoviews/pull/3115>`_)
+
 
 Version 1.10.8
 ==============
@@ -27,66 +45,66 @@ Julia Signell (@jsignell), and Zachary Barry (@zbarry).
 Enhancements:
 
 - Add support for labels, choord, hextiles and area in `.to` interface
-  (`#2924 <https://github.com/ioam/holoviews/pull/2923`_)
+  (`#2924 <https://github.com/ioam/holoviews/pull/2923>`_)
 - Allow defining default bokeh themes as strings on Renderer
-  (`#2972 <https://github.com/ioam/holoviews/pull/2972`_)
+  (`#2972 <https://github.com/ioam/holoviews/pull/2972>`_)
 - Allow specifying fontsize for categorical axis ticks in bokeh
-  (`#3047 <https://github.com/ioam/holoviews/pull/3047`_)
+  (`#3047 <https://github.com/ioam/holoviews/pull/3047>`_)
 - Allow hiding toolbar without disabling tools
-  (`#3074 <https://github.com/ioam/holoviews/pull/3074`_)
+  (`#3074 <https://github.com/ioam/holoviews/pull/3074>`_)
 - Allow specifying explicit colormapping on non-categorical data
-  (`#3071 <https://github.com/ioam/holoviews/pull/3071`_)
+  (`#3071 <https://github.com/ioam/holoviews/pull/3071>`_)
 - Support for displaying xarray without explicit coordinates
-  (`#2968 <https://github.com/ioam/holoviews/pull/2968`_)
+  (`#2968 <https://github.com/ioam/holoviews/pull/2968>`_)
 
 Fixes:
 
 - Ensured that objects are garbage collected when using
-  linked streams (`#2111 <https://github.com/ioam/holoviews/issues/2111>`_)
+  linked streams (`#2111 <https://github.com/ioam/holoviews/issues/2111>>`_)
 - Allow dictionary data to reference values which are not dimensions
-  (`#2855 <https://github.com/ioam/holoviews/pull/2855`_,
-  `#2859 <https://github.com/ioam/holoviews/pull/2859`_)
+  (`#2855 <https://github.com/ioam/holoviews/pull/2855>`_,
+  `#2859 <https://github.com/ioam/holoviews/pull/2859>`_)
 - Fixes for zero and non-finite ranges in datashader operation
-  (`#2860 <https://github.com/ioam/holoviews/pull/2860`_,
-  `#2863 <https://github.com/ioam/holoviews/pull/2863`_,
-  `#2869 <https://github.com/ioam/holoviews/pull/2869`_)
+  (`#2860 <https://github.com/ioam/holoviews/pull/2860>`_,
+  `#2863 <https://github.com/ioam/holoviews/pull/2863>`_,
+  `#2869 <https://github.com/ioam/holoviews/pull/2869>`_)
 - Fixes for CDSStream and drawing tools on bokeh server
-  (`#2915 <https://github.com/ioam/holoviews/pull/2915`_)
+  (`#2915 <https://github.com/ioam/holoviews/pull/2915>`_)
 - Fixed issues with nans, datetimes and streaming on Area and Spread
-  elements (`#2951 <https://github.com/ioam/holoviews/pull/2951`_,
-  `c55b044 <https://github.com/ioam/holoviews/commit/c55b044`_)
+  elements (`#2951 <https://github.com/ioam/holoviews/pull/2951>`_,
+  `c55b044 <https://github.com/ioam/holoviews/commit/c55b044>`_)
 - General fixes for datetime handling
-  (`#3005 <https://github.com/ioam/holoviews/pull/3005`_,
-  `#3045 <https://github.com/ioam/holoviews/pull/3045`_,
-  `#3075 <https://github.com/ioam/holoviews/pull/3074`_)
+  (`#3005 <https://github.com/ioam/holoviews/pull/3005>`_,
+  `#3045 <https://github.com/ioam/holoviews/pull/3045>`_,
+  `#3075 <https://github.com/ioam/holoviews/pull/3074>`_)
 - Fixed handling of curvilinear and datetime coordinates on QuadMesh
-  (`#3017 <https://github.com/ioam/holoviews/pull/3017`_,
-  `#3081 <https://github.com/ioam/holoviews/pull/3081`_)
+  (`#3017 <https://github.com/ioam/holoviews/pull/3017>`_,
+  `#3081 <https://github.com/ioam/holoviews/pull/3081>`_)
 - Fixed issue when inverting a shared axis in bokeh
-  (`#3083 <https://github.com/ioam/holoviews/pull/3083`_)
+  (`#3083 <https://github.com/ioam/holoviews/pull/3083>`_)
 - Fixed formatting of values in HoloMap widgets
-  (`#2954 <https://github.com/ioam/holoviews/pull/2954`_)
+  (`#2954 <https://github.com/ioam/holoviews/pull/2954>`_)
 - Fixed setting fontsize for z-axis label
-  (`#2967 <https://github.com/ioam/holoviews/pull/2967`_)
+  (`#2967 <https://github.com/ioam/holoviews/pull/2967>`_)
 
 Compatibility:
 
 - Suppress warnings about rcParams in matplotlib 3.0
-  (`#3013 <https://github.com/ioam/holoviews/pull/3013`_,
-  `#3058 <https://github.com/ioam/holoviews/pull/3058`_,
-  `#3104 <https://github.com/ioam/holoviews/pull/3104`_)
+  (`#3013 <https://github.com/ioam/holoviews/pull/3013>`_,
+  `#3058 <https://github.com/ioam/holoviews/pull/3058>`_,
+  `#3104 <https://github.com/ioam/holoviews/pull/3104>`_)
 - Fixed incompatibility with Python <=3.5
-  (`#3073 <https://github.com/ioam/holoviews/pull/3073`_)
+  (`#3073 <https://github.com/ioam/holoviews/pull/3073>`_)
 - Fixed incompatibility with bokeh >=1.0
-  (`#3051 <https://github.com/ioam/holoviews/pull/3051`_)
+  (`#3051 <https://github.com/ioam/holoviews/pull/3051>`_)
 
 Documentation:
 
 - Completely overhauled the FAQ
-  (`#2928 <https://github.com/ioam/holoviews/pull/2928`_,
-  `#2941 <https://github.com/ioam/holoviews/pull/2941`_,
-  `#2959 <https://github.com/ioam/holoviews/pull/2959`_,
-  `#3025 <https://github.com/ioam/holoviews/pull/3025`_)
+  (`#2928 <https://github.com/ioam/holoviews/pull/2928>`_,
+  `#2941 <https://github.com/ioam/holoviews/pull/2941>`_,
+  `#2959 <https://github.com/ioam/holoviews/pull/2959>`_,
+  `#3025 <https://github.com/ioam/holoviews/pull/3025>`_)
 
 
 Version 1.10.7

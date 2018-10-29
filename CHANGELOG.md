@@ -1,3 +1,22 @@
+Version 1.10.9
+==============
+
+A very minor release to fix a regression in linked Stream handling in
+1.10.8.
+
+Fixes:
+
+- Fixes regression defining linked streams on empty Element or DynamicMap
+  ([#3113](https://github.com/ioam/holoviews/pull/3113))
+- Fixed bug colormapping Labels element
+  ([#3114](https://github.com/ioam/holoviews/pull/3114))
+
+Compatibility:
+
+- Relaxed pinned bokeh version to include all versions up to 1.1.0
+  ([#3115](https://github.com/ioam/holoviews/pull/3115))
+
+
 Version 1.10.8
 ==============
 
