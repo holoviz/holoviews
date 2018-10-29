@@ -16,7 +16,6 @@ from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
-from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes)
 
@@ -102,12 +101,23 @@ class BokehPlot(DimensionedPlot):
 
     @document.setter
     def document(self, doc):
+        if (doc and hasattr(doc, 'on_session_destroyed') and
+            self.root is self.handles.get('plot') and not isinstance(self, AdjointLayoutPlot)):
+            doc.on_session_destroyed(self._session_destroy)
+            if self._document:
+                if isinstance(self._document._session_destroyed_callbacks, set):
+                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
+                else:
+                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
+
         self._document = doc
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
 
+    def _session_destroy(self, session_context):
+        self.cleanup()
 
     def __init__(self, *args, **params):
         root = params.pop('root', None)
@@ -148,7 +158,7 @@ class BokehPlot(DimensionedPlot):
 
         cb_classes = set()
         for _, source in sources:
-            streams = Stream.registry.get(id(source), [])
+            streams = Stream.registry.get(source, [])
             registry = Stream._callbacks['bokeh']
             cb_classes |= {(registry[type(stream)], stream) for stream in streams
                            if type(stream) in registry and stream.linked}
@@ -271,19 +281,25 @@ class BokehPlot(DimensionedPlot):
             if not isinstance(plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)):
                 continue
             streams = list(plot.streams)
+            plot.streams = []
+            plot._document = None
+
+            if plot.subplots:
+                plot.subplots.clear()
+
+            if isinstance(plot, GenericElementPlot):
+                for callback in plot.callbacks:
+                    streams += callback.streams
+                    callback.cleanup()
+
             for stream in set(streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if get_method_owner(subscriber) not in plots
                 ]
-            if not isinstance(plot, GenericElementPlot):
-                continue
-            for callback in plot.callbacks:
-                streams += callback.streams
-                callbacks = {k: cb for k, cb in callback._callbacks.items()
-                            if cb is not callback}
-                Callback._callbacks = callbacks
-                callback.cleanup()
+
+        if self.comm:
+            self.comm.close()
 
 
     def _fontsize(self, key, label='fontsize', common=True):
