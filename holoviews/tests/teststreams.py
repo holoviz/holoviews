@@ -481,6 +481,16 @@ class TestStreamSource(ComparisonTestCase):
     def tearDown(self):
         Stream.registry = defaultdict(list)
 
+    def test_source_empty_element(self):
+        points = Points([])
+        stream = PointerX(source=points)
+        self.assertIs(stream.source, points)
+
+    def test_source_empty_dmap(self):
+        points_dmap = DynamicMap(lambda x: Points([]), kdims=['X'])
+        stream = PointerX(source=points_dmap)
+        self.assertIs(stream.source, points_dmap)
+
     def test_source_registry(self):
         points = Points([(0, 0)])
         PointerX(source=points)
