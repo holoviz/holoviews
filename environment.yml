@@ -18,7 +18,7 @@ dependencies:
   - conda-forge::ffmpeg
   - conda-forge::flexx=0.4.1
   - conda-forge::plotly=2.7
-  - bokeh::bokeh=0.12.15
+  - bokeh::bokeh=1.0.0
   - bokeh::selenium
   # Testing requirements
   - flake8
