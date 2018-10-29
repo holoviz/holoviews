@@ -68,8 +68,15 @@ class MessageCallback(object):
 
 
     def cleanup(self):
+        self.reset()
+        self.handle_ids = None
+        self.plot = None
+        self.source = None
+        self.streams = []
         if self.comm:
             self.comm.close()
+        Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
+                               if cb is not self}
 
 
     def reset(self):
@@ -1143,10 +1150,10 @@ class LinkCallback(param.Parameterized):
         sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
         for src in sources:
             if link is None:
-                if id(src) in Link.registry:
-                    return (plot, Link.registry[id(src)])
+                if src in Link.registry:
+                    return (plot, Link.registry[src])
             else:
-                if id(link.target) == id(src):
+                if link.target is src:
                     return (plot, [link])
 
     def validate(self):
