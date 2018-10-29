@@ -17,8 +17,8 @@ except:
 from ...core.util import dimension_sanitizer, basestring
 from ...element import HLine
 from ..plot import GenericElementPlot
-from .element import (AnnotationPlot, CompositeElementPlot, ColorbarPlot,
-                      ElementPlot, text_properties, line_properties)
+from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .styles import text_properties, line_properties
 from .plot import BokehPlot
 
 

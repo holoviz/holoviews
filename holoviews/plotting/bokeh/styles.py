@@ -1,0 +1,182 @@
+"""
+Defines valid style options, validation and utilities
+"""
+
+import numpy as np
+
+from bokeh.core.properties import (
+    Angle, Color, DashPattern, FontSize, MarkerType, Size
+)
+
+try:
+    from matplotlib import colors
+    import matplotlib.cm as cm
+except ImportError:
+    cm, colors = None, None
+
+from ...core.options import abbreviated_exception
+from ...core.util import basestring
+from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
+
+# Define shared style properties for bokeh plots
+
+property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
+
+line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
+                   'line_join', 'line_cap', 'line_dash']
+line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
+                    for prefix in property_prefixes]
+
+fill_properties = ['fill_color', 'fill_alpha']
+fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
+                    for prefix in property_prefixes]
+
+text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
+                   'text_alpha', 'text_align', 'text_baseline']
+
+legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
+                     'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
+
+no_op_styles = ['cmap', 'palette']
+
+# Conversion between matplotlib and bokeh markers
+
+markers = {
+    's': {'marker': 'square'},
+    'd': {'marker': 'diamond'},
+    '^': {'marker': 'triangle', 'angle': 0},
+    '>': {'marker': 'triangle', 'angle': -np.pi/2},
+    'v': {'marker': 'triangle', 'angle': np.pi},
+    '<': {'marker': 'triangle', 'angle': np.pi/2},
+    '1': {'marker': 'triangle', 'angle': 0},
+    '2': {'marker': 'triangle', 'angle': -np.pi/2},
+    '3': {'marker': 'triangle', 'angle': np.pi},
+    '4': {'marker': 'triangle', 'angle': np.pi/2}
+}
+
+
+def mpl_to_bokeh(properties):
+    """
+    Utility to process style properties converting any
+    matplotlib specific options to their nearest bokeh
+    equivalent.
+    """
+    new_properties = {}
+    for k, v in properties.items():
+        if k == 's':
+            new_properties['size'] = v
+        elif k == 'marker':
+            new_properties.update(markers.get(v, {'marker': v}))
+        elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
+            with abbreviated_exception():
+                v = COLOR_ALIASES.get(v, v)
+            if isinstance(v, tuple):
+                with abbreviated_exception():
+                    v = rgb2hex(v)
+            new_properties[k] = v
+        else:
+            new_properties[k] = v
+    new_properties.pop('cmap', None)
+    return new_properties
+
+# Validation
+
+angle     = Angle()
+color     = Color()
+dash_pattern = DashPattern()
+font_size = FontSize()
+marker    = MarkerType()
+size      = Size()
+
+validators = {
+    'angle'     : angle.is_valid,
+    'color'     : lambda x: (
+        color.is_valid(x) or (isinstance(x, basestring) and RGB_HEX_REGEX.match(x))
+    ),
+    'font_size' : font_size.is_valid,
+    'line_dash' : dash_pattern.is_valid,
+    'marker'    : marker.is_valid,
+    'size'      : size.is_valid,
+}
+
+def get_validator(style):
+    for k, v in validators.items():
+        if style.endswith(k):
+            return v
+
+
+def validate(style, value):
+    """
+    Validates a style and associated value.
+
+    Arguments
+    ---------
+    style: str
+       The style to validate (e.g. 'color', 'size' or 'marker')
+    value: 
+       The style value to validate
+
+    Returns
+    -------
+    valid: boolean or None
+       If validation is supported returns boolean, otherwise None
+    """
+    validator = get_validator(style)
+    if validator is None:
+        return None
+    if isinstance(value, (np.ndarray, list)):
+        return all(validator(v) for v in value)
+    return validator(value)
+
+# Utilities
+
+def rgba_tuple(rgba):
+    """
+    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+    """
+    if isinstance(rgba, tuple):
+        return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
+    else:
+        return COLOR_ALIASES.get(rgba, rgba)
+
+
+def expand_batched_style(style, opts, mapping, nvals):
+    """
+    Computes styles applied to a batched plot by iterating over the
+    supplied list of style options and expanding any options found in
+    the supplied style dictionary returning a data and mapping defining
+    the data that should be added to the ColumnDataSource.
+    """
+    opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
+    applied_styles = set(mapping)
+    style_data, style_mapping = {}, {}
+    for opt in opts:
+        if 'color' in opt:
+            alias = 'color'
+        elif 'alpha' in opt:
+            alias = 'alpha'
+        else:
+            alias = None
+        if opt not in style or opt in mapping:
+            continue
+        elif opt == alias:
+            if alias in applied_styles:
+                continue
+            elif 'line_'+alias in applied_styles:
+                if 'fill_'+alias not in opts:
+                    continue
+                opt = 'fill_'+alias
+                val = style[alias]
+            elif 'fill_'+alias in applied_styles:
+                opt = 'line_'+alias
+                val = style[alias]
+            else:
+                val = style[alias]
+        else:
+            val = style[opt]
+        style_mapping[opt] = {'field': opt}
+        applied_styles.add(opt)
+        if 'color' in opt and isinstance(val, tuple):
+            val = rgb2hex(val)
+        style_data[opt] = [val]*nvals
+    return style_data, style_mapping

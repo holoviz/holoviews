@@ -13,7 +13,7 @@ from ..utils import ParamLogStream
 
 try:
     from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
-    from bokeh.models.glyphs import Circle, Triangle
+    from bokeh.models import Scatter
 except:
     pass
 
@@ -438,11 +438,16 @@ class TestPointPlot(TestBokehPlot):
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
                         vdims='marker').options(marker='marker')
-        with self.assertRaises(ValueError):
-            bokeh_renderer.get_plot(points)
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['marker'], np.array(['circle', 'triangle', 'square']))
+        self.assertEqual(glyph.marker, 'marker')
 
     def test_op_ndoverlay_value(self):
-        overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(['circle', 'triangle'])}, 'Marker').options('Points', marker='Marker')
+        markers = ['circle', 'triangle']
+        overlay = NdOverlay({marker: Points(np.arange(i)) for i, marker in enumerate(markers)}, 'Marker').options('Points', marker='Marker')
         plot = bokeh_renderer.get_plot(overlay)
-        for subplot, glyph_type in zip(plot.subplots.values(), [Circle, Triangle]):
+        for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
+            self.assertEqual(subplot.handles['glyph'].marker, marker)

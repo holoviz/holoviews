@@ -31,31 +31,16 @@ from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
+from .styles import (
+    legend_dimensions, line_properties, mpl_to_bokeh, no_op_styles,
+    rgba_tuple, text_properties, validate
+)
 from .util import (
-    mpl_to_bokeh, get_tab_title,  py2js_tickformatter, rgba_tuple,
-    recursive_model_update, glyph_order, decode_bytes, bokeh_version,
-    theme_attr_json, is_color, cds_column_replace, hold_policy
+    bokeh_version, decode_bytes, get_tab_title, glyph_order,
+    py2js_tickformatter, recursive_model_update, theme_attr_json,
+    cds_column_replace, hold_policy
 )
 
-property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
-
-# Define shared style properties for bokeh plots
-line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
-                   'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
-                    for prefix in property_prefixes]
-
-fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
-                    for prefix in property_prefixes]
-
-text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
-                   'text_alpha', 'text_align', 'text_baseline']
-
-legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
-                     'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
-
-no_op_styles = ['cmap', 'palette', 'marker']
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -714,7 +699,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and
-                (numeric or not all(is_color(v) for v in val))):
+                (numeric or not validate('color', val))):
                 kwargs = {}
                 if val.dtype.kind not in 'if':
                     kwargs['factors'] = np.unique(val)

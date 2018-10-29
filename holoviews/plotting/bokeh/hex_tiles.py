@@ -12,7 +12,8 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
-from .element import ColorbarPlot, line_properties, fill_properties
+from .element import ColorbarPlot
+from .styles import line_properties, fill_properties
 from .util import bokeh_version
 
 

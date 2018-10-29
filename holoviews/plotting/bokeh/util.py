@@ -6,19 +6,11 @@ import datetime as dt
 
 import numpy as np
 
-try:
-    from matplotlib import colors
-    import matplotlib.cm as cm
-except ImportError:
-    cm, colors = None, None
-
 import param
 import bokeh
 
 bokeh_version = LooseVersion(bokeh.__version__)  # noqa
 
-from bokeh.colors.named import __all__ as named_colors
-from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.layouts import WidgetBox, Row, Column
@@ -37,26 +29,12 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
-from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import (basestring, unique_array, callable_name, pd,
                           dt64_to_dt, _getargspec)
 from ...core.spaces import get_nested_dmaps, DynamicMap
+from ..util import dim_axis_label
 
-from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES, RGB_HEX_REGEX
-
-# Conversion between matplotlib and bokeh markers
-markers = {'s': {'marker': 'square'},
-           'd': {'marker': 'diamond'},
-           '+': {'marker': 'cross'},
-           '^': {'marker': 'triangle', 'angle': 0},
-           '>': {'marker': 'triangle', 'angle': -np.pi/2},
-           'v': {'marker': 'triangle', 'angle': np.pi},
-           '<': {'marker': 'triangle', 'angle': np.pi/2},
-           '1': {'marker': 'triangle', 'angle': 0},
-           '2': {'marker': 'triangle', 'angle': -np.pi/2},
-           '3': {'marker': 'triangle', 'angle': np.pi},
-           '4': {'marker': 'triangle', 'angle': np.pi/2}}
 
 
 def convert_timestamp(timestamp):
@@ -65,31 +43,6 @@ def convert_timestamp(timestamp):
     """
     datetime = dt.datetime.fromtimestamp(timestamp/1000., dt.timezone.utc)
     return np.datetime64(datetime.replace(tzinfo=None))
-
-
-def rgba_tuple(rgba):
-    """
-    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
-    """
-    if isinstance(rgba, tuple):
-        return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
-    else:
-        return COLOR_ALIASES.get(rgba, rgba)
-
-
-def is_color(color):
-    """
-    Checks if the supplied value is a valid color spec.
-    """
-    if not isinstance(color, basestring):
-        return False
-    elif RGB_HEX_REGEX.match(color):
-        return True
-    elif color in COLOR_ALIASES:
-        return True
-    elif color in named_colors:
-        return True
-    return False
 
 
 def decode_bytes(array):
@@ -106,43 +59,6 @@ def decode_bytes(array):
     elif isinstance(array, tuple):
         return tuple(decoded)
     return decoded
-
-
-def get_cmap(cmap):
-    """
-    Returns matplotlib cmap generated from bokeh palette or
-    directly accessed from matplotlib.
-    """
-    with abbreviated_exception():
-        rgb_vals = getattr(Palette, cmap, None)
-        if rgb_vals:
-            return colors.ListedColormap(rgb_vals, name=cmap)
-        return cm.get_cmap(cmap)
-
-
-def mpl_to_bokeh(properties):
-    """
-    Utility to process style properties converting any
-    matplotlib specific options to their nearest bokeh
-    equivalent.
-    """
-    new_properties = {}
-    for k, v in properties.items():
-        if k == 's':
-            new_properties['size'] = v
-        elif k == 'marker':
-            new_properties.update(markers.get(v, {'marker': v}))
-        elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
-            with abbreviated_exception():
-                v = COLOR_ALIASES.get(v, v)
-            if isinstance(v, tuple):
-                with abbreviated_exception():
-                    v = rgb2hex(v)
-            new_properties[k] = v
-        else:
-            new_properties[k] = v
-    new_properties.pop('cmap', None)
-    return new_properties
 
 
 def layout_padding(plots, renderer):
@@ -433,47 +349,6 @@ def get_tab_title(key, frame, overlay):
                             zip(overlay.kdims, key)])
     return title
 
-
-def expand_batched_style(style, opts, mapping, nvals):
-    """
-    Computes styles applied to a batched plot by iterating over the
-    supplied list of style options and expanding any options found in
-    the supplied style dictionary returning a data and mapping defining
-    the data that should be added to the ColumnDataSource.
-    """
-    opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
-    applied_styles = set(mapping)
-    style_data, style_mapping = {}, {}
-    for opt in opts:
-        if 'color' in opt:
-            alias = 'color'
-        elif 'alpha' in opt:
-            alias = 'alpha'
-        else:
-            alias = None
-        if opt not in style or opt in mapping:
-            continue
-        elif opt == alias:
-            if alias in applied_styles:
-                continue
-            elif 'line_'+alias in applied_styles:
-                if 'fill_'+alias not in opts:
-                    continue
-                opt = 'fill_'+alias
-                val = style[alias]
-            elif 'fill_'+alias in applied_styles:
-                opt = 'line_'+alias
-                val = style[alias]
-            else:
-                val = style[alias]
-        else:
-            val = style[opt]
-        style_mapping[opt] = {'field': opt}
-        applied_styles.add(opt)
-        if 'color' in opt and isinstance(val, tuple):
-            val = rgb2hex(val)
-        style_data[opt] = [val]*nvals
-    return style_data, style_mapping
 
 
 def filter_batched_data(data, mapping):

@@ -3,8 +3,9 @@ import param
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster, RGB, HSV
-from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import mpl_to_bokeh, colormesh, bokeh_version
+from .element import ElementPlot, ColorbarPlot
+from .styles import line_properties, fill_properties, mpl_to_bokeh
+from .util import bokeh_version, colormesh
 
 
 class RasterPlot(ColorbarPlot):

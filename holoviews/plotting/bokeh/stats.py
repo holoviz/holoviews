@@ -12,10 +12,10 @@ from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
                           unique_iterator, isfinite)
 from ...operation.stats import univariate_kde
 from .chart import AreaPlot
-from .element import (CompositeElementPlot, ColorbarPlot, LegendPlot,
-                      fill_properties, line_properties)
+from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
-from .util import rgb2hex, decode_bytes
+from .styles import fill_properties, line_properties, rgb2hex
+from .util import decode_bytes
 
 
 class DistributionPlot(AreaPlot):

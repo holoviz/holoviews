@@ -9,11 +9,12 @@ from ...core.data import Dataset
 from ...core.util import (basestring, dimension_sanitizer, unique_array,
                           max_range)
 from ...core.options import Cycle
-from .chart import ColorbarPlot, PointPlot
-from .element import (CompositeElementPlot, LegendPlot, line_properties,
-                      fill_properties, text_properties)
 from ..util import process_cmap
+from .chart import ColorbarPlot, PointPlot
+from .element import CompositeElementPlot, LegendPlot
+from .styles import line_properties, fill_properties, text_properties
 from .util import rgba_tuple
+
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):

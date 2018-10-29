@@ -5,8 +5,9 @@ import numpy as np
 
 from ...core import util
 from ...element import Polygons
-from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
-from .util import expand_batched_style, mpl_to_bokeh, bokeh_version, multi_polygons_data
+from .element import ColorbarPlot, LegendPlot
+from .styles import expand_batched_style, line_properties, fill_properties, mpl_to_bokeh
+from .util import bokeh_version, multi_polygons_data
 
 
 class PathPlot(ColorbarPlot):

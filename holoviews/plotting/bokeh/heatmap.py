@@ -6,10 +6,8 @@ from bokeh.models.glyphs import AnnularWedge
 
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
-from .element import (ColorbarPlot, CompositeElementPlot,
-                      line_properties, fill_properties, text_properties)
-from .util import mpl_to_bokeh
-
+from .element import ColorbarPlot, CompositeElementPlot
+from .styles import line_properties, fill_properties, mpl_to_bokeh, text_properties
 
 
 class HeatMapPlot(ColorbarPlot):
