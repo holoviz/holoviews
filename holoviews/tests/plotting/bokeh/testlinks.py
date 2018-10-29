@@ -17,9 +17,12 @@ except:
 
 class TestLinkCallbacks(ComparisonTestCase):
 
-    def test_range_tool_link_callback_single_axis(self):
-        if bokeh_version < '0.13':
+    def setUp(self):
+        if not bokeh_renderer or bokeh_version < '0.13':
             raise SkipTest('RangeTool requires bokeh version >= 0.13')
+        super(TestLinkCallbacks, self).setUp()
+
+    def test_range_tool_link_callback_single_axis(self):
         from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
@@ -34,8 +37,6 @@ class TestLinkCallbacks(ComparisonTestCase):
         self.assertIs(range_tool.y_range, None)
 
     def test_range_tool_link_callback_both_axes(self):
-        if bokeh_version < '0.13':
-            raise SkipTest('RangeTool requires bokeh version >= 0.13')
         from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
