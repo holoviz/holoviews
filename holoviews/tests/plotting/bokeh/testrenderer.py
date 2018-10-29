@@ -95,8 +95,9 @@ class BokehRendererTest(ComparisonTestCase):
                 'outline_line_color': '#444444'}
         }
             })
-        renderer = BokehRenderer.instance(fig='png')
-        renderer.theme = theme
-        plot = renderer.get_plot(Curve([]))
-        renderer(plot)
-        self.assertEqual(plot.state.outline_line_color, '#444444')
+        self.renderer.theme = theme
+        plot = self.renderer.get_plot(Curve([]))
+        diff = self.renderer.diff(plot)
+        events = [e for e in diff.content['events'] if e.get('attr', None) == 'outline_line_color']
+        self.assertTrue(bool(events))
+        self.assertEqual(events[-1]['new']['value'], '#444444')
