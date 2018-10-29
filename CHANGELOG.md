@@ -25,6 +25,8 @@ Enhancements:
 
 Fixes:
 
+- Ensured that objects are garbage collected when using
+  linked streams ([#2111](https://github.com/ioam/holoviews/issues/2111)
 - Allow dictionary data to reference values which are not dimensions
   ([#2855](https://github.com/ioam/holoviews/pull/2855),
   [#2859](https://github.com/ioam/holoviews/pull/2859))
