@@ -315,11 +315,15 @@ class Stream(param.Parameterized):
 
     @source.setter
     def source(self, source):
-        old_source = self._source() if self._source else None
-        if old_source:
-            source_list = self.registry[old_source]
+        if self.source:
+            source_list = self.registry[self.source]
             if self in source_list:
                 source_list.remove(self)
+
+        if source is None:
+            self._source = None
+            return
+
         self._source = weakref.ref(source)
         if source in self.registry:
             self.registry[source].append(self)
