@@ -107,8 +107,13 @@ class LabelsPlot(ColorbarPlot):
             return data, mapping, style
 
         cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
-        data['text_color'] = cdata[dimension_sanitizer(cdim.name)]
-        mapping['text_color'] = cmapping['text_color']
+        if dims[2] is cdim:
+            # If color dim is same as text dim, rename color column
+            data['text_color'] = cdata[tdim]
+            mapping['text_color'] = dict(cmapping['text_color'], field='text_color')
+        else:
+            data.update(cdata)
+            mapping.update(cmapping)
         return data, mapping, style
 
 
