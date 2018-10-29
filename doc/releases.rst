@@ -41,7 +41,6 @@ Enhancements:
 
 Fixes:
 
-
 - Ensured that objects are garbage collected when using
   linked streams (`#2111 <https://github.com/ioam/holoviews/issues/2111>`_)
 - Allow dictionary data to reference values which are not dimensions
@@ -107,6 +106,7 @@ Fixes:
   (`#2861 <https://github.com/ioam/holoviews/pull/2861>`_)
 - Fixed ticks on log Colorbar if low value <= 0
   (`#2865 <https://github.com/ioam/holoviews/pull/2865>`_)
+
 
 Version 1.10.6
 ==============

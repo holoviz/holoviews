@@ -26,7 +26,7 @@ Enhancements:
 Fixes:
 
 - Ensured that objects are garbage collected when using
-  linked streams ([#2111](https://github.com/ioam/holoviews/issues/2111)
+  linked streams ([#2111](https://github.com/ioam/holoviews/issues/2111))
 - Allow dictionary data to reference values which are not dimensions
   ([#2855](https://github.com/ioam/holoviews/pull/2855),
   [#2859](https://github.com/ioam/holoviews/pull/2859))
@@ -38,7 +38,7 @@ Fixes:
   ([#2915](https://github.com/ioam/holoviews/pull/2915))
 - Fixed issues with nans, datetimes and streaming on Area and Spread
   elements ([#2951](https://github.com/ioam/holoviews/pull/2951),
-  c55b044](https://github.com/ioam/holoviews/commit/c55b044)
+  [c55b044](https://github.com/ioam/holoviews/commit/c55b044))
 - General fixes for datetime handling
   ([#3005](https://github.com/ioam/holoviews/pull/3005),
   [#3045](https://github.com/ioam/holoviews/pull/3045),
@@ -60,7 +60,7 @@ Compatibility:
   [#3058](https://github.com/ioam/holoviews/pull/3058),
   [#3104](https://github.com/ioam/holoviews/pull/3104))
 - Fixed incompatibility with Python <=3.5
-  ([#3073](https://github.com/ioam/holoviews/pull/3073)
+  ([#3073](https://github.com/ioam/holoviews/pull/3073))
 - Fixed incompatibility with bokeh >=1.0
   ([#3051](https://github.com/ioam/holoviews/pull/3051))
 
