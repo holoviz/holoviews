@@ -107,7 +107,10 @@ class BokehPlot(DimensionedPlot):
             self.root is self.handles.get('plot') and not isinstance(self, AdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
             if self._document:
-                self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
+                if isinstance(self._document._session_destroyed_callbacks, set):
+                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
+                else:
+                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
 
         self._document = doc
         if self.subplots:
@@ -160,7 +163,8 @@ class BokehPlot(DimensionedPlot):
             streams = Stream.registry.get(source, [])
             registry = Stream._callbacks['bokeh']
             cb_classes |= {(registry[type(stream)], stream) for stream in streams
-                           if type(stream) in registry and stream.linked}
+                           if type(stream) in registry and stream.linked
+                           and stream.source is not None}
         cbs = []
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):

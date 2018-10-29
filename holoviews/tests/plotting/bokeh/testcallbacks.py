@@ -96,10 +96,12 @@ class TestResetCallback(CallbackTestCase):
         def record(resetting):
             resets.append(resetting)
         curve = Curve([])
-        PlotReset(source=curve).add_subscriber(record)
+        stream = PlotReset(source=curve)
+        stream.add_subscriber(record)
         plot = bokeh_server_renderer.get_plot(curve)
         plot.callbacks[0].on_msg({'reset': True})
         self.assertEqual(resets, [True])
+        self.assertIs(stream.source, curve)
 
         
 class TestEditToolCallbacks(CallbackTestCase):
