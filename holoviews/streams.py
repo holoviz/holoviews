@@ -204,7 +204,7 @@ class Stream(param.Parameterized):
         """
 
         # Source is stored as a weakref to allow it to be garbage collected
-        self._source = weakref.ref(source) if source else None
+        self._source = None if source is None else weakref.ref(source)
 
         self._subscribers = []
         for subscriber in subscribers:
