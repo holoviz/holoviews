@@ -1136,7 +1136,7 @@ class LinkCallback(param.Parameterized):
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(plot, link) for plot in plots]
+                potentials = [cls.find_link(p, link) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))

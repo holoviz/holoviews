@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Curve, Polygons, Table
+from holoviews.element import Curve, Polygons, Table, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
@@ -26,7 +26,7 @@ class TestLinkCallbacks(ComparisonTestCase):
         from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
-        target = Curve(array)
+        target = Scatter(array)
         RangeToolLink(src, target)
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
@@ -40,7 +40,7 @@ class TestLinkCallbacks(ComparisonTestCase):
         from bokeh.models import RangeTool
         array = np.random.rand(100, 2)
         src = Curve(array)
-        target = Curve(array)
+        target = Scatter(array)
         RangeToolLink(src, target, axes=['x', 'y'])
         layout = target + src
         plot = bokeh_renderer.get_plot(layout)
