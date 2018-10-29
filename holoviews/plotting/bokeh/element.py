@@ -889,7 +889,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         update on the backend.
         """
         callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
-                             for cb in cbs]
+                     for cb in cbs]
         stream_metadata = [stream._metadata for cb in callbacks
                            for stream in cb.streams if stream._metadata]
         return any(md['id'] == model.ref['id'] for models in stream_metadata
