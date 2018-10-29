@@ -18,8 +18,7 @@ except:
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
-    dimension_range
+    date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY

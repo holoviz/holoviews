@@ -4,6 +4,7 @@ Unit test of the streams system
 from collections import defaultdict
 
 import param
+from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
