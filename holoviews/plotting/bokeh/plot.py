@@ -19,11 +19,10 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
-                   update_shared_sources, empty_plot, decode_bytes)
+                   update_shared_sources, empty_plot, decode_bytes, theme_attr_json)
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
-from holoviews.plotting.bokeh.util import theme_attr_json
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
