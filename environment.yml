@@ -10,6 +10,7 @@ dependencies:
   - xarray
   - networkx
   - ipython=5.4.1
+  - jsonschema=2.6.0
   - pyviz/label/dev::param=1.8.0a10
   - pyviz::pyviz_comms=0.6.0
   - pyviz::datashader
