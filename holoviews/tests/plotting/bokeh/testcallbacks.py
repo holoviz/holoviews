@@ -311,12 +311,11 @@ class TestServerCallbacks(CallbackTestCase):
         points = Points([1, 2, 3])
         Selection1D(source=points)
         plot = bokeh_server_renderer.get_plot(points)
-        cds = plot.handles['cds']
-        cds.selected = Selection(indices=[0, 2])
+        selected = Selection(indices=[0, 2])
         callback = plot.callbacks[0]
         spec = callback.attributes['index']
-        resolved = callback.resolve_attr_spec(spec, cds, model=cds)
-        self.assertEqual(resolved, {'id': cds.ref['id'], 'value': [0, 2]})
+        resolved = callback.resolve_attr_spec(spec, selected, model=selected)
+        self.assertEqual(resolved, {'id': selected.ref['id'], 'value': [0, 2]})
 
     def test_rangexy_resolves(self):
         points = Points([1, 2, 3])

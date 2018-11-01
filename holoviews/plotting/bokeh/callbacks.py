@@ -787,9 +787,9 @@ class Selection1DCallback(Callback):
     Returns the current selection on a ColumnDataSource.
     """
 
-    attributes = {'index': 'cb_obj.selected.indices'}
-    models = ['source']
-    on_changes = ['selected']
+    attributes = {'index': 'cb_obj.indices'}
+    models = ['selected']
+    on_changes = ['indices']
 
     def _process_msg(self, msg):
         if 'index' in msg:
