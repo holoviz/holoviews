@@ -74,7 +74,10 @@ class MessageCallback(object):
         self.source = None
         self.streams = []
         if self.comm:
-            self.comm.close()
+            try:
+                self.comm.close()
+            except:
+                pass
         Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
                                if cb is not self}
 

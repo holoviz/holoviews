@@ -300,7 +300,7 @@ class BokehPlot(DimensionedPlot):
                     if get_method_owner(subscriber) not in plots
                 ]
 
-        if self.comm:
+        if self.comm and self.root is self.handles.get('plot'):
             self.comm.close()
 
 
