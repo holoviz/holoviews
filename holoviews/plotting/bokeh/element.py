@@ -746,6 +746,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
         self.handles['source'] = self.handles['cds'] = source
+        self.handles['selected'] = source.selected
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
         with abbreviated_exception():
