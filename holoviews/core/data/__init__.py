@@ -361,6 +361,8 @@ class Dataset(Element):
             # drop all scalar key dimensions
             key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
                         and not d in scalars]
+        elif not isinstance(kdims, list):
+            key_dims = [self.get_dimension(kdims, strict=True)]
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
         dropped = [d for d in self.kdims if not d in key_dims and not d in scalars]
