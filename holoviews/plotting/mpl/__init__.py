@@ -240,7 +240,6 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.GridImage = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest',
