@@ -163,6 +163,7 @@ class Element(ViewableElement, Composable, Overlayable):
         are 'numpy' (for homogeneous data), 'dataframe', and
         'dictionary'.
         """
+        self.warning("The table method is deprecated.")
         if datatype and not isinstance(datatype, list):
             datatype = [datatype]
         from ..element import Table
@@ -177,6 +178,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def mapping(self, kdims=None, vdims=None, **kwargs):
+        self.warning("The mapping method is deprecated.")
         length = len(self)
         if not kdims: kdims = self.kdims
         if kdims:

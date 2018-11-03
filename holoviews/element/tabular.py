@@ -131,6 +131,7 @@ class ItemTable(Element):
 
 
     def table(self, datatype=None):
+        self.warning("The table method is deprecated.")
         return Table(OrderedDict([((), self.values())]), kdims=[],
                      vdims=self.vdims)
 

@@ -574,6 +574,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         are 'numpy' (for homogeneous data), 'dataframe', and
         'dictionary'.
         """
+        self.warning("The table method is deprecated.")
         if datatype and not isinstance(datatype, list):
             datatype = [datatype]
         from ..element import Table

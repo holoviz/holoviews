@@ -432,6 +432,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
+        self.warning("The table method is deprecated.")
         from .data.interface import Interface
         from ..element.tabular import Table
         new_data = [(key, value.table(datatype=datatype, **kwargs))
