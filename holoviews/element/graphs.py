@@ -50,7 +50,12 @@ class layout_nodes(Operation):
     def _process(self, element, key=None):
         if self.p.layout and isinstance(self.p.layout, FunctionType):
             import networkx as nx
-            graph = nx.from_edgelist(element.array([0, 1]))
+            edges = element.array([0, 1])
+            graph = nx.from_edgelist(edges)
+            if 'weight' in self.p.kwargs:
+                weight = self.p.kwargs['weight']
+                for (s, t), w in zip(edges, element[weight]):
+                    graph.edges[s, t][weight] = w
             positions = self.p.layout(graph, **self.p.kwargs)
             nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
         else:
