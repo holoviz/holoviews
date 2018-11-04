@@ -2,8 +2,8 @@ import os, sys, inspect, shutil
 
 import param
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from ..core.options import options_policy, Keywords
+from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions
+from ..core.options import options_policy, Keywords, Store
 from ..core.operation import Operation
 from ..core.util import Aliases, basestring  # noqa (API import)
 from ..core.operation import OperationCallable
@@ -337,6 +337,78 @@ class extension(param.ParameterizedFunction):
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.current_backend = selected_backend
+
+
+def save(obj, filename, fmt='auto', backend=None, **kwargs):
+    """
+    Saves the supplied object to file.
+
+    The available output formats available depend on the backend being
+    used. By default and if the filename is a string the output format
+    will be inferred from the file extension. Otherwise an explicit
+    format will be specified. For ambiguous file extensions such as
+    html it may be necessary to specify an explicit fmt to override
+    the default.
+
+
+    Arguments
+    ---------
+    obj: HoloViews object
+        The HoloViews object to save to file
+    filename: string or IO object
+        The filename or BytesIO/StringIO object to save to
+    fmt: string
+        The format to save the object as, e.g. png, svg, html, or gif
+        and if widgets are desired either 'widgets' or 'scrubber'
+    backend: string
+        A valid HoloViews rendering backend, e.g. bokeh or matplotlib
+    **kwargs: dict
+        Additional keyword arguments passed to the renderer,
+        e.g. fps for animations
+    """
+    backend = backend or Store.current_backend
+    renderer_obj = renderer(backend)
+    if kwargs:
+        renderer_obj = renderer_obj.instance(**kwargs)
+    if isinstance(filename, basestring):
+        supported = [mfmt for tformats in renderer_obj.mode_formats.values()
+                     for mformats in tformats.values() for mfmt in mformats]
+        formats = filename.split('.')
+        if fmt == 'auto' and formats and formats[-1] != 'html':
+            fmt = formats[-1]
+        if formats[-1] in supported:
+            filename = '.'.join(formats[:-1])
+    return renderer_obj.save(obj, filename, fmt=fmt)
+
+
+def render(obj, backend=None, **kwargs):
+    """
+    Renders the object to a figure object.
+
+    Arguments
+    ---------
+    obj: HoloViews object
+        The HoloViews object to render
+    backend: string
+        A valid HoloViews rendering backend
+    **kwargs: dict
+        Additional keyword arguments passed to the renderer,
+        e.g. fps for animations
+
+    Returns
+    -------
+    renderered:
+        The rendered representation of the HoloViews object, e.g.
+        if backend='matplotlib' a matplotlib Figure or FuncAnimation
+    """
+    backend = backend or Store.current_backend
+    renderer_obj = renderer(backend)
+    if kwargs:
+        renderer_obj = renderer_obj.instance(**kwargs)
+    plot = renderer_obj.get_plot(obj)
+    if backend == 'matplotlib' and len(plot) > 1:
+        return plot.anim(fps=renderer_obj.fps)
+    return renderer_obj.get_plot(obj).state
 
 
 class Dynamic(param.ParameterizedFunction):
