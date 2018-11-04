@@ -413,7 +413,7 @@ class aggregate(AggregationOperation):
         return agg.clone(bounds=bbox)
 
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         agg_fn = self._get_aggregator(element)
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
@@ -572,7 +572,7 @@ class regrid(AggregationOperation):
         return arrays
 
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         if ds_version <= '0.5.0':
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
@@ -691,7 +691,7 @@ class trimesh_rasterize(aggregate):
                 'vertices': verts}
 
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         if isinstance(element, TriMesh):
             x, y = element.nodes.kdims[:2]
         else:
@@ -710,7 +710,7 @@ class trimesh_rasterize(aggregate):
                                  % agg.column)
         elif not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims)):
             self.p.aggregator = ds.count() if not isinstance(agg, ds.any) else agg
-            return aggregate._process(self, element, key)
+            return aggregate._process(self, element)
         else:
             if isinstance(element, TriMesh) and element.nodes.vdims:
                 vdim = element.nodes.vdims[0]
@@ -801,7 +801,7 @@ class rasterize(AggregationOperation):
                                (not isinstance(x, Image))),
                     aggregate)]
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         for predicate, transform in self._transforms:
             op_params = dict({k: v for k, v in self.p.items()
                               if k in transform.params() and v is not None},
@@ -909,7 +909,7 @@ class shade(LinkableOperation):
                              ydensity=element.ydensity)
 
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         element = element.map(self.to_xarray, Image)
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
@@ -984,9 +984,9 @@ class datashade(rasterize, shade):
     See aggregate and shade operations for more details.
     """
 
-    def _process(self, element, key=None):
-        agg = rasterize._process(self, element, key)
-        shaded = shade._process(self, agg, key)
+    def _process(self, element):
+        agg = rasterize._process(self, element)
+        shaded = shade._process(self, agg)
         return shaded
 
 
@@ -1014,7 +1014,7 @@ class stack(Operation):
         N, M, _ = img.shape
         return img.view(dtype=np.uint32).reshape((N, M))
 
-    def _process(self, overlay, key=None):
+    def _process(self, overlay):
         if not isinstance(overlay, CompositeOverlay):
             return overlay
         elif len(overlay) == 1:
@@ -1075,7 +1075,7 @@ class SpreadingOperation(LinkableOperation):
         """Apply the spread function using the indicated parameters."""
         raise NotImplementedError
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         if not isinstance(element, RGB):
             raise ValueError('spreading can only be applied to RGB Elements.')
         rgb = element.rgb
@@ -1163,7 +1163,7 @@ class _connect_edges(Operation):
         raise NotImplementedError('_connect_edges is an abstract baseclass '
                                   'and does not implement any actual bundling.')
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         index = element.nodes.kdims[2].name
         rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
         rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'])}

@@ -56,7 +56,7 @@ class univariate_kde(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         if self.p.groupby:
             if not isinstance(element, Dataset):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
@@ -169,7 +169,7 @@ class bivariate_kde(Operation):
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         try:
             from scipy import stats
         except ImportError:

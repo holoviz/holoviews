@@ -26,7 +26,7 @@ if pd:
     column_interfaces.append(PandasInterface)
 
 
-def identity(x,k): return x
+def identity(x): return x
 
 class operation(Operation):
     """
@@ -62,8 +62,8 @@ class operation(Operation):
         by the operation. By default, the identity operation is
         applied.""")
 
-    def _process(self, view, key=None):
-        retval = self.p.op(view, key)
+    def _process(self, element):
+        retval = self.p.op(element)
         if (self.p.output_type is not None):
             assert isinstance(retval, self.p.output_type), \
                               "Return value does not match the declared output type."
@@ -83,8 +83,8 @@ class factory(Operation):
         By default, if three overlaid Images elements are supplied,
         the corresponding RGB element will be returned. """)
 
-    def _process(self, view, key=None):
-        return self.p.output_type(view)
+    def _process(self, element):
+        return self.p.output_type(element)
 
 
 class chain(Operation):
@@ -117,11 +117,12 @@ class chain(Operation):
        A list of Operations (or Operation instances)
        that are applied on the input from left to right..""")
 
-    def _process(self, view, key=None):
-        processed = view
+    def _process(self, element):
+        processed = element
         for operation in self.p.operations:
-            processed = operation.process_element(processed, key,
-                                                  input_ranges=self.p.input_ranges)
+            processed = operation.process_element(
+                processed, input_ranges=self.p.input_ranges
+            )
 
         return processed.clone(group=self.p.group)
 
@@ -156,7 +157,7 @@ class transform(Operation):
        Image to the data in the output Image. By default, acts as
        the identity function such that the output matches the input.""")
 
-    def _process(self, img, key=None):
+    def _process(self, img):
         processed = (img.data if not self.p.operator
                      else self.p.operator(img.data))
         return img.clone(processed, group=self.p.group)
@@ -246,7 +247,7 @@ class image_overlay(Operation):
         return ordering, strengths
 
 
-    def _process(self, raster, key=None):
+    def _process(self, raster):
         specs = tuple(el.strip() for el in self.p.spec.split('*'))
         ordering, strengths = self._match_overlay(raster, specs)
         if all(el is None for el in ordering):
@@ -289,7 +290,7 @@ class threshold(Operation):
     group = param.String(default='Threshold', doc="""
        The group assigned to the thresholded output.""")
 
-    def _process(self, matrix, key=None):
+    def _process(self, matrix):
 
         if not isinstance(matrix, Image):
             raise TypeError("The threshold operation requires a Image as input.")
@@ -316,7 +317,7 @@ class gradient(Operation):
     group = param.String(default='Gradient', doc="""
     The group assigned to the output gradient matrix.""")
 
-    def _process(self, matrix, key=None):
+    def _process(self, matrix):
 
         if len(matrix.vdims) != 1:
             raise ValueError("Input matrix to gradient operation must "
@@ -370,7 +371,7 @@ class convolve(Operation):
         convolution in lbrt (left, bottom, right, top) format. By
         default, no slicing is applied.""")
 
-    def _process(self, overlay, key=None):
+    def _process(self, overlay):
         if len(overlay) != 2:
             raise Exception("Overlay must contain at least to items.")
 
@@ -420,7 +421,7 @@ class contours(Operation):
     overlaid = param.Boolean(default=False, doc="""
         Whether to overlay the contour on the supplied Element.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         try:
             from matplotlib.contour import QuadContourSet
             from matplotlib.axes import Axes
@@ -540,31 +541,31 @@ class histogram(Operation):
     style_prefix = param.String(default=None, allow_None=None, doc="""
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
-    def _process(self, view, key=None):
+    def _process(self, element):
         if self.p.groupby:
-            if not isinstance(view, Dataset):
+            if not isinstance(element, Dataset):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
-            grouped = view.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
+            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
-            selected_dim = [d.name for d in view.vdims + view.kdims][0]
-        data = np.array(view.dimension_values(selected_dim))
+            selected_dim = [d.name for d in element.vdims + element.kdims][0]
+        data = np.array(element.dimension_values(selected_dim))
         if self.p.nonzero:
             mask = data > 0
             data = data[mask]
         if self.p.weight_dimension:
-            weights = np.array(view.dimension_values(self.p.weight_dimension))
+            weights = np.array(element.dimension_values(self.p.weight_dimension))
             if self.p.nonzero:
                 weights = weights[mask]
         else:
             weights = None
 
         data = data[isfinite(data)]
-        hist_range = self.p.bin_range or view.range(selected_dim)
+        hist_range = self.p.bin_range or element.range(selected_dim)
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
             hist_range = (0, 1)
@@ -613,21 +614,21 @@ class histogram(Operation):
 
         params = {}
         if self.p.weight_dimension:
-            params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
+            params['vdims'] = [element.get_dimension(self.p.weight_dimension)]
         else:
             label = self.p.frequency_label.format(dim=selected_dim)
             params['vdims'] = [Dimension('{}_frequency'.format(selected_dim),
                                          label=label)]
 
-        if view.group != view.__class__.__name__:
-            params['group'] = view.group
+        if element.group != element.__class__.__name__:
+            params['group'] = element.group
 
         if self.p.cumulative:
             hist = np.cumsum(hist)
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
-        return Histogram((edges, hist), kdims=[view.get_dimension(selected_dim)],
-                         label=view.label, **params)
+        return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
+                         label=element.label, **params)
 
 
 class decimate(Operation):
@@ -664,7 +665,7 @@ class decimate(Operation):
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
 
-    def _process_layer(self, element, key=None):
+    def _process_layer(self, element):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
         if element.interface not in column_interfaces:
@@ -683,7 +684,7 @@ class decimate(Operation):
             return element.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
         return sliced
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         return element.map(self._process_layer, Element)
 
 
@@ -746,7 +747,7 @@ class interpolate_curve(Operation):
 
         return steps, tuple(val_arrays)
 
-    def _process_layer(self, element, key=None):
+    def _process_layer(self, element):
         INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
                              'steps-mid': self.pts_to_midstep,
                              'steps-post': self.pts_to_poststep}
@@ -764,7 +765,7 @@ class interpolate_curve(Operation):
             xs = xs.astype(dt_type)
         return element.clone((xs,)+dvals)
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         return element.map(self._process_layer, Element)
 
 
@@ -787,7 +788,7 @@ class collapse(Operation):
         The function that is used to collapse the curve y-values for
         each x-value.""")
 
-    def _process(self, overlay, key=None):
+    def _process(self, overlay):
         if isinstance(overlay, NdOverlay):
             collapse_map = HoloMap(overlay)
         else:

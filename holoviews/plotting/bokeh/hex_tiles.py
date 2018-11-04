@@ -34,7 +34,7 @@ class hex_binning(Operation):
 
     orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
 
         # Determine sampling

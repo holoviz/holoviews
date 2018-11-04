@@ -44,7 +44,7 @@ class rolling(Operation,RollingBase):
     function = param.Callable(default=np.mean, doc="""
         The function to apply over the rolling window.""")
 
-    def _process_layer(self, element, key=None):
+    def _process_layer(self, element):
         xdim = element.kdims[0].name
         df = PandasInterface.as_dframe(element)
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
@@ -62,7 +62,7 @@ class rolling(Operation,RollingBase):
                                  "mean and sum when custom window_type is supplied")
         return element.clone(rolled.reset_index())
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         return element.map(self._process_layer, Element)
 
 
@@ -83,7 +83,7 @@ class resample(Operation):
     rule = param.String(default='D', doc="""
         A string representing the time interval over which to apply the resampling""")
 
-    def _process_layer(self, element, key=None):
+    def _process_layer(self, element):
         df = PandasInterface.as_dframe(element)
         xdim = element.kdims[0].name
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
@@ -91,7 +91,7 @@ class resample(Operation):
         df = df.set_index(xdim).resample(**resample_kwargs)
         return element.clone(df.apply(self.p.function).reset_index())
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         return element.map(self._process_layer, Element)
 
 
@@ -110,7 +110,7 @@ class rolling_outlier_std(Operation, RollingBase):
     sigma = param.Number(default=2.0, doc="""
         Minimum sigma before a value is considered an outlier.""")
 
-    def _process_layer(self, element, key=None):
+    def _process_layer(self, element):
         ys = element.dimension_values(1)
 
         # Calculate the variation in the distribution of the residual
@@ -123,5 +123,5 @@ class rolling_outlier_std(Operation, RollingBase):
             outliers = (np.abs(residual) > std * self.p.sigma).values
         return element[outliers].clone(new_type=Scatter)
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         return element.map(self._process_layer, Element)

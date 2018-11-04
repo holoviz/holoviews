@@ -47,7 +47,7 @@ class layout_nodes(Operation):
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the layout function.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         if self.p.layout and isinstance(self.p.layout, FunctionType):
             import networkx as nx
             graph = nx.from_edgelist(element.array([0, 1]))
@@ -554,7 +554,7 @@ class layout_chords(Operation):
     max_chords = param.Integer(default=500, doc="""
         Maximum number of chords to render.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         nodes_el = element._nodes
         if nodes_el:
             idx_dim = nodes_el.kdims[-1]

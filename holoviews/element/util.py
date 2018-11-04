@@ -196,7 +196,7 @@ class categorical_aggregate2d(Operation):
                          datatype=self.p.datatype)
 
 
-    def _process(self, obj, key=None):
+    def _process(self, obj):
         """
         Generates a categorical 2D aggregate by inserting NaNs at all
         cross-product locations that do not already have a value assigned.

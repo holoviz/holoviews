@@ -33,7 +33,7 @@ class _layout_sankey(Operation):
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
 
-    def _process(self, element, key=None):
+    def _process(self, element):
         nodes, edges, graph = self.layout(element, **self.p)
         params = get_param_values(element)
         return Sankey((element.data, nodes, edges), sankey=graph, **params)

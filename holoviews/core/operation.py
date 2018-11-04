@@ -118,13 +118,13 @@ class Operation(param.ParameterizedFunction):
         kwargs = {}
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
-        ret = self._process(element, key)
+        ret = self._process(element)
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
         return ret
 
 
-    def _process(self, view, key=None):
+    def _process(self, element):
         """
         Process a single input element and outputs new single element or
         overlay. If a HoloMap is passed into an Operation, the
