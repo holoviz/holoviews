@@ -254,6 +254,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         data where regular sampling is expected. Expressed as the maximal
         allowable sampling difference between sample locations.""")
 
+    _ndim = 2
+
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):
         supplied_bounds = bounds
@@ -262,6 +264,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             xdensity = xdensity or data.xdensity
             ydensity = ydensity or data.ydensity
             if rtol is None: rtol = data.rtol
+
         extents = extents if extents else (None, None, None, None)
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)
@@ -270,6 +273,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = 0
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
+        elif isinstance(data, np.ndarray) and data.ndim != self._ndim:
+            raise ValueError('%s type expects %d-D array received %d-D'
+                             'array.' % (self._ndim, data.ndim))
 
         if rtol is not None:
             params['rtol'] = rtol
@@ -623,6 +629,7 @@ class RGB(Image):
         If an alpha channel is supplied, the defined alpha_dimension
         is automatically appended to this list.""")
 
+    _ndim = 3
     _vdim_reductions = {1: Image}
 
     @property
