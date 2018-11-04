@@ -73,7 +73,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
-    def get_extents(self, element, ranges, range_type=True):
+    def get_extents(self, element, ranges, range_type='combined'):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
     def _get_axis_labels(self, *args, **kwargs):
