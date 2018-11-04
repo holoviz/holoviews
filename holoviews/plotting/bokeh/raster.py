@@ -70,7 +70,7 @@ class RasterPlot(ColorbarPlot):
 
 
 
-class RGBPlot(RasterPlot):
+class RGBPlot(ElementPlot):
 
     style_opts = ['alpha']
     _plot_methods = dict(single='image_rgba')
@@ -112,10 +112,6 @@ class RGBPlot(RasterPlot):
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping, style)
-
-    def _glyph_properties(self, plot, element, source, ranges, style):
-        return ElementPlot._glyph_properties(self, plot, element,
-                                             source, ranges, style)
 
 
 

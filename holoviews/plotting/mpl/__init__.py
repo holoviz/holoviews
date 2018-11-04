@@ -155,8 +155,8 @@ Store.register({Curve: CurvePlot,
                                        False: HeatMapPlot},
                                       True),
                 Image: RasterPlot,
-                RGB: RasterPlot,
-                HSV: RasterPlot,
+                RGB: RGBPlot,
+                HSV: RGBPlot,
 
                 # Graph Elements
                 Graph: GraphPlot,

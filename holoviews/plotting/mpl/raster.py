@@ -5,23 +5,17 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
-from .element import ColorbarPlot, OverlayPlot
+from .element import ElementPlot, ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array
 
 
-
-class RasterPlot(ColorbarPlot):
+class RasterBasePlot(ElementPlot):
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
-
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
-
-    colorbar = param.Boolean(default=False, doc="""
-        Whether to add a colorbar to the plot.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -29,19 +23,10 @@ class RasterPlot(ColorbarPlot):
     situate_axes = param.Boolean(default=True, doc="""
         Whether to situate the image relative to other plots. """)
 
-    style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
-                  'filterrad', 'clims', 'norm']
-
     _plot_methods = dict(single='imshow')
 
-    def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
-        if self.hmap.type == Raster:
-            self.invert_yaxis = not self.invert_yaxis
-
-
     def get_extents(self, element, ranges, range_type='combined'):
-        extents = super(RasterPlot, self).get_extents(element, ranges, range_type)
+        extents = super(RasterBasePlot, self).get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
         else:
@@ -50,10 +35,21 @@ class RasterPlot(ColorbarPlot):
             else:
                 return element.extents
 
-
     def _compute_ticks(self, element, ranges):
         return None, None
 
+
+class RasterPlot(RasterBasePlot, ColorbarPlot):
+
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
+                  'filterrad', 'clims', 'norm']
+
+    def __init__(self, *args, **kwargs):
+        super(RasterPlot, self).__init__(*args, **kwargs)
+        if self.hmap.type == Raster:
+            self.invert_yaxis = not self.invert_yaxis
 
     def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
@@ -94,6 +90,32 @@ class RasterPlot(ColorbarPlot):
         if 'norm' in style:
             im.norm = style['norm']
 
+        return axis_kwargs
+
+
+
+class RGBPlot(RasterBasePlot):
+
+    style_opts = ['alpha', 'interpolation', 'visible', 'filterrad']
+
+    def get_data(self, element, ranges, style):
+        xticks, yticks = self._compute_ticks(element, ranges)
+        data = get_raster_array(element)
+        l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            data = data[::-1, ::-1]
+            data = data.transpose([1, 0, 2])
+            l, b, r, t = b, l, t, r
+        style['extent'] = [l, r, b, t]
+        style['origin'] = 'upper'
+        return [data], style, {'xticks': xticks, 'yticks': yticks}
+
+    def update_handles(self, key, axis, element, ranges, style):
+        im = self.handles['artist']
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        l, r, b, t = style['extent']
+        im.set_data(data[0])
+        im.set_extent((l, r, b, t))
         return axis_kwargs
 
 
