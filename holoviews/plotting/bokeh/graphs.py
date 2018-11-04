@@ -13,6 +13,7 @@ from .chart import ColorbarPlot, PointPlot
 from .element import (CompositeElementPlot, LegendPlot, line_properties,
                       fill_properties, text_properties)
 from ..util import process_cmap
+from .util import rgba_tuple
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
