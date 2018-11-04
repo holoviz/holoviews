@@ -142,7 +142,7 @@ def compute_overlayable_zorders(obj, path=[]):
 
     isoverlay = isinstance(obj.last, CompositeOverlay)
     isdynoverlay = obj.callback._is_overlay
-    if obj not in zorder_map[0] and not isoverlay:
+    if obj not in zorder_map[0]:
         zorder_map[0].append(obj)
     depth = overlay_depth(obj)
 
