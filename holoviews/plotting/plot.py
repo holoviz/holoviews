@@ -1144,6 +1144,8 @@ class GenericOverlayPlot(GenericElementPlot):
             oidx = 0
         else:
             vtype = type(obj.last)
+            if style_key not in ordering:
+                ordering.append(style_key)
             oidx = ordering.index(style_key)
 
         plottype = registry.get(vtype, None)
