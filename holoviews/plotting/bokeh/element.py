@@ -1329,7 +1329,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or len(plot.legend) == 0:
+        subplots = self.traverse(lambda x: x, [lambda x: x is not self])
+        legend_plots = any(p is not None for p in subplots
+                           if isinstance(p, LegendPlot) and
+                           not isinstance(p, OverlayPlot))
+        non_annotation = [p for p in subplots if not
+                          (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
+        if (not self.show_legend or len(plot.legend) == 0 or
+            (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super(OverlayPlot, self)._process_legend()
 
         options = {}
@@ -1365,19 +1372,27 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         legend.orientation = orientation
 
-        legend_items = []
-        legend_labels = {}
+        if 'legend_items' not in self.handles:
+            self.handles['legend_items'] = []
+        legend_items = self.handles['legend_items']
+        legend_labels = {tuple(i.label.items()) if isinstance(i.label, dict) else i.label: i
+                         for i in legend_items}
         for item in legend.items:
             label = tuple(item.label.items()) if isinstance(item.label, dict) else item.label
             if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
                 continue
+            if item not in legend_items:
+                for oitem in legend_items:
+                    oitem.renderers[:] = [r for r in oitem.renderers if r not in item.renderers]
             if label in legend_labels:
                 prev_item = legend_labels[label]
-                prev_item.renderers += item.renderers
+                prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
             else:
                 legend_labels[label] = item
                 legend_items.append(item)
-        legend.items[:] = legend_items
+                self.handles['legend_items'].append(item)
+        legend_items = [item for item in legend_items if any(r.visible for r in item.renderers)]
+        legend.items[:] = list(util.unique_iterator(legend_items))
 
         if self.multiple_legends:
             plot.legend.pop(plot.legend.index(legend))
@@ -1599,5 +1614,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_plot(key, self.handles['plot'], element)
+
+        self._process_legend()
 
         self._execute_hooks(element)
