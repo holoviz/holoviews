@@ -104,6 +104,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
+        nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if factors is None or (factors.dtype.kind in 'uif' and idx not in self._node_columns):
             colors, factors = None, None
         else:
@@ -115,7 +116,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 cvals = [str(f) for f in cvals]
                 factors = (str(f) for f in factors)
             factors = list(factors)
-            colors = process_cmap(cycle or cmap, len(factors))
+            if isinstance(cmap, dict):
+                colors = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
+            else:
+                colors = process_cmap(cycle or cmap, len(factors))
         if field not in edge_data:
             edge_data[field] = cvals
         edge_style = dict(style, cmap=cmap)
