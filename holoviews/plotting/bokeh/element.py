@@ -1297,6 +1297,12 @@ class LegendPlot(ElementPlot):
 
 
 
+class AnnotationPlot(object):
+    """
+    Mix-in plotting subclass for AnnotationPlots which do not have a legend.
+    """
+
+
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     tabs = param.Boolean(default=False, doc="""
