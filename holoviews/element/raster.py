@@ -207,12 +207,30 @@ class Raster(Element2D):
 
 class Image(Dataset, Raster, SheetCoordinateSystem):
     """
-    Image is the atomic unit as which 2D data is stored, along with
-    its bounds object. The input data may be a numpy.matrix object or
-    a two-dimensional numpy array.
+    Image represents a regularly sampled 2D grid of an underlying
+    continuous space of intensity values, which will be colormapped on
+    plotting. The grid of intensity values may be specified as a NxM
+    sized array of values along with a bounds, but it may also be
+    defined through explicit and regularly spaced x/y-coordinate
+    arrays of shape M and N respectively. The two most basic supported
+    constructors of an Image therefore include:
 
-    Allows slicing operations of the data in sheet coordinates or direct
-    access to the data, via the .data attribute.
+        Image((X, Y, Z))
+
+    where X is a 1D array of shape M, Y is a 1D array of shape N and
+    Z is a 2D array of shape NxM, or equivalently:
+
+        Image(Z, bounds=(x0, y0, x1, y1))
+
+    where Z is a 2D array of shape NxM defining the intensity values
+    and the bounds define the (left, bottom, top, right) edges of four
+    corners of the grid. Other gridded formats which support declaring
+    of explicit x/y-coordinate arrays such as xarray are also
+    supported.
+
+    Note that the interpretation of the orientation of the array
+    changes depending on whether bounds or explicit coordinates are
+    used.
     """
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
@@ -233,8 +251,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
     rtol = param.Number(default=None, doc="""
         The tolerance used to enforce regular sampling for regular, gridded
-        data where regular sampling is expected. Expressed as the maximal 
+        data where regular sampling is expected. Expressed as the maximal
         allowable sampling difference between sample locations.""")
+
+    _ndim = 2
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):
@@ -244,6 +264,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             xdensity = xdensity or data.xdensity
             ydensity = ydensity or data.ydensity
             if rtol is None: rtol = data.rtol
+
         extents = extents if extents else (None, None, None, None)
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)
@@ -252,6 +273,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = 0
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
+        elif isinstance(data, np.ndarray) and data.ndim != self._ndim:
+            raise ValueError('%s type expects %d-D array received %d-D'
+                             'array.' % (self._ndim, data.ndim))
 
         if rtol is not None:
             params['rtol'] = rtol
@@ -561,21 +585,33 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         return self.sheet2matrixidx(*coord)
 
 
-class GridImage(Image):
-    def __init__(self, *args, **kwargs):
-        self.warning('GridImage is now deprecated. Please use Image element instead.')
-        super(GridImage, self).__init__(*args, **kwargs)
-
 
 class RGB(Image):
     """
-    An RGB element is a Image containing channel data for the the
-    red, green, blue and (optionally) the alpha channels. The values
-    of each channel must be in the range 0.0 to 1.0.
+    RGB represents a regularly spaced 2D grid of an underlying
+    continuous space of RGB(A) (red, green, blue and alpha) color
+    space values. The definition of the grid closely matches the
+    semantics of an Image and in the simplest case the grid may be
+    specified as a NxMx3 or NxMx4 array of values along with a bounds,
+    but it may also be defined through explicit and regularly spaced
+    x/y-coordinate arrays. The two most basic supported constructors
+    of an RGB element therefore include:
 
-    In input array may have a shape of NxMx4 or NxMx3. In the latter
-    case, the defined alpha dimension parameter is appended to the
-    list of value dimensions.
+        RGB((X, Y, R, G, B))
+
+    where X is a 1D array of shape M, Y is a 1D array of shape N and
+    R/G/B are 2D array of shape NxM, or equivalently:
+
+        RGB(Z, bounds=(x0, y0, x1, y1))
+
+    where Z is a 3D array of stacked R/G/B arrays with shape NxMx3/4
+    and the bounds define the (left, bottom, top, right) edges of the
+    four corners of the grid. Other gridded formats which support
+    declaring of explicit x/y-coordinate arrays such as xarray are
+    also supported.
+
+    Note that the interpretation of the orientation changes depending
+    on whether bounds or explicit coordinates are used.
     """
 
     group = param.String(default='RGB', constant=True)
@@ -593,6 +629,7 @@ class RGB(Image):
         If an alpha channel is supplied, the defined alpha_dimension
         is automatically appended to this list.""")
 
+    _ndim = 3
     _vdim_reductions = {1: Image}
 
     @property
@@ -671,8 +708,30 @@ class RGB(Image):
 
 class HSV(RGB):
     """
-    Example of a commonly used color space subclassed from RGB used
-    for working in a HSV (hue, saturation and value) color space.
+    HSV represents a regularly spaced 2D grid of an underlying
+    continuous space of HSV (hue, saturation and value) color space
+    values. The definition of the grid closely matches the semantics
+    of an Image or RGB element and in the simplest case the grid may
+    be specified as a NxMx3 or NxMx4 array of values along with a
+    bounds, but it may also be defined through explicit and regularly
+    spaced x/y-coordinate arrays. The two most basic supported
+    constructors of an HSV element therefore include:
+
+        HSV((X, Y, H, S, V))
+
+    where X is a 1D array of shape M, Y is a 1D array of shape N and
+    H/S/V are 2D array of shape NxM, or equivalently:
+
+        HSV(Z, bounds=(x0, y0, x1, y1))
+
+    where Z is a 3D array of stacked H/S/V arrays with shape NxMx3/4
+    and the bounds define the (left, bottom, top, right) edges of the
+    four corners of the grid. Other gridded formats which support
+    declaring of explicit x/y-coordinate arrays such as xarray are
+    also supported.
+
+    Note that the interpretation of the orientation changes depending
+    on whether bounds or explicit coordinates are used.
     """
 
     group = param.String(default='HSV', constant=True)
@@ -716,16 +775,25 @@ class HSV(RGB):
 
 class QuadMesh(Dataset, Element2D):
     """
-    QuadMesh is a Raster type to hold x- and y- bin values
-    with associated values. The x- and y-values of the QuadMesh
-    may be supplied either as the edges of each bin allowing
-    uneven sampling or as the bin centers, which will be converted
-    to evenly sampled edges.
+    A QuadMesh represents 2D rectangular grid expressed as x- and
+    y-coordinates defined as 1D or 2D arrays. Unlike the Image type
+    a QuadMesh may be regularly or irregularly spaced and contain
+    either bin edges or bin centers. If bin edges are supplied the
+    shape of the x/y-coordinate arrays should be one greater than the
+    shape of the value array.
 
-    As a secondary but less supported mode QuadMesh can contain
-    a mesh of quadrilateral coordinates that is not laid out in
-    a grid. The data should then be supplied as three separate
-    2D arrays for the x-/y-coordinates and grid values.
+    The default interface expects data to be specified in the form:
+
+        QuadMesh((X, Y, Z))
+
+    where X and Y may be 1D or 2D arrays of the shape N(+1) and M(+1)
+    respectively or N(+1)xM(+1) and the Z value array should be of
+    shape NxM. Other gridded formats such as xarray are also supported
+    if installed.
+
+    The grid orientation follows the standard matrix convention: An
+    array Z with shape (nrows, ncolumns) is plotted with the column
+    number as X and the row number as Y.
     """
 
     group = param.String(default="QuadMesh", constant=True)
@@ -810,12 +878,21 @@ class QuadMesh(Dataset, Element2D):
 
 class HeatMap(Dataset, Element2D):
     """
-    HeatMap is an atomic Element used to visualize two dimensional
-    parameter spaces. It supports sparse or non-linear spaces, dynamically
-    upsampling them to a dense representation, which can be visualized.
+    HeatMap represents a 2D grid of categorical coordinates which can
+    be computed from a sparse tabular representation. A HeatMap does
+    not automatically aggregate the supplied values, so if the data
+    contains multiple entries for the same coordinate on the 2D grid
+    it should be aggregated using the aggregate method before display.
 
-    A HeatMap can be initialized with any dict or NdMapping type with
-    two-dimensional keys.
+    The HeatMap constructor will support any tabular or gridded data
+    format with 2 coordinates and at least one value dimension. A
+    simple example:
+
+        HeatMap([(x1, y1, z1), (x2, y2, z2), ...])
+
+    However any tabular and gridded format, including pandas
+    DataFrames, dictionaries of columns, xarray DataArrays and more
+    are supported if the library is importable.
     """
 
     group = param.String(default='HeatMap', constant=True)
@@ -828,10 +905,3 @@ class HeatMap(Dataset, Element2D):
     def __init__(self, data, kdims=None, vdims=None, **params):
         super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
         self.gridded = categorical_aggregate2d(self)
-
-    @property
-    def raster(self):
-        self.warning("The .raster attribute on HeatMap is deprecated, "
-                     "the 2D aggregate is now computed dynamically "
-                     "during plotting.")
-        return self.gridded.dimension_values(2, flat=False)
