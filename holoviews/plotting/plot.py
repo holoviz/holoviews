@@ -1050,6 +1050,7 @@ class GenericOverlayPlot(GenericElementPlot):
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
         self.top_level = keys is None
+        self.dynamic_subplots = []
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
@@ -1202,17 +1203,16 @@ class GenericOverlayPlot(GenericElementPlot):
         """
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
-        keys, vmaps = self.hmap.split_overlays()
-        for k, m in items:
-            self.map_lengths[group_fn(vmaps[keys.index(k)])[:length]] += 1
-
-        for k, obj in items:
-            subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+        for i, (k, obj) in enumerate(items):
+            vmap = self.hmap.clone([(key, obj)])
+            self.map_lengths[group_fn(vmap)[:length]] += 1
+            subplot = self._create_subplot(k, vmap, [], ranges)
             if subplot is None:
                 continue
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
+            self.dynamic_subplots.append(subplot)
 
 
     def _update_subplot(self, subplot, spec):

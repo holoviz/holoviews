@@ -1600,7 +1600,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
-                if triggering and all(s not in triggering for s in subplot.streams):
+                if (triggering and all(s not in triggering for s in subplot.streams) and
+                    not subplot in self.dynamic_subplots):
                     continue
             subplot.update_frame(key, ranges, element=el)
 
