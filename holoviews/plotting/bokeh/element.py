@@ -1381,18 +1381,24 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
             if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
                 continue
-            if item not in legend_items:
-                for oitem in legend_items:
-                    oitem.renderers[:] = [r for r in oitem.renderers if r not in item.renderers]
             if label in legend_labels:
                 prev_item = legend_labels[label]
                 prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
             else:
                 legend_labels[label] = item
                 legend_items.append(item)
-                self.handles['legend_items'].append(item)
-        legend_items = [item for item in legend_items if any(r.visible for r in item.renderers)]
-        legend.items[:] = list(util.unique_iterator(legend_items))
+                if item not in self.handles['legend_items']:
+                    self.handles['legend_items'].append(item)
+
+        filtered = []
+        renderers = []
+        for item in legend_items:
+            item.renderers[:] = [r for r in item.renderers if r not in renderers]
+            if item in filtered or not item.renderers or not any(r.visible for r in item.renderers):
+                continue
+            renderers += item.renderers
+            filtered.append(item)
+        legend.items[:] = list(util.unique_iterator(filtered))
 
         if self.multiple_legends:
             plot.legend.pop(plot.legend.index(legend))
