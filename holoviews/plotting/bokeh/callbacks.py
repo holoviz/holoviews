@@ -608,6 +608,30 @@ class TapCallback(PointerXYCallback):
     individual tap events within a doubletap event.
     """
 
+    # Skip if tap is outside axis range
+    code = """
+    if (x_range.type.endsWith('Range1d')) {
+      xstart = x_range.start;
+      xend = x_range.end;
+      if (xstart > xend) {
+        [xstart, xend] = [xend, xstart]
+      }
+      if ((cb_obj.x < xstart) || (cb_obj.x > xend)) {
+        return
+      }
+    }
+    if (y_range.type.endsWith('Range1d')) {
+      ystart = y_range.start;
+      yend = y_range.end;
+      if (ystart > yend) {
+        [ystart, yend] = [yend, ystart]
+      }
+      if ((cb_obj.y < ystart) || (cb_obj.y > yend) {
+        return
+      }
+    }
+    """
+
     on_events = ['tap', 'doubletap']
 
 
@@ -616,6 +640,8 @@ class SingleTapCallback(PointerXYCallback):
     Returns the mouse x/y-position on tap event.
     """
 
+    code = TapCallback.code
+
     on_events = ['tap']
 
 
@@ -623,6 +649,8 @@ class DoubleTapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on doubletap event.
     """
+
+    code = TapCallback.code
 
     on_events = ['doubletap']
 
