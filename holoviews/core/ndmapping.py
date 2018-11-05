@@ -717,7 +717,7 @@ class UniformNdMapping(NdMapping):
 
     data_type = (ViewableElement, NdMapping)
 
-    _abstract = True
+    __abstract = True
     _deep_indexable = True
     _auxiliary_component = False
 
