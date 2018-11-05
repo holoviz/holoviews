@@ -880,7 +880,7 @@ class HeatMap(Dataset, Element2D):
     """
     HeatMap represents a 2D grid of categorical coordinates which can
     be computed from a sparse tabular representation. A HeatMap does
-    not automatically aggregate the supplied values, if the data
+    not automatically aggregate the supplied values, so if the data
     contains multiple entries for the same coordinate on the 2D grid
     it should be aggregated using the aggregate method before display.
 
