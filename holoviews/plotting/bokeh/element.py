@@ -1497,10 +1497,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = util.wrap_tuple(self.hmap.last_key)
-        nonempty = [el for el in self.hmap.data.values() if el]
+        nonempty = [(k, el) for k, el in self.hmap.data.items() if el]
         if not nonempty:
             raise SkipRendering('All Overlays empty, cannot initialize plot.')
-        element = nonempty[-1]
+        dkey, element = nonempty[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
@@ -1518,8 +1518,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
             if isinstance(element, CompositeOverlay):
+                # Ensure that all subplots are in the same state
                 frame = element.get(key, None)
                 subplot.current_frame = frame
+                subplot.current_key = dkey
             if self.batched:
                 self.handles['plot'] = child
             if self.tabs:
