@@ -9,6 +9,7 @@ import os, base64
 from contextlib import contextmanager
 
 import param
+from ..core import HoloMap, NdLayout
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import find_file, unicode, unbound_dimensions, basestring
@@ -552,6 +553,9 @@ class Renderer(Exporter):
             return
 
         if fmt == 'svg' and self_or_cls.backend == 'bokeh':
+            if isinstance(obj, HoloMap):
+                # save each image instead of just the first one
+                plot = self_or_cls.get_plot(NdLayout(obj))
             self_or_cls._save_to_svg(plot.state, basename)
         else:
             rendered = self_or_cls(plot, fmt)
