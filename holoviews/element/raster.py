@@ -780,7 +780,7 @@ class QuadMesh(Dataset, Element2D):
     a QuadMesh may be regularly or irregularly spaced and contain
     either bin edges or bin centers. If bin edges are supplied the
     shape of the x/y-coordinate arrays should be one greater than the
-    value array.
+    shape of the value array.
 
     The default interface expects data to be specified in the form:
 
