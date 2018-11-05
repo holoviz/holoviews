@@ -1046,10 +1046,12 @@ class GenericOverlayPlot(GenericElementPlot):
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.map_lengths = Counter()
         self.group_counter = Counter() if group_counter is None else group_counter
+        self.cyclic_index_lookup = {}
         self.zoffset = 0
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
         self.top_level = keys is None
+        self.dynamic_subplots = []
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
@@ -1144,6 +1146,8 @@ class GenericOverlayPlot(GenericElementPlot):
             oidx = 0
         else:
             vtype = type(obj.last)
+            if style_key not in ordering:
+                ordering.append(style_key)
             oidx = ordering.index(style_key)
 
         plottype = registry.get(vtype, None)
@@ -1157,6 +1161,7 @@ class GenericOverlayPlot(GenericElementPlot):
         group_key = style_key[:length]
         zorder = self.zorder + oidx + self.zoffset
         cyclic_index = self.group_counter[group_key]
+        self.cyclic_index_lookup[style_key] = cyclic_index
         self.group_counter[group_key] += 1
         group_length = self.map_lengths[group_key]
 
@@ -1200,17 +1205,16 @@ class GenericOverlayPlot(GenericElementPlot):
         """
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
-        keys, vmaps = self.hmap.split_overlays()
-        for k, m in items:
-            self.map_lengths[group_fn(vmaps[keys.index(k)])[:length]] += 1
-
-        for k, obj in items:
-            subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+        for i, (k, obj) in enumerate(items):
+            vmap = self.hmap.clone([(key, obj)])
+            self.map_lengths[group_fn(vmap)[:length]] += 1
+            subplot = self._create_subplot(k, vmap, [], ranges)
             if subplot is None:
                 continue
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
+            self.dynamic_subplots.append(subplot)
 
 
     def _update_subplot(self, subplot, spec):
@@ -1219,10 +1223,17 @@ class GenericOverlayPlot(GenericElementPlot):
         to plot an element that is not an exact match to the object
         it was initially assigned.
         """
-        # Handle reused plot updating plot values
-        group_key = spec[:self.style_grouping]
-        self.group_counter[group_key] += 1
-        cyclic_index = self.group_counter[group_key]
+
+        # See if the precise spec has already been assigned a cyclic
+        # index otherwise generate a new one
+        if spec in self.cyclic_index_lookup:
+            cyclic_index = self.cyclic_index_lookup[spec]
+        else:
+            group_key = spec[:self.style_grouping]
+            self.group_counter[group_key] += 1
+            cyclic_index = self.group_counter[group_key]
+            self.cyclic_index_lookup[spec] = cyclic_index
+
         subplot.cyclic_index = cyclic_index
         if subplot.overlay_dims:
             odim_key = util.wrap_tuple(spec[-1])

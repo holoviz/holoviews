@@ -17,13 +17,13 @@ except:
 from ...core.util import dimension_sanitizer, basestring
 from ...element import HLine
 from ..plot import GenericElementPlot
-from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
-                      text_properties, line_properties)
+from .element import (AnnotationPlot, CompositeElementPlot, ColorbarPlot,
+                      ElementPlot, text_properties, line_properties)
 from .plot import BokehPlot
 
 
 
-class TextPlot(ElementPlot):
+class TextPlot(ElementPlot, AnnotationPlot):
 
     style_opts = text_properties+['color', 'angle']
     _plot_methods = dict(single='text', batched='text')
@@ -66,7 +66,7 @@ class TextPlot(ElementPlot):
 
 
 
-class LabelsPlot(ColorbarPlot):
+class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -118,7 +118,7 @@ class LabelsPlot(ColorbarPlot):
 
 
 
-class LineAnnotationPlot(ElementPlot):
+class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
     style_opts = line_properties + ['level']
 
@@ -147,7 +147,7 @@ class LineAnnotationPlot(ElementPlot):
 
 
 
-class SplinePlot(ElementPlot):
+class SplinePlot(ElementPlot, AnnotationPlot):
     """
     Draw the supplied Spline annotation (see Spline docstring).
     Does not support matplotlib Path codes.
@@ -180,7 +180,7 @@ class SplinePlot(ElementPlot):
 
 
 
-class ArrowPlot(CompositeElementPlot):
+class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
     style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
 
@@ -249,7 +249,7 @@ class ArrowPlot(CompositeElementPlot):
 
 
 
-class DivPlot(BokehPlot, GenericElementPlot):
+class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     height = param.Number(default=300)
 

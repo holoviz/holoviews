@@ -1297,6 +1297,12 @@ class LegendPlot(ElementPlot):
 
 
 
+class AnnotationPlot(object):
+    """
+    Mix-in plotting subclass for AnnotationPlots which do not have a legend.
+    """
+
+
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     tabs = param.Boolean(default=False, doc="""
@@ -1323,7 +1329,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     def _process_legend(self):
         plot = self.handles['plot']
-        if not self.show_legend or len(plot.legend) == 0:
+        subplots = self.traverse(lambda x: x, [lambda x: x is not self])
+        legend_plots = any(p is not None for p in subplots
+                           if isinstance(p, LegendPlot) and
+                           not isinstance(p, OverlayPlot))
+        non_annotation = [p for p in subplots if not
+                          (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
+        if (not self.show_legend or len(plot.legend) == 0 or
+            (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super(OverlayPlot, self)._process_legend()
 
         options = {}
@@ -1359,19 +1372,34 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         legend.orientation = orientation
 
-        legend_items = []
-        legend_labels = {}
+        if 'legend_items' not in self.handles:
+            self.handles['legend_items'] = []
+        legend_items = self.handles['legend_items']
+        legend_labels = {tuple(sorted(i.label.items())) if isinstance(i.label, dict) else i.label: i
+                         for i in legend_items}
         for item in legend.items:
-            label = tuple(item.label.items()) if isinstance(item.label, dict) else item.label
+            label = tuple(sorted(item.label.items())) if isinstance(item.label, dict) else item.label
             if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
                 continue
             if label in legend_labels:
                 prev_item = legend_labels[label]
-                prev_item.renderers += item.renderers
+                prev_item.renderers[:] = list(util.unique_iterator(prev_item.renderers+item.renderers))
             else:
                 legend_labels[label] = item
                 legend_items.append(item)
-        legend.items[:] = legend_items
+                if item not in self.handles['legend_items']:
+                    self.handles['legend_items'].append(item)
+
+        # Ensure that each renderer is only singly referenced by a legend item
+        filtered = []
+        renderers = []
+        for item in legend_items:
+            item.renderers[:] = [r for r in item.renderers if r not in renderers]
+            if item in filtered or not item.renderers or not any(r.visible for r in item.renderers):
+                continue
+            renderers += item.renderers
+            filtered.append(item)
+        legend.items[:] = list(util.unique_iterator(filtered))
 
         if self.multiple_legends:
             plot.legend.pop(plot.legend.index(legend))
@@ -1476,10 +1504,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = util.wrap_tuple(self.hmap.last_key)
-        nonempty = [el for el in self.hmap.data.values() if el]
+        nonempty = [(k, el) for k, el in self.hmap.data.items() if el]
         if not nonempty:
             raise SkipRendering('All Overlays empty, cannot initialize plot.')
-        element = nonempty[-1]
+        dkey, element = nonempty[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
@@ -1497,8 +1525,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
             if isinstance(element, CompositeOverlay):
+                # Ensure that all subplots are in the same state
                 frame = element.get(key, None)
                 subplot.current_frame = frame
+                subplot.current_key = dkey
             if self.batched:
                 self.handles['plot'] = child
             if self.tabs:
@@ -1579,7 +1609,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
-                if triggering and all(s not in triggering for s in subplot.streams):
+                if (triggering and all(s not in triggering for s in subplot.streams) and
+                    not subplot in self.dynamic_subplots):
                     continue
             subplot.update_frame(key, ranges, element=el)
 
@@ -1593,5 +1624,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_plot(key, self.handles['plot'], element)
+
+        self._process_legend()
 
         self._execute_hooks(element)
