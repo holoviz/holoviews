@@ -885,7 +885,7 @@ class HeatMap(Dataset, Element2D):
     it should be aggregated using the aggregate method before display.
 
     The HeatMap constructor will support any tabular or gridded data
-    format with 2 coordinate and at least one value dimensions. A
+    format with 2 coordinates and at least one value dimension. A
     simple example:
 
         HeatMap([(x1, y1, z1), (x2, y2, z2), ...])
