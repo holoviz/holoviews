@@ -23,6 +23,12 @@ from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
+from bokeh.themes.theme import Theme
+
+try:
+    from bokeh.themes import built_in_themes
+except:
+    built_in_themes = {}
 
 try:
     from bkcharts import Chart
@@ -40,6 +46,7 @@ from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
            'd': {'marker': 'diamond'},
+           '+': {'marker': 'cross'},
            '^': {'marker': 'triangle', 'angle': 0},
            '>': {'marker': 'triangle', 'angle': -np.pi/2},
            'v': {'marker': 'triangle', 'angle': np.pi},
@@ -344,8 +351,7 @@ def pad_plots(plots):
         widths.append(row_widths)
     plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
-    total_width = np.max([np.sum(row) for row in widths])
-    return plots, total_width
+    return plots
 
 
 def filter_toolboxes(plots):
@@ -661,3 +667,39 @@ def colormesh(X, Y):
     X = np.column_stack([X1, X2, X3, X4, X1])
     Y = np.column_stack([Y1, Y2, Y3, Y4, Y1])
     return X, Y
+
+
+def theme_attr_json(theme, attr):
+    if isinstance(theme, str) and theme in built_in_themes:
+        return built_in_themes[theme]._json['attrs'].get(attr, {})
+    elif isinstance(theme, Theme):
+        return theme._json['attrs'].get(attr, {})
+    else:
+        return {}
+
+
+def multi_polygons_data(element):
+    """
+    Expands polygon data which contains holes to a bokeh multi_polygons
+    representation. Multi-polygons split by nans are expanded and the
+    correct list of holes is assigned to each sub-polygon.
+    """
+    paths = element.split(datatype='array', dimensions=element.kdims)
+    xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+    holes = element.holes()
+    xsh, ysh = [], []
+    for x, y, multi_hole in zip(xs, ys, holes):
+        xhs = [[h[:, 0] for h in hole] for hole in multi_hole]
+        yhs = [[h[:, 1] for h in hole] for hole in multi_hole]
+        array = np.column_stack([x, y])
+        splits = np.where(np.isnan(array[:, :2].astype('float')).sum(axis=1))[0]
+        arrays = np.split(array, splits+1) if len(splits) else [array]
+        multi_xs, multi_ys = [], []
+        for i, (path, hx, hy) in enumerate(zip(arrays, xhs, yhs)):
+            if i != (len(arrays)-1):
+                path = path[:-1]
+            multi_xs.append([path[:, 0]]+hx)
+            multi_ys.append([path[:, 1]]+hy)
+        xsh.append(multi_xs)
+        ysh.append(multi_ys)
+    return xsh, ysh

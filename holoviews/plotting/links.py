@@ -1,8 +1,7 @@
+import weakref
 from collections import defaultdict
 
 import param
-
-from ..core import ViewableElement
 
 
 class Link(param.Parameterized):
@@ -22,14 +21,8 @@ class Link(param.Parameterized):
     directional links between the source and target object.
     """
 
-    source = param.ClassSelector(class_=ViewableElement, doc="""
-        The source object of the link (required).""")
-
-    target = param.ClassSelector(class_=ViewableElement, doc="""
-        The target object of the link (optional).""")
-
     # Mapping from a source id to a Link instance
-    registry = defaultdict(list)
+    registry = weakref.WeakKeyDictionary()
 
     # Mapping to define callbacks by backend and Link type.
     # e.g. Link._callbacks['bokeh'][Stream] = Callback
@@ -38,7 +31,11 @@ class Link(param.Parameterized):
     def __init__(self, source, target=None, **params):
         if source is None:
             raise ValueError('%s must define a source' % type(self).__name__)
-        super(Link, self).__init__(source=source, target=target, **params)
+
+        # Source is stored as a weakref to allow it to be garbage collected
+        self._source = None if source is None else weakref.ref(source)
+        self._target = None if target is None else weakref.ref(target)
+        super(Link, self).__init__(**params)
         self.link()
 
     @classmethod
@@ -49,17 +46,28 @@ class Link(param.Parameterized):
         """
         cls._callbacks[backend][cls] = callback
 
+    @property
+    def source(self):
+        return self._source() if self._source else None
+
+    @property
+    def target(self):
+        return self._target() if self._target else None
+
     def link(self):
         """
         Registers the Link
         """
-        self.registry[id(self.source)].append(self)
+        if self.source in self.registry:
+            self.registry[self.source].append(self)
+        else:
+            self.registry[self.source] = [self]
 
     def unlink(self):
         """
         Unregisters the Link
         """
-        links = self.registry.get(id(self.source))
+        links = self.registry.get(self.source)
         if self in links:
             links.pop(links.index(self))
 

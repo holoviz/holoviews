@@ -15,7 +15,8 @@ import param
 
 from ...core import OrderedDict, Dimension, Store
 from ...core.util import (
-    match_spec, unique_iterator, basestring, max_range, isfinite, datetime_types
+    match_spec, unique_iterator, basestring, max_range, isfinite,
+    datetime_types, dt_to_int, dt64_to_dt
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -172,6 +173,7 @@ class ErrorPlot(ChartPlot):
         return axis_kwargs
 
 
+
 class AreaPlot(ChartPlot):
 
     show_legend = param.Boolean(default=False, doc="""
@@ -193,11 +195,21 @@ class AreaPlot(ChartPlot):
         stack = fill_fn(*plot_data, **plot_kwargs)
         return {'artist': stack}
 
-    def get_extents(self, element, ranges):
-        vdims = element.vdims
+    def get_extents(self, element, ranges, range_type='combined'):
+        vdims = element.vdims[:2]
         vdim = vdims[0].name
-        ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
-        return super(AreaPlot, self).get_extents(element, ranges)
+        if len(vdims) > 1:
+            new_range = {}
+            for r in ranges[vdim]:
+                new_range[r] = max_range([ranges[vd.name][r] for vd in vdims])
+            ranges[vdim] = new_range
+        else:
+            s0, s1 = ranges[vdim]['soft']
+            s0 = min(s0, 0) if isfinite(s0) else 0
+            s1 = max(s1, 0) if isfinite(s1) else 0
+            ranges[vdim]['soft'] = (s0, s1)
+        return super(AreaPlot, self).get_extents(element, ranges, range_type)
+
 
 
 
@@ -244,8 +256,8 @@ class SpreadPlot(AreaPlot):
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
 
-    def get_extents(self, element, ranges):
-        return ChartPlot.get_extents(self, element, ranges)
+    def get_extents(self, element, ranges, range_type='combined'):
+        return ChartPlot.get_extents(self, element, ranges, range_type)
 
 
 
@@ -322,8 +334,9 @@ class HistogramPlot(ChartPlot):
         ylim = hist.range(1)
         isdatetime = False
         if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
-            edges = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in edges])
-            xlim = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in xlim])
+            edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
+            edges = date2num(edges)
+            xlim = tuple(dt_to_int(v, 'D') for v in xlim)
             isdatetime = True
         widths = np.diff(edges)
         return edges[:-1], hist_vals, widths, xlim+ylim, isdatetime
@@ -349,12 +362,13 @@ class HistogramPlot(ChartPlot):
         return [xvals, labels]
 
 
-    def get_extents(self, element, ranges):
-        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
-        ylow, yhigh = element.get_dimension(1).range
-        y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
-        y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
-        return (x0, y0, x1, y1)
+    def get_extents(self, element, ranges, range_type='combined'):
+        ydim = element.get_dimension(1)
+        s0, s1 = ranges[ydim.name]['soft']
+        s0 = min(s0, 0) if isfinite(s0) else 0
+        s1 = max(s1, 0) if isfinite(s1) else 0
+        ranges[ydim.name]['soft'] = (s0, s1)
+        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
 
 
     def _process_axsettings(self, hist, lims, ticks):
@@ -662,7 +676,7 @@ class VectorFieldPlot(ColorbarPlot):
         mag_dim = element.get_dimension(self.size_index)
         if mag_dim:
             magnitudes = element.dimension_values(mag_dim)
-            _, max_magnitude = ranges[mag_dim.name]
+            _, max_magnitude = ranges[mag_dim.name]['combined']
             if self.normalize_lengths and max_magnitude != 0:
                 magnitudes = magnitudes / max_magnitude
         else:
@@ -789,13 +803,13 @@ class BarPlot(LegendPlot):
         return style, color_groups, sopts
 
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, range_type='combined'):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
         if self.stack_index in range(element.ndims):
             return 0, 0, ngroups, np.NaN
         else:
-            vrange = ranges[vdim]
+            vrange = ranges[vdim]['combined']
             return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
 
 
@@ -954,16 +968,30 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
-
-    def get_extents(self, element, ranges):
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
-        if len(element.dimensions()) == 1:
-            b, t = self.position, self.position+self.spike_length
-        else:
-            b = np.nanmin([0, b])
-            t = np.nanmax([0, t])
+    def get_extents(self, element, ranges, range_type='combined'):
+        if len(element.dimensions()) > 1:
+            ydim = element.get_dimension(1)
+            s0, s1 = ranges[ydim.name]['soft']
+            s0 = min(s0, 0) if isfinite(s0) else 0
+            s1 = max(s1, 0) if isfinite(s1) else 0
+            ranges[ydim.name]['soft'] = (s0, s1)
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
+        if len(element.dimensions()) == 1 and range_type != 'hard':
+            if self.batched:
+                bs, ts = [], []
+                # Iterate over current NdOverlay and compute extents
+                # from position and length plot options
+                frame = self.current_frame or self.hmap.last
+                for el in frame.values():
+                    opts = self.lookup_options(el, 'plot').options
+                    pos = opts.get('position', self.position)
+                    length = opts.get('spike_length', self.spike_length)
+                    bs.append(pos)
+                    ts.append(pos+length)
+                b, t = (np.nanmin(bs), np.nanmax(ts))
+            else:
+                b, t = self.position, self.position+self.spike_length
         return l, b, r, t
-
 
     def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
@@ -989,7 +1017,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                 if vs.dtype.kind == 'M' and i < len(dims):
                     dt_format = Dimension.type_formatters[np.datetime64]
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))
-                    vs = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in vs])
+                    vs = np.array([dt_to_int(v, 'D') for v in vs])
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 

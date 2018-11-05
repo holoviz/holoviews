@@ -43,7 +43,10 @@ class DictInterface(Interface):
             vdims = eltype.vdims
 
         dimensions = [dimension_name(d) for d in kdims + vdims]
-        if isinstance(data, tuple):
+        if (isinstance(data, list) and all(isinstance(d, dict) for d in data) and
+            not all(c in d for d in data for c in dimensions)):
+            raise ValueError('DictInterface could not find specified dimensions in the data.')
+        elif isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}
@@ -84,32 +87,36 @@ class DictInterface(Interface):
 
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.""")
-        elif isinstance(data, dict):
-            unpacked = []
-            for d, vals in data.items():
-                if isinstance(d, tuple):
-                    vals = np.asarray(vals)
-                    if vals.shape == (0,):
-                        for sd in d:
-                            unpacked.append((sd, np.array([], dtype=vals.dtype)))
-                    elif not vals.ndim == 2 and vals.shape[1] == len(d):
-                        raise ValueError("Values for %s dimensions did not have "
-                                         "the expected shape.")
-                    else:
-                        for i, sd in enumerate(d):
-                            unpacked.append((sd, vals[:, i]))
+
+        unpacked = []
+        for d, vals in data.items():
+            if isinstance(d, tuple):
+                vals = np.asarray(vals)
+                if vals.shape == (0,):
+                    for sd in d:
+                        unpacked.append((sd, np.array([], dtype=vals.dtype)))
+                elif not vals.ndim == 2 and vals.shape[1] == len(d):
+                    raise ValueError("Values for %s dimensions did not have "
+                                     "the expected shape.")
                 else:
-                    if not isscalar(vals):
-                        vals = np.asarray(vals)
-                        if not vals.ndim == 1 and d in dimensions:
-                            raise ValueError('DictInterface expects data for each column to be flat.')
-                    unpacked.append((d, vals))
-            if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
-                raise ValueError('DictInterface expects data to be of uniform shape.')
-            if isinstance(data, odict_types):
-                data.update(unpacked)
+                    for i, sd in enumerate(d):
+                        unpacked.append((sd, vals[:, i]))
+            elif d not in dimensions:
+                unpacked.append((d, vals))
             else:
-                data = OrderedDict(unpacked)
+                if not isscalar(vals):
+                    vals = np.asarray(vals)
+                    if not vals.ndim == 1 and d in dimensions:
+                        raise ValueError('DictInterface expects data for each column to be flat.')
+                unpacked.append((d, vals))
+
+        if not cls.expanded([vs for d, vs in unpacked if d in dimensions and not isscalar(vs)]):
+            raise ValueError('DictInterface expects data to be of uniform shape.')
+        if isinstance(data, odict_types):
+            data.update(unpacked)
+        else:
+            data = OrderedDict(unpacked)
+
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -151,7 +158,12 @@ class DictInterface(Interface):
         values = dataset.data[name]
         if isscalar(values):
             return True
-        unique = set(values) if values.dtype.kind == 'O' else np.unique(values)
+        if values.dtype.kind == 'O':
+            unique = set(values)
+        else:
+            unique = np.unique(values)
+            if (~util.isfinite(unique)).all():
+                return True
         return len(unique) == 1
 
 
@@ -219,6 +231,15 @@ class DictInterface(Interface):
             sorting = util.arglexsort(arrays)
         return OrderedDict([(d, v if isscalar(v) else (v[sorting][::-1] if reverse else v[sorting]))
                             for d, v in dataset.data.items()])
+
+
+    @classmethod
+    def range(cls, dataset, dimension):
+        dim = dataset.get_dimension(dimension)
+        column = dataset.data[dim.name]
+        if isscalar(column):
+            return column, column
+        return Interface.range(dataset, dimension)
 
 
     @classmethod
@@ -357,6 +378,21 @@ class DictInterface(Interface):
             arr = new_data[cols[0].name]
             return arr if isscalar(arr) else arr[0]
         return new_data
+
+    @classmethod
+    def has_holes(cls, dataset):
+        from holoviews.element import Polygons
+        key = Polygons._hole_key
+        return key in dataset.data and isinstance(dataset.data[key], list)
+
+    @classmethod
+    def holes(cls, dataset):
+        from holoviews.element import Polygons
+        key = Polygons._hole_key
+        if key in dataset.data:
+            return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
+        else:
+            return super(DictInterface, cls).holes(dataset)
 
 
 Interface.register(DictInterface)

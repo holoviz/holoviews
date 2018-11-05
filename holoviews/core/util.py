@@ -64,11 +64,6 @@ try:
 except ImportError:
     pd = None
 
-try:
-    import dask.dataframe as dd
-except ImportError:
-    dd = None
-
 
 class VersionError(Exception):
     "Raised when there is a library version mismatch."
@@ -237,7 +232,7 @@ if sys.version_info.major >= 3:
     unicode = str
     long = int
     generator_types = (zip, range, types.GeneratorType)
-    RecursionError = RecursionError # noqa
+    RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
 else:
     basestring = basestring
     unicode = unicode
@@ -810,36 +805,68 @@ def find_range(values, soft_range=[]):
             return (None, None)
 
 
-def max_range(ranges):
+def max_range(ranges, combined=True):
     """
     Computes the maximal lower and upper bounds from a list bounds.
     """
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            values = [r for r in ranges for v in r if v is not None]
+            values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
             if pd and all(isinstance(v, pd.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
-            if arr.dtype.kind in 'OSU':
-                arr = list(python2sort([v for v in arr.flat if not is_nan(v) and v is not None]))
+            if not len(arr):
+                return np.NaN, np.NaN
+            elif arr.dtype.kind in 'OSU':
+                arr = list(python2sort([v for r in values for v in r if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            if arr.dtype.kind in 'M':
-                return arr[:, 0].min(), arr[:, 1].max()
-            return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+            elif arr.dtype.kind in 'M':
+                return (arr.min(), arr.max()) if combined else (arr[:, 0].min(), arr[:, 1].min())
+            if combined:
+                return (np.nanmin(arr), np.nanmax(arr))
+            else:
+                return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except:
         return (np.NaN, np.NaN)
 
 
-def dimension_range(lower, upper, dimension):
+def range_pad(lower, upper, padding=None, log=False):
+    """
+    Pads the range by a fraction of the interval
+    """
+    if padding is not None and not isinstance(padding, tuple):
+        padding = (padding, padding)
+    if is_number(lower) and is_number(upper) and padding is not None:
+        if not isinstance(lower, datetime_types) and log and lower > 0 and upper > 0:
+            log_min = np.log(lower) / np.log(10)
+            log_max = np.log(upper) / np.log(10)
+            lspan = (log_max-log_min)*(1+padding[0]*2)
+            uspan = (log_max-log_min)*(1+padding[1]*2)
+            center = (log_min+log_max) / 2.0
+            start, end = np.power(10, center-lspan/2.), np.power(10, center+uspan/2.)
+        else:
+            span = (upper-lower)
+            lpad = span*(padding[0])
+            upad = span*(padding[1])
+            start, end = lower-lpad, upper+upad
+    else:
+        start, end = lower, upper
+
+    return start, end
+
+
+def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=False):
     """
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = max_range([(lower, upper), dimension.soft_range])
-    dmin, dmax = dimension.range
-    lower = dmin if isfinite(dmin) else lower
-    upper = dmax if isfinite(dmax) else upper
+    lower, upper = range_pad(lower, upper, padding, log)
+    lower = max_range([(lower, None), (soft_range[0], None)])[0]
+    upper = max_range([(None, upper), (None, soft_range[1])])[1]
+    dmin, dmax = hard_range
+    lower = lower if dmin is None or not isfinite(dmin) else dmin
+    upper = upper if dmax is None or not isfinite(dmax) else dmax
     return lower, upper
 
 
@@ -1035,6 +1062,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
 # Copied from param should make param version public
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
+    elif isinstance(obj, (np.str_, np.unicode_)): return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True
@@ -1243,6 +1271,9 @@ def is_dataframe(data):
     """
     Checks whether the supplied data is of DataFrame type.
     """
+    dd = None
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
 
@@ -1251,6 +1282,9 @@ def is_series(data):
     """
     Checks whether the supplied data is of Series type.
     """
+    dd = None
+    if 'dask' in sys.modules:
+        import dask.dataframe as dd
     return((pd is not None and isinstance(data, pd.Series)) or
           (dd is not None and isinstance(data, dd.Series)))
 
@@ -1645,6 +1679,8 @@ def bound_range(vals, density, time_unit='us'):
     assumed to be evenly spaced. Density is rounded to machine precision
     using significant digits reported by sys.float_info.dig.
     """
+    if not len(vals):
+        return(np.nan, np.nan, density, False)
     low, high = vals.min(), vals.max()
     invert = False
     if len(vals) > 1 and vals[0] > vals[1]:
@@ -1671,8 +1707,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     Returns a boolean indicating whether the sampling is regular.
     """
     diffs = np.diff(values)
-    vals = np.unique(diffs)
-    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > abs(diffs.min()*rtol))
+    return (len(diffs) < 1) or abs(diffs.min()-diffs.max()) < abs(diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):
@@ -1802,11 +1837,11 @@ def closest_match(match, specs, depth=0):
         if spec[0] == match[0]:
             new_specs.append((i, spec[1:]))
         else:
-            if is_number(match[0]) and is_number(spec[0]):
-                match_length = -abs(match[0]-spec[0])
-            elif all(isinstance(s[0], basestring) for s in [spec, match]):
+            if all(isinstance(s[0], basestring) for s in [spec, match]):
                 match_length = max(i for i in range(len(match[0]))
                                    if match[0].startswith(spec[0][:i]))
+            elif is_number(match[0]) and is_number(spec[0]):
+                match_length = -abs(match[0]-spec[0])
             else:
                 match_length = 0
             match_lengths.append((i, match_length, spec[0]))

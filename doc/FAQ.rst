@@ -48,6 +48,46 @@ This same method is applicable to adjust the range of a color bar. Here
 z_col is the color bar value dimension and is bounded from 0 to 5.
 
 
+**Q: How do I control the auto-ranging/normalization of axis limits 
+across frames in a HoloMap or objects in a Layout?**
+
+**A:** Where feasible, HoloViews defaults to normalizing axis ranges
+across all objects that are presented together, so that they can be 
+compared directly. If you don't want objects that share a dimension to 
+be normalized together in your layout, you can change the ``axiswise``
+normalization option to True, making each object be normalized 
+independently:
+
+.. code:: python
+
+    your_layout.options(axiswise=True)
+
+Similarly, if you have a HoloMap composed of multiple frames in an
+animation or controlled with widgets, you can make each frame be normalized
+independently by changing ``framewise`` to True:
+
+.. code:: python
+
+    your_holomap.options(framewise=True)
+
+
+**Q: Why doesn't my DynamicMap respect the framewise=False option for 
+axis normalization across frames?**
+
+**A:** Unfortunately, HoloViews has no way of knowing the axis ranges
+of objects that might be returned by future calls to a DynamicMap's 
+callback function, and so there is no way for it to fully implement 
+``framewise=False`` normalization (even though such normalization 
+is the default in HoloViews). Thus as a special case, a DynamicMap 
+(whether created specifically or as the return value of various
+operations that accept a ``dynamic=True`` argument) will by default
+compute its ranges *using the first frame's data only*. If that is not
+the behavior you want, you either set ``framewise=True`` on it to enable
+normalization on every frame independently, or you can manually
+determine the appropriate axis range yourself and set that, e.g. with 
+``.redim.range()`` as described above.
+
+
 **Q: The default figure size is so tiny! How do I enlarge it?**
 
 **A:** Depending on the selected backend...

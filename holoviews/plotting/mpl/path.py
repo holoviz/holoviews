@@ -1,9 +1,11 @@
-from matplotlib.collections import PolyCollection, LineCollection
-import numpy as np
 import param
+import numpy as np
+from matplotlib.collections import PatchCollection, LineCollection
 
 from ...core import util
+from ...element import Polygons
 from .element import ColorbarPlot
+from .util import polygons_to_path_patches
 
 
 class PathPlot(ColorbarPlot):
@@ -36,6 +38,8 @@ class PathPlot(ColorbarPlot):
         paths, cvals = [], []
         for path in element.split(datatype='array'):
             splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
+            if len(splits) == 1:
+                splits.append(len(path))
             for (s1, s2) in zip(splits[:-1], splits[1:]):
                 cvals.append(path[s1, cidx])
                 paths.append(path[s1:s2+1, :2])
@@ -80,9 +84,17 @@ class ContourPlot(PathPlot):
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
-        paths = element.split(datatype='array', dimensions=element.kdims)
-        if self.invert_axes:
-            paths = [p[:, ::-1] for p in paths]
+
+        if isinstance(element, Polygons):
+            subpaths = polygons_to_path_patches(element)
+            paths = [path for subpath in subpaths for path in subpath]
+            if self.invert_axes:
+                for p in paths:
+                    p._path.vertices = p._path.vertices[:, ::-1]
+        else:
+            paths = element.split(datatype='array', dimensions=element.kdims)
+            if self.invert_axes:
+                paths = [p[:, ::-1] for p in paths]
 
         if cdim is None:
             return (paths,), style, {}
@@ -91,9 +103,15 @@ class ContourPlot(PathPlot):
             array = np.full(len(paths), element.level)
         else:
             array = element.dimension_values(cdim, expanded=False)
+            if len(paths) != len(array):
+                # If there are multi-geometries the list of scalar values
+                # will not match the list of paths and has to be expanded
+                array = np.array([v for v, sps in zip(array, subpaths)
+                                  for _ in range(len(sps))])
+
         if array.dtype.kind not in 'uif':
             array = np.searchsorted(np.unique(array), array)
-        style['array']= array
+        style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
         style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
@@ -115,6 +133,6 @@ class PolygonPlot(ContourPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        polys = PolyCollection(*plot_args, **plot_kwargs)
+        polys = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(polys)
         return {'artist': polys}

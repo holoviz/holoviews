@@ -40,9 +40,9 @@ class RasterPlot(ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
-    def get_extents(self, element, ranges):
-        extents = super(RasterPlot, self).get_extents(element, ranges)
-        if self.situate_axes:
+    def get_extents(self, element, ranges, range_type='combined'):
+        extents = super(RasterPlot, self).get_extents(element, ranges, range_type)
+        if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
         else:
             if isinstance(element, Image):
@@ -150,6 +150,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     equivalent using subplots.
     """
 
+    padding = param.Number(default=0.1, doc="""
+        The amount of padding as a fraction of the total Grid size""")
+
     # Parameters inherited from OverlayPlot that are not part of the
     # GridPlot interface. Some of these may be enabled in future in
     # conjunction with GridPlot.
@@ -159,6 +162,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_ticks = param.Parameter(precedence=-1)
     batched = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
+    default_span = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
@@ -172,11 +176,17 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     logz = param.Parameter(precedence=-1)
     show_grid = param.Parameter(precedence=-1)
     style_grouping = param.Parameter(precedence=-1)
+    xlim = param.Parameter(precedence=-1)
+    ylim = param.Parameter(precedence=-1)
+    zlim = param.Parameter(precedence=-1)
     xticks = param.Parameter(precedence=-1)
+    xformatter = param.Parameter(precedence=-1)
     yticks = param.Parameter(precedence=-1)
+    yformatter = param.Parameter(precedence=-1)
     zticks = param.Parameter(precedence=-1)
     zaxis = param.Parameter(precedence=-1)
     zrotation = param.Parameter(precedence=-1)
+    zformatter = param.Parameter(precedence=-1)
 
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
@@ -216,7 +226,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _finalize_artist(self, key):
         pass
 
-    def get_extents(self, view, ranges):
+    def get_extents(self, view, ranges, range_type='combined'):
+        if range_type == 'hard':
+            return (np.nan,)*4
         width, height, _, _, _, _ = self.border_extents
         return (0, 0, width, height)
 
@@ -249,7 +261,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
                 cdim = pane.vdims[0].name
-                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))
+                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))['combined']
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)

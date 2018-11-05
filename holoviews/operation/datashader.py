@@ -224,10 +224,10 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % type(self).__name__)
             inner_element = elements[0]
-            if inner_element.vdims:
-                field = inner_element.vdims[0].name
-            elif isinstance(inner_element, TriMesh) and inner_element.nodes.kdims:
+            if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
+            elif inner_element.vdims:
+                field = inner_element.vdims[0].name
             elif isinstance(element, NdOverlay):
                 field = element.kdims[0].name
             else:
@@ -580,7 +580,7 @@ class regrid(AggregationOperation):
         x, y = element.kdims
         coords = tuple(element.dimension_values(d, expanded=False) for d in [x, y])
         info = self._get_sampling(element, x, y)
-        (x_range, y_range), _, (width, height), (xtype, ytype) = info
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         # Disable upsampling by clipping size and ranges
         (xstart, xend), (ystart, yend) = (x_range, y_range)
@@ -592,21 +592,33 @@ class regrid(AggregationOperation):
             if isinstance(y0, datetime_types):
                 y0, y1 = dt_to_int(y0, 'ns'), dt_to_int(y1, 'ns')
             exspan, eyspan = (x1-x0), (y1-y0)
-            width = min([int((xspan/exspan) * len(coords[0])), width])
-            height = min([int((yspan/eyspan) * len(coords[1])), height])
+            if np.isfinite(exspan) and exspan > 0:
+                width = min([int((xspan/exspan) * len(coords[0])), width])
+            else:
+                width = 0
+            if np.isfinite(eyspan) and eyspan > 0:
+                height = min([int((yspan/eyspan) * len(coords[1])), height])
+            else:
+                height = 0
+            xunit = float(xspan)/width if width else 0
+            yunit = float(yspan)/height if height else 0
+            xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
+                      np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
         # Compute bounds (converting datetimes)
         if xtype == 'datetime':
             xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
+            xs = (xs/10e5).astype('datetime64[us]')
         if ytype == 'datetime':
             ystart, yend = (np.array([ystart, yend])/10e5).astype('datetime64[us]')
+            ys = (ys/10e5).astype('datetime64[us]')
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
 
         params = dict(bounds=bbox)
         if width == 0 or height == 0:
             if width == 0: params['xdensity'] = 1
             if height == 0: params['ydensity'] = 1
-            return element.clone([], **params)
+            return element.clone((xs, ys, np.zeros((height, width))), **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
@@ -664,9 +676,9 @@ class trimesh_rasterize(aggregate):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
-    def _precompute(self, element):
+    def _precompute(self, element, agg):
         from datashader.utils import mesh
-        if element.vdims:
+        if element.vdims and getattr(agg, 'column', None) not in element.nodes.vdims:
             simplices = element.dframe([0, 1, 2, 3])
             verts = element.nodes.dframe([0, 1])
         elif element.nodes.vdims:
@@ -688,19 +700,29 @@ class trimesh_rasterize(aggregate):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
         agg = self.p.aggregator
-        if not (element.vdims or element.nodes.vdims):
-            if not isinstance(agg, (rd.count, rd.any)) and agg.column is not None:
-                raise ValueError("Aggregation column %s not found on TriMesh element. "
-                                 "The supplied TriMesh does not define any value "
-                                 "dimensions.")
+        if getattr(agg, 'column', None):
+            if agg.column in element.vdims:
+                vdim = element.get_dimension(agg.column)
+            elif isinstance(element, TriMesh) and agg.column in element.nodes.vdims:
+                vdim = element.nodes.get_dimension(agg.column)
+            else:
+                raise ValueError("Aggregation column %s not found on TriMesh element."
+                                 % agg.column)
+        elif not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims)):
             self.p.aggregator = ds.count() if not isinstance(agg, ds.any) else agg
             return aggregate._process(self, element, key)
-        elif element._plot_id in self._precomputed:
+        else:
+            if isinstance(element, TriMesh) and element.nodes.vdims:
+                vdim = element.nodes.vdims[0]
+            else:
+                vdim = element.vdims[0]
+            agg = self._get_aggregator(element)
+
+        if element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
         else:
-            precomputed = self._precompute(element)
+            precomputed = self._precompute(element, agg)
 
-        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
 
@@ -719,7 +741,7 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         interpolate = bool(self.p.interpolation)
-        agg = cvs.trimesh(pts, simplices, agg=self._get_aggregator(element),
+        agg = cvs.trimesh(pts, simplices, agg=agg,
                           interp=interpolate, mesh=mesh)
         return Image(agg, **params)
 
@@ -732,8 +754,8 @@ class quadmesh_rasterize(trimesh_rasterize):
     handle the actual rasterization.
     """
 
-    def _precompute(self, element):
-        return super(quadmesh_rasterize, self)._precompute(element.trimesh())
+    def _precompute(self, element, agg):
+        return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
 
 
 
@@ -881,7 +903,10 @@ class shade(LinkableOperation):
         data += tuple(element.dimension_values(vd, flat=False)
                       for vd in element.vdims)
         dtypes = [dt for dt in element.datatype if dt != 'xarray']
-        return element.clone(data, datatype=['xarray']+dtypes)
+        return element.clone(data, datatype=['xarray']+dtypes,
+                             bounds=element.bounds,
+                             xdensity=element.xdensity,
+                             ydensity=element.ydensity)
 
 
     def _process(self, element, key=None):

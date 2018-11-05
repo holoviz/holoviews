@@ -3,8 +3,7 @@ from collections import defaultdict
 import param
 import numpy as np
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection,
-    ToolbarBox
+    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox
 )
 from pyviz_comms import JS_CALLBACK
 
@@ -61,9 +60,26 @@ class MessageCallback(object):
         self.streams = streams
         if plot.renderer.mode != 'server':
             self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
+        else:
+            self.comm = None
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()
+
+
+    def cleanup(self):
+        self.reset()
+        self.handle_ids = None
+        self.plot = None
+        self.source = None
+        self.streams = []
+        if self.comm:
+            try:
+                self.comm.close()
+            except:
+                pass
+        Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
+                               if cb is not self}
 
 
     def reset(self):
@@ -107,9 +123,14 @@ class MessageCallback(object):
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
             streams.append(stream)
-        Stream.trigger(streams)
-        for stream in streams:
-            stream._metadata = {}
+
+        try:
+            Stream.trigger(streams)
+        except Exception as e:
+            raise e
+        finally:
+            for stream in streams:
+                stream._metadata = {}
 
 
     def _init_plot_handles(self):
@@ -224,7 +245,7 @@ class CustomJSCallback(MessageCallback):
         """
         # Generate callback JS code to get all the requested data
         if plot_id is None:
-            plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
+            plot_id = self.plot.id or 'PLACEHOLDER_PLOT_ID'
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce,
@@ -289,9 +310,6 @@ class ServerCallback(MessageCallback):
                 continue
             if isinstance(resolved, dict):
                 resolved = resolved.get(p)
-            elif isinstance(resolved, Selection) and p in ['1d', 'indices']:
-                # Handle resolving bokeh Selection 1d indices
-                resolved = resolved[p]
             else:
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
@@ -772,9 +790,9 @@ class Selection1DCallback(Callback):
     Returns the current selection on a ColumnDataSource.
     """
 
-    attributes = {'index': 'cb_obj.selected.1d.indices'}
-    models = ['source']
-    on_changes = ['selected']
+    attributes = {'index': 'cb_obj.indices'}
+    models = ['selected']
+    on_changes = ['indices']
 
     def _process_msg(self, msg):
         if 'index' in msg:
@@ -909,7 +927,7 @@ class PolyDrawCallback(CDSCallback):
                 if scalar:
                     cds.data[dim] = element.dimension_values(d, not scalar)
                 else:
-                    cds.data[dim] = element.split(datatype='array')
+                    cds.data[dim] = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
 
 
 class FreehandDrawCallback(PolyDrawCallback):
@@ -937,7 +955,7 @@ class BoxEditCallback(CDSCallback):
     attributes = {'data': 'rect_source.data'}
     models = ['rect_source']
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         try:
             from bokeh.models import BoxEditTool
         except:
@@ -1064,8 +1082,8 @@ class LinkCallback(param.Parameterized):
     source_code = None
     target_code = None
 
-    def __init__(self, root_plot, link, source_plot, target_plot=None):
-        self.root_plot = root_plot
+    def __init__(self, root_model, link, source_plot, target_plot=None):
+        self.root_model = root_model
         self.link = link
         self.source_plot = source_plot
         self.target_plot = target_plot
@@ -1118,9 +1136,10 @@ class LinkCallback(param.Parameterized):
         for plot, links in source_links:
             for link in links:
                 if link.target is None:
+                    # If link has no target don't look further
                     found.append((link, plot, None))
                     continue
-                potentials = [cls.find_link(plot, link) for plot in plots]
+                potentials = [cls.find_link(p, link) for p in plots]
                 tgt_links = [p for p in potentials if p is not None]
                 if tgt_links:
                     found.append((link, plot, tgt_links[0][0]))
@@ -1134,10 +1153,10 @@ class LinkCallback(param.Parameterized):
         sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
         for src in sources:
             if link is None:
-                if id(src) in Link.registry:
-                    return (plot, Link.registry[id(src)])
+                if src in Link.registry:
+                    return (plot, Link.registry[src])
             else:
-                if id(link.target) == id(src):
+                if link.target is src:
                     return (plot, [link])
 
     def validate(self):
@@ -1153,13 +1172,12 @@ class RangeToolLinkCallback(LinkCallback):
     specified axes on the target plot
     """
 
-    def __init__(self, root_plot, link, source_plot, target_plot):
+    def __init__(self, root_model, link, source_plot, target_plot):
         try:
             from bokeh.models.tools import RangeTool
         except:
             raise Exception('RangeToolLink requires bokeh >= 0.13')
-        toolbar = [model for model in root_plot.state.children
-                   if isinstance(model, ToolbarBox)]
+        toolbars = list(root_model.select({'type': ToolbarBox}))
         axes = {}
         if 'x' in link.axes:
             axes['x_range'] = target_plot.handles['x_range']
@@ -1167,8 +1185,8 @@ class RangeToolLinkCallback(LinkCallback):
             axes['y_range'] = target_plot.handles['y_range']
         tool = RangeTool(**axes)
         source_plot.state.add_tools(tool)
-        if toolbar:
-            toolbar = toolbar[0].toolbar
+        if toolbars:
+            toolbar = toolbars[0].toolbar
             toolbar.tools.append(tool)
 
 
@@ -1177,7 +1195,7 @@ class DataLinkCallback(LinkCallback):
     Merges the source and target ColumnDataSource
     """
 
-    def __init__(self, root_plot, link, source_plot, target_plot):
+    def __init__(self, root_model, link, source_plot, target_plot):
         src_cds = source_plot.handles['source']
         tgt_cds = target_plot.handles['source']
         src_len = [len(v) for v in src_cds.data.values()]
@@ -1211,7 +1229,7 @@ class DataLinkCallback(LinkCallback):
             renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
         for callback in target_plot.callbacks:
-            callback.initialize(plot_id=root_plot.id)
+            callback.initialize(plot_id=root_model.ref['id'])
 
 
 callbacks = Link._callbacks['bokeh']

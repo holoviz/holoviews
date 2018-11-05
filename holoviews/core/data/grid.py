@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import sys
+import datetime as dt
 from collections import OrderedDict, defaultdict, Iterable
 
 try:
@@ -7,18 +9,7 @@ try:
 except ImportError:
     pass
 
-
 import numpy as np
-array_types = (np.ndarray,)
-
-try:
-    import dask.array as da
-    array_types += (da.Array,)
-except ImportError:
-    da = None
-
-def is_dask(array):
-    return da and isinstance(array, da.Array)
 
 from .dictionary import DictInterface
 from .interface import Interface, DataError
@@ -27,6 +18,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
+from .interface import is_dask, dask_array_module, get_array_types
 
 
 
@@ -90,7 +82,7 @@ class GridInterface(DictInterface):
             name = dimension_name(dim)
             if name not in data:
                 raise ValueError("Values for dimension %s not found" % dim)
-            if not isinstance(data[name], array_types):
+            if not isinstance(data[name], get_array_types()):
                 data[name] = np.array(data[name])
 
         kdim_names = [dimension_name(d) for d in kdims]
@@ -144,7 +136,7 @@ class GridInterface(DictInterface):
                                 'of arrays must match. %s found that arrays '
                                 'along the %s dimension do not match.' %
                                 (cls.__name__, vdim.name))
-            stack = np.stack if any(is_dask(arr) for arr in arrays) else da.stack
+            stack = np.stack if any(is_dask(arr) for arr in arrays) else dask_array_module().stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
 
@@ -198,6 +190,9 @@ class GridInterface(DictInterface):
                [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
+        if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
+            # np.diff does not work on datetimes in python 2
+            coord = coord.astype('datetime64')
         deltas = 0.5 * np.diff(coord, axis=axis)
         first = np.take(coord, [0], axis=axis) - np.take(deltas, [0], axis=axis)
         last = np.take(coord, [-1], axis=axis) + np.take(deltas, [-1], axis=axis)
@@ -261,21 +256,9 @@ class GridInterface(DictInterface):
         if data_coords is None:
             data_coords = dataset.dimensions('key', label='name')[::-1]
 
-        # Reorient data
-        invert = False
-        slices = []
-        for d in data_coords:
-            coords = cls.coords(dataset, d)
-            if np.all(coords[1:] < coords[:-1]):
-                slices.append(slice(None, None, -1))
-                invert = True
-            else:
-                slices.append(slice(None))
-        data = data[tuple(slices)] if invert else data
-
         # Transpose data
         dims = [name for name in data_coords
-                if isinstance(cls.coords(dataset, name), array_types)]
+                if isinstance(cls.coords(dataset, name), get_array_types())]
         dropped = [dims.index(d) for d in dims
                    if d not in dataset.kdims+virtual_coords]
         if dropped:
@@ -286,6 +269,18 @@ class GridInterface(DictInterface):
             inds = [i - sum([1 for d in dropped if i>=d]) for i in inds]
             if inds:
                 data = data.transpose(inds[::-1])
+
+        # Reorient data
+        invert = False
+        slices = []
+        for d in dataset.kdims[::-1]:
+            coords = cls.coords(dataset, d)
+            if np.all(coords[1:] < coords[:-1]) and not coords.ndim > 1:
+                slices.append(slice(None, None, -1))
+                invert = True
+            else:
+                slices.append(slice(None))
+        data = data[tuple(slices)] if invert else data
 
         # Allow lower dimensional views into data
         if len(dataset.kdims) < 2:
@@ -346,6 +341,7 @@ class GridInterface(DictInterface):
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
+            da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             return data.T.flatten() if flat else data
@@ -398,12 +394,12 @@ class GridInterface(DictInterface):
             else:
                 group_data = cls.select(dataset, **select)
 
-            if np.isscalar(group_data) or (isinstance(group_data, array_types) and group_data.shape == ()):
+            if np.isscalar(group_data) or (isinstance(group_data, get_array_types()) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
-                if isinstance(group_data, array_types):
+                if isinstance(group_data, get_array_types()):
                     group_data = {dataset.vdims[0].name: group_data}
                 for vdim in dataset.vdims:
                     data = group_data[vdim.name]
@@ -423,7 +419,7 @@ class GridInterface(DictInterface):
     def key_select_mask(cls, dataset, values, ind):
         if isinstance(ind, tuple):
             ind = slice(*ind)
-        if isinstance(ind, array_types):
+        if isinstance(ind, get_array_types()):
             mask = ind
         elif isinstance(ind, slice):
             mask = True
@@ -511,12 +507,14 @@ class GridInterface(DictInterface):
 
         for kdim in dataset.kdims:
             if cls.irregular(dataset, dim):
+                da = dask_array_module()
                 if da and isinstance(dataset.data[kdim.name], da.Array):
                     data[kdim.name] = dataset.data[kdim.name].vindex[index]
                 else:
                     data[kdim.name] = np.asarray(data[kdim.name])[index]
 
         for vdim in dataset.vdims:
+            da = dask_array_module()
             if da and isinstance(dataset.data[vdim.name], da.Array):
                 data[vdim.name] = dataset.data[vdim.name].vindex[index]
             else:
@@ -524,6 +522,7 @@ class GridInterface(DictInterface):
 
         if indexed:
             if len(dataset.vdims) == 1:
+                da = dask_array_module()
                 arr = np.squeeze(data[dataset.vdims[0].name])
                 if da and isinstance(arr, da.Array):
                     arr = arr.compute()
@@ -559,6 +558,7 @@ class GridInterface(DictInterface):
             for d, arr in zip(dimensions, np.meshgrid(*sampled)):
                 data[d].append(arr)
             for vdim, array in zip(dataset.vdims, arrays):
+                da = dask_array_module()
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 if da and isinstance(array, da.Array):
                     data[vdim.name].append(array.flatten().vindex[tuple(flat_index)])
@@ -574,6 +574,7 @@ class GridInterface(DictInterface):
         data = {kdim: dataset.data[kdim] for kdim in kdims}
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
+        da = dask_array_module()
         for vdim in dataset.vdims:
             values = dataset.data[vdim.name]
             atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
@@ -649,6 +650,7 @@ class GridInterface(DictInterface):
             new_data.append(cls.values(dataset, d, compute=False)[rows])
 
         if scalar:
+            da = dask_array_module()
             if new_data and isinstance(new_data[0], da.Array):
                 return new_data[0].compute()[0]
             return new_data[0][0]
@@ -661,6 +663,8 @@ class GridInterface(DictInterface):
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
             column = cls.values(dataset, dimension, expanded=False, flat=False)
+
+        da = dask_array_module()
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
             if da and isinstance(column, da.Array):

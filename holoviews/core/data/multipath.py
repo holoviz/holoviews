@@ -1,6 +1,9 @@
 import numpy as np
 
-from ..util import max_range
+from .. import util
+from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
+from .dictionary import DictInterface
 from .interface import Interface, DataError
 
 
@@ -54,10 +57,22 @@ class MultiInterface(Interface):
     def validate(cls, dataset, vdims=True):
         if not dataset.data:
             return
+
+        from holoviews.element import Polygons
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             ds.interface.validate(ds, vdims)
+            if isinstance(dataset, Polygons) and ds.interface is DictInterface:
+                holes = ds.interface.holes(ds)
+                if not isinstance(holes, list):
+                    raise DataError('Polygons holes must be declared as a list-of-lists.', cls)
+                subholes = holes[0]
+                coords = ds.data[ds.kdims[0].name]
+                splits = np.isnan(coords.astype('float')).sum()
+                if len(subholes) != (splits+1):
+                    raise DataError('Polygons with holes containing multi-geometries '
+                                    'must declare a list of holes for each geometry.', cls)
 
 
     @classmethod
@@ -97,7 +112,28 @@ class MultiInterface(Interface):
         for d in dataset.data:
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
-        return max_range(ranges)
+        return util.max_range(ranges)
+
+
+    @classmethod
+    def has_holes(cls, dataset):
+        if not dataset.data:
+            return False
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            if ds.interface.has_holes(ds):
+                return True
+        return False
+
+    @classmethod
+    def holes(cls, dataset):
+        holes = []
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            holes += ds.interface.holes(ds)
+        return holes
 
 
     @classmethod
@@ -138,15 +174,53 @@ class MultiInterface(Interface):
         return [s[0] for s in np.array([{0: p} for p in dataset.data])[selection]]
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
         raise NotImplementedError('Aggregation currently not implemented')
 
     @classmethod
-    def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        raise NotImplementedError('Grouping currently not implemented')
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        # Get dimensions information
+        dimensions = [dataset.get_dimension(d) for d in dimensions]
+        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = list if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(dataset))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        # Find all the keys along supplied dimensions
+        values = []
+        for d in dimensions:
+            if not cls.isscalar(dataset, d):
+                raise ValueError('MultiInterface can only apply groupby '
+                                 'on scalar dimensions, %s dimension'
+                                 'is not scalar' % d)
+            vals = cls.values(dataset, d, False, True)
+            values.append(vals)
+        values = tuple(values)
+
+        # Iterate over the unique entries applying selection masks
+        from . import Dataset
+        ds = Dataset(values, dimensions)
+        keys = (tuple(vals[i] for vals in values) for i in range(len(vals)))
+        grouped_data = []
+        for unique_key in util.unique_iterator(keys):
+            mask = ds.interface.select_mask(ds, dict(zip(dimensions, unique_key)))
+            selection = [data for data, m in zip(dataset.data, mask) if m]
+            group_data = group_type(selection, **group_kwargs)
+            grouped_data.append((unique_key, group_data))
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
 
     @classmethod
-    def sample(cls, columns, samples=[]):
+    def sample(cls, dataset, samples=[]):
         raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
@@ -259,7 +333,7 @@ class MultiInterface(Interface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not len(dataset.data):
             return dataset.data
-        elif values is None or np.isscalar(values):
+        elif values is None or util.isscalar(values):
             values = [values]*len(dataset.data)
         elif not len(values) == len(dataset.data):
             raise ValueError('Added dimension values must be scalar or '

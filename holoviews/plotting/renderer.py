@@ -16,7 +16,7 @@ from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
-from pyviz_comms import CommManager, JupyterCommManager
+from pyviz_comms import CommManager, JupyterCommManager, embed_js
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
@@ -68,19 +68,6 @@ static_template = """
   </body>
 </html>
 """
-
-embed_js = """
-// Ugly hack - see #2574 for more information
-if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
-  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
-  var htmlObject = document.createElement('div');
-  htmlObject.innerHTML = `{html}`;
-  var scriptTags = document.getElementsByTagName('script');
-  var parentTag = scriptTags[scriptTags.length-1].parentNode;
-  parentTag.append(htmlObject)
-}}
-"""
-
 
 class Renderer(Exporter):
     """
@@ -179,7 +166,7 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj, renderer=None):
+    def get_plot(self_or_cls, obj, renderer=None, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -206,7 +193,8 @@ class Renderer(Exporter):
                 renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-            plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
+            plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
+                             **kwargs)
             plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
                                                    **plot_opts)
             defaults = [kd.default for kd in plot.dimensions]

@@ -14,13 +14,13 @@ except:
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
 
-from ...core.util import datetime_types, dimension_sanitizer, basestring
+from ...core.util import dimension_sanitizer, basestring
 from ...element import HLine
 from ..plot import GenericElementPlot
 from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
                       text_properties, line_properties)
 from .plot import BokehPlot
-from .util import date_to_integer
+
 
 
 class TextPlot(ElementPlot):
@@ -61,7 +61,7 @@ class TextPlot(ElementPlot):
                 data[k].extend(eld)
         return data, elmapping, style
 
-    def get_extents(self, element, ranges=None):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 
@@ -107,8 +107,13 @@ class LabelsPlot(ColorbarPlot):
             return data, mapping, style
 
         cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
-        data['text_color'] = cdata[dimension_sanitizer(cdim.name)]
-        mapping['text_color'] = cmapping['text_color']
+        if dims[2] is cdim:
+            # If color dim is same as text dim, rename color column
+            data['text_color'] = cdata[tdim]
+            mapping['text_color'] = dict(cmapping['text_color'], field='text_color')
+        else:
+            data.update(cdata)
+            mapping.update(cmapping)
         return data, mapping, style
 
 
@@ -126,8 +131,6 @@ class LineAnnotationPlot(ElementPlot):
             dim = 'width' if dim == 'height' else 'height'
         mapping['dimension'] = dim
         loc = element.data
-        if isinstance(loc, datetime_types):
-            loc = date_to_integer(loc)
         mapping['location'] = loc
         return (data, mapping, style)
 
@@ -139,7 +142,7 @@ class LineAnnotationPlot(ElementPlot):
         plot.renderers.append(box)
         return None, box
 
-    def get_extents(self, element, ranges=None):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 
@@ -241,7 +244,7 @@ class ArrowPlot(CompositeElementPlot):
         plot.renderers.append(glyph)
         return None, glyph
 
-    def get_extents(self, element, ranges=None):
+    def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None
 
 

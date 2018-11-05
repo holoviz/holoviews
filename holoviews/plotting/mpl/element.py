@@ -1,4 +1,5 @@
 import math
+from types import FunctionType
 
 import param
 import numpy as np
@@ -39,6 +40,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
+
+    xformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
+
+    yformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the y-axis.""")
+
+    zformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the z-axis.""")
 
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
@@ -111,7 +124,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
 
             # Apply axis options if axes are enabled
-            if element and not any(not sp._has_axes for sp in [self] + subplots):
+            if element is not None and not any(not sp._has_axes for sp in [self] + subplots):
                 # Set axis labels
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
@@ -164,13 +177,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         # Tick formatting
         if xdim:
-            self._set_axis_formatter(axis.xaxis, xdim)
+            self._set_axis_formatter(axis.xaxis, xdim, self.xformatter)
         if ydim:
-            self._set_axis_formatter(axis.yaxis, ydim)
+            self._set_axis_formatter(axis.yaxis, ydim, self.yformatter)
         if self.projection == '3d':
             zdim = dimensions[2] if ndims > 2 else None
-            if zdim:
-                self._set_axis_formatter(axis.zaxis, zdim)
+            if zdim or self.zformatter is not None:
+                self._set_axis_formatter(axis.zaxis, zdim, self.zformatter)
 
         xticks = xticks if xticks else self.xticks
         self._set_axis_ticks(axis.xaxis, xticks, log=self.logx,
@@ -222,18 +235,32 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axes.set_zlabel(zlabel, **self._fontsize('zlabel'))
 
 
-    def _set_axis_formatter(self, axis, dim):
+    def _set_axis_formatter(self, axis, dim, formatter):
         """
         Set axis formatter based on dimension formatter.
         """
         if isinstance(dim, list): dim = dim[0]
-        formatter = None
-        if dim.value_format:
+        if formatter is not None:
+            pass
+        elif dim.value_format:
             formatter = dim.value_format
         elif dim.type in dim.type_formatters:
             formatter = dim.type_formatters[dim.type]
         if formatter:
             axis.set_major_formatter(wrap_formatter(formatter))
+
+
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        if isinstance(self.aspect, (int, float)):
+            return self.aspect
+        elif self.aspect == 'square':
+            return 1
+        elif self.aspect == 'equal':
+            return xspan/yspan
+        return 1
 
 
     def _set_aspect(self, axes, aspect):
@@ -612,7 +639,10 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, 0)
                 categorical = False
             elif values.dtype.kind in 'uif':
-                clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
+                if vdim.name in ranges:
+                    clim = ranges[vdim.name]['combined']
+                else:
+                    clim = element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value
@@ -690,7 +720,7 @@ class ColorbarPlot(ElementPlot):
             else:
                 palette = process_cmap(cmap, ncolors, categorical=categorical)
                 if isinstance(self.color_levels, list):
-                    palette = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
+                    palette, (vmin, vmax) = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
             cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
@@ -749,7 +779,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
-                          'invert_zaxis', 'title_format']
+                          'invert_zaxis', 'title_format', 'padding',
+                          'xlim', 'ylim', 'zlim']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

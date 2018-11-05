@@ -1,4 +1,5 @@
 import warnings
+from types import FunctionType
 
 import param
 import numpy as np
@@ -6,10 +7,12 @@ import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
-                          FactorRange, FuncTickFormatter, Tool, Legend)
+                          FactorRange, FuncTickFormatter, Tool, Legend,
+                          TickFormatter, PrintfTickFormatter)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
+from bokeh.models import CategoricalAxis
 try:
     from bokeh.models import ColorBar
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
@@ -26,7 +29,7 @@ from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version)
+                   decode_bytes, bokeh_version, theme_attr_json)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -102,10 +105,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     toolbar = param.ObjectSelector(default='right',
                                    objects=["above", "below",
-                                            "left", "right", None],
+                                            "left", "right", "disable", None],
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
+
+    xformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
+
+    yformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the x-axis.""")
 
     _categorical = False
 
@@ -195,7 +206,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
-            elif isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
+            if isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
                 data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
 
         for k, v in self.overlay_dims.items():
@@ -313,7 +324,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        if self.toolbar:
+        if self.toolbar != 'disable':
             tools = self._init_tools(element)
             properties['tools'] = tools
         properties['toolbar_location'] = self.toolbar
@@ -354,12 +365,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             title = self._format_title(key, separator=' ')
         else:
             title = ''
+        opts = dict(text=title)
 
-        opts = dict(text=title, text_color='black')
+        # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
-        if title_font:
+        if title_font != '12pt':
             opts['text_font_size'] = value(title_font)
         return opts
+
 
     def _init_axes(self, plot):
         if self.xaxis is None:
@@ -387,7 +400,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of axis properties depending
         on the specified axis.
         """
-        axis_props = {}
+        # need to copy dictionary by calling dict() on it
+        axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
+
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
             axis_props['axis_label_text_font_size'] = value('0pt')
@@ -419,7 +434,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
-        if FuncTickFormatter is not None and ax_mapping and dimension:
+        formatter = self.xformatter if axis == 'x' else self.yformatter
+        if formatter:
+            if isinstance(formatter, TickFormatter):
+                pass
+            elif isinstance(formatter, FunctionType):
+                msg = ('%sformatter could not be '
+                       'converted to tick formatter. ' % axis)
+                jsfunc = py2js_tickformatter(formatter, msg)
+                if jsfunc:
+                    formatter = FuncTickFormatter(code=jsfunc)
+                else:
+                    formatter = None
+            else:
+                formatter = PrintfTickFormatter(format=formatter)
+            if formatter is not None:
+                axis_props['formatter'] = formatter
+        elif FuncTickFormatter is not None and ax_mapping and dimension:
             formatter = None
             if dimension.value_format:
                 formatter = dimension.value_format
@@ -432,6 +463,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if jsfunc:
                     formatter = FuncTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
+
+        if axis == 'x':
+            axis_obj = plot.xaxis[0]
+        elif axis == 'y':
+            axis_obj = plot.yaxis[0]
+
+        if isinstance(axis_obj, CategoricalAxis):
+            for key in list(axis_props):
+                if key.startswith('major_label'):
+                    # set the group labels equal to major (actually minor)
+                    new_key = key.replace('major_label', 'group')
+                    axis_props[new_key] = axis_props[key]
+
+            # major ticks are actually minor ticks in a categorical
+            # so if user inputs minor ticks sizes, then use that;
+            # else keep major (group) == minor (subgroup)
+            msize = self._fontsize('minor_{0}ticks'.format(axis),
+                common=False).get('fontsize')
+            if msize is not None:
+                axis_props['major_label_text_font_size'] = msize
+
         return axis_props
 
 
@@ -495,6 +547,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or xfactors is not None)
         yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
+
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
@@ -514,11 +567,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     offset = abs(low*0.1 if low else 0.5)
                     low -= offset
                     high += offset
-            if invert: low, high = high, low
             if shared:
                 shared = (axis_range.start, axis_range.end)
                 low, high = util.max_range([(low, high), shared])
-            if log and (low is None or low <= 0):
+            if invert: low, high = high, low
+            if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
@@ -558,6 +611,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if (isinstance(ranges[i], FactorRange) and
                 (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
+
+
+    def get_aspect(self, xspan, yspan):
+        """
+        Computes the aspect ratio of the plot
+        """
+        return self.width/self.height
+
 
     def _get_factors(self, element):
         """
@@ -685,6 +746,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
         self.handles['source'] = self.handles['cds'] = source
+        self.handles['selected'] = source.selected
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
         with abbreviated_exception():
@@ -716,7 +778,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_key = key
         style_element = element.last if self.batched else element
         ranges = util.match_spec(style_element, ranges)
-
         # Initialize plot, source and glyph
         if plot is None:
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
@@ -829,7 +890,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         update on the backend.
         """
         callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
-                             for cb in cbs]
+                     for cb in cbs]
         stream_metadata = [stream._metadata for cb in callbacks
                            for stream in cb.streams if stream._metadata]
         return any(md['id'] == model.ref['id'] for models in stream_metadata
@@ -1066,7 +1127,7 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         if dim:
             if dim.name in ranges:
-                low, high = ranges.get(dim.name)
+                low, high = ranges[dim.name]['combined']
             else:
                 low, high = element.range(dim.name)
             if self.symmetric:
@@ -1077,8 +1138,11 @@ class ColorbarPlot(ElementPlot):
 
         cmap = colors or style.pop('cmap', 'viridis')
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        if isinstance(cmap, dict) and factors:
+        if isinstance(cmap, dict):
+            if not factors:
+                factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
+            factors = [dim.pprint_value(f) for f in factors]
         else:
             categorical = ncolors is not None
             if isinstance(self.color_levels, int):
@@ -1092,7 +1156,7 @@ class ColorbarPlot(ElementPlot):
                                      % (ncolors, len(cmap)))
             palette = process_cmap(cmap, ncolors, categorical=categorical)
             if isinstance(self.color_levels, list):
-                palette = color_intervals(palette, self.color_levels, clip=(low, high))
+                palette, (low, high) = color_intervals(palette, self.color_levels, clip=(low, high))
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)
@@ -1123,12 +1187,17 @@ class ColorbarPlot(ElementPlot):
         if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
             factors = list(util.unique_array(cdata))
         if factors and int_categories and cdata.dtype.kind == 'i':
-            field += '_str'
+            field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]
 
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
+        if not factors and isinstance(mapper, CategoricalColorMapper):
+            field += '_str__'
+            cdata = [cdim.pprint_value(c) for c in cdata]
+            factors = mapper.factors
+
         data[field] = cdata
         if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
@@ -1245,8 +1314,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
-                          'legend_cols', 'gridstyle', 'legend_muted']
+                          'legend_cols', 'gridstyle', 'legend_muted', 'padding',
+                          'xlim', 'ylim', 'zlim']
 
+    def __init__(self, overlay, **params):
+        super(OverlayPlot, self).__init__(overlay, **params)
+        self.set_root(params.pop('root', None))
 
     def _process_legend(self):
         plot = self.handles['plot']

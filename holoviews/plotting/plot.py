@@ -23,7 +23,8 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay)
+                   split_dmap_overlay, get_axis_padding, get_range,
+                   get_minimum_span)
 
 
 class Plot(param.Parameterized):
@@ -76,6 +77,8 @@ class Plot(param.Parameterized):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if util.get_method_owner(subscriber) not in plots]
+        if self.comm:
+            self.comm.close()
 
 
     @property
@@ -176,22 +179,24 @@ class DimensionedPlot(Plot):
     """
 
     fontsize = param.Parameter(default=None, allow_None=True,  doc="""
-       Specifies various fontsizes of the displayed text.
+       Specifies various font sizes of the displayed text.
 
        Finer control is available by supplying a dictionary where any
-       unmentioned keys reverts to the default sizes, e.g:
+       unmentioned keys revert to the default sizes, e.g:
 
           {'ticks':20, 'title':15,
            'ylabel':5, 'xlabel':5, 'zlabel':5,
            'legend':8, 'legend_title':13}
 
-       You can set the fontsize of 'zlabel', 'ylabel' and 'xlabel' together
-       using the 'labels' key.""")
+       You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
+       together using the 'labels' key.""")
 
     #Allowed fontsize keys
-    _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'labels', 'ticks',
-                      'title', 'legend', 'legend_title', 'xticks',
-                      'yticks', 'zticks']
+    _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'labels',
+                      'xticks', 'yticks', 'zticks', 'ticks',
+                      'minor_xticks', 'minor_yticks', 'minor_ticks',
+                      'title', 'legend', 'legend_title',
+                      ]
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -209,11 +214,12 @@ class DimensionedPlot(Plot):
         Allows supplying a custom projection to transform the axis
         coordinates during display. Example projections include '3d'
         and 'polar' projections supported by some backends. Depending
-        on the backend custom projection objects may be supplied.""")
+        on the backend custom, projection objects may be supplied.""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, renderer=None, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None,
+                 comm=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -231,7 +237,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
-        self.comm = None
+        self.comm = comm
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
 
@@ -334,13 +340,15 @@ class DimensionedPlot(Plot):
             return {label:self.fontsize['labels']}
         elif key in ['xticks', 'yticks', 'zticks'] and 'ticks' in self.fontsize:
             return {label:self.fontsize['ticks']}
+        elif key in ['minor_xticks', 'minor_yticks'] and 'minor_ticks' in self.fontsize:
+            return {label:self.fontsize['minor_ticks']}
         else:
             return {}
 
 
     def compute_ranges(self, obj, key, ranges):
         """
-        Given an object, a specific key and the normalization options
+        Given an object, a specific key, and the normalization options,
         this method will find the specified normalization options on
         the appropriate OptionTree, group the elements according to
         the selected normalization option (i.e. either per frame or
@@ -385,7 +393,7 @@ class DimensionedPlot(Plot):
     def _get_norm_opts(self, obj):
         """
         Gets the normalization options for a LabelledData object by
-        traversing the object for to find elements and their ids.
+        traversing the object to find elements and their ids.
         The id is then used to select the appropriate OptionsTree,
         accumulating the normalization options into a dictionary.
         Returns a dictionary of normalization options for each
@@ -436,12 +444,25 @@ class DimensionedPlot(Plot):
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions('ranges', label=True):
-                dim_range = el.range(dim)
-                if dim not in group_ranges:
-                    group_ranges[dim] = []
-                group_ranges[dim].append(dim_range)
-        ranges[group] = OrderedDict((k, util.max_range(v)) for k, v in group_ranges.items())
+            for dim in el.dimensions('ranges'):
+                data_range = el.range(dim, dimension_range=False)
+                if dim.name not in group_ranges:
+                    group_ranges[dim.name] = {'data': [], 'hard': [], 'soft': []}
+                group_ranges[dim.name]['data'].append(data_range)
+                group_ranges[dim.name]['hard'].append(dim.range)
+                group_ranges[dim.name]['soft'].append(dim.soft_range)
+
+        dim_ranges = []
+        for dim, values in group_ranges.items():
+            hard_range = util.max_range(values['hard'], combined=False)
+            soft_range = util.max_range(values['soft'])
+            data_range = util.max_range(values['data'])
+            combined = util.dimension_range(data_range[0], data_range[1],
+                                            hard_range, soft_range)
+            dranges = {'data': data_range, 'hard': hard_range,
+                       'soft': soft_range, 'combined': combined}
+            dim_ranges.append((dim, dranges))
+        ranges[group] = OrderedDict(dim_ranges)
 
 
     @classmethod
@@ -455,7 +476,7 @@ class DimensionedPlot(Plot):
         """
         def lookup(x):
             """
-            Looks up options for object, including plot defaults,
+            Looks up options for object, including plot defaults.
             keyfn determines returned key otherwise None key is used.
             """
             options = cls.lookup_options(x, opt_type)
@@ -552,6 +573,8 @@ class DimensionedPlot(Plot):
         """
         Initializes comm and attaches streams.
         """
+        if self.comm:
+            return self.comm
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
             comm = self.renderer.comm_manager.get_server_comm()
@@ -582,6 +605,13 @@ class GenericElementPlot(DimensionedPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
+    default_span = param.ClassSelector(default=2.0, class_=(int, float, tuple), doc="""
+        Defines the span of an axis if the axis range is zero, i.e. if
+        the lower and upper end of an axis are equal or no range is
+        defined at all. For example if there is a single datapoint at
+        0 a default_span of 2.0 will result in axis ranges spanning
+        from -1 to 1.""")
+
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
 
@@ -597,6 +627,32 @@ class GenericElementPlot(DimensionedPlot):
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
+        Fraction by which to increase auto-ranged extents to make
+        datapoints more visible around borders.
+
+        To compute padding, the axis whose screen size is largest is
+        chosen, and the range of that axis is increased by the
+        specified fraction along each axis.  Other axes are then
+        padded ensuring that the amount of screen space devoted to
+        padding is equal for all axes. If specified as a tuple, the
+        int or float values in the tuple will be used for padding in
+        each axis, in order (x,y or x,y,z).
+
+        For example, for padding=0.2 on a 800x800-pixel plot, an x-axis
+        with the range [0,10] will be padded by 20% to be [-1,11], while
+        a y-axis with a range [0,1000] will be padded to be [-100,1100],
+        which should make the padding be approximately the same number of
+        pixels. But if the same plot is changed to have a height of only
+        200, the y-range will then be [-400,1400] so that the y-axis
+        padding will still match that of the x-axis.
+
+        It is also possible to declare non-equal padding value for the
+        lower and upper bound of an axis by supplying nested tuples,
+        e.g. padding=(0.1, (0, 0.1)) will pad the x-axis lower and
+        upper bound as well as the y-axis upper bound by a fraction of
+        0.1 while the y-axis lower bound is not padded at all.""")
+
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -606,16 +662,28 @@ class GenericElementPlot(DimensionedPlot):
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None, True, False], doc="""
-        Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel. Valid options are 'top',
-        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+        Whether and where to display the xaxis.
+        The "bare" options allow suppressing all axis labels, including ticks and xlabel.
+        Valid options are 'top', 'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
 
     yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
                                                'right-bare', None, True, False], doc="""
-        Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel. Valid options are 'left',
-        'right', 'bare' 'left-bare' and 'right-bare'.""")
+        Whether and where to display the yaxis.
+        The "bare" options allow suppressing all axis labels, including ticks and ylabel.
+        Valid options are 'left', 'right', 'bare', 'left-bare' and 'right-bare'.""")
+
+    xlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
+    ylim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified x-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
+    zlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified z-axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
 
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
@@ -625,12 +693,12 @@ class GenericElementPlot(DimensionedPlot):
 
     xticks = param.Parameter(default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None default
+        tick locations, or bokeh Ticker object. If set to None default
         bokeh ticking behavior is applied.""")
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None
+        tick locations, or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
 
     # A dictionary mapping of the plot methods used to draw the
@@ -752,50 +820,129 @@ class GenericElementPlot(DimensionedPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def get_extents(self, view, ranges):
+    def get_aspect(self, xspan, yspan):
         """
-        Gets the extents for the axes from the current View. The globally
-        computed ranges can optionally override the extents.
+        Should define the aspect ratio of the plot.
         """
-        ndims = len(view.dimensions())
-        num = 6 if self.projection == '3d' else 4
-        if self.apply_ranges:
-            if ranges:
-                dims = view.dimensions()
-                x0, x1 = ranges[dims[0].name]
-                if ndims > 1:
-                    y0, y1 = ranges[dims[1].name]
-                else:
-                    y0, y1 = (np.NaN, np.NaN)
-                if self.projection == '3d':
-                    if len(dims) > 2:
-                        z0, z1 = ranges[dims[2].name]
-                    else:
-                        z0, z1 = np.NaN, np.NaN
-            else:
-                x0, x1 = view.range(0)
-                y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
-                if self.projection == '3d':
-                    z0, z1 = view.range(2)
-            if self.projection == '3d':
-                range_extents = (x0, y0, z0, x1, y1, z1)
-            else:
-                range_extents = (x0, y0, x1, y1)
-        else:
-            range_extents = (np.NaN,) * num
 
-        if self.apply_extents:
-            norm_opts = self.lookup_options(view, 'norm').options
+
+    def get_padding(self, extents):
+        """
+        Computes padding along the axes taking into account the plot aspect.
+        """
+        (x0, y0, z0, x1, y1, z1) = extents
+        padding = 0 if self.overlaid else self.padding
+        xpad, ypad, zpad = get_axis_padding(padding)
+        if not self.overlaid and not self.batched:
+            xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
+            yspan = y1-y0 if util.is_number(y0) and util.is_number(y1) else None
+            aspect = self.get_aspect(xspan, yspan)
+            if aspect > 1:
+                xpad = tuple(xp/aspect for xp in xpad) if isinstance(xpad, tuple) else xpad/aspect
+            else:
+                ypad = tuple(yp*aspect for yp in ypad) if isinstance(ypad, tuple) else ypad*aspect
+        return xpad, ypad, zpad
+
+
+    def _get_range_extents(self, element, ranges, range_type, xdim, ydim, zdim):
+        dims = element.dimensions()
+        ndims = len(dims)
+        xdim = xdim or (dims[0] if ndims else None)
+        ydim = ydim or (dims[1] if ndims > 1 else None)
+        if self.projection == '3d':
+            zdim = zdim or (dims[2] if ndims > 2 else None)
+        else:
+            zdim = None
+
+        (x0, x1), xsrange, xhrange = get_range(element, ranges, xdim)
+        (y0, y1), ysrange, yhrange = get_range(element, ranges, ydim)
+        (z0, z1), zsrange, zhrange = get_range(element, ranges, zdim)
+
+        if not self.overlaid and not self.batched:
+            xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+            x0, x1 = get_minimum_span(x0, x1, xspan)
+            y0, y1 = get_minimum_span(y0, y1, yspan)
+            z0, z1 = get_minimum_span(z0, z1, zspan)
+        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+
+        if range_type == 'soft':
+            x0, x1 = xsrange
+        elif range_type == 'hard':
+            x0, x1 = xhrange
+        elif xdim == 'categorical':
+            x0, x1 = '', ''
+        elif range_type == 'combined':
+            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, xpad, self.logx)
+
+        if range_type == 'soft':
+            y0, y1 = ysrange
+        elif range_type == 'hard':
+            y0, y1 = yhrange
+        elif range_type == 'combined':
+            y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, ypad, self.logy)
+        elif ydim == 'categorical':
+            y0, y1 = '', ''
+        elif ydim is None:
+            y0, y1 = np.NaN, np.NaN
+
+        if self.projection == '3d':
+            if range_type == 'soft':
+                z0, z1 = zsrange
+            elif range_type == 'data':
+                z0, z1 = zhrange
+            elif range_type=='combined':
+                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, zpad, self.logz)
+            elif zdim == 'categorical':
+                z0, z1 = '', ''
+            elif zdim is None:
+                z0, z1 = np.NaN, np.NaN
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
+
+
+    def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
+        """
+        Gets the extents for the axes from the current Element. The globally
+        computed ranges can optionally override the extents.
+
+        The extents are computed by combining the data ranges, extents
+        and dimension ranges. Each of these can be obtained individually
+        by setting the range_type to one of:
+
+        * 'data': Just the data ranges
+        * 'extents': Element.extents
+        * 'soft': Dimension.soft_range values
+        * 'hard': Dimension.range values
+
+        To obtain the combined range, which includes range padding the
+        default may be used:
+
+        * 'combined': All the range types combined and padding applied
+
+        This allows Overlay plots to obtain each range and combine them
+        appropriately for all the objects in the overlay.
+        """
+        num = 6 if self.projection == '3d' else 4
+        if self.apply_extents and range_type in ('combined', 'extents'):
+            norm_opts = self.lookup_options(element, 'norm').options
             if norm_opts.get('framewise', False) or self.dynamic:
-                extents = view.extents
+                extents = element.extents
             else:
                 extent_list = self.hmap.traverse(lambda x: x.extents, [Element])
                 extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
 
+        if range_type == 'extents':
+            return extents
+
+        if self.apply_ranges:
+            range_extents = self._get_range_extents(element, ranges, range_type, xdim, ydim, zdim)
+        else:
+            range_extents = (np.NaN,) * num
+
         if getattr(self, 'shared_axes', False) and self.subplot:
-            return util.max_extents([range_extents, extents], self.projection == '3d')
+            combined = util.max_extents([range_extents, extents], self.projection == '3d')
         else:
             max_extent = []
             for l1, l2 in zip(range_extents, extents):
@@ -803,7 +950,19 @@ class GenericElementPlot(DimensionedPlot):
                     max_extent.append(l2)
                 else:
                     max_extent.append(l1)
-            return tuple(max_extent)
+            combined = tuple(max_extent)
+
+        if self.projection == '3d':
+            x0, y0, z0, x1, y1, z1 = combined
+        else:
+            x0, y0, x1, y1 = combined
+
+        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if self.projection == '3d':
+            z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
 
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
@@ -1071,14 +1230,21 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot.overlay_dims = util.OrderedDict(new_dims)
 
 
-    def get_extents(self, overlay, ranges):
-        extents = []
+    def _get_subplot_extents(self, overlay, ranges, range_type):
+        """
+        Iterates over all subplots and collects the extents of each.
+        """
+        if range_type == 'combined':
+            extents = {'extents': [], 'soft': [], 'hard': [], 'data': []}
+        else:
+            extents = {range_type: []}
         items = overlay.items()
         if self.batched and self.subplots:
             subplot = list(self.subplots.values())[0]
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()
+
         for key, subplot in subplots:
             found = False
             if subplot is None:
@@ -1091,14 +1257,67 @@ class GenericOverlayPlot(GenericElementPlot):
                         break
                 if not found:
                     layer = None
-            if layer is not None and subplot.apply_ranges:
-                if isinstance(layer, CompositeOverlay):
-                    sp_ranges = ranges
-                else:
-                    sp_ranges = util.match_spec(layer, ranges) if ranges else {}
-                extents.append(subplot.get_extents(layer, sp_ranges))
-        return util.max_extents(extents, self.projection == '3d')
+            if layer is None or not subplot.apply_ranges:
+                continue
 
+            if isinstance(layer, CompositeOverlay):
+                sp_ranges = ranges
+            else:
+                sp_ranges = util.match_spec(layer, ranges) if ranges else {}
+            for rt in extents:
+                extent = subplot.get_extents(layer, sp_ranges, range_type=rt)
+                extents[rt].append(extent)
+        return extents
+
+
+    def get_extents(self, overlay, ranges, range_type='combined'):
+        subplot_extents = self._get_subplot_extents(overlay, ranges, range_type)
+        zrange = self.projection == '3d'
+        extents = {k: util.max_extents(rs, zrange) for k, rs in subplot_extents.items()}
+        if range_type != 'combined':
+            return extents[range_type]
+
+        # Unpack extents
+        if len(extents['data']) == 6:
+            x0, y0, z0, x1, y1, z1 = extents['data']
+            sx0, sy0, sz0, sx1, sy1, sz1 = extents['soft']
+            hx0, hy0, hz0, hx1, hy1, hz1 = extents['hard']
+        else:
+            x0, y0, x1, y1 = extents['data']
+            sx0, sy0, sx1, sy1 = extents['soft']
+            hx0, hy0, hx1, hy1 = extents['hard']
+            z0, z1 = np.NaN, np.NaN
+
+        # Apply minimum span
+        xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
+        x0, x1 = get_minimum_span(x0, x1, xspan)
+        y0, y1 = get_minimum_span(y0, y1, yspan)
+        z0, z1 = get_minimum_span(z0, z1, zspan)
+
+        # Apply padding
+        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
+        y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
+        if len(extents['data']) == 6:
+            z0, z1 = util.dimension_range(z0, z1, (hz0, hz1), (sz0, sz1), zpad, self.logz)
+            padded = (x0, y0, z0, x1, y1, z1)
+        else:
+            padded = (x0, y0, x1, y1)
+
+        # Combine with Element.extents
+        combined = util.max_extents([padded, extents['extents']], zrange)
+        if self.projection == '3d':
+            x0, y0, z0, x1, y1, z1 = combined
+        else:
+            x0, y0, x1, y1 = combined
+
+        # Apply xlim, ylim, zlim plot option
+        x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        if self.projection == '3d':
+            z0, z1 = util.dimension_range(z0, z1, getattr(self, 'zlim', (None, None)), (None, None))
+            return (x0, y0, z0, x1, y1, z1)
+        return (x0, y0, x1, y1)
 
 
 class GenericCompositePlot(DimensionedPlot):

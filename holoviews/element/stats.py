@@ -37,9 +37,9 @@ class StatisticsElement(Chart):
             self.vdims = process_dimensions(None, vdims)['vdims']
 
 
-    def range(self, dim, data_range=True):
+    def range(self, dim, data_range=True, dimension_range=True):
         iskdim = self.get_dimension(dim) not in self.vdims
-        return super(StatisticsElement, self).range(dim, data_range=iskdim)
+        return super(StatisticsElement, self).range(dim, iskdim, dimension_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):

@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+import weakref
 from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
@@ -71,8 +72,10 @@ class Stream(param.Parameterized):
     respectively.
     """
 
-    # Mapping from a source id to a list of streams
-    registry = defaultdict(list)
+    # Mapping from a source to a list of streams
+    # WeakKeyDictionary to allow garbage collection
+    # of unreferenced sources
+    registry = weakref.WeakKeyDictionary()
 
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
@@ -199,13 +202,15 @@ class Stream(param.Parameterized):
         Some streams are configured to automatically link to the source
         plot, to disable this set linked=False
         """
-        self._source = source
+
+        # Source is stored as a weakref to allow it to be garbage collected
+        self._source = None if source is None else weakref.ref(source)
+
         self._subscribers = []
         for subscriber in subscribers:
             self.add_subscriber(subscriber)
 
         self.linked = linked
-        self._rename = self._validate_rename(rename)
         self.transient = transient
 
         # Whether this stream is currently triggering its subscribers
@@ -217,8 +222,12 @@ class Stream(param.Parameterized):
         self._metadata = {}
 
         super(Stream, self).__init__(**params)
+        self._rename = self._validate_rename(rename)
         if source is not None:
-            self.registry[id(source)].append(self)
+            if source in self.registry:
+                self.registry[source].append(self)
+            else:
+                self.registry[source] = [self]
 
 
     @property
@@ -296,22 +305,30 @@ class Stream(param.Parameterized):
         """
         params = {k: v for k, v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
-                              source=self._source,
+                              source=(self._source() if self._source else None),
                               linked=self.linked, **params)
 
     @property
     def source(self):
-        return self._source
+        return self._source() if self._source else None
 
 
     @source.setter
     def source(self, source):
-        if self._source:
-            source_list = self.registry[id(self._source)]
+        if self.source:
+            source_list = self.registry[self.source]
             if self in source_list:
                 source_list.remove(self)
-        self._source = source
-        self.registry[id(source)].append(self)
+
+        if source is None:
+            self._source = None
+            return
+
+        self._source = weakref.ref(source)
+        if source in self.registry:
+            self.registry[source].append(self)
+        else:
+            self.registry[source] = [self]
 
 
     def transform(self):
@@ -592,14 +609,37 @@ class Params(Stream):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
-        parameters = [p for p in parameterized.params() if p != 'name']
+        if parameters is None:
+            parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        self._memoize = True
         if watch:
-            for p in self.parameters:
-                self.parameterized.param.watch(self._listener, p)
+            self.parameterized.param.watch(self._watcher, self.parameters)
 
-    def _listener(self, change):
+    def _validate_rename(self, mapping):
+        for k, v in mapping.items():
+            if k not in self.parameters:
+                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+            if v in self.parameters:
+                raise KeyError('Cannot rename to %r as it clashes with a '
+                               'stream parameter of the same name' % v)
+        return mapping
+
+    def _watcher(self, *events):
+        self._memoize = not any(e.type == 'triggered' for e in events)
         self.trigger([self])
+        self._memoize = True
+
+    @property
+    def hashkey(self):
+        if self._memoize:
+            return {p: v for p, v in self.parameterized.get_param_values()
+                    if p in self.parameters}
+        else:
+            return {'hash': uuid.uuid4().hex}
+
+    def reset(self):
+        pass
 
     def update(self, **kwargs):
         for k, v in kwargs.items():
@@ -631,10 +671,6 @@ class ParamMethod(Params):
         if not parameters:
             parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
-
-    @property
-    def hashkey(self):
-        return {'hash': Params.contents.fget(self)}
 
     @property
     def contents(self):

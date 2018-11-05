@@ -9,7 +9,7 @@ from bokeh.models import FactorRange, Circle, VBar, HBar
 from ...core.dimension import Dimension
 from ...core.ndmapping import sorted_context
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator)
+                          unique_iterator, isfinite)
 from ...operation.stats import univariate_kde
 from .chart import AreaPlot
 from .element import (CompositeElementPlot, ColorbarPlot, LegendPlot,
@@ -79,13 +79,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    def get_extents(self, element, ranges):
-        """
-        Extents are set to '' and None because x-axis is categorical and
-        y-axis auto-ranges.
-        """
-        yrange = ranges.get(element.vdims[0].name)
-        return ('', yrange[0], '', yrange[1])
+    def get_extents(self, element, ranges, range_type='combined'):
+        return super(BoxWhiskerPlot, self).get_extents(
+            element, ranges, range_type, 'categorical', element.vdims[0]
+        )
 
     def _get_axis_labels(self, *args, **kwargs):
         """
@@ -174,7 +171,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
-            vals = vals[np.isfinite(vals)]
+            vals = vals[isfinite(vals)]
             if len(vals):
                 q1, q2, q3 = (np.percentile(vals, q=q)
                               for q in range(25, 100, 25))
@@ -324,7 +321,7 @@ class ViolinPlot(BoxWhiskerPlot):
             el = el.clone(vdims=[vdim])
         kde = univariate_kde(el, dimension=vdim, **kwargs)
         xs, ys = (kde.dimension_values(i) for i in range(2))
-        mask = np.isfinite(ys) & (ys>0) # Mask out non-finite and zero values
+        mask = isfinite(ys) & (ys>0) # Mask out non-finite and zero values
         xs, ys = xs[mask], ys[mask]
         ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
         ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
@@ -333,7 +330,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
-        values = values[np.isfinite(values)]
+        values = values[isfinite(values)]
         if not len(values):
             pass
         elif self.inner == 'quartiles':

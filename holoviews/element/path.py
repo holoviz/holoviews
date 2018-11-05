@@ -22,19 +22,34 @@ from ..core.util import disable_constant
 
 class Path(Dataset, Element2D):
     """
-    The Path Element contains a list of Paths stored as tabular data
-    types including arrays, dataframes and dictionary of column
-    arrays. In addition a number of convenient constructors are
-    supported:
+    The Path element represents a collection of path geometries with
+    associated values. Each path geometry may be split into
+    sub-geometries on NaN-values and may be associated with scalar
+    values or array values varying along its length. In analogy to
+    GEOS geometry types a Path is a collection of LineString and
+    MultiLineString geometries with associated values.
 
-    1) A list of lists containing x/y coordinate tuples.
-    2) A tuple containing an array of length N with the x-values and a
-       second array of shape NxP, where P is the number of paths.
-    3) A list of tuples each containing arrays x and y values.
+    Like all other elements a Path may be defined through an
+    extensible list of interfaces. Natively, HoloViews provides the
+    MultiInterface which allows representing paths as lists of regular
+    columnar data objects including arrays, dataframes and
+    dictionaries of column arrays and scalars.
 
-    A Path can be split into subpaths using the split method or combined
-    into a flat view using the dimension_values, table, and dframe methods,
-    where each path is separated by a NaN value.
+    The canonical representation is a list of dictionaries storing the
+    x- and y-coordinates along with any other values:
+
+        [{'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}, ...]
+
+    Both scalar values and values continuously varying along the
+    geometries coordinates a Path may be used to color the geometry
+    by. Since not all formats allow storing scalar values as actual
+    scalars arrays which are the same length as the coordinates but
+    have only one unique value are also considered scalar.
+
+    The easiest way of accessing the individual geometries is using
+    the `Path.split` method, which returns each path geometry as a
+    separate entity, while the other methods assume a flattened
+    representation where all paths are separated by NaN values.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -123,8 +138,29 @@ class Path(Dataset, Element2D):
 
 class Contours(Path):
     """
-    Contours is a type of Path that is also associated with a value
-    (the contour level).
+    The Contours element is a subtype of a Path which is characterized
+    by the fact that each path geometry may only be associated with
+    scalar values. It supports all the same data formats as a `Path`
+    but does not allow continuously varying values along the path
+    geometry's coordinates. Conceptually Contours therefore represent
+    iso-contours or isoclines, i.e. a function of two variables which
+    describes a curve along which the function has a constant value.
+
+    The canonical representation is a list of dictionaries storing the
+    x- and y-coordinates along with any other (scalar) values:
+
+        [{'x': 1d-array, 'y': 1d-array, 'value': scalar}, ...]
+
+    Since not all formats allow storing scalar values as actual
+    scalars arrays which are the same length as the coordinates but
+    have only one unique value are also considered scalar. This is
+    strictly enforced, ensuring that each path geometry represents
+    a valid iso-contour.
+
+    The easiest way of accessing the individual geometries is using
+    the `Contours.split` method, which returns each path geometry as a
+    separate entity, while the other methods assume a flattened
+    representation where all paths are separated by NaN values.
     """
 
     level = param.Number(default=None, doc="""
@@ -169,8 +205,43 @@ class Contours(Path):
 
 class Polygons(Contours):
     """
-    Polygons is a Path Element type that may contain any number of
-    closed paths with an associated value.
+    The Polygons element represents a collection of polygon geometries
+    with associated scalar values. Each polygon geometry may be split
+    into sub-geometries on NaN-values and may be associated with
+    scalar values. In analogy to GEOS geometry types a Polygons
+    element is a collection of Polygon and MultiPolygon
+    geometries. Polygon geometries are defined as a set of coordinates
+    describing the exterior bounding ring and any number of interior
+    holes.
+
+    Like all other elements a Polygons element may be defined through
+    an extensible list of interfaces. Natively HoloViews provides the
+    MultiInterface which allows representing paths as lists of regular
+    columnar data objects including arrays, dataframes and
+    dictionaries of column arrays and scalars.
+
+    The canonical representation is a list of dictionaries storing the
+    x- and y-coordinates, a list-of-lists of arrays representing the
+    holes, along with any other values:
+
+        [{'x': 1d-array, 'y': 1d-array, 'holes': list-of-lists-of-arrays, 'value': scalar}, ...]
+
+    The list-of-lists format of the holes corresponds to the potential
+    for each coordinate array to be split into a multi-geometry
+    through NaN-separators. Each sub-geometry separated by the NaNs
+    therefore has an unambiguous mapping to a list of holes. If a
+    (multi-)polygon has no holes, the 'holes' key may be ommitted.
+
+    Any value dimensions stored on a Polygons geometry must be scalar,
+    just like the Contours element. Since not all formats allow
+    storing scalar values as actual scalars arrays which are the same
+    length as the coordinates but have only one unique value are also
+    considered scalar.
+
+    The easiest way of accessing the individual geometries is using
+    the `Polygons.split` method, which returns each path geometry as a
+    separate entity, while the other methods assume a flattened
+    representation where all paths are separated by NaN values.
     """
 
     group = param.String(default="Polygons", constant=True)
@@ -180,6 +251,28 @@ class Polygons(Contours):
         to the supplied value.""")
 
     _level_vdim = Dimension('Value')
+
+    # Defines which key the DictInterface uses to look for holes
+    _hole_key = 'holes'
+
+    @property
+    def has_holes(self):
+        """
+        Detects whether any polygon in the Polygons element defines
+        holes. Useful to avoid expanding Polygons unless necessary.
+        """
+        return self.interface.has_holes(self)
+
+    def holes(self):
+        """
+        Returns a list-of-lists-of-lists of hole arrays. The three levels
+        of nesting reflects the structure of the polygons:
+
+          1. The first level of nesting corresponds to the list of geometries
+          2. The second level corresponds to each Polygon in a MultiPolygon
+          3. The third level of nesting allows for multiple holes per Polygon
+        """
+        return self.interface.holes(self)
 
 
 class BaseShape(Path):

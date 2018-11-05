@@ -14,7 +14,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match)
+                         unique_iterator, closest_match, is_number, isfinite)
 from ..streams import LinkedStream
 
 def displayable(obj):
@@ -309,6 +309,57 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     return (base_size*scaling_factor*sizes)
 
 
+def get_axis_padding(padding):
+    """
+    Process a padding value supplied as a tuple or number and returns
+    padding values for x-, y- and z-axis.
+    """
+    if isinstance(padding, tuple):
+        if len(padding) == 2:
+            xpad, ypad = padding
+            zpad = 0
+        elif len(padding) == 3:
+            xpad, ypad, zpad = padding
+        else:
+            raise ValueError('Padding must be supplied as an number applied '
+                             'to all axes or a length two or three tuple '
+                             'corresponding to the x-, y- and optionally z-axis')
+    else:
+        xpad, ypad, zpad = (padding,)*3
+    return (xpad, ypad, zpad)
+
+
+def get_minimum_span(low, high, span):
+    """
+    If lower and high values are equal ensures they are separated by
+    the defined span.
+    """
+    if is_number(low) and low == high:
+        if isinstance(low, np.datetime64):
+            span = span * np.timedelta64(1, 's')
+        low, high = low-span, high+span
+    return low, high
+
+
+def get_range(element, ranges, dimension):
+    """
+    Computes the data, soft- and hard-range along a dimension given
+    an element and a dictionary of ranges.
+    """
+    if dimension and dimension != 'categorical':
+        if ranges and dimension.name in ranges:
+            drange = ranges[dimension.name]['data']
+            srange = ranges[dimension.name]['soft']
+            hrange = ranges[dimension.name]['hard']
+        else:
+            drange = element.range(dimension, dimension_range=False)
+            srange = dimension.soft_range
+            hrange = dimension.range
+    else:
+        drange = srange = hrange = (np.NaN, np.NaN)
+    return drange, srange, hrange
+
+
 def get_sideplot_ranges(plot, element, main, ranges):
     """
     Utility to find the range for an adjoined
@@ -329,7 +380,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
         ranges = match_spec(range_item.last, ranges)
 
     if dim.name in ranges:
-        main_range = ranges[dim.name]
+        main_range = ranges[dim.name]['combined']
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):
@@ -348,8 +399,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
 
 def within_range(range1, range2):
     """Checks whether range1 is within the range specified by range2."""
-    range1 = [r if np.isfinite(r) else None for r in range1]
-    range2 = [r if np.isfinite(r) else None for r in range2]
+    range1 = [r if isfinite(r) else None for r in range1]
+    range2 = [r if isfinite(r) else None for r in range2]
     return ((range1[0] is None or range2[0] is None or range1[0] >= range2[0]) and
             (range1[1] is None or range2[1] is None or range1[1] <= range2[1]))
 
@@ -805,7 +856,27 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
 
 def color_intervals(colors, levels, clip=None, N=255):
     """
-    Maps a set of intervals to colors given a fixed color range.
+    Maps the supplied colors into bins defined by the supplied levels.
+    If a clip tuple is defined the bins are clipped to the defined
+    range otherwise the range is computed from the levels and returned.
+
+    Arguments
+    ---------
+    colors: list
+      List of colors (usually hex string or named colors)
+    levels: list or array_like
+      Levels specifying the bins to map the colors to
+    clip: tuple (optional)
+      Lower and upper limits of the color range
+    N: int
+      Number of discrete colors to map the range onto
+
+    Returns
+    -------
+    cmap: list
+      List of colors
+    clip: tuple
+      Lower and upper bounds of the color range
     """
     if len(colors) != len(levels)-1:
         raise ValueError('The number of colors in the colormap '
@@ -822,8 +893,14 @@ def color_intervals(colors, levels, clip=None, N=255):
         clmin, clmax = clip
         lidx = int(round(N*((clmin-cmin)/interval)))
         uidx = int(round(N*((cmax-clmax)/interval)))
-        cmap = cmap[lidx:N-uidx]
-    return cmap
+        uidx = N-uidx
+        if lidx == uidx:
+            uidx = lidx+1
+        cmap = cmap[lidx:uidx]
+        if clmin == clmax:
+            idx = np.argmin(np.abs(np.array(levels)-clmin))
+            clip = levels[idx: idx+2] if len(levels) > idx+2 else levels[idx-1: idx+1]
+    return cmap, clip
 
 
 def dim_axis_label(dimensions, separator=', '):

@@ -24,10 +24,12 @@ def escape_vals(vals, escape_numerics=True):
 
     escaped = []
     for v in vals:
-        if not isnumeric(v):
-            v = "'"+unicode(bytes_to_unicode(v))+"'"
-        elif isinstance(v, (np.datetime64, np.timedelta64)):
+        if isinstance(v, np.timedelta64):
             v = "'"+str(v)+"'"
+        elif isinstance(v, np.datetime64):
+            v = "'"+str(v.astype('datetime64[ns]'))+"'"
+        elif not isnumeric(v):
+            v = "'"+unicode(bytes_to_unicode(v))+"'"
         else:
             if v % 1 == 0:
                 v = ints % v
@@ -361,8 +363,11 @@ class SelectionWidget(NdWidget):
         else:
             next_vals = {}
 
+        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                for v in dim_vals]))
+
         if isinstance(dim_vals[0], np.datetime64):
-            dim_vals = sorted([str(v) for v in dim_vals])
+            dim_vals = sorted([str(v.astype('datetime64[ns]')) for v in dim_vals])
             widget_type = 'slider'
         elif isnumeric(dim_vals[0]):
             dim_vals = sorted([round(v, 10) for v in dim_vals])
@@ -385,9 +390,6 @@ class SelectionWidget(NdWidget):
             default = repr(dim_vals.index(dim.default))
             init_val = dim.default
 
-        value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                for v in dim_vals]))
-
         dim_vals = escape_list(escape_vals(dim_vals))
         next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
         return {'type': widget_type, 'vals': dim_vals, 'labels': value_labels,
@@ -406,14 +408,13 @@ class SelectionWidget(NdWidget):
                 values = dim.values
                 dim_vals = {i: i for i, v in enumerate(values)}
                 widget_type = 'slider'
-                value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                        for v in values]))
             else:
                 values = list(dim.values)
                 dim_vals = list(range(len(values)))
-                value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                        for v in values]))
                 widget_type = 'dropdown'
+
+            value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                    for v in values]))
 
             if dim.default is None:
                 default = dim_vals[0]

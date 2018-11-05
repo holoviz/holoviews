@@ -14,6 +14,98 @@ Release notes
 *************
 
 
+Version 1.10.8
+==============
+
+This a likely the last hotfix release in the 1.10.x series containing
+fixes for compatibility with bokeh 1.0 and matplotlib 3.0. It also
+contains a wide array of fixes contributed and reported by users:
+
+Special thanks for the contributions by Andrew Huang (@ahuang11),
+Julia Signell (@jsignell), and Zachary Barry (@zbarry).
+
+Enhancements:
+
+- Add support for labels, choord, hextiles and area in `.to` interface
+  (`#2924 <https://github.com/ioam/holoviews/pull/2923`_)
+- Allow defining default bokeh themes as strings on Renderer
+  (`#2972 <https://github.com/ioam/holoviews/pull/2972`_)
+- Allow specifying fontsize for categorical axis ticks in bokeh
+  (`#3047 <https://github.com/ioam/holoviews/pull/3047`_)
+- Allow hiding toolbar without disabling tools
+  (`#3074 <https://github.com/ioam/holoviews/pull/3074`_)
+- Allow specifying explicit colormapping on non-categorical data
+  (`#3071 <https://github.com/ioam/holoviews/pull/3071`_)
+- Support for displaying xarray without explicit coordinates
+  (`#2968 <https://github.com/ioam/holoviews/pull/2968`_)
+
+Fixes:
+
+- Allow dictionary data to reference values which are not dimensions
+  (`#2855 <https://github.com/ioam/holoviews/pull/2855`_,
+  `#2859 <https://github.com/ioam/holoviews/pull/2859`_)
+- Fixes for zero and non-finite ranges in datashader operation
+  (`#2860 <https://github.com/ioam/holoviews/pull/2860`_,
+  `#2863 <https://github.com/ioam/holoviews/pull/2863`_,
+  `#2869 <https://github.com/ioam/holoviews/pull/2869`_)
+- Fixes for CDSStream and drawing tools on bokeh server
+  (`#2915 <https://github.com/ioam/holoviews/pull/2915`_)
+- Fixed issues with nans, datetimes and streaming on Area and Spread
+  elements (`#2951 <https://github.com/ioam/holoviews/pull/2951`_,
+  `c55b044 <https://github.com/ioam/holoviews/commit/c55b044`_)
+- General fixes for datetime handling
+  (`#3005 <https://github.com/ioam/holoviews/pull/3005`_,
+  `#3045 <https://github.com/ioam/holoviews/pull/3045`_,
+  `#3075 <https://github.com/ioam/holoviews/pull/3074`_)
+- Fixed handling of curvilinear and datetime coordinates on QuadMesh
+  (`#3017 <https://github.com/ioam/holoviews/pull/3017`_,
+  `#3081 <https://github.com/ioam/holoviews/pull/3081`_)
+- Fixed issue when inverting a shared axis in bokeh
+  (`#3083 <https://github.com/ioam/holoviews/pull/3083`_)
+- Fixed formatting of values in HoloMap widgets
+  (`#2954 <https://github.com/ioam/holoviews/pull/2954`_)
+- Fixed setting fontsize for z-axis label
+  (`#2967 <https://github.com/ioam/holoviews/pull/2967`_)
+
+Compatibility:
+
+- Suppress warnings about rcParams in matplotlib 3.0
+  (`#3013 <https://github.com/ioam/holoviews/pull/3013`_,
+  `#3058 <https://github.com/ioam/holoviews/pull/3058`_,
+  `#3104 <https://github.com/ioam/holoviews/pull/3104`_)
+- Fixed incompatibility with Python <=3.5
+  (`#3073 <https://github.com/ioam/holoviews/pull/3073`_)
+- Fixed incompatibility with bokeh >=1.0
+  (`#3051 <https://github.com/ioam/holoviews/pull/3051`_)
+
+Documentation:
+
+- Completely overhauled the FAQ
+  (`#2928 <https://github.com/ioam/holoviews/pull/2928`_,
+  `#2941 <https://github.com/ioam/holoviews/pull/2941`_,
+  `#2959 <https://github.com/ioam/holoviews/pull/2959`_,
+  `#3025 <https://github.com/ioam/holoviews/pull/3025`_)
+
+
+Version 1.10.7
+==============
+
+This a very minor hotfix release mostly containing fixes for datashader
+aggregation of empty datasets:
+
+Fixes:
+
+- Fix datashader aggregation of empty and zero-range data
+  (`#2860 <https://github.com/ioam/holoviews/pull/2860>`_,
+  `#2863 <https://github.com/ioam/holoviews/pull/2863>`_)
+- Disable validation for additional, non-referenced keys in the
+  DictInterface (`#2860 <https://github.com/ioam/holoviews/pull/2860>`_)
+- Fixed frame lookup for non-overlapping dimensions
+  (`#2861 <https://github.com/ioam/holoviews/pull/2861>`_)
+- Fixed ticks on log Colorbar if low value <= 0
+  (`#2865 <https://github.com/ioam/holoviews/pull/2865>`_)
+
+
 Version 1.10.6
 ==============
 

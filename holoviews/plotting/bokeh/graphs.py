@@ -73,11 +73,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
-    def get_extents(self, element, ranges):
-        xdim, ydim = element.nodes.kdims[:2]
-        x0, x1 = ranges[xdim.name]
-        y0, y1 = ranges[ydim.name]
-        return (x0, y0, x1, y1)
+    def get_extents(self, element, ranges, range_type=True):
+        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
     def _get_axis_labels(self, *args, **kwargs):
         """
@@ -114,7 +111,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 cvals = cvals.astype(np.int32)
                 factors = factors.astype(np.int32)
             if factors.dtype.kind not in 'SU':
-                field += '_str'
+                field += '_str__'
                 cvals = [str(f) for f in cvals]
                 factors = (str(f) for f in factors)
             factors = list(factors)
@@ -317,11 +314,13 @@ class ChordPlot(GraphPlot):
 
     _draw_order = ['scatter', 'multi_line', 'layout']
 
-    def get_extents(self, element, ranges):
+    def get_extents(self, element, ranges, range_type='combined'):
         """
         A Chord plot is always drawn on a unit circle.
         """
         xdim, ydim = element.nodes.kdims[:2]
+        if range_type not in ('combined', 'data', 'extents'):
+            return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
         rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
         y0, y1 = max_range([ydim.range, (-rng, rng)])

@@ -15,7 +15,7 @@ from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int)
 from ..element.chart import Histogram, Scatter
-from ..element.raster import Raster, Image, RGB, QuadMesh
+from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)
 from ..streams import RangeXY
@@ -429,15 +429,9 @@ class contours(Operation):
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]
 
-        if type(element) is Raster:
-            data = [np.flipud(element.data)]
-        elif isinstance(element, Image):
-            data = [np.flipud(element.dimension_values(2, flat=False))]
-        elif isinstance(element, QuadMesh):
-            data = (element.dimension_values(0, False, flat=False),
-                    element.dimension_values(1, False, flat=False),
-                    element.dimension_values(2, flat=False))
-
+        data = (element.dimension_values(0, False, flat=False),
+                element.dimension_values(1, False, flat=False),
+                element.dimension_values(2, flat=False))
         xdim, ydim = element.dimensions('key', label=True)
         if self.p.filled:
             contour_type = Polygons
@@ -445,35 +439,49 @@ class contours(Operation):
             contour_type = Contours
         vdims = element.vdims[:1]
 
+        kwargs = {}
+        levels = self.p.levels
+        zmin, zmax = element.range(2)
         if isinstance(self.p.levels, int):
-            levels = self.p.levels+2 if self.p.filled else self.p.levels+3
-            zmin, zmax = element.range(2)
-            levels = np.linspace(zmin, zmax, levels)
             if zmin == zmax:
                 contours = contour_type([], [xdim, ydim], vdims)
                 return (element * contours) if self.p.overlaid else contours
+            data += (levels,)
         else:
-            levels = self.p.levels
+            kwargs = {'levels': levels}
 
         fig = Figure()
         ax = Axes(fig, [0, 0, 1, 1])
         contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
-                                     extent=extent, levels=levels)
+                                     extent=extent, **kwargs)
+        levels = np.array(contour_set.get_array())
+        crange = levels.min(), levels.max()
+        if self.p.filled:
+            levels = levels[:-1] + np.diff(levels)/2.
+            vdims = [vdims[0].clone(range=crange)]
 
         paths = []
-        empty = np.full((1, 2), np.NaN)
-        for level, cset in zip(contour_set.get_array(), contour_set.collections):
-            subpaths = []
-            for path in cset.get_paths():
-                if path.codes is None:
-                    subpaths.append(path.vertices)
-                else:
-                    subpaths += np.split(path.vertices, np.where(path.codes==1)[0][1:])
-            if len(subpaths):
-                subpath = np.concatenate([p for sp in subpaths for p in (sp, empty)][:-1])
-            else:
-                subpath = np.array([])
-            paths.append({(xdim, ydim): subpath, element.vdims[0].name: level})
+        empty = np.array([[np.nan, np.nan]])
+        for level, cset in zip(levels, contour_set.collections):
+            exteriors = []
+            interiors = []
+            for geom in cset.get_paths():
+                interior = []
+                polys = geom.to_polygons(closed_only=False)
+                for ncp, cp in enumerate(polys):
+                    if ncp == 0:
+                        exteriors.append(cp)
+                        exteriors.append(empty)
+                    else:
+                        interior.append(cp)
+                if len(polys):
+                    interiors.append(interior)
+            if not exteriors:
+                continue
+            geom = {element.vdims[0].name: level, (xdim, ydim): np.concatenate(exteriors[:-1])}
+            if self.p.filled and interiors:
+                geom['holes'] = interiors
+            paths.append(geom)
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
             contours = element * contours

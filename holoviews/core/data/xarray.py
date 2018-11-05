@@ -1,29 +1,34 @@
 from __future__ import absolute_import
 import sys
 import types
+from collections import OrderedDict
 
 import numpy as np
-import xarray as xr
-
-try:
-    import dask
-    import dask.array
-except ImportError:
-    dask = None
 
 from .. import util
 from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface, DataError
+from .interface import Interface, DataError, dask_array_module
 
 
 class XArrayInterface(GridInterface):
 
-    types = (xr.Dataset, xr.DataArray)
+    types = ()
 
     datatype = 'xarray'
+
+    @classmethod
+    def loaded(cls):
+        return 'xarray' in sys.modules
+
+    @classmethod
+    def applies(cls, obj):
+        if not cls.loaded():
+            return False
+        import xarray as xr
+        return isinstance(obj, (xr.Dataset, xr.DataArray))
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -55,6 +60,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
+        import xarray as xr
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
@@ -112,12 +118,24 @@ class XArrayInterface(GridInterface):
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
-            coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
+            data = {d: np.asarray(values) if d in kdims else values
+                    for d, values in data.items()}
+            coord_dims = [data[kd.name].ndim for kd in kdims]
+            dims = tuple('dim_%d' % i for i in range(max(coord_dims)))[::-1]
+            coords = OrderedDict()
+            for kd in kdims:
+                coord_vals = data[kd.name]
+                if coord_vals.ndim > 1:
+                    coord = (dims[:coord_vals.ndim], coord_vals)
+                else:
+                    coord = coord_vals
+                coords[kd.name] = coord
+            xr_kwargs = {'dims': dims if max(coord_dims) > 1 else list(coords)[::-1]}
             arrays = {}
             for vdim in vdims:
                 arr = data[vdim.name]
                 if not isinstance(arr, xr.DataArray):
-                    arr = xr.DataArray(arr, coords=coords)
+                    arr = xr.DataArray(arr, coords=coords, **xr_kwargs)
                 arrays[vdim.name] = arr
             data = xr.Dataset(arrays)
         else:
@@ -182,17 +200,22 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dimension, strict=True).name
         if dataset._binned and dimension in dataset.kdims:
             data = cls.coords(dataset, dim, edges=True)
-            dmin, dmax = np.nanmin(data), np.nanmax(data)
+            if data.dtype.kind == 'M':
+                dmin, dmax = data.min(), data.max()
+            else:
+                dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             data = dataset.data[dim]
             if len(data):
                 dmin, dmax = data.min().data, data.max().data
             else:
                 dmin, dmax = np.NaN, np.NaN
-        if dask and isinstance(dmin, dask.array.Array):
-            dmin, dmax = dask.array.compute(dmin, dmax)
-        dmin = dmin if np.isscalar(dmin) else dmin.item()
-        dmax = dmax if np.isscalar(dmax) else dmax.item()
+
+        da = dask_array_module()
+        if da and isinstance(dmin, da.Array):
+            dmin, dmax = da.compute(dmin, dmax)
+        dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
+        dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
         return dmin, dmax
 
 
@@ -244,6 +267,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+        import xarray as xr
         dim = dataset.get_dimension(dimension)
         dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
@@ -255,7 +279,8 @@ class XArrayInterface(GridInterface):
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
-            return data
+
+            return data.values if isinstance(data, xr.DataArray) else data
 
         data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
@@ -272,7 +297,8 @@ class XArrayInterface(GridInterface):
             data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
             data = np.convolve(data, [0.5, 0.5], 'valid')
-        return data
+
+        return data.values if isinstance(data, xr.DataArray) else data
 
 
     @classmethod
@@ -287,7 +313,8 @@ class XArrayInterface(GridInterface):
             virtual_coords = []
         if dim in dataset.vdims or irregular:
             data_coords = list(dataset.data[dim.name].dims)
-            if compute and dask and isinstance(data, dask.array.Array):
+            da = dask_array_module()
+            if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                     virtual_coords=virtual_coords)
@@ -366,6 +393,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def concat_dim(cls, datasets, dim, vdims):
+        import xarray as xr
         return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
                          dim=dim.name)
 
@@ -427,17 +455,18 @@ class XArrayInterface(GridInterface):
         if dropped and not indexed:
             data = data.assign_coords(**dropped)
 
+        da = dask_array_module()
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
             value = data[dataset.vdims[0].name]
-            if dask and isinstance(value.data, dask.array.Array):
+            if da and isinstance(value.data, da.Array):
                 value = value.compute()
             return value.item()
         elif indexed:
             values = []
             for vd in dataset.vdims:
                 value = data[vd.name]
-                if dask and isinstance(value.data, dask.array.Array):
+                if da and isinstance(value.data, da.Array):
                     value = value.compute()
                 values.append(value.item())
             return np.array(values)
@@ -455,11 +484,12 @@ class XArrayInterface(GridInterface):
         return data
 
     @classmethod
-    def sample(cls, columns, samples=[]):
+    def sample(cls, dataset, samples=[]):
         raise NotImplementedError
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        import xarray as xr
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension_name(dimension)

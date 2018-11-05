@@ -11,11 +11,12 @@ from operator import itemgetter
 import numpy as np
 import param
 
+from ..core import util
 from ..core.util import (basestring, sanitize_identifier, isfinite,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins, config, dimension_range, disable_constant)
+                         builtins, config, disable_constant)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -1104,18 +1105,23 @@ class Dimensioned(LabelledData):
                             (dimension, self.__class__.__name__))
 
 
-    def range(self, dimension, data_range=True):
+    def range(self, dimension, data_range=True, dimension_range=True):
         """
         Returns the range of values along the specified dimension.
 
-        If data_range is True, the data may be used to try and infer
-        the appropriate range. Otherwise, (None,None) is returned to
-        indicate that no range is defined.
+        dimension: str or int or Dimension
+            The dimension to compute the range on.
+        data_range: bool (optional)
+            Whether the range should include the data range or only
+            the dimension ranges
+        dimension_range: bool (optional)
+            Whether to compute the range including the Dimension range
+            and soft_range.
         """
         dimension = self.get_dimension(dimension)
-        if dimension is None:
+        if dimension is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(isfinite(v) for v in dimension.range):
+        elif all(isfinite(v) for v in dimension.range) and dimension_range:
             return dimension.range
         elif data_range:
             if dimension in self.kdims+self.vdims:
@@ -1129,7 +1135,9 @@ class Dimensioned(LabelledData):
                 lower, upper = max_range(ranges)
         else:
             lower, upper = (np.NaN, np.NaN)
-        return dimension_range(lower, upper, dimension)
+        if not dimension_range:
+            return lower, upper
+        return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
 
 
     def __repr__(self):

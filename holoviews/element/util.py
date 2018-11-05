@@ -17,17 +17,6 @@ try:
 except:
     pd = None
 
-try:
-    import dask
-except:
-    dask = None
-
-try:
-    import xarray as xr
-except:
-    xr = None
-
-
 
 def split_path(path):
     """
@@ -131,7 +120,7 @@ class categorical_aggregate2d(Operation):
             kdims=['Country', 'Year'], vdims=['Population'])
     """
 
-    datatype = param.List(['xarray', 'grid'] if xr else ['grid'], doc="""
+    datatype = param.List(['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
     def _get_coords(self, obj):

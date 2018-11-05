@@ -10,7 +10,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.6.1,<2.0', 'numpy>=1.0', 'pyviz_comms']
+install_requires = ['param>=1.6.1,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.6.0']
 extras_require = {}
 
 # Notebook dependencies of IPython 3
@@ -100,7 +100,8 @@ setup_args.update(dict(
               "holoviews.plotting.mpl",
               "holoviews.plotting.bokeh",
               "holoviews.plotting.plotly",
-              "holoviews.plotting.widgets"],
+              "holoviews.plotting.widgets",
+              "holoviews.tests"],
     package_data={'holoviews': ['.version'],
                   'holoviews.ipython': ['*.html'],
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
