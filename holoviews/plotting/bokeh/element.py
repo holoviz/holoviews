@@ -1390,6 +1390,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 if item not in self.handles['legend_items']:
                     self.handles['legend_items'].append(item)
 
+        # Ensure that each renderer is only singly referenced by a legend item
         filtered = []
         renderers = []
         for item in legend_items:

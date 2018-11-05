@@ -1046,6 +1046,7 @@ class GenericOverlayPlot(GenericElementPlot):
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.map_lengths = Counter()
         self.group_counter = Counter() if group_counter is None else group_counter
+        self.cyclic_index_lookup = {}
         self.zoffset = 0
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
@@ -1160,6 +1161,7 @@ class GenericOverlayPlot(GenericElementPlot):
         group_key = style_key[:length]
         zorder = self.zorder + oidx + self.zoffset
         cyclic_index = self.group_counter[group_key]
+        self.cyclic_index_lookup[style_key] = cyclic_index
         self.group_counter[group_key] += 1
         group_length = self.map_lengths[group_key]
 
@@ -1221,10 +1223,17 @@ class GenericOverlayPlot(GenericElementPlot):
         to plot an element that is not an exact match to the object
         it was initially assigned.
         """
-        # Handle reused plot updating plot values
-        group_key = spec[:self.style_grouping]
-        self.group_counter[group_key] += 1
-        cyclic_index = self.group_counter[group_key]
+
+        # See if the precise spec has already been assigned a cyclic
+        # index otherwise generate a new one
+        if spec in self.cyclic_index_lookup:
+            cyclic_index = self.cyclic_index_lookup[spec]
+        else:
+            group_key = spec[:self.style_grouping]
+            self.group_counter[group_key] += 1
+            cyclic_index = self.group_counter[group_key]
+            self.cyclic_index_lookup[spec] = cyclic_index
+
         subplot.cyclic_index = cyclic_index
         if subplot.overlay_dims:
             odim_key = util.wrap_tuple(spec[-1])
