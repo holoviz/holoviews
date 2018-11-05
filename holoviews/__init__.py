@@ -83,3 +83,7 @@ def help(obj, visualization=True, ansi=True, backend=None,
         print((msg if visualization is False else '') + info)
     else:
         pydoc.help(obj)
+
+
+del (absolute_import, code, f, filename, np, os, print_function, pydoc,
+     rcfile, warnings)
