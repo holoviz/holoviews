@@ -1585,6 +1585,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if element is not None:
             ranges = self.compute_ranges(range_obj, key, ranges)
 
+        self.set_param(**self.lookup_options(element, 'plot').options)
+
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
 

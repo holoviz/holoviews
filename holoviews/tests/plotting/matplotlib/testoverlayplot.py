@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.core import Overlay, NdOverlay, DynamicMap
+from holoviews.core import Overlay, NdOverlay, DynamicMap, HoloMap
 from holoviews.element import Curve, Scatter
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -24,6 +24,16 @@ class TestOverlayPlot(TestMPLPlot):
         overlay = Curve(range(10)) * NdOverlay()
         plot = mpl_renderer.get_plot(overlay)
         self.assertEqual(len(plot.subplots), 1)
+
+    def test_overlay_update_plot_opts(self):
+        hmap = HoloMap(
+            {0: (Curve([]) * Curve([])).options(title_format='A'),
+             1: (Curve([]) * Curve([])).options(title_format='B')}
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        self.assertEqual(plot.handles['title'].get_text(), 'A')
+        plot.update((1,))
+        self.assertEqual(plot.handles['title'].get_text(), 'B')
 
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).options('Curve', apply_ranges=False)

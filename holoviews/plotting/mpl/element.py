@@ -901,6 +901,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if isinstance(self.hmap, DynamicMap) and items:
             self._create_dynamic_subplots(key, items, ranges)
 
+        self.set_param(**self.lookup_options(element, 'plot').options)
+
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)
 
