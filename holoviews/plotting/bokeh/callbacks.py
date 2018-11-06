@@ -626,7 +626,7 @@ class TapCallback(PointerXYCallback):
       if (ystart > yend) {
         [ystart, yend] = [yend, ystart]
       }
-      if ((cb_obj.y < ystart) || (cb_obj.y > yend) {
+      if ((cb_obj.y < ystart) || (cb_obj.y > yend)) {
         return
       }
     }
