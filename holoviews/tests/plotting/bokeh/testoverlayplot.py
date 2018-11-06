@@ -113,6 +113,16 @@ class TestOverlayPlot(TestBokehPlot):
         plot.update((1,))
         self.assertEqual(plot.state.title.text, 'B')
 
+    def test_overlay_update_plot_opts_inherited(self):
+        hmap = HoloMap(
+            {0: (Curve([]).options(title_format='A') * Curve([])),
+             1: (Curve([]).options(title_format='B') * Curve([]))}
+        )
+        plot = bokeh_renderer.get_plot(hmap)
+        self.assertEqual(plot.state.title.text, 'A')
+        plot.update((1,))
+        self.assertEqual(plot.state.title.text, 'B')
+
     def test_points_errorbars_text_ndoverlay_categorical_xaxis(self):
         overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))
                              for i in range(5)})

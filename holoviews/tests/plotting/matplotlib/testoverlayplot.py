@@ -35,6 +35,16 @@ class TestOverlayPlot(TestMPLPlot):
         plot.update((1,))
         self.assertEqual(plot.handles['title'].get_text(), 'B')
 
+    def test_overlay_update_plot_opts_inherited(self):
+        hmap = HoloMap(
+            {0: (Curve([]).options(title_format='A') * Curve([])),
+             1: (Curve([]).options(title_format='B') * Curve([]))}
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        self.assertEqual(plot.handles['title'].get_text(), 'A')
+        plot.update((1,))
+        self.assertEqual(plot.handles['title'].get_text(), 'B')
+
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).options('Curve', apply_ranges=False)
         plot = mpl_renderer.get_plot(overlay)
