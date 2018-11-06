@@ -58,7 +58,9 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                 exec(code)
             except Exception as e:
                 print("Warning: Could not load %r [%r]" % (filename, str(e)))
+        del f, code
         break
+    del filename
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
@@ -85,5 +87,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del (absolute_import, code, f, filename, np, os, print_function, pydoc,
-     rcfile, warnings)
+del absolute_import, np, os, print_function, pydoc, rcfile, warnings
