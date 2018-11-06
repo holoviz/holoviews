@@ -749,7 +749,8 @@ class GenericElementPlot(DimensionedPlot):
             inherited = self._traverse_options(plot_element, 'plot',
                                                self._propagate_options,
                                                defaults=False)
-            plot_opts.update(**{k: v[0] for k, v in inherited.items()})
+            plot_opts.update(**{k: v[0] for k, v in inherited.items()
+                                if k not in plot_opts})
 
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
