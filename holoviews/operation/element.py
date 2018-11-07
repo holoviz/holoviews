@@ -429,9 +429,21 @@ class contours(Operation):
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]
 
-        data = (element.dimension_values(0, False, flat=False),
-                element.dimension_values(1, False, flat=False),
-                element.dimension_values(2, flat=False))
+        xs = element.dimension_values(0, True, flat=False)
+        ys = element.dimension_values(1, True, flat=False)
+        zs = element.dimension_values(2, flat=False)
+
+        # Ensure that coordinate arrays specify bin centers
+        if xs.shape[0] != zs.shape[0]:
+            xs = xs[:-1] + np.diff(xs, axis=0)/2.
+        if xs.shape[1] != zs.shape[1]:
+            xs = xs[:, :-1] + (np.diff(xs, axis=1)/2.)
+        if ys.shape[0] != zs.shape[0]:
+            ys = ys[:-1] + np.diff(ys, axis=0)/2.
+        if ys.shape[1] != zs.shape[1]:
+            ys = ys[:, :-1] + (np.diff(ys, axis=1)/2.)
+        data = (xs, ys, zs)
+
         xdim, ydim = element.dimensions('key', label=True)
         if self.p.filled:
             contour_type = Polygons
