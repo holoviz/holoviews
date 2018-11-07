@@ -673,6 +673,14 @@ class GenericElementPlot(DimensionedPlot):
         The "bare" options allow suppressing all axis labels, including ticks and ylabel.
         Valid options are 'left', 'right', 'bare', 'left-bare' and 'right-bare'.""")
 
+    xlabel = param.String(default=None, doc="""
+        An explicit override of the x-axis label, if set takes precedence
+        over the dimension label.""")
+
+    ylabel = param.String(default=None, doc="""
+        An explicit override of the y-axis label, if set takes precedence
+        over the dimension label.""")
+
     xlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified x-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
@@ -967,11 +975,17 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
-        if dimensions and xlabel is None:
+        if self.xlabel is not None:
+            xlabel = self.xlabel
+        elif dimensions and xlabel is None:
             xlabel = dim_axis_label(dimensions[0]) if dimensions[0] else ''
-        if len(dimensions) >= 2 and ylabel is None:
+        if self.ylabel is not None:
+            ylabel = self.ylabel
+        elif len(dimensions) >= 2 and ylabel is None:
             ylabel = dim_axis_label(dimensions[1]) if dimensions[1] else ''
-        if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
+        if getattr(self, 'zlabel', None) is not None:
+            zlabel = self.zlabel
+        elif self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
             zlabel = dim_axis_label(dimensions[2]) if dimensions[2] else ''
         return xlabel, ylabel, zlabel
 

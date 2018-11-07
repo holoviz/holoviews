@@ -56,6 +56,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     zaxis = param.Boolean(default=True, doc="""
         Whether to display the z-axis.""")
 
+    zlabel = param.String(default=None, doc="""
+        An explicit override of the z-axis label, if set takes precedence
+        over the dimension label.""")
+
     zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the zticks.""")
 
@@ -780,7 +784,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title_format', 'padding',
-                          'xlim', 'ylim', 'zlim']
+                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

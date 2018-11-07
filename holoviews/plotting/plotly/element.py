@@ -80,6 +80,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         labels or a matplotlib tick locator object. If set to None
         default matplotlib ticking behavior is applied.""")
 
+    zlabel = param.String(default=None, doc="""
+        An explicit override of the z-axis label, if set takes precedence
+        over the dimension label.""")
+
     graph_obj = None
 
     def initialize_plot(self, ranges=None):
