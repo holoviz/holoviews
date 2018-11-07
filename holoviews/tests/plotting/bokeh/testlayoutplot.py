@@ -1,7 +1,9 @@
 import numpy as np
 
-from holoviews.core import HoloMap, GridSpace, Layout, Empty, Dataset, NdOverlay
+from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
+                            NdOverlay, DynamicMap)
 from holoviews.element import Curve, Image, Points
+from holoviews.streams import Stream
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -247,3 +249,13 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertEqual(subplot.handles['y_range'].start, 1)
         self.assertEqual(subplot.handles['y_range'].end, 0)
 
+    def test_layout_dimensioned_stream_title_update(self):
+        stream = Stream.define('Test', test=0)()
+        dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
+        layout = dmap + Curve([])
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertIn('test: 0', plot.handles['title'].text)
+        stream.event(test=1)
+        self.assertIn('test: 1', plot.handles['title'].text)
+        plot.cleanup()
+        self.assertEqual(stream._subscribers, [])
