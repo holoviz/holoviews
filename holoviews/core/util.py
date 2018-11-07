@@ -1659,7 +1659,7 @@ def dt64_to_dt(dt64):
     """
     Safely converts NumPy datetime64 to a datetime object.
     """
-    ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+    ts = (dt64 - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')
     return dt.datetime.utcfromtimestamp(ts)
 
 
