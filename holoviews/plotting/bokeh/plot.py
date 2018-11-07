@@ -182,15 +182,16 @@ class BokehPlot(DimensionedPlot):
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
 
-        msg = self.renderer.diff(self, binary=True)
-        if msg is None:
+        msgs = self.renderer.diff(self, binary=True, individual=True)
+        if not msgs:
             return
-        self.comm.send(msg.header_json)
-        self.comm.send(msg.metadata_json)
-        self.comm.send(msg.content_json)
-        for header, payload in msg.buffers:
-            self.comm.send(json.dumps(header))
-            self.comm.send(buffers=[payload])
+        for msg in msgs:
+            self.comm.send(msg.header_json)
+            self.comm.send(msg.metadata_json)
+            self.comm.send(msg.content_json)
+            for header, payload in msg.buffers:
+                self.comm.send(json.dumps(header))
+                self.comm.send(buffers=[payload])
 
 
     def set_root(self, root):
