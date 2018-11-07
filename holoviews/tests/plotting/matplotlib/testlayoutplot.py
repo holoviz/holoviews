@@ -1,7 +1,8 @@
 import numpy as np
 
-from holoviews.core import HoloMap, NdOverlay
+from holoviews.core import HoloMap, NdOverlay, DynamicMap
 from holoviews.element import Image, Curve
+from holoviews.streams import Stream
 
 from .testplot import TestMPLPlot, mpl_renderer
 
@@ -35,3 +36,14 @@ class TestLayoutPlot(TestMPLPlot):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
                 self.assertEqual(adjoint.subplots['main'].layout_num, num)
+
+    def test_layout_dimensioned_stream_title_update(self):
+        stream = Stream.define('Test', test=0)()
+        dmap = DynamicMap(lambda test: Curve([]), kdims=['test'], streams=[stream])
+        layout = dmap + Curve([])
+        plot = mpl_renderer.get_plot(layout)
+        self.assertIn('test: 0', plot.handles['title'].get_text())
+        stream.event(test=1)
+        self.assertIn('test: 1', plot.handles['title'].get_text())
+        plot.cleanup()
+        self.assertEqual(stream._subscribers, [])

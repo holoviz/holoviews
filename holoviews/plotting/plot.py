@@ -1353,7 +1353,13 @@ class GenericCompositePlot(DimensionedPlot):
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
         self.streams = list(set([s for streams in nested_streams for s in streams]))
+        self._link_dimensioned_streams()
 
+    def _link_dimensioned_streams(self):
+        """
+        Should perform any linking required to update titles when dimensioned
+        streams change.
+        """
 
     def _get_frame(self, key):
         """
