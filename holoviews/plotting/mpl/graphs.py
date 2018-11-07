@@ -42,7 +42,11 @@ class GraphPlot(ColorbarPlot):
             else:
                 factors = unique_array(cs)
                 cmap = color if isinstance(color, Cycle) else cmap
-                colors = process_cmap(cmap, len(factors))
+                if isinstance(cmap, dict):
+                    colors = [cmap.get(f, cmap.get('NaN', {'color': self._default_nan})['color'])
+                              for f in factors]
+                else:
+                    colors = process_cmap(cmap, len(factors))
                 cs = search_indices(cs, factors)
                 style['node_facecolors'] = [colors[v%len(colors)] for v in cs]
                 style.pop('node_color', None)
@@ -73,7 +77,11 @@ class GraphPlot(ColorbarPlot):
             factors = list(factors)
             cmap = elstyle.kwargs.get('edge_cmap', 'tab20')
             cmap = cycle if isinstance(cycle, Cycle) else cmap
-            colors = process_cmap(cmap, len(factors))
+            if isinstance(cmap, dict):
+                colors = [cmap.get(f, cmap.get('NaN', {'color': self._default_nan})['color'])
+                          for f in factors]
+            else:
+                colors = process_cmap(cmap, len(factors))
             style['edge_colors'] = [colors[v%len(colors)] for v in cvals]
             style.pop('edge_color', None)
         if 'edge_array' in style:

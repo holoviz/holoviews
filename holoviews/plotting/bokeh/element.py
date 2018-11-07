@@ -23,6 +23,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
+from ...element import Graph
 from ...streams import Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
@@ -242,7 +243,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
 
-        dims = el.dimensions()
+        dims = el.nodes.dimensions() if isinstance(el, Graph) else el.dimensions()
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
@@ -492,7 +493,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates plot parameters on every frame
         """
         el = element.traverse(lambda x: x, [Element])
-        dimensions = el[0].dimensions() if el else el.dimensions()
+        el = el[0] if el else element
+        dimensions = el.nodes.dimensions() if isinstance(el, Graph) else el.dimensions()
         if not len(dimensions) >= 2:
             dimensions = dimensions+[None]
         plot.update(**self._plot_properties(key, plot, element))

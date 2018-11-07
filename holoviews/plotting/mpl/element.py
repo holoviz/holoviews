@@ -12,6 +12,7 @@ from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
+from ...element import Graph
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
@@ -100,7 +101,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self.current_frame = element
         if not dimensions and element and not self.subplots:
             el = element.traverse(lambda x: x, [Element])
-            if el: dimensions = el[0].dimensions()
+            if el:
+                el = el[0]
+                dimensions = el.nodes.dimensions() if isinstance(el, Graph) else el.dimensions()
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
