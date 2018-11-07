@@ -132,6 +132,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Set axis labels
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
+                else:
+                    if self.xlabel is not None:
+                        axis.set_xlabel(self.xlabel)
+                    if self.ylabel is not None:
+                        axis.set_ylabel(self.ylabel)
+                    if self.zlabel is not None and hasattr(axis, 'set_zlabel'):
+                        axis.set_zlabel(self.zlabel)
 
                 if not subplots:
                     legend = axis.get_legend()

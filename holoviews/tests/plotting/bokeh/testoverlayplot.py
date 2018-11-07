@@ -81,6 +81,26 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertFalse(plot.yaxis[0].visible)
 
+    def test_overlay_xlabel_override(self):
+        overlay = (Curve(range(10)) * Curve(range(10))).options(xlabel='custom x-label')
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.xaxis[0].axis_label, 'custom x-label')
+
+    def test_overlay_ylabel_override(self):
+        overlay = (Curve(range(10)) * Curve(range(10))).options(ylabel='custom y-label')
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.yaxis[0].axis_label, 'custom y-label')
+
+    def test_overlay_xlabel_override_propagated(self):
+        overlay = (Curve(range(10)).options(xlabel='custom x-label') * Curve(range(10)))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.xaxis[0].axis_label, 'custom x-label')
+
+    def test_overlay_ylabel_override(self):
+        overlay = (Curve(range(10)).options(ylabel='custom y-label') * Curve(range(10)))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.yaxis[0].axis_label, 'custom y-label')
+
     def test_overlay_xrotation(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(xrotation=90))
         plot = bokeh_renderer.get_plot(overlay).state

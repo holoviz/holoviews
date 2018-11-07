@@ -77,3 +77,23 @@ class TestOverlayPlot(TestMPLPlot):
         self.assertEqual(len(plot.subplots), 3)
         for i, subplot in enumerate(plot.subplots.values()):
             self.assertEqual(subplot.cyclic_index, i)
+
+    def test_overlay_xlabel(self):
+        overlay = (Curve(range(10)) * Curve(range(10))).options(xlabel='custom x-label')
+        axes = mpl_renderer.get_plot(overlay).handles['axis']
+        self.assertEqual(axes.get_xlabel(), 'custom x-label')
+
+    def test_overlay_ylabel(self):
+        overlay = (Curve(range(10)) * Curve(range(10))).options(ylabel='custom y-label')
+        axes = mpl_renderer.get_plot(overlay).handles['axis']
+        self.assertEqual(axes.get_ylabel(), 'custom y-label')
+
+    def test_overlay_xlabel_override_propagated(self):
+        overlay = (Curve(range(10)).options(xlabel='custom x-label') * Curve(range(10)))
+        axes = mpl_renderer.get_plot(overlay).handles['axis']
+        self.assertEqual(axes.get_xlabel(), 'custom x-label')
+
+    def test_overlay_ylabel_override(self):
+        overlay = (Curve(range(10)).options(ylabel='custom y-label') * Curve(range(10)))
+        axes = mpl_renderer.get_plot(overlay).handles['axis']
+        self.assertEqual(axes.get_ylabel(), 'custom y-label')

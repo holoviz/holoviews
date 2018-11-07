@@ -26,7 +26,7 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(plot.outline_line_alpha, 0)
 
     def test_element_xformatter_string(self):
-        curve = Curve(range(10)).options(xformatter='%d')
+        curve = Curve(range(10)).options(xlabel='custom x-label')
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
         self.assertIsInstance(xaxis.formatter, PrintfTickFormatter)
@@ -94,6 +94,16 @@ class TestElementPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
 
+    def test_element_xlabel_override(self):
+        curve = Curve(range(10)).options(xlabel='custom x-label')
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].axis_label, 'custom x-label')
+
+    def test_element_ylabel_override(self):
+        curve = Curve(range(10)).options(ylabel='custom y-label')
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.yaxis[0].axis_label, 'custom y-label')
+
     def test_element_labelled_x_disabled(self):
         curve = Curve(range(10)).options(labelled=['y'])
         plot = bokeh_renderer.get_plot(curve).state
@@ -110,6 +120,12 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve(range(10)).options(labelled=[])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.xaxis[0].axis_label, '')
+        self.assertEqual(plot.yaxis[0].axis_label, '')
+
+    def test_element_labelled_y_disabled(self):
+        curve = Curve(range(10)).options(labelled=['x'])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].axis_label, 'x')
         self.assertEqual(plot.yaxis[0].axis_label, '')
 
     def test_static_source_optimization(self):

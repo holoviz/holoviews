@@ -21,6 +21,16 @@ class TestElementPlot(TestMPLPlot):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
 
+    def test_element_xlabel(self):
+        element = Curve(range(10)).options(xlabel='custom x-label')
+        axes = mpl_renderer.get_plot(element).handles['axis']
+        self.assertEqual(axes.get_xlabel(), 'custom x-label')
+
+    def test_element_ylabel(self):
+        element = Curve(range(10)).options(ylabel='custom y-label')
+        axes = mpl_renderer.get_plot(element).handles['axis']
+        self.assertEqual(axes.get_ylabel(), 'custom y-label')
+
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).options(xformatter='%d')
         plot = mpl_renderer.get_plot(curve)
