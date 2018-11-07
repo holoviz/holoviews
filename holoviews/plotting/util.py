@@ -962,6 +962,28 @@ def get_min_distance(element):
         return _get_min_distance_numpy(element)
 
 
+def get_directed_graph_paths(element, arrow_length):
+    """
+    Computes paths for a directed path which include an arrow to
+    indicate the directionality of each edge.
+    """
+    edgepaths = element._split_edgepaths
+    edges = edgepaths.split(datatype='array', dimensions=edgepaths.kdims)
+    arrows = []
+    for e in edges:
+        sx, sy = e[0]
+        ex, ey = e[1]
+        rad = np.arctan2(ey-sy, ex-sx)
+        xa0 = ex - np.cos(rad+np.pi/8)*arrow_length
+        ya0 = ey - np.sin(rad+np.pi/8)*arrow_length
+        xa1 = ex - np.cos(rad-np.pi/8)*arrow_length
+        ya1 = ey - np.sin(rad-np.pi/8)*arrow_length
+        arrow = np.array([(sx, sy), (ex, ey), (np.nan, np.nan),
+                          (xa0, ya0), (ex, ey), (xa1, ya1)])
+        arrows.append(arrow)
+    return arrows
+
+
 def rgb2hex(rgb):
     """
     Convert RGB(A) tuple to hex.
