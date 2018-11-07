@@ -13,7 +13,7 @@ from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
 from ...core.options import Store, SkipRendering
-from ...core.util import int_to_roman, int_to_alpha, basestring
+from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_streams
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot)
 from ..util import attach_streams, collate, displayable
@@ -255,18 +255,35 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
     subplots to form a Layout.
     """
 
-    @mpl_rc_context
-    def update_frame(self, key, ranges=None):
-        ranges = self.compute_ranges(self.layout, key, ranges)
-        for subplot in self.subplots.values():
-            subplot.update_frame(key, ranges=ranges)
+    def _link_dimensioned_streams(self):
+        """
+        Should perform any linking required to update titles when dimensioned
+        streams change.
+        """
+        streams = [s for s in self.streams if any(k in self.dimensions for k in s.contents)]
+        for s in streams:
+            s.add_subscriber(self._stream_update, 1)
 
+    def _stream_update(self, **kwargs):
+        contents = [k for s in self.streams for k in s.contents]
+        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key))
+        key = wrap_tuple_streams(key, self.dimensions, self.streams)
+        self._update_title(key)
+
+    def _update_title(self, key):
         title = self._format_title(key) if self.show_title else ''
         if 'title' in self.handles:
             self.handles['title'].set_text(title)
         else:
             title = self.handles['axis'].set_title(title, **self._fontsize('title'))
             self.handles['title'] = title
+
+    @mpl_rc_context
+    def update_frame(self, key, ranges=None):
+        ranges = self.compute_ranges(self.layout, key, ranges)
+        for subplot in self.subplots.values():
+            subplot.update_frame(key, ranges=ranges)
+        self._update_title(key)
 
 
 

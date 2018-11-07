@@ -11,7 +11,8 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
-from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
+from ...core.util import (basestring, wrap_tuple, unique_iterator,
+                          get_method_owner, wrap_tuple_streams)
 from ...streams import Stream
 from ..links import Link
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
@@ -423,6 +424,21 @@ class CompositePlot(BokehPlot):
         title_div.text = title_tags
 
         return title_div
+
+    def _link_dimensioned_streams(self):
+        """
+        Should perform any linking required to update titles when dimensioned
+        streams change.
+        """
+        streams = [s for s in self.streams if any(k in self.dimensions for k in s.contents)]
+        for s in streams:
+            s.add_subscriber(self._stream_update, 1)
+
+    def _stream_update(self, **kwargs):
+        contents = [k for s in self.streams for k in s.contents]
+        key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key))
+        key = wrap_tuple_streams(key, self.dimensions, self.streams)
+        self._get_title(key)
 
     @property
     def current_handles(self):
@@ -966,6 +982,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
+        print(key)
         title = self._get_title(key)
         if title:
             self.handles['title'] = title
