@@ -26,7 +26,7 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(plot.outline_line_alpha, 0)
 
     def test_element_xformatter_string(self):
-        curve = Curve(range(10)).options(xlabel='custom x-label')
+        curve = Curve(range(10)).options(xformatter='%d')
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
         self.assertIsInstance(xaxis.formatter, PrintfTickFormatter)
@@ -120,12 +120,6 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve(range(10)).options(labelled=[])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.xaxis[0].axis_label, '')
-        self.assertEqual(plot.yaxis[0].axis_label, '')
-
-    def test_element_labelled_y_disabled(self):
-        curve = Curve(range(10)).options(labelled=['x'])
-        plot = bokeh_renderer.get_plot(curve).state
-        self.assertEqual(plot.xaxis[0].axis_label, 'x')
         self.assertEqual(plot.yaxis[0].axis_label, '')
 
     def test_static_source_optimization(self):

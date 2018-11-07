@@ -96,7 +96,7 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.xaxis[0].axis_label, 'custom x-label')
 
-    def test_overlay_ylabel_override(self):
+    def test_overlay_ylabel_override_propagated(self):
         overlay = (Curve(range(10)).options(ylabel='custom y-label') * Curve(range(10)))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.yaxis[0].axis_label, 'custom y-label')
