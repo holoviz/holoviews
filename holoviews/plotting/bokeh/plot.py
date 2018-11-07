@@ -982,7 +982,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-        print(key)
         title = self._get_title(key)
         if title:
             self.handles['title'] = title
