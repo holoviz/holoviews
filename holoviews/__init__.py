@@ -1,6 +1,6 @@
 
 from __future__ import print_function, absolute_import
-import os, pydoc
+import os, pydoc, io
 
 import numpy as np # noqa (API import)
 import param
@@ -52,7 +52,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.config/holoviews/holoviews.rc"]:
     filename = os.path.expanduser(rcfile)
     if os.path.isfile(filename):
-        with open(filename) as f:
+        with io.open(filename, encoding='utf8') as f:
             code = compile(f.read(), filename, 'exec')
             try:
                 exec(code)
@@ -87,4 +87,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del absolute_import, np, os, print_function, pydoc, rcfile, warnings
+del absolute_import, io, np, os, print_function, pydoc, rcfile, warnings
