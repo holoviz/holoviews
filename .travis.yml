@@ -29,9 +29,6 @@ install:
   - conda info -a
   - conda env create -q -f environment.yml
   - source activate holoviews
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "3.6" ]]; then
-      conda install -c conda-forge python=3.6.6=h5001a0f_0;
-    fi
   - python setup.py develop
   - conda env export
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
