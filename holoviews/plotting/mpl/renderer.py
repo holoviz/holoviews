@@ -1,3 +1,4 @@
+import os
 import sys
 import base64
 from io import BytesIO
@@ -242,9 +243,12 @@ class MPLRenderer(Renderer):
         if self.fps is not None: anim_kwargs['fps'] = max([int(self.fps), 1])
         if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
         if not hasattr(anim, '_encoded_video'):
-            with NamedTemporaryFile(suffix='.%s' % fmt) as f:
+            # Windows will throw PermissionError with auto-delete
+            with NamedTemporaryFile(suffix='.%s' % fmt, delete=False) as f:
                 anim.save(f.name, writer=writer, **anim_kwargs)
                 video = f.read()
+            f.close()
+            os.remove(f.name)
         return video
 
 
