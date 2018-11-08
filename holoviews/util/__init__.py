@@ -343,13 +343,14 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
     """
     Saves the supplied object to file.
 
-    The available output formats available depend on the backend being
-    used. By default and if the filename is a string the output format
-    will be inferred from the file extension. Otherwise an explicit
-    format will be specified. For ambiguous file extensions such as
+    The available output formats depend on the backend being used. By
+    default and if the filename is a string the output format will be
+    inferred from the file extension. Otherwise an explicit format
+    will need to be specified. For ambiguous file extensions such as
     html it may be necessary to specify an explicit fmt to override
-    the default.
-
+    the default, e.g. in the case of 'html' output the widgets will
+    default to fmt='widgets', which may be changed to scrubber widgets
+    using fmt='scrubber'.
 
     Arguments
     ---------
@@ -383,7 +384,16 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
 
 def render(obj, backend=None, **kwargs):
     """
-    Renders the object to a figure object.
+    Renders the HoloViews object to the corresponding object in the
+    specified backend, e.g. a Matplotlib or Bokeh figure.
+
+    The backend defaults to the currently declared default
+    backend. The resulting object can then be used with other objects
+    in the specified backend. For instance, if you want to make a
+    multi-part Bokeh figure using a plot type only available in
+    HoloViews, you can use this function to return a Bokeh figure that
+    you can use like any hand-constructed Bokeh figure in a Bokeh
+    layout.
 
     Arguments
     ---------
