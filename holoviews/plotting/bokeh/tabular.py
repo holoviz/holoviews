@@ -68,6 +68,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         style['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **style)
+        self.handles['table'] = table
         self.handles['glyph_renderer'] = table
         self._execute_hooks(element)
         self.drawn = True
