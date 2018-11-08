@@ -131,5 +131,5 @@ class TablePlot(BokehPlot, GenericElementPlot):
         style = self.lookup_options(element, 'style')[self.cyclic_index]
         data, _, style = self.get_data(element, ranges, style)
         columns = self._get_columns(element, data)
-        self.handles['plot'].columns = columns
+        self.handles['table'].columns = columns
         self._update_datasource(source, data)
