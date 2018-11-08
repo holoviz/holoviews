@@ -7,7 +7,7 @@ dependencies:
   - pillow=5.2.0
   - pandas
   - scipy
-  - xarray
+  - xarray=0.10.9
   - networkx
   - ipython=5.4.1
   - jsonschema=2.6.0
