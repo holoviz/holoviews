@@ -108,7 +108,6 @@ class univariate_kde(Operation):
                 kde = stats.gaussian_kde(data)
             except LinAlgError:
                 return element_type([], selected_dim, vdims, **params)
-            kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
             bw = kde.scotts_factor() * data.std(ddof=1)
