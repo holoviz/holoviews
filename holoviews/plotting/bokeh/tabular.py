@@ -1,5 +1,6 @@
 import param
 
+from bokeh.models import Column
 from bokeh.models.widgets import (
     DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
     DateEditor, StringFormatter, StringEditor, IntEditor
@@ -67,7 +68,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         style['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **style)
-        self.handles['plot'] = table
+        self.handles['table'] = table
         self.handles['glyph_renderer'] = table
         self._execute_hooks(element)
         self.drawn = True
@@ -75,7 +76,14 @@ class TablePlot(BokehPlot, GenericElementPlot):
         for cb in self.callbacks:
             cb.initialize()
 
-        return table
+        title = self._get_title_div(self.keys[-1], '10pt')
+        if title:
+            plot = Column(title, table)
+            self.handles['title'] = title
+        else:
+            plot = table
+        self.handles['plot'] = plot
+        return plot
 
     def _get_columns(self, element, data):
         columns = []
@@ -108,6 +116,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
+        self._get_title_div(key, '12pt')
 
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
@@ -122,5 +131,5 @@ class TablePlot(BokehPlot, GenericElementPlot):
         style = self.lookup_options(element, 'style')[self.cyclic_index]
         data, _, style = self.get_data(element, ranges, style)
         columns = self._get_columns(element, data)
-        self.handles['plot'].columns = columns
+        self.handles['table'].columns = columns
         self._update_datasource(source, data)

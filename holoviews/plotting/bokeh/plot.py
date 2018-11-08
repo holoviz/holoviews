@@ -82,6 +82,14 @@ class BokehPlot(DimensionedPlot):
     _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
                      'poly_select', 'ypan', 'xpan']
 
+    _title_template = (
+        '<span style='
+        '"color:{color};font-family:{font};'
+        'font-style:{fontstyle};font-weight:{fontstyle};'  # italic/bold
+        'font-size:{fontsize}">'
+        '{title}</span>'
+    )
+
     backend = 'bokeh'
 
     @property
@@ -315,6 +323,37 @@ class BokehPlot(DimensionedPlot):
         return {k: v if isinstance(v, basestring) else '%spt' % v
                 for k, v in size.items()}
 
+    def _get_title_div(self, key, default_fontsize='15pt', width=450):
+        title_div = None
+        title = self._format_title(key) if self.show_title else ''
+        if not title:
+            return title_div
+
+        title_json = theme_attr_json(self.renderer.theme, 'Title')
+        color = title_json.get('text_color', None)
+        font = title_json.get('text_font', 'Arial')
+        fontstyle = title_json.get('text_font_style', 'bold')
+        fontsize = self._fontsize('title').get('fontsize', default_fontsize)
+        if fontsize == default_fontsize:  # if default
+            fontsize = title_json.get('text_font_size', default_fontsize)
+            if 'em' in fontsize:
+                # it's smaller than it shosuld be so add 0.25
+                fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
+
+        title_tags = self._title_template.format(
+            color=color,
+            font=font,
+            fontstyle=fontstyle,
+            fontsize=fontsize,
+            title=title)
+
+        if 'title' in self.handles:
+            title_div = self.handles['title']
+        else:
+            title_div = Div(width=width)  # so it won't wrap long titles easily
+        title_div.text = title_tags
+
+        return title_div
 
     def sync_sources(self):
         """
@@ -386,46 +425,6 @@ class CompositePlot(BokehPlot):
 
           {'title': '15pt'}""")
 
-    _title_template = (
-        '<span style='
-        '"color:{color};font-family:{font};'
-        'font-style:{fontstyle};font-weight:{fontstyle};'  # italic/bold
-        'font-size:{fontsize}">'
-        '{title}</span>'
-    )
-
-    def _get_title(self, key):
-        title_div = None
-        title = self._format_title(key) if self.show_title else ''
-        if not title:
-            return title_div
-
-        title_json = theme_attr_json(self.renderer.theme, 'Title')
-        color = title_json.get('text_color', None)
-        font = title_json.get('text_font', 'Arial')
-        fontstyle = title_json.get('text_font_style', 'bold')
-        fontsize = self._fontsize('title')['fontsize']
-        if fontsize == '15pt':  # if default
-            fontsize = title_json.get('text_font_size', '15pt')
-            if 'em' in fontsize:
-                # it's smaller than it shosuld be so add 0.25
-                fontsize = str(float(fontsize[:-2]) + 0.25) + 'em'
-
-        title_tags = self._title_template.format(
-            color=color,
-            font=font,
-            fontstyle=fontstyle,
-            fontsize=fontsize,
-            title=title)
-
-        if 'title' in self.handles:
-            title_div = self.handles['title']
-        else:
-            title_div = Div(width=450)  # so it won't wrap long titles easily
-        title_div.text = title_tags
-
-        return title_div
-
     def _link_dimensioned_streams(self):
         """
         Should perform any linking required to update titles when dimensioned
@@ -439,7 +438,7 @@ class CompositePlot(BokehPlot):
         contents = [k for s in self.streams for k in s.contents]
         key = tuple(None if d in contents else k for d, k in zip(self.dimensions, self.current_key))
         key = wrap_tuple_streams(key, self.dimensions, self.streams)
-        self._get_title(key)
+        self._get_title_div(key)
 
     @property
     def current_handles(self):
@@ -608,7 +607,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                         merge_tools=self.merge_tools)
         plot = self._make_axes(plot)
 
-        title = self._get_title(self.keys[-1])
+        title = self._get_title_div(self.keys[-1])
         if title:
             plot = Column(title, plot)
             self.handles['title'] = title
@@ -683,7 +682,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-        title = self._get_title(key)
+        title = self._get_title_div(key)
         if title:
             self.handles['title']
 
@@ -952,7 +951,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools, **kwargs)
 
-        title = self._get_title(self.keys[-1])
+        title = self._get_title_div(self.keys[-1])
         if title:
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot, **kwargs)
@@ -983,7 +982,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-        title = self._get_title(key)
+        title = self._get_title_div(key)
         if title:
             self.handles['title'] = title
 
