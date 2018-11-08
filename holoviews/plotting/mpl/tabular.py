@@ -47,34 +47,40 @@ class TablePlot(ElementPlot):
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
-        self.cell_widths = self._format_table()
+        if not self.dynamic:
+            self.cell_widths = self._format_table()
+        else:
+            self.cell_widths = None
 
 
     def _format_table(self):
         cell_widths = defaultdict(int)
         for key in self.keys:
-            frame = self._get_frame(key)
-            if frame is None:
+            element = self._get_frame(key)
+            if element is None:
                 continue
-
-            # Mapping from the cell coordinates to the dictionary key.
-            summarize = frame.rows > self.max_rows
-            half_rows = self.max_rows//2
-            rows = min([self.max_rows, frame.rows])
-            for row in range(rows):
-                adjusted_row = row
-                for col in range(frame.cols):
-                    if summarize and row == half_rows:
-                        cell_text = "..."
-                    else:
-                        if summarize and row > half_rows:
-                            adjusted_row = (frame.rows - self.max_rows + row)
-                        cell_text = frame.pprint_cell(adjusted_row, col)
-                        if len(cell_text) > self.max_value_len:
-                            cell_text = cell_text[:(self.max_value_len-3)]+'...'
-                    if len(cell_text) + 2 > cell_widths[col]:
-                        cell_widths[col] = len(cell_text) + 2
+            self._update_cell_widths(element, cell_widths)
         return cell_widths
+
+
+    def _update_cell_widths(self, element, cell_widths):
+        # Mapping from the cell coordinates to the dictionary key.
+        summarize = element.rows > self.max_rows
+        half_rows = self.max_rows//2
+        rows = min([self.max_rows, element.rows])
+        for row in range(rows):
+            adjusted_row = row
+            for col in range(element.cols):
+                if summarize and row == half_rows:
+                    cell_text = "..."
+                else:
+                    if summarize and row > half_rows:
+                        adjusted_row = (element.rows - self.max_rows + row)
+                    cell_text = element.pprint_cell(adjusted_row, col)
+                    if len(cell_text) > self.max_value_len:
+                        cell_text = cell_text[:(self.max_value_len-3)]+'...'
+                if len(cell_text) + 2 > cell_widths[col]:
+                    cell_widths[col] = len(cell_text) + 2
 
 
     def _cell_value(self, element, row, col):
@@ -93,14 +99,30 @@ class TablePlot(ElementPlot):
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
 
-        axis.set_axis_off()
+        # Render table
+        axes = self.handles['axis']
+        element = self.hmap.last
+        table = self._render_table(element, axes)
+        self.handles['artist'] = table
+
+        # Add to axes
+        axes.set_axis_off()
+        axes.add_table(table)
+        return self._finalize_axis(self.keys[-1], element=element)
+
+
+    def _render_table(self, element, axes):
+        if self.dynamic:
+            cell_widths = defaultdict(int)
+            self._update_cell_widths(element, cell_widths)
+        else:
+            cell_widths = self.cell_widths
+
         size_factor = (1.0 - 2*self.border)
-        table = mpl_Table(axis, bbox=[self.border, self.border,
+        table = mpl_Table(axes, bbox=[self.border, self.border,
                                       size_factor, size_factor])
-        total_width = sum(self.cell_widths.values())
+        total_width = sum(cell_widths.values())
         height = size_factor / element.rows
 
         summarize = element.rows > self.max_rows
@@ -113,27 +135,18 @@ class TablePlot(ElementPlot):
                     adjusted_row = (element.rows - self.max_rows + row)
                 cell_value = self._cell_value(element, row, col)
                 cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
-                width = self.cell_widths[col] / float(total_width)
+                width = cell_widths[col] / float(total_width)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
                 table.add_cell(row, col, width, height, text=cell_value,  loc='center',
                                **font_kwargs)
-
         table.set_fontsize(self.max_font_size)
         table.auto_set_font_size(True)
-        axis.add_table(table)
+        return table
 
+
+    def update_handles(self, key, axes, element, ranges, style):
+        table = self._render_table(element, axes)
+        self.handles['artist'].remove()
+        axes.add_table(table)
         self.handles['artist'] = table
-
-        return self._finalize_axis(self.keys[-1], element=element)
-
-
-    def update_handles(self, key, axis, element, ranges, style):
-        table = self.handles['artist']
-
-        for coords, cell in table.get_celld().items():
-            value = self._cell_value(element, *coords)
-            cell.set_text_props(text=value)
-
-        # Resize fonts across table as necessary
-        table.set_fontsize(self.max_font_size)
-        table.auto_set_font_size(True)
+        return {}
