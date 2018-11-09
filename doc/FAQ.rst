@@ -53,7 +53,7 @@ This constrains the bounds of x_col to (0, max(x_col)).
   curve = hv.Curve(df, 'x_col', 'y_col')
   curve = curve.redim.range(x_col=(0, None))
 
-Much like labels this allows you to declaratively associate ranges
+As in the discussion of labels above, this approach allows you to declaratively associate ranges
 with the dimensions of your data in a way that will persist even if
 you apply operations to the object. This same method is applicable to
 adjust the range of a color bar. Here z_col is the color bar value
