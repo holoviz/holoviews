@@ -256,9 +256,15 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
     width = param.Number(default=300)
 
     finalize_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing a column.
-        The hook is passed the plot object and the displayed
-        object, and other plotting handles can be accessed via plot.handles.""")
+        Optional list of hooks called when finalizing a column
+        (deprecated in favor of hooks). The hook is passed the plot
+        object and the displayed object, and other plotting handles
+        can be accessed via plot.handles.""")
+
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a column.  The
+        hook is passed the plot object and the displayed object, and
+        other plotting handles can be accessed via plot.handles.""")
 
     _stream_data = False
 

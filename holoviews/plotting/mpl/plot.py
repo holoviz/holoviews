@@ -89,18 +89,20 @@ class MPLPlot(DimensionedPlot):
 
     initial_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called before plotting the data onto
-        the axis. The hook is passed the plot object and the displayed
-        object, other plotting handles can be accessed via plot.handles.""")
-
-    final_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing an axis.
-        The hook is passed the plot object and the displayed
-        object, other plotting handles can be accessed via plot.handles.""")
+        the axis (now marked for deprecation). The hook is passed the
+        plot object and the displayed object, other plotting handles
+        can be accessed via plot.handles.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing an axis.
-        The hook is passed the plot object and the displayed
-        object, other plotting handles can be accessed via plot.handles.""")
+        Optional list of hooks called when finalizing a column
+        (deprecated in favor of hooks). The hook is passed the plot
+        object and the displayed object, and other plotting handles
+        can be accessed via plot.handles.""")
+
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a column.  The
+        hook is passed the plot object and the displayed object, and
+        other plotting handles can be accessed via plot.handles.""")
 
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
@@ -146,11 +148,6 @@ class MPLPlot(DimensionedPlot):
 
         self.handles['fig'] = fig
         self.handles['axis'] = axis
-
-        if self.final_hooks and self.finalize_hooks:
-            self.warning('Set either finalize_hooks or deprecated '
-                         'final_hooks, not both.')
-        self.finalize_hooks = self.final_hooks
         self.handles['bbox_extra_artists'] = []
 
 

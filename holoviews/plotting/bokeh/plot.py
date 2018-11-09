@@ -393,7 +393,11 @@ class BokehPlot(DimensionedPlot):
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
         for plot in plots:
-            for hook in plot.finalize_hooks:
+            if plot.hooks and plot.finalize_hooks:
+                self.warning("Supply either hooks or finalize_hooks not both, "
+                             "using hooks and ignoring finalize_hooks.")
+            hooks = plot.hooks or plot.finalize_hooks
+            for hook in hooks:
                 hook(plot, plot.current_frame)
             for callback in plot.callbacks:
                 callback.initialize(plot_id=self.id)

@@ -169,7 +169,7 @@ Note that the backend is optional and will default to the currently
 activated backend (i.e. ``hv.Store.current_backend``).
 
 If instead you want to customize the object before it is plotted it
-is possible to write so called ``finalize_hooks``:
+is possible to write so called ``hooks``:
 
 .. code:: python
 
@@ -181,7 +181,7 @@ is possible to write so called ``finalize_hooks``:
 	# artist, axis, legend and in bokeh x_range, y_range, glyph, cds etc.
 	plot.handles
 
-  hv.Curve(df, 'x_col', 'y_col').options(finalize_hooks=[hook])
+  hv.Curve(df, 'x_col', 'y_col').options(hooks=[hook])
 
 These hooks can modify the backend specific representation, e.g. the
 matplotlib figure, before allowing arbitrary customizations to be
@@ -450,7 +450,7 @@ for that HoloViews object:
       b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
 
   h = hv.Curve([1,2,7], 'x_col', 'y_col')
-  h = h.options(finalize_hooks=[update_axis])
+  h = h.options(hooks=[update_axis])
   h
 
 Here, you've wrapped your Bokeh-API calls into a function, then
