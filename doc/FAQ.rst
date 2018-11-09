@@ -104,7 +104,7 @@ is the default in HoloViews). Thus as a special case, a DynamicMap
 (whether created specifically or as the return value of various
 operations that accept a ``dynamic=True`` argument) will by default
 compute its ranges *using the first frame's data only*. If that is not
-the behavior you want, you either set ``framewise=True`` on it to enable
+ the behavior you want, you can either set ``framewise=True`` on it to enable
 normalization on every frame independently, or you can manually
 determine the appropriate axis range yourself and set that, e.g. with
 ``.redim.range()`` as described above.
