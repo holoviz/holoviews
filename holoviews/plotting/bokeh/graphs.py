@@ -12,8 +12,7 @@ from ...core.options import Cycle
 from ..util import process_cmap
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
-from .styles import line_properties, fill_properties, text_properties
-from .util import rgba_tuple
+from .styles import line_properties, fill_properties, text_properties, rgba_tuple
 
 
 
@@ -44,6 +43,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
                   ['node_size', 'cmap', 'edge_cmap'])
+
+    _no_op_styles =  ['cmap', 'edge_cmap']
 
     # Filled is only supported for subclasses
     filled = False

@@ -3,6 +3,7 @@ import numpy as np
 
 from ..core.dimension import Dimension
 from ..core.util import basestring
+from ..element import Graph
 
 
 def norm_fn(values, min=None, max=None):
@@ -72,6 +73,8 @@ class op(object):
     def eval(self, dataset, ranges={}):
         expanded = not ((dataset.interface.gridded and self.dimension in dataset.kdims) or
                         (dataset.interface.multi and dataset.interface.isscalar(dataset, self.dimension)))
+        if isinstance(dataset, Graph):
+            dataset = dataset if self.dimension in dataset else dataset.nodes
         data = dataset.dimension_values(self.dimension, expanded=expanded, flat=False)
         for o in self.ops:
             other = o['other']

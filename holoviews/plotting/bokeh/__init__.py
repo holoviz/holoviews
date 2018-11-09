@@ -170,7 +170,7 @@ if not config.style_17:
 options.Histogram = Options('style', line_color='black', fill_color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
-options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8, muted_alpha=0.2)
+options.Bars = Options('style', color=Cycle(), line_color='black', bar_width=0.8, muted_alpha=0.2)
 
 options.Spikes = Options('style', color='black', cmap='fire', muted_alpha=0.2)
 options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', muted_alpha=0.2)

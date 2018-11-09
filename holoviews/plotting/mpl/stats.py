@@ -56,6 +56,9 @@ class BoxPlot(ChartPlot):
                   'whiskerprops', 'capprops', 'flierprops',
                   'medianprops', 'meanprops', 'meanline']
 
+    _no_op_styles = [s for s in style_opts
+                     if s not in ('conf_intervals', 'widths')] 
+
     _plot_methods = dict(single='boxplot')
 
     def get_extents(self, element, ranges, range_type='combined'):
@@ -149,6 +152,9 @@ class ViolinPlot(BoxPlot):
 
     style_opts = ['showmeans', 'facecolors', 'showextrema', 'bw_method',
                   'widths', 'stats_color', 'box_color', 'alpha', 'edgecolors']
+
+    _no_op_styles = [s for s in style_opts
+                     if s not in ('facecolors', 'edgecolors', 'widths')] 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         box_color = plot_kwargs.pop('box_color', 'black')

@@ -20,8 +20,6 @@ from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter, is_color, categorize_colors
 from distutils.version import LooseVersion
 
-no_op_styles = ['marker', 'alpha', 'cmap', 'angle']
-
 
 class ElementPlot(GenericElementPlot, MPLPlot):
 
@@ -75,6 +73,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
+
+    # Declare which styles cannot be mapped to a non-scalar dimension
+    _no_op_styles = ['marker', 'alpha', 'cmap', 'angle']
 
     # Whether plot has axes, disables setting axis limits, labels and ticks
     _has_axes = True
@@ -479,7 +480,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.show_legend:
             style['label'] = element.label
 
-        style = self._apply_ops(element, ranges, style)
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
 
         with abbreviated_exception():
@@ -507,7 +509,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Update the elements of the plot.
         """
         self.teardown_handles()
-        new_style = self._apply_ops(element, range, style)
+        with abbreviated_exception():
+            new_style = self._apply_ops(element, range, style)
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, new_style)
 
         with abbreviated_exception():
@@ -543,14 +546,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
-            if not np.isscalar(val) and k in no_op_styles:
-                    raise ValueError('Mapping the a dimension to the "{style}" '
-                                     'style option is not supported. To '
-                                     'map the {dim} dimension to the {style} '
-                                     'use a groupby operation to overlay '
-                                     'your data along the dimension.'.format(
-                                         style=k, dim=v.dimension))
-
+            if not np.isscalar(val) and k in self._no_op_styles:
+                raise ValueError('Mapping a dimension to the "{style}" '
+                                 'style option is not supported by the '
+                                 '{backend} backend. To map the "{dim}" '
+                                 'dimension to the {style} use a '
+                                 'groupby operation to overlay your '
+                                 'data along the dimension.'.format(
+                                     style=k, dim=v.dimension,
+                                     backend=self.renderer.backend
+                                 )
+                )
             if 'color' == k and (isinstance(val, np.ndarray) and all(not is_color(c) for c in val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v.dimension, val)

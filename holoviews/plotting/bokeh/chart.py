@@ -166,6 +166,9 @@ class VectorFieldPlot(ColorbarPlot):
        smallest non-zero distance between two vectors.""")
 
     style_opts = line_properties + ['scale', 'cmap']
+
+    _no_op_styles = ['scale', 'cmap']
+
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
@@ -263,6 +266,8 @@ class CurvePlot(ElementPlot):
         'steps-pre' and 'steps-post'.""")
 
     style_opts = line_properties
+    _no_op_styles = line_properties
+    
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
 
@@ -486,6 +491,8 @@ class ErrorPlot(ElementPlot):
 class SpreadPlot(ElementPlot):
 
     style_opts = line_properties + fill_properties
+    _no_op_style = style_opts
+
     _plot_methods = dict(single='patch')
 
     _stream_data = False # Plot does not support streaming data
@@ -697,6 +704,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
 
+    _no_op_styles = ['bar_width', 'cmap', 'width']
+
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded
@@ -862,6 +871,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Define style information
         width = style.get('bar_width', style.get('width', 1))
+        if 'width' in style:
+            self.warning("BarPlot width option is deprecated use 'bar_width' instead.")
         cmap = style.get('cmap')
         hover = 'hover' in self.handles
 

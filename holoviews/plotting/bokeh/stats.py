@@ -77,6 +77,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['width', 'box_width', 'cmap'])
 
+    _no_op_styles = ['box_width', 'width', 'cmap']
+
     _stream_data = False # Plot does not support streaming data
 
     def get_extents(self, element, ranges, range_type='combined'):
@@ -134,6 +136,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         # Define glyph-data mapping
         width = style.get('box_width', style.get('width', 0.7))
+        if 'width' in style:
+            self.warning("BoxWhisker width option is deprecated use 'box_width' instead.")
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}

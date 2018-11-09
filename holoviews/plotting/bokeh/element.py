@@ -32,8 +32,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .styles import (
-    legend_dimensions, line_properties, mpl_to_bokeh, no_op_styles,
-    rgba_tuple, text_properties, validate
+    legend_dimensions, line_properties, mpl_to_bokeh, rgba_tuple,
+    text_properties, validate
 )
 from .util import (
     bokeh_version, decode_bytes, get_tab_title, glyph_order,
@@ -115,6 +115,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Formatter for ticks along the x-axis.""")
 
     _categorical = False
+
+    # Declare which styles cannot be mapped to a non-scalar dimension
+    _no_op_styles = []
 
     # Declares the default types for continuous x- and y-axes
     _x_range_type = Range1d
@@ -664,7 +667,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
-            if dname not in element and v.dimension not in self.overlay_dims:
+            if (dname not in element and v.dimension not in self.overlay_dims and
+                not (isinstance(element, Graph) and v.dimension in element.nodes)):
                 new_style.pop(k)
                 self.warning('Specified %s op %r could not be applied, %s dimension '
                              'could not be found' % (k, v, v.dimension))
@@ -679,13 +683,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val):
-                if k in no_op_styles:
-                    raise ValueError('Mapping the a dimension to the "{style}" '
-                                     'style option is not supported. To '
-                                     'map the {dim} dimension to the {style} '
-                                     'use a groupby operation to overlay '
-                                     'your data along the dimension.'.format(
-                                         style=k, dim=v.dimension))
+                if k in self._no_op_styles:
+                    raise ValueError('Mapping a dimension to the "{style}" '
+                                     'style option is not supported by the '
+                                     '{backend} backend. To map the {dim} '
+                                     'dimension to the {style} use a '
+                                     'groupby operation to overlay your '
+                                     'data along the dimension.'.format(
+                                         style=k, dim=v.dimension,
+                                         backend=self.renderer.backend
+                                     )
+                    )
                 elif source.data and len(val) != len(list(source.data.values())[0]):
                     continue
 
@@ -711,7 +719,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        new_style = self._apply_ops(element, source, ranges, style, group)
+        with abbreviated_exception():
+            new_style = self._apply_ops(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend:
             if self.overlay_dims:
@@ -1177,6 +1186,8 @@ class ColorbarPlot(ElementPlot):
                               major_tick_line_color='black')
 
     _default_nan = '#8b8b8b'
+
+    _no_op_styles = ['cmap', 'palette']
 
     def _draw_colorbar(self, plot, color_mapper):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):

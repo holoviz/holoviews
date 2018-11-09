@@ -37,8 +37,6 @@ text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color
 legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
                      'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
 
-no_op_styles = ['cmap', 'palette']
-
 # Conversion between matplotlib and bokeh markers
 
 markers = {

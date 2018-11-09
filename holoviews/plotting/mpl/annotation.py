@@ -101,6 +101,8 @@ class LabelsPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'family', 'weight', 'size', 'visible',
                   'horizontalalignment', 'verticalalignment', 'cmap', 'rotation']
 
+    _no_op_styles = []
+
     _plot_methods = dict(single='annotate')
 
     def get_data(self, element, ranges, style):

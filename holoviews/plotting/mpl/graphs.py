@@ -27,6 +27,9 @@ class GraphPlot(ColorbarPlot):
 
     _style_groups = ['node', 'edge']
 
+    _no_op_styles = ['edge_alpha', 'edge_linestyle', 'edge_cmap', 'cmap',
+                     'visible', 'node_marker']
+
     filled = False
 
     def _compute_styles(self, element, ranges, style):
@@ -124,6 +127,7 @@ class GraphPlot(ColorbarPlot):
                 edge_opts['facecolors'] = edge_opts.pop('colors')
         else:
             coll = LineCollection
+        print(edge_opts)
         edges = coll(paths, **edge_opts)
         ax.add_collection(edges)
 
