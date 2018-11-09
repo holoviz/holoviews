@@ -90,7 +90,7 @@ class MPLPlot(DimensionedPlot):
     initial_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called before plotting the data onto
         the axis (now marked for deprecation). The hook is passed the
-        plot object and the displayed object, other plotting handles
+        plot object and the displayed object; other plotting handles
         can be accessed via plot.handles.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
