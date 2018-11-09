@@ -66,6 +66,8 @@ set the `xlim` and `ylim` plot options:
 .. code:: python
 
   hv.Curve(df, 'x_col', 'y_col').options(xlim=(0, None), ylim=(0, 10))
+  
+This approach allows you to customize objects easily as a final step, but note that the values won't be applied to the underlying data, and thus won't be inherited if this object is subsequently used in an operation or data selection command.
 
 
 **Q: How do I control the auto-ranging/normalization of axis limits
