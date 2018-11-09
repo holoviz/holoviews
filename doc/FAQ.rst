@@ -22,20 +22,29 @@ you can make the label 'X Label' using:
 
   curve = hv.Curve(df, ('x_col', 'X Label'), 'y_col')
 
-You can also change the labels later, even after the object has been
-defined, by passing arguments (or an unpacked dictionary) to
-.redim.label():
+This is the recommended way to specify labels in a declarative way,
+which will persist when applying operations to your data. You can also
+change the labels later, even after the object has been defined, by
+passing arguments (or an unpacked dictionary) to .redim.label():
 
 .. code:: python
 
   curve = hv.Curve(df, 'x_col', 'y_col')
   curve = curve.redim.label(x_col='X Label', y_col='Label for Y')
 
+To override a label for plotting it is also possible to use the
+`xlabel` and `ylabel` plot options:
+
+  hv.Curve(df, 'x_col', 'y_col').options(
+      xlabel='X Label', ylabel='Label for Y'
+  )
+
 
 **Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
 
-**A:** Pass an unpacked dictionary containing the kdims/vdims' names as
-keys and a tuple of the bounds as values into obj.redim.range().
+**A:** Pass an unpacked dictionary containing the kdims/vdims' names
+as keys and a tuple of the bounds as values into
+obj.redim.range().
 
 This constrains the bounds of x_col to (0, max(x_col)).
 
@@ -44,18 +53,29 @@ This constrains the bounds of x_col to (0, max(x_col)).
   curve = hv.Curve(df, 'x_col', 'y_col')
   curve = curve.redim.range(x_col=(0, None))
 
-This same method is applicable to adjust the range of a color bar. Here
-z_col is the color bar value dimension and is bounded from 0 to 5.
+Much like labels this allows you to declaratively associate ranges
+with the dimensions of your data in a way that will persist even if
+you apply operations to the object. This same method is applicable to
+adjust the range of a color bar. Here z_col is the color bar value
+dimension and is bounded from 0 to 5.
+
+To override the range specifically for plotting it is also possible to
+set the `xlim` and `ylim` plot options:
 
 
-**Q: How do I control the auto-ranging/normalization of axis limits 
+.. code:: python
+
+  hv.Curve(df, 'x_col', 'y_col').options(xlim=(0, None), ylim=(0, 10))
+
+
+**Q: How do I control the auto-ranging/normalization of axis limits
 across frames in a HoloMap or objects in a Layout?**
 
 **A:** Where feasible, HoloViews defaults to normalizing axis ranges
-across all objects that are presented together, so that they can be 
-compared directly. If you don't want objects that share a dimension to 
+across all objects that are presented together, so that they can be
+compared directly. If you don't want objects that share a dimension to
 be normalized together in your layout, you can change the ``axiswise``
-normalization option to True, making each object be normalized 
+normalization option to True, making each object be normalized
 independently:
 
 .. code:: python
@@ -63,28 +83,28 @@ independently:
     your_layout.options(axiswise=True)
 
 Similarly, if you have a HoloMap composed of multiple frames in an
-animation or controlled with widgets, you can make each frame be normalized
-independently by changing ``framewise`` to True:
+animation or controlled with widgets, you can make each frame be
+normalized independently by changing ``framewise`` to True:
 
 .. code:: python
 
     your_holomap.options(framewise=True)
 
 
-**Q: Why doesn't my DynamicMap respect the framewise=False option for 
+**Q: Why doesn't my DynamicMap respect the framewise=False option for
 axis normalization across frames?**
 
 **A:** Unfortunately, HoloViews has no way of knowing the axis ranges
-of objects that might be returned by future calls to a DynamicMap's 
-callback function, and so there is no way for it to fully implement 
-``framewise=False`` normalization (even though such normalization 
-is the default in HoloViews). Thus as a special case, a DynamicMap 
+of objects that might be returned by future calls to a DynamicMap's
+callback function, and so there is no way for it to fully implement
+``framewise=False`` normalization (even though such normalization
+is the default in HoloViews). Thus as a special case, a DynamicMap
 (whether created specifically or as the return value of various
 operations that accept a ``dynamic=True`` argument) will by default
 compute its ranges *using the first frame's data only*. If that is not
 the behavior you want, you either set ``framewise=True`` on it to enable
 normalization on every frame independently, or you can manually
-determine the appropriate axis range yourself and set that, e.g. with 
+determine the appropriate axis range yourself and set that, e.g. with
 ``.redim.range()`` as described above.
 
 
@@ -114,19 +134,58 @@ shows an example of an ``NdOverlay`` in action.
 
 **Q: How do I export a figure?**
 
-**A:** Create a renderer object by passing a backend (matplotlib / bokeh)
-and pass the object and name of file without any suffix into the .save method.
+**A:** The easiest way to save a figure is the `hv.save` utility,
+ which allows saving plots in different formats depending on what is
+ supported by the selected backend:
 
 .. code:: python
 
-  backend = 'bokeh'
-  renderer = hv.renderer(backend)
-  renderer.save(obj, 'name_of_file')
+  # Using bokeh
+  hv.save(obj, 'plot.html', backend='bokeh')
+
+  # Using matplotlib
+  hv.save(obj, 'plot.svg', backend='matplotlib')
+
+Note that the backend is optional and will default to the currently
+activated backend (i.e. ``hv.Store.current_backend``).
+
+
+**Q: Can I export and customize a bokeh or matplotlib figure directly?**
+
+**A:**: Sometimes it is useful to customize a plot further using the
+ underlying plotting API used to render it. The `hv.render` method
+ returns the rendered representation of a holoviews object as bokeh or
+ matplotlib figure:
 
 .. code:: python
 
-  curve = hv.Curve(df, 'x_col', ['y_col', 'z_col'])
-  curve = curve.redim.range(z_col=(0, 5))
+  # Using bokeh
+  p = hv.render(obj, backend='bokeh')
+
+  # Using matplotlib
+  fig = hv.render(obj, backend='matplotlib')
+
+Note that the backend is optional and will default to the currently
+activated backend (i.e. ``hv.Store.current_backend``).
+
+If instead you want to customize the object before it is plotted it
+is possible to write so called ``finalize_hooks``:
+
+.. code:: python
+
+  def hook(plot, element):
+    # The bokeh/matplotlib figure
+    plot.state
+
+	# A dictionary of handles on plot subobjects, e.g. in matplotlib
+	# artist, axis, legend and in bokeh x_range, y_range, glyph, cds etc.
+	plot.handles
+
+  hv.Curve(df, 'x_col', 'y_col').options(finalize_hooks=[hook])
+
+These hooks can modify the backend specific representation, e.g. the
+matplotlib figure, before allowing arbitrary customizations to be
+applied which are not implemented or exposed by holoviews itself.
 
 
 **Q: Can I avoid generating extremely large HTML files when exporting
@@ -146,6 +205,7 @@ include:
 * Displaying your data in a more highly compressed format such as
   ``webm``, ``mp4`` or animated ``gif``, while being aware that those
   formats may introduce visible artifacts.
+* When using bokeh use lower precision dtypes (e.g. float16 vs. float64)
 * Replace figures with lots of data with images prerendered
   by `datashade() <user_guides/Large_Data.html>`_.
 
@@ -209,26 +269,6 @@ using curly braces and unpack it.
  argument of the Element as *a single object*, so if you are using a
  pair of lists, be sure to pass them as a tuple, not as two separate
  arguments.
-
-
-**Q: Can I use HoloViews without IPython/Jupyter?**
-
-**A:** Yes! The IPython/Jupyter notebook support makes a lot of tasks easier, and
-helps keep your data objects separate from the customization options,
-but everything available in IPython can also be done directly from
-Python.  For instance, since HoloViews 1.3.0 you can render an object
-directly to disk, with custom options, like this:
-
-.. code:: python
-
-  import holoviews as hv
-  renderer = hv.renderer('matplotlib').instance(fig='svg', holomap='gif')
-  renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'RdBu_r'}))
-
-This process is described in detail in the
-`Customizing Plots <user_guide/Customizing_Plots.html>`_ user guide.
-Of course, notebook-specific functionality like capturing the data in
-notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 
 
 **Q: Help! How do I find out the options for customizing the
