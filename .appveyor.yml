@@ -1,0 +1,48 @@
+build: false
+
+platform:
+  - x64
+
+environment:
+  matrix:
+    - MINICONDA: C:\Miniconda36-x64
+
+skip_branch_with_pr: true
+clone_depth: 5
+skip_tags: true
+
+init:
+  - cmd: set PATH=%MINICONDA%;%MINICONDA%\\Scripts;%MINICONDA%\\Library\\bin;%PATH%
+  - cmd: echo %path%
+
+install:
+  # Install ImageMagick (which also installs ffmpeg.)
+  # This installation process is a big fragile, as new releases are issued, but no Conda package exists yet.
+  - cmd: echo Downloading ImageMagick"
+    # Versions >=7.0 have problems - executables changed names.
+    # Assume 64-bit. Need to change to x86 for 32-bit.
+    # The available version at this site changes - each time it needs to be corrected in four places
+    # in the next few lines.
+  - cmd: curl -fskLO ftp://ftp.fifi.org/pub/ImageMagick/binaries/ImageMagick-6.9.10-14-Q16-x64-static.exe
+  - cmd: echo Installing ImageMagick
+  - cmd: ImageMagick-6.9.10-14-Q16-x64-static.exe /verySILENT /SP
+  - cmd: set IMAGEMAGICK_BINARY=c:\Program Files\ImageMagick-6.9.10-Q16\convert.exe
+  - cmd: set FFMPEG_BINARY=c:\Program Files\ImageMagick-6.9.10-Q16\ffmpeg.exe
+  - cmd: conda config --set always_yes yes --set changeps1 no
+  - cmd: conda update -q conda
+  - cmd: conda info -a
+  - cmd: conda env create -q -f environment.yml
+  - cmd: git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
+  - cmd: activate holoviews
+  - cmd: conda install phantomjs
+  - cmd: python setup.py develop
+
+before_test:
+  - cmd: for /f %%i in ('python -c "import matplotlib; print(matplotlib.matplotlib_fname())"') do set matplotlibrc=%%i
+  - cmd: 'echo backend : Agg > %matplotlibrc%'
+  - cmd: python -c "import matplotlib; print(matplotlib.get_backend())"
+  - cmd: flake8 --ignore=E,W,F999,F405 holoviews
+  - cmd: echo import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True > holoviews.rc
+
+test_script:
+  - nosetests --with-doctest --with-coverage --cover-package=holoviews
