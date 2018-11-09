@@ -394,7 +394,7 @@ class BokehPlot(DimensionedPlot):
                 source_cols[id(new_source)] = [c for c in new_source.data]
         for plot in plots:
             if plot.hooks and plot.finalize_hooks:
-                self.warning("Supply either hooks or finalize_hooks not both, "
+                self.warning("Supply either hooks or finalize_hooks not both; "
                              "using hooks and ignoring finalize_hooks.")
             hooks = plot.hooks or plot.finalize_hooks
             for hook in hooks:
