@@ -187,7 +187,7 @@ is possible to write so called ``hooks``:
   hv.Curve(df, 'x_col', 'y_col').options(hooks=[hook])
 
 These hooks can modify the backend specific representation, e.g. the
-matplotlib figure, before allowing arbitrary customizations to be
+matplotlib figure, before it is displayed, allowing arbitrary customizations to be
 applied which are not implemented or exposed by holoviews itself.
 
 
