@@ -170,7 +170,8 @@ activated backend (i.e. ``hv.Store.current_backend``).
 Note that the backend is optional and will default to the currently
 activated backend (i.e. ``hv.Store.current_backend``).
 
-If instead you want to customize the object before it is plotted it
+If the main reason you want access to the object is to somehow customize it before it is
+plotted, instead consider that it
 is possible to write so called ``hooks``:
 
 .. code:: python
