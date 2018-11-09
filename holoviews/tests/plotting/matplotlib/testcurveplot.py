@@ -3,6 +3,7 @@ from unittest import SkipTest
 
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
 from holoviews.core.util import pd
 from holoviews.element import Curve
 
@@ -144,3 +145,43 @@ class TestCurvePlot(TestMPLPlot):
         self.assertEqual(x_range[1], 736057.09999999998)
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_curve_scalar_color_op(self):
+        curve = Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
+                       vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(curve)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_color(), 'red')
+
+    def test_op_ndoverlay_color_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Curve(np.arange(i))
+                             for i, color in enumerate(colors)},
+                            'color').options('Curve', color='color')
+        plot = mpl_renderer.get_plot(overlay)
+        for subplot, color in zip(plot.subplots.values(), colors):
+            style = dict(subplot.style[subplot.cyclic_index])
+            style = subplot._apply_ops(subplot.current_frame, {}, style)
+            self.assertEqual(style['color'], color)
+
+    def test_curve_color_op(self):
+        curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
+                       vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(curve)
+
+    def test_curve_alpha_op(self):
+        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+                       vdims=['y', 'alpha']).options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(curve)
+
+    def test_curve_linewidth_op(self):
+        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+                       vdims=['y', 'linewidth']).options(linewidth='linewidth')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(curve)

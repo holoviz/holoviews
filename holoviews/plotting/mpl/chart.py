@@ -13,7 +13,8 @@ mpl_version = LooseVersion(mpl.__version__)
 
 import param
 
-from ...core import OrderedDict, Dimension, Store
+from ...core import OrderedDict, Dimension
+from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     match_spec, unique_iterator, basestring, max_range, isfinite,
     datetime_types, dt_to_int, dt64_to_dt
@@ -67,6 +68,8 @@ class CurvePlot(ChartPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker', 'ms']
+
+    _no_op_styles = style_opts
 
     _plot_methods = dict(single='plot')
 
@@ -262,7 +265,7 @@ class SpreadPlot(AreaPlot):
 
 
 
-class HistogramPlot(ChartPlot):
+class HistogramPlot(ColorbarPlot):
     """
     HistogramPlot can plot DataHistograms and ViewMaps of
     DataHistograms, which can be displayed as a single frame or
@@ -272,6 +275,8 @@ class HistogramPlot(ChartPlot):
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
                   'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
                   'linewidth']
+
+    _no_op_styles = ['alpha', 'log', 'error_kw', 'hatch', 'visible', 'align']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -309,6 +314,18 @@ class HistogramPlot(ChartPlot):
         else:
             self.offset_linefn = self.handles['axis'].axhline
             self.plotfn = self.handles['axis'].bar
+
+        with abbreviated_exception():
+            style = self._apply_ops(hist, ranges, style)
+            if 'vmin' in style:
+                raise ValueError('Mapping a continuous dimension to a '
+                                 'color on a HistogramPlot is not '
+                                 'supported by the {backend} backend. '
+                                 'To map a dimension to a color supply '
+                                 'an explicit list of rgba colors.'.format(
+                                     backend=self.renderer.backend
+                                 )
+                )
 
         # Plot bars and make any adjustments
         legend = hist.label if self.show_legend else ''
@@ -553,6 +570,9 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax', 'norm']
 
+    _no_ops_styles = ['alpha', 'marker', 'cmap', 'vmin', 'vmax',
+                      'norm', 'visible']
+
     _disabled_opts = ['size']
     _plot_methods = dict(single='scatter')
 
@@ -745,6 +765,8 @@ class BarPlot(LegendPlot):
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
 
+    _no_op_styles = style_opts
+
     legend_specs = dict(LegendPlot.legend_specs, **{
         'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
                        ncol=3, loc=3, mode="expand", borderaxespad=0.),
@@ -801,6 +823,7 @@ class BarPlot(LegendPlot):
         wrapped_style = self.lookup_options(element, 'style').max_cycles(len(style_product))
         color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
                         for n,k in enumerate(style_product)}
+        
         return style, color_groups, sopts
 
 
@@ -906,6 +929,8 @@ class BarPlot(LegendPlot):
                     label = ', '.join(label_key)
                     style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
+                    with abbreviated_exception():
+                        style = self._apply_ops(element, {}, style)
                     bar = axis.bar([xpos], [val], width=width, bottom=prev,
                                    **style)
 
@@ -1000,10 +1025,10 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
         pos = self.position
         if ndims > 1:
-            data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
+            data = [[(x, pos), (x, pos+y)] for x, y in element.array([0, 1])]
         else:
             height = self.spike_length
-            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array()]
+            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array([0])]
 
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]

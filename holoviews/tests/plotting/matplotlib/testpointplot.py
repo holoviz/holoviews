@@ -152,6 +152,10 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
     def test_point_color_op(self):
         points = Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
                         vdims='color').options(color='color')
@@ -209,13 +213,13 @@ class TestPointPlot(TestMPLPlot):
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
                         vdims='marker').options(marker='marker')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             mpl_renderer.get_plot(points)
 
     def test_point_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
                         vdims='alpha').options(alpha='alpha')
-        with self.assertRaises(ValueError):
+        with self.assertRaises(Exception):
             mpl_renderer.get_plot(points)
 
     def test_op_ndoverlay_value(self):

@@ -510,7 +510,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         self.teardown_handles()
         with abbreviated_exception():
-            new_style = self._apply_ops(element, range, style)
+            new_style = self._apply_ops(element, ranges, style)
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, new_style)
 
         with abbreviated_exception():
@@ -541,22 +541,24 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges)
+                val = v.eval(element, ranges['combined'])
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val) and k in self._no_op_styles:
+                element = type(element).__name__
                 raise ValueError('Mapping a dimension to the "{style}" '
                                  'style option is not supported by the '
-                                 '{backend} backend. To map the "{dim}" '
-                                 'dimension to the {style} use a '
-                                 'groupby operation to overlay your '
-                                 'data along the dimension.'.format(
-                                     style=k, dim=v.dimension,
+                                 '{element} element using the {backend} '
+                                 'backend. To map the "{dim}" dimension '
+                                 'to the {style} use a groupby operation '
+                                 'to overlay your data along the dimension.'.format(
+                                     style=k, dim=v.dimension, element=element,
                                      backend=self.renderer.backend
                                  )
                 )
+
             if 'color' == k and (isinstance(val, np.ndarray) and all(not is_color(c) for c in val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v.dimension, val)
@@ -564,9 +566,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     val = categorize_colors(val)
                 k = 'c'
 
-            if k == 'facecolors':
+            # If mapped to color/alpha override static fill/line style
+            if k == 'c' or (k == 'color' and isinstance(val, np.ndarray)):
+                fill_style = new_style.get('facecolor')
+                if fill_style and is_color(fill_style):
+                    new_style.pop('facecolor')
+                line_style = new_style.get('edgecolor')
+                if line_style and is_color(line_style):
+                    new_style.pop('edgecolor')
+            elif k == 'facecolors':
                 # Color overrides facecolors if defined
-                new_style.pop('color')
+                new_style.pop('color', None)
 
             new_style[k] = val
 

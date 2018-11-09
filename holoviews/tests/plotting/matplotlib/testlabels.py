@@ -60,3 +60,50 @@ class TestLabelsPlot(TestMPLPlot):
             self.assertEqual(text._y, expected['y'][i])
             self.assertEqual(text.get_text(), expected['Label'][i])
             self.assertEqual(text.get_color(), colors[i])
+    
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_label_color_op(self):
+        labels = Labels([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                        vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_color() for a in artist],
+                         ['#000000', '#FF0000', '#00FF00'])
+
+    def test_label_linear_color_op(self):
+        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(labels)
+
+    def test_label_categorical_color_op(self):
+        labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+                        vdims='color').options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(labels)
+
+    def test_label_size_op(self):
+        labels = Labels([(0, 0, 8), (0, 1, 12), (0, 2, 6)],
+                        vdims='size').options(size='size')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_fontsize() for a in artist], [8, 12, 6])
+
+    def test_label_alpha_op(self):
+        labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(alpha='alpha')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_alpha() for a in artist],
+                         [0, 0.2, 0.7])
+
+    def test_label_rotation_op(self):
+        labels = Labels([(0, 0, 90), (0, 1, 180), (0, 2, 270)],
+                        vdims='rotation').options(rotation='rotation')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_rotation() for a in artist],
+                         [90, 180, 270])

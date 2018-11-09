@@ -88,7 +88,7 @@ class ErrorBars(Chart):
         the error bars.""")
 
     vdims = param.List(default=[Dimension('y'), Dimension('yerror')],
-                       bounds=(1, 3), constant=True)
+                       bounds=(1, None), constant=True)
 
 
     def range(self, dim, data_range=True, dimension_range=True):
@@ -155,7 +155,7 @@ class Histogram(Chart):
         Dimensions on Element2Ds determine the number of indexable
         dimensions.""")
 
-    vdims = param.List(default=[Dimension('Frequency')], bounds=(1,1))
+    vdims = param.List(default=[Dimension('Frequency')], bounds=(1, None))
 
     _binned = True
 

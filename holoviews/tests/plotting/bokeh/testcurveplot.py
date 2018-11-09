@@ -337,3 +337,44 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(x_range.end, np.datetime64('2016-04-03T02:24:00.000000000'))
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_curve_scalar_color_op(self):
+        curve = Curve([(0, 0, 'red'), (0, 1, 'red'), (0, 2, 'red')],
+                       vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(curve)
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_color, 'red')
+
+    def test_op_ndoverlay_color_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Curve(np.arange(i))
+                             for i, color in enumerate(colors)},
+                            'color').options('Curve', color='color')
+        plot = bokeh_renderer.get_plot(overlay)
+        for subplot, color in zip(plot.subplots.values(), colors):
+            style = dict(subplot.style[subplot.cyclic_index])
+            cds = subplot.handles['cds']
+            style = subplot._apply_ops(subplot.current_frame, cds, {}, style)
+            self.assertEqual(style['color'], color)
+
+    def test_curve_color_op(self):
+        curve = Curve([(0, 0, 'red'), (0, 1, 'blue'), (0, 2, 'red')],
+                       vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            bokeh_renderer.get_plot(curve)
+
+    def test_curve_alpha_op(self):
+        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+                       vdims=['y', 'alpha']).options(alpha='alpha')
+        with self.assertRaises(Exception):
+            bokeh_renderer.get_plot(curve)
+
+    def test_curve_line_width_op(self):
+        curve = Curve([(0, 0, 0.1), (0, 1, 0.3), (0, 2, 1)],
+                       vdims=['y', 'linewidth']).options(line_width='linewidth')
+        with self.assertRaises(Exception):
+            bokeh_renderer.get_plot(curve)

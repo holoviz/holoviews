@@ -330,9 +330,9 @@ class CurvePlot(ElementPlot):
 
 
 
-class HistogramPlot(ElementPlot):
+class HistogramPlot(ColorbarPlot):
 
-    style_opts = line_properties + fill_properties
+    style_opts = line_properties + fill_properties + ['cmap']
     _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges, style):
@@ -360,7 +360,7 @@ class HistogramPlot(ElementPlot):
 
 
 
-class SideHistogramPlot(ColorbarPlot, HistogramPlot):
+class SideHistogramPlot(HistogramPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
@@ -434,9 +434,11 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
 
 
 
-class ErrorPlot(ElementPlot):
+class ErrorPlot(ColorbarPlot):
 
     style_opts = line_properties + ['lower_head', 'upper_head']
+
+    _no_op_styles = ['line_dash']
 
     _mapping = dict(base="base", upper="upper", lower="lower")
 

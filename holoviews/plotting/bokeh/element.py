@@ -677,22 +677,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges)
+                val = v.eval(element, ranges['combined'])
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val):
                 if k in self._no_op_styles:
+                    element = type(element).__name__
                     raise ValueError('Mapping a dimension to the "{style}" '
                                      'style option is not supported by the '
-                                     '{backend} backend. To map the {dim} '
-                                     'dimension to the {style} use a '
-                                     'groupby operation to overlay your '
-                                     'data along the dimension.'.format(
-                                         style=k, dim=v.dimension,
+                                     '{element} element using the {backend} '
+                                     'backend. To map the "{dim}" dimension '
+                                     'to the {style} use a groupby operation '
+                                     'to overlay your data along the dimension.'.format(
+                                         style=k, dim=v.dimension, element=element,
                                          backend=self.renderer.backend
-                                     )
+                                 )
                     )
                 elif source.data and len(val) != len(list(source.data.values())[0]):
                     continue
@@ -705,6 +706,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = k
                 source.data[k] = val
 
+            # If color is not valid colorspec add colormapper
             numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
             if ('color' in k and isinstance(val, np.ndarray) and
                 (numeric or not validate('color', val))):
@@ -714,6 +716,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v.dimension, element, ranges,
                                                 style, name=dname+'_color_mapper', **kwargs)
                 key = {'field': k, 'transform': cmapper}
+
+            # If mapped to color/alpha override static fill/line style
+            for s in ('alpha', 'color'):
+                if s != k or k not in source.data:
+                    continue
+                fill_style = new_style.get('fill_'+s)
+                if fill_style and validate(s, fill_style):
+                    new_style.pop('fill_'+s)
+                line_style = new_style.get('line_'+s)
+                if line_style and validate(s, line_style):
+                    new_style.pop('line_'+s)
+
             new_style[k] = key
         return new_style
 

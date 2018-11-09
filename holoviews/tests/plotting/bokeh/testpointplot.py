@@ -322,6 +322,10 @@ class TestPointPlot(TestBokehPlot):
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
     def test_point_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                         vdims='color').options(color='color')
