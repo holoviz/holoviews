@@ -15,10 +15,7 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 var BokehMethods = {
   update_cache : function(){
     for (var index in this.frames) {
-      var data = this.frames[index];
-      for (var i=0; i<data.content.length; i++) {
-        data.content[i] = JSON.parse(data.content[i]);
-      }
+      this.frames[index] = JSON.parse(this.frames[index]);
     }
   },
   update : function(current){
@@ -32,11 +29,7 @@ var BokehMethods = {
       } else {
         var doc = Bokeh.index[data.root].model.document;
       }
-      for (var i=0; i<data.content.length; i++) {
-        try {
-          doc.apply_json_patch(data.content[i]);
-        } catch(err) { }
-      }
+      doc.apply_json_patch(data.content);
     }
   },
   init_comms: function() {

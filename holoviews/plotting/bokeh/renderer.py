@@ -330,7 +330,7 @@ class BokehRenderer(Renderer):
         return data
 
 
-    def diff(self, plot, binary=True, individual=False):
+    def diff(self, plot, binary=True):
         """
         Returns a json diff required to update an existing plot with
         the latest plot data.
@@ -338,16 +338,9 @@ class BokehRenderer(Renderer):
         events = list(plot.document._held_events)
         if not events:
             return None
-
-        if individual:
-            msgs = []
-            for event in events:
-                msg = Protocol("1.0").create("PATCH-DOC", [event], use_buffers=binary)
-                msgs.append(msg)
-        else:
-            msgs = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
+        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
         plot.document._held_events = []
-        return msgs
+        return msg
 
 
     @classmethod
