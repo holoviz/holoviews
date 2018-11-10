@@ -541,7 +541,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges['combined'])
+                val = v.eval(element, ranges)
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]

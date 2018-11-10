@@ -85,6 +85,7 @@ class op(object):
             else:
                 args = (data,)
             drange = ranges.get(self.dimension.name)
+            drange = drange.get('combined', drange)
             if o['fn'] == norm_fn and drange is not None:
                 data = o['fn'](data, *drange)
             else:
