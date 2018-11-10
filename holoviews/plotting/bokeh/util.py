@@ -1,6 +1,7 @@
 import re, time, sys
 from distutils.version import LooseVersion
 from collections import defaultdict
+from contextlib import contextmanager
 import datetime as dt
 
 import numpy as np
@@ -479,6 +480,31 @@ def filter_batched_data(data, mapping):
                 del data[v]
         except:
             pass
+
+def cds_column_replace(source, data):
+    """
+    Determine if the CDS.data requires a full replacement or simply
+    needs to be updated. A replacement is required if untouched
+    columns are not the same length as the columns being updated.
+    """
+    current_length = [len(v) for v in source.data.values() if isinstance(v, (list, np.ndarray))]
+    new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
+    untouched = [k for k in source.data if k not in data]
+    return bool(untouched and current_length and new_length and current_length[0] != new_length[0])
+
+
+@contextmanager
+def hold_policy(document, policy, server=False):
+    """
+    Context manager to temporary override the hold policy.
+    """
+    old_policy = document._hold
+    document._hold = policy
+    yield
+    if server and not old_policy:
+        document.unhold()
+    else:
+        document._hold = old_policy
 
 
 def recursive_model_update(model, props):
