@@ -32,7 +32,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .styles import (
-    legend_dimensions, line_properties, mpl_to_bokeh, rgba_tuple,
+    legend_dimensions, line_properties, markers, mpl_to_bokeh, rgba_tuple,
     text_properties, validate
 )
 from .util import (
@@ -667,7 +667,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
-            if (dname not in element and v.dimension not in self.overlay_dims and
+            if k == 'marker' and dname in markers:
+                continue
+            elif (dname not in element and v.dimension not in self.overlay_dims and
                 not (isinstance(element, Graph) and v.dimension in element.nodes)):
                 new_style.pop(k)
                 self.warning('Specified %s op %r could not be applied, %s dimension '
@@ -1257,7 +1259,7 @@ class ColorbarPlot(ElementPlot):
         cmap = colors or style.pop('cmap', 'viridis')
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
-            if not factors:
+            if factors is None:
                 factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
             factors = [dim.pprint_value(f) for f in factors]

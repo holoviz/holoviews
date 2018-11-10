@@ -187,6 +187,8 @@ class AreaPlot(ChartPlot):
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
 
+    _no_op_styles = style_opts
+
     _plot_methods = dict(single='fill_between')
 
     def get_data(self, element, ranges, style):

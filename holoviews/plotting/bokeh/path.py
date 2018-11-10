@@ -49,7 +49,12 @@ class PathPlot(ColorbarPlot):
 
 
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
+        color = style.get('color', None)
+        cdim = None
+        if isinstance(color, util.basestring):
+            cdim = element.get_dimension(color)
+        if cdim is None:
+            cdim = element.get_dimension(self.color_index)
         inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
         if not cdim:
