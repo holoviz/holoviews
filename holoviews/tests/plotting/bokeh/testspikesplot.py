@@ -4,6 +4,8 @@ import numpy as np
 from holoviews.core import NdOverlay
 from holoviews.element import Spikes
 
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
+
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
@@ -127,3 +129,84 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(cds.data['x_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x_dt_strings}'), ('y', '@{y}')])
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_spikes_color_op(self):
+        spikes = Spikes([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.line_color, 'color')
+
+    def test_spikes_linear_color_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
+    def test_spikes_categorical_color_op(self):
+        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, np.array(['A', 'B', 'C']))
+        self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
+    def test_spikes_line_color_op(self):
+        spikes = Spikes([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(line_color='color')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.line_color, 'line_color')
+
+    def test_spikes_alpha_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.line_alpha, 'alpha')
+
+    def test_spikes_line_alpha_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(line_alpha='alpha')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.line_alpha, 'line_alpha')
+
+    def test_spikes_line_width_op(self):
+        spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                              vdims=['y', 'line_width']).options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(spikes)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
+        self.assertEqual(glyph.line_width, 'line_width')
+
+    def test_op_ndoverlay_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Spikes(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').options('Spikes', color='Color')
+        plot = bokeh_renderer.get_plot(overlay)
+        for subplot, color in zip(plot.subplots.values(),  colors):
+            self.assertEqual(subplot.handles['glyph'].line_color, color)

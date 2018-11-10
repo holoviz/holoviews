@@ -1,5 +1,6 @@
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
 from holoviews.element import Spikes
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -86,3 +87,56 @@ class TestSpikesPlot(TestMPLPlot):
         x_range = plot.handles['axis'].get_xlim()
         self.assertEqual(x_range[0], 736054.90000000002)
         self.assertEqual(x_range[1], 736057.09999999998)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_spikes_color_op(self):
+        spikes = Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
+            self.assertEqual(c.get_facecolor(), tuple(c/255. for c in hex2rgb(w))+(1,))
+
+    def test_spikes_linear_color_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                              vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(spikes)
+
+    def test_spikes_categorical_color_op(self):
+        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                              vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(spikes)
+
+    def test_spikes_alpha_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(spikes)
+
+    def test_spikes_line_width_op(self):
+        spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                              vdims=['y', 'line_width']).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        for c, w in zip(children, np.array([1, 4, 8])):
+            self.assertEqual(c.get_linewidth(), w)
+
+    def test_op_ndoverlay_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Spikes(np.arange(i+2))
+                             for i, color in enumerate(colors)}, 'Color').options(
+                                     'Spikes', color='Color'
+                             )
+        plot = mpl_renderer.get_plot(overlay)
+        colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
+        for subplot, color in zip(plot.subplots.values(),  colors):
+            children = subplot.handles['artist'].get_children()
+            for c in children:
+                self.assertEqual(c.get_facecolor(), color)
