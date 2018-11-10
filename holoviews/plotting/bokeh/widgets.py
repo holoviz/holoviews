@@ -306,9 +306,10 @@ class BokehWidget(NdWidget):
         """
         self.plot.update(idx)
         if self.embed:
-            patch = self.renderer.diff(self.plot, binary=False, individual=True)
-            patches = [serialize_json(p.content) for p in patch]
-            return {'content': patches, 'root': self.plot.state._id}
+            patch = self.renderer.diff(self.plot, binary=False)
+            msg = serialize_json(dict(content=patch.content,
+                                      root=self.plot.state._id))
+            return msg
 
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):

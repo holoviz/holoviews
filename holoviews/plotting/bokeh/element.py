@@ -6,6 +6,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
+from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend,
                           TickFormatter, PrintfTickFormatter)
@@ -30,7 +31,8 @@ from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version, theme_attr_json)
+                   decode_bytes, bokeh_version, theme_attr_json,
+                   cds_column_replace, hold_policy)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -690,24 +692,59 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return {k: v for k, v in glyph_props.items() if k in allowed}
 
 
-    def _update_glyph(self, renderer, properties, mapping, glyph):
+    def _update_glyph(self, renderer, properties, mapping, glyph, source, data):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
         legend = merged.pop('legend', None)
+        columns = list(source.data.keys())
+        glyph_updates = []
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
             if not glyph or (not renderer and glyph_type):
                 continue
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
-            glyph.update(**filtered)
+
+            # Ensure that data is populated before updating glyph
+            dataspecs = glyph.dataspecs()
+            for spec in dataspecs:
+                new_spec = filtered.get(spec)
+                old_spec = getattr(glyph, spec)
+                new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
+                old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
+                if new_field not in data or new_field in source.data or new_field == old_field:
+                    continue
+                columns.append(new_field)
+            glyph_updates.append((glyph, filtered))
+
+        # If a dataspec has changed and the CDS.data will be replaced
+        # the GlyphRenderer will not find the column, therefore we
+        # craft an event which will make the column available.
+        cds_replace = cds_column_replace(source, data)
+        if not cds_replace:
+            if not self.static_source:
+                self._update_datasource(source, data)
+        elif self.document:
+            server = self.renderer.mode == 'server'
+            with hold_policy(self.document, 'collect', server=server):
+                empty_data = {c: [] for c in columns}
+                event = ModelChangedEvent(self.document, source, 'data',
+                                          source.data, empty_data, empty_data,
+                                          setter='empty')
+                self.document._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
                 for item in leg.items:
                     if renderer in item.renderers:
                         item.label = legend
+
+        for glyph, update in glyph_updates:
+            glyph.update(**update)
+
+        if cds_replace and not self.static_source:
+            return self._update_datasource(source, data)
 
 
     def _postprocess_hover(self, renderer, source):
@@ -761,7 +798,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Update plot, source and glyph
         with abbreviated_exception():
-            self._update_glyph(renderer, properties, mapping, glyph)
+            self._update_glyph(renderer, properties, mapping, glyph, source, source.data)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -828,14 +865,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             data, mapping, style = self.get_data(element, ranges, style)
 
-        if not self.static_source:
-            self._update_datasource(source, data)
-
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
             with abbreviated_exception():
-                self._update_glyph(renderer, properties, mapping, glyph)
+                self._update_glyph(renderer, properties, mapping, glyph, source, data)
+        elif not self.static_source:
+            self._update_datasource(source, data)
 
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
@@ -958,7 +994,8 @@ class CompositeElementPlot(ElementPlot):
 
             # Update plot, source and glyph
             with abbreviated_exception():
-                self._update_glyph(renderer, properties, mapping.get(key, {}), glyph)
+                self._update_glyph(renderer, properties, mapping.get(key, {}), glyph,
+                                   source, source.data)
 
 
     def _process_properties(self, key, properties, mapping):
@@ -997,15 +1034,16 @@ class CompositeElementPlot(ElementPlot):
             gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
-            if not self.static_source and gdata is not None:
-                self._update_datasource(source, gdata)
 
             if glyph:
                 properties = self._glyph_properties(plot, element, source, ranges, style)
                 properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
-                    self._update_glyph(renderer, properties, mapping[key], glyph)
+                    self._update_glyph(renderer, properties, mapping[key],
+                                       glyph, source, gdata)
+            elif not self.static_source and gdata is not None:
+                self._update_datasource(source, gdata)
 
 
     def _init_glyph(self, plot, mapping, properties, key):

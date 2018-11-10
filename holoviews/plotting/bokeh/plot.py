@@ -5,8 +5,10 @@ from collections import defaultdict
 import numpy as np
 import param
 
+from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
+from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
@@ -20,10 +22,8 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
-                   update_shared_sources, empty_plot, decode_bytes, theme_attr_json)
-
-from bokeh.layouts import gridplot
-from bokeh.plotting.helpers import _known_tools as known_tools
+                   update_shared_sources, empty_plot, decode_bytes,
+                   theme_attr_json, cds_column_replace)
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -190,16 +190,15 @@ class BokehPlot(DimensionedPlot):
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
 
-        msgs = self.renderer.diff(self, binary=True, individual=True)
-        if not msgs:
+        msg = self.renderer.diff(self, binary=True)
+        if msg is None:
             return
-        for msg in msgs:
-            self.comm.send(msg.header_json)
-            self.comm.send(msg.metadata_json)
-            self.comm.send(msg.content_json)
-            for header, payload in msg.buffers:
-                self.comm.send(json.dumps(header))
-                self.comm.send(buffers=[payload])
+        self.comm.send(msg.header_json)
+        self.comm.send(msg.metadata_json)
+        self.comm.send(msg.content_json)
+        for header, payload in msg.buffers:
+            self.comm.send(json.dumps(header))
+            self.comm.send(buffers=[payload])
 
 
     def set_root(self, root):
@@ -224,6 +223,9 @@ class BokehPlot(DimensionedPlot):
         """
         Update datasource with data for a new frame.
         """
+        if not self.document:
+            return
+
         data = {k: decode_bytes(vs) for k, vs in data.items()}
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data
@@ -234,13 +236,7 @@ class BokehPlot(DimensionedPlot):
                 source.stream(data, stream.length)
             return
 
-        # Determine if the CDS.data requires a full replacement or simply needs
-        # to be updated. A replacement is required if untouched columns
-        # are not the same length as the columns being updated.
-        current_length = [len(v) for v in source.data.values() if isinstance(v, (list, np.ndarray))]
-        new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
-        untouched = [k for k in source.data if k not in data]
-        if (untouched and current_length and new_length and current_length[0] != new_length[0]):
+        if cds_column_replace(source, data):
             source.data = data
         else:
             source.data.update(data)
