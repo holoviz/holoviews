@@ -8,6 +8,7 @@ from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from ...core.dimension import Dimension
 from ...core.ndmapping import sorted_context
+from ...core.options import abbreviated_exception
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
                           unique_iterator, isfinite)
 from ...operation.stats import univariate_kde
@@ -96,7 +97,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return xlabel, ylabel, None
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        new_style = self._apply_ops(element, source, ranges, style, group)
+        element = element.aggregate(function=np.mean)
+        with abbreviated_exception():
+            new_style = self._apply_ops(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label
@@ -259,20 +262,6 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             r2_data[dimension_sanitizer(cdim.name)] = factors
             factors = list(unique_iterator(factors))
 
-        # Get colors and define categorical colormapper
-        cname = dimension_sanitizer(cdim.name)
-        cmap = style.get('cmap')
-        if cmap is None:
-            cycle_style = self.lookup_options(element, 'style')
-            styles = cycle_style.max_cycles(len(factors))
-            colors = [styles[i].get('box_color', styles[i]['box_fill_color'])
-                      for i in range(len(factors))]
-            colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
-        else:
-            colors = None
-        mapper = self._get_colormapper(cdim, element, ranges, style, factors, colors)
-        vbar_map['fill_color'] = {'field': cname, 'transform': mapper}
-        vbar2_map['fill_color'] = {'field': cname, 'transform': mapper}
         if self.show_legend:
             vbar_map['legend'] = cdim.name
 
@@ -305,16 +294,17 @@ class ViolinPlot(BoxWhiskerPlot):
        Relative width of the violin""")
 
     # Map each glyph to a style group
-    _style_groups = {'patch': 'violin', 'segment': 'stats', 'vbar': 'box',
+    _style_groups = {'patches': 'violin', 'segment': 'stats', 'vbar': 'box',
                      'scatter': 'median', 'hbar': 'box'}
 
-    _draw_order = ['patch', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
+    _draw_order = ['patches', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
 
     style_opts = ([glyph+p for p in fill_properties+line_properties
                    for glyph in ('violin_', 'box_')] +
                   ['stats_'+p for p in line_properties] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
-                   for glyph in ('box', 'violin', 'stats', 'median')])
+                   for glyph in ('box', 'violin', 'stats', 'median')] +
+                  ['cmap'])
 
     _stat_fns = [partial(np.percentile, q=q) for q in [25, 50, 75]]
 
@@ -331,7 +321,7 @@ class ViolinPlot(BoxWhiskerPlot):
         ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
         ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
         xs = np.concatenate([xs, xs[::-1]])
-        kde =  {'x': xs, 'y': ys}
+        kde =  {'ys': xs, 'xs': ys}
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
@@ -382,7 +372,7 @@ class ViolinPlot(BoxWhiskerPlot):
         if self.invert_axes:
             bar_map = {'y': 'x', 'left': 'bottom',
                        'right': 'top', 'height': 0.1}
-            kde_map = {'x': 'x', 'y': 'y'}
+            kde_map = {'xs': 'ys', 'ys': 'xs'}
             if self.inner == 'box':
                 seg_map = {'x0': 'y0', 'x1': 'y1', 'y0': 'x', 'y1': 'x'}
             else:
@@ -392,7 +382,7 @@ class ViolinPlot(BoxWhiskerPlot):
         else:
             bar_map = {'x': 'x', 'bottom': 'bottom',
                        'top': 'top', 'width': 0.1}
-            kde_map = {'x': 'y', 'y': 'x'}
+            kde_map = {'xs': 'xs', 'ys': 'ys'}
             if self.inner == 'box':
                 seg_map = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
             else:
@@ -403,11 +393,10 @@ class ViolinPlot(BoxWhiskerPlot):
         elstyle = self.lookup_options(element, 'style')
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
 
-        data, mapping = {}, {}
-        seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(3))
+        mapping, data = {}, {}
+        patches_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(4))
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
-            gkey = 'patch_%d'%i
             kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
             for k, v in segs.items():
                 seg_data[k] += v
@@ -415,11 +404,11 @@ class ViolinPlot(BoxWhiskerPlot):
                 bar_data[k] += v
             for k, v in scatter.items():
                 scatter_data[k].append(v)
-            data[gkey] = kde
-            patch_style = {k[7:]: v for k, v in elstyle[i].items()
-                           if k.startswith('violin')}
-            mapping[gkey] = dict(kde_map, **patch_style)
+            for k, v in kde.items():
+                patches_data[k].append(v)
 
+        data['patches_1'] = patches_data
+        mapping['patches_1'] = kde_map
         if seg_data:
             data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
                                  for k, v in seg_data.items()}
