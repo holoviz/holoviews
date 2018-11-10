@@ -500,11 +500,13 @@ def hold_policy(document, policy, server=False):
     """
     old_policy = document._hold
     document._hold = policy
-    yield
-    if server and not old_policy:
-        document.unhold()
-    else:
-        document._hold = old_policy
+    try:
+        yield
+    finally:
+        if server and not old_policy:
+            document.unhold()
+        else:
+            document._hold = old_policy
 
 
 def recursive_model_update(model, props):
