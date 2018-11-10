@@ -56,12 +56,10 @@ This constrains the bounds of x_col to (0, max(x_col)).
 As in the discussion of labels above, this approach allows you to declaratively associate ranges
 with the dimensions of your data in a way that will persist even if
 you apply operations to the object. This same method is applicable to
-adjust the range of a color bar. Here z_col is the color bar value
-dimension and is bounded from 0 to 5.
+adjust the limits of the colormapping range (i.e. the `clim`).
 
 To override the range specifically for plotting it is also possible to
 set the `xlim` and `ylim` plot options:
-
 
 .. code:: python
 
