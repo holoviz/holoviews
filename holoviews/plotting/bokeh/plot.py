@@ -23,7 +23,7 @@ from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
-                   theme_attr_json, cds_column_replace, hold_policy)
+                   theme_attr_json, cds_column_replace)
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
