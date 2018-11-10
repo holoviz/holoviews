@@ -2,7 +2,7 @@ import operator
 import numpy as np
 
 from ..core.dimension import Dimension
-from ..core.util import basestring
+from ..core.util import basestring, unique_iterator, isfinite
 from ..element import Graph
 
 
@@ -11,9 +11,40 @@ def norm_fn(values, min=None, max=None):
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
 
+
+def bin_fn(values, bins, labels=None):
+    bins = np.asarray(bins)
+    if labels is None:
+        labels = (bins[:-1] + np.diff(bins)/2.)
+    else:
+        labels = np.asarray(labels)
+    dtype = 'float' if labels.dtype.kind == 'f' else 'O'
+    binned = np.full_like(values, (np.nan if dtype == 'f' else None), dtype=dtype)
+    for lower, upper, label in zip(bins[:-1], bins[1:], labels):
+        condition = (values > lower) & (values <= upper)
+        binned[np.where(condition)[0]] = label
+    return binned
+
+
+def cat_fn(values, categories, empty=None):
+    uniq_cats = list(unique_iterator(values))
+    cats = []
+    for c in values:
+        if isinstance(categories, list):
+            cat_ind = uniq_cats.index(c)
+            if cat_ind < len(categories):
+                cat = categories[cat_ind]
+            else:
+                cat = empty
+        else:
+            cat = categories.get(c, empty)
+        cats.append(cat)
+    return np.asarray(cats)
+
+
 class op(object):
 
-    _op_registry = {'norm': norm_fn}
+    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn}
 
     def __init__(self, obj, fn=None, other=None, reverse=False, **kwargs):
         ops = []
