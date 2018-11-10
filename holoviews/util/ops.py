@@ -115,9 +115,9 @@ class op(object):
                 args = (other, data) if o['reverse'] else (data, other)
             else:
                 args = (data,)
-            drange = ranges.get(self.dimension.name)
+            drange = ranges.get(self.dimension.name, {})
             drange = drange.get('combined', drange)
-            if o['fn'] == norm_fn and drange is not None:
+            if o['fn'] == norm_fn and drange != {}:
                 data = o['fn'](data, *drange)
             else:
                 data = o['fn'](*args, **o['kwargs'])
