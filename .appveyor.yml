@@ -16,6 +16,7 @@ init:
   - cmd: echo %path%
 
 install:
+   #- cmd: npm install -g phantomjs-prebuilt
   # Install ImageMagick (which also installs ffmpeg.)
   # This installation process is a big fragile, as new releases are issued, but no Conda package exists yet.
   - cmd: echo Downloading ImageMagick"
@@ -34,7 +35,6 @@ install:
   - cmd: conda env create -q -f environment.yml
   - cmd: git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
   - cmd: activate holoviews
-  - cmd: conda install phantomjs
   - cmd: python setup.py develop
 
 before_test:
