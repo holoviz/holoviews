@@ -1,4 +1,6 @@
 import operator
+from itertools import zip_longest
+
 import numpy as np
 
 from ..core.dimension import Dimension
@@ -42,9 +44,18 @@ def cat_fn(values, categories, empty=None):
     return np.asarray(cats)
 
 
+def str_fn(values):
+    return np.asarray([str(v) for v in values])
+
+
+def int_fn(values):
+    return values.astype(int)
+
+
 class op(object):
 
-    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn}
+    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn,
+                    str: str_fn, int: int_fn}
 
     def __init__(self, obj, fn=None, other=None, reverse=False, **kwargs):
         ops = []
@@ -55,7 +66,7 @@ class op(object):
         else:
             self.dimension = obj.dimension
             ops = obj.ops
-        if isinstance(fn, str):
+        if isinstance(fn, str) or fn in self._op_registry:
             fn = self._op_registry.get(fn)
             if fn is None:
                 raise ValueError('Operation function %s not found' % fn)
@@ -63,6 +74,30 @@ class op(object):
             ops = ops + [{'other': other, 'fn': fn, 'kwargs': kwargs,
                           'reverse': reverse}]
         self.ops = ops
+
+    @classmethod
+    def resolve_spec(cls, op_spec):
+        """
+        Converts an op spec, i.e. a string or tuple declaring an op
+        or a nested spec of ops into an op instance.
+        """
+        if isinstance(op_spec, basestring):
+            return cls(op_spec)
+        elif isinstance(op_spec, tuple):
+            combined = zip_longest(op_spec, (None, None, None, {}))
+            obj, fn, other, kwargs = (o2 if o1 is None else o1 for o1, o2 in combined)
+            if isinstance(obj, tuple):
+                obj = cls.resolve_spec(obj)
+            return cls(obj, fn, other, **kwargs)
+        return op_spec
+
+    @classmethod
+    def register(cls, key, function):
+        """
+        Register a custom op transform function which can from then
+        on be referenced by the key.
+        """
+        self._op_registry[name] = function
 
     # Unary operators
     def __abs__(self): return op(self, operator.abs)
