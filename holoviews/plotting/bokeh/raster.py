@@ -16,6 +16,9 @@ class RasterPlot(ColorbarPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['cmap', 'alpha']
+
+    _no_op_styles = style_opts
+
     _plot_methods = dict(single='image')
 
     def _hover_opts(self, element):
@@ -74,6 +77,9 @@ class RasterPlot(ColorbarPlot):
 class RGBPlot(ElementPlot):
 
     style_opts = ['alpha']
+
+    _no_op_styles = style_opts
+
     _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges, style):
@@ -130,8 +136,11 @@ class QuadMeshPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    _plot_methods = dict(single='quad')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
+
+    _no_op_styles = style_opts
+
+    _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges, style):
         x, y, z = element.dimensions()[:3]
@@ -182,7 +191,7 @@ class QuadMeshPlot(ColorbarPlot):
         else:
             xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
                       element.interface.coords(element, y, edges=True, ordered=True))
-            
+
             x0, y0 = cartesian_product([xc[:-1], yc[:-1]], copy=True)
             x1, y1 = cartesian_product([xc[1:], yc[1:]], copy=True)
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
