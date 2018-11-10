@@ -6,6 +6,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
+from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend,
                           TickFormatter, PrintfTickFormatter)
@@ -727,12 +728,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif self.document:
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
-                source.data = {c: [] for c in columns}
-                event = self.document._held_events[-1]
-                event.hint = None
-                event.setter = 'override'
-                event.new = source.data
-                event.serializable_new = source.data
+                empty_data = {c: [] for c in columns}
+                event = ModelChangedEvent(self.document, source, 'data',
+                                          source.data, empty_data, empty_data,
+                                          setter='empty')
+                self.document._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
