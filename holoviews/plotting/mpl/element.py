@@ -555,7 +555,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  )
                 )
 
-            if k in ('color', 'c') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
+            if k in ('c', 'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v.dimension, val)
                 if val.dtype.kind in 'OSUM':
@@ -566,7 +566,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
         for k, val in list(new_style.items()):
             # If mapped to color/alpha override static fill/line style
-            if k == 'c' or (k == 'color' and isinstance(val, np.ndarray)):
+            if k == 'c':
+                new_style.pop('color', None)
+            if k in ('c', 'color') and isinstance(val, np.ndarray):
                 fill_style = new_style.get('facecolor')
                 if fill_style and is_color(fill_style):
                     new_style.pop('facecolor')

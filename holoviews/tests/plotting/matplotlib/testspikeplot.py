@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core.overlay import NdOverlay
 from holoviews.element import Spikes
 
+from ..utils import ParamLogStream
 from .testplot import TestMPLPlot, mpl_renderer
 
 
@@ -103,15 +104,19 @@ class TestSpikesPlot(TestMPLPlot):
 
     def test_spikes_linear_color_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                              vdims=['y', 'color']).options(color='color')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(spikes)
+                        vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_spikes_categorical_color_op(self):
-        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
-                              vdims=['y', 'color']).options(color='color')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(spikes)
+        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+                        vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_spikes_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -140,3 +145,15 @@ class TestSpikesPlot(TestMPLPlot):
             children = subplot.handles['artist'].get_children()
             for c in children:
                 self.assertEqual(c.get_facecolor(), color)
+
+    def test_spikes_color_index_color_clash(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims=['y', 'color']).options(color='color', color_index='color')
+        with ParamLogStream() as log:
+            plot = mpl_renderer.get_plot(spikes)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index, ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)
+

@@ -6,6 +6,7 @@ from holoviews.element import Spikes
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
+from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
@@ -141,7 +142,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.line_color, 'color')
+        self.assertEqual(glyph.line_color, {'field': 'color'})
 
     def test_spikes_linear_color_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -164,7 +165,7 @@ class TestSpikesPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertTrue(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, np.array(['A', 'B', 'C']))
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
 
@@ -175,7 +176,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.line_color, 'line_color')
+        self.assertEqual(glyph.line_color, {'field': 'line_color'})
 
     def test_spikes_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -184,7 +185,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, 'alpha')
+        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
 
     def test_spikes_line_alpha_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -193,7 +194,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, 'line_alpha')
+        self.assertEqual(glyph.line_alpha, {'field': 'line_alpha'})
 
     def test_spikes_line_width_op(self):
         spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -202,7 +203,7 @@ class TestSpikesPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(glyph.line_width, 'line_width')
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']
@@ -210,3 +211,14 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(),  colors):
             self.assertEqual(subplot.handles['glyph'].line_color, color)
+
+    def test_spikes_color_index_color_clash(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                    vdims=['y', 'color']).options(color='color', color_index='color')
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(spikes)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index, ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)

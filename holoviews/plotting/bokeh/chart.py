@@ -341,6 +341,8 @@ class HistogramPlot(ColorbarPlot):
     style_opts = line_properties + fill_properties + ['cmap']
     _plot_methods = dict(single='quad')
 
+    _no_op_styles = ['line_dash']
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
             mapping = dict(top='right', bottom='left', left=0, right='top')
@@ -650,13 +652,10 @@ class SpikesPlot(ColorbarPlot):
             mapping = {'x0': 'y0', 'x1': 'y1', 'y0': 'x', 'y1': 'x'}
         else:
             mapping = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            cmapper = self._get_colormapper(cdim, element, ranges, style)
-            data[cdim.name] = [] if self.static_source else element.dimension_values(cdim)
-            mapping['color'] = {'field': cdim.name,
-                                'transform': cmapper}
 
+        cdata, cmapping = self._get_color_data(element, ranges, dict(style))
+        data.update(cdata)
+        mapping.update(cmapping)
         self._get_hover_data(data, element)
 
         return data, mapping, style

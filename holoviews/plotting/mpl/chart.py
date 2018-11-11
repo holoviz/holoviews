@@ -1003,6 +1003,10 @@ class SpikesPlot(PathPlot, ColorbarPlot):
     style_opts = PathPlot.style_opts + ['cmap']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
+        if 'c' in plot_kwargs:
+            plot_kwargs['array'] = plot_kwargs.pop('c')
+        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
+            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
@@ -1061,10 +1065,17 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             clean_spikes.append(np.column_stack(cols))
 
         cdim = element.get_dimension(self.color_index)
+        color = style.get('color', None)
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+            self.warning("Cannot declare style mapping for 'color' option "
+                         "and declare a color_index, ignoring the color_index.")
+            cdim = None
         if cdim:
             style['array'] = element.dimension_values(cdim)
             self._norm_kwargs(element, ranges, style, cdim)
-            style['clim'] = style.pop('vmin'), style.pop('vmax')
+
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
         return (clean_spikes,), style, {'dimensions': dims}
 
 
@@ -1073,9 +1084,9 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         (data,), kwargs, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data)
         artist.set_visible(style.get('visible', True))
-        if 'array' in kwargs:
+        if 'array' in kwargs or 'c' in kwargs:
             artist.set_clim((kwargs['vmin'], kwargs['vmax']))
-            artist.set_array(kwargs['array'])
+            artist.set_array(kwargs.get('array', kwargs.get('c')))
             if 'norm' in kwargs:
                 artist.norm = kwargs['norm']
         return axis_kwargs
