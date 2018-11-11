@@ -719,7 +719,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v.dimension, element, ranges,
                                                 style, name=dname+'_color_mapper', **kwargs)
                 key = {'field': k, 'transform': cmapper}
-
             new_style[k] = key
 
         for style, value in list(new_style.items()):
@@ -1236,9 +1235,12 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         if dim is None and colors is None:
             return None
+
+        # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:
+            dim_name = dim.name+'_'+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get(name)))
+                                                         x.handles.get(name, x.handles.get(dim_name))))
             cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
             if cmappers:
                 cmapper = cmappers[0]
@@ -1301,6 +1303,12 @@ class ColorbarPlot(ElementPlot):
                         int_categories=False):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
+        color = style.get(name, None)
+        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, op)):
+            self.warning("Cannot declare style mapping for '%s' option "
+                         "and declare a color_index, ignoring the color_index."
+                         % name)
+            cdim = None
         if not cdim:
             return data, mapping
 

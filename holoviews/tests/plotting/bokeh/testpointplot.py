@@ -333,8 +333,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.fill_color, 'color')
-        self.assertEqual(glyph.line_color, 'color')
+        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(glyph.line_color, {'field': 'color'})
 
     def test_point_linear_color_op(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -358,7 +358,7 @@ class TestPointPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertTrue(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, np.array(['A', 'B', 'C']))
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
@@ -370,8 +370,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertNotEqual(glyph.fill_color, 'line_color')
-        self.assertEqual(glyph.line_color, 'line_color')
+        self.assertNotEqual(glyph.fill_color, {'field': 'line_color'})
+        self.assertEqual(glyph.line_color, {'field': 'line_color'})
 
     def test_point_fill_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -380,8 +380,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.fill_color, 'fill_color')
-        self.assertNotEqual(glyph.line_color, 'fill_color')
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertNotEqual(glyph.line_color, {'field': 'fill_color'})
 
     def test_point_angle_op(self):
         points = Points([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
@@ -390,7 +390,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['angle'], np.array([0, 0.785398, 1.570796]))
-        self.assertEqual(glyph.angle, 'angle')
+        self.assertEqual(glyph.angle, {'field': 'angle'})
 
     def test_point_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -399,7 +399,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.fill_alpha, 'alpha')
+        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
 
     def test_point_line_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -408,8 +408,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, 'line_alpha')
-        self.assertNotEqual(glyph.fill_alpha, 'line_alpha')
+        self.assertEqual(glyph.line_alpha, {'field': 'line_alpha'})
+        self.assertNotEqual(glyph.fill_alpha, {'field': 'line_alpha'})
 
     def test_point_fill_alpha_op(self):
         points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -418,8 +418,8 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(glyph.line_alpha, 'fill_alpha')
-        self.assertEqual(glyph.fill_alpha, 'fill_alpha')
+        self.assertNotEqual(glyph.line_alpha, {'field': 'fill_alpha'})
+        self.assertEqual(glyph.fill_alpha, {'field': 'fill_alpha'})
 
     def test_point_size_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -428,7 +428,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['size'], np.array([1, 4, 8]))
-        self.assertEqual(glyph.size, 'size')
+        self.assertEqual(glyph.size, {'field': 'size'})
 
     def test_point_line_width_op(self):
         points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -437,7 +437,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(glyph.line_width, 'line_width')
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
 
     def test_point_marker_op(self):
         points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
@@ -446,7 +446,7 @@ class TestPointPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['marker'], np.array(['circle', 'triangle', 'square']))
-        self.assertEqual(glyph.marker, 'marker')
+        self.assertEqual(glyph.marker, {'field': 'marker'})
 
     def test_op_ndoverlay_value(self):
         markers = ['circle', 'triangle']
@@ -455,3 +455,35 @@ class TestPointPlot(TestBokehPlot):
         for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
+
+    def test_point_color_index_color_clash(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(color='color', color_index='color')        
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index, ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)
+
+    def test_point_color_index_color_no_clash(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(fill_color='color', color_index='color')        
+        plot = bokeh_renderer.get_plot(points)
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        cmapper2 = plot.handles['color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper2})
+
+    def test_point_size_index_size_clash(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='size').options(size='size', size_index='size')        
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'size' option "
+                   "and declare a size_index, ignoring the size_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)

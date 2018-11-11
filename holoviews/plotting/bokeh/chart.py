@@ -10,6 +10,7 @@ from ...core import Dataset, OrderedDict
 from ...core.util import max_range, basestring, dimension_sanitizer, isfinite, range_pad
 from ...element import Bars
 from ...operation import interpolate_curve
+from ...util.ops import op
 from ..util import compute_sizes, get_min_distance, dim_axis_label, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
@@ -53,11 +54,16 @@ class PointPlot(LegendPlot, ColorbarPlot):
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
         sdim = element.get_dimension(self.size_index)
+        ms = style.get('size', np.sqrt(6))
+        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, op)):
+            self.warning("Cannot declare style mapping for 'size' option "
+                         "and declare a size_index, ignoring the size_index.")
+            sdim = None
         if not sdim or self.static_source:
             return data, mapping
 
         map_key = 'size_' + sdim.name
-        ms = style.get('size', np.sqrt(6))**2
+        ms = ms**2
         sizes = element.dimension_values(self.size_index)
         sizes = compute_sizes(sizes, self.size_fn,
                               self.scaling_factor,

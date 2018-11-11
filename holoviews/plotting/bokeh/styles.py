@@ -63,7 +63,9 @@ def mpl_to_bokeh(properties):
     """
     new_properties = {}
     for k, v in properties.items():
-        if k == 's':
+        if isinstance(v, dict):
+            new_properties[k] = v
+        elif k == 's':
             new_properties['size'] = v
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
