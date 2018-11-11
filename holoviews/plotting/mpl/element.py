@@ -480,8 +480,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.show_legend:
             style['label'] = element.label
 
-        with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
 
         with abbreviated_exception():
@@ -509,9 +507,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Update the elements of the plot.
         """
         self.teardown_handles()
-        with abbreviated_exception():
-            new_style = self._apply_ops(element, ranges, style)
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, new_style)
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
 
         with abbreviated_exception():
             handles = self.init_artists(axis, plot_data, plot_kwargs)
@@ -559,13 +555,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  )
                 )
 
-            if 'color' == k and (isinstance(val, np.ndarray) and all(not is_color(c) for c in val)):
+            if k in ('color', 'c') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v.dimension, val)
                 if val.dtype.kind in 'OSUM':
                     val = categorize_colors(val)
                 k = 'c'
 
+            new_style[k] = val
+
+        for k, val in list(new_style.items()):
             # If mapped to color/alpha override static fill/line style
             if k == 'c' or (k == 'color' and isinstance(val, np.ndarray)):
                 fill_style = new_style.get('facecolor')
@@ -574,11 +573,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 line_style = new_style.get('edgecolor')
                 if line_style and is_color(line_style):
                     new_style.pop('edgecolor')
-            elif k == 'facecolors':
+            elif k == 'facecolors' and not isinstance(new_style.get('color', new_style.get('c')), np.ndarray):
                 # Color overrides facecolors if defined
                 new_style.pop('color', None)
-
-            new_style[k] = val
+                new_style.pop('c', None)
 
         return new_style
 

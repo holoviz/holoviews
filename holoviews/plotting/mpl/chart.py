@@ -581,6 +581,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
         self._compute_styles(element, ranges, style)
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
 
 
@@ -588,6 +590,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
         cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
+
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+            self.warning("Cannot declare style mapping for 'color' option "
+                         "and declare a color_index, ignoring the color_index.")
+            cdim = None
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
@@ -603,10 +610,14 @@ class PointPlot(ChartPlot, ColorbarPlot):
                 style['color'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
+        ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
+        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, op)):
+            self.warning("Cannot declare style mapping for 's' option "
+                         "and declare a size_index, ignoring the size_index.")
+            sdim = None
         if sdim:
             sizes = element.dimension_values(self.size_index)
-            ms = style['s'] if 's' in style else mpl.rcParams['lines.markersize']
             sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
                                   self.scaling_method, ms)
             if sizes is None:
