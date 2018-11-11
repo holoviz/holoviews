@@ -700,15 +700,16 @@ class BarPlot(ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
        Index of the dimension from which the color will the drawn""")
 
+    stacked = param.Boolean(default=False, doc="""
+       Whether the bars should be stacked or grouped.""")
+
     group_index = param.ClassSelector(default=1, class_=(basestring, int),
                                       allow_None=True, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
+       Deprecated; use stacked option instead.""")
 
     stack_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
+       Deprecated; use stacked option instead.""")
 
     style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
 
@@ -732,13 +733,12 @@ class BarPlot(ColorbarPlot, LegendPlot):
             for kd in overlay.kdims:
                 ranges[kd.name]['combined'] = overlay.range(kd)
 
-        stacked = element.get_dimension(self.stack_index)
         extents = super(BarPlot, self).get_extents(element, ranges, range_type)
         xdim = element.kdims[0]
         ydim = element.vdims[0]
 
         # Compute stack heights
-        if stacked:
+        if self.stacked:
             ds = Dataset(element)
             pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
             neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
@@ -768,12 +768,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         Get factors for categorical axes.
         """
-        gdim = element.get_dimension(self.group_index)
-        if gdim not in element.kdims:
-            gdim = None
-        sdim = element.get_dimension(self.stack_index)
-        if sdim not in element.kdims:
-            sdim = None
+        gdim = None
+        sdim = None
+        if element.ndims == 1:
+            pass
+        elif not self.stacked:
+            gdim = element.get_dimension(1)
+        else:
+            sdim = element.get_dimension(1)
 
         xdim, ydim = element.dimensions()[:2]
         xvals = element.dimension_values(0, False)
@@ -797,7 +799,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if self.batched:
             element = element.last
         xlabel = dim_axis_label(element.kdims[0])
-        gdim = element.get_dimension(self.group_index)
+        if element.ndims > 1 and not self.stacked:
+            gdim = element.get_dimension(1)
+        else:
+            gdim = None
         if gdim and gdim in element.kdims:
             xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
         return (xlabel, dim_axis_label(element.vdims[0]), None)
@@ -843,6 +848,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
             isinstance(cmapper, CategoricalColorMapper)):
             mapping['legend'] = cdim.name
 
+        if not self.stacked and ds.ndims > 1:
+            cmapping.pop('legend', None)
+            mapping.pop('legend', None)
+
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
@@ -855,19 +864,25 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
 
     def get_data(self, element, ranges, style):
+        if self.stack_index is not None:
+            self.warning('Bars stack_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.group_index not in (None, 1):
+            self.warning('Bars group_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+
         # Get x, y, group, stack and color dimensions
-        grouping = None
-        group_dim = element.get_dimension(self.group_index)
-        if group_dim not in element.kdims:
-            group_dim = None
+        group_dim, stack_dim = None, None
+        if element.ndims == 1:
+            grouping = None
+        elif self.stacked:
+            grouping = 'stacked'
+            stack_dim = element.get_dimension(1)
         else:
             grouping = 'grouped'
-        stack_dim = element.get_dimension(self.stack_index)
-        if stack_dim not in element.kdims:
-            stack_dim = None
-        else:
-            grouping = 'stacked'
-            group_dim = None
+            group_dim = element.get_dimension(1)
 
         xdim = element.get_dimension(0)
         ydim = element.vdims[0]
