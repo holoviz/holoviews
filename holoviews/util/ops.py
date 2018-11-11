@@ -136,12 +136,12 @@ class op(object):
     def std(self, **kwargs): return op(self, np.std, **kwargs)
     def var(self, **kwargs): return op(self, np.var, **kwargs)
 
-    def eval(self, dataset, ranges={}):
+    def eval(self, dataset, flat=False, ranges={}):
         expanded = not ((dataset.interface.gridded and self.dimension in dataset.kdims) or
                         (dataset.interface.multi and dataset.interface.isscalar(dataset, self.dimension)))
         if isinstance(dataset, Graph):
             dataset = dataset if self.dimension in dataset else dataset.nodes
-        data = dataset.dimension_values(self.dimension, expanded=expanded, flat=False)
+        data = dataset.dimension_values(self.dimension, expanded=expanded, flat=flat)
         for o in self.ops:
             other = o['other']
             if other is not None:

@@ -680,7 +680,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges)
+                val = v.eval(element, ranges=ranges, flat=True)
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
@@ -703,6 +703,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             if k == 'angle':
                 val = np.deg2rad(val)
+            elif k.endswith('font_size'):
+                if np.isscalar(val) and isinstance(val, int):
+                    val = str(v)+'pt'
+                elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
+                    val = [str(int(v))+'pt' for v in val]
             if np.isscalar(val):
                 key = val
             else:
@@ -732,6 +737,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 line_style = new_style.get(prefix+'line_'+s)
                 if line_style and validate(s, line_style):
                     new_style.pop(prefix+'line_'+s)
+
         return new_style
 
 

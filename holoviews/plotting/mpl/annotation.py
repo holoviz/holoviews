@@ -101,11 +101,14 @@ class LabelsPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'family', 'weight', 'size', 'visible',
                   'horizontalalignment', 'verticalalignment', 'cmap', 'rotation']
 
-    _no_op_styles = []
+    _no_op_styles = ['cmap']
 
     _plot_methods = dict(single='annotate')
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         xs, ys = (element.dimension_values(i) for i in range(2))
         tdim = element.get_dimension(2)
         text = [tdim.pprint_value(v) for v in element.dimension_values(tdim)]
