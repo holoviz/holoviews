@@ -21,6 +21,7 @@ from ...core.util import (
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
+from ...util.ops import op
 from ..plot import PlotSelector
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
@@ -688,11 +689,13 @@ class VectorFieldPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot',
-                  'width','headwidth', 'norm']
+                  'width', 'headwidth', 'norm']
+
+    _no_op_styles = ['alpha', 'marker', 'cmap', 'visible', 'norm',
+                     'pivot', 'scale', 'headlength', 'headaxislength',
+                     'headwidth']
 
     _plot_methods = dict(single='quiver')
-
-
 
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
@@ -717,22 +720,34 @@ class VectorFieldPlot(ColorbarPlot):
             magnitudes = np.ones(len(xs))
 
         args = (xs, ys, magnitudes,  [0.0] * len(element))
-        if self.color_index:
+        cdim = element.get_dimension(self.color_index)
+        color = style.get('color', None)
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+            self.warning("Cannot declare style mapping for 'color' option "
+                         "and declare a color_index, ignoring the color_index.")
+            cdim = None
+        if cdim:
             colors = element.dimension_values(self.color_index)
             args += (colors,)
             cdim = element.get_dimension(self.color_index)
             self._norm_kwargs(element, ranges, style, cdim)
-            style['clim'] = (style.pop('vmin'), style.pop('vmax'))
             style.pop('color', None)
 
         if 'pivot' not in style: style['pivot'] = 'mid'
         if not self.arrow_heads:
             style['headaxislength'] = 0
+
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
         style.update(dict(scale=input_scale, angles=angles,
                           units='x', scale_units='x'))
 
-        return args, style, {}
+        if 'vmin' in style:
+            style['clim'] = (style.pop('vmin'), style.pop('vmax'))
+        if 'c' in style:
+            style['array'] = style.pop('c')
 
+        return args, style, {}
 
     def update_handles(self, key, axis, element, ranges, style):
         args, style, axis_kwargs = self.get_data(element, ranges, style)

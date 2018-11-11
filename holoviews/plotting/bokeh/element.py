@@ -25,7 +25,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph
+from ...element import Graph, VectorField
 from ...streams import Buffer
 from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -699,7 +699,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                  )
                     )
                 elif source.data and len(val) != len(list(source.data.values())[0]):
-                    continue
+                    if isinstance(element, VectorField):
+                        val = np.tile(val, 3)
+                    else:
+                        continue
 
             if k == 'angle':
                 val = np.deg2rad(val)

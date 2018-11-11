@@ -242,13 +242,13 @@ class VectorFieldPlot(ColorbarPlot):
             ya1s = y0s - np.sin(rads+np.pi/4)*arrow_len
             xa2s = x0s - np.cos(rads-np.pi/4)*arrow_len
             ya2s = y0s - np.sin(rads-np.pi/4)*arrow_len
-            x0s = np.concatenate([x0s, x0s, x0s])
+            x0s = np.tile(x0s, 3)
             x1s = np.concatenate([x1s, xa1s, xa2s])
-            y0s = np.concatenate([y0s, y0s, y0s])
+            y0s = np.tile(y0s, 3)
             y1s = np.concatenate([y1s, ya1s, ya2s])
             if cdim:
                 color = cdata.get(cdim.name)
-                color = np.concatenate([color, color, color])
+                color = np.tile(color, 3)
         elif cdim:
             color = cdata.get(cdim.name)
 
