@@ -161,8 +161,8 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.fill_color, 'color')
-        self.assertEqual(glyph.line_color, 'color')
+        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(glyph.line_color, {'field': 'color'})
 
     def test_histogram_linear_color_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -186,7 +186,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
         self.assertTrue(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, np.array(['A', 'B', 'C']))
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
@@ -198,8 +198,8 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertNotEqual(glyph.fill_color, 'line_color')
-        self.assertEqual(glyph.line_color, 'line_color')
+        self.assertNotEqual(glyph.fill_color, {'field': 'line_color'})
+        self.assertEqual(glyph.line_color, {'field': 'line_color'})
 
     def test_histogram_fill_color_op(self):
         histogram = Histogram([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
@@ -208,8 +208,8 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
-        self.assertEqual(glyph.fill_color, 'fill_color')
-        self.assertNotEqual(glyph.line_color, 'fill_color')
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertNotEqual(glyph.line_color, {'field': 'fill_color'})
 
     def test_histogram_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -218,7 +218,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.fill_alpha, 'alpha')
+        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
 
     def test_histogram_line_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -227,8 +227,8 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertEqual(glyph.line_alpha, 'line_alpha')
-        self.assertNotEqual(glyph.fill_alpha, 'line_alpha')
+        self.assertEqual(glyph.line_alpha, {'field': 'line_alpha'})
+        self.assertNotEqual(glyph.fill_alpha, {'field': 'line_alpha'})
 
     def test_histogram_fill_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -237,8 +237,8 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
-        self.assertNotEqual(glyph.line_alpha, 'fill_alpha')
-        self.assertEqual(glyph.fill_alpha, 'fill_alpha')
+        self.assertNotEqual(glyph.line_alpha, {'field': 'fill_alpha'})
+        self.assertEqual(glyph.fill_alpha, {'field': 'fill_alpha'})
 
     def test_histogram_line_width_op(self):
         histogram = Histogram([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
@@ -247,7 +247,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
-        self.assertEqual(glyph.line_width, 'line_width')
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
 
     def test_op_ndoverlay_value(self):
         colors = ['blue', 'red']
