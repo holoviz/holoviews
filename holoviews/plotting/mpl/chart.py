@@ -75,6 +75,9 @@ class CurvePlot(ChartPlot):
     _plot_methods = dict(single='plot')
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
         xs = element.dimension_values(0)
@@ -212,6 +215,9 @@ class AreaPlot(ChartPlot):
     _plot_methods = dict(single='fill_between')
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
         return tuple([xs]+ys), style, {}
