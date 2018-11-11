@@ -104,7 +104,7 @@ class CurvePlot(ChartPlot):
 
 
 
-class ErrorPlot(ChartPlot):
+class ErrorPlot(ColorbarPlot):
     """
     ErrorPlot plots the ErrorBar Element type and supporting
     both horizontal and vertical error bars via the 'horizontal'
@@ -129,10 +129,27 @@ class ErrorPlot(ChartPlot):
                 bottoms, tops = caps
         else:
             _, (bottoms, tops), verts = handles
-        return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0]}
+        return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0], 'artist': verts[0]}
 
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+        color = style.get('color')
+        if isinstance(color, np.ndarray):
+            style['ecolor'] = color
+        c = style.get('c')
+        if isinstance(c, np.ndarray):
+            with abbreviated_exception():
+                raise ValueError('Mapping a continuous or categorical '
+                                 'dimension to a color on a ErrorBarPlot '
+                                 'is not supported by the {backend} backend. '
+                                 'To map a dimension to a color supply '
+                                 'an explicit list of rgba colors.'.format(
+                                     backend=self.renderer.backend
+                                 )
+                )
+
         style['fmt'] = 'none'
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
@@ -168,6 +185,8 @@ class ErrorPlot(ChartPlot):
             new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
                           for i in range(samples)]
         verts.set_paths(new_arrays)
+        if 'ecolor' in style:
+            verts.set_edgecolors(style['ecolor'])
 
         if bottoms:
             bottoms.set_xdata(bxs)
