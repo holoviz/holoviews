@@ -1074,8 +1074,9 @@ class CompositeElementPlot(ElementPlot):
                 source = self._init_datasource(ds_data)
                 source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
+            group_style = dict(style)
             style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
-            properties = self._glyph_properties(plot, element, source, ranges, style, style_group)
+            properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
             properties = self._process_properties(key, properties, mapping.get(key, {}))
 
             with abbreviated_exception():
@@ -1128,10 +1129,10 @@ class CompositeElementPlot(ElementPlot):
             gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
-
             if glyph:
+                group_style = dict(style)
                 style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
-                properties = self._glyph_properties(plot, element, source, ranges, style, style_group)
+                properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
                 properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
