@@ -127,6 +127,7 @@ class opts(param.ParameterizedFunction):
 
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
+        from .parser import OptsSpec # Move this utility!
         current_backend = Store.current_backend
         backend_options = Store.options(backend=backend or current_backend)
         expanded = {}
@@ -134,9 +135,11 @@ class opts(param.ParameterizedFunction):
             merged_options = {}
             for obj in options:
                 if isinstance(obj,dict):
-                    merged_options =dict(merged_options, **obj)
+                    new_opts = obj
                 else:
-                    merged_options[obj.key] = obj.kwargs
+                    new_opts = {obj.key: obj.kwargs}
+
+                merged_options = OptsSpec._merge_options(merged_options, new_opts)
             options = merged_options
 
         for objspec, options in options.items():
