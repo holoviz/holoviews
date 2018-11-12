@@ -218,7 +218,8 @@ class opts(param.ParameterizedFunction):
     def _update_backend(cls, backend):
         backend_options = Store.options(backend)
         all_keywords = set()
-        for element in backend_options.keys():  # What if dotted?
+        for element in backend_options.keys():
+            if '.' in element: continue
             element_keywords = []
             options = backend_options['.'.join(element)]
             for group in Options._expected_groups:
@@ -233,8 +234,8 @@ class opts(param.ParameterizedFunction):
 
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(all_keywords))
         cls.__doc__ = 'opts({kws})'.format(kws=kws) # Keep original docstring
-        
-            
+
+
 Store._backend_switch_hooks.append(opts._update_backend)
 
 
