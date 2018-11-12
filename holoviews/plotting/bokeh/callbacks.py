@@ -1237,10 +1237,10 @@ class DataLinkCallback(LinkCallback):
         for k, v in tgt_cds.data.items():
             if k not in src_cds.data:
                 continue
-            col = src_cds.data[k]
+            col = np.asarray(src_cds.data[k])
             if not ((isscalar(v) and v == col) or
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
-                    np.allclose(v, src_cds.data[k])):
+                    np.allclose(v, np.asarray(src_cds.data[k]))):
                 raise ValueError('DataLink can only be applied if overlapping '
                                  'dimension values are equal, %s column on source '
                                  'does not match target' % k)
