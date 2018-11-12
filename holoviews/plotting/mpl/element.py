@@ -523,6 +523,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     v = op(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = op([d for d in self.overlay_dims if d==v][0])
+            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, op)):
+                try:
+                    v = op.resolve_spec(v)
+                except:
+                    continue
 
             if not isinstance(v, op):
                 continue
