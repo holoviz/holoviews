@@ -392,6 +392,8 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
+    _expected_groups = ['style', 'plot', 'norm']
+
     def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
         invalid_kws = []
@@ -401,6 +403,10 @@ class Options(param.Parameterized):
                     invalid_kws.append(kwarg)
                 else:
                     raise OptionError(kwarg, allowed_keywords)
+
+        if key and key[0].islower() and key not in self._expected_groups:
+            raise Exception('Key does not start with a capitalized element class name and is not a group in %s'
+                            % ', '.join(repr(el) for el in self._expected_groups))
 
         for invalid_kw in invalid_kws:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
@@ -495,8 +501,12 @@ class Options(param.Parameterized):
 
 
     def __repr__(self):
-        kws = ', '.join("%s=%r" % (k,v) for (k,v) in self.kwargs.items())
-        return "%s(%s)" % (self.__class__.__name__,  kws)
+        kws = ', '.join("%s=%r" % (k,self.kwargs[k]) for k in sorted(self.kwargs.keys()))
+
+        if self.key and self.key[0].isupper():
+            return "%s(%s, %s)" % (self.__class__.__name__,  repr(self.key), kws)
+        else:
+            return "%s(%s)" % (self.__class__.__name__,  kws)
 
     def __str__(self):
         return repr(self)
@@ -617,6 +627,9 @@ class OptionTree(AttrTree):
             group_items = val
         elif isinstance(val, Options) and val.key is None:
             raise AttributeError("Options object needs to have a group name specified.")
+        elif isinstance(val, Options) and val.key[0].isupper():
+            raise AttributeError("OptionTree only accepts Options using keys that are one of %s." %
+                                 ', '.join(repr(el) for el in Options._expected_groups))
         elif isinstance(val, Options):
             group_items = {val.key: val}
         elif isinstance(val, OptionTree):
@@ -1050,7 +1063,16 @@ class Store(object):
     load_counter_offset = None
     save_option_state = False
 
-    current_backend = 'matplotlib'
+    current_backend = 'matplotlib' # Would be nice to have a class property
+
+    _backend_switch_hooks = []
+
+    @classmethod
+    def set_current_backend(cls, backend):
+        "Use this method to set the backend to run the switch hooks"
+        for hook in cls._backend_switch_hooks:
+            hook(backend)
+        cls.current_backend = backend
 
     @classmethod
     def options(cls, backend=None, val=None):

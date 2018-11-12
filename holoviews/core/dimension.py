@@ -1245,6 +1245,9 @@ class Dimensioned(LabelledData):
         """
         if isinstance(options, basestring):
             options = {options: kwargs}
+        elif isinstance(options, list):
+            if kwargs:
+                raise ValueError('Please specify a list of option objects, or kwargs, but not both')
         elif options and kwargs:
             raise ValueError("Options must be defined in one of two formats."
                              "Either supply keywords defining the options for "

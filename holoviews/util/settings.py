@@ -373,7 +373,7 @@ class OutputSettings(KeywordSettings):
     @classmethod
     def set_backend(cls, backend):
         cls.last_backend = Store.current_backend
-        Store.current_backend = backend
+        Store.set_current_backend(backend)
 
 
     @classmethod
