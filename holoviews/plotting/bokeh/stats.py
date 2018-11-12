@@ -110,12 +110,14 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Get factors for categorical axes.
         """
         if not element.kdims:
-            xfactors, yfactors =  [element.label], []
+            xfactors, yfactors = [element.label], []
         else:
             factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
                        for key in element.groupby(element.kdims).data.keys()]
             factors = [f[0] if len(f) == 1 else f for f in factors]
             xfactors, yfactors = factors, []
+            if element.ndims > 1:
+                xfactors = sorted(xfactors)
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
     def _postprocess_hover(self, renderer, source):
@@ -390,9 +392,7 @@ class ViolinPlot(BoxWhiskerPlot):
             scatter_map = {'x': 'x', 'y': 'y'}
             bar_glyph = 'vbar'
 
-        elstyle = self.lookup_options(element, 'style')
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
-
         mapping, data = {}, {}
         patches_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(4))
         for i, (key, g) in enumerate(groups.items()):
