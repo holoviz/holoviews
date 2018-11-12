@@ -207,10 +207,6 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _build_completer(cls, element, allowed):
         def fn(spec=None, **kws):
-            diff = set(kws.keys()) - set(allowed)
-            if diff:
-                raise Exception('Keywords %s not accepted by %r backend' % (', '.join(repr(el) for el in sorted(diff)),
-                                                                            Store.current_backend))
             spec = element if spec is None else '%s.%s' % (element, spec)
             return Options(spec, **kws)
 
