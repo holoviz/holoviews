@@ -1222,7 +1222,7 @@ class Dimensioned(LabelledData):
         return obj
 
 
-    def options(self, options=None, backend=None, clone=True, **kwargs):
+    def options(self, *args, backend=None, clone=True, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -1243,12 +1243,16 @@ class Dimensioned(LabelledData):
         If no options are supplied all options on the object will be reset.
         Disabling clone will modify the object inplace.
         """
-        if isinstance(options, basestring):
+
+        if len(args) == 0:
+            options = None
+        elif isinstance(args[0], basestring):
             options = {options: kwargs}
-        elif isinstance(options, list):
+        elif isinstance(args[0], list):
             if kwargs:
                 raise ValueError('Please specify a list of option objects, or kwargs, but not both')
-        elif options and kwargs:
+            options = list(args)
+        elif args and kwargs:
             raise ValueError("Options must be defined in one of two formats."
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "
