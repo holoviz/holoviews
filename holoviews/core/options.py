@@ -503,8 +503,10 @@ class Options(param.Parameterized):
     def __repr__(self):
         kws = ', '.join("%s=%r" % (k,self.kwargs[k]) for k in sorted(self.kwargs.keys()))
 
-        if self.key and self.key[0].isupper():
+        if self.key and self.key[0].isupper() and kws:
             return "%s(%s, %s)" % (self.__class__.__name__,  repr(self.key), kws)
+        elif self.key and self.key[0].isupper():
+            return "%s(%s)" % (self.__class__.__name__,  repr(self.key))
         else:
             return "%s(%s)" % (self.__class__.__name__,  kws)
 
