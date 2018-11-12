@@ -131,10 +131,14 @@ class opts(param.ParameterizedFunction):
         backend_options = Store.options(backend=backend or current_backend)
         expanded = {}
         if isinstance(options, list):
-            options = {}
+            merged_options = {}
             for obj in options:
-                options[obj.key] = obj.kwargs
-                
+                if isinstance(obj,dict):
+                    merged_options =dict(merged_options, **obj)
+                else:
+                    merged_options[obj.key] = obj.kwargs
+            options = merged_options
+
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
