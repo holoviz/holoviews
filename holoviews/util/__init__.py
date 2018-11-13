@@ -5,7 +5,7 @@ import param
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_option_dicts  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -127,7 +127,6 @@ class opts(param.ParameterizedFunction):
 
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
-        from .parser import OptsSpec # Move this utility!
         current_backend = Store.current_backend
         backend_options = Store.options(backend=backend or current_backend)
         expanded = {}
@@ -139,7 +138,7 @@ class opts(param.ParameterizedFunction):
                 else:
                     new_opts = {obj.key: obj.kwargs}
 
-                merged_options = OptsSpec._merge_options(merged_options, new_opts)
+                merged_options = merge_option_dicts(merged_options, new_opts)
             options = merged_options
 
         for objspec, options in options.items():
