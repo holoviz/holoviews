@@ -1065,7 +1065,7 @@ class Store(object):
     load_counter_offset = None
     save_option_state = False
 
-    current_backend = 'matplotlib' # Would be nice to have a class property
+    current_backend = 'matplotlib'
 
     _backend_switch_hooks = []
 

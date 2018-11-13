@@ -222,6 +222,8 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _update_backend(cls, backend):
+        if backend not in Store.loaded_backends():
+            return
         backend_options = Store.options(backend)
         all_keywords = set()
         for element in backend_options.keys():
