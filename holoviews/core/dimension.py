@@ -1246,11 +1246,11 @@ class Dimensioned(LabelledData):
         backend = kwargs.pop('backend', None)
         clone = kwargs.pop('clone', True)
         
-        if len(args) == 0:
+        if len(args) == 0 and len(kwargs)==0:
             options = None
-        elif isinstance(args[0], basestring):
+        elif args and isinstance(args[0], basestring):
             options = {options: kwargs}
-        elif isinstance(args[0], list):
+        elif args and isinstance(args[0], list):
             if kwargs:
                 raise ValueError('Please specify a list of option objects, or kwargs, but not both')
             options = args[0]
