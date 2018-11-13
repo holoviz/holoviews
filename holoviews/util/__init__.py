@@ -77,7 +77,7 @@ class opts(param.ParameterizedFunction):
 
     def __call__(self, *args, **params):
 
-        if args and set(params.keys()) != set(['strict']):
+        if args and set(params.keys()) - set(['strict']):
             raise TypeError('When used with positional arguments, hv.opts accepts only strings and dictionaries, not keywords.')
         if params and not args:
             return Options(**params)
