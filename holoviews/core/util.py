@@ -84,7 +84,7 @@ class Config(param.ParameterizedFunction):
        Switch to the default style options used up to (and including)
        the HoloViews 1.7 release.""")
 
-    warn_options_call = param.Boolean(default=False, doc="""
+    warn_options_call = param.Boolean(default=True, doc="""
        Whether to warn when the deprecated __call__ options syntax is
        used (the opts method should now be used instead). It is
        recommended that users switch this on to update any uses of
