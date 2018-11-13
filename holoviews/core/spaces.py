@@ -97,7 +97,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         return self.clone(data)
 
 
-    def options(self, options=None, backend=None, clone=True, **kwargs):
+    def options(self, *args, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -118,7 +118,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         If no options are supplied all options on the object will be reset.
         Disabling clone will modify the object inplace.
         """
-        data = OrderedDict([(k, v.options(options, backend, clone, **kwargs))
+        data = OrderedDict([(k, v.options(*args, **kwargs))
                              for k, v in self.data.items()])
         return self.clone(data)
 
@@ -946,7 +946,7 @@ class DynamicMap(HoloMap):
         return dmap
 
 
-    def options(self, options=None, backend=None, clone=True, **kwargs):
+    def options(self, *args, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -968,9 +968,10 @@ class DynamicMap(HoloMap):
         Disabling clone will modify the object inplace.
         """
         from ..util import Dynamic
+        clone = kwargs.get('clone', True)
+
         obj = self if clone else self.clone()
-        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.options(options, backend,
-                                                                           clone, **kwargs),
+        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.options(*args, **kwargs),
                        streams=self.streams, link_inputs=True)
         if not clone:
             with util.disable_constant(self):
@@ -978,7 +979,7 @@ class DynamicMap(HoloMap):
             self.callback.inputs[:] = [obj]
             obj.callback.inputs[:] = []
             dmap = self
-        dmap.data = OrderedDict([(k, v.options(options, backend, **kwargs))
+        dmap.data = OrderedDict([(k, v.options(*args, **kwargs))
                                  for k, v in self.data.items()])
         return dmap
 
