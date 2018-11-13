@@ -392,7 +392,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    _expected_groups = ['style', 'plot', 'norm']
+    _option_groups = ['style', 'plot', 'norm']
 
     def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
@@ -404,9 +404,9 @@ class Options(param.Parameterized):
                 else:
                     raise OptionError(kwarg, allowed_keywords)
 
-        if key and key[0].islower() and key not in self._expected_groups:
+        if key and key[0].islower() and key not in self._option_groups:
             raise Exception('Key %s does not start with a capitalized element class name and is not a group in %s'
-                            % (repr(key), ', '.join(repr(el) for el in self._expected_groups)))
+                            % (repr(key), ', '.join(repr(el) for el in self._option_groups)))
 
         for invalid_kw in invalid_kws:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
@@ -631,7 +631,7 @@ class OptionTree(AttrTree):
             raise AttributeError("Options object needs to have a group name specified.")
         elif isinstance(val, Options) and val.key[0].isupper():
             raise AttributeError("OptionTree only accepts Options using keys that are one of %s." %
-                                 ', '.join(repr(el) for el in Options._expected_groups))
+                                 ', '.join(repr(el) for el in Options._option_groups))
         elif isinstance(val, Options):
             group_items = {val.key: val}
         elif isinstance(val, OptionTree):

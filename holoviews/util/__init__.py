@@ -229,7 +229,7 @@ class opts(param.ParameterizedFunction):
             if '.' in element: continue
             element_keywords = []
             options = backend_options['.'.join(element)]
-            for group in Options._expected_groups:
+            for group in Options._option_groups:
                 element_keywords.extend(options[group].allowed_keywords)
 
             all_keywords |= set(element_keywords)
