@@ -1222,7 +1222,7 @@ class Dimensioned(LabelledData):
         return obj
 
 
-    def options(self, *args, backend=None, clone=True, **kwargs):
+    def options(self, *args, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -1243,7 +1243,9 @@ class Dimensioned(LabelledData):
         If no options are supplied all options on the object will be reset.
         Disabling clone will modify the object inplace.
         """
-
+        backend = kwargs.pop('backend', None)
+        clone = kwargs.pop('clone', True)
+        
         if len(args) == 0:
             options = None
         elif isinstance(args[0], basestring):
