@@ -1153,8 +1153,8 @@ class Dimensioned(LabelledData):
     def __call__(self, options=None, **kwargs):
         if config.warn_options_call:
             self.warning('Use of __call__ to set options will be deprecated '
-                         'in future. Use the equivalent opts method or use "
-                         "the recommended .options method instead.')
+                         'in future. Use the equivalent opts method or use '
+                         'the recommended .options method instead.')
 
         return self.opts(options, **kwargs)
 
