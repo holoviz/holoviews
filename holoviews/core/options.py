@@ -405,8 +405,8 @@ class Options(param.Parameterized):
                     raise OptionError(kwarg, allowed_keywords)
 
         if key and key[0].islower() and key not in self._expected_groups:
-            raise Exception('Key does not start with a capitalized element class name and is not a group in %s'
-                            % ', '.join(repr(el) for el in self._expected_groups))
+            raise Exception('Key %s does not start with a capitalized element class name and is not a group in %s'
+                            % (repr(key), ', '.join(repr(el) for el in self._expected_groups)))
 
         for invalid_kw in invalid_kws:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
