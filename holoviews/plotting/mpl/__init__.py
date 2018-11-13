@@ -97,7 +97,7 @@ style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
 Store.renderers['matplotlib'] = MPLRenderer.instance()
 
 if len(Store.renderers) == 1:
-    Store.current_backend = 'matplotlib'
+    Store.set_current_backend('matplotlib')
 
 # Defines a wrapper around GridPlot and RasterGridPlot
 # switching to RasterGridPlot if the plot only contains

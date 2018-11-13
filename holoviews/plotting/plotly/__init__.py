@@ -14,7 +14,7 @@ from .tabular import *               # noqa (API import)
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 
 if len(Store.renderers) == 1:
-    Store.current_backend = 'plotly'
+    Store.set_current_backend('plotly')
 
 Store.register({Points: PointPlot,
                 Scatter: PointPlot,
