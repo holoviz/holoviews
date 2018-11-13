@@ -27,11 +27,11 @@ except:
 class TestOptions(ComparisonTestCase):
 
     def setUp(self):
-        Options.__option_groups = ['test']
+        Options._option_groups = ['test']
         super(TestOptions, self).setUp()
 
     def tearDown(self):
-        Options.__option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = ['style', 'plot', 'norm']
         super(TestOptions, self).tearDown()
 
     def test_options_init(self):
@@ -123,11 +123,11 @@ class TestOptions(ComparisonTestCase):
 class TestCycle(ComparisonTestCase):
 
     def setUp(self):
-        Options.__option_groups = ['test']
+        Options._option_groups = ['test']
         super(TestCycle, self).setUp()
 
     def tearDown(self):
-        Options.__option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = ['style', 'plot', 'norm']
         super(TestCycle, self).tearDown()
 
     def test_cycle_init(self):
@@ -195,11 +195,11 @@ class TestCycle(ComparisonTestCase):
 class TestOptionTree(ComparisonTestCase):
 
     def setUp(self):
-        Options.__option_groups = ['group1', 'group2']
+        Options._option_groups = ['group1', 'group2']
         super(TestOptionTree, self).setUp()
 
     def tearDown(self):
-        Options.__option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = ['style', 'plot', 'norm']
         super(TestOptionTree, self).tearDown()
 
     def test_optiontree_init_1(self):
@@ -556,7 +556,7 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
-        Options.__option_groups = ['group']
+        Options._option_groups = ['group']
         options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
         self.opts2 = Options('group', kw2='value2')
@@ -578,7 +578,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
     def tearDown(self):
-        Options.__option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = ['style', 'plot', 'norm']
         Store.options(val=self.original_options)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
