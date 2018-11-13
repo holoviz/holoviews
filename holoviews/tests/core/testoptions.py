@@ -26,6 +26,14 @@ except:
 
 class TestOptions(ComparisonTestCase):
 
+    def setUp(self):
+        Options._expected_groups = ['test']
+        super(TestOptions, self).setUp()
+
+    def tearDown(self):
+        Options._expected_groups = ['style', 'plot', 'norm']
+        super(TestOptions, self).tearDown()
+
     def test_options_init(self):
         Options('test')
 
@@ -114,6 +122,14 @@ class TestOptions(ComparisonTestCase):
 
 class TestCycle(ComparisonTestCase):
 
+    def setUp(self):
+        Options._expected_groups = ['test']
+        super(TestCycle, self).setUp()
+
+    def tearDown(self):
+        Options._expected_groups = ['style', 'plot', 'norm']
+        super(TestCycle, self).tearDown()
+
     def test_cycle_init(self):
         Cycle(values=['a', 'b', 'c'])
         Cycle(values=[1, 2, 3])
@@ -177,6 +193,14 @@ class TestCycle(ComparisonTestCase):
 
 
 class TestOptionTree(ComparisonTestCase):
+
+    def setUp(self):
+        Options._expected_groups = ['group1', 'group2']
+        super(TestOptionTree, self).setUp()
+
+    def tearDown(self):
+        Options._expected_groups = ['style', 'plot', 'norm']
+        super(TestOptionTree, self).tearDown()
 
     def test_optiontree_init_1(self):
         OptionTree(groups=['group1', 'group2'])
@@ -532,6 +556,7 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
+        Options._expected_groups = ['group']
         options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
         self.opts2 = Options('group', kw2='value2')
@@ -553,6 +578,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
     def tearDown(self):
+        Options._expected_groups = ['style', 'plot', 'norm']
         Store.options(val=self.original_options)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
@@ -732,4 +758,3 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-
