@@ -70,6 +70,8 @@ class opts(param.ParameterizedFunction):
     %%opts cell magic respectively.
     """
 
+    __original_docstring__ = None
+
     strict = param.Boolean(default=False, doc="""
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
@@ -222,8 +224,13 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _update_backend(cls, backend):
+
+        if cls.__original_docstring__ is None:
+            cls.__original_docstring__ = cls.__doc__
+
         if backend not in Store.loaded_backends():
             return
+
         backend_options = Store.options(backend)
         all_keywords = set()
         for element in backend_options.keys():
@@ -239,9 +246,9 @@ class opts(param.ParameterizedFunction):
                         cls._build_completer(element[0],
                                              element_keywords))
 
-
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(all_keywords))
-        cls.__doc__ = 'opts({kws})'.format(kws=kws) # Keep original docstring
+        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
+        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
