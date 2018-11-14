@@ -214,20 +214,24 @@ class OutputSettings(KeywordSettings):
         holomap = "holomap      : The display type for holomaps"
         widgets = "widgets      : The widget mode for widgets"
         fps =    "fps          : The frames per second used for animations"
-        frames=  ("max_frames   : The max number of frames rendered (default %r)"
-                  % cls.defaults['max_frames'])
+        max_frames=  ("max_frames   : The max number of frames rendered (default %r)"
+                      % cls.defaults['max_frames'])
         size =   "size         : The percentage size of displayed output"
         dpi =    "dpi          : The rendered dpi of the figure"
-        chars =  ("charwidth    : The max character width for displaying helper (default %r)"
+        charwidth =  ("charwidth    : The max character width for displaying helper (default %r)"
                   % cls.defaults['charwidth'])
-        fname =  ("filename    : The filename of the saved output, if any (default %r)"
-                  % cls.defaults['filename'])
-        page =  ("info    : The information to page about the displayed objects (default %r)"
-                  % cls.defaults['info'])
+        filename =  ("filename    : The filename of the saved output, if any (default %r)"
+                     % cls.defaults['filename'])
+        info = ("info    : The information to page about the displayed objects (default %r)"
+                % cls.defaults['info'])
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
 
-        descriptions = [backend, fig, holomap, widgets, fps, frames, size, dpi, chars, fname, page, css]
-        return '\n'.join(intro + descriptions)
+        descriptions = [backend, fig, holomap, widgets, fps, max_frames, size,
+                        dpi, charwidth, filename, info, css]
+        keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
+                    'size', 'dpi', 'charwidth', 'filename', 'info', 'css']
+        signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
+        return '\n'.join([signature] + intro + descriptions)
 
 
     @classmethod
