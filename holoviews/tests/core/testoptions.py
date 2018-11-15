@@ -543,6 +543,9 @@ class TestStoreInheritance(ComparisonTestCase):
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
     def test_style_transfer(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("test_style_transfer requires matplotlib")
+
         hist = self.hist.opts(style={'style1':'style_child'})
         hist2 = self.hist.opts()
         opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
@@ -629,7 +632,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
-            raise SkipTest("General to specific option test requires matplotlib")
+            raise SkipTest("Cross background tests assumes matplotlib is available")
         if 'bokeh' not in Store.renderers:
             raise SkipTest("Cross background tests assumes bokeh is available.")
         self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
