@@ -628,7 +628,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
     """
 
     def setUp(self):
-
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
         if 'bokeh' not in Store.renderers:
             raise SkipTest("Cross background tests assumes bokeh is available.")
         self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
