@@ -130,7 +130,10 @@ class opts(param.ParameterizedFunction):
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
-        backend_options = Store.options(backend=backend or current_backend)
+        try:
+            backend_options = Store.options(backend=backend or current_backend)
+        except KeyError as e:
+            raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
         expanded = {}
         if isinstance(options, list):
             merged_options = {}
