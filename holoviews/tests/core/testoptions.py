@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-from holoviews import Store, Histogram, Image
+from holoviews import Store, Histogram, Image, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
@@ -709,6 +709,22 @@ class TestCrossBackendOptions(ComparisonTestCase):
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
         return img
+
+    def test_completer_backend_switch(self):
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+        self.assertEqual(opts.Curve.__doc__.startswith('Curve('), True)
+        docline = opts.Curve.__doc__.splitlines()[0]
+        dockeys = eval(docline.replace('Curve', 'dict'))
+        self.assertEqual('color' in dockeys, True)
+        self.assertEqual('line_width' in dockeys, True)
+        Store.set_current_backend('matplotlib')
+        self.assertEqual(opts.Curve.__doc__.startswith('Curve('), True)
+        docline = opts.Curve.__doc__.splitlines()[0]
+        dockeys = eval(docline.replace('Curve', 'dict'))
+        self.assertEqual('color' in dockeys, True)
+        self.assertEqual('linewidth' in dockeys, True)
 
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
