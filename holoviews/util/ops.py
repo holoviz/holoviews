@@ -129,12 +129,29 @@ class op(object):
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return op(self, ufunc, **kwargs)
 
-    def max(self, **kwargs): return op(self, np.max, **kwargs)
+    def max(self, **kwargs):  return op(self, np.max, **kwargs)
     def mean(self, **kwargs): return op(self, np.mean, **kwargs)
-    def min(self, **kwargs): return op(self, np.min, **kwargs)
-    def sum(self, **kwargs): return op(self, np.sum, **kwargs)
-    def std(self, **kwargs): return op(self, np.std, **kwargs)
-    def var(self, **kwargs): return op(self, np.var, **kwargs)
+    def min(self, **kwargs):  return op(self, np.min, **kwargs)
+    def sum(self, **kwargs):  return op(self, np.sum, **kwargs)
+    def std(self, **kwargs):  return op(self, np.std, **kwargs)
+    def var(self, **kwargs):  return op(self, np.var, **kwargs)
+    def astype(self, dtype):  return op(self, np.asarray, dtype=dtype)
+
+    ## Custom functions
+
+    def norm(self):
+        """
+        Normalizes the data into the given range
+        """
+        return op(self, norm_fn)
+
+    def cat(self, categories, empty=None):
+        cat_op = op(self, cat_fn, categories=categories, empty=empty)
+        return cat_op
+
+    def bin(self, bins, labels=None):
+        bin_op = op(self, bin_fn, categories=categories, empty=empty)
+        return bin_op
 
     def eval(self, dataset, flat=False, expanded=None, ranges={}):
         if expanded is None:
