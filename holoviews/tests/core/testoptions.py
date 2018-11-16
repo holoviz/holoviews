@@ -422,7 +422,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
     def test_custom_call_to_default_inheritance(self):
         """
         Checks customs inheritance backs off to default tree correctly
-        using __call__.
+        using .opts.
         """
         options = self.initialize_option_tree()
         options.Image.A.B = Options('style', alpha=0.2)
@@ -433,7 +433,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(obj_lookup.kwargs, expected_obj)
 
         # Customize this particular object
-        custom_obj = obj(style=dict(clims=(0, 0.5)))
+        custom_obj = obj.opts(style=dict(clims=(0, 0.5)))
         expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
         custom_obj_lookup = Store.lookup_options('matplotlib', custom_obj, 'style')
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
@@ -512,7 +512,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist(plot={'plot3':'plot3'})
+        hist2 = self.hist.opts(plot={'plot3':'plot3'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot1', plot2='plot2', plot3='plot3'))
         # Check style works as expected
@@ -520,7 +520,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist(plot={'plot1':'plot_child'})
+        hist2 = self.hist.opts(plot={'plot1':'plot_child'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot_child', plot2='plot2'))
         # Check style works as expected
@@ -528,7 +528,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist(style={'style3':'style3'})
+        hist2 = self.hist.opts(style={'style3':'style3'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style1', style2='style2', style3='style3'))
         # Check plot options works as expected
@@ -536,7 +536,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist(style={'style1':'style_child'})
+        hist2 = self.hist.opts(style={'style1':'style_child'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style_child', style2='style2'))
         # Check plot options works as expected

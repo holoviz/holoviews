@@ -38,9 +38,9 @@ class TestStoreOptionsMerge(ComparisonTestCase):
 
 
 @attr(optional=1) # Requires matplotlib
-class TestStoreOptionsCall(ComparisonTestCase):
+class TestStoreOptsMethod(ComparisonTestCase):
     """
-    The __call__ method makes use of most of the functionality in
+    The .opts method makes use of most of the functionality in
     StoreOptions.
     """
 
