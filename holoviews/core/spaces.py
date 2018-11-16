@@ -1491,6 +1491,8 @@ class DynamicMap(HoloMap):
         usually allows dropping non-constant dimensions is therefore
         ignored and only for API consistency.
         """
+        if not isinstance(kdims, list):
+            kdims = [kdims]
         kdims = [self.get_dimension(kd, strict=True) for kd in kdims]
         dropped = [kd for kd in self.kdims if kd not in kdims]
         if dropped:
