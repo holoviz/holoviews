@@ -270,6 +270,8 @@ class MultiDimensionalMapping(Dimensioned):
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
+        elif not isinstance(dimensions, list):
+            dimensions = [dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
@@ -361,7 +363,9 @@ class MultiDimensionalMapping(Dimensioned):
         each value uniquely.
         """
         old_kdims = [d.name for d in self.kdims]
-        if not len(kdims):
+        if not isinstance(kdims, list):
+            kdims = [kdims]
+        elif not len(kdims):
             kdims = [d for d in old_kdims
                      if not len(set(self.dimension_values(d))) == 1]
         indices = [self.get_dimension_index(el) for el in kdims]

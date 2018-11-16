@@ -59,9 +59,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Minimum border around plot.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing an axis.
-        The hook is passed the plot object and the displayed
-        object, other plotting handles can be accessed via plot.handles.""")
+        Deprecated; use hooks options instead.""")
+
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a plot. The
+        hook is passed the plot object and the displayed element, and
+        other plotting handles can be accessed via plot.handles.""")
 
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.

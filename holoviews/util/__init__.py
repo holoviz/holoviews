@@ -403,6 +403,88 @@ class extension(param.ParameterizedFunction):
         Store.set_current_backend(selected_backend)
 
 
+def save(obj, filename, fmt='auto', backend=None, **kwargs):
+    """
+    Saves the supplied object to file.
+
+    The available output formats depend on the backend being used. By
+    default and if the filename is a string the output format will be
+    inferred from the file extension. Otherwise an explicit format
+    will need to be specified. For ambiguous file extensions such as
+    html it may be necessary to specify an explicit fmt to override
+    the default, e.g. in the case of 'html' output the widgets will
+    default to fmt='widgets', which may be changed to scrubber widgets
+    using fmt='scrubber'.
+
+    Arguments
+    ---------
+    obj: HoloViews object
+        The HoloViews object to save to file
+    filename: string or IO object
+        The filename or BytesIO/StringIO object to save to
+    fmt: string
+        The format to save the object as, e.g. png, svg, html, or gif
+        and if widgets are desired either 'widgets' or 'scrubber'
+    backend: string
+        A valid HoloViews rendering backend, e.g. bokeh or matplotlib
+    **kwargs: dict
+        Additional keyword arguments passed to the renderer,
+        e.g. fps for animations
+    """
+    backend = backend or Store.current_backend
+    renderer_obj = renderer(backend)
+    if kwargs:
+        renderer_obj = renderer_obj.instance(**kwargs)
+    if isinstance(filename, basestring):
+        supported = [mfmt for tformats in renderer_obj.mode_formats.values()
+                     for mformats in tformats.values() for mfmt in mformats]
+        formats = filename.split('.')
+        if fmt == 'auto' and formats and formats[-1] != 'html':
+            fmt = formats[-1]
+        if formats[-1] in supported:
+            filename = '.'.join(formats[:-1])
+    return renderer_obj.save(obj, filename, fmt=fmt)
+
+
+def render(obj, backend=None, **kwargs):
+    """
+    Renders the HoloViews object to the corresponding object in the
+    specified backend, e.g. a Matplotlib or Bokeh figure.
+
+    The backend defaults to the currently declared default
+    backend. The resulting object can then be used with other objects
+    in the specified backend. For instance, if you want to make a
+    multi-part Bokeh figure using a plot type only available in
+    HoloViews, you can use this function to return a Bokeh figure that
+    you can use like any hand-constructed Bokeh figure in a Bokeh
+    layout.
+
+    Arguments
+    ---------
+    obj: HoloViews object
+        The HoloViews object to render
+    backend: string
+        A valid HoloViews rendering backend
+    **kwargs: dict
+        Additional keyword arguments passed to the renderer,
+        e.g. fps for animations
+
+    Returns
+    -------
+    renderered:
+        The rendered representation of the HoloViews object, e.g.
+        if backend='matplotlib' a matplotlib Figure or FuncAnimation
+    """
+    backend = backend or Store.current_backend
+    renderer_obj = renderer(backend)
+    if kwargs:
+        renderer_obj = renderer_obj.instance(**kwargs)
+    plot = renderer_obj.get_plot(obj)
+    if backend == 'matplotlib' and len(plot) > 1:
+        return plot.anim(fps=renderer_obj.fps)
+    return renderer_obj.get_plot(obj).state
+
+
 class Dynamic(param.ParameterizedFunction):
     """
     Dynamically applies a callable to the Elements in any HoloViews

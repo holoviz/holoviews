@@ -4,8 +4,12 @@ regardless of plotting package or backend.
 """
 from __future__ import unicode_literals
 
-from io import BytesIO
 import os, base64
+from io import BytesIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from contextlib import contextmanager
 
 import param
@@ -402,7 +406,7 @@ class Renderer(Exporter):
                              "registered widget types.")
 
         if not isinstance(obj, NdWidget):
-            if not isinstance(filename, BytesIO):
+            if not isinstance(filename, (BytesIO, StringIO)):
                 filedir = os.path.dirname(filename)
                 current_path = os.getcwd()
                 html_path = os.path.abspath(filedir)
@@ -418,7 +422,7 @@ class Renderer(Exporter):
 
         html = self_or_cls.static_html(widget, fmt, template)
         encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
-        if isinstance(filename, BytesIO):
+        if isinstance(filename, (BytesIO, StringIO)):
             filename.write(encoded)
             filename.seek(0)
         else:
@@ -558,7 +562,7 @@ class Renderer(Exporter):
         prefix = self_or_cls._save_prefix(info['file-ext'])
         if prefix:
             encoded = prefix + encoded
-        if isinstance(basename, BytesIO):
+        if isinstance(basename, (BytesIO, StringIO)):
             basename.write(encoded)
             basename.seek(0)
         else:

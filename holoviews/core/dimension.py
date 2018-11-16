@@ -691,6 +691,8 @@ class LabelledData(param.Parameterized):
         processed. Otherwise, specs must be a list of
         type.group.label specs, types, and functions.
         """
+        if specs is not None and not isinstance(specs, (list, set, tuple)):
+            specs = [specs]
         accumulator = []
         matches = specs is None
         if not matches:
@@ -715,7 +717,8 @@ class LabelledData(param.Parameterized):
         Recursively replaces elements using a map function when the
         specification applies.
         """
-        if specs and not isinstance(specs, list): specs = [specs]
+        if specs is not None and not isinstance(specs, (list, set, tuple)):
+            specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
         if self._deep_indexable:
