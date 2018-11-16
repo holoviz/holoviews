@@ -562,7 +562,7 @@ class TestOptionsMethod(ComparisonTestCase):
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
-        Store.current_backend = self.backend
+        Store.set_current_backend(self.backend)
         super(TestOptionsMethod, self).setUp()
 
     def lookup_options(self, obj, group):
