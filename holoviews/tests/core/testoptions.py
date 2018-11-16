@@ -419,7 +419,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
         self.assertEqual(node2.kwargs, {'alpha': 0.2})
 
-    def test_custom_call_to_default_inheritance(self):
+    def test_custom_opts_to_default_inheritance(self):
         """
         Checks customs inheritance backs off to default tree correctly
         using .opts.
@@ -554,6 +554,63 @@ class TestStoreInheritance(ComparisonTestCase):
         opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
         self.assertEqual(opts, {'style1': 'style_child', 'style2': 'style2'})
 
+
+
+class TestOptionsMethod(ComparisonTestCase):
+
+    def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=['style', 'plot', 'norm'])
+        self.backend = 'matplotlib'
+        Store.current_backend = self.backend
+        super(TestOptionsMethod, self).setUp()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
+
+    def tearDown(self):
+        Store.options(val=self.store_copy)
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
+        super(TestOptionsMethod, self).tearDown()
+
+    def initialize_option_tree(self):
+        Store.options(val=OptionTree(groups=['plot', 'style']))
+        options = Store.options()
+        options.Image = Options('style', cmap='hot', interpolation='nearest')
+        return options
+
+    def test_plot_options_keywords(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.options(interpolation='nearest')
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='fire', interpolation='nearest'))
+
+    def test_plot_options_one_object(self):
+        im = Image(np.random.rand(10,10))
+        imopts = opts.Image(interpolation='nearest', cmap='jet')
+        styled_im = im.options(imopts)
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='jet', interpolation='nearest'))
+
+    def test_plot_options_two_object(self):
+        im = Image(np.random.rand(10,10))
+        imopts1 = opts.Image(interpolation='nearest')
+        imopts2 = opts.Image(cmap='hsv')
+        styled_im = im.options(imopts1,imopts2)
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='hsv', interpolation='nearest'))
+
+    def test_plot_options_object_list(self):
+        im = Image(np.random.rand(10,10))
+        imopts1 = opts.Image(interpolation='nearest')
+        imopts2 = opts.Image(cmap='summer')
+        styled_im = im.options([imopts1,imopts2])
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='summer', interpolation='nearest'))
 
 @attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):
