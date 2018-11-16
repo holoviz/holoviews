@@ -822,7 +822,11 @@ class GenericElementPlot(DimensionedPlot):
         """
         Executes finalize hooks
         """
-        for hook in self.finalize_hooks:
+        if self.hooks and self.finalize_hooks:
+            self.warning("Supply either hooks or finalize_hooks not both, "
+                         "using hooks and ignoring finalize_hooks.")
+        hooks = self.hooks or self.finalize_hooks
+        for hook in hooks:
             try:
                 hook(self, element)
             except Exception as e:

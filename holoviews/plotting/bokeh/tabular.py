@@ -19,6 +19,14 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     height = param.Number(default=None)
 
+    finalize_hooks = param.HookList(default=[], doc="""
+        Deprecated; use hooks options instead.""")
+
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a plot. The
+        hook is passed the plot object and the displayed element, and
+        other plotting handles can be accessed via plot.handles.""")
+
     width = param.Number(default=400)
 
     style_opts = (
@@ -26,11 +34,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
          'sortable', 'fit_columns', 'scroll_to_selection'] +
         (['index_position'] if bokeh_version >= '0.12.15' else [])
         )
-
-    finalize_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing a column.
-        The hook is passed the plot object and the displayed
-        object, and other plotting handles can be accessed via plot.handles.""")
 
     _stream_data = True
 
