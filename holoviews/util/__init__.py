@@ -217,13 +217,13 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _build_completer(cls, element, allowed):
-        def fn(spec=None, **kws):
+        def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
             return Options(spec, **kws)
 
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(allowed))
         fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
-        return fn
+        return classmethod(fn)
 
     @classmethod
     def _update_backend(cls, backend):
