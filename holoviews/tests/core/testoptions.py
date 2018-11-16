@@ -581,7 +581,7 @@ class TestOptionsMethod(ComparisonTestCase):
 
     def test_plot_options_keywords(self):
         im = Image(np.random.rand(10,10))
-        styled_im = im.options(interpolation='nearest')
+        styled_im = im.options(interpolation='nearest', cmap='fire')
         self.assertEqual(self.lookup_options(im, 'plot').options, {})
         self.assertEqual(self.lookup_options(styled_im, 'style').options,
                          dict(cmap='fire', interpolation='nearest'))
