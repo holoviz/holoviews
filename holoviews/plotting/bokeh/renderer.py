@@ -1,30 +1,31 @@
-from io import BytesIO
+from __future__ import absolute_import, division, unicode_literals
+
 import base64
 import logging
 import signal
+from io import BytesIO
 
 import param
-from param.parameterized import bothmethod
-
 import bokeh
+
+from param.parameterized import bothmethod
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
+from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc, show as bkshow
+from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
+from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
+from bokeh.themes.theme import Theme
 
 from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size, bokeh_version
-
-from bokeh.io.notebook import load_notebook
-from bokeh.protocol import Protocol
-from bokeh.embed.notebook import encode_utf8, notebook_content
-from bokeh.themes.theme import Theme
 
 NOTEBOOK_DIV = """
 {plot_div}

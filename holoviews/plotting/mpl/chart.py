@@ -1,17 +1,14 @@
-from __future__ import unicode_literals
+from __future__ import absolute_import, division, unicode_literals
 
 from itertools import product
-from distutils.version import LooseVersion
 
+import param
 import numpy as np
 import matplotlib as mpl
+
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
-
-mpl_version = LooseVersion(mpl.__version__)
-
-import param
 
 from ...core import OrderedDict, Dimension
 from ...core.options import Store, abbreviated_exception
@@ -27,7 +24,8 @@ from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
-from .util import categorize_colors
+from .util import categorize_colors, mpl_version
+
 
 
 class ChartPlot(ElementPlot):

@@ -1,6 +1,9 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import numpy as np
 import matplotlib
+
 from matplotlib import patches as patches
 
 from ...core.util import match_spec, basestring

@@ -1,10 +1,12 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import math
 from types import FunctionType
 
 import param
 import numpy as np
-import matplotlib as mpl
 import matplotlib.colors as mpl_colors
+
 from matplotlib import ticker
 from matplotlib.dates import date2num
 
@@ -17,8 +19,7 @@ from ...util.ops import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
-from .util import wrap_formatter, is_color, categorize_colors
-from distutils.version import LooseVersion
+from .util import wrap_formatter, is_color, categorize_colors, mpl_version
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -117,7 +118,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if LooseVersion(mpl.__version__) <= '1.5.9':
+                if mpl_version <= '1.5.9':
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)

@@ -1,6 +1,7 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import numpy as np
-
 
 from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot

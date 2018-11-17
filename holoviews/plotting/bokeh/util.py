@@ -1,15 +1,17 @@
-import re, time, sys
+from __future__ import absolute_import, division, unicode_literals
+
+import re
+import time
+import sys
+import datetime as dt
+
 from distutils.version import LooseVersion
 from collections import defaultdict
 from contextlib import contextmanager
-import datetime as dt
-
-import numpy as np
 
 import param
 import bokeh
-
-bokeh_version = LooseVersion(bokeh.__version__)  # noqa
+import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
@@ -35,6 +37,7 @@ from ...core.util import (basestring, unique_array, callable_name, pd,
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
+bokeh_version = LooseVersion(bokeh.__version__)  # noqa
 
 
 def convert_timestamp(timestamp):

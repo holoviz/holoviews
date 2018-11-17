@@ -1,9 +1,12 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
+
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
 
 from ...core.util import basestring, max_range
 from .graphs import GraphPlot
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PatchCollection
 
 
 class SankeyPlot(GraphPlot):

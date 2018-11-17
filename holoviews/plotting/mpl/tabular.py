@@ -1,7 +1,11 @@
+from __future__ import absolute_import, division, unicode_literals
+
 from collections import defaultdict
+
+import param
+
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
-import param
 
 from .element import ElementPlot
 from .plot import mpl_rc_context

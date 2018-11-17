@@ -1,14 +1,16 @@
-from __future__ import division
+from __future__ import absolute_import, division, unicode_literals
 
 from itertools import chain
 from contextlib import contextmanager
 
+import param
 import numpy as np
 import matplotlib as mpl
+
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
-import param
+
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
