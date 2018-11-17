@@ -52,7 +52,7 @@ def int_fn(values):
     return values.astype(int)
 
 
-class op(object):
+class dim(object):
 
     _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn,
                     str: str_fn, int: int_fn}
@@ -100,42 +100,42 @@ class op(object):
         self._op_registry[name] = function
 
     # Unary operators
-    def __abs__(self): return op(self, operator.abs)
-    def __neg__(self): return op(self, operator.neg)
-    def __pos__(self): return op(self, operator.pos)
+    def __abs__(self): return dim(self, operator.abs)
+    def __neg__(self): return dim(self, operator.neg)
+    def __pos__(self): return dim(self, operator.pos)
 
     # Binary operators
-    def __add__(self, other):       return op(self, operator.add, other)
-    def __div__(self, other):       return op(self, operator.div, other)
-    def __floordiv__(self, other):  return op(self, operator.floordiv, other)
-    def __pow__(self, other):       return op(self, operator.pow, other)
-    def __mod__(self, other):       return op(self, operator.mod, other)
-    def __mul__(self, other):       return op(self, operator.mul, other)
-    def __sub__(self, other):       return op(self, operator.sub, other)
-    def __truediv__(self, other):   return op(self, operator.truediv, other)
+    def __add__(self, other):       return dim(self, operator.add, other)
+    def __div__(self, other):       return dim(self, operator.div, other)
+    def __floordiv__(self, other):  return dim(self, operator.floordiv, other)
+    def __pow__(self, other):       return dim(self, operator.pow, other)
+    def __mod__(self, other):       return dim(self, operator.mod, other)
+    def __mul__(self, other):       return dim(self, operator.mul, other)
+    def __sub__(self, other):       return dim(self, operator.sub, other)
+    def __truediv__(self, other):   return dim(self, operator.truediv, other)
 
     # Reverse binary operators
-    def __radd__(self, other):      return op(self, operator.add, other, True)
-    def __rdiv__(self, other):      return op(self, operator.div, other, True)
-    def __rfloordiv__(self, other): return op(self, operator.floordiv, other, True)
-    def __rmod__(self, other):      return op(self, operator.mod, other, True)
-    def __rmul__(self, other):      return op(self, operator.mul, other, True)
-    def __rsub__(self, other):      return op(self, operator.sub, other, True)
-    def __rtruediv__(self, other):  return op(self, operator.truediv, other, True)
+    def __radd__(self, other):      return dim(self, operator.add, other, True)
+    def __rdiv__(self, other):      return dim(self, operator.div, other, True)
+    def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, True)
+    def __rmod__(self, other):      return dim(self, operator.mod, other, True)
+    def __rmul__(self, other):      return dim(self, operator.mul, other, True)
+    def __rsub__(self, other):      return dim(self, operator.sub, other, True)
+    def __rtruediv__(self, other):  return dim(self, operator.truediv, other, True)
 
     ## NumPy operations
     def __array_ufunc__(self, *args, **kwargs):
         ufunc = getattr(args[0], args[1])
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return op(self, ufunc, **kwargs)
+        return dim(self, ufunc, **kwargs)
 
-    def max(self, **kwargs):  return op(self, np.max, **kwargs)
-    def mean(self, **kwargs): return op(self, np.mean, **kwargs)
-    def min(self, **kwargs):  return op(self, np.min, **kwargs)
-    def sum(self, **kwargs):  return op(self, np.sum, **kwargs)
-    def std(self, **kwargs):  return op(self, np.std, **kwargs)
-    def var(self, **kwargs):  return op(self, np.var, **kwargs)
-    def astype(self, dtype):  return op(self, np.asarray, dtype=dtype)
+    def max(self, **kwargs):  return dim(self, np.max, **kwargs)
+    def mean(self, **kwargs): return dim(self, np.mean, **kwargs)
+    def min(self, **kwargs):  return dim(self, np.min, **kwargs)
+    def sum(self, **kwargs):  return dim(self, np.sum, **kwargs)
+    def std(self, **kwargs):  return dim(self, np.std, **kwargs)
+    def var(self, **kwargs):  return dim(self, np.var, **kwargs)
+    def astype(self, dtype):  return dim(self, np.asarray, dtype=dtype)
 
     ## Custom functions
 
@@ -143,14 +143,14 @@ class op(object):
         """
         Normalizes the data into the given range
         """
-        return op(self, norm_fn)
+        return dim(self, norm_fn)
 
     def cat(self, categories, empty=None):
-        cat_op = op(self, cat_fn, categories=categories, empty=empty)
+        cat_op = dim(self, cat_fn, categories=categories, empty=empty)
         return cat_op
 
     def bin(self, bins, labels=None):
-        bin_op = op(self, bin_fn, categories=categories, empty=empty)
+        bin_op = dim(self, bin_fn, categories=categories, empty=empty)
         return bin_op
 
     def eval(self, dataset, flat=False, expanded=None, ranges={}):

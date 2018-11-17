@@ -13,7 +13,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph
-from ...util.ops import op
+from ...util.ops import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
@@ -520,17 +520,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         for k, v in style.items():
             if isinstance(v, util.basestring):
                 if v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = op(v)
+                    v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
-                    v = op([d for d in self.overlay_dims if d==v][0])
-            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, op)):
+                    v = dim([d for d in self.overlay_dims if d==v][0])
+            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, dim)):
                 try:
-                    v = op.resolve_spec(v)
+                    v = dim.resolve_spec(v)
                 except:
                     continue
 
-
-            if not isinstance(v, op):
+            if not isinstance(v, dim):
                 continue
 
             dname = v.dimension.name

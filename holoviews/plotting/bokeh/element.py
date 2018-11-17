@@ -27,7 +27,7 @@ from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField
 from ...streams import Buffer
-from ...util.ops import op
+from ...util.ops import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
@@ -662,16 +662,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in dict(style).items():
             if isinstance(v, util.basestring):
                 if v in element or (isinstance(element, Graph) and v in element.nodes):
-                    v = op(v)
+                    v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
-                    v = op([d for d in self.overlay_dims if d==v][0])
-            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, op)):
+                    v = dim([d for d in self.overlay_dims if d==v][0])
+            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, dim)):
                 try:
-                    v = op.resolve_spec(v)
+                    v = dim.resolve_spec(v)
                 except:
                     continue
 
-            if not isinstance(v, op) or (group is not None and not k.startswith(group)):
+            if not isinstance(v, dim) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
 
