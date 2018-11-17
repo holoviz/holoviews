@@ -236,6 +236,7 @@ class VectorFieldPlot(ColorbarPlot):
         x0s, x1s = (xs + nxoff, xs - pxoff)
         y0s, y1s = (ys + nyoff, ys - pyoff)
 
+        color = None
         if self.arrow_heads:
             arrow_len = (lens/4.)
             xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
@@ -246,15 +247,14 @@ class VectorFieldPlot(ColorbarPlot):
             x1s = np.concatenate([x1s, xa1s, xa2s])
             y0s = np.tile(y0s, 3)
             y1s = np.concatenate([y1s, ya1s, ya2s])
-            if cdim:
-                color = cdata.get(cdim.name)
-                color = np.tile(color, 3)
+            if cdim and cdim.name in cdata:
+                color = np.tile(cdata[cdim.name], 3)
         elif cdim:
             color = cdata.get(cdim.name)
 
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
-        if cdim:
+        if cdim and color:
             data[cdim.name] = color
             mapping.update(cmapping)
 
@@ -737,7 +737,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         ydim = element.vdims[0]
 
         # Compute stack heights
-        if self.stacked:
+        if self.stacked or self.stack_index:
             ds = Dataset(element)
             pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
             neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
@@ -771,7 +771,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         sdim = None
         if element.ndims == 1:
             pass
-        elif not self.stacked:
+        elif not (self.stacked or self.stack_index):
             gdim = element.get_dimension(1)
         else:
             sdim = element.get_dimension(1)
@@ -798,7 +798,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if self.batched:
             element = element.last
         xlabel = dim_axis_label(element.kdims[0])
-        if element.ndims > 1 and not self.stacked:
+        if element.ndims > 1 and not (self.stacked or self.stack_index):
             gdim = element.get_dimension(1)
         else:
             gdim = None
@@ -847,7 +847,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             isinstance(cmapper, CategoricalColorMapper)):
             mapping['legend'] = cdim.name
 
-        if not self.stacked and ds.ndims > 1:
+        if not (self.stacked or self.stack_index) and ds.ndims > 1:
             cmapping.pop('legend', None)
             mapping.pop('legend', None)
 
@@ -876,7 +876,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             grouping = None
-        elif self.stacked:
+        elif self.stacked or self.stack_index:
             grouping = 'stacked'
             stack_dim = element.get_dimension(1)
         else:

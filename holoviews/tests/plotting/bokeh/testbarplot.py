@@ -234,7 +234,7 @@ class TestBarPlot(TestBokehPlot):
 
     def test_bars_color_index_color_clash(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).options(color='color', color_index='color')        
+                    vdims=['y', 'color']).options(color='color', color_index='color')
         with ParamLogStream() as log:
             plot = bokeh_renderer.get_plot(bars)
         log_msg = log.stream.read()
@@ -245,10 +245,10 @@ class TestBarPlot(TestBokehPlot):
 
     def test_bars_color_index_color_no_clash(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).options(fill_color='color', color_index='color')        
+                    vdims=['y', 'color']).options(line_color='color', color_index='color')
         plot = bokeh_renderer.get_plot(bars)
         glyph = plot.handles['glyph']
-        cmapper = plot.handles['fill_color_color_mapper']
+        cmapper = plot.handles['line_color_color_mapper']
         cmapper2 = plot.handles['color_mapper']
-        self.assertEqual(glyph.fill_color, {'field': 'fill_color', 'transform': cmapper})
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper2})
+        self.assertEqual(glyph.line_color, {'field': 'line_color', 'transform': cmapper})
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper2})
