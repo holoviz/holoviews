@@ -6,6 +6,7 @@ import pyviz_comms as comms
 
 try:
     import holoviews.plotting.mpl # noqa
+    import matplotlib.pyplot as plt
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None
@@ -34,3 +35,4 @@ class TestMPLPlot(ComparisonTestCase):
     def tearDown(self):
         Store.current_backend = self.previous_backend
         mpl_renderer.comm_manager = self.comm_manager
+        plt.close(plt.gcf())

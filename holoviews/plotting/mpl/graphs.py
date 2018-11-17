@@ -88,7 +88,7 @@ class GraphPlot(ColorbarPlot):
             style['edge_colors'] = [colors[v%len(colors)] for v in cvals]
             style.pop('edge_color', None)
         if 'edge_array' in style:
-            self._norm_kwargs(element, ranges, style, edge_cdim, 'edge_')
+            self._norm_kwargs(element, ranges, style, edge_cdim, prefix='edge_')
         else:
             style.pop('edge_cmap', None)
         if 'edge_vmin' in style:

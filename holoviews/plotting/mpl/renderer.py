@@ -132,9 +132,9 @@ class MPLRenderer(Renderer):
                 plots.append(self.get_plot(o))
             plt.show()
         except:
-            MPLPlot._close_figures = True
             raise
-        MPLPlot._close_figures = True
+        finally:
+            MPLPlot._close_figures = True
         return plots[0] if len(plots) == 1 else plots
 
 
