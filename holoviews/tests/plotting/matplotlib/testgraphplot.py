@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
-from holoviews.element import Graph, TriMesh, Chord, circular_layout
+from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
 
 # Standardize backend due to random inconsistencies
 try:
@@ -83,6 +83,87 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual(edges.get_array(), self.weights)
         self.assertEqual(edges.get_clim(), (self.weights.min(), self.weights.max()))
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_graph_op_node_color(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, '#000000'), (0, 1, 1, '#FF0000'), (1, 1, 2, '#00FF00')],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = mpl_renderer.get_plot(graph)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_facecolors(),
+                         np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
+
+    def test_graph_op_node_color_linear(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = mpl_renderer.get_plot(graph)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_array(), np.array([0.5, 1.5, 2.5]))
+
+    def test_graph_op_node_color_categorical(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'A')],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = mpl_renderer.get_plot(graph)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+
+    def test_graph_op_node_size(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)],
+                      vdims='size')
+        graph = Graph((edges, nodes)).options(node_size='size')
+        plot = mpl_renderer.get_plot(graph)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_sizes(), np.array([4, 16, 36]))
+
+    def test_graph_op_node_linewidth(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 3.5)], vdims='line_width')
+        graph = Graph((edges, nodes)).options(node_linewidth='line_width')
+        plot = mpl_renderer.get_plot(graph)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_linewidths(), [2, 4, 3.5])
+
+    def test_graph_op_node_alpha(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
+        graph = Graph((edges, nodes)).options(node_alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(graph)
+
+    def test_graph_op_edge_color(self):
+        edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(graph)
+
+    def test_graph_op_edge_color_linear(self):
+        edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(graph)
+
+    def test_graph_op_edge_color_categorical(self):
+        edges = [(0, 1, 'C'), (0, 2, 'B'), (1, 3, 'A')]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(graph)
+
+    def test_graph_op_edge_alpha(self):
+        edges = [(0, 1, 0.1), (0, 2, 0.5), (1, 3, 0.3)]
+        graph = Graph(edges, vdims='alpha').options(edge_alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(graph)
+
+    def test_graph_op_edge_linewidth(self):
+        edges = [(0, 1, 2), (0, 2, 10), (1, 3, 6)]
+        graph = Graph(edges, vdims='line_width').options(edge_linewidth='line_width')
+        plot = mpl_renderer.get_plot(graph)
 
 
 class TestMplTriMeshPlot(TestMPLPlot):

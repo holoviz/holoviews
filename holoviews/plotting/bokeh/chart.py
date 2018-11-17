@@ -783,11 +783,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if gdim and not sdim:
             gvals = element.dimension_values(gdim, False)
             gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
-            coords = ([(x, g) for x in xvals for g in gvals], [])
-        else:
-            coords = (xvals, [])
+            xvals = sorted([(x, g) for x in xvals for g in gvals])
+        coords = xvals, []
         if self.invert_axes: coords = coords[::-1]
         return coords
+
 
     def _get_axis_labels(self, *args, **kwargs):
         """

@@ -38,9 +38,9 @@ class TestBokehViolinPlot(TestBokehPlot):
         scatter_source = plot.handles['scatter_1_source']
         self.assertEqual(scatter_source.data['x'], [('', 0)])
         self.assertEqual(scatter_source.data['y'], [q2])
-        patch_source = plot.handles['patch_0_source']
-        self.assertEqual(patch_source.data['x'], kde['x'])
-        self.assertEqual(patch_source.data['y'], kde['y'])
+        patch_source = plot.handles['patches_1_source']
+        self.assertEqual(patch_source.data['xs'], [kde['y']])
+        self.assertEqual(patch_source.data['ys'], [kde['x']])
 
     def test_violin_inner_quartiles(self):
         values = np.random.rand(100)
@@ -74,6 +74,6 @@ class TestBokehViolinPlot(TestBokehPlot):
     def test_violin_empty(self):
         violin = Violin([])
         plot = bokeh_renderer.get_plot(violin)
-        patch_source = plot.handles['patch_0_source']
-        self.assertEqual(patch_source.data['x'], np.array([]))
-        self.assertEqual(patch_source.data['y'], [])
+        patch_source = plot.handles['patches_1_source']
+        self.assertEqual(patch_source.data['xs'], [[]])
+        self.assertEqual(patch_source.data['ys'], [np.array([])])

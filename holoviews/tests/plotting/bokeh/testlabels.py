@@ -120,7 +120,7 @@ class TestLabelsPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        cmapper = plot.handles['color_color_mapper']
+        cmapper = plot.handles['text_color_color_mapper']
         self.assertTrue(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 2)
@@ -133,7 +133,7 @@ class TestLabelsPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(labels)
         cds = plot.handles['cds']
         glyph = plot.handles['glyph']
-        cmapper = plot.handles['color_color_mapper']
+        cmapper = plot.handles['text_color_color_mapper']
         self.assertTrue(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['text_color'], np.array(['A', 'B', 'C']))

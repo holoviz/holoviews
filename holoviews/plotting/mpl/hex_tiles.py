@@ -29,6 +29,8 @@ class HexTilesPlot(ColorbarPlot):
 
     style_opts = ['edgecolors', 'alpha', 'linewidths', 'marginals']
 
+    _no_op_styles = style_opts
+
     _plot_methods = dict(single='hexbin')
 
     def get_data(self, element, ranges, style):

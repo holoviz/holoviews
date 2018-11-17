@@ -472,7 +472,7 @@ class TestPointPlot(TestBokehPlot):
                         vdims='color').options(fill_color='color', color_index='color')        
         plot = bokeh_renderer.get_plot(points)
         glyph = plot.handles['glyph']
-        cmapper = plot.handles['color_color_mapper']
+        cmapper = plot.handles['fill_color_color_mapper']
         cmapper2 = plot.handles['color_mapper']
         self.assertEqual(glyph.fill_color, {'field': 'fill_color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper2})

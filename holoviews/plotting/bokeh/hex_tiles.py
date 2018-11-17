@@ -132,7 +132,9 @@ class HexTilesPlot(ColorbarPlot):
 
     _plot_methods = dict(single='hex_tile')
 
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+    style_opts = ['cmap', 'color', 'scale'] + line_properties + fill_properties
+
+    _no_op_styles = ['cmap', 'line_dash']
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:

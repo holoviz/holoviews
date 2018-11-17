@@ -79,6 +79,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def get_extents(self, element, ranges, range_type='combined'):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
+
     def _get_axis_labels(self, *args, **kwargs):
         """
         Override axis labels to group all key dimensions together.
@@ -127,7 +128,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             edge_data[field] = cvals
         edge_style = dict(style, cmap=cmap)
         mapper = self._get_colormapper(cdim, element, ranges, edge_style,
-                                       factors, colors, 'edge_colormapper')
+                                       factors, colors, 'edge', 'edge_colormapper')
         transform = {'field': field, 'transform': mapper}
         color_type = 'fill_color' if self.filled else 'line_color'
         edge_mapping['edge_'+color_type] = transform
@@ -248,9 +249,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 continue
             source = self._init_datasource(data.pop(key, {}))
             self.handles[key+'_source'] = source
+            group_style = dict(style)
             style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
-            glyph_props = self._glyph_properties(plot, element, source, ranges, style, style_group)
-            properties.update(glyph_props)
+            others = [sg for sg in self._style_groups.values() if sg != style_group]
+            glyph_props = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
+            for k, p in glyph_props.items():
+                if any(k.startswith(o) for o in others):
+                    continue
+                properties[k] = p
             mappings.update(mapping.pop(key, {}))
         properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}
         properties.update(mappings)

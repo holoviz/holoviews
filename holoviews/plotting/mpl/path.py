@@ -3,6 +3,7 @@ import numpy as np
 from matplotlib.collections import PatchCollection, LineCollection
 
 from ...core import util
+from ...core.options import abbreviated_exception
 from ...element import Polygons
 from .element import ColorbarPlot
 from .util import polygons_to_path_patches
@@ -28,6 +29,9 @@ class PathPlot(ColorbarPlot):
             self._draw_colorbar(element.get_dimension(self.color_index))
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         cdim = element.get_dimension(self.color_index)
         if cdim: cidx = element.get_dimension_index(cdim)
         if not cdim:
@@ -79,6 +83,9 @@ class ContourPlot(PathPlot):
             self._draw_colorbar(cdim)
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         if None not in [element.level, self.color_index]:
             cdim = element.vdims[0]
         else:

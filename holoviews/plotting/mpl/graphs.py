@@ -4,8 +4,8 @@ import numpy as np
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
-from ...core.options import Cycle
-from ...core.util import basestring, unique_array, search_indices, max_range
+from ...core.options import Cycle, abbreviated_exception
+from ...core.util import basestring, unique_array, search_indices, max_range, is_number
 from ..util import process_cmap
 from .element import ColorbarPlot
 
@@ -55,7 +55,7 @@ class GraphPlot(ColorbarPlot):
                 style.pop('node_color', None)
             if 'c' in style:
                 self._norm_kwargs(element.nodes, ranges, style, cdim)
-        elif color:
+        elif color and 'node_color' in style:
             style['c'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
 
@@ -97,6 +97,9 @@ class GraphPlot(ColorbarPlot):
 
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))
         dims = element.nodes.dimensions()
@@ -120,6 +123,8 @@ class GraphPlot(ColorbarPlot):
                      for k, v in plot_kwargs.items()
                      if not any(k.startswith(p) for p in groups)
                      and k not in color_opts}
+        if 'c' in edge_opts:
+            edge_opts['array'] = edge_opts.pop('c')
         paths = plot_args['edges']
         if self.filled:
             coll = PolyCollection
@@ -127,7 +132,6 @@ class GraphPlot(ColorbarPlot):
                 edge_opts['facecolors'] = edge_opts.pop('colors')
         else:
             coll = LineCollection
-        print(edge_opts)
         edges = coll(paths, **edge_opts)
         ax.add_collection(edges)
 
@@ -137,7 +141,8 @@ class GraphPlot(ColorbarPlot):
         node_opts = {k[5:] if 'node_' in k else k: v
                      for k, v in plot_kwargs.items()
                      if not any(k.startswith(p) for p in groups)}
-        if 'size' in node_opts: node_opts['s'] = node_opts.pop('size')**2
+        if is_number(node_opts.get('size')):
+            node_opts['s'] = node_opts.pop('size')**2
         nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}

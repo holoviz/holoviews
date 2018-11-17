@@ -519,7 +519,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         new_style = dict(style)
         for k, v in style.items():
             if isinstance(v, util.basestring):
-                if v in element:
+                if v in element or (isinstance(element, Graph) and v in element.nodes):
                     v = op(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = op([d for d in self.overlay_dims if d==v][0])
@@ -529,11 +529,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 except:
                     continue
 
+
             if not isinstance(v, op):
                 continue
 
             dname = v.dimension.name
-            if dname not in element and v.dimension not in self.overlay_dims:
+            if (dname not in element and v.dimension not in self.overlay_dims and
+                not (isinstance(element, Graph) and v.dimension in element.nodes)):
                 new_style.pop(k)
                 self.warning('Specified %s op %r could not be applied, %s dimension '
                              'could not be found' % (k, v, v.dimension))
@@ -560,12 +562,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  )
                 )
 
-            if k in ('c', 'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
+            style_groups = getattr(self, '_style_groups', [])
+            groups = [sg for sg in style_groups if k.startswith(sg)]
+            group = groups[0] if groups else None
+            prefix = '' if group is None else group+'_'
+            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v.dimension, val)
                 if val.dtype.kind in 'OSUM':
                     val = categorize_colors(val)
-                k = 'c'
+                k = prefix+'c'
 
             new_style[k] = val
 
@@ -573,11 +579,16 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             # If mapped to color/alpha override static fill/line style
             if k == 'c':
                 new_style.pop('color', None)
-            if k in ('c', 'color') and isinstance(val, np.ndarray):
-                fill_style = new_style.get('facecolor')
+
+            style_groups = getattr(self, '_style_groups', [])
+            groups = [sg for sg in style_groups if k.startswith(sg)]
+            group = groups[0] if groups else None
+            prefix = '' if group is None else group+'_'
+            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray):
+                fill_style = new_style.get(prefix+'facecolor')
                 if fill_style and is_color(fill_style):
                     new_style.pop('facecolor')
-                line_style = new_style.get('edgecolor')
+                line_style = new_style.get(prefix+'edgecolor')
                 if line_style and is_color(line_style):
                     new_style.pop('edgecolor')
             elif k == 'facecolors' and not isinstance(new_style.get('color', new_style.get('c')), np.ndarray):

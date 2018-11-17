@@ -1,4 +1,6 @@
 import param
+import numpy as np
+
 
 from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot
@@ -56,8 +58,7 @@ class BoxPlot(ChartPlot):
                   'whiskerprops', 'capprops', 'flierprops',
                   'medianprops', 'meanprops', 'meanline']
 
-    _no_op_styles = [s for s in style_opts
-                     if s not in ('conf_intervals', 'widths')] 
+    _no_op_styles = style_opts
 
     _plot_methods = dict(single='boxplot')
 
@@ -154,7 +155,7 @@ class ViolinPlot(BoxPlot):
                   'widths', 'stats_color', 'box_color', 'alpha', 'edgecolors']
 
     _no_op_styles = [s for s in style_opts
-                     if s not in ('facecolors', 'edgecolors', 'widths')] 
+                     if s not in ('facecolors', 'edgecolors', 'widths')]
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         box_color = plot_kwargs.pop('box_color', 'black')
@@ -204,6 +205,13 @@ class ViolinPlot(BoxPlot):
         style['positions'] = list(range(len(data)))
         style['labels'] = labels
         style['facecolors'] = colors
+
+        if element.ndims > 0:
+            element = element.aggregate(function=np.mean)
+        else:
+            element = element.clone([(element.aggregate(function=np.mean),)])
+        new_style = self._apply_ops(element, ranges, style)
+
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes

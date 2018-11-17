@@ -97,7 +97,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return xlabel, ylabel, None
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        element = element.aggregate(function=np.mean)
+        if element.ndims > 0:
+            element = element.aggregate(function=np.mean)
+        else:
+            element = element.clone([(element.aggregate(function=np.mean),)])
         with abbreviated_exception():
             new_style = self._apply_ops(element, source, ranges, style, group)
         properties = dict(new_style, source=source)

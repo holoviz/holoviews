@@ -661,7 +661,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
             if isinstance(v, util.basestring):
-                if v in element:
+                if v in element or (isinstance(element, Graph) and v in element.nodes):
                     v = op(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = op([d for d in self.overlay_dims if d==v][0])
@@ -674,6 +674,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not isinstance(v, op) or (group is not None and not k.startswith(group)):
                 continue
             dname = v.dimension.name
+
             if k == 'marker' and dname in markers:
                 continue
             elif (dname not in element and v.dimension not in self.overlay_dims and
@@ -731,7 +732,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if val.dtype.kind not in 'if':
                     kwargs['factors'] = np.unique(val)
                 cmapper = self._get_colormapper(v.dimension, element, ranges,
-                                                style, name=dname+'_color_mapper', **kwargs)
+                                                style, name=k+'_color_mapper',
+                                                group=group, **kwargs)
                 key = {'field': k, 'transform': cmapper}
             new_style[k] = key
 
@@ -742,10 +744,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     continue
                 fill_style = new_style.get(prefix+'fill_'+s)
                 if fill_style and validate(s, fill_style):
-                    new_style.pop(prefix+'fill_'+s)
+                    new_style[prefix+'fill_'+s] = value
                 line_style = new_style.get(prefix+'line_'+s)
                 if line_style and validate(s, line_style):
-                    new_style.pop(prefix+'line_'+s)
+                    new_style[prefix+'line_'+s] = value
 
         return new_style
 
@@ -1061,6 +1063,7 @@ class CompositeElementPlot(ElementPlot):
             style = self.style[self.cyclic_index]
             data, mapping, style = self.get_data(element, ranges, style)
 
+
         keys = glyph_order(dict(data, **mapping), self._draw_order)
 
         source_cache = {}
@@ -1246,7 +1249,7 @@ class ColorbarPlot(ElementPlot):
 
 
     def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
-                         name='color_mapper'):
+                         group=None, name='color_mapper'):
         # The initial colormapper instance is cached the first time
         # and then only updated
         if dim is None and colors is None:
@@ -1277,7 +1280,8 @@ class ColorbarPlot(ElementPlot):
         else:
             low, high = None, None
 
-        cmap = colors or style.pop('cmap', 'viridis')
+        prefix = '' if group is None else group+'_'
+        cmap = colors or style.get(prefix+'cmap', style.pop('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
             if factors is None:
