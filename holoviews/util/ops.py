@@ -1,5 +1,8 @@
 import operator
-from itertools import zip_longest
+try:
+    from itertools import zip_longest as zip_longest
+except:
+    from itertools import izip_longest as zip_longest
 
 import numpy as np
 
