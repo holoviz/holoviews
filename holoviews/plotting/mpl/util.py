@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import re
 import warnings
-from distutils.version import LooseVersion
 
 import numpy as np
 import matplotlib
@@ -11,7 +10,7 @@ from matplotlib.colors import cnames
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
-from ...core.util import basestring, _getargspec
+from ...core.util import LooseVersion, _getargspec, basestring
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 

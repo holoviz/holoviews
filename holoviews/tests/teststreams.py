@@ -2,12 +2,11 @@
 Unit test of the streams system
 """
 from collections import defaultdict
-from distutils.version import LooseVersion
 from unittest import SkipTest
 
 import param
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.util import pd
+from holoviews.core.util import LooseVersion, pd
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)

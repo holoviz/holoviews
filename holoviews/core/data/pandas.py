@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from distutils.version import LooseVersion
-
 try:
     import itertools.izip as zip
 except ImportError:
@@ -156,7 +154,7 @@ class PandasInterface(Interface):
         column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
-                        LooseVersion(pd.__version__) < '0.17.0'):
+                util.LooseVersion(pd.__version__) < '0.17.0'):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
@@ -252,7 +250,7 @@ class PandasInterface(Interface):
         cols = [dataset.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(dataset.data, pd.DataFrame) or
-            LooseVersion(pd.__version__) < '0.17.0'):
+            util.LooseVersion(pd.__version__) < '0.17.0'):
             return dataset.data.sort(columns=cols, ascending=not reverse)
         return dataset.data.sort_values(by=cols, ascending=not reverse)
 

@@ -5,7 +5,6 @@ import time
 import sys
 import datetime as dt
 
-from distutils.version import LooseVersion
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -32,8 +31,8 @@ except:
     Chart = type(None) # Create stub for isinstance check
 
 from ...core.overlay import Overlay
-from ...core.util import (basestring, unique_array, callable_name, pd,
-                          dt64_to_dt, _getargspec)
+from ...core.util import (LooseVersion, _getargspec, basestring,
+                          callable_name, dt64_to_dt, pd, unique_array)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 

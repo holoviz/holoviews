@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import os
-from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap
@@ -9,7 +8,7 @@ from matplotlib.colors import ListedColormap
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import pd
+from ...core.util import LooseVersion, pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from .annotation import * # noqa (API import)

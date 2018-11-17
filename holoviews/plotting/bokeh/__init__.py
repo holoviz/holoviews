@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from distutils.version import LooseVersion
-
 import numpy as np
 import bokeh
 from bokeh.palettes import all_palettes
@@ -16,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey)
 from ...core.options import Options, Cycle, Palette
-from ...core.util import VersionError
+from ...core.util import LooseVersion, VersionError
 
 if LooseVersion(bokeh.__version__) < '0.12.10':
     raise VersionError("The bokeh extension requires a bokeh version >=0.12.10, "
