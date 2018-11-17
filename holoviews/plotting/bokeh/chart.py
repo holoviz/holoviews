@@ -10,7 +10,7 @@ from ...core import Dataset, OrderedDict
 from ...core.util import max_range, basestring, dimension_sanitizer, isfinite, range_pad
 from ...element import Bars
 from ...operation import interpolate_curve
-from ...util.ops import op
+from ...util.ops import dim
 from ..util import compute_sizes, get_min_distance, dim_axis_label, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
@@ -55,7 +55,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data, mapping = {}, {}
         sdim = element.get_dimension(self.size_index)
         ms = style.get('size', np.sqrt(6))
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, op)):
+        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
             self.warning("Cannot declare style mapping for 'size' option "
                          "and declare a size_index, ignoring the size_index.")
             sdim = None
@@ -135,8 +135,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
                 data[k].append(v)
 
             if 'hover' in self.handles:
-                for dim, k in zip(element.dimensions(), key):
-                    sanitized = dimension_sanitizer(dim.name)
+                for d, k in zip(element.dimensions(), key):
+                    sanitized = dimension_sanitizer(d.name)
                     data[sanitized].append([k]*nvals)
 
         data = {k: np.concatenate(v) for k, v in data.items()}

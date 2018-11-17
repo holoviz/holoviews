@@ -13,7 +13,6 @@ mpl_version = LooseVersion(matplotlib.__version__)  # noqa
 
 from ...core.util import basestring, _getargspec
 from ...element import Raster, RGB, Polygons
-from ...element import Raster, RGB
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 

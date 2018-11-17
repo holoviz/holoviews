@@ -21,7 +21,7 @@ from ...core.util import (
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
-from ...util.ops import op
+from ...util.ops import dim
 from ..plot import PlotSelector
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
@@ -617,7 +617,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
 
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
                          "and declare a color_index, ignoring the color_index.")
             cdim = None
@@ -638,7 +638,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, op)):
+        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
             self.warning("Cannot declare style mapping for 's' option "
                          "and declare a size_index, ignoring the size_index.")
             sdim = None
@@ -747,7 +747,7 @@ class VectorFieldPlot(ColorbarPlot):
         args = (xs, ys, magnitudes,  [0.0] * len(element))
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
                          "and declare a color_index, ignoring the color_index.")
             cdim = None
@@ -1106,7 +1106,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, op)):
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
                          "and declare a color_index, ignoring the color_index.")
             cdim = None

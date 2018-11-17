@@ -7,7 +7,7 @@ except:
 import numpy as np
 
 from ..core.dimension import Dimension
-from ..core.util import basestring, unique_iterator, isfinite
+from ..core.util import basestring, unique_iterator
 from ..element import Graph
 
 
@@ -100,7 +100,7 @@ class dim(object):
         Register a custom op transform function which can from then
         on be referenced by the key.
         """
-        self._op_registry[name] = function
+        cls._op_registry[key] = function
 
     # Unary operators
     def __abs__(self): return dim(self, operator.abs)
@@ -149,12 +149,10 @@ class dim(object):
         return dim(self, norm_fn)
 
     def cat(self, categories, empty=None):
-        cat_op = dim(self, cat_fn, categories=categories, empty=empty)
-        return cat_op
+        return dim(self, cat_fn, categories=categories, empty=empty)
 
     def bin(self, bins, labels=None):
-        bin_op = dim(self, bin_fn, categories=categories, empty=empty)
-        return bin_op
+        return dim(self, bin_fn, bins=bins, labels=labels)
 
     def eval(self, dataset, flat=False, expanded=None, ranges={}):
         if expanded is None:
@@ -166,7 +164,7 @@ class dim(object):
         for o in self.ops:
             other = o['other']
             if other is not None:
-                if isinstance(other, op):
+                if isinstance(other, dim):
                     other = other.eval(dataset, ranges)
                 args = (other, data) if o['reverse'] else (data, other)
             else:
@@ -190,7 +188,7 @@ class dim(object):
         return op_repr
 
 
-class norm(op):
+class norm(dim):
 
     def __init__(self, obj, **kwargs):
         super(norm, self).__init__(obj, norm_fn, **kwargs)

@@ -15,7 +15,7 @@ from ...operation.stats import univariate_kde
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
-from .styles import fill_properties, line_properties, rgb2hex
+from .styles import fill_properties, line_properties
 from .util import decode_bytes
 
 

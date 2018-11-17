@@ -1,19 +1,12 @@
-import datetime as dt
-from unittest import SkipTest
-
 import numpy as np
 
-from holoviews.core import NdOverlay
-from holoviews.core.options import Cycle
-from holoviews.core.util import pd
 from holoviews.element import VectorField
 
 from .testplot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
 
 try:
-    from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
-    from bokeh.models import Scatter
+    from bokeh.models import LinearColorMapper, CategoricalColorMapper
 except:
     pass
 

@@ -717,7 +717,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if np.isscalar(val) and isinstance(val, int):
                     val = str(v)+'pt'
                 elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
-                    val = [str(int(v))+'pt' for v in val]
+                    val = [str(int(s))+'pt' for s in val]
             if np.isscalar(val):
                 key = val
             else:
@@ -737,17 +737,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = {'field': k, 'transform': cmapper}
             new_style[k] = key
 
-        for style, value in list(new_style.items()):
+        for style, val in list(new_style.items()):
             # If mapped to color/alpha override static fill/line style
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in source.data:
                     continue
                 fill_style = new_style.get(prefix+'fill_'+s)
                 if fill_style and validate(s, fill_style):
-                    new_style[prefix+'fill_'+s] = value
+                    new_style[prefix+'fill_'+s] = val
                 line_style = new_style.get(prefix+'line_'+s)
                 if line_style and validate(s, line_style):
-                    new_style[prefix+'line_'+s] = value
+                    new_style[prefix+'line_'+s] = val
 
         return new_style
 
@@ -1324,7 +1324,7 @@ class ColorbarPlot(ElementPlot):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         color = style.get(name, None)
-        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, op)):
+        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for '%s' option "
                          "and declare a color_index, ignoring the color_index."
                          % name)

@@ -1,15 +1,9 @@
 import numpy as np
 
-from holoviews.core.overlay import NdOverlay
 from holoviews.element import VectorField
 
 from .testplot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
-
-try:
-    from matplotlib import pyplot
-except:
-    pass
 
 
 class TestVectorFieldPlot(TestMPLPlot):

@@ -2,10 +2,8 @@ import numpy as np
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from holoviews.core.overlay import NdOverlay
 from holoviews.element import ErrorBars
 
-from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 

@@ -1,8 +1,8 @@
 import numpy as np
 
 from holoviews.element import ErrorBars
+from holoviews.plotting.util import hex2rgb
 
-from ..utils import ParamLogStream
 from .testplot import TestMPLPlot, mpl_renderer
 
 
