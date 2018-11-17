@@ -33,6 +33,7 @@ if sys.version_info.major >= 3:
     basestring = str
     unicode = str
     long = int
+    cmp = lambda a, b: (a>b)-(a<b)
     generator_types = (zip, range, types.GeneratorType)
     RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
     _getargspec = inspect.getfullargspec
@@ -46,10 +47,20 @@ else:
     RecursionError = RuntimeError
     _getargspec = inspect.getargspec
     get_keywords = operator.attrgetter('keywords')
-    def LooseVersion(obj):
-        if isinstance(obj, unicode):
-            obj = str(obj)
-        return _LooseVersion(obj)
+
+    class LooseVersion(_LooseVersion):
+
+        def __init__ (self, vstring=None):
+            if isinstance(vstring, unicode):
+                vstring = str(vstring)
+            self.parse(vstring)
+
+        def __cmp__(self, other):
+            if isinstance(other, unicode):
+                other = str(other)
+            if isinstance(other, basestring):
+                other = LooseVersion(other)
+            return cmp(self.version, other.version)
 
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
