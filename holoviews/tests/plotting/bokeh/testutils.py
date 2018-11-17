@@ -4,8 +4,8 @@ from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.plotting.bokeh.util import (
-        expand_batched_style, filter_batched_data )
+    from holoviews.plotting.bokeh.util import filter_batched_data
+    from holoviews.plotting.bokeh.styles import expand_batched_style
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None

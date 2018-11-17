@@ -48,7 +48,10 @@ class hex_binning(Operation):
         xsize = ((x1-x0)/sx)*(2.0/3.0)
         ysize = ((y1-y0)/sy)*(2.0/3.0)
         size = xsize if self.orientation == 'flat' else ysize
-        scale = ysize/xsize
+        if isfinite(ysize) and isfinite(xsize) and not xsize == 0:
+            scale = ysize/xsize
+        else:
+            scale = 1
 
         # Compute hexagonal coordinates
         x, y = (element.dimension_values(i) for i in indexes)
