@@ -1,7 +1,5 @@
 from __future__ import absolute_import
 
-from unittest import SkipTest
-
 import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
