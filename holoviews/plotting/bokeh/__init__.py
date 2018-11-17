@@ -52,7 +52,7 @@ from .util import bokeh_version # noqa (API import)
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
 if len(Store.renderers) == 1:
-    Store.current_backend = 'bokeh'
+    Store.set_current_backend('bokeh')
 
 associations = {Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,

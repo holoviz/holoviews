@@ -1156,7 +1156,9 @@ class Dimensioned(LabelledData):
     def __call__(self, options=None, **kwargs):
         if config.warn_options_call:
             self.warning('Use of __call__ to set options will be deprecated '
-                         'in future. Use the equivalent opts method instead.')
+                         'in future. Use the equivalent opts method or use '
+                         'the recommended .options method instead.')
+
         return self.opts(options, **kwargs)
 
     def opts(self, options=None, backend=None, clone=True, **kwargs):
@@ -1225,7 +1227,7 @@ class Dimensioned(LabelledData):
         return obj
 
 
-    def options(self, options=None, backend=None, clone=True, **kwargs):
+    def options(self, *args, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -1246,15 +1248,26 @@ class Dimensioned(LabelledData):
         If no options are supplied all options on the object will be reset.
         Disabling clone will modify the object inplace.
         """
-        if isinstance(options, basestring):
-            options = {options: kwargs}
-        elif options and kwargs:
+        backend = kwargs.pop('backend', None)
+        clone = kwargs.pop('clone', True)
+
+        if len(args) == 0 and len(kwargs)==0:
+            options = None
+        elif args and isinstance(args[0], basestring):
+            options = {args[0]: kwargs}
+        elif args and isinstance(args[0], list):
+            if kwargs:
+                raise ValueError('Please specify a list of option objects, or kwargs, but not both')
+            options = args[0]
+        elif args and kwargs:
             raise ValueError("Options must be defined in one of two formats."
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "
                              "or explicitly define the type, e.g."
                              "obj.options({'Image': {'cmap': 'viridis'}})."
                              "Supplying both formats is not supported.")
+        elif args:
+            options = list(args)
         elif kwargs:
             options = {type(self).__name__: kwargs}
 

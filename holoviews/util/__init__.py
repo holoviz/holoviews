@@ -2,10 +2,10 @@ import os, sys, inspect, shutil
 
 import param
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions
-from ..core.options import options_policy, Keywords, Store
+from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_option_dicts  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -35,6 +35,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
         print('Cannot find %s' % tree_root)
+
 
 
 class opts(param.ParameterizedFunction):
@@ -69,12 +70,20 @@ class opts(param.ParameterizedFunction):
     %%opts cell magic respectively.
     """
 
+    __original_docstring__ = None
+
     strict = param.Boolean(default=False, doc="""
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
 
     def __call__(self, *args, **params):
+
+        if args and set(params.keys()) - set(['strict']):
+            raise TypeError('When used with positional arguments, hv.opts accepts only strings and dictionaries, not keywords.')
+        if params and not args:
+            return Options(**params)
+
         p = param.ParamOverrides(self, params)
         if len(args) not in [1,2]:
             raise TypeError('The opts utility accepts one or two positional arguments.')
@@ -121,8 +130,22 @@ class opts(param.ParameterizedFunction):
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
-        backend_options = Store.options(backend=backend or current_backend)
+        try:
+            backend_options = Store.options(backend=backend or current_backend)
+        except KeyError as e:
+            raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
         expanded = {}
+        if isinstance(options, list):
+            merged_options = {}
+            for obj in options:
+                if isinstance(obj,dict):
+                    new_opts = obj
+                else:
+                    new_opts = {obj.key: obj.kwargs}
+
+                merged_options = merge_option_dicts(merged_options, new_opts)
+            options = merged_options
+
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
             if objtype not in backend_options:
@@ -191,6 +214,47 @@ class opts(param.ParameterizedFunction):
             raise ValueError('Unexpected option %r for %s types '
                              'across all extensions. No similar options '
                              'found.' % (opt, objtype))
+
+    @classmethod
+    def _build_completer(cls, element, allowed):
+        def fn(cls, spec=None, **kws):
+            spec = element if spec is None else '%s.%s' % (element, spec)
+            return Options(spec, **kws)
+
+        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(allowed))
+        fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        return classmethod(fn)
+
+    @classmethod
+    def _update_backend(cls, backend):
+
+        if cls.__original_docstring__ is None:
+            cls.__original_docstring__ = cls.__doc__
+
+        if backend not in Store.loaded_backends():
+            return
+
+        backend_options = Store.options(backend)
+        all_keywords = set()
+        for element in backend_options.keys():
+            if '.' in element: continue
+            element_keywords = []
+            options = backend_options['.'.join(element)]
+            for group in Options._option_groups:
+                element_keywords.extend(options[group].allowed_keywords)
+
+            all_keywords |= set(element_keywords)
+            with param.logging_level('CRITICAL'):
+                setattr(cls, element[0],
+                        cls._build_completer(element[0],
+                                             element_keywords))
+
+        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(all_keywords))
+        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
+        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+
+
+Store._backend_switch_hooks.append(opts._update_backend)
 
 
 class output(param.ParameterizedFunction):
@@ -336,7 +400,7 @@ class extension(param.ParameterizedFunction):
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
-        Store.current_backend = selected_backend
+        Store.set_current_backend(selected_backend)
 
 
 def save(obj, filename, fmt='auto', backend=None, **kwargs):

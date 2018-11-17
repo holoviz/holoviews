@@ -84,7 +84,7 @@ class Config(param.ParameterizedFunction):
        Switch to the default style options used up to (and including)
        the HoloViews 1.7 release.""")
 
-    warn_options_call = param.Boolean(default=False, doc="""
+    warn_options_call = param.Boolean(default=True, doc="""
        Whether to warn when the deprecated __call__ options syntax is
        used (the opts method should now be used instead). It is
        recommended that users switch this on to update any uses of
@@ -142,6 +142,31 @@ class HashableJSON(json.JSONEncoder):
             return hash(obj)
         except:
             return id(obj)
+
+
+def merge_option_dicts(old_opts, new_opts):
+    """
+    Update the old_opts option dictionary with the options defined in
+    new_opts. Instead of a shallow update as would be performed by calling
+    old_opts.update(new_opts), this updates the dictionaries of all option
+    types separately.
+
+    Given two dictionaries
+        old_opts = {'a': {'x': 'old', 'y': 'old'}}
+    and
+        new_opts = {'a': {'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+    this returns a dictionary
+        {'a': {'x': 'old', 'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+    """
+    merged = dict(old_opts)
+
+    for option_type, options in new_opts.items():
+        if option_type not in merged:
+            merged[option_type] = {}
+
+        merged[option_type].update(options)
+
+    return merged
 
 
 class periodic(Thread):

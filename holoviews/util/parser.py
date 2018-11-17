@@ -15,6 +15,7 @@ import numpy as np
 import pyparsing as pp
 
 from ..core.options import Options, Cycle, Palette
+from ..core.util import merge_option_dicts
 from ..operation import Compositor
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -284,30 +285,7 @@ class OptsSpec(Parser):
             yield active_pathspecs, {}
 
 
-    @classmethod
-    def _merge_options(cls, old_opts, new_opts):
-        """
-        Update the old_opts option dictionary with the options defined in
-        new_opts. Instead of a shallow update as would be performed by calling
-        old_opts.update(new_opts), this updates the dictionaries of all option
-        types separately.
 
-        Given two dictionaries
-            old_opts = {'a': {'x': 'old', 'y': 'old'}}
-        and
-            new_opts = {'a': {'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
-        this returns a dictionary
-            {'a': {'x': 'old', 'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
-        """
-        merged = dict(old_opts)
-
-        for option_type, options in new_opts.items():
-            if option_type not in merged:
-                merged[option_type] = {}
-
-            merged[option_type].update(options)
-
-        return merged
 
     @classmethod
     def apply_deprecations(cls, path):
@@ -356,7 +334,7 @@ class OptsSpec(Parser):
                 options['style'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
             for pathspec in pathspecs:
-                parse[pathspec] = cls._merge_options(parse.get(pathspec, {}), options)
+                parse[pathspec] = merge_option_dicts(parse.get(pathspec, {}), options)
 
         return {
             cls.apply_deprecations(path): {

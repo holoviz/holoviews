@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-from holoviews import Store, Histogram, Image
+from holoviews import Store, Histogram, Image, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
@@ -25,6 +25,14 @@ except:
     pass
 
 class TestOptions(ComparisonTestCase):
+
+    def setUp(self):
+        Options._option_groups = ['test']
+        super(TestOptions, self).setUp()
+
+    def tearDown(self):
+        Options._option_groups = ['style', 'plot', 'norm']
+        super(TestOptions, self).tearDown()
 
     def test_options_init(self):
         Options('test')
@@ -114,6 +122,14 @@ class TestOptions(ComparisonTestCase):
 
 class TestCycle(ComparisonTestCase):
 
+    def setUp(self):
+        Options._option_groups = ['test']
+        super(TestCycle, self).setUp()
+
+    def tearDown(self):
+        Options._option_groups = ['style', 'plot', 'norm']
+        super(TestCycle, self).tearDown()
+
     def test_cycle_init(self):
         Cycle(values=['a', 'b', 'c'])
         Cycle(values=[1, 2, 3])
@@ -177,6 +193,14 @@ class TestCycle(ComparisonTestCase):
 
 
 class TestOptionTree(ComparisonTestCase):
+
+    def setUp(self):
+        Options._option_groups = ['group1', 'group2']
+        super(TestOptionTree, self).setUp()
+
+    def tearDown(self):
+        Options._option_groups = ['style', 'plot', 'norm']
+        super(TestOptionTree, self).tearDown()
 
     def test_optiontree_init_1(self):
         OptionTree(groups=['group1', 'group2'])
@@ -395,10 +419,10 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
         self.assertEqual(node2.kwargs, {'alpha': 0.2})
 
-    def test_custom_call_to_default_inheritance(self):
+    def test_custom_opts_to_default_inheritance(self):
         """
         Checks customs inheritance backs off to default tree correctly
-        using __call__.
+        using .opts.
         """
         options = self.initialize_option_tree()
         options.Image.A.B = Options('style', alpha=0.2)
@@ -409,7 +433,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(obj_lookup.kwargs, expected_obj)
 
         # Customize this particular object
-        custom_obj = obj(style=dict(clims=(0, 0.5)))
+        custom_obj = obj.opts(style=dict(clims=(0, 0.5)))
         expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
         custom_obj_lookup = Store.lookup_options('matplotlib', custom_obj, 'style')
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
@@ -488,7 +512,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist(plot={'plot3':'plot3'})
+        hist2 = self.hist.opts(plot={'plot3':'plot3'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot1', plot2='plot2', plot3='plot3'))
         # Check style works as expected
@@ -496,7 +520,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_plot_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist(plot={'plot1':'plot_child'})
+        hist2 = self.hist.opts(plot={'plot1':'plot_child'})
         self.assertEqual(self.lookup_options(hist2, 'plot').options,
                          dict(plot1='plot_child', plot2='plot2'))
         # Check style works as expected
@@ -504,7 +528,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_addition(self):
         "Adding an element"
-        hist2 = self.hist(style={'style3':'style3'})
+        hist2 = self.hist.opts(style={'style3':'style3'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style1', style2='style2', style3='style3'))
         # Check plot options works as expected
@@ -512,13 +536,16 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def test_style_inheritance_override(self):
         "Overriding an element"
-        hist2 = self.hist(style={'style1':'style_child'})
+        hist2 = self.hist.opts(style={'style1':'style_child'})
         self.assertEqual(self.lookup_options(hist2, 'style').options,
                          dict(style1='style_child', style2='style2'))
         # Check plot options works as expected
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
     def test_style_transfer(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("test_style_transfer requires matplotlib")
+
         hist = self.hist.opts(style={'style1':'style_child'})
         hist2 = self.hist.opts()
         opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
@@ -528,10 +555,68 @@ class TestStoreInheritance(ComparisonTestCase):
         self.assertEqual(opts, {'style1': 'style_child', 'style2': 'style2'})
 
 
+
+class TestOptionsMethod(ComparisonTestCase):
+
+    def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=['style', 'plot', 'norm'])
+        self.backend = 'matplotlib'
+        Store.set_current_backend(self.backend)
+        super(TestOptionsMethod, self).setUp()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
+
+    def tearDown(self):
+        Store.options(val=self.store_copy)
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
+        super(TestOptionsMethod, self).tearDown()
+
+    def initialize_option_tree(self):
+        Store.options(val=OptionTree(groups=['plot', 'style']))
+        options = Store.options()
+        options.Image = Options('style', cmap='hot', interpolation='nearest')
+        return options
+
+    def test_plot_options_keywords(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.options(interpolation='nearest', cmap='fire')
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='fire', interpolation='nearest'))
+
+    def test_plot_options_one_object(self):
+        im = Image(np.random.rand(10,10))
+        imopts = opts.Image(interpolation='nearest', cmap='jet')
+        styled_im = im.options(imopts)
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='jet', interpolation='nearest'))
+
+    def test_plot_options_two_object(self):
+        im = Image(np.random.rand(10,10))
+        imopts1 = opts.Image(interpolation='nearest')
+        imopts2 = opts.Image(cmap='hsv')
+        styled_im = im.options(imopts1,imopts2)
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='hsv', interpolation='nearest'))
+
+    def test_plot_options_object_list(self):
+        im = Image(np.random.rand(10,10))
+        imopts1 = opts.Image(interpolation='nearest')
+        imopts2 = opts.Image(cmap='summer')
+        styled_im = im.options([imopts1,imopts2])
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         dict(cmap='summer', interpolation='nearest'))
+
 @attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
+        Options._option_groups = ['group']
         options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
         self.opts2 = Options('group', kw2='value2')
@@ -553,6 +638,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
     def tearDown(self):
+        Options._option_groups = ['style', 'plot', 'norm']
         Store.options(val=self.original_options)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
@@ -602,7 +688,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
     """
 
     def setUp(self):
-
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("Cross background tests assumes matplotlib is available")
         if 'bokeh' not in Store.renderers:
             raise SkipTest("Cross background tests assumes bokeh is available.")
         self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
@@ -680,6 +767,22 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
         return img
 
+    def test_completer_backend_switch(self):
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+        self.assertEqual(opts.Curve.__doc__.startswith('Curve('), True)
+        docline = opts.Curve.__doc__.splitlines()[0]
+        dockeys = eval(docline.replace('Curve', 'dict'))
+        self.assertEqual('color' in dockeys, True)
+        self.assertEqual('line_width' in dockeys, True)
+        Store.set_current_backend('matplotlib')
+        self.assertEqual(opts.Curve.__doc__.startswith('Curve('), True)
+        docline = opts.Curve.__doc__.splitlines()[0]
+        dockeys = eval(docline.replace('Curve', 'dict'))
+        self.assertEqual('color' in dockeys, True)
+        self.assertEqual('linewidth' in dockeys, True)
+
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
@@ -732,4 +835,3 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Store.current_backend = 'bokeh'
         bokeh_opts = Store.lookup_options('bokeh', img, 'style').options
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
-
