@@ -532,13 +532,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if not isinstance(v, dim):
                 continue
-
-            dname = v.dimension.name
-            if (dname not in element and v.dimension not in self.overlay_dims and
-                not (isinstance(element, Graph) and v.dimension in element.nodes)):
+            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.warning('Specified %s op %r could not be applied, %s dimension '
-                             'could not be found' % (k, v, v.dimension))
+                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                             'dimensions could be resolved.' % (k, v))
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:

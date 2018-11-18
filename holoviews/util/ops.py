@@ -154,6 +154,23 @@ class dim(object):
     def bin(self, bins, labels=None):
         return dim(self, bin_fn, bins=bins, labels=labels)
 
+    def applies(self, dataset):
+        if isinstance(self.dimension, dim):
+            applies = self.dimension.applies(dataset)
+        else:
+            applies = dataset.get_dimension(self.dimension) is not None
+            if isinstance(dataset, Graph) and not applies:
+                applies = dataset.nodes.get_dimension(self.dimension) is not None
+        for op in self.ops:
+            other = op.get('other')
+            if other is None:
+                continue
+            elif isinstance(other, basestring):
+                applies &= dim(other).applies(dataset)
+            elif isinstance(other, dim):
+                applies &= other.applies(dataset)
+        return applies
+
     def eval(self, dataset, flat=False, expanded=None, ranges={}):
         if expanded is None:
             expanded = not ((dataset.interface.gridded and self.dimension in dataset.kdims) or

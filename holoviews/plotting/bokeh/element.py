@@ -673,17 +673,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 except:
                     continue
 
-            if not isinstance(v, dim) or (group is not None and not k.startswith(group)):
+            if (not isinstance(v, dim) or (group is not None and not k.startswith(group)) or
+                (k == 'marker' and v.dimension.name in markers)):
                 continue
-            dname = v.dimension.name
-
-            if k == 'marker' and dname in markers:
-                continue
-            elif (dname not in element and v.dimension not in self.overlay_dims and
-                not (isinstance(element, Graph) and v.dimension in element.nodes)):
+            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.warning('Specified %s op %r could not be applied, %s dimension '
-                             'could not be found' % (k, v, v.dimension))
+                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                             'dimensions could be resolved.' % (k, v))
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -1233,7 +1229,7 @@ class ColorbarPlot(ElementPlot):
 
     _no_op_styles = ['cmap', 'palette']
 
-    def _draw_colorbar(self, plot, color_mapper):
+    def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
         if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
@@ -1252,7 +1248,7 @@ class ColorbarPlot(ElementPlot):
                              **dict(opts, **self.colorbar_opts))
 
         plot.add_layout(color_bar, pos)
-        self.handles['colorbar'] = color_bar
+        self.handles[prefix+'colorbar'] = color_bar
 
 
     def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
@@ -1389,8 +1385,11 @@ class ColorbarPlot(ElementPlot):
         Returns a Bokeh glyph object and optionally creates a colorbar.
         """
         ret = super(ColorbarPlot, self)._init_glyph(plot, mapping, properties)
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k[:-12])
         return ret
 
 

@@ -49,6 +49,9 @@ else:
     get_keywords = operator.attrgetter('keywords')
 
     class LooseVersion(_LooseVersion):
+        """
+        Subclassed to avoid unicode issues in python2
+        """
 
         def __init__ (self, vstring=None):
             if isinstance(vstring, unicode):
