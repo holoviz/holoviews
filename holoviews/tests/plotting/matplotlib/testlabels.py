@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.core.dimension import Dimension
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -73,6 +74,21 @@ class TestLabelsPlot(TestMPLPlot):
         self.assertEqual([a.get_color() for a in artist],
                          ['#000000', '#FF0000', '#00FF00'])
 
+    def test_label_color_op_update(self):
+        labels = HoloMap({
+            0: Labels([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                      vdims='color'),
+            1: Labels([(0, 0, '#FF0000'), (0, 1, '#00FF00'), (0, 2, '#0000FF')],
+                      vdims='color')}).options(color='color')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_color() for a in artist],
+                         ['#000000', '#FF0000', '#00FF00'])
+        plot.update((1,))
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_color() for a in artist],
+                         ['#FF0000', '#00FF00', '#0000FF'])
+        
     def test_label_linear_color_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(color='color')
@@ -90,7 +106,19 @@ class TestLabelsPlot(TestMPLPlot):
                         vdims='size').options(size='size')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
-        self.assertEqual([a.get_fontsize() for a in artist], [8, 12, 6])
+
+    def test_label_size_op_update(self):
+        labels = HoloMap({
+            0: Labels([(0, 0, 8), (0, 1, 6), (0, 2, 12)],
+                      vdims='size'),
+            1: Labels([(0, 0, 9), (0, 1, 4), (0, 2, 3)],
+                      vdims='size')}).options(size='size')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_fontsize() for a in artist], [8, 6, 12])
+        plot.update((1,))
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_fontsize() for a in artist], [9, 4, 3])
 
     def test_label_alpha_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -100,6 +128,21 @@ class TestLabelsPlot(TestMPLPlot):
         self.assertEqual([a.get_alpha() for a in artist],
                          [0, 0.2, 0.7])
 
+    def test_label_alpha_op_update(self):
+        labels = HoloMap({
+            0: Labels([(0, 0, 0.3), (0, 1, 1), (0, 2, 0.6)],
+                      vdims='alpha'),
+            1: Labels([(0, 0, 0.6), (0, 1, 0.1), (0, 2, 1)],
+                      vdims='alpha')}).options(alpha='alpha')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_alpha() for a in artist],
+                         [0.3, 1, 0.6])
+        plot.update((1,))
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_alpha() for a in artist],
+                         [0.6, 0.1, 1])
+
     def test_label_rotation_op(self):
         labels = Labels([(0, 0, 90), (0, 1, 180), (0, 2, 270)],
                         vdims='rotation').options(rotation='rotation')
@@ -107,3 +150,18 @@ class TestLabelsPlot(TestMPLPlot):
         artist = plot.handles['artist']
         self.assertEqual([a.get_rotation() for a in artist],
                          [90, 180, 270])
+
+    def test_label_rotation_op_update(self):
+        labels = HoloMap({
+            0: Labels([(0, 0, 45), (0, 1, 180), (0, 2, 90)],
+                      vdims='rotation'),
+            1: Labels([(0, 0, 30), (0, 1, 120), (0, 2, 60)],
+                      vdims='rotation')}).options(rotation='rotation')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_rotation() for a in artist],
+                         [45, 180, 90])
+        plot.update((1,))
+        artist = plot.handles['artist']
+        self.assertEqual([a.get_rotation() for a in artist],
+                         [30, 120, 60])

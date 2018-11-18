@@ -1,5 +1,6 @@
 import numpy as np
 
+from holoviews.core.spaces import HoloMap
 from holoviews.element import ErrorBars
 from holoviews.plotting.util import hex2rgb
 
@@ -21,6 +22,21 @@ class TestErrorBarPlot(TestMPLPlot):
         self.assertEqual(artist.get_edgecolors(),
                          np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
 
+    def test_errorbars_color_op_update(self):
+        errorbars = HoloMap({
+            0: ErrorBars([(0, 0, 0.1, 0.2, '#000000'), (0, 1, 0.2, 0.4, '#FF0000'),
+                          (0, 2, 0.6, 1.2, '#00FF00')], vdims=['y', 'perr', 'nerr', 'color']),
+            1: ErrorBars([(0, 0, 0.1, 0.2, '#FF0000'), (0, 1, 0.2, 0.4, '#00FF00'),
+                          (0, 2, 0.6, 1.2, '#0000FF')], vdims=['y', 'perr', 'nerr', 'color'])
+        }).options(color='color')
+        plot = mpl_renderer.get_plot(errorbars)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_edgecolors(),
+                         np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
+        plot.update((1,))
+        self.assertEqual(artist.get_edgecolors(),
+                         np.array([[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]))
+
     def test_errorbars_linear_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, 0), (0, 1, 0.2, 0.4, 1), (0, 2, 0.6, 1.2, 2)],
                               vdims=['y', 'perr', 'nerr', 'color']).options(color='color')
@@ -35,12 +51,12 @@ class TestErrorBarPlot(TestMPLPlot):
 
     def test_errorbars_line_color_op(self):
         errorbars = ErrorBars([(0, 0, 0.1, 0.2, '#000000'), (0, 1, 0.2, 0.4, '#FF0000'), (0, 2, 0.6, 1.2, '#00FF00')],
-                              vdims=['y', 'perr', 'nerr', 'color']).options(ecolor='color')
+                              vdims=['y', 'perr', 'nerr', 'color']).options(edgecolor='color')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        children = artist.get_children()
-        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
-            self.assertEqual(c.get_edgecolor(), tuple(c/255. for c in hex2rgb(w))+(1,))
+        self.assertEqual(artist.get_edgecolors(), np.array([
+            [0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]
+        ))
 
     def test_errorbars_alpha_op(self):
         errorbars = ErrorBars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
@@ -53,6 +69,17 @@ class TestErrorBarPlot(TestMPLPlot):
                               vdims=['y', 'perr', 'nerr', 'line_width']).options(linewidth='line_width')
         plot = mpl_renderer.get_plot(errorbars)
         artist = plot.handles['artist']
-        children = artist.get_children()
-        for c, w in zip(children, np.array([1, 4, 8])):
-            self.assertEqual(c.get_linewidth(), w)
+        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+
+    def test_errorbars_line_width_op_update(self):
+        errorbars = HoloMap({
+            0: ErrorBars([(0, 0, 0.1, 0.2, 1), (0, 1, 0.2, 0.4, 4),
+                          (0, 2, 0.6, 1.2, 8)], vdims=['y', 'perr', 'nerr', 'line_width']),
+            1: ErrorBars([(0, 0, 0.1, 0.2, 2), (0, 1, 0.2, 0.4, 6),
+                          (0, 2, 0.6, 1.2, 4)], vdims=['y', 'perr', 'nerr', 'line_width'])
+        }).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(errorbars)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+        plot.update((1,))
+        self.assertEqual(artist.get_linewidths(), [2, 6, 4])

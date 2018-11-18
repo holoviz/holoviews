@@ -112,7 +112,7 @@ class ErrorPlot(ColorbarPlot):
     plot option.
     """
 
-    style_opts = ['ecolor', 'elinewidth', 'capsize', 'capthick',
+    style_opts = ['edgecolor', 'elinewidth', 'capsize', 'capthick',
                   'barsabove', 'lolims', 'uplims', 'xlolims',
                   'errorevery', 'xuplims', 'alpha', 'linestyle',
                   'linewidth', 'markeredgecolor', 'markeredgewidth',
@@ -139,6 +139,8 @@ class ErrorPlot(ColorbarPlot):
         color = style.get('color')
         if isinstance(color, np.ndarray):
             style['ecolor'] = color
+        if 'edgecolor' in style:
+            style['ecolor'] = style.pop('edgecolor')
         c = style.get('c')
         if isinstance(c, np.ndarray):
             with abbreviated_exception():
@@ -186,15 +188,17 @@ class ErrorPlot(ColorbarPlot):
             new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
                           for i in range(samples)]
         verts.set_paths(new_arrays)
-        if 'ecolor' in style:
-            verts.set_edgecolors(style['ecolor'])
-
         if bottoms:
             bottoms.set_xdata(bxs)
             bottoms.set_ydata(bys)
         if tops:
             tops.set_xdata(txs)
             tops.set_ydata(tys)
+        if 'ecolor' in style:
+            verts.set_edgecolors(style['ecolor'])
+        if 'linewidth' in style:
+            verts.set_linewidths(style['linewidth'])
+
         return axis_kwargs
 
 
@@ -657,16 +661,16 @@ class PointPlot(ChartPlot, ColorbarPlot):
         paths = self.handles['artist']
         (xs, ys), style, _ = self.get_data(element, ranges, style)
         paths.set_offsets(np.column_stack([xs, ys]))
-        sdim = element.get_dimension(self.size_index)
-        if sdim:
+        if 's' in style:
             paths.set_sizes(style['s'])
-
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
+        if 'vmin' in style:
             paths.set_clim((style['vmin'], style['vmax']))
+        if 'c' in style:
             paths.set_array(style['c'])
-            if 'norm' in style:
-                paths.norm = style['norm']
+        if 'norm' in style:
+            paths.norm = style['norm']
+        if 'linewidth' in style:
+            paths.set_linewidths(style['linewidth'])
 
 
 
@@ -751,7 +755,7 @@ class VectorFieldPlot(ColorbarPlot):
             cdim = None
         if cdim:
             colors = element.dimension_values(self.color_index)
-            args += (colors,)
+            style['c'] = colors
             cdim = element.get_dimension(self.color_index)
             self._norm_kwargs(element, ranges, style, cdim)
             style.pop('color', None)
@@ -780,9 +784,15 @@ class VectorFieldPlot(ColorbarPlot):
         quiver.set_offsets(np.column_stack(args[:2]))
         quiver.U = args[2]
         quiver.angles = style['angles']
-        if self.color_index:
-            quiver.set_array(args[-1])
+        if 'color' in style:
+            quiver.set_facecolors(style['color'])
+            quiver.set_edgecolors(style['color'])
+        if 'array' in style:
+            quiver.set_array(style['array'])
+        if 'clim' in style:
             quiver.set_clim(style['clim'])
+        if 'linewidth' in style:
+            quiver.set_linewidths(style['linewidth'])
         return axis_kwargs
 
 
@@ -1122,11 +1132,16 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         (data,), kwargs, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data)
         artist.set_visible(style.get('visible', True))
+        if 'color' in kwargs:
+            artist.set_edgecolors(kwargs['color'])
         if 'array' in kwargs or 'c' in kwargs:
-            artist.set_clim((kwargs['vmin'], kwargs['vmax']))
             artist.set_array(kwargs.get('array', kwargs.get('c')))
-            if 'norm' in kwargs:
-                artist.norm = kwargs['norm']
+        if 'vmin' in kwargs:
+            artist.set_clim((kwargs['vmin'], kwargs['vmax']))
+        if 'norm' in kwargs:
+            artist.norm = kwargs['norm']
+        if 'linewidth' in kwargs:
+            artist.set_linewidths(kwargs['linewidth'])
         return axis_kwargs
 
 

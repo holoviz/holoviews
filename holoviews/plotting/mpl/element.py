@@ -568,7 +568,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             prefix = '' if group is None else group+'_'
             if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
                 new_style.pop(k)
-                self._norm_kwargs(element, ranges, new_style, v.dimension, val)
+                self._norm_kwargs(element, ranges, new_style, v.dimension, val, prefix)
                 if val.dtype.kind in 'OSUM':
                     val = categorize_colors(val)
                 k = prefix+'c'
