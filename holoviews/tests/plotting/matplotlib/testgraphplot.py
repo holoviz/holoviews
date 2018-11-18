@@ -344,6 +344,112 @@ class TestMplTriMeshPlot(TestMPLPlot):
                            [0.215686, 0.494118, 0.721569, 1.]])
         self.assertEqual(edges.get_facecolors(), colors)
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_trimesh_op_node_color(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 'red'), (0, 0, 1, 'green'), (0, 1, 2, 'blue'), (1, 0, 3, 'black')]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_facecolors(),
+                         np.array([[1, 0, 0, 1], [0, 0.501961, 0, 1], [0, 0, 1, 1], [0, 0, 0, 1]]))
+
+    def test_trimesh_op_node_color_linear(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_array(), np.array([2, 1, 3, 4]))
+        self.assertEqual(artist.get_clim(), (1, 4))
+
+    def test_trimesh_op_node_color_categorical(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 'B'), (0, 0, 1, 'C'), (0, 1, 2, 'A'), (1, 0, 3, 'B')]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_array(), np.array([1, 2, 0, 1]))
+        self.assertEqual(artist.get_clim(), (0, 2))
+
+    def test_trimesh_op_node_size(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 3), (0, 0, 1, 2), (0, 1, 2, 8), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='size'))).options(node_size='size')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_sizes(), np.array([9, 4, 64, 16]))
+
+    def test_trimesh_op_node_alpha(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(graph)
+
+    def test_trimesh_op_node_line_width(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='line_width'))).options(node_linewidth='line_width')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['nodes']
+        self.assertEqual(artist.get_linewidths(), [0.2, 0.6, 1, 0.3])
+
+    def test_trimesh_op_edge_color_linear_mean_node(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(edge_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['edges']
+        self.assertEqual(artist.get_array(), np.array([2, 8/3.]))
+        self.assertEqual(artist.get_clim(), (1, 4))
+
+    def test_trimesh_op_edge_color(self):
+        edges = [(0, 1, 2, 'red'), (1, 2, 3, 'blue')]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['edges']
+        self.assertEqual(artist.get_edgecolors(), np.array([
+            [1, 0, 0, 1], [0, 0, 1, 1]]))
+
+    def test_trimesh_op_edge_color_linear(self):
+        edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['edges']
+        self.assertEqual(artist.get_array(), np.array([2.4, 3.6]))
+        self.assertEqual(artist.get_clim(), (2.4, 3.6))
+
+    def test_trimesh_op_edge_color_categorical(self):
+        edges = [(0, 1, 2, 'A'), (1, 2, 3, 'B')]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['edges']
+        self.assertEqual(artist.get_array(), np.array([0, 1]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_trimesh_op_edge_alpha(self):
+        edges = [(0, 1, 2, 0.7), (1, 2, 3, 0.3)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='alpha').options(edge_alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(graph)
+
+    def test_trimesh_op_edge_line_width(self):
+        edges = [(0, 1, 2, 7), (1, 2, 3, 3)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='line_width').options(edge_linewidth='line_width')
+        plot = mpl_renderer.get_plot(trimesh)
+        artist = plot.handles['edges']
+        self.assertEqual(artist.get_linewidths(), [7, 3])
+
+
 
 class TestMplChordPlot(TestMPLPlot):
 

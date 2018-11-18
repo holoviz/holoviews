@@ -301,7 +301,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 glyph = getattr(renderer.edge_renderer, glyph_type+'glyph', None)
                 if glyph is None:
                     continue
-                props = self._process_properties(self.edge_glyph, properties, mappings)
+                group_properties = dict(properties)
+                props = self._process_properties(self.edge_glyph, group_properties, mappings)
                 filtered = self._filter_properties(props, glyph_type, allowed_properties)
                 new_glyph = glyph_model(**dict(filtered, **edge_mapping))
                 setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
@@ -408,15 +409,25 @@ class TriMeshPlot(GraphPlot):
     # Declares that three columns in TriMesh refer to edges
     _node_columns = [0, 1, 2]
 
-    def get_data(self, element, ranges, style):
-        # Ensure the edgepaths for the triangles are generated before plotting
-        simplex_dim = element.get_dimension(self.edge_color_index)
-        vertex_dim = element.nodes.get_dimension(self.edge_color_index)
-        if not isinstance(self.edge_color_index, int) and vertex_dim and not simplex_dim:
+    def _process_vertices(self, element):
+        style = self.style[self.cyclic_index]
+        edge_color = style.get('edge_color')
+        if edge_color not in element.nodes:
+            edge_color = self.edge_color_index
+        simplex_dim = element.get_dimension(edge_color)
+        vertex_dim = element.nodes.get_dimension(edge_color)
+        if vertex_dim and not simplex_dim:
             simplices = element.array([0, 1, 2])
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
         element.edgepaths
-        return super(TriMeshPlot, self).get_data(element, ranges, style)
+        return element
 
+    def _init_glyphs(self, plot, element, ranges, source):
+        element = self._process_vertices(element)
+        super(TriMeshPlot, self)._init_glyphs(plot, element, ranges, source)
+
+    def _update_glyphs(self, element, ranges):
+        element = self._process_vertices(element)
+        super(TriMeshPlot, self)._update_glyphs(element, ranges)

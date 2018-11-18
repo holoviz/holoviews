@@ -138,7 +138,7 @@ class TestBarPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
         self.assertEqual(glyph.fill_color, {'field': 'color'})
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(glyph.line_color, 'black')
 
     def test_bars_linear_color_op(self):
         bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
@@ -152,7 +152,7 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
 
     def test_bars_categorical_color_op(self):
         bars = Bars([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
@@ -165,7 +165,7 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
         self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
 
     def test_bars_line_color_op(self):
         bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
