@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, unique_array, search_indices, max_range, is_number
+from ...core.util import basestring, unique_array, search_indices, max_range, is_number, isscalar
 from ..util import process_cmap
 from .element import ColorbarPlot
 
@@ -43,7 +43,7 @@ class GraphPlot(ColorbarPlot):
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
             if cs.dtype.kind == 'f':
-                style['c'] = cs
+                style['node_c'] = cs
             else:
                 factors = unique_array(cs)
                 cmap = color if isinstance(color, Cycle) else cmap
@@ -55,14 +55,19 @@ class GraphPlot(ColorbarPlot):
                 cs = search_indices(cs, factors)
                 style['node_facecolors'] = [colors[v%len(colors)] for v in cs]
                 style.pop('node_color', None)
-            if 'c' in style:
+            if 'node_c' in style:
                 self._norm_kwargs(element.nodes, ranges, style, cdim)
         elif color and 'node_color' in style:
-            style['c'] = style.pop('node_color')
+            style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
+        if is_number(style.get('node_size')):
+            style['node_s'] = style.pop('node_size')**2
 
         edge_cdim = element.get_dimension(self.edge_color_index)
         if not edge_cdim:
+            if not isscalar(style.get('edge_color')):
+                opt = 'edge_facecolors' if self.filled else 'edge_edgecolors'
+                style[opt] = style.pop('edge_color')
             return style
 
         elstyle = self.lookup_options(element, 'style')
@@ -76,7 +81,7 @@ class GraphPlot(ColorbarPlot):
         else:
             factors = unique_array(cvals)
         if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
-            style['edge_array'] = cvals
+            style['edge_c'] = cvals
         else:
             cvals = search_indices(cvals, factors)
             factors = list(factors)
@@ -89,12 +94,10 @@ class GraphPlot(ColorbarPlot):
                 colors = process_cmap(cmap, len(factors))
             style['edge_colors'] = [colors[v%len(colors)] for v in cvals]
             style.pop('edge_color', None)
-        if 'edge_array' in style:
+        if 'edge_c' in style:
             self._norm_kwargs(element, ranges, style, edge_cdim, prefix='edge_')
         else:
             style.pop('edge_cmap', None)
-        if 'edge_vmin' in style:
-            style['edge_clim'] = (style.pop('edge_vmin'), style.pop('edge_vmax'))
         return style
 
 
@@ -107,7 +110,12 @@ class GraphPlot(ColorbarPlot):
         dims = element.nodes.dimensions()
         self._compute_styles(element, ranges, style)
 
-        paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
+        if 'edge_vmin' in style:
+            style['edge_clim'] = (style.pop('edge_vmin'), style.pop('edge_vmax'))
+        if 'edge_c' in style:
+            style['edge_array'] = style.pop('edge_c')
+
+        paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims[:2])
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
@@ -134,7 +142,10 @@ class GraphPlot(ColorbarPlot):
                 edge_opts['facecolors'] = edge_opts.pop('colors')
         else:
             coll = LineCollection
+        edgecolors = edge_opts.pop('edgecolors', None)
         edges = coll(paths, **edge_opts)
+        if edgecolors is not None:
+            edges.set_edgecolors(edgecolors)
         ax.add_collection(edges)
 
         # Draw nodes
@@ -143,8 +154,6 @@ class GraphPlot(ColorbarPlot):
         node_opts = {k[5:] if 'node_' in k else k: v
                      for k, v in plot_kwargs.items()
                      if not any(k.startswith(p) for p in groups)}
-        if is_number(node_opts.get('size')):
-            node_opts['s'] = node_opts.pop('size')**2
         nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
@@ -154,12 +163,24 @@ class GraphPlot(ColorbarPlot):
         nodes = self.handles['nodes']
         xs, ys = data['nodes']
         nodes.set_offsets(np.column_stack([xs, ys]))
-        cdim = element.nodes.get_dimension(self.color_index)
-        if cdim and 'c' in style:
-            nodes.set_clim((style['vmin'], style['vmax']))
-            nodes.set_array(style['c'])
-            if 'norm' in style:
-                nodes.norm = style['norm']
+        if 'node_facecolors' in style:
+            nodes.set_facecolors(style['node_facecolors'])
+        if 'node_edgecolors' in style:
+            nodes.set_edgecolors(style['node_edgecolors'])
+        if 'node_c' in style:
+            nodes.set_array(style['node_c'])
+        if 'node_vmin' in style:
+            nodes.set_clim((style['node_vmin'], style['node_vmax']))
+        if 'node_norm' in style:
+            nodes.norm = style['norm']
+        if 'node_linewidth' in style:
+            nodes.set_linewidths(style['node_linewidth'])
+        if 'node_s' in style:
+            sizes = style['node_s']
+            if isscalar(sizes):
+                nodes.set_sizes([sizes])
+            else:
+                nodes.set_sizes(sizes)
 
 
     def _update_edges(self, element, data, style):
@@ -167,18 +188,23 @@ class GraphPlot(ColorbarPlot):
         paths = data['edges']
         edges.set_paths(paths)
         edges.set_visible(style.get('visible', True))
-        cdim = element.get_dimension(self.edge_color_index)
-        if cdim:
-            if 'edge_array' in style:
-                edges.set_clim(style['edge_clim'])
-                edges.set_array(style['edge_array'])
-                if 'norm' in style:
-                    edges.norm = style['edge_norm']
-            elif 'edge_colors' in style:
-                if self.filled:
-                    edges.set_facecolors(style['edge_colors'])
-                else:
-                    edges.set_edgecolors(style['edge_colors'])
+        if 'edge_facecolors' in style:
+            edges.set_facecolors(style['edge_facecolors'])
+        if 'edge_edgecolors' in style:
+            edges.set_edgecolors(style['edge_edgecolors'])
+        if 'edge_array' in style:
+            edges.set_array(style['edge_array'])
+        elif 'edge_colors' in style:
+            if self.filled:
+                edges.set_facecolors(style['edge_colors'])
+            else:
+                edges.set_edgecolors(style['edge_colors'])
+        if 'edge_clim' in style:
+            edges.set_clim(style['edge_clim'])
+        if 'edge_norm' in style:
+            edges.norm = style['edge_norm']
+        if 'edge_linewidth' in style:
+            edges.set_linewidths(style['edge_linewidth'])
 
 
     def update_handles(self, key, axis, element, ranges, style):
