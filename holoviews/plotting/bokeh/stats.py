@@ -104,7 +104,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         else:
             element = element.clone([(element.aggregate(function=np.mean),)])
         with abbreviated_exception():
-            new_style = self._apply_ops(element, source, ranges, style, group)
+            new_style = self._apply_transforms(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label

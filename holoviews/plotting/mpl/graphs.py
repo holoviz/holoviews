@@ -103,7 +103,7 @@ class GraphPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
 
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))

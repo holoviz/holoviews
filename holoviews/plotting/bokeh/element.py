@@ -658,7 +658,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _apply_ops(self, element, source, ranges, style, group=None):
+    def _apply_transforms(self, element, source, ranges, style, group=None):
         new_style = dict(style)
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
@@ -754,7 +754,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         with abbreviated_exception():
-            new_style = self._apply_ops(element, source, ranges, style, group)
+            new_style = self._apply_transforms(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend:
             if self.overlay_dims:

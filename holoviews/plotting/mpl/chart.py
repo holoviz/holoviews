@@ -74,7 +74,7 @@ class CurvePlot(ChartPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
 
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
@@ -135,7 +135,7 @@ class ErrorPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
         color = style.get('color')
         if isinstance(color, np.ndarray):
             style['ecolor'] = color
@@ -218,7 +218,7 @@ class AreaPlot(ChartPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
 
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
@@ -346,7 +346,7 @@ class HistogramPlot(ColorbarPlot):
             self.plotfn = self.handles['axis'].bar
 
         with abbreviated_exception():
-            style = self._apply_ops(hist, ranges, style)
+            style = self._apply_transforms(hist, ranges, style)
             if 'vmin' in style:
                 raise ValueError('Mapping a continuous dimension to a '
                                  'color on a HistogramPlot is not '
@@ -610,7 +610,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         xs, ys = (element.dimension_values(i) for i in range(2))
         self._compute_styles(element, ranges, style)
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
 
 
@@ -766,7 +766,7 @@ class VectorFieldPlot(ColorbarPlot):
             style['headaxislength'] = 0
 
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
         style.update(dict(scale=input_scale, angles=angles,
                           units='x', scale_units='x'))
 
@@ -992,7 +992,7 @@ class BarPlot(LegendPlot):
                     style = dict(style_opts, label='' if label in labels else label,
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
                     with abbreviated_exception():
-                        style = self._apply_ops(element, {}, style)
+                        style = self._apply_transforms(element, {}, style)
                     bar = axis.bar([xpos], [val], width=width, bottom=prev,
                                    **style)
 
@@ -1124,7 +1124,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             self._norm_kwargs(element, ranges, style, cdim)
 
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
         return (clean_spikes,), style, {'dimensions': dims}
 
 

@@ -33,7 +33,7 @@ class PathPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
 
         cdim = element.get_dimension(self.color_index)
         if cdim: cidx = element.get_dimension_index(cdim)
@@ -111,7 +111,7 @@ class ContourPlot(PathPlot):
                 paths = [p[:, ::-1] for p in paths]
 
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
         if 'c' in style:
             style['array'] = style.pop('c')
         if isinstance(style.get('color'), np.ndarray):

@@ -211,7 +211,7 @@ class ViolinPlot(BoxPlot):
             element = element.aggregate(function=np.mean)
         else:
             element = element.clone([(element.aggregate(function=np.mean),)])
-        new_style = self._apply_ops(element, ranges, style)
+        new_style = self._apply_transforms(element, ranges, style)
         style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes

@@ -110,7 +110,7 @@ class LabelsPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
+            style = self._apply_transforms(element, ranges, style)
 
         xs, ys = (element.dimension_values(i) for i in range(2))
         tdim = element.get_dimension(2)

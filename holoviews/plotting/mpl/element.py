@@ -517,7 +517,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         return axis_kwargs
 
 
-    def _apply_ops(self, element, ranges, style):
+    def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
             if isinstance(v, util.basestring):
