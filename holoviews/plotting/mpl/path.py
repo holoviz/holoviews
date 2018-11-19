@@ -70,6 +70,12 @@ class PathPlot(ColorbarPlot):
         if 'norm' in style:
             artist.set_norm(style['norm'])
         artist.set_visible(style.get('visible', True))
+        if 'colors' in style:
+            artist.set_edgecolors(style['colors'])
+        if 'facecolors' in style:
+            artist.set_facecolors(style['facecolors'])
+        if 'linewidth' in style:
+            artist.set_linewidths(style['linewidth'])
         return axis_kwargs
 
 
@@ -85,26 +91,36 @@ class ContourPlot(PathPlot):
             cdim = element.get_dimension(cidx)
             self._draw_colorbar(cdim)
 
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        line_segments = LineCollection(*plot_args, **plot_kwargs)
+        ax.add_collection(line_segments)
+        return {'artist': line_segments}
+
     def get_data(self, element, ranges, style):
-        with abbreviated_exception():
-            style = self._apply_ops(element, ranges, style)
-
-        if None not in [element.level, self.color_index]:
-            cdim = element.vdims[0]
-        else:
-            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-
         if isinstance(element, Polygons):
+            color_prop = 'facecolors'
             subpaths = polygons_to_path_patches(element)
             paths = [path for subpath in subpaths for path in subpath]
             if self.invert_axes:
                 for p in paths:
                     p._path.vertices = p._path.vertices[:, ::-1]
         else:
+            color_prop = 'colors'
             paths = element.split(datatype='array', dimensions=element.kdims)
             if self.invert_axes:
                 paths = [p[:, ::-1] for p in paths]
+
+        with abbreviated_exception():
+            style = self._apply_ops(element, ranges, style)
+        if 'c' in style:
+            style['array'] = style.pop('c')
+        if isinstance(style.get('color'), np.ndarray):
+            style[color_prop] = style.pop('color')
+        if None not in [element.level, self.color_index]:
+            cdim = element.vdims[0]
+        else:
+            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
+            cdim = element.get_dimension(cidx)
 
         if cdim is None:
             return (paths,), style, {}
@@ -140,7 +156,8 @@ class PolygonPlot(ContourPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
-                  'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
+                  'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle',
+                  'color']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         polys = PatchCollection(*plot_args, **plot_kwargs)

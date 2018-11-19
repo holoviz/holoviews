@@ -9,6 +9,12 @@ from holoviews.plotting.bokeh.util import bokeh_version
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
+try:
+    from bokeh.models import LinearColorMapper, CategoricalColorMapper
+except:
+    pass
+
+
 
 class TestPathPlot(TestBokehPlot):
 
@@ -194,6 +200,73 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
                                                np.array([4.5, 5, 3.5])], [np.array([7, 5, 2])]]])
 
+    def test_polygons_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(cds.data['color'], np.array(['green', 'red']))
+
+    def test_polygons_linear_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(cds.data['color'], np.array([7, 3]))
+        self.assertIsInstance(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 3)
+        self.assertEqual(cmapper.high, 7)
+
+    def test_polygons_categorical_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(cds.data['color'], np.array(['b', 'a']))
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['a', 'b'])
+
+    def test_polygons_alpha_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
+        ], vdims='alpha').options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+        self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
+
+    def test_polygons_line_width_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
+        ], vdims='line_width').options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(cds.data['line_width'], np.array([7, 3]))
+
+
 
 class TestContoursPlot(TestBokehPlot):
 
@@ -204,3 +277,65 @@ class TestContoursPlot(TestBokehPlot):
         self.assertEqual(len(source.data['xs']), 0)
         self.assertEqual(len(source.data['ys']), 0)
         self.assertEqual(len(source.data['Intensity']), 0)
+
+    def test_contours_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(cds.data['color'], np.array(['green', 'red']))
+
+    def test_contours_linear_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(cds.data['color'], np.array([7, 3]))
+        self.assertIsInstance(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 3)
+        self.assertEqual(cmapper.high, 7)
+
+    def test_contours_categorical_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
+        ], vdims='color').options(color='color')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(cds.data['color'], np.array(['b', 'a']))
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['a', 'b'])
+
+    def test_contours_alpha_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
+        ], vdims='alpha').options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_alpha, {'field': 'alpha'})
+        self.assertEqual(cds.data['alpha'], np.array([0.7, 0.3]))
+
+    def test_contours_line_width_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
+        ], vdims='line_width').options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+        self.assertEqual(cds.data['line_width'], np.array([7, 3]))

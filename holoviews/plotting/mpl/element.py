@@ -564,7 +564,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             groups = [sg for sg in style_groups if k.startswith(sg)]
             group = groups[0] if groups else None
             prefix = '' if group is None else group+'_'
-            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
+            if (k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray)
+                and any(not is_color(c) for c in val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
                 if val.dtype.kind in 'OSUM':
@@ -739,7 +740,12 @@ class ColorbarPlot(ElementPlot):
             if isinstance(vdim, dim):
                 values = vdim.eval(element)
             else:
-                values = np.asarray(element.dimension_values(vdim))
+                expanded = not (
+                    element.interface.multi and
+                    (element.level is not None or
+                     element.interface.isscalar(element, vdim.name))
+                )
+                values = np.asarray(element.dimension_values(vdim, expanded=expanded))
         if clim is None:
             if not len(values):
                 clim = (0, 0)

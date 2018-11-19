@@ -7,8 +7,10 @@ import numpy as np
 
 from ...core import util
 from ...element import Polygons
+from ...util.ops import dim
 from .element import ColorbarPlot, LegendPlot
-from .styles import expand_batched_style, line_properties, fill_properties, mpl_to_bokeh
+from .styles import (expand_batched_style, line_properties, fill_properties,
+                     mpl_to_bokeh, validate)
 from .util import bokeh_version, multi_polygons_data
 
 
@@ -53,9 +55,9 @@ class PathPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring):
+        if isinstance(color, util.basestring) and validate('color', color) == False:
             cdim = element.get_dimension(color)
-        if cdim is None:
+        elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
         inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
@@ -182,7 +184,10 @@ class ContourPlot(LegendPlot, PathPlot):
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-        if None not in [element.level, self.color_index] and element.vdims:
+        color = style.get('color')
+        if (isinstance(color, dim) and color.applies(element)) or color in element:
+            cdim = None
+        elif None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index

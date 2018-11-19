@@ -1,6 +1,7 @@
 import numpy as np
 
 from holoviews.core import NdOverlay
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Polygons, Contours
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -56,6 +57,95 @@ class TestPolygonPlot(TestMPLPlot):
         self.assertEqual(path2.vertices, np.array([(6, 7), (7, 5), (3, 2)]))
         self.assertEqual(path2.codes, np.array([1, 2, 2]))
 
+    def test_polygons_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        colors = np.array([[0. , 0.501961, 0. , 1. ],
+                           [1. , 0. , 0. , 1. ]])
+        self.assertEqual(artist.get_facecolors(), colors)
+
+    def test_polygons_color_op_update(self):
+        polygons = HoloMap({
+            0: Polygons([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+            ], vdims='color'),
+            1: Polygons([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
+            ], vdims='color'),
+        }).options(color='color')
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        colors = np.array([[0, 0.501961, 0, 1],
+                           [1, 0, 0, 1]])
+        self.assertEqual(artist.get_facecolors(), colors)
+        plot.update((1,))
+        colors = np.array([[0, 0, 1, 1],
+                           [0, 0.501961, 0, 1]])
+        self.assertEqual(artist.get_facecolors(), colors)
+
+    def test_polygons_linear_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(artist.get_clim(), (3, 7))
+
+    def test_polygons_linear_color_op_update(self):
+        polygons = HoloMap({
+            0: Polygons([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+            ], vdims='color'),
+            1: Polygons([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
+            ], vdims='color'),
+        }).options(color='color', framewise=True)
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(artist.get_clim(), (3, 7))
+        plot.update((1,))
+        self.assertEqual(artist.get_array(), np.array([2, 5]))
+        self.assertEqual(artist.get_clim(), (2, 5))
+
+    def test_polygons_categorical_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([1, 0]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_polygons_alpha_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
+        ], vdims='alpha').options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(polygons)
+
+    def test_polygons_line_width_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
+        ], vdims='line_width').options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(polygons)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [7, 3])
+
+
 
 class TestContoursPlot(TestMPLPlot):
 
@@ -66,3 +156,109 @@ class TestContoursPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_array(), np.array([1, 0, 1]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_contours_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        colors = np.array([[0. , 0.501961, 0. , 1. ],
+                           [1. , 0. , 0. , 1. ]])
+        self.assertEqual(artist.get_edgecolors(), colors)
+
+    def test_contours_color_op_update(self):
+        contours = HoloMap({
+            0: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+            ], vdims='color'),
+            1: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'blue'},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'green'}
+            ], vdims='color'),
+        }).options(color='color')
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        colors = np.array([[0, 0.501961, 0, 1],
+                           [1, 0, 0, 1]])
+        self.assertEqual(artist.get_edgecolors(), colors)
+        plot.update((1,))
+        colors = np.array([[0, 0, 1, 1],
+                           [0, 0.501961, 0, 1]])
+        self.assertEqual(artist.get_edgecolors(), colors)
+
+    def test_contours_linear_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(artist.get_clim(), (3, 7))
+
+    def test_contours_linear_color_op_update(self):
+        contours = HoloMap({
+            0: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+            ], vdims='color'),
+            1: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 2},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 5}
+            ], vdims='color'),
+        }).options(color='color', framewise=True)
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(artist.get_clim(), (3, 7))
+        plot.update((1,))
+        self.assertEqual(artist.get_array(), np.array([2, 5]))
+        self.assertEqual(artist.get_clim(), (2, 5))
+
+    def test_contours_categorical_color_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'b'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'a'}
+        ], vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([1, 0]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_contours_alpha_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'alpha': 0.7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'alpha': 0.3}
+        ], vdims='alpha').options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(contours)
+
+    def test_contours_line_width_op(self):
+        contours = Contours([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
+        ], vdims='line_width').options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [7, 3])
+
+    def test_contours_line_width_op_update(self):
+        contours = HoloMap({
+            0: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 7},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 3}
+            ], vdims='line_width'),
+            1: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'line_width': 2},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'line_width': 5}
+            ], vdims='line_width'),
+        }).options(linewidth='line_width', framewise=True)
+        plot = mpl_renderer.get_plot(contours)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [7, 3])
+        plot.update((1,))
+        self.assertEqual(artist.get_linewidths(), [2, 5])
