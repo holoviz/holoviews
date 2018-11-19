@@ -457,6 +457,8 @@ class DimensionedPlot(Plot):
                     values = v.eval(el)
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
+                    elif util.isscalar(values):
+                        drange = values, values
                     elif len(values) == 0:
                         drange = np.NaN, np.NaN
                     else:
