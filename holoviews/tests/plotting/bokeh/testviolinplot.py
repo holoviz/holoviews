@@ -7,6 +7,11 @@ from holoviews.operation.stats import univariate_kde
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
+try:
+    from bokeh.models import LinearColorMapper, CategoricalColorMapper
+except:
+    pass
+
 
 class TestBokehViolinPlot(TestBokehPlot):
 
@@ -77,3 +82,101 @@ class TestBokehViolinPlot(TestBokehPlot):
         patch_source = plot.handles['patches_1_source']
         self.assertEqual(patch_source.data['xs'], [[]])
         self.assertEqual(patch_source.data['ys'], [np.array([])])
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_violin_linear_color_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5), 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_color='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['patches_1_source']
+        cmapper = plot.handles['violin_color_color_mapper']
+        glyph = plot.handles['patches_1_glyph']
+        self.assertEqual(source.data['violin_color'], np.arange(5))
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 4)
+        self.assertEqual(glyph.fill_color, {'field': 'violin_color', 'transform': cmapper})
+
+    def test_violin_categorical_color_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(['A', 'B', 'C', 'D', 'E'], 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_color='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['patches_1_source']
+        glyph = plot.handles['patches_1_glyph']
+        cmapper = plot.handles['violin_color_color_mapper']
+        self.assertEqual(source.data['violin_color'], b[::5])
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
+        self.assertEqual(glyph.fill_color, {'field': 'violin_color', 'transform': cmapper})
+
+    def test_violin_alpha_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5)/10., 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_alpha='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['patches_1_source']
+        glyph = plot.handles['patches_1_glyph']
+        self.assertEqual(source.data['violin_alpha'], np.arange(5)/10.)
+        self.assertEqual(glyph.fill_alpha, {'field': 'violin_alpha'})
+
+    def test_violin_line_width_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5), 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_line_width='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['patches_1_source']
+        glyph = plot.handles['patches_1_glyph']
+        self.assertEqual(source.data['violin_line_width'], np.arange(5))
+        self.assertEqual(glyph.line_width, {'field': 'violin_line_width'})
+
+    def test_violin_box_linear_color_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5), 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_color='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['vbar_1_source']
+        cmapper = plot.handles['box_color_color_mapper']
+        glyph = plot.handles['vbar_1_glyph']
+        self.assertEqual(source.data['box_color'], np.arange(5))
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 4)
+        self.assertEqual(glyph.fill_color, {'field': 'box_color', 'transform': cmapper})
+
+    def test_violin_box_categorical_color_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(['A', 'B', 'C', 'D', 'E'], 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_color='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['vbar_1_source']
+        glyph = plot.handles['vbar_1_glyph']
+        cmapper = plot.handles['box_color_color_mapper']
+        self.assertEqual(source.data['box_color'], b[::5])
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C', 'D', 'E'])
+        self.assertEqual(glyph.fill_color, {'field': 'box_color', 'transform': cmapper})
+
+    def test_violin_box_alpha_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5)/10., 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_alpha='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['vbar_1_source']
+        glyph = plot.handles['vbar_1_glyph']
+        self.assertEqual(source.data['box_alpha'], np.arange(5)/10.)
+        self.assertEqual(glyph.fill_alpha, {'field': 'box_alpha'})
+
+    def test_violin_box_line_width_op(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5), 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(box_line_width='b')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['vbar_1_source']
+        glyph = plot.handles['vbar_1_glyph']
+        self.assertEqual(source.data['box_line_width'], np.arange(5))
+        self.assertEqual(glyph.line_width, {'field': 'box_line_width'})
