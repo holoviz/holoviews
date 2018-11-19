@@ -163,9 +163,9 @@ class dim(object):
     def __add__(self, other):       return dim(self, operator.add, other)
     def __div__(self, other):       return dim(self, operator.div, other)
     def __floordiv__(self, other):  return dim(self, operator.floordiv, other)
-    def __pow__(self, other):       return dim(self, operator.pow, other)
     def __mod__(self, other):       return dim(self, operator.mod, other)
     def __mul__(self, other):       return dim(self, operator.mul, other)
+    def __pow__(self, other):       return dim(self, operator.pow, other)
     def __sub__(self, other):       return dim(self, operator.sub, other)
     def __truediv__(self, other):   return dim(self, operator.truediv, other)
 
@@ -184,21 +184,31 @@ class dim(object):
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return dim(self, ufunc, **kwargs)
 
-    def max(self, **kwargs):  return dim(self, np.max, **kwargs)
-    def mean(self, **kwargs): return dim(self, np.mean, **kwargs)
-    def min(self, **kwargs):  return dim(self, np.min, **kwargs)
-    def sum(self, **kwargs):  return dim(self, np.sum, **kwargs)
-    def std(self, **kwargs):  return dim(self, np.std, **kwargs)
-    def var(self, **kwargs):  return dim(self, np.var, **kwargs)
-    def astype(self, dtype):  return dim(self, np.asarray, dtype=dtype)
+    def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
+    def cumsum(self, **kwargs):  return dim(self, np.cumsum, **kwargs)
+    def max(self, **kwargs):     return dim(self, np.max, **kwargs)
+    def mean(self, **kwargs):    return dim(self, np.mean, **kwargs)
+    def min(self, **kwargs):     return dim(self, np.min, **kwargs)
+    def round(self, decimals=0): return dim(self, np.round, decimals=decimals)
+    def sum(self, **kwargs):     return dim(self, np.sum, **kwargs)
+    def std(self, **kwargs):     return dim(self, np.std, **kwargs)
+    def var(self, **kwargs):     return dim(self, np.var, **kwargs)
 
     ## Custom functions
 
-    def norm(self):
+    def bin(self, bins, labels=None):
         """
-        min-max normalizes to scale data into 0-1 range.
+        Replaces discrete values in input array into a fixed set of
+        categories defined either as a list or dictionary.
+
+        Arguments
+        ---------
+        categories: list or dict
+           Categories to assign to input values
+        empty: any (optional)
+           Value assigned to input values no category could be assigned to
         """
-        return dim(self, norm_fn)
+        return dim(self, bin_fn, bins, labels=labels)
 
     def cat(self, categories, empty=None):
         """
@@ -215,20 +225,14 @@ class dim(object):
         """
         return dim(self, cat_fn, categories=categories, empty=empty)
 
-    def bin(self, bins, labels=None):
+    def norm(self):
         """
-        Replaces discrete values in input array into a fixed set of
-        categories defined either as a list or dictionary.
-
-        Arguments
-        ---------
-        categories: list or dict
-           Categories to assign to input values
-        empty: any (optional)
-           Value assigned to input values no category could be assigned to
+        min-max normalizes to scale data into 0-1 range.
         """
-        return dim(self, bin_fn, bins, labels=labels)
+        return dim(self, norm_fn)
 
+    # Other methods
+    
     def applies(self, dataset):
         """
         Determines whether the dim transform can be applied to the
