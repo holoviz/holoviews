@@ -106,7 +106,7 @@ class SankeyPlot(GraphPlot):
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = {k[5:] if 'node_' in k else k: v
                      for k, v in plot_kwargs.items()
-                     if not (any(k.startswith(p) for p in groups) or 's' == k)}
+                     if not (any(k.startswith(p) for p in groups) or k in ('s', 'node_s'))}
         rects = [Rectangle(**rect) for rect in plot_args['rects']]
         artists['rects'] = ax.add_collection(PatchCollection(rects, **node_opts))
         artists['labels'] = self._update_labels(ax, plot_args, plot_kwargs)
