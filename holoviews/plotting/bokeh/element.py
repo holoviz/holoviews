@@ -1261,7 +1261,7 @@ class ColorbarPlot(ElementPlot):
             return None
 
         # Attempt to find matching colormapper on the adjoined plot
-        dim_name = repr(eldim)[1:-1] if isinstance(eldim, dim) else dim.name
+        dim_name = repr(eldim)[1:-1] if isinstance(eldim, dim) else eldim.name
         if self.adjoined:
             cmapper_name = dim_name+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
