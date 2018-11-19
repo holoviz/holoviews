@@ -740,14 +740,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in source.data:
                     continue
+                supports_fill = any(o.startswith(prefix+'fill') and getattr(self, 'filled', True)
+                                    for o in self.style_opts)
                 fill_style = new_style.get(prefix+'fill_'+s)
-                if fill_style and validate(s, fill_style):
+                if ((fill_style is not None and validate(s, fill_style))
+                    or (fill_style is None and supports_fill)):
                     new_style[prefix+'fill_'+s] = val
 
                 # If glyph has fill and line style is set skip setting line color
                 line_style = new_style.get(prefix+'line_'+s)
-                if any(o.startswith(prefix+'fill') and getattr(self, 'filled', True)
-                       for o in self.style_opts) and line_style is not None:
+                if supports_fill and line_style is not None:
                     continue
                 if line_style and validate(s, line_style):
                     new_style[prefix+'line_'+s] = val
