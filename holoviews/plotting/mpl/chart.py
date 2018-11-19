@@ -18,7 +18,7 @@ from ...core.util import (
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
-from ...util.ops import dim
+from ...util.transform import dim
 from ..plot import PlotSelector
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot

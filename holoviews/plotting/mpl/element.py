@@ -12,11 +12,11 @@ from matplotlib import ticker
 from matplotlib.dates import date2num
 
 from ...core import util
-from ...core import (OrderedDict, NdOverlay, DynamicMap,
+from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph
-from ...util.ops import dim
+from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
@@ -741,6 +741,7 @@ class ColorbarPlot(ElementPlot):
                 values = vdim.eval(element)
             else:
                 expanded = not (
+                    isinstance(element, Dataset) and
                     element.interface.multi and
                     (element.level is not None or
                      element.interface.isscalar(element, vdim.name))

@@ -29,7 +29,7 @@ from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField
 from ...streams import Buffer
-from ...util.ops import dim
+from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
