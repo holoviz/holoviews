@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import math
+import warnings
 from types import FunctionType
 
 import param
@@ -565,7 +566,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             prefix = '' if group is None else group+'_'
             if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray) and all(not is_color(c) for c in val):
                 new_style.pop(k)
-                self._norm_kwargs(element, ranges, new_style, v.dimension, val, prefix)
+                self._norm_kwargs(element, ranges, new_style, v, val, prefix)
                 if val.dtype.kind in 'OSUM':
                     val = categorize_colors(val)
                 k = prefix+'c'
@@ -733,15 +734,31 @@ class ColorbarPlot(ElementPlot):
         to be passed to matplotlib plot function.
         """
         clim = opts.pop(prefix+'clims', None)
+        dim_name = repr(vdim)[1:-1] if isinstance(vdim, dim) else vdim.name
         if values is None:
-            values = np.asarray(element.dimension_values(vdim))
+            if isinstance(vdim, dim):
+                values = vdim.eval(element)
+            else:
+                values = np.asarray(element.dimension_values(vdim))
         if clim is None:
             if not len(values):
                 clim = (0, 0)
                 categorical = False
             elif values.dtype.kind in 'uif':
-                if vdim.name in ranges:
-                    clim = ranges[vdim.name]['combined']
+                if dim_name in ranges:
+                    clim = ranges[dim_name]['combined']
+                elif isinstance(vdim, dim):
+                    if values.dtype.kind == 'M':
+                        clim = values.min(), values.max()
+                    elif len(values) == 0:
+                        clim = np.NaN, np.NaN
+                    else:
+                        try:
+                            with warnings.catch_warnings():
+                                warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                                drange = (np.nanmin(values), np.nanmax(values))
+                        except:
+                            clim = np.NaN, np.NaN
                 else:
                     clim = element.range(vdim)
                 if self.logz:

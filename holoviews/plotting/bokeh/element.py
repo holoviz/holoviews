@@ -729,7 +729,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 kwargs = {}
                 if val.dtype.kind not in 'if':
                     kwargs['factors'] = np.unique(val)
-                cmapper = self._get_colormapper(v.dimension, element, ranges,
+                cmapper = self._get_colormapper(v, element, ranges,
                                                 style, name=k+'_color_mapper',
                                                 group=group, **kwargs)
                 key = {'field': k, 'transform': cmapper}
@@ -1251,19 +1251,20 @@ class ColorbarPlot(ElementPlot):
         self.handles[prefix+'colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
+    def _get_colormapper(self, eldim, element, ranges, style, factors=None, colors=None,
                          group=None, name='color_mapper'):
         # The initial colormapper instance is cached the first time
         # and then only updated
-        if dim is None and colors is None:
+        if eldim is None and colors is None:
             return None
 
         # Attempt to find matching colormapper on the adjoined plot
+        dim_name = repr(eldim)[1:-1] if isinstance(eldim, dim) else dim.name
         if self.adjoined:
-            dim_name = dim.name+'_'+name
+            cmapper_name = dim_name+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get(name, x.handles.get(dim_name))))
-            cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
+                                                         x.handles.get(name, x.handles.get(cmapper_name))))
+            cmappers = [cmap for cdim, cmap in cmappers if cdim == eldim]
             if cmappers:
                 cmapper = cmappers[0]
                 self.handles['color_mapper'] = cmapper
@@ -1272,11 +1273,13 @@ class ColorbarPlot(ElementPlot):
                 return None
 
         ncolors = None if factors is None else len(factors)
-        if dim:
-            if dim.name in ranges:
-                low, high = ranges[dim.name]['combined']
+        if eldim:
+            if dim_name in ranges:
+                low, high = ranges[dim_name]['combined']
+            elif isinstance(eldim, dim):
+                low, high = np.nan, np.nan
             else:
-                low, high = element.range(dim.name)
+                low, high = element.range(eldim.name)
             if self.symmetric:
                 sym_max = max(abs(low), high)
                 low, high = -sym_max, sym_max
@@ -1290,7 +1293,14 @@ class ColorbarPlot(ElementPlot):
             if factors is None:
                 factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
-            factors = [dim.pprint_value(f) for f in factors]
+            if isinstance(eldim, dim):
+                if eldim.dimension in element:
+                    formatter = element.get_dimension(eldim.dimension).pprint_value
+                else:
+                    formatter = str
+            else:
+                formatter = eldim.pprint_value
+            factors = [formatter(f) for f in factors]
         else:
             categorical = ncolors is not None
             if isinstance(self.color_levels, int):
@@ -1318,7 +1328,7 @@ class ColorbarPlot(ElementPlot):
         else:
             cmapper = colormapper(palette=palette, **opts)
             self.handles[name] = cmapper
-            self.handles['color_dim'] = dim
+            self.handles['color_dim'] = eldim
         return cmapper
 
 
