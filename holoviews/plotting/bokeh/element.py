@@ -667,11 +667,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])
-            elif isinstance(v, tuple) and v and isinstance(v[0], (util.basestring, tuple, dim)):
-                try:
-                    v = dim.resolve_spec(v)
-                except:
-                    continue
 
             if (not isinstance(v, dim) or (group is not None and not k.startswith(group)) or
                 (k == 'marker' and v.dimension.name in markers)):

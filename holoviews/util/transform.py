@@ -131,22 +131,6 @@ class dim(object):
         self.ops = ops
 
     @classmethod
-    def resolve_spec(cls, op_spec):
-        """
-        Converts a dim transform spec, i.e. a string or tuple, into
-        a dim instance.
-        """
-        if isinstance(op_spec, basestring):
-            return cls(op_spec)
-        elif isinstance(op_spec, tuple):
-            combined = zip_longest(op_spec, (None, None, None, {}))
-            obj, fn, other, kwargs = (o2 if o1 is None else o1 for o1, o2 in combined)
-            if isinstance(obj, tuple):
-                obj = cls.resolve_spec(obj)
-            return cls(obj, fn, other, **kwargs)
-        return op_spec
-
-    @classmethod
     def register(cls, key, function):
         """
         Register a custom op transform function which can from then
