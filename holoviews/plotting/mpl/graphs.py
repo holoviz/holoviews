@@ -29,8 +29,10 @@ class GraphPlot(ColorbarPlot):
 
     _style_groups = ['node', 'edge']
 
-    _no_op_styles = ['edge_alpha', 'edge_linestyle', 'edge_cmap', 'cmap',
-                     'visible', 'node_marker']
+    _nonvectorized_styles = [
+        'edge_alpha', 'edge_linestyle', 'edge_cmap', 'cmap', 'visible',
+        'node_marker'
+    ]
 
     filled = False
 

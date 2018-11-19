@@ -175,7 +175,7 @@ class VectorFieldPlot(ColorbarPlot):
 
     style_opts = line_properties + ['scale', 'cmap']
 
-    _no_op_styles = ['scale', 'cmap']
+    _nonvectorized_styles = ['scale', 'cmap']
 
     _plot_methods = dict(single='segment')
 
@@ -274,7 +274,7 @@ class CurvePlot(ElementPlot):
         'steps-pre' and 'steps-post'.""")
 
     style_opts = line_properties
-    _no_op_styles = line_properties
+    _nonvectorized_styles = line_properties
     
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
@@ -343,7 +343,7 @@ class HistogramPlot(ColorbarPlot):
     style_opts = line_properties + fill_properties + ['cmap']
     _plot_methods = dict(single='quad')
 
-    _no_op_styles = ['line_dash']
+    _nonvectorized_styles = ['line_dash']
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -448,7 +448,7 @@ class ErrorPlot(ColorbarPlot):
 
     style_opts = line_properties + ['lower_head', 'upper_head']
 
-    _no_op_styles = ['line_dash']
+    _nonvectorized_styles = ['line_dash']
 
     _mapping = dict(base="base", upper="upper", lower="lower")
 
@@ -714,7 +714,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
 
-    _no_op_styles = ['bar_width', 'cmap', 'width']
+    _nonvectorized_styles = ['bar_width', 'cmap', 'width']
 
     _plot_methods = dict(single=('vbar', 'hbar'))
 

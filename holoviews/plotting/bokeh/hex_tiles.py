@@ -137,7 +137,7 @@ class HexTilesPlot(ColorbarPlot):
 
     style_opts = ['cmap', 'color', 'scale'] + line_properties + fill_properties
 
-    _no_op_styles = ['cmap', 'line_dash']
+    _nonvectorized_styles = ['cmap', 'line_dash']
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:

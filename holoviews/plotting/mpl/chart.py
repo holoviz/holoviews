@@ -68,7 +68,7 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker', 'ms']
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='plot')
 
@@ -212,7 +212,7 @@ class AreaPlot(ChartPlot):
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='fill_between')
 
@@ -306,7 +306,7 @@ class HistogramPlot(ColorbarPlot):
                   'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
                   'linewidth']
 
-    _no_op_styles = ['alpha', 'log', 'error_kw', 'hatch', 'visible', 'align']
+    _nonvectorized_styles = ['alpha', 'log', 'error_kw', 'hatch', 'visible', 'align']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -600,7 +600,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax', 'norm']
 
-    _no_ops_styles = ['alpha', 'marker', 'cmap', 'vmin', 'vmax',
+    _nonvectorized_styles = ['alpha', 'marker', 'cmap', 'vmin', 'vmax',
                       'norm', 'visible']
 
     _disabled_opts = ['size']
@@ -719,7 +719,7 @@ class VectorFieldPlot(ColorbarPlot):
                   'scale', 'headlength', 'headaxislength', 'pivot',
                   'width', 'headwidth', 'norm']
 
-    _no_op_styles = ['alpha', 'marker', 'cmap', 'visible', 'norm',
+    _nonvectorized_styles = ['alpha', 'marker', 'cmap', 'visible', 'norm',
                      'pivot', 'scale', 'headlength', 'headaxislength',
                      'headwidth']
 
@@ -827,7 +827,7 @@ class BarPlot(LegendPlot):
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     legend_specs = dict(LegendPlot.legend_specs, **{
         'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),

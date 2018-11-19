@@ -46,7 +46,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['node_'+p for p in fill_properties+line_properties] +
                   ['node_size', 'cmap', 'edge_cmap'])
 
-    _no_op_styles =  ['cmap', 'edge_cmap']
+    _nonvectorized_styles =  ['cmap', 'edge_cmap']
 
     # Filled is only supported for subclasses
     filled = False

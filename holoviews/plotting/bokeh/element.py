@@ -119,7 +119,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _categorical = False
 
     # Declare which styles cannot be mapped to a non-scalar dimension
-    _no_op_styles = []
+    _nonvectorized_styles = []
 
     # Declares the default types for continuous x- and y-axes
     _x_range_type = Range1d
@@ -686,7 +686,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val):
-                if k in self._no_op_styles:
+                if k in self._nonvectorized_styles:
                     element = type(element).__name__
                     raise ValueError('Mapping a dimension to the "{style}" '
                                      'style option is not supported by the '
@@ -1224,7 +1224,7 @@ class ColorbarPlot(ElementPlot):
 
     _default_nan = '#8b8b8b'
 
-    _no_op_styles = ['cmap', 'palette']
+    _nonvectorized_styles = ['cmap', 'palette']
 
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):

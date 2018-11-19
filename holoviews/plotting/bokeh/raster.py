@@ -19,7 +19,7 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap', 'alpha']
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image')
 
@@ -80,7 +80,7 @@ class RGBPlot(ElementPlot):
 
     style_opts = ['alpha']
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image_rgba')
 
@@ -140,7 +140,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    _no_op_styles = style_opts
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='quad')
 

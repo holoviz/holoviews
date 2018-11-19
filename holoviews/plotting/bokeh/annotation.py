@@ -85,7 +85,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     style_opts = text_properties + ['cmap', 'angle']
 
-    _no_op_styles = ['cmap']
+    _nonvectorized_styles = ['cmap']
 
     _plot_methods = dict(single='text', batched='text')
     _batched_style_opts = text_properties

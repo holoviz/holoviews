@@ -80,7 +80,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['width', 'box_width', 'cmap'])
 
-    _no_op_styles = ['box_width', 'width', 'cmap']
+    _nonvectorized_styles = ['box_width', 'width', 'cmap']
 
     _stream_data = False # Plot does not support streaming data
 
