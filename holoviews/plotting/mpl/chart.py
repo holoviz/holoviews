@@ -632,10 +632,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
                 style['c'] = categorize_colors(cs)
             self._norm_kwargs(element, ranges, style, cdim)
         elif color is not None:
-            if np.isscalar(color):
-                style['c'] = color
-            else:
-                style['color'] = color
+            style['color'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         ms = style.get('s', mpl.rcParams['lines.markersize'])
@@ -671,6 +668,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
             paths.norm = style['norm']
         if 'linewidth' in style:
             paths.set_linewidths(style['linewidth'])
+        if 'edgecolors' in style:
+            paths.set_edgecolors(style['edgecolors'])
+        if 'facecolors' in style:
+            paths.set_edgecolors(style['facecolors'])
 
 
 

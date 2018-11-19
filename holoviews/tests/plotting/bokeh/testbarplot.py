@@ -242,13 +242,3 @@ class TestBarPlot(TestBokehPlot):
                    "and declare a color_index, ignoring the color_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)
-
-    def test_bars_color_index_color_no_clash(self):
-        bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).options(line_color='color', color_index='color')
-        plot = bokeh_renderer.get_plot(bars)
-        glyph = plot.handles['glyph']
-        cmapper = plot.handles['line_color_color_mapper']
-        cmapper2 = plot.handles['color_mapper']
-        self.assertEqual(glyph.line_color, {'field': 'line_color', 'transform': cmapper})
-        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper2})
