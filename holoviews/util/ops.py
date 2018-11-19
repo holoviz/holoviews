@@ -12,12 +12,48 @@ from ..element import Graph
 
 
 def norm_fn(values, min=None, max=None):
+    """
+    min-max normalizes to scale data into 0-1 range.
+
+    Arguments
+    ---------
+    values: np.ndarray
+       Array of values to be binned
+    min: float (optional)
+       Lower bound of normalization range
+    max: float (optional)
+       Upper bound of normalization range
+
+    Returns
+    -------
+    normalized: np.ndarray
+       Array of normalized values
+    """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
 
 
 def bin_fn(values, bins, labels=None):
+    """
+    Bins data into declared bins. By default each bin is labelled
+    with bin center values but an explicit list of bin labels may be
+    defined.
+
+    Arguments
+    ---------
+    values: np.ndarray
+       Array of values to be binned
+    bins: np.ndarray or list
+       Bin edges to place bins into
+    labels: np.ndarray or list (optional)
+       Labels for bins should have length N-1 compared to bins
+
+    Returns
+    -------
+    binned: np.ndarray
+       Array of binned values
+    """
     bins = np.asarray(bins)
     if labels is None:
         labels = (bins[:-1] + np.diff(bins)/2.)
@@ -32,6 +68,24 @@ def bin_fn(values, bins, labels=None):
 
 
 def cat_fn(values, categories, empty=None):
+    """
+    Replaces discrete values in input array into a fixed set of
+    categories defined either as a list or dictionary.
+
+    Arguments
+    ---------
+    values: np.ndarray
+       Array of values to be categorized
+    categories: list or dict
+       Categories to assign to input values
+    empty: any (optional)
+       Value assigned to input values no category could be assigned to
+
+    Returns
+    -------
+    categorized: np.ndarray
+       Array of categorized values
+    """
     uniq_cats = list(unique_iterator(values))
     cats = []
     for c in values:
@@ -47,23 +101,16 @@ def cat_fn(values, categories, empty=None):
     return np.asarray(cats)
 
 
-def str_fn(values):
-    return np.asarray([str(v) for v in values])
-
-
-def int_fn(values):
-    return values.astype(int)
-
 
 class dim(object):
     """
     dim transform objects are a way to express deferred transformations
-    on HoloViews element types. It supports all mathematical operations,
-    NumPy ufuncs and provides a number of useful methods.
+    on HoloViews Datasets. It supports all mathematical operations,
+    NumPy ufuncs and provides a number of useful methods for normalizing,
+    binning and categorizing data.
     """
 
-    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn,
-                    str: str_fn, int: int_fn}
+    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn}
 
     def __init__(self, obj, fn=None, other=None, reverse=False, **kwargs):
         ops = []
@@ -77,7 +124,7 @@ class dim(object):
         if isinstance(fn, str) or fn in self._op_registry:
             fn = self._op_registry.get(fn)
             if fn is None:
-                raise ValueError('Operation function %s not found' % fn)
+                raise ValueError('dim transform %s not found' % fn)
         if fn is not None:
             ops = ops + [{'other': other, 'fn': fn, 'kwargs': kwargs,
                           'reverse': reverse}]
@@ -86,8 +133,8 @@ class dim(object):
     @classmethod
     def resolve_spec(cls, op_spec):
         """
-        Converts an op spec, i.e. a string or tuple declaring an op
-        or a nested spec of ops into an op instance.
+        Converts a dim transform spec, i.e. a string or tuple, into
+        a dim instance.
         """
         if isinstance(op_spec, basestring):
             return cls(op_spec)
@@ -149,25 +196,45 @@ class dim(object):
 
     def norm(self):
         """
-        Normalizes the data into the given range
+        min-max normalizes to scale data into 0-1 range.
         """
         return dim(self, norm_fn)
 
     def cat(self, categories, empty=None):
+        """
+        Bins data into declared bins. By default each bin is labelled
+        with bin center values but an explicit list of bin labels may be
+        defined.
+
+        Arguments
+        ---------
+        bins: np.ndarray or list
+           Bin edges to place bins into
+        labels: np.ndarray or list (optional)
+           Labels for bins should have length N-1 compared to bins
+        """
         return dim(self, cat_fn, categories=categories, empty=empty)
 
     def bin(self, bins, labels=None):
-        return dim(self, bin_fn, bins=bins, labels=labels)
+        """
+        Replaces discrete values in input array into a fixed set of
+        categories defined either as a list or dictionary.
 
-    @property
-    def dimensions(self):
-        dims = []
-        if isinstance(self.dimension, dim):
-            dims += self.dimension.dimensions
-        else:
-            dims.append(self.dimension)
+        Arguments
+        ---------
+        categories: list or dict
+           Categories to assign to input values
+        empty: any (optional)
+           Value assigned to input values no category could be assigned to
+        """
+        return dim(self, bin_fn, bins, labels=labels)
 
     def applies(self, dataset):
+        """
+        Determines whether the dim transform can be applied to the
+        Dataset, i.e. whether all referenced dimensions can be
+        resolved.
+        """
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         else:
@@ -185,6 +252,9 @@ class dim(object):
         return applies
 
     def eval(self, dataset, flat=False, expanded=None, ranges={}):
+        """
+        Evaluates the transform on the supplied dataset.
+        """
         if expanded is None:
             expanded = not ((dataset.interface.gridded and self.dimension in dataset.kdims) or
                             (dataset.interface.multi and dataset.interface.isscalar(dataset, self.dimension)))
@@ -217,8 +287,3 @@ class dim(object):
                                                          arg=arg, kwargs=kwargs)
         return op_repr
 
-
-class norm(dim):
-
-    def __init__(self, obj, **kwargs):
-        super(norm, self).__init__(obj, norm_fn, **kwargs)
