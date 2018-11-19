@@ -56,6 +56,11 @@ def int_fn(values):
 
 
 class dim(object):
+    """
+    dim transform objects are a way to express deferred transformations
+    on HoloViews element types. It supports all mathematical operations,
+    NumPy ufuncs and provides a number of useful methods.
+    """
 
     _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn,
                     str: str_fn, int: int_fn}
@@ -153,6 +158,14 @@ class dim(object):
 
     def bin(self, bins, labels=None):
         return dim(self, bin_fn, bins=bins, labels=labels)
+
+    @property
+    def dimensions(self):
+        dims = []
+        if isinstance(self.dimension, dim):
+            dims += self.dimension.dimensions
+        else:
+            dims.append(self.dimension)
 
     def applies(self, dataset):
         if isinstance(self.dimension, dim):

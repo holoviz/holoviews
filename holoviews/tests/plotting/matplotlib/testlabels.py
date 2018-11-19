@@ -106,6 +106,7 @@ class TestLabelsPlot(TestMPLPlot):
                         vdims='size').options(size='size')
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
+        self.assertEqual([a.get_fontsize() for a in artist], [8, 6, 12])
 
     def test_label_size_op_update(self):
         labels = HoloMap({

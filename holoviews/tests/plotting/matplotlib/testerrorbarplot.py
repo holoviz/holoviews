@@ -2,7 +2,6 @@ import numpy as np
 
 from holoviews.core.spaces import HoloMap
 from holoviews.element import ErrorBars
-from holoviews.plotting.util import hex2rgb
 
 from .testplot import TestMPLPlot, mpl_renderer
 

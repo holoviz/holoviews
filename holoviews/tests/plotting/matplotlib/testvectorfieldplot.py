@@ -44,17 +44,6 @@ class TestVectorFieldPlot(TestMPLPlot):
             [1, 0, 0, 1]
         ]))
 
-    def test_vectorfield_color_op(self):
-        vectorfield = VectorField([(0, 0, 0, 1, '#000000'), (0, 1, 0, 1,'#FF0000'), (0, 2, 0, 1,'#00FF00')],
-                                  vdims=['A', 'M', 'color']).options(color='color')
-        plot = mpl_renderer.get_plot(vectorfield)
-        artist = plot.handles['artist']
-        self.assertEqual(artist.get_facecolors(), np.array([
-            [0, 0, 0, 1],
-            [1, 0, 0, 1],
-            [0, 1, 0, 1]
-        ]))
-
     def test_vectorfield_linear_color_op_update(self):
         vectorfield = HoloMap({
             0: VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],

@@ -388,7 +388,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
         with self.assertRaises(Exception):
-            mpl_renderer.get_plot(graph)
+            mpl_renderer.get_plot(trimesh)
 
     def test_trimesh_op_node_line_width(self):
         edges = [(0, 1, 2), (1, 2, 3)]
@@ -439,7 +439,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
         trimesh = TriMesh((edges, nodes), vdims='alpha').options(edge_alpha='alpha')
         with self.assertRaises(Exception):
-            mpl_renderer.get_plot(graph)
+            mpl_renderer.get_plot(trimesh)
 
     def test_trimesh_op_edge_line_width(self):
         edges = [(0, 1, 2, 7), (1, 2, 3, 3)]
