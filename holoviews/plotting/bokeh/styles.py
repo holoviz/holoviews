@@ -5,7 +5,7 @@ Defines valid style options, validation and utilities
 import numpy as np
 
 from bokeh.core.properties import (
-    Angle, Color, DashPattern, FontSize, MarkerType, Size
+    Angle, Color, DashPattern, FontSize, MarkerType, Percent, Size
 )
 
 try:
@@ -83,6 +83,7 @@ def mpl_to_bokeh(properties):
 
 # Validation
 
+alpha     = Percent()
 angle     = Angle()
 color     = Color()
 dash_pattern = DashPattern()
@@ -92,6 +93,7 @@ size      = Size()
 
 validators = {
     'angle'     : angle.is_valid,
+    'alpha'     : alpha.is_valid,
     'color'     : lambda x: (
         color.is_valid(x) or (isinstance(x, basestring) and RGB_HEX_REGEX.match(x))
     ),
