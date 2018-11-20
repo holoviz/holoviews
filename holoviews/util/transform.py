@@ -101,7 +101,7 @@ def cat_fn(values, categories, empty=None):
 class dim(object):
     """
     dim transform objects are a way to express deferred transformations
-    on HoloViews Datasets. It supports all mathematical operations,
+    on HoloViews Datasets. Dims support all mathematical operations
     and NumPy ufuncs, and provide a number of useful methods for normalizing,
     binning and categorizing data.
     """
