@@ -558,10 +558,6 @@ def glyph_order(keys, draw_order=[]):
     of glyph names while the keys should be glyph names with a custom
     suffix. The draw order may only match subset of the keys and any
     matched items will take precedence over other entries.
-
-    >>> glyph_order(['scatter_1', 'patch_1', 'rect_1'], \
-                    ['scatter', 'patch'])
-    ['scatter_1', 'patch_1', 'rect_1']
     """
     keys = sorted(keys)
     def order_fn(glyph):
