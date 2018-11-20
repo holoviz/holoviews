@@ -34,7 +34,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .styles import (
-    legend_dimensions, line_properties, markers, mpl_to_bokeh, rgba_tuple,
+    legend_dimensions, line_properties, mpl_to_bokeh, rgba_tuple,
     text_properties, validate
 )
 from .util import (

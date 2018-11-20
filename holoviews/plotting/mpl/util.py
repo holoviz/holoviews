@@ -6,7 +6,6 @@ import warnings
 import numpy as np
 import matplotlib
 from matplotlib import ticker
-from matplotlib.colors import cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
@@ -17,7 +16,6 @@ from matplotlib.rcsetup import (
 )
 from ...core.util import LooseVersion, _getargspec, basestring, is_number
 from ...element import Raster, RGB, Polygons
-from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 mpl_version = LooseVersion(matplotlib.__version__)
 

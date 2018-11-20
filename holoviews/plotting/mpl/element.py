@@ -562,7 +562,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             group = groups[0] if groups else None
             prefix = '' if group is None else group+'_'
             if (k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray)
-                and not validate('color', c)):
+                and not validate('color', val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
                 if val.dtype.kind in 'OSUM':
