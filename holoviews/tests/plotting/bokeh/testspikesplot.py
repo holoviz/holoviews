@@ -219,6 +219,6 @@ class TestSpikesPlot(TestBokehPlot):
             plot = bokeh_renderer.get_plot(spikes)
         log_msg = log.stream.read()
         warning = ("%s: Cannot declare style mapping for 'color' option "
-                   "and declare a color_index, ignoring the color_index.\n"
+                   "and declare a color_index; ignoring the color_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)

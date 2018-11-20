@@ -8,8 +8,9 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...core import Dataset, OrderedDict
-from ...core.util import max_range, basestring, dimension_sanitizer, isfinite, range_pad
+from ...core.data import Dataset
+from ...core.dimension import dimension_name
+from ...core.util import OrderedDict, max_range, basestring, dimension_sanitizer, isfinite, range_pad
 from ...element import Bars
 from ...operation import interpolate_curve
 from ...util.transform import dim
@@ -22,22 +23,24 @@ from .util import categorize_array
 
 class PointPlot(LegendPlot, ColorbarPlot):
 
+    jitter = param.Number(default=None, bounds=(0, None), doc="""
+      The amount of jitter to apply to offset the points along the x-axis.""")
+
+    # Deprecated parameters
+
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
+        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
     scaling_method = param.ObjectSelector(default="area",
                                           objects=["width", "area"],
                                           doc="""
-      Determines whether the `scaling_factor` should be applied to
-      the width or area of each point (default: "area").""")
-
-    jitter = param.Number(default=None, bounds=(0, None), doc="""
-      The amount of jitter to apply to offset the points along the x-axis.""")
+        Deprecated in favor of size style mapping, e.g.
+        size=dim('size')**2.""")
 
     scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
@@ -59,7 +62,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         ms = style.get('size', np.sqrt(6))
         if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
             self.warning("Cannot declare style mapping for 'size' option "
-                         "and declare a size_index, ignoring the size_index.")
+                         "and declare a size_index; ignoring the size_index.")
             sdim = None
         if not sdim or self.static_source:
             return data, mapping
@@ -149,29 +152,42 @@ class PointPlot(LegendPlot, ColorbarPlot):
 class VectorFieldPlot(ColorbarPlot):
 
     arrow_heads = param.Boolean(default=True, doc="""
-       Whether or not to draw arrow heads.""")
+        Whether or not to draw arrow heads.""")
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
-
-    normalize_lengths = param.Boolean(default=True, doc="""
-       Whether to normalize vector magnitudes automatically. If False,
-       it will be assumed that the lengths have already been correctly
-       normalized.""")
+    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+        Dimension or dimension value transform that declares the magnitude
+        of each vector. Magnitude is expected to be scaled between 0-1,
+        by default the magnitudes are rescaled relative to the minimum
+        distance between vectors, this can be disabled with the
+        rescale_lengths option.""")
 
     pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
                                  doc="""
-       The point around which the arrows should pivot valid options
-       include 'mid', 'tip' and 'tail'.""")
+        The point around which the arrows should pivot valid options
+        include 'mid', 'tip' and 'tail'.""")
 
     rescale_lengths = param.Boolean(default=True, doc="""
-       Whether the lengths will be rescaled to take into account the
-       smallest non-zero distance between two vectors.""")
+        Whether the lengths will be rescaled to take into account the
+        smallest non-zero distance between two vectors.""")
+
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of dimension value transform on color option,
+        e.g. `color=dim('Magnitude')`.
+        """)
+
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+        Deprecated in favor of the magnitude option, e.g.
+        `magnitude=dim('Magnitude')`.
+        """)
+
+    normalize_lengths = param.Boolean(default=True, doc="""
+        Deprecated in favor of rescaling length using dimension value
+        transforms using the magnitude option, e.g.
+        `dim('Magnitude').norm()`.""")
 
     style_opts = line_properties + ['scale', 'cmap']
 
@@ -180,13 +196,25 @@ class VectorFieldPlot(ColorbarPlot):
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
-        mag_dim = element.get_dimension(self.size_index)
+        size_dim = element.get_dimension(self.size_index)
+        mag_dim = self.magnitude
+        if size_dim and mag_dim:
+            self.warning("Cannot declare style mapping for 'magnitude' option "
+                         "and declare a size_index; ignoring the size_index.")
+        elif size_dim:
+            mag_dim = size_dim
+        elif isinstance(mag_dim, basestring):
+            mag_dim = element.get_dimension(mag_dim)
+
         (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if mag_dim:
-            magnitudes = element.dimension_values(mag_dim)
-            _, max_magnitude = ranges[mag_dim.name]['combined']
-            if self.normalize_lengths and max_magnitude != 0:
-                magnitudes = magnitudes / max_magnitude
+            if isinstance(mag_dim, dim):
+                magnitudes = mag_dim.apply(element, flat=True)
+            else:
+                magnitudes = element.dimension_values(mag_dim)
+                _, max_magnitude = ranges[dimension_name(mag_dim)]['combined']
+                if self.normalize_lengths and max_magnitude != 0:
+                    magnitudes = magnitudes / max_magnitude
             if self.rescale_lengths:
                 base_dist = get_min_distance(element)
                 magnitudes *= base_dist
@@ -593,10 +621,6 @@ class AreaPlot(SpreadPlot):
 
 class SpikesPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, allow_None=True,
-                                      class_=(basestring, int), doc="""
-      Index of the dimension from which the color will the drawn""")
-
     spike_length = param.Number(default=0.5, doc="""
       The length of each spike if Spikes object is one dimensional.""")
 
@@ -605,6 +629,12 @@ class SpikesPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     style_opts = (['color', 'cmap', 'palette'] + line_properties)
 
@@ -697,12 +727,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
     mapped onto separate groups, categories and stacks.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-       Index of the dimension from which the color will the drawn""")
-
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
+
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     group_index = param.ClassSelector(default=1, class_=(basestring, int),
                                       allow_None=True, doc="""

@@ -20,14 +20,6 @@ from .styles import line_properties, fill_properties, text_properties, rgba_tupl
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when selecting connected edges and nodes respectively.""")
@@ -38,6 +30,16 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     tools = param.List(default=['hover', 'tap'], doc="""
         A list of plugin tools to use on the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
+
+    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge', 'bezier': 'edge'}
@@ -316,13 +318,15 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 class ChordPlot(GraphPlot):
 
-    label_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the node labels will be drawn""")
-
     show_frame = param.Boolean(default=False, doc="""
         Whether or not to show a complete frame around the plot.""")
 
+    # Deprecated options
+
+    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the node labels will be drawn""")
+    
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label',
                      'arc': 'arc'}

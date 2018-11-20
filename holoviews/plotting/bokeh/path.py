@@ -16,12 +16,14 @@ from .util import bokeh_version, multi_polygons_data
 
 class PathPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     style_opts = line_properties + ['cmap']
     _plot_methods = dict(single='multi_line', batched='multi_line')
@@ -130,12 +132,14 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(LegendPlot, PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     _color_style = 'line_color'
 

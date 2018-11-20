@@ -14,13 +14,15 @@ from .element import ColorbarPlot
 
 class GraphPlot(ColorbarPlot):
 
+    # Deprecated options
+
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                  allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
 
     edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
     style_opts = ['edge_alpha', 'edge_color', 'edge_linestyle', 'edge_linewidth',
                   'node_alpha', 'node_color', 'node_edgecolors', 'node_facecolors',

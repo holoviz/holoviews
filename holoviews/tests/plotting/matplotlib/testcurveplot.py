@@ -165,7 +165,7 @@ class TestCurvePlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(), colors):
             style = dict(subplot.style[subplot.cyclic_index])
-            style = subplot._apply_ops(subplot.current_frame, {}, style)
+            style = subplot._apply_transforms(subplot.current_frame, {}, style)
             self.assertEqual(style['color'], color)
 
     def test_curve_color_op(self):

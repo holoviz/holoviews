@@ -70,10 +70,6 @@ class TextPlot(ElementPlot, AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -82,6 +78,12 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     yoffset = param.Number(default=None, doc="""
       Amount of offset to apply to labels along x-axis.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     style_opts = text_properties + ['cmap', 'angle']
 

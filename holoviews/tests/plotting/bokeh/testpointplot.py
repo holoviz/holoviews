@@ -463,7 +463,7 @@ class TestPointPlot(TestBokehPlot):
             plot = bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("%s: Cannot declare style mapping for 'color' option "
-                   "and declare a color_index, ignoring the color_index.\n"
+                   "and declare a color_index; ignoring the color_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)
 
@@ -484,6 +484,6 @@ class TestPointPlot(TestBokehPlot):
             plot = bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("%s: Cannot declare style mapping for 'size' option "
-                   "and declare a size_index, ignoring the size_index.\n"
+                   "and declare a size_index; ignoring the size_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)

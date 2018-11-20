@@ -287,7 +287,7 @@ class TestPointPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(overlay)
         for subplot, marker in zip(plot.subplots.values(), markers):
             style = dict(subplot.style[subplot.cyclic_index])
-            style = subplot._apply_ops(subplot.current_frame, {}, style)
+            style = subplot._apply_transforms(subplot.current_frame, {}, style)
             self.assertEqual(style['marker'], marker)
 
     def test_point_color_index_color_clash(self):
@@ -297,7 +297,7 @@ class TestPointPlot(TestMPLPlot):
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("%s: Cannot declare style mapping for 'color' option "
-                   "and declare a color_index, ignoring the color_index.\n"
+                   "and declare a color_index; ignoring the color_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)
 
@@ -308,6 +308,6 @@ class TestPointPlot(TestMPLPlot):
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("%s: Cannot declare style mapping for 's' option "
-                   "and declare a size_index, ignoring the size_index.\n"
+                   "and declare a size_index; ignoring the size_index.\n"
                    % plot.name)
         self.assertEqual(log_msg, warning)

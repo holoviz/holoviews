@@ -10,11 +10,11 @@ from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ...core import OrderedDict, Dimension
+from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, unique_iterator, basestring, max_range, isfinite,
-    datetime_types, dt_to_int, dt64_to_dt
+    OrderedDict, match_spec, unique_iterator, basestring, max_range,
+    isfinite, datetime_types, dt_to_int, dt64_to_dt
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -571,26 +571,28 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
+    show_grid = param.Boolean(default=False, doc="""
+      Whether to draw grid lines at the tick positions.""")
+
+    # Deprecated parameters
+
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                  allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                 allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
+                                     allow_None=True, doc="""
+        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
     scaling_method = param.ObjectSelector(default="area",
                                           objects=["width", "area"],
                                           doc="""
-      Determines whether the `scaling_factor` should be applied to
-      the width or area of each point (default: "area").""")
+        Deprecated in favor of size style mapping, e.g.
+        size=dim('size')**2.""")
 
     scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
-
-    show_grid = param.Boolean(default=False, doc="""
-      Whether to draw grid lines at the tick positions.""")
 
     size_fn = param.Callable(default=np.abs, doc="""
       Function applied to size values before applying scaling,
@@ -621,7 +623,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index, ignoring the color_index.")
+                         "and declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
@@ -639,7 +641,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         sdim = element.get_dimension(self.size_index)
         if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
             self.warning("Cannot declare style mapping for 's' option "
-                         "and declare a size_index, ignoring the size_index.")
+                         "and declare a size_index; ignoring the size_index.")
             sdim = None
         if sdim:
             sizes = element.dimension_values(self.size_index)
@@ -692,27 +694,40 @@ class VectorFieldPlot(ColorbarPlot):
     to the minimum distance respectively.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
-
     arrow_heads = param.Boolean(default=True, doc="""
        Whether or not to draw arrow heads. If arrowheads are enabled,
        they may be customized with the 'headlength' and
        'headaxislength' style options.""")
 
-    normalize_lengths = param.Boolean(default=True, doc="""
-       Whether to normalize vector magnitudes automatically. If False,
-       it will be assumed that the lengths have already been correctly
-       normalized.""")
+    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+        Dimension or dimension value transform that declares the magnitude
+        of each vector. Magnitude is expected to be scaled between 0-1,
+        by default the magnitudes are rescaled relative to the minimum
+        distance between vectors, this can be disabled with the
+        rescale_lengths option.""")
 
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
+
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of dimension value transform on color option,
+        e.g. `color=dim('Magnitude')`.
+        """)
+
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+        Deprecated in favor of the magnitude option, e.g.
+        `magnitude=dim('Magnitude')`.
+        """)
+
+    normalize_lengths = param.Boolean(default=True, doc="""
+        Deprecated in favor of rescaling length using dimension value
+        transforms using the magnitude option, e.g.
+        `dim('Magnitude').norm()`.""")
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
@@ -720,39 +735,57 @@ class VectorFieldPlot(ColorbarPlot):
                   'width', 'headwidth', 'norm']
 
     _nonvectorized_styles = ['alpha', 'marker', 'cmap', 'visible', 'norm',
-                     'pivot', 'scale', 'headlength', 'headaxislength',
-                     'headwidth']
+                             'pivot', 'headlength', 'headaxislength',
+                             'headwidth']
 
     _plot_methods = dict(single='quiver')
 
-    def get_data(self, element, ranges, style):
-        input_scale = style.pop('scale', 1.0)
+    def _get_magnitudes(self, element, style, ranges):
+        size_dim = element.get_dimension(self.size_index)
+        mag_dim = self.magnitude
+        if size_dim and mag_dim:
+            self.warning("Cannot declare style mapping for 'magnitude' option "
+                         "and declare a size_index; ignoring the size_index.")
+        elif size_dim:
+            mag_dim = size_dim
+        elif isinstance(mag_dim, basestring):
+            mag_dim = element.get_dimension(mag_dim)
+        if mag_dim is not None:
+            if isinstance(mag_dim, dim):
+                magnitudes = mag_dim.apply(element, flat=True)
+            else:
+                magnitudes = element.dimension_values(mag_dim)
+                _, max_magnitude = ranges[dimension_name(mag_dim)]['combined']
+                if self.normalize_lengths and max_magnitude != 0:
+                    magnitudes = magnitudes / max_magnitude
+        else:
+            magnitudes = np.ones(len(element))
+        return magnitudes
 
+    def get_data(self, element, ranges, style):
+        # Compute coordinates
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         xs = element.dimension_values(xidx) if len(element.data) else []
         ys = element.dimension_values(yidx) if len(element.data) else []
+
+        # Compute vector angle and magnitude
         radians = element.dimension_values(2) if len(element.data) else []
         if self.invert_axes: radians = radians+1.5*np.pi
         angles = list(np.rad2deg(radians))
+        magnitudes = self._get_magnitudes(element, style, ranges)
+        input_scale = style.pop('scale', 1.0)
         if self.rescale_lengths:
             min_dist = get_min_distance(element)
             input_scale = input_scale / min_dist
 
-        mag_dim = element.get_dimension(self.size_index)
-        if mag_dim:
-            magnitudes = element.dimension_values(mag_dim)
-            _, max_magnitude = ranges[mag_dim.name]['combined']
-            if self.normalize_lengths and max_magnitude != 0:
-                magnitudes = magnitudes / max_magnitude
-        else:
-            magnitudes = np.ones(len(xs))
-
         args = (xs, ys, magnitudes,  [0.0] * len(element))
+
+        # Compute color
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index, ignoring the color_index.")
+                         "and declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim:
             colors = element.dimension_values(self.color_index)
@@ -761,19 +794,18 @@ class VectorFieldPlot(ColorbarPlot):
             self._norm_kwargs(element, ranges, style, cdim)
             style.pop('color', None)
 
-        if 'pivot' not in style: style['pivot'] = 'mid'
-        if not self.arrow_heads:
-            style['headaxislength'] = 0
-
+        # Process style
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        style.update(dict(scale=input_scale, angles=angles,
-                          units='x', scale_units='x'))
-
+        style.update(dict(scale=input_scale, angles=angles, units='x', scale_units='x'))
         if 'vmin' in style:
             style['clim'] = (style.pop('vmin'), style.pop('vmax'))
         if 'c' in style:
             style['array'] = style.pop('c')
+        if 'pivot' not in style:
+            style['pivot'] = 'mid'
+        if not self.arrow_heads:
+            style['headaxislength'] = 0
 
         return args, style, {}
 
@@ -1117,7 +1149,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         color = style.get('color', None)
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index, ignoring the color_index.")
+                         "and declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim:
             style['array'] = element.dimension_values(cdim)

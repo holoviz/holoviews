@@ -358,7 +358,7 @@ class TestCurvePlot(TestBokehPlot):
         for subplot, color in zip(plot.subplots.values(), colors):
             style = dict(subplot.style[subplot.cyclic_index])
             cds = subplot.handles['cds']
-            style = subplot._apply_ops(subplot.current_frame, cds, {}, style)
+            style = subplot._apply_transforms(subplot.current_frame, cds, {}, style)
             self.assertEqual(style['color'], color)
 
     def test_curve_color_op(self):

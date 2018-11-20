@@ -61,12 +61,14 @@ class BivariatePlot(PolygonPlot):
 
 class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`""")
 
     # X-axis is categorical
     _x_range_type = FactorRange
@@ -299,6 +301,12 @@ class ViolinPlot(BoxWhiskerPlot):
 
     violin_width = param.Number(default=0.8, doc="""
        Relative width of the violin""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`""")
 
     # Map each glyph to a style group
     _style_groups = {'patches': 'violin', 'segment': 'stats', 'vbar': 'box',

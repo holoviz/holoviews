@@ -99,15 +99,25 @@ class HexTilesPlot(ColorbarPlot):
       reduction is allowed, defaulting to np.size to count the number
       of values in each bin.""")
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the colors will the drawn.""")
-
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
       sampling along both axes when setting and integer but independent
       bin sampling can be specified a tuple of integers corresponding to
       the number of bins along each axis.""")
+
+    min_count = param.Number(default=None, doc="""
+      The display threshold before a bin is shown, by default bins with
+      a count of less than 1 are hidden.""")
+
+    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+                                       doc="""
+      The orientation of hexagon bins. By default the pointy side is on top.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     max_scale = param.Number(default=0.9, bounds=(0, None), doc="""
       When size_index is enabled this defines the maximum size of each
@@ -120,14 +130,6 @@ class HexTilesPlot(ColorbarPlot):
       bin relative to uniform tile size, i.e. for a value of 1, the
       smallest bin will match the size of bins when scaling is disabled.
       Setting value larger than 1 will result in overlapping bins.""")
-
-    min_count = param.Number(default=None, doc="""
-      The display threshold before a bin is shown, by default bins with
-      a count of less than 1 are hidden.""")
-
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
-                                       doc="""
-      The orientation of hexagon bins. By default the pointy side is on top.""")
 
     size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
