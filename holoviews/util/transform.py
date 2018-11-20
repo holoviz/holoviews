@@ -102,7 +102,7 @@ class dim(object):
     """
     dim transform objects are a way to express deferred transformations
     on HoloViews Datasets. It supports all mathematical operations,
-    NumPy ufuncs and provides a number of useful methods for normalizing,
+    and NumPy ufuncs, and provide a number of useful methods for normalizing,
     binning and categorizing data.
     """
 
