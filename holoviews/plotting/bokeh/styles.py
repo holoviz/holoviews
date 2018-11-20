@@ -51,7 +51,9 @@ markers = {
     '1': {'marker': 'triangle', 'angle': 0},
     '2': {'marker': 'triangle', 'angle': -np.pi/2},
     '3': {'marker': 'triangle', 'angle': np.pi},
-    '4': {'marker': 'triangle', 'angle': np.pi/2}
+    '4': {'marker': 'triangle', 'angle': np.pi/2},
+    'o': {'marker': 'circle'},
+    '*': {'marker': 'asterisk'},
 }
 
 
@@ -99,7 +101,7 @@ validators = {
     ),
     'font_size' : font_size.is_valid,
     'line_dash' : dash_pattern.is_valid,
-    'marker'    : marker.is_valid,
+    'marker'    : lambda x: marker.is_valid(x) or x in markers,
     'size'      : size.is_valid,
 }
 

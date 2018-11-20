@@ -7,28 +7,71 @@ import numpy as np
 import matplotlib
 from matplotlib import ticker
 from matplotlib.colors import cnames
+from matplotlib.lines import Line2D
+from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-
-from ...core.util import LooseVersion, _getargspec, basestring
+from matplotlib.rcsetup import (
+    validate_capstyle, validate_color, validate_fontsize, validate_fonttype,
+    validate_hatch, validate_joinstyle
+)
+from ...core.util import LooseVersion, _getargspec, basestring, is_number
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
 mpl_version = LooseVersion(matplotlib.__version__)
 
-def is_color(color):
+
+validators = {
+    'alpha': lambda x: is_number(x) and (0 <= x <= 1),
+    'capstyle': validate_capstyle,
+    'color': validate_color,
+    'fontsize': validate_fontsize,
+    'fonttype': validate_fonttype,
+    'hatch': validate_hatch,
+    'joinstyle': validate_joinstyle,
+    'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
+                         or isinstance(x, Path) or
+                         (isinstance(x, basestring) and x.startswith('$')
+                          and x.endswith('$'))),
+    's': lambda x: is_number(x) and (x >= 0)
+}
+
+
+def get_validator(style):
+    for k, v in validators.items():
+        if style.endswith(k) and (len(style) != 1 or style == k):
+            return v
+
+
+def validate(style, value, vectorized=True):
     """
-    Checks if supplied object is a valid color spec.
+    Validates a style and associated value.
+
+    Arguments
+    ---------
+    style: str
+       The style to validate (e.g. 'color', 'size' or 'marker')
+    value:
+       The style value to validate
+    vectorized: bool
+       Whether validator should allow vectorized setting
+
+    Returns
+    -------
+    valid: boolean or None
+       If validation is supported returns boolean, otherwise None
     """
-    if not isinstance(color, basestring):
+    validator = get_validator(style)
+    if validator is None:
+        return None
+    if isinstance(value, (np.ndarray, list)) and vectorized:
+        return all(validator(v) for v in value)
+    try:
+        valid = validator(value)
+        return False if valid == False else True
+    except:
         return False
-    elif RGB_HEX_REGEX.match(color):
-        return True
-    elif color in COLOR_ALIASES:
-        return True
-    elif color in cnames:
-        return True
-    return False
 
 
 def categorize_colors(colors, categories=None):

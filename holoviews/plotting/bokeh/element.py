@@ -663,13 +663,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
             if isinstance(v, util.basestring):
-                if v in element or (isinstance(element, Graph) and v in element.nodes):
+                if validate(k, v) == True:
+                    continue
+                elif v in element or (isinstance(element, Graph) and v in element.nodes):
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])
 
-            if (not isinstance(v, dim) or (group is not None and not k.startswith(group)) or
-                (k == 'marker' and v.dimension.name in markers)):
+            if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
