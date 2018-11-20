@@ -129,7 +129,7 @@ class dim(object):
     @classmethod
     def register(cls, key, function):
         """
-        Register a custom op transform function which can from then
+        Register a custom dim transform function which can from then
         on be referenced by the key.
         """
         cls._op_registry[key] = function
