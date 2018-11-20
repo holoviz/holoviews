@@ -1255,8 +1255,14 @@ class ColorbarPlot(ElementPlot):
         if eldim is None and colors is None:
             return None
 
+        if isinstance(eldim, dim):
+            dim_name = repr(eldim)
+            if dim_name.startswith("'") and dim_name.endswith("'"):
+                dim_name = dim_name[1:-1]
+        else:
+            dim_name = eldim.name
+
         # Attempt to find matching colormapper on the adjoined plot
-        dim_name = repr(eldim) if isinstance(eldim, dim) else eldim.name
         if self.adjoined:
             cmapper_name = dim_name+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),

@@ -418,7 +418,9 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         cmapper = plot.handles['edge_color_color_mapper']
         self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
         self.assertEqual(cds.data['edge_color'], np.array([2, 8/3.]))
-    
+        self.assertEqual(cmapper.low, 1)
+        self.assertEqual(cmapper.high, 4)
+
     def test_trimesh_op_edge_color(self):
         edges = [(0, 1, 2, 'red'), (1, 2, 3, 'blue')]
         nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]

@@ -729,8 +729,13 @@ class ColorbarPlot(ElementPlot):
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
-        clim = opts.pop(prefix+'clims', None)
-        dim_name = repr(vdim) if isinstance(vdim, dim) else vdim.name
+        if isinstance(vdim, dim):
+            dim_name = repr(vdim)
+            if dim_name.startswith("'") and dim_name.endswith("'"):
+                dim_name = dim_name[1:-1]
+        else:
+            dim_name = vdim.name
+
         if values is None:
             if isinstance(vdim, dim):
                 values = vdim.apply(element, flat=True)
@@ -742,6 +747,8 @@ class ColorbarPlot(ElementPlot):
                      element.interface.isscalar(element, vdim.name))
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
+
+        clim = opts.pop(prefix+'clims', None)
         if clim is None:
             if not len(values):
                 clim = (0, 0)
