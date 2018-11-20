@@ -80,9 +80,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     style_opts = (['whisker_'+p for p in line_properties] +
                   ['box_'+p for p in fill_properties+line_properties] +
                   ['outlier_'+p for p in fill_properties+line_properties] +
-                  ['width', 'box_width', 'cmap'])
+                  ['width', 'box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = ['box_width', 'width', 'cmap']
+    _nonvectorized_styles = ['box_width', 'width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
@@ -319,7 +319,7 @@ class ViolinPlot(BoxWhiskerPlot):
                   ['stats_'+p for p in line_properties] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
-                  ['cmap'])
+                  ['cmap', 'box_cmap', 'violin_cmap'])
 
     _stat_fns = [partial(np.percentile, q=q) for q in [25, 50, 75]]
 

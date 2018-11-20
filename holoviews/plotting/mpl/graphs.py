@@ -8,6 +8,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import basestring, unique_array, search_indices, max_range, is_number, isscalar
+from ...util.transform import dim
 from ..util import process_cmap
 from .element import ColorbarPlot
 
@@ -27,7 +28,7 @@ class GraphPlot(ColorbarPlot):
     style_opts = ['edge_alpha', 'edge_color', 'edge_linestyle', 'edge_linewidth',
                   'node_alpha', 'node_color', 'node_edgecolors', 'node_facecolors',
                   'node_linewidth', 'node_marker', 'node_size', 'visible', 'cmap',
-                  'edge_cmap']
+                  'edge_cmap', 'node_cmap']
 
     _style_groups = ['node', 'edge']
 
@@ -245,6 +246,11 @@ class TriMeshPlot(GraphPlot):
 
 class ChordPlot(GraphPlot):
 
+    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+        The dimension or dimension value transform used to draw labels from.""")
+
+    # Deprecated options
+
     label_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the node labels will be drawn""")
@@ -260,7 +266,9 @@ class ChordPlot(GraphPlot):
         xdim, ydim = element.nodes.kdims[:2]
         if range_type not in ('combined', 'data'):
             return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
+        no_labels = (element.nodes.get_dimension(self.label_index) is None and
+                     self.labels is None)
+        rng = 1.1 if no_labels else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
         y0, y1 = max_range([ydim.range, (-rng, rng)])
         return (x0, y0, x1, y1)
@@ -268,7 +276,8 @@ class ChordPlot(GraphPlot):
 
     def get_data(self, element, ranges, style):
         data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
-        if isinstance(style.get('node_facecolors'), list):
+        node_color = style.get('node_c')
+        if isinstance(style.get('node_facecolors'), list) or isinstance(node_color, np.ndarray):
             angles = element._angles
             paths = []
             for i in range(len(element.nodes)):
@@ -276,17 +285,27 @@ class ChordPlot(GraphPlot):
                 vals = np.linspace(start, end, 20)
                 paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
             data['arcs'] = paths
-            style['arc_colors'] = style['node_facecolors']
+            if 'node_c' in style:
+                style['arc_array'] = node_color
+                style['arc_clim'] = style['node_vmin'], style['node_vmax']
+                style['arc_cmap'] = style['node_cmap']
+            else:
+                style['arc_colors'] = style['node_facecolors']
             style['arc_linewidth'] = 10
 
-        lidx = element.nodes.get_dimension(self.label_index)
-        if lidx is None:
-            if self.label_index is not None:
-                dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Chord not found, "
-                             "expected one of %s, got %s." %
-                             (dims, self.label_index))
+        label_dim = element.get_dimension(self.label_index)
+        labels = self.labels
+        if label_dim and labels:
+            self.warning("Cannot declare style mapping for 'labels' option "
+                         "and declare a label_index; ignoring the label_index.")
+        elif label_dim:
+            labels = label_dim
+        elif isinstance(labels, basestring):
+            labels = element.nodes.get_dimension(labels)
+
+        if labels is None:
             return data, style, plot_kwargs
+
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
@@ -296,9 +315,13 @@ class ChordPlot(GraphPlot):
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         offset = style.get('label_offset', 1.05)
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
-        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
+        if isinstance(labels, dim):
+            text = labels.apply(element, flat=True)
+        else:
+            text = element.nodes.dimension_values(labels)
+            text = [labels.pprint_value(v) for v in text]
         angles = np.rad2deg(np.arctan2(ys, xs))
-        data['text'] = (xs, ys, labels, angles)
+        data['text'] = (xs, ys, text, angles)
         return data, style, plot_kwargs
 
 

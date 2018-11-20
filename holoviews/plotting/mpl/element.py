@@ -797,7 +797,7 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmin'] = clim[0]
         opts[prefix+'vmax'] = clim[1]
 
-        cmap = opts.get(prefix+'cmap', 'viridis')
+        cmap = opts.get(prefix+'cmap', opts.get('cmap', 'viridis'))
         if values.dtype.kind not in 'OSUM':
             ncolors = None
             if isinstance(self.color_levels, int):
