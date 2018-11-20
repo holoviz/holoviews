@@ -64,7 +64,7 @@ def validate(style, value, vectorized=True):
     if validator is None:
         return None
     if isinstance(value, (np.ndarray, list)) and vectorized:
-        return all(validator(v) for v in value)
+        return all(validate(style, v) for v in value)
     try:
         valid = validator(value)
         return False if valid == False else True
