@@ -447,14 +447,15 @@ class DimensionedPlot(Plot):
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
             opts = cls.lookup_options(el, 'style')
+            plot_opts = cls.lookup_options(el, 'plot')
 
             # Compute normalization for color dim transforms
-            for k, v in opts.kwargs.items():
-                if not isinstance(v, dim) or 'color' not in k:
+            for k, v in dict(opts.kwargs, **plot_opts.kwargs).items():
+                if not isinstance(v, dim) or ('color' not in k and k != 'magnitude'):
                     continue
                 if isinstance(v, dim) and v.applies(el):
-                    dim_name = repr(v)[1:-1]
-                    values = v.eval(el)
+                    dim_name = repr(v)
+                    values = v.apply(el)
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):

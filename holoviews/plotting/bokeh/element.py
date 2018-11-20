@@ -680,7 +680,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges=ranges, flat=True)
+                val = v.apply(element, ranges=ranges, flat=True)
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
@@ -1256,7 +1256,7 @@ class ColorbarPlot(ElementPlot):
             return None
 
         # Attempt to find matching colormapper on the adjoined plot
-        dim_name = repr(eldim)[1:-1] if isinstance(eldim, dim) else eldim.name
+        dim_name = repr(eldim) if isinstance(eldim, dim) else eldim.name
         if self.adjoined:
             cmapper_name = dim_name+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
@@ -1336,7 +1336,7 @@ class ColorbarPlot(ElementPlot):
         color = style.get(name, None)
         if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
             self.warning("Cannot declare style mapping for '%s' option "
-                         "and declare a color_index, ignoring the color_index."
+                         "and declare a color_index; ignoring the color_index."
                          % name)
             cdim = None
         if not cdim:

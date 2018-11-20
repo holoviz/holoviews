@@ -537,7 +537,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
             else:
-                val = v.eval(element, ranges)
+                val = v.apply(element, ranges)
 
             if len(np.unique(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
@@ -730,10 +730,10 @@ class ColorbarPlot(ElementPlot):
         to be passed to matplotlib plot function.
         """
         clim = opts.pop(prefix+'clims', None)
-        dim_name = repr(vdim)[1:-1] if isinstance(vdim, dim) else vdim.name
+        dim_name = repr(vdim) if isinstance(vdim, dim) else vdim.name
         if values is None:
             if isinstance(vdim, dim):
-                values = vdim.eval(element)
+                values = vdim.apply(element, flat=True)
             else:
                 expanded = not (
                     isinstance(element, Dataset) and

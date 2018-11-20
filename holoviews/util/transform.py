@@ -235,7 +235,7 @@ class dim(object):
                 applies &= other.applies(dataset)
         return applies
 
-    def eval(self, dataset, flat=False, expanded=None, ranges={}):
+    def apply(self, dataset, flat=False, expanded=None, ranges={}):
         """
         Evaluates the transform on the supplied dataset.
         """
@@ -249,11 +249,11 @@ class dim(object):
             other = o['other']
             if other is not None:
                 if isinstance(other, dim):
-                    other = other.eval(dataset, ranges)
+                    other = other.apply(dataset, flat, expanded, ranges)
                 args = (other, data) if o['reverse'] else (data, other)
             else:
                 args = (data,)
-            drange = ranges.get(self.dimension.name, {})
+            drange = ranges.get(str(self), {})
             drange = drange.get('combined', drange)
             if o['fn'] == norm_fn and drange != {}:
                 data = o['fn'](data, *drange)
