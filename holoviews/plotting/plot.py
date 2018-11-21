@@ -481,7 +481,10 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
-                data_range = el.range(el_dim, dimension_range=False)
+                if isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                    data_range = el.nodes.range(2, dimension_range=False)
+                else:
+                    data_range = el.range(el_dim, dimension_range=False)
                 if el_dim.name not in group_ranges:
                     group_ranges[el_dim.name] = {'data': [], 'hard': [], 'soft': []}
                 group_ranges[el_dim.name]['data'].append(data_range)
