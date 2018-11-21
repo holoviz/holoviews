@@ -20,7 +20,7 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table
+from ..element import Table, Graph
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -455,7 +455,8 @@ class DimensionedPlot(Plot):
                     continue
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
-                    values = v.apply(el)
+                    values = v.apply(el, expanded=False)
+                    factors = None
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
@@ -468,12 +469,15 @@ class DimensionedPlot(Plot):
                                 warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
                                 drange = (np.nanmin(values), np.nanmax(values))
                         except:
-                            continue
+                            factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
-                    group_ranges[dim_name]['data'].append(drange)
-                    group_ranges[dim_name]['hard'].append((None, None))
-                    group_ranges[dim_name]['soft'].append((None, None))
+                    if factors is not None:
+                        if 'factors' not in group_ranges[dim_name]:
+                            group_ranges[dim_name]['factors'] = []
+                        group_ranges[dim_name]['factors'].append(factors)
+                    else:
+                        group_ranges[dim_name]['data'].append(drange)
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
@@ -483,6 +487,17 @@ class DimensionedPlot(Plot):
                 group_ranges[el_dim.name]['data'].append(data_range)
                 group_ranges[el_dim.name]['hard'].append(el_dim.range)
                 group_ranges[el_dim.name]['soft'].append(el_dim.soft_range)
+                if any(isinstance(r, util.basestring) for r in data_range):
+                    if 'factors' not in group_ranges[el_dim.name]:
+                        group_ranges[el_dim.name]['factors'] = []
+                    if el_dim.values not in ([], None):
+                        values = el_dim.values
+                    elif el_dim in el:
+                        values = el.dimension_values(el_dim, expanded=False)
+                    elif isinstance(el, Graph) and el_dim in el.nodes:
+                        values = el.nodes.dimension_values(el_dim, expanded=False)
+                    factors = util.unique_array(values)
+                    group_ranges[el_dim.name]['factors'].append(factors)
 
         dim_ranges = []
         for gdim, values in group_ranges.items():
@@ -493,6 +508,10 @@ class DimensionedPlot(Plot):
                                             hard_range, soft_range)
             dranges = {'data': data_range, 'hard': hard_range,
                        'soft': soft_range, 'combined': combined}
+            if 'factors' in values:
+                factors = util.unique_array([
+                    v for factors in values['factors'] for v in factors])
+                dranges['factors'] = factors
             dim_ranges.append((gdim, dranges))
         ranges[group] = OrderedDict(dim_ranges)
 
