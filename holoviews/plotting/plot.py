@@ -516,9 +516,8 @@ class DimensionedPlot(Plot):
             dranges = {'data': data_range, 'hard': hard_range,
                        'soft': soft_range, 'combined': combined}
             if 'factors' in values:
-                factors = util.unique_array([
+                dranges['factors'] = util.unique_array([
                     v for factors in values['factors'] for v in factors])
-                dranges['factors'] = factors
             dim_ranges.append((gdim, dranges))
         ranges[group] = OrderedDict(dim_ranges)
 
