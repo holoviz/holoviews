@@ -9,7 +9,7 @@ import holoviews as hv
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Store
-from holoviews.util import output, opts, OutputSettings
+from holoviews.util import output, opts, OutputSettings, Options
 from holoviews.core import OrderedDict
 
 from holoviews.core.options import OptionTree
@@ -127,3 +127,32 @@ class TestOptsUtil(ComparisonTestCase):
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'norm').options.get('axiswise',True), True)
+
+    def test_opts_completer_repr(self):
+        magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
+        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
+                   "opts.Points(logx=True, size=2)"]
+        reprs = opts._completer_reprs(magic)
+        self.assertEqual(reprs, expected)
+
+    def test_opts_completer_repr_line_magic(self):
+        magic= "%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
+        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
+                   "opts.Points(logx=True, size=2)"]
+        reprs = opts._completer_reprs(magic)
+        self.assertEqual(reprs, expected)
+
+    def test_opts_completer_repr_cell_magic(self):
+        magic= "%%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
+        expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
+                   "opts.Points(logx=True, size=2)"]
+        reprs = opts._completer_reprs(magic)
+        self.assertEqual(reprs, expected)
+
+    def test_opts_completer_repr_options_dotted(self):
+        options = [Options('Bivariate.Test.Example', bandwidth=0.5, cmap='Blues'),
+                   Options('Points', size=2, logx=True)]
+        expected= ["opts.Bivariate('Test.Example', bandwidth=0.5, cmap='Blues')",
+                   "opts.Points(logx=True, size=2)"]
+        reprs = opts._completer_reprs(options)
+        self.assertEqual(reprs, expected)
