@@ -18,7 +18,7 @@ from ...core.options import abbreviated_exception
 from ...element import Graph
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals
+from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
 from .util import categorize_colors, mpl_version, validate, wrap_formatter
 
@@ -731,13 +731,7 @@ class ColorbarPlot(ElementPlot):
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
-        if isinstance(vdim, dim):
-            dim_name = repr(vdim)
-            if dim_name.startswith("'") and dim_name.endswith("'"):
-                dim_name = dim_name[1:-1]
-        else:
-            dim_name = vdim.name
-
+        dim_name = dim_range_key(vdim)
         if values is None:
             if isinstance(vdim, dim):
                 values = vdim.apply(element, flat=True)

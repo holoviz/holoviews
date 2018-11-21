@@ -31,7 +31,7 @@ from ...element import Graph, VectorField
 from ...streams import Buffer
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals
+from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import BokehPlot, TOOLS
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, rgba_tuple,
@@ -1255,13 +1255,7 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         if eldim is None and colors is None:
             return None
-
-        if isinstance(eldim, dim):
-            dim_name = repr(eldim)
-            if dim_name.startswith("'") and dim_name.endswith("'"):
-                dim_name = dim_name[1:-1]
-        else:
-            dim_name = eldim.name
+        dim_name = dim_range_key(eldim)
 
         # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:

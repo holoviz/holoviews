@@ -17,6 +17,8 @@ from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
                          unique_iterator, closest_match, is_number, isfinite)
 from ..streams import LinkedStream
+from ..util.transform import dim
+
 
 def displayable(obj):
     """
@@ -966,6 +968,19 @@ def rgb2hex(rgb):
     if len(rgb) > 3:
         rgb = rgb[:-1]
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
+def dim_range_key(eldim):
+    """
+    Returns the key to look up a dimension range.
+    """
+    if isinstance(eldim, dim):
+        dim_name = repr(eldim)
+        if dim_name.startswith("'") and dim_name.endswith("'"):
+            dim_name = dim_name[1:-1]
+    else:
+        dim_name = eldim.name
+    return dim_name
 
 
 def hex2rgb(hex):
