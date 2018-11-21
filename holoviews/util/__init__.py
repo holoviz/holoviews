@@ -244,7 +244,7 @@ class opts(param.ParameterizedFunction):
                 spec = ''
 
             opts_format = '{ns}opts.{element}({spec}{kws})'
-            reprs.append(opts_format.format(ns=ns, spec=spec, kws=kws))
+            reprs.append(opts_format.format(ns=ns, spec=spec, kws=kws, element=element))
         return reprs
 
     @classmethod
