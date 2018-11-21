@@ -277,30 +277,29 @@ class ChordPlot(GraphPlot):
     def get_data(self, element, ranges, style):
         data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
         node_color = style.get('node_c')
-        if isinstance(style.get('node_facecolors'), list) or isinstance(node_color, np.ndarray):
-            angles = element._angles
-            paths = []
-            for i in range(len(element.nodes)):
-                start, end = angles[i:i+2]
-                vals = np.linspace(start, end, 20)
-                paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
-            data['arcs'] = paths
-            if 'node_c' in style:
-                style['arc_array'] = node_color
-                style['arc_clim'] = style['node_vmin'], style['node_vmax']
-                style['arc_cmap'] = style['node_cmap']
-            else:
-                style['arc_colors'] = style['node_facecolors']
-            style['arc_linewidth'] = 10
+        angles = element._angles
+        paths = []
+        for i in range(len(element.nodes)):
+            start, end = angles[i:i+2]
+            vals = np.linspace(start, end, 20)
+            paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
+        data['arcs'] = paths
+        if 'node_c' in style:
+            style['arc_array'] = style['node_c']
+            style['arc_clim'] = style['node_vmin'], style['node_vmax']
+            style['arc_cmap'] = style['node_cmap']
+        elif 'node_facecolors' in style:
+            style['arc_colors'] = style['node_facecolors']
+        style['arc_linewidth'] = 10
 
-        label_dim = element.get_dimension(self.label_index)
+        label_dim = element.nodes.get_dimension(self.label_index)
         labels = self.labels
         if label_dim and labels:
             self.warning("Cannot declare style mapping for 'labels' option "
                          "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
-        elif isinstance(labels, basestring):
+        if isinstance(labels, basestring):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:
@@ -356,7 +355,16 @@ class ChordPlot(GraphPlot):
         paths = data['arcs']
         edges.set_paths(paths)
         edges.set_visible(style.get('visible', True))
-
+        if 'arc_array' in style:
+            edges.set_array(style['arc_array'])
+        if 'arc_clim' in style:
+            edges.set_clim(style['arc_clim'])
+        if 'arc_norm' in style:
+            edges.set_norm(style['arc_norm'])
+        if 'arc_colors' in style:
+            edges.set_edgecolors(style['arc_colors'])
+        elif 'arc_edgecolors' in style:
+            edges.set_edgecolors(style['arc_edgecolors'])
 
     def _update_labels(self, ax, element, data, style):
         labels = self.handles.get('labels', [])
@@ -376,7 +384,6 @@ class ChordPlot(GraphPlot):
                                 verticalalignment='center', rotation_mode='anchor')
             labels.append(label)
         self.handles['labels'] = labels
-
 
     def update_handles(self, key, axis, element, ranges, style):
         data, style, axis_kwargs = self.get_data(element, ranges, style)

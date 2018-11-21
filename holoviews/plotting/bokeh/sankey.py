@@ -94,7 +94,7 @@ class SankeyPlot(GraphPlot):
         lidx = element.nodes.get_dimension(self.label_index)
         if element.vdims:
             edges = Dataset(element)[element[element.vdims[0].name]>0]
-            nodes = list(unique_array([edges.dimension_values(i) for i in range(2)]))
+            nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
             nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         else:
             nodes = element

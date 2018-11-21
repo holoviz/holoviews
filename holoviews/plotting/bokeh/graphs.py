@@ -366,28 +366,25 @@ class ChordPlot(GraphPlot):
             arc_renderer.view = scatter_renderer.view
             self.handles['multi_line_2_glyph'].update(**styles)
             self.handles['multi_line_2_source'] = scatter_renderer.data_source
-            
+
 
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
         data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
         node_color = style.get('node_color')
-        if ('node_fill_color' in mapping['scatter_1'] or
-            (isinstance(node_color, dim) and node_color.applies(element.nodes)) or
-            (isinstance(node_color, basestring) and node_color in elment.nodes)):
-            angles = element._angles
-            arcs = defaultdict(list)
-            for i in range(len(element.nodes)):
-                start, end = angles[i:i+2]
-                vals = np.linspace(start, end, 20)
-                xs, ys = np.cos(vals), np.sin(vals)
-                arcs['arc_xs'].append(xs)
-                arcs['arc_ys'].append(ys)
-            data['scatter_1'].update(arcs)
-            data['multi_line_2'] = data['scatter_1']
-            mapping['multi_line_2'] = {'xs': 'arc_xs', 'ys': 'arc_ys', 'line_width': 10}
+        angles = element._angles
+        arcs = defaultdict(list)
+        for i in range(len(element.nodes)):
+            start, end = angles[i:i+2]
+            vals = np.linspace(start, end, 20)
+            xs, ys = np.cos(vals), np.sin(vals)
+            arcs['arc_xs'].append(xs)
+            arcs['arc_ys'].append(ys)
+        data['scatter_1'].update(arcs)
+        data['multi_line_2'] = data['scatter_1']
+        mapping['multi_line_2'] = {'xs': 'arc_xs', 'ys': 'arc_ys', 'line_width': 10}
 
-        label_dim = element.get_dimension(self.label_index)
+        label_dim = element.nodes.get_dimension(self.label_index)
         labels = self.labels
         if label_dim and labels:
             self.warning("Cannot declare style mapping for 'labels' option "
@@ -405,7 +402,7 @@ class ChordPlot(GraphPlot):
             values = element.dimension_values(element.vdims[0])
             if values.dtype.kind in 'uif':
                 edges = Dataset(element)[values>0]
-                nodes = list(unique_array([edges.dimension_values(i) for i in range(2)]))
+                nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
         if isinstance(labels, dim):
