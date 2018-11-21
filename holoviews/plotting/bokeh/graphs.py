@@ -81,6 +81,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
+
     def get_extents(self, element, ranges, range_type='combined'):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
@@ -330,7 +331,7 @@ class ChordPlot(GraphPlot):
     label_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the node labels will be drawn""")
-    
+
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label',
                      'arc': 'arc'}
@@ -353,7 +354,7 @@ class ChordPlot(GraphPlot):
         y0, y1 = max_range([ydim.range, (-rng, rng)])
         return (x0, y0, x1, y1)
 
-    
+
     def _init_glyphs(self, plot, element, ranges, source):
         super(ChordPlot, self)._init_glyphs(plot, element, ranges, source)
         # Ensure that arc glyph matches node style

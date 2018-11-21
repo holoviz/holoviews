@@ -782,7 +782,12 @@ class ColorbarPlot(ElementPlot):
                     clim = -np.abs(clim).max(), np.abs(clim).max()
                 categorical = False
             else:
-                clim = (0, len(util.unique_array(values))-1)
+                range_key = dim_range_key(vdim)
+                if range_key in ranges and 'factors' in ranges[range_key]:
+                    factors = ranges[range_key]['factors']
+                else:
+                    factors = util.unique_array(values)
+                clim = (0, len(factors)-1)
                 categorical = True
         else:
             categorical = values.dtype.kind not in 'uif'

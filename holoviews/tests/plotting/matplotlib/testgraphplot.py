@@ -5,6 +5,7 @@ from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
+from holoviews.util.transform import dim
 
 # Standardize backend due to random inconsistencies
 try:
@@ -459,8 +460,19 @@ class TestMplChordPlot(TestMPLPlot):
         self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
         self.chord = Chord((self.edges, self.nodes))
 
+    def make_chord(self, i):
+        edges = [(0, 1, 1+i), (0, 2, 2+i), (1, 2, 3+i)]
+        nodes = Dataset([(0, 0+i), (1, 1+i), (2, 2+i)], 'index', 'Label')
+        return Chord((edges, nodes), vdims='weight')
+
     def test_chord_nodes_label_text(self):
         g = self.chord.opts(plot=dict(label_index='Label'))
+        plot = mpl_renderer.get_plot(g)
+        labels = plot.handles['labels']
+        self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
+
+    def test_chord_nodes_labels_mapping(self):
+        g = self.chord.opts(plot=dict(labels='Label'))
         plot = mpl_renderer.get_plot(g)
         labels = plot.handles['labels']
         self.assertEqual([l.get_text() for l in labels], ['A', 'B', 'C'])
@@ -477,6 +489,16 @@ class TestMplChordPlot(TestMPLPlot):
         self.assertEqual(arcs.get_colors(), colors)
         self.assertEqual(nodes.get_facecolors(), colors)
 
+    def test_chord_node_color_style_mapping(self):
+        g = self.chord.opts(style=dict(node_color='Label', cmap=['#FFFFFF', '#CCCCCC', '#000000']))
+        plot = mpl_renderer.get_plot(g)
+        arcs = plot.handles['arcs']
+        nodes = plot.handles['nodes']
+        self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(nodes.get_clim(), (0, 2))
+        self.assertEqual(arcs.get_clim(), (0, 2))
+
     def test_chord_edges_categorically_colormapped(self):
         g = self.chord.opts(plot=dict(edge_color_index='start'),
                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
@@ -486,3 +508,68 @@ class TestMplChordPlot(TestMPLPlot):
                            [ 1., 1., 1., 1. ],
                            [ 0., 0., 0., 1. ]])
         self.assertEqual(edges.get_edgecolors(), colors)
+
+    def test_chord_edge_color_style_mapping(self):
+        g = self.chord.opts(style=dict(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']))
+        plot = mpl_renderer.get_plot(g)
+        edges = plot.handles['edges']
+        self.assertEqual(edges.get_array(), np.array([0, 0, 1]))
+        self.assertEqual(edges.get_clim(), (0, 1))
+
+    def test_chord_edge_color_linear_style_mapping_update(self):
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(edge_color='weight', framewise=True)
+        plot = mpl_renderer.get_plot(hmap)
+        edges = plot.handles['edges']
+        self.assertEqual(edges.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(edges.get_clim(), (1, 3))
+        plot.update((1,))
+        self.assertEqual(edges.get_array(), np.array([2, 3, 4]))
+        self.assertEqual(edges.get_clim(), (2, 4))
+
+    def test_chord_node_color_linear_style_mapping_update(self):
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(node_color='Label', framewise=True)
+        plot = mpl_renderer.get_plot(hmap)        
+        arcs = plot.handles['arcs']
+        nodes = plot.handles['nodes']
+        self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(nodes.get_clim(), (0, 2))
+        self.assertEqual(arcs.get_clim(), (0, 2))
+        plot.update((1,))
+        self.assertEqual(nodes.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(arcs.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(nodes.get_clim(), (1, 3))
+        self.assertEqual(arcs.get_clim(), (1, 3))
+
+    def test_chord_edge_color_style_mapping_update(self):
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
+            edge_color=dim('weight').cat({1: 'red', 2: 'green', 3: 'blue', 4: 'black'})
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        edges = plot.handles['edges']
+        self.assertEqual(edges.get_edgecolors(), np.array([
+            [1, 0, 0, 1], [0, 0.501961, 0, 1], [0, 0, 1, 1]
+        ]))
+        plot.update((1,))
+        self.assertEqual(edges.get_edgecolors(), np.array([
+            [0, 0.501961, 0, 1], [0, 0, 1, 1], [0, 0, 0, 1]
+        ]))
+
+    def test_chord_node_color_style_mapping_update(self):
+        hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
+            node_color=dim('Label').cat({0: 'red', 1: 'green', 2: 'blue', 3: 'black'})
+        )
+        plot = mpl_renderer.get_plot(hmap)
+        arcs = plot.handles['arcs']
+        nodes = plot.handles['nodes']
+        colors = np.array([
+            [1, 0, 0, 1], [0, 0.501961, 0, 1], [0, 0, 1, 1]
+        ])
+        self.assertEqual(arcs.get_edgecolors(), colors)
+        self.assertEqual(nodes.get_facecolors(), colors)
+        plot.update((1,))
+        colors = np.array([
+            [0, 0.501961, 0, 1], [0, 0, 1, 1], [0, 0, 0, 1]
+        ])
+        self.assertEqual(arcs.get_edgecolors(), colors)
+        self.assertEqual(nodes.get_facecolors(), colors)

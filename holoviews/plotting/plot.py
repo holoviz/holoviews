@@ -455,7 +455,7 @@ class DimensionedPlot(Plot):
                     continue
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
-                    values = v.apply(el, expanded=False)
+                    values = v.apply(el, expanded=False, all_values=True)
                     factors = None
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
@@ -493,7 +493,11 @@ class DimensionedPlot(Plot):
                     if el_dim.values not in ([], None):
                         values = el_dim.values
                     elif el_dim in el:
-                        values = el.dimension_values(el_dim, expanded=False)
+                        if isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                            # Graph start/end normalization should include all node indices
+                            values = el.nodes.dimension_values(2, expanded=False)
+                        else:
+                            values = el.dimension_values(el_dim, expanded=False)
                     elif isinstance(el, Graph) and el_dim in el.nodes:
                         values = el.nodes.dimension_values(el_dim, expanded=False)
                     factors = util.unique_array(values)

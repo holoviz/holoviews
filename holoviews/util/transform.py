@@ -110,7 +110,7 @@ class dim(object):
 
     _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn}
 
-    def __init__(self, obj, fn=None, other=None, reverse=False, **kwargs):
+    def __init__(self, obj, *args, **kwargs):
         ops = []
         if isinstance(obj, basestring):
             self.dimension = Dimension(obj)
@@ -119,13 +119,17 @@ class dim(object):
         else:
             self.dimension = obj.dimension
             ops = obj.ops
+        if args:
+            fn = args[0]
+        else:
+            fn = None
         if isinstance(fn, str) or fn in self._op_registry:
             fn = self._op_registry.get(fn)
             if fn is None:
                 raise ValueError('dim transform %s not found' % fn)
         if fn is not None:
-            ops = ops + [{'other': other, 'fn': fn, 'kwargs': kwargs,
-                          'reverse': reverse}]
+            ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
+                          'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
     @classmethod
@@ -152,13 +156,13 @@ class dim(object):
     def __truediv__(self, other):   return dim(self, operator.truediv, other)
 
     # Reverse binary operators
-    def __radd__(self, other):      return dim(self, operator.add, other, True)
-    def __rdiv__(self, other):      return dim(self, operator.div, other, True)
-    def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, True)
-    def __rmod__(self, other):      return dim(self, operator.mod, other, True)
-    def __rmul__(self, other):      return dim(self, operator.mul, other, True)
-    def __rsub__(self, other):      return dim(self, operator.sub, other, True)
-    def __rtruediv__(self, other):  return dim(self, operator.truediv, other, True)
+    def __radd__(self, other):      return dim(self, operator.add, other, reverse=True)
+    def __rdiv__(self, other):      return dim(self, operator.div, other, reverse=True)
+    def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, reverse=True)
+    def __rmod__(self, other):      return dim(self, operator.mod, other, reverse=True)
+    def __rmul__(self, other):      return dim(self, operator.mul, other, reverse=True)
+    def __rsub__(self, other):      return dim(self, operator.sub, other, reverse=True)
+    def __rtruediv__(self, other):  return dim(self, operator.truediv, other, reverse=True)
 
     ## NumPy operations
     def __array_ufunc__(self, *args, **kwargs):
@@ -228,36 +232,59 @@ class dim(object):
             if isinstance(dataset, Graph) and not applies:
                 applies = dataset.nodes.get_dimension(self.dimension) is not None
         for op in self.ops:
-            other = op.get('other')
-            if other is None:
+            args = op.get('args')
+            if not args:
                 continue
-            elif isinstance(other, basestring):
-                applies &= dim(other).applies(dataset)
-            elif isinstance(other, dim):
-                applies &= other.applies(dataset)
+            for arg in args:
+                if isinstance(arg, dim):
+                    applies &= arg.applies(dataset)
         return applies
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}):
+    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False):
         """
         Evaluates the transform on the supplied dataset.
+
+        Arguments
+        ---------
+
+        dataset: Dataset
+            Dataset object to evaluate the expression on
+        flat: boolean
+            Whether to flatten the returned array
+        expanded: boolean
+            Whether to use the expanded expression
+        ranges: dict
+            Dictionary for ranges along each dimension used for norm function
+        all_values: boolean
+            Whether to evaluate on all available values, for some element
+            types, such as Graphs, this may include values not included
+            in the referenced column
+
+        Returns
+        -------
+        values: np.ndarray
+            Array containing evaluated expression
         """
+        dimension = self.dimension
         if expanded is None:
-            expanded = not ((dataset.interface.gridded and self.dimension in dataset.kdims) or
-                            (dataset.interface.multi and dataset.interface.isscalar(dataset, self.dimension)))
+            expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
+                            (dataset.interface.multi and dataset.interface.isscalar(dataset, dimension)))
         if isinstance(dataset, Graph):
-            dataset = dataset if self.dimension in dataset else dataset.nodes
-        data = dataset.dimension_values(self.dimension, expanded=expanded, flat=flat)
+            if dimension in dataset.kdims and all_values:
+                dimension = dataset.nodes.kdims[2]
+            dataset = dataset if dimension in dataset else dataset.nodes
+        data = dataset.dimension_values(dimension, expanded=expanded, flat=flat)
         for o in self.ops:
-            other = o['other']
-            if other is not None:
-                if isinstance(other, dim):
-                    other = other.apply(dataset, flat, expanded, ranges)
-                args = (other, data) if o['reverse'] else (data, other)
-            else:
-                args = (data,)
+            args = o['args']
+            fn_args = [data]
+            for arg in args:
+                if isinstance(arg, dim):
+                    arg = arg.apply(dataset, flat, expanded, ranges, all_values)
+                fn_args.append(arg)
+            args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
             drange = ranges.get(str(self), {})
             drange = drange.get('combined', drange)
-            if o['fn'] == norm_fn and drange != {}:
+            if o['fn'] is norm_fn and drange != {}:
                 data = o['fn'](data, *drange)
             else:
                 data = o['fn'](*args, **o['kwargs'])
@@ -266,10 +293,9 @@ class dim(object):
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
         for o in self.ops:
-            arg = ', %r' % o['other'] if o['other'] else ''
+            args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
             kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
             kwargs = ', %s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
-            op_repr = '{fn}({repr}{arg}{kwargs})'.format(fn=o['fn'].__name__, repr=op_repr,
-                                                         arg=arg, kwargs=kwargs)
+            op_repr = '{fn}({repr}, {args}{kwargs})'.format(fn=o['fn'].__name__, repr=op_repr,
+                                                            args=args, kwargs=kwargs)
         return op_repr
-
