@@ -371,7 +371,6 @@ class ChordPlot(GraphPlot):
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
         data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
-        node_color = style.get('node_color')
         angles = element._angles
         arcs = defaultdict(list)
         for i in range(len(element.nodes)):

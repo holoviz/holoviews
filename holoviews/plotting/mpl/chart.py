@@ -14,7 +14,8 @@ from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, max_range,
-    isfinite, datetime_types, dt_to_int, dt64_to_dt
+    isfinite, datetime_types, dt_to_int, dt64_to_dt, search_indices,
+    unique_array
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -631,7 +632,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if cs.dtype.kind in 'uif':
                 style['c'] = cs
             else:
-                style['c'] = util.search_indices(cs, util.unique_array(array))
+                style['c'] = search_indices(cs, unique_array(cs))
             self._norm_kwargs(element, ranges, style, cdim)
         elif color is not None:
             style['color'] = color

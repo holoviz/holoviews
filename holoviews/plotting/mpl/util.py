@@ -12,9 +12,8 @@ from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
-    validate_capstyle, validate_color, validate_fontsize, validate_fonttype,
-    validate_hatch, validate_joinstyle
-)
+    validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
+    validate_joinstyle)
 from ...core.util import LooseVersion, _getargspec, basestring, is_number
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX

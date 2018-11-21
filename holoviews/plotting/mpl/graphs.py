@@ -276,7 +276,6 @@ class ChordPlot(GraphPlot):
 
     def get_data(self, element, ranges, style):
         data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
-        node_color = style.get('node_c')
         angles = element._angles
         paths = []
         for i in range(len(element.nodes)):
