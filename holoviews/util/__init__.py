@@ -243,7 +243,7 @@ class opts(param.ParameterizedFunction):
                 element = option.key
                 spec = ''
 
-            opts_format = f'{ns}opts.{element}({spec}{kws})'
+            opts_format = '{ns}opts.{element}({spec}{kws})'
             reprs.append(opts_format.format(ns=ns, spec=spec, kws=kws))
         return reprs
 
