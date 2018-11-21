@@ -12,6 +12,7 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
+from ...util.transform import dim
 from .element import ColorbarPlot
 from .styles import line_properties, fill_properties
 from .util import bokeh_version
@@ -183,6 +184,11 @@ class HexTilesPlot(ColorbarPlot):
         style['size'] = size
         style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
+        scale = style.get('scale')
+        if scale_dim and ((isinstance(scale, basestring) and scale in element) or isinstance(scale, dim)):
+            self.warning("Cannot declare style mapping for 'scale' option "
+                         "and declare a size_index; ignoring the size_index.")
+            scale_dim = None
         if scale_dim is not None:
             sizes = element.dimension_values(scale_dim)
             if self.aggregator is np.size:
