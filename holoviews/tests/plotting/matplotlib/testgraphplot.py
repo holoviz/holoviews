@@ -514,7 +514,7 @@ class TestMplChordPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
         self.assertEqual(edges.get_array(), np.array([0, 0, 1]))
-        self.assertEqual(edges.get_clim(), (0, 1))
+        self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_chord_edge_color_linear_style_mapping_update(self):
         hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(edge_color='weight', framewise=True)
@@ -543,7 +543,7 @@ class TestMplChordPlot(TestMPLPlot):
 
     def test_chord_edge_color_style_mapping_update(self):
         hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
-            edge_color=dim('weight').cat({1: 'red', 2: 'green', 3: 'blue', 4: 'black'})
+            edge_color=dim('weight').categorize({1: 'red', 2: 'green', 3: 'blue', 4: 'black'})
         )
         plot = mpl_renderer.get_plot(hmap)
         edges = plot.handles['edges']
@@ -557,7 +557,7 @@ class TestMplChordPlot(TestMPLPlot):
 
     def test_chord_node_color_style_mapping_update(self):
         hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(
-            node_color=dim('Label').cat({0: 'red', 1: 'green', 2: 'blue', 3: 'black'})
+            node_color=dim('Label').categorize({0: 'red', 1: 'green', 2: 'blue', 3: 'black'})
         )
         plot = mpl_renderer.get_plot(hmap)
         arcs = plot.handles['arcs']

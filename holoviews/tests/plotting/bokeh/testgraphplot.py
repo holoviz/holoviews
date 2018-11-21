@@ -551,6 +551,6 @@ class TestBokehChordPlot(TestBokehPlot):
         glyph = plot.handles['multi_line_1_glyph']
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
-        self.assertEqual(cmapper.factors, ['0', '1'])
+        self.assertEqual(cmapper.factors, ['0', '1', '2'])
         self.assertEqual(edge_source.data['edge_color'], np.array(['0', '0', '1']))
         self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})

@@ -125,16 +125,16 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(dim('int').bin([0, 5, 10], ['A', 'B']).apply(self.dataset),
                          np.array(['A', 'A', 'A', 'A', 'A', 'B', 'B', 'B', 'B', 'B']))
 
-    def test_cat_transform_list(self):
-        self.assertEqual(dim('categories').cat(['circle', 'square', 'triangle']).apply(self.dataset),
+    def test_categorize_transform_list(self):
+        self.assertEqual(dim('categories').categorize(['circle', 'square', 'triangle']).apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
-    def test_cat_transform_dict(self):
-        self.assertEqual(dim('categories').cat({'A': 'circle', 'B': 'square', 'C': 'triangle'}).apply(self.dataset),
+    def test_categorize_transform_dict(self):
+        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square', 'C': 'triangle'}).apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
-    def test_cat_transform_dict_with_empty(self):
-        self.assertEqual(dim('categories').cat({'A': 'circle', 'B': 'square'}, empty='triangle').apply(self.dataset),
+    def test_categorize_transform_dict_with_empty(self):
+        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, empty='triangle').apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
     # Complex expressions
