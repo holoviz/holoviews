@@ -9,7 +9,7 @@ from ..core.util import basestring, unique_iterator
 from ..element import Graph
 
 
-def norm_fn(values, min=None, max=None):
+def _norm(values, min=None, max=None):
     """
     min-max normalizes to scale data into 0-1 range.
 
@@ -32,7 +32,7 @@ def norm_fn(values, min=None, max=None):
     return (values - min) / (max-min)
 
 
-def bin_fn(values, bins, labels=None):
+def _bin(values, bins, labels=None):
     """
     Bins data into declared bins. By default each bin is labelled
     with bin center values but an explicit list of bin labels may be
@@ -65,7 +65,7 @@ def bin_fn(values, bins, labels=None):
     return binned
 
 
-def cat_fn(values, categories, empty=None):
+def _categorize(values, categories, empty=None):
     """
     Replaces discrete values in input array into a fixed set of
     categories defined either as a list or dictionary.
@@ -108,7 +108,7 @@ class dim(object):
     binning and categorizing data.
     """
 
-    _op_registry = {'norm': norm_fn, 'bin': bin_fn, 'cat': cat_fn}
+    _op_registry = {'norm': _norm, 'bin': _bin, 'categorize': _categorize}
 
     def __init__(self, obj, *args, **kwargs):
         ops = []
@@ -194,9 +194,9 @@ class dim(object):
         empty: any (optional)
            Value assigned to input values no category could be assigned to
         """
-        return dim(self, bin_fn, bins, labels=labels)
+        return dim(self, _bin, bins, labels=labels)
 
-    def cat(self, categories, empty=None):
+    def categorize(self, categories, empty=None):
         """
         Bins data into declared bins. By default each bin is labelled
         with bin center values but an explicit list of bin labels may be
@@ -209,13 +209,13 @@ class dim(object):
         labels: np.ndarray or list (optional)
            Labels for bins should have length N-1 compared to bins
         """
-        return dim(self, cat_fn, categories=categories, empty=empty)
+        return dim(self, _categorize, categories=categories, empty=empty)
 
     def norm(self):
         """
         min-max normalizes to scale data into 0-1 range.
         """
-        return dim(self, norm_fn)
+        return dim(self, _norm)
 
     # Other methods
     
@@ -284,7 +284,7 @@ class dim(object):
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
             drange = ranges.get(str(self), {})
             drange = drange.get('combined', drange)
-            if o['fn'] is norm_fn and drange != {}:
+            if o['fn'] is _norm and drange != {}:
                 data = o['fn'](data, *drange)
             else:
                 data = o['fn'](*args, **o['kwargs'])
