@@ -354,20 +354,34 @@ class ChordPlot(GraphPlot):
         y0, y1 = max_range([ydim.range, (-rng, rng)])
         return (x0, y0, x1, y1)
 
+    def _sync_arcs(self):
+        arc_renderer = self.handles['multi_line_2_glyph_renderer']
+        scatter_renderer = self.handles['scatter_1_glyph_renderer']
+        for gtype in ('selection_', 'nonselection_', 'muted_', 'hover_', ''):
+            glyph = getattr(scatter_renderer, gtype+'glyph')
+            arc_glyph = getattr(arc_renderer, gtype+'glyph')
+            if not glyph or not arc_glyph:
+                continue
+            scatter_props = glyph.properties_with_values(include_defaults=False)
+            styles = {k.replace('fill', 'line'): v for k, v in scatter_props.items()
+                      if 'fill' in k}
+            arc_glyph.update(**styles)
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(ChordPlot, self)._init_glyphs(plot, element, ranges, source)
         # Ensure that arc glyph matches node style
         if 'multi_line_2_glyph' in self.handles:
-            scatter_props = self.handles['scatter_1_glyph'].properties_with_values()
-            styles = {k.replace('fill', 'line'): v for k, v in scatter_props.items() if 'fill' in k}
             arc_renderer = self.handles['multi_line_2_glyph_renderer']
             scatter_renderer = self.handles['scatter_1_glyph_renderer']
-            arc_renderer.data_source = scatter_renderer.data_source
             arc_renderer.view = scatter_renderer.view
-            self.handles['multi_line_2_glyph'].update(**styles)
+            arc_renderer.data_source = scatter_renderer.data_source
             self.handles['multi_line_2_source'] = scatter_renderer.data_source
+            self._sync_arcs()
 
+    def _update_glyphs(self, element, ranges, style):
+        if 'multi_line_2_glyph' in self.handles:
+            self._sync_arcs()
+        super(ChordPlot, self)._init_glyphs(element, ranges, style)
 
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
@@ -458,6 +472,6 @@ class TriMeshPlot(GraphPlot):
         element = self._process_vertices(element)
         super(TriMeshPlot, self)._init_glyphs(plot, element, ranges, source)
 
-    def _update_glyphs(self, element, ranges):
+    def _update_glyphs(self, element, ranges, style):
         element = self._process_vertices(element)
-        super(TriMeshPlot, self)._update_glyphs(element, ranges)
+        super(TriMeshPlot, self)._update_glyphs(element, ranges, style)

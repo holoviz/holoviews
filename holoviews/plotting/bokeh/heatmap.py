@@ -149,8 +149,8 @@ class HeatMapPlot(ColorbarPlot):
         self._draw_markers(plot, element, self.ymarks, axis='y')
 
 
-    def _update_glyphs(self, element, ranges):
-        super(HeatMapPlot, self)._update_glyphs(element, ranges)
+    def _update_glyphs(self, element, ranges, style):
+        super(HeatMapPlot, self)._update_glyphs(element, ranges, style)
         plot = self.handles['plot']
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')

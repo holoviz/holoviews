@@ -755,7 +755,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         continue
 
                     # Override empty and non-vectorized fill_style if not hover style
-                    hover = pprefix == 'hover'
+                    hover = pprefix == 'hover_'
                     if ((fill_style is None or (validate(s, fill_style, True) and not hover))
                         and supports_fill):
                         new_style[fill_key] = val
@@ -962,7 +962,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def _update_glyphs(self, element, ranges):
+    def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
         glyph = self.handles.get('glyph')
         source = self.handles['source']
@@ -976,7 +976,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        style = self.style[self.cyclic_index]
         if self.batched:
             data, mapping, style = self.get_batched_data(element, ranges)
         else:
@@ -1033,7 +1032,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
 
-        self._update_glyphs(element, ranges)
+        self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
 
 
@@ -1136,7 +1135,7 @@ class CompositeElementPlot(ElementPlot):
         return group_props
 
 
-    def _update_glyphs(self, element, ranges):
+    def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
 
         # Cache frame object id to skip updating data if unchanged
@@ -1147,7 +1146,6 @@ class CompositeElementPlot(ElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
         keys = glyph_order(dict(data, **mapping), self._draw_order)
