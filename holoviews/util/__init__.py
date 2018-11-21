@@ -216,6 +216,38 @@ class opts(param.ParameterizedFunction):
                              'found.' % (opt, objtype))
 
     @classmethod
+    def _completer_reprs(cls, options, namespace=None):
+        """
+        Given a list of Option objects (such as those returned from
+        OptsSpec.parse_options) or an %opts or %%opts magic string,
+        return a list of corresponding completer reprs. The namespace is
+        typically given as 'hv' if fully qualified namespaces are
+        desired.
+        """
+        if isinstance(options, basestring):
+            from .parser import OptsSpec
+            try:     ns = get_ipython().user_ns  # noqa
+            except:  ns = globals()
+            options = options.replace('%%opts','').replace('%opts','')
+            options = OptsSpec.parse_options(options, ns=ns)
+
+
+        reprs = []
+        ns = '{namespace}.'.format(namespace=namespace) if namespace else ''
+        for option in options:
+            kws = ', '.join('%s=%r' % (k,option.kwargs[k]) for k in sorted(option.kwargs))
+            if '.' in option.key:
+                element = option.key.split('.')[0]
+                spec = repr('.'.join(option.key.split('.')[1:])) + ', '
+            else:
+                element = option.key
+                spec = ''
+
+            opts_format = f'{ns}opts.{element}({spec}{kws})'
+            reprs.append(opts_format.format(ns=ns, spec=spec, kws=kws))
+        return reprs
+
+    @classmethod
     def _build_completer(cls, element, allowed):
         def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
