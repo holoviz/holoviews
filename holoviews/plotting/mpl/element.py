@@ -541,10 +541,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             else:
                 val = v.apply(element, ranges)
 
-            if len(util.unique_array(val)) == 1:
-                val = val if np.isscalar(val) else val[0]
+            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+                (not 'color' in k or validate('color', val))):
+                val = val[0]
 
-            if not np.isscalar(val) and k in self._nonvectorized_styles:
+            if not np.isscalar(val) k in self._nonvectorized_styles:
                 element = type(element).__name__
                 raise ValueError('Mapping a dimension to the "{style}" '
                                  'style option is not supported by the '

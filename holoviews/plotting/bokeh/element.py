@@ -683,8 +683,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if len(util.unique_array(val)) == 1:
-                val = val if np.isscalar(val) else val[0]
+            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+                (not 'color' in k or validate('color', val))):
+                val = val[0]
 
             if not np.isscalar(val):
                 if k in self._nonvectorized_styles:
