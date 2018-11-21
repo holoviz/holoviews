@@ -15,7 +15,8 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match, is_number, isfinite)
+                         unique_iterator, closest_match, is_number, isfinite,
+                         python2sort)
 from ..streams import LinkedStream
 from ..util.transform import dim
 
@@ -720,7 +721,7 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
 
     # Return results sorted by category if category information is provided
     if records:
-        return list(unique_iterator(sorted(matches,
+        return list(unique_iterator(python2sort(matches,
                     key=lambda r: (r.category.split(" ")[-1],r.bg,r.name.lower(),r.provider,r.source))))
     else:
         return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))

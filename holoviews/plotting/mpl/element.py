@@ -745,7 +745,7 @@ class ColorbarPlot(ElementPlot):
                 expanded = not (
                     isinstance(element, Dataset) and
                     element.interface.multi and
-                    (element.level is not None or
+                    (getattr(element, 'level', None) is not None or
                      element.interface.isscalar(element, vdim.name))
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
