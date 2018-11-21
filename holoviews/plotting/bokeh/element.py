@@ -34,8 +34,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import BokehPlot, TOOLS
 from .styles import (
-    legend_dimensions, line_properties, mpl_to_bokeh, rgba_tuple,
-    text_properties, validate
+    legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
+    rgba_tuple, text_properties, validate
 )
 from .util import (
     bokeh_version, decode_bytes, get_tab_title, glyph_order,
@@ -737,24 +737,40 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = {'field': k, 'transform': cmapper}
             new_style[k] = key
 
+        # Process color/alpha styles and expand to fill/line style
         for style, val in list(new_style.items()):
-            # If mapped to color/alpha override static fill/line style
             for s in ('alpha', 'color'):
                 if prefix+s != style or style not in source.data:
                     continue
-                supports_fill = any(o.startswith(prefix+'fill') and getattr(self, 'filled', True)
-                                    for o in self.style_opts)
-                fill_style = new_style.get(prefix+'fill_'+s)
-                if ((fill_style is not None and validate(s, fill_style))
-                    or (fill_style is None and supports_fill)):
-                    new_style[prefix+'fill_'+s] = val
+                supports_fill = any(
+                    o.startswith(prefix+'fill') and (prefix != 'edge_' or getattr(self, 'filled', True))
+                    for o in self.style_opts)
+                for pprefix in [p+'_' for p in property_prefixes]+['']:
+                    fill_key = prefix+pprefix+'fill_'+s
+                    fill_style = new_style.get(fill_key)
 
-                # If glyph has fill and line style is set skip setting line color
-                line_style = new_style.get(prefix+'line_'+s)
-                if supports_fill and line_style is not None:
-                    continue
-                if line_style and validate(s, line_style):
-                    new_style[prefix+'line_'+s] = val
+                    # Do not override custom nonselection/muted alpha
+                    if ((pprefix in ('nonselection_', 'muted_') and s == 'alpha')
+                        or fill_key not in self.style_opts):
+                        continue
+
+                    # Override empty and non-vectorized fill_style if not hover style
+                    hover = pprefix == 'hover'
+                    if ((fill_style is None or (validate(s, fill_style, True) and not hover))
+                        and supports_fill):
+                        new_style[fill_key] = val
+
+                    line_key = prefix+pprefix+'line_'+s
+                    line_style = new_style.get(line_key)
+
+                    # If glyph has fill and line style is set overriding line color
+                    if supports_fill and line_style is not None:
+                        continue
+
+                    # If glyph does not support fill override non-vectorized line_color
+                    if ((line_style is not None and (validate(s, line_style) and not hover)) or
+                        (line_style is None and not supports_fill)):
+                        new_style[line_key] = val
 
         return new_style
 

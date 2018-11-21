@@ -2,7 +2,7 @@ import datetime as dt
 from unittest import SkipTest
 
 import numpy as np
-from holoviews.core import NdOverlay
+from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
 from holoviews.plotting.bokeh.util import bokeh_version
@@ -303,6 +303,29 @@ class TestContoursPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
+
+    def test_contours_linear_color_op_update(self):
+        contours = HoloMap({
+            0: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 7},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 3}
+            ], vdims='color'),
+            1: Contours([
+                {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 5},
+                {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 2}
+            ], vdims='color')}).options(color='color', framewise=True)
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(cds.data['color'], np.array([7, 3]))
+        self.assertEqual(cmapper.low, 3)
+        self.assertEqual(cmapper.high, 7)
+        plot.update((1,))
+        self.assertEqual(cds.data['color'], np.array([5, 2]))
+        self.assertEqual(cmapper.low, 2)
+        self.assertEqual(cmapper.high, 5)
 
     def test_contours_categorical_color_op(self):
         contours = Contours([

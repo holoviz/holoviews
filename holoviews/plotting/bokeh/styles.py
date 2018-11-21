@@ -111,7 +111,7 @@ def get_validator(style):
             return v
 
 
-def validate(style, value):
+def validate(style, value, scalar=False):
     """
     Validates a style and associated value.
 
@@ -121,6 +121,8 @@ def validate(style, value):
        The style to validate (e.g. 'color', 'size' or 'marker')
     value: 
        The style value to validate
+    scalar: bool
+
 
     Returns
     -------
@@ -131,6 +133,8 @@ def validate(style, value):
     if validator is None:
         return None
     if isinstance(value, (np.ndarray, list)):
+        if scalar:
+            return False
         return all(validator(v) for v in value)
     return validator(value)
 
