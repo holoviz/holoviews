@@ -260,7 +260,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph(edges, vdims='color').options(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([2, 1, 0]))
+        self.assertEqual(edges.get_array(), np.array([0, 1, 2]))
         self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_graph_op_edge_alpha(self):
@@ -372,7 +372,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([1, 2, 0, 1]))
+        self.assertEqual(artist.get_array(), np.array([0, 1, 2, 0]))
         self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_trimesh_op_node_size(self):

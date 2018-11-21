@@ -20,7 +20,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import categorize_colors, mpl_version, validate, wrap_formatter
+from .util import mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -567,7 +567,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
                 if val.dtype.kind in 'OSUM':
-                    val = categorize_colors(val)
+                    range_key = dim_range_key(v)
+                    if range_key in ranges and 'factors' in ranges[range_key]:
+                        factors = ranges[range_key]['factors']
+                    else:
+                        factors = util.unique_array(val)
+                    val = util.search_indices(val, factors)
                 k = prefix+'c'
 
             new_style[k] = val

@@ -88,17 +88,6 @@ def validate(style, value, vectorized=True):
         return False
 
 
-def categorize_colors(colors, categories=None):
-    """
-    Takes a list of categorical values and turns them into integers
-    which can be colormapped.
-    """
-    categories = np.unique(colors) if categories is None else categories
-    sorted_colors = np.argsort(categories)
-    positions = np.searchsorted(categories, colors)
-    return sorted_colors[positions]
-
-
 def wrap_formatter(formatter):
     """
     Wraps formatting function or string in

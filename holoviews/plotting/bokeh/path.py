@@ -206,7 +206,10 @@ class ContourPlot(LegendPlot, PathPlot):
         else:
             values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
-        factors = list(util.unique_array(values)) if values.dtype.kind in 'SUO' else None
+        if cdim.name in ranges and 'factors' in ranges[cdim.name]:
+            factors = ranges[cdim.name]['factors']
+        else:
+            factors = util.unique_array(values) if values.dtype.kind in 'SUO' else None
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         self._get_hover_data(data, element)

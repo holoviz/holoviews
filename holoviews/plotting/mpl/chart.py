@@ -24,7 +24,7 @@ from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
-from .util import categorize_colors, mpl_version
+from .util import mpl_version
 
 
 
@@ -631,7 +631,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if cs.dtype.kind in 'uif':
                 style['c'] = cs
             else:
-                style['c'] = categorize_colors(cs)
+                style['c'] = util.search_indices(cs, util.unique_array(array))
             self._norm_kwargs(element, ranges, style, cdim)
         elif color is not None:
             style['color'] = color

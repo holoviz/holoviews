@@ -125,7 +125,7 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([1, 0]))
+        self.assertEqual(artist.get_array(), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_polygons_alpha_op(self):
@@ -155,7 +155,7 @@ class TestContoursPlot(TestMPLPlot):
                     vdims='z').opts(plot=dict(color_index='z'))
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([1, 0, 1]))
+        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_contours_color_op(self):
@@ -226,7 +226,7 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([1, 0]))
+        self.assertEqual(artist.get_array(), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_contours_alpha_op(self):

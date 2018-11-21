@@ -724,8 +724,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if ('color' in k and isinstance(val, np.ndarray) and
                 (numeric or not validate('color', val))):
                 kwargs = {}
-                if val.dtype.kind not in 'if':
-                    kwargs['factors'] = util.unique_array(val)
+                if val.dtype.kind not in 'ifMu':
+                    range_key = dim_range_key(v)
+                    if range_key in ranges and 'factors' in ranges[range_key]:
+                        factors = ranges[range_key]['factors']
+                    else:
+                        factors = util.unique_array(val)
+                    kwargs['factors'] = factors
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 style, name=k+'_color_mapper',
                                                 group=group, **kwargs)
@@ -1347,19 +1352,24 @@ class ColorbarPlot(ElementPlot):
         cdata = element.dimension_values(cdim)
         field = util.dimension_sanitizer(cdim.name)
         dtypes = 'iOSU' if int_categories else 'OSU'
+
         if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
-            factors = list(util.unique_array(cdata))
-        if factors and int_categories and cdata.dtype.kind == 'i':
+            range_key = dim_range_key(cdim)
+            if range_key in ranges and 'factors' in ranges[range_key]:
+                factors = ranges[range_key]['factors']
+            else:
+                factors = util.unique_array(cdata)
+        if factors is not None and int_categories and cdata.dtype.kind == 'i':
             field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]
 
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
-        if not factors and isinstance(mapper, CategoricalColorMapper):
+        if factors is None and isinstance(mapper, CategoricalColorMapper):
             field += '_str__'
             cdata = [cdim.pprint_value(c) for c in cdata]
-            factors = mapper.factors
+            factors = True
 
         data[field] = cdata
         if factors is not None and self.show_legend:

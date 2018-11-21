@@ -241,7 +241,7 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, ['a', 'b'])
+        self.assertEqual(cmapper.factors, ['b', 'a'])
 
     def test_polygons_alpha_op(self):
         polygons = Polygons([
@@ -316,7 +316,7 @@ class TestContoursPlot(TestBokehPlot):
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array(['b', 'a']))
         self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, ['a', 'b'])
+        self.assertEqual(cmapper.factors, ['b', 'a'])
 
     def test_contours_alpha_op(self):
         contours = Contours([

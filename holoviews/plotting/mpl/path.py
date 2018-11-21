@@ -136,7 +136,7 @@ class ContourPlot(PathPlot):
                                   for _ in range(len(sps))])
 
         if array.dtype.kind not in 'uif':
-            array = np.searchsorted(util.unique_array(array), array)
+            array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
         style['clim'] = style.pop('vmin'), style.pop('vmax')
