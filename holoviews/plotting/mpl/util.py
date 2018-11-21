@@ -87,6 +87,42 @@ def validate(style, value, vectorized=True):
         return False
 
 
+def filter_styles(style, group, other_groups, blacklist=[]):
+    """
+    Filters styles which are specific to a particular artist, e.g.
+    for a GraphPlot this will filter options specific to the nodes and
+    edges.
+
+    Arguments
+    ---------
+    style: dict
+        Dictionary of styles and values
+    group: str
+        Group within the styles to filter for
+    other_groups: list
+        Other groups to filter out
+    blacklist: list (optional)
+        List of options to filter out
+
+    Returns
+    -------
+    filtered: dict
+        Filtered dictionary of styles
+    """
+    group = group+'_'
+    filtered = {}
+    for k, v in style.items():
+        if (any(k.startswith(p) for p in other_groups)
+            or k.startswith(group) or k in blacklist):
+            continue
+        filtered[k] = v
+    for k, v in style.items():
+        if not k.startswith(group):
+            continue
+        filtered[k[len(group):]] = v
+    return filtered
+
+
 def wrap_formatter(formatter):
     """
     Wraps formatting function or string in

@@ -11,6 +11,7 @@ from ...core.util import basestring, unique_array, search_indices, max_range, is
 from ...util.transform import dim
 from ..util import process_cmap
 from .element import ColorbarPlot
+from .util import filter_styles
 
 
 class GraphPlot(ColorbarPlot):
@@ -134,10 +135,7 @@ class GraphPlot(ColorbarPlot):
         # Draw edges
         color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
         groups = [g for g in self._style_groups if g != 'edge']
-        edge_opts = {k[5:] if 'edge_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)
-                     and k not in color_opts}
+        edge_opts = filter_styles(plot_kwargs, 'edge', groups, color_opts)
         if 'c' in edge_opts:
             edge_opts['array'] = edge_opts.pop('c')
         paths = plot_args['edges']
@@ -156,9 +154,7 @@ class GraphPlot(ColorbarPlot):
         # Draw nodes
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
-        node_opts = {k[5:] if 'node_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)}
+        node_opts = filter_styles(plot_kwargs, 'node', groups)
         nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
@@ -328,10 +324,7 @@ class ChordPlot(GraphPlot):
         if 'arcs' in plot_args:
             color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
             groups = [g for g in self._style_groups if g != 'arc']
-            edge_opts = {k[4:] if 'arc_' in k else k: v
-                         for k, v in plot_kwargs.items()
-                         if not any(k.startswith(p) for p in groups)
-                         and k not in color_opts}
+            edge_opts = filter_styles(plot_kwargs, 'arc', groups, color_opts)
             paths = plot_args['arcs']
             edges = LineCollection(paths, **edge_opts)
             ax.add_collection(edges)

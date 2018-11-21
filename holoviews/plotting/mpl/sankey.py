@@ -7,6 +7,7 @@ from matplotlib.collections import PatchCollection
 
 from ...core.util import basestring, max_range
 from .graphs import GraphPlot
+from .util import filter_styles
 
 
 class SankeyPlot(GraphPlot):
@@ -104,9 +105,7 @@ class SankeyPlot(GraphPlot):
     def init_artists(self, ax, plot_args, plot_kwargs):
         artists = super(SankeyPlot, self).init_artists(ax, plot_args, plot_kwargs)
         groups = [g for g in self._style_groups if g != 'node']
-        node_opts = {k[5:] if 'node_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not (any(k.startswith(p) for p in groups) or k in ('s', 'node_s'))}
+        node_opts = filter_styles(plot_kwargs, 'node', groups, ('s', 'node_s'))
         rects = [Rectangle(**rect) for rect in plot_args['rects']]
         artists['rects'] = ax.add_collection(PatchCollection(rects, **node_opts))
         artists['labels'] = self._update_labels(ax, plot_args, plot_kwargs)

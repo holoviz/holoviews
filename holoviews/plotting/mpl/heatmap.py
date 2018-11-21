@@ -12,6 +12,7 @@ from ...core.util import dimension_sanitizer, unique_array, is_nan
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot
 from .raster import RasterPlot
+from .util import filter_styles
 
 
 class HeatMapPlot(RasterPlot):
@@ -389,9 +390,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         # Draw edges
         color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm', 'array']
         groups = [g for g in self._style_groups if g != 'annular']
-        edge_opts = {k[8:] if 'annular_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)}
+        edge_opts = filter_styles(plot_kwargs, 'annular', groups)
         annuli = plot_args['annular']
         edge_opts.pop('interpolation', None)
         annuli = PatchCollection(annuli, transform=ax.transAxes, **edge_opts)
@@ -402,25 +401,19 @@ class RadialHeatMapPlot(ColorbarPlot):
         paths = plot_args['xseparator']
         if paths:
             groups = [g for g in self._style_groups if g != 'xmarks']
-            edge_opts = {k[7:] if 'xmarks_' in k else k: v
-                         for k, v in plot_kwargs.items()
-                         if not any(k.startswith(p) for p in groups)
-                         and k not in color_opts}
-            edge_opts.pop('interpolation', None)
-            xseparators = LineCollection(paths, **edge_opts)
+            xmark_opts = filter_styles(plot_kwargs, 'xmarks', groups, color_opts)
+            xmark_opts.pop('interpolation', None)
+            xseparators = LineCollection(paths, **xmark_opts)
             ax.add_collection(xseparators)
             artists['xseparator'] = xseparators
 
         paths = plot_args['yseparator']
         if paths:
             groups = [g for g in self._style_groups if g != 'ymarks']
-            edge_opts = {k[7:] if 'ymarks_' in k else k: v
-                         for k, v in plot_kwargs.items()
-                         if not any(k.startswith(p) for p in groups)
-                         and k not in color_opts}
-            edge_opts.pop('interpolation', None)
+            ymark_opts = filter_styles(plot_kwargs, 'ymarks', groups, color_opts)
+            ymark_opts.pop('interpolation', None)
             yseparators = PatchCollection(paths, facecolor='none',
-                                          transform=ax.transAxes, **edge_opts)
+                                          transform=ax.transAxes, **ymark_opts)
             ax.add_collection(yseparators)
             artists['yseparator'] = yseparators
 
