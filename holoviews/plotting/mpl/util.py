@@ -117,7 +117,7 @@ def filter_styles(style, group, other_groups, blacklist=[]):
             continue
         filtered[k] = v
     for k, v in style.items():
-        if not k.startswith(group):
+        if not k.startswith(group) or k in blacklist:
             continue
         filtered[k[len(group):]] = v
     return filtered
