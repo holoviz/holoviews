@@ -683,7 +683,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if len(np.unique(val)) == 1:
+            if len(util.unique_array(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val):
@@ -724,7 +724,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 (numeric or not validate('color', val))):
                 kwargs = {}
                 if val.dtype.kind not in 'if':
-                    kwargs['factors'] = np.unique(val)
+                    kwargs['factors'] = util.unique_array(val)
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 style, name=k+'_color_mapper',
                                                 group=group, **kwargs)

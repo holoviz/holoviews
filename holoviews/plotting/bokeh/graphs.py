@@ -405,7 +405,7 @@ class ChordPlot(GraphPlot):
             values = element.dimension_values(element.vdims[0])
             if values.dtype.kind in 'uif':
                 edges = Dataset(element)[values>0]
-                nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
+                nodes = list(unique_array([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
         if isinstance(labels, dim):

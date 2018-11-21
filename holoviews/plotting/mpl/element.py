@@ -541,7 +541,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             else:
                 val = v.apply(element, ranges)
 
-            if len(np.unique(val)) == 1:
+            if len(util.unique_array(val)) == 1:
                 val = val if np.isscalar(val) else val[0]
 
             if not np.isscalar(val) and k in self._nonvectorized_styles:
@@ -782,7 +782,7 @@ class ColorbarPlot(ElementPlot):
                     clim = -np.abs(clim).max(), np.abs(clim).max()
                 categorical = False
             else:
-                clim = (0, len(np.unique(values))-1)
+                clim = (0, len(util.unique_array(values))-1)
                 categorical = True
         else:
             categorical = values.dtype.kind not in 'uif'
@@ -843,7 +843,7 @@ class ColorbarPlot(ElementPlot):
 
         if not isinstance(cmap, mpl_colors.Colormap):
             if isinstance(cmap, dict):
-                factors = np.unique(values)
+                factors = util.unique_array(values)
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:
