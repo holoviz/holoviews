@@ -91,13 +91,11 @@ class SankeyPlot(GraphPlot):
         for gtype in ('selection_', 'nonselection_', 'muted_', 'hover_', ''):
             glyph = getattr(scatter_renderer, gtype+'glyph')
             arc_glyph = getattr(arc_renderer, gtype+'glyph')
-            print(gtype, glyph, arc_glyph)
             if not glyph or not arc_glyph:
                 continue
             scatter_props = glyph.properties_with_values(include_defaults=False)
             styles = {k: v for k, v in scatter_props.items()
                       if k in arc_glyph.properties()}
-            print(styles)
             arc_glyph.update(**styles)
 
     def _compute_quads(self, element, data, mapping):

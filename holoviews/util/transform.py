@@ -217,6 +217,12 @@ class dim(object):
         """
         return dim(self, _norm)
 
+    def str(self):
+        """
+        Casts values to strings
+        """
+        return self.astype(str)
+
     # Other methods
     
     def applies(self, dataset):
