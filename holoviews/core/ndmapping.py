@@ -281,9 +281,9 @@ class MultiDimensionalMapping(Dimensioned):
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
         """
-        Return the results of a groupby operation over the specified
-        dimensions as an object of type container_type (expected to be
-        dictionary-like).
+        Applies groupby operation over the specified dimensions
+        returning an object of type container_type (expected to be
+        dictionary-like) containing the groups.
 
         Arguments
         ---------
@@ -437,7 +437,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def reindex(self, kdims=[], force=False):
         """
-        Create a new object with a re-ordered or reduced set of key
+        Create a new object with a reordered or reduced set of key
         dimensions.
 
         Reducing the number of key dimensions will discard information

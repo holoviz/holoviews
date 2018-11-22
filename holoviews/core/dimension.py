@@ -661,9 +661,9 @@ class LabelledData(param.Parameterized):
         Arguments
         ---------
         label: str (optional)
-            New label to apply to returned element
+            New label to apply to returned object
         group: str (optional)
-            New group to apply to returned element
+            New group to apply to returned object
         depth: int (optional, default=0)
             If applied to container allows applying relabeling to
             contained objects up to the specified depth
@@ -770,7 +770,10 @@ class LabelledData(param.Parameterized):
     def map(self, map_fn, specs=None, clone=True):
         """
         Recursively replaces elements using a map function when the
-        specification applies.
+        specs apply, by default applies to all objects, e.g. to apply
+        the function to all contained Curve objects:
+
+            dmap.map(fn, hv.Curve)
 
         Arguments
         ---------
@@ -1140,16 +1143,27 @@ class Dimensioned(LabelledData):
 
     def select(self, selection_specs=None, **kwargs):
         """
-        Allows slicing or indexing into the Dimensioned object by
-        supplying the dimension and index/slice as key value
-        pairs. Select descends recursively through the data structure
-        applying the key dimension selection. The 'value' keyword
-        allows selecting the value dimensions on objects which have
-        any declared.
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
 
-        The selection may also be selectively applied to specific
-        objects by supplying the selection_specs as an iterable of
-        type.group.label specs, types or functions.
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
 
         Arguments
         ---------
@@ -1167,6 +1181,8 @@ class Dimensioned(LabelledData):
             Returns an Dimensioned object containing the selected data
             or a scalar if a single value was selected
         """
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
+            selection_specs = [selection_specs]
 
         # Apply all indexes applying on this object
         vdims = self.vdims+['value'] if self.vdims else []

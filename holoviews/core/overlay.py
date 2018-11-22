@@ -14,7 +14,8 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
-from .util import sanitize_identifier, unique_array
+from .util import config, sanitize_identifier, unique_array
+
 
 class Overlayable(object):
     """
@@ -49,14 +50,41 @@ class CompositeOverlay(ViewableElement, Composable):
 
     _deep_indexable = True
 
+    def hist(self, dimension=None, num_bins=20, bin_range=None,
+             adjoin=True, index=0, **kwargs):
+        """
+        Computes a histogram of the data along the specified dimension
+        (defaulting to the first value dimension) and adjoins the
+        histogram to the plot. Uses first item in the overlay by default.
 
-    def hist(self, index=0, adjoin=True, dimension=None, **kwargs):
+        Arguments
+        ---------
+        dimension: Dimension/str or list (optional)
+            Dimension(s) to compute histogram on, defaults to first
+            value dimension
+        num_bins: int (optional, default=20)
+            Number of bins of the Histogram
+        bin_range: tuple (optional)
+            Explicit lower and upper range to bin on, defaults to full
+            range along the dimension
+        adjoin: bool (optional, default=True)
+            Whether to return adjoined histogram
+        index: int (optional, default=0)
+            The index of the overlay layer to compute the histogram on
+
+        Returns
+        -------
+        hist: Histogram or AdjointLayout
+            AdjointLayout or just a Histogram if adjoin=False
+        """
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
         valid_label = index in [el.label for el in self]
         if not any([valid_ind, valid_label]):
             raise TypeError("Please supply a suitable index or label for the histogram data")
 
-        hists = self.get(index).hist(adjoin=False, dimension=dimension, **kwargs)
+        hists = self.get(index).hist(
+            adjoin=False, dimension=dimension, bin_range=bin_range,
+            num_bins=num_bins, **kwargs)
         if not isinstance(hists, Layout):
             hists = [hists]
         if not isinstance(dimension, list):
@@ -74,6 +102,27 @@ class CompositeOverlay(ViewableElement, Composable):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """
+        Returns the values along a particular dimension.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            The dimension to query values on
+        expanded: boolean (optional, default=True)
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+              - Columnar: If false returns unique values
+              - Geometry: If false returns scalar values per geometry
+              - Gridded: If false returns 1D coordinates
+        flat: boolean (optional, default=True)
+            Whether the array should be flattened to a 1D array
+
+        Returns
+        -------
+        array: numpy.ndarray
+            NumPy array of values along the requested dimension
+        """
         values = []
         found = False
         for el in self:
@@ -121,6 +170,22 @@ class Overlay(ViewableTree, CompositeOverlay):
 
 
     def get(self, identifier, default=None):
+        """
+        Get a particular layer in the Overlay using its path string
+        or an integer index.
+
+        Arguments
+        ---------
+        identifier: str or int
+            Index or path string of the item to return
+        default: object
+            Value to return if no item is found
+
+        Returns
+        -------
+        layer: Element or NdOverlay
+            The indexed layer of the Overlay
+        """
         if isinstance(identifier, int):
             values = list(self.data.values())
             if 0 <= identifier < len(values):
@@ -159,9 +224,12 @@ class Overlay(ViewableTree, CompositeOverlay):
 
     def collapse(self, function):
         """
-        Collapses all the Elements in the Overlay using the
-        supplied function if they share a common type and group.
+        Deprecated method to collapse layers in the Overlay.
         """
+        if config.future_deprecations:
+            self.warning('Overlay.collapse has been deprecated, to'
+                         'collapse multiple elements use a HoloMap.')
+
         elements = list(self)
         types = [type(el) for el in elements]
         values = [el.group for el in elements]

@@ -27,12 +27,27 @@ class Element(ViewableElement, Composable, Overlayable):
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
         """
-        The hist method generates a histogram to be adjoined to the
-        Element in an AdjointLayout. By default the histogram is
-        computed along the first value dimension of the Element,
-        however any dimension may be selected. The number of bins and
-        the bin_ranges and any kwargs to be passed to the histogram
-        operation may also be supplied.
+        Computes a histogram of the data along the specified dimension
+        (defaulting to the first value dimension) and adjoins the
+        histogram to the plot.
+
+        Arguments
+        ---------
+        dimension: Dimension/str or list (optional)
+            Dimension(s) to compute histogram on, defaults to first
+            value dimension
+        num_bins: int (optional, default=20)
+            Number of bins of the Histogram
+        bin_range: tuple (optional)
+            Explicit lower and upper range to bin on, defaults to full
+            range along the dimension
+        adjoin: bool (optional, default=True)
+            Whether to return adjoined histogram
+
+        Returns
+        -------
+        hist: Histogram or AdjointLayout
+            AdjointLayout or just a Histogram if adjoin=False
         """
         from ..operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]

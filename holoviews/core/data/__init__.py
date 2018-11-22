@@ -288,7 +288,7 @@ class Dataset(Element):
 
         Returns
         -------
-        dataset: Dataset
+        dataset: Element
             Element of the same type sorted along the specified dimensions
         """
         if by is None:
@@ -356,8 +356,8 @@ class Dataset(Element):
 
         Returns
         -------
-        clone: Dataset
-            Cloned Dataset containing the new dimension
+        clone: Element
+            Cloned element containing the new dimension
         """
         if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
@@ -385,13 +385,26 @@ class Dataset(Element):
 
     def select(self, selection_specs=None, **selection):
         """
-        Allows selecting data by the slices, sets and scalar values
-        along a particular dimension. The indices should be supplied as
-        keywords mapping between the selected dimension and
-        value. Additionally selection_specs (taking the form of a list
-        of type.group.label strings, types or functions) may be
-        supplied, which will ensure the selection is only applied if the
-        specs match the selected object.
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
 
         Arguments
         ---------
@@ -405,11 +418,11 @@ class Dataset(Element):
 
         Returns
         -------
-        selection: Dataset or scalar
+        selection: Element or scalar
             Returns an element containing the selected data or a scalar
             if a single value was selected
         """
-        if not isinstance(selection_specs, (list, tuple, set)):
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions()+['selection_mask']}
@@ -521,13 +534,19 @@ class Dataset(Element):
 
     def sample(self, samples=[], closest=True, **kwargs):
         """
-        Allows sampling of Dataset as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Supports two signatures:
+        Allows sampling the values of the Dataset at certain coordinates.
+        Coordinates may be defined by passing either a list of samples
+        or a tuple specifying the number of regularly spaced samples
+        per dimension or using keywords, e.g.:
 
         Sampling with a list of coordinates, e.g.:
 
             ds.sample([(0, 0), (0.1, 0.2), ...])
+
+        Sampling a range or grid of coordinates, e.g.:
+
+            1D: ds.sample(3)
+            2D: ds.sample((3, 3))
 
         Sampling by keyword, e.g.:
 
@@ -547,13 +566,38 @@ class Dataset(Element):
         sampled: Curve or Table
             Element containing the sampled coordinates
         """
-        if kwargs and samples:
+        if kwargs and samples != []:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
         elif kwargs:
             sample = [slice(None) for _ in range(self.ndims)]
             for dim, val in kwargs.items():
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
+        elif isinstance(samples, tuple) or util.isscalar(samples):
+            if self.ndims == 1:
+                xlim = self.range(0)
+                lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
+                edges = np.linspace(lower, upper, samples+1)
+                linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+            elif self.ndims == 2:
+                (rows, cols) = samples
+                if bounds:
+                    (l,b,r,t) = bounds
+                else:
+                    l, r = self.range(0)
+                    b, t = self.range(1)
+
+                xedges = np.linspace(l, r, cols+1)
+                yedges = np.linspace(b, t, rows+1)
+                xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
+                ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
+
+                Y,X = np.meshgrid(ysamples, xsamples)
+                linsamples = list(zip(X.flat, Y.flat))
+            else:
+                raise NotImplementedError("Regular sampling not implemented "
+                                          "for elements with more than two dimensions.")
+            samples = list(util.unique_iterator(self.closest(linsamples)))
 
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
@@ -625,8 +669,8 @@ class Dataset(Element):
 
         Returns
         -------
-        reduced: Dataset
-            Returns the reduced Dataset
+        reduced: Element type
+            Returns the reduced element
         """
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
@@ -655,8 +699,8 @@ class Dataset(Element):
 
         Returns
         -------
-        aggregated: Dataset
-            Returns the aggregated Dataset
+        aggregated: Element
+            Returns the reduced element
         """
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
