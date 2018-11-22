@@ -336,10 +336,10 @@ class Dataset(Element):
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
-        Create a new object with an additional key dimensions.  Requires
-        the dimension name or object, the desired position in the key
-        dimensions and a key value scalar or sequence of the same length
-        as the existing keys.
+        Create a new object with the additional key or value
+        dimensions.  Requires the dimension name or object, the
+        desired position in the key dimensions and a key value scalar
+        or sequence of the same length as the existing data.
 
         Arguments
         ---------
@@ -779,8 +779,7 @@ class Dataset(Element):
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """
-        Returns the values along a particular dimension. If unique
-        values are requested will return only unique values.
+        Returns the values along a particular dimension.
 
         Arguments
         ---------
@@ -894,11 +893,11 @@ class Dataset(Element):
         Arguments
         ---------
         data: valid data format, e.g. a tuple of arrays (optional)
-            The data to replace existing data with
+            New data to replace existing data
         shared_data: bool (optional, default=True)
             Whether to use the existing data
         new_type: Element type
-            An Element type to cast the clone to
+            An Element type to cast the cloned object to
         *args:
             Additional arguments
         **overrides:
