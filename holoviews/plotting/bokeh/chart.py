@@ -284,7 +284,7 @@ class VectorFieldPlot(ColorbarPlot):
 
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
-        if cdim and color:
+        if cdim and color is not None:
             data[cdim.name] = color
             mapping.update(cmapping)
 
