@@ -9,18 +9,27 @@ from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import basestring, unique_array, search_indices, max_range, is_number, isscalar
 from ...util.transform import dim
-from ..util import process_cmap
+from ..util import process_cmap, get_directed_graph_paths
 from .element import ColorbarPlot
 from .util import filter_styles
 
 
 class GraphPlot(ColorbarPlot):
 
+    arrowhead_length = param.Number(default=0.025, doc="""
+      If directed option is enabled this determines the length of the
+      arrows as fraction of the overall extent of the graph.""")
+
+    directed = param.Boolean(default=False, doc="""
+      Whether to draw arrows on the graph edges to indicate the
+      directionality of each edge.""")
+
     # Deprecated options
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
+
 
     edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -121,7 +130,15 @@ class GraphPlot(ColorbarPlot):
         if 'edge_c' in style:
             style['edge_array'] = style.pop('edge_c')
 
-        paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims[:2])
+        if self.directed:
+            xdim, ydim = element.nodes.kdims[:2]
+            x_range = ranges[xdim.name]['combined']
+            y_range = ranges[ydim.name]['combined']
+            arrow_len = np.hypot(y_range[1]-y_range[0], x_range[1]-x_range[0])*self.arrowhead_length
+            paths = get_directed_graph_paths(element, arrow_len)
+        else:
+            paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
+
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
