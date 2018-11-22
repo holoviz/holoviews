@@ -611,6 +611,24 @@ class LabelledData(param.Parameterized):
         If shared_data is set to True and no data explicitly supplied,
         the clone will share data with the original. May also supply
         a new_type, which will inherit all shared parameters.
+
+        Arguments
+        ---------
+        data: dict or list (optional)
+            New data replacing the existing data
+        shared_data: bool (optional, default=True)
+            Whether to use the existing data
+        new_type: LabelledData type
+            An LabelledData type to cast the clone to
+        *args:
+            Additional arguments
+        **overrides:
+            Additional keyword arguments to pass to cloned constructor
+
+        Returns
+        -------
+        clone: MultiDimensionalMapping
+            Cloned mapping object
         """
         params = dict(self.get_param_values())
         if new_type is None:
