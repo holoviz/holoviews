@@ -156,29 +156,91 @@ class Element(ViewableElement, Composable, Overlayable):
         return grouped[0]
 
 
+    def dframe(self, dimensions=None, multi_index=False):
+        """
+        Returns a pandas dataframe of columns along each dimension.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+        multi_index: boolean (optional, default=False)
+            Whether to treat key dimensions as (multi-)indexes
+
+        Returns
+        -------
+        dataframe: pandas.DataFrame
+            DataFrame of columns corresponding to each dimension
+        """
+        import pandas as pd
+        if dimensions is None:
+            dimensions = [d.name for d in self.dimensions()]
+        else:
+            dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
+        column_names = dimensions
+        dim_vals = OrderedDict([(dim, self.dimension_values(dim)) for dim in column_names])
+        df = pd.DataFrame(dim_vals)
+        if multi_index:
+            df = df.set_index([d for d in dimensions if d in self.kdims])
+        return df
+
+
+    def array(self, dimensions=None):
+        """
+        Returns an array of columns along each dimension.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+
+        Returns
+        -------
+        array: numpy.ndarray
+            Array of columns corresponding to each dimension
+        """
+        if dimensions is None:
+            dims = [d for d in self.kdims + self.vdims]
+        else:
+            dims = [self.get_dimension(d, strict=True) for d in dimensions]
+
+        columns, types = [], []
+        for dim in dims:
+            column = self.dimension_values(dim)
+            columns.append(column)
+            types.append(column.dtype.kind)
+        if len(set(types)) > 1:
+            columns = [c.astype('object') for c in columns]
+        return np.column_stack(columns)
+
+
+    ######################
+    #    Deprecations    #
+    ######################
+
     def table(self, datatype=None):
         """
-        Converts the data Element to a Table, optionally may
-        specify a supported data type. The default data types
-        are 'numpy' (for homogeneous data), 'dataframe', and
-        'dictionary'.
+        Deprecated method to convert any Element to a Table.
         """
-        self.warning("The table method is deprecated.")
+        self.warning("The table method is deprecated and should no "
+                     "longer be used. Instead cast the %s to a "
+                     "a Table directly." % type(self).__name__)
+
         if datatype and not isinstance(datatype, list):
             datatype = [datatype]
         from ..element import Table
         return Table(self, **(dict(datatype=datatype) if datatype else {}))
 
 
-    def dframe(self, dimensions=None):
-        import pandas as pd
-        column_names = dimensions if dimensions else self.dimensions(label=True)
-        dim_vals = OrderedDict([(dim, self[dim]) for dim in column_names])
-        return pd.DataFrame(dim_vals)
-
-
     def mapping(self, kdims=None, vdims=None, **kwargs):
-        self.warning("The mapping method is deprecated.")
+        """
+        Deprecated method to convert Element data to an old dictionary
+        format which is no longer supported.
+        """
+        self.warning("The mapping method is deprecated and should no "
+                     "longer be used. Use another one of the common "
+                     "formats instead, e.g. .dframe, .array or .columns.")
+
         length = len(self)
         if not kdims: kdims = self.kdims
         if kdims:
@@ -194,21 +256,6 @@ class Element(ViewableElement, Composable, Overlayable):
         else:
             values = [()]*length
         return OrderedDict(zip(keys, values))
-
-
-    def array(self, dimensions=[]):
-        if dimensions:
-            dims = [self.get_dimension(d, strict=True) for d in dimensions]
-        else:
-            dims = [d for d in self.kdims + self.vdims if d != 'Index']
-        columns, types = [], []
-        for dim in dims:
-            column = self.dimension_values(dim)
-            columns.append(column)
-            types.append(column.dtype.kind)
-        if len(set(types)) > 1:
-            columns = [c.astype('object') for c in columns]
-        return np.column_stack(columns)
 
 
 

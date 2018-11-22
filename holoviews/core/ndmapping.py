@@ -430,28 +430,6 @@ class MultiDimensionalMapping(Dimensioned):
         print(info_str)
 
 
-    def table(self, datatype=None, **kwargs):
-        "Creates a table from the stored keys and data."
-        self.warning("The table method is deprecated.")
-        from .data.interface import Interface
-        from ..element.tabular import Table
-        new_data = [(key, value.table(datatype=datatype, **kwargs))
-                    for key, value in self.data.items()]
-        tables = self.clone(new_data)
-        return Interface.concatenate(tables, new_type=Table)
-
-
-    def dframe(self):
-        "Creates a pandas DataFrame from the stored keys and data."
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('key', True) + [self.group]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
     def update(self, other):
         """
         Updates the current mapping with some other mapping or
@@ -540,6 +518,45 @@ class MultiDimensionalMapping(Dimensioned):
     def __len__(self):
         return len(self.data)
 
+    ######################
+    #    Deprecations    #
+    ######################
+
+    def table(self, datatype=None, **kwargs):
+        """
+        Deprecated method to convert an MultiDimensionalMapping of
+        Elements to a Table.
+        """
+        self.warning("The table method is deprecated and should no "
+                     "longer be used. If using a HoloMap use "
+                     "HoloMap.collapse() instead to return a Dataset.")
+
+        from .data.interface import Interface
+        from ..element.tabular import Table
+        new_data = [(key, value.table(datatype=datatype, **kwargs))
+                    for key, value in self.data.items()]
+        tables = self.clone(new_data)
+        return Interface.concatenate(tables, new_type=Table)
+
+
+    def dframe(self):
+        """
+        Deprecated method to convert a MultiDimensionalMapping to
+        a pandas DataFrame. Conversion to a dataframe now only
+        supported by specific subclasses such as UniformNdMapping
+        types.
+        """
+        self.warning("The MultiDimensionalMapping.dframe method is "
+                     "deprecated and should no longer be used. "
+                     "Use a more specific subclass which does support "
+                     "the dframe method instead, e.g. a HoloMap.")
+        try:
+            import pandas
+        except ImportError:
+            raise Exception("Cannot build a DataFrame without the pandas library.")
+        labels = self.dimensions('key', True) + [self.group]
+        return pandas.DataFrame(
+            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
 
 
@@ -767,6 +784,59 @@ class UniformNdMapping(NdMapping):
                                               if k not in pos_args})
 
 
+    def dframe(self, dimensions=None, multi_index=False):
+        """
+        Returns a pandas dataframe of columns along each dimension.
+        Collapses all elements into each
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+        multi_index: boolean (optional, default=False)
+            Whether to treat key dimensions as (multi-)indexes
+
+        Returns
+        -------
+        dataframe: pandas.DataFrame
+            DataFrame of columns corresponding to each dimension
+        """
+        import pandas as pd
+        if dimensions is None:
+            outer_dimensions = self.kdims
+            inner_dimensions = None
+        else:
+            outer_dimensions = [self.get_dimension(d) for d in dimensions
+                                if d in self.kdims]
+            inner_dimensions = [d for d in dimensions
+                                if d not in outer_dimensions]
+        inds = [(d, self.get_dimension_index(d)) for d in outer_dimensions]
+
+        dframes = []
+        for key, element in self.data.items():
+            df = element.dframe(inner_dimensions, multi_index)
+            names = [d.name for d in outer_dimensions]
+            key_dims = [(d, key[i]) for d, i in inds]
+            if multi_index:
+                length = len(df)
+                indexes = [[v]*length for _, v in key_dims]
+                if df.index.names != [None]:
+                    indexes += [df.index]
+                    names += list(df.index.names)
+                df = df.set_index(indexes)
+                df.index.names = names
+            else:
+                for dim, val in key_dims:
+                    dimn = 1
+                    while dim in df:
+                        dim = dim+'_%d' % dimn
+                        if dim in df:
+                            dimn += 1
+                    df.insert(0, dim, val)
+            dframes.append(df)
+        return pd.concat(dframes)
+
+
     @property
     def group(self):
         if self._group:
@@ -823,28 +893,6 @@ class UniformNdMapping(NdMapping):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
         super(UniformNdMapping, self)._item_check(dim_vals, data)
-
-
-    def dframe(self):
-        """
-        Gets a dframe for each Element in the HoloMap, appends the
-        dimensions of the HoloMap as series and concatenates the
-        dframes.
-        """
-        import pandas
-        dframes = []
-        for key, view in self.data.items():
-            view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self.dimensions('key', True))))
-            for val, dim in key_dims:
-                dimn = 1
-                while dim in view_frame:
-                    dim = dim+'_%d' % dimn
-                    if dim in view_frame:
-                        dimn += 1
-                view_frame.insert(0, dim, val)
-            dframes.append(view_frame)
-        return pandas.concat(dframes)
 
 
     def __mul__(self, other, reverse=False):

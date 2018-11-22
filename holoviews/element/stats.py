@@ -69,27 +69,61 @@ class StatisticsElement(Chart):
         return self.interface.dimension_type(self, dim)
 
 
-    def dframe(self, dimensions=None):
+    def dframe(self, dimensions=None, multi_index=False):
         """
-        Returns the data in the form of a DataFrame. Supplying a list
-        of dimensions filters the dataframe. If the data is already
-        a DataFrame a copy is returned.
+        Returns a pandas dataframe of columns along each dimension.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+        multi_index: boolean (optional, default=False)
+            Whether to treat key dimensions as (multi-)indexes
+
+        Returns
+        -------
+        dataframe: pandas.DataFrame
+            DataFrame of columns corresponding to each dimension
         """
         if dimensions:
-            dimensions = [self.get_dimension(d, strict=True) for d in dimensions
-                          if d in dimensions.kdims]
+            dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         else:
             dimensions = self.kdims
-        return self.interface.dframe(self, dimensions)
+        vdims = [d for d in dimensions if d in self.vdims]
+        if vdims:
+            raise ValueError('%s element does not hold data for value '
+                             'dimensions. Could not return data for %s '
+                             'dimension(s).' %
+                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+        return super(StatisticsElement, self).dframe(dimensions, False)
 
 
     def columns(self, dimensions=None):
+        """
+        Returns a dictionary of column arrays along each dimension
+        of the element.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+
+        Returns
+        -------
+        columns: OrderedDict
+            Dictionary of arrays for each dimension
+        """
         if dimensions is None:
             dimensions = self.kdims
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return OrderedDict([(d.name, self.dimension_values(d))
-                            for d in dimensions if d in self.kdims])
+        vdims = [d for d in dimensions if d in self.vdims]
+        if vdims:
+            raise ValueError('%s element does not hold data for value '
+                             'dimensions. Could not return data for %s '
+                             'dimension(s).' %
+                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
 

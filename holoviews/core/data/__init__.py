@@ -631,18 +631,47 @@ class Dataset(Element):
         return self.interface.dimension_type(self, dim_obj)
 
 
-    def dframe(self, dimensions=None):
+    def dframe(self, dimensions=None, multi_index=False):
         """
-        Returns the data in the form of a DataFrame. Supplying a list
-        of dimensions filters the dataframe. If the data is already
-        a DataFrame a copy is returned.
+        Returns a pandas dataframe of columns along each dimension.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+        multi_index: boolean (optional, default=False)
+            Whether to treat key dimensions as (multi-)indexes
+
+        Returns
+        -------
+        dataframe: pandas.DataFrame
+            DataFrame of columns corresponding to each dimension
         """
-        if dimensions:
+        if dimensions is None:
+            dimensions = [d.name for d in self.dimensions()]
+        else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
-        return self.interface.dframe(self, dimensions)
+        df = self.interface.dframe(self, dimensions)
+        if multi_index:
+            df = df.set_index([d for d in dimensions if d in self.kdims])
+        return df
 
 
     def columns(self, dimensions=None):
+        """
+        Returns a dictionary of column arrays along each dimension
+        of the element.
+
+        Arguments
+        ---------
+        dimensions: list (optional)
+            List of dimensions to return (defaults to all dimensions)
+
+        Returns
+        -------
+        columns: OrderedDict
+            Dictionary of arrays for each dimension
+        """
         if dimensions is None:
             dimensions = self.dimensions()
         else:
