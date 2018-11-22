@@ -24,6 +24,9 @@ class SankeyPlot(GraphPlot):
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show the values.""")
+
     node_width = param.Number(default=15, doc="""
         Width of the nodes.""")
 
@@ -56,6 +59,13 @@ class SankeyPlot(GraphPlot):
         ret = super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
         plot.renderers = [renderer] + plot.renderers
+        arc_renderer = self.handles['quad_1_glyph_renderer']
+        scatter_renderer = self.handles['scatter_1_glyph_renderer']
+        arc_renderer.view = scatter_renderer.view
+        arc_renderer.data_source = scatter_renderer.data_source
+        self.handles['quad_1_source'] = scatter_renderer.data_source
+        self._sync_nodes()
+
         return ret
 
     def get_data(self, element, ranges, style):
@@ -65,15 +75,6 @@ class SankeyPlot(GraphPlot):
         self._compute_labels(element, data, mapping)
         self._patch_hover(element, data)
         return data, mapping, style
-
-    def _init_glyphs(self, plot, element, ranges, source):
-        super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
-        arc_renderer = self.handles['quad_1_glyph_renderer']
-        scatter_renderer = self.handles['scatter_1_glyph_renderer']
-        arc_renderer.view = scatter_renderer.view
-        arc_renderer.data_source = scatter_renderer.data_source
-        self.handles['quad_1_source'] = scatter_renderer.data_source
-        self._sync_nodes()
 
     def _init_glyph(self, plot, mapping, properties, key):
         if key == 'quad_1':
