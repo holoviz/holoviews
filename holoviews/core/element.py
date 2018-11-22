@@ -9,7 +9,7 @@ from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import get_param_values
+from .util import config, get_param_values
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -222,9 +222,10 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         Deprecated method to convert any Element to a Table.
         """
-        self.warning("The table method is deprecated and should no "
-                     "longer be used. Instead cast the %s to a "
-                     "a Table directly." % type(self).__name__)
+        if config.future_deprecations:
+            self.warning("The table method is deprecated and should no "
+                         "longer be used. Instead cast the %s to a "
+                         "a Table directly." % type(self).__name__)
 
         if datatype and not isinstance(datatype, list):
             datatype = [datatype]

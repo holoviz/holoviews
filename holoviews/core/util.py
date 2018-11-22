@@ -108,6 +108,9 @@ class Config(param.ParameterizedFunction):
     deprecations or set global parameter such as style 'themes'.
     """
 
+    future_deprecations = param.Boolean(default=False, doc="""
+       Whether to warn about future deprecations""")
+
     style_17 = param.Boolean(default=False, doc="""
        Switch to the default style options used up to (and including)
        the HoloViews 1.7 release.""")

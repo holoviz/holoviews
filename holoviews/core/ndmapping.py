@@ -12,7 +12,7 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (unique_iterator, sanitize_identifier, dimension_sort,
+from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 
@@ -527,9 +527,10 @@ class MultiDimensionalMapping(Dimensioned):
         Deprecated method to convert an MultiDimensionalMapping of
         Elements to a Table.
         """
-        self.warning("The table method is deprecated and should no "
-                     "longer be used. If using a HoloMap use "
-                     "HoloMap.collapse() instead to return a Dataset.")
+        if config.future_deprecations:
+            self.warning("The table method is deprecated and should no "
+                         "longer be used. If using a HoloMap use "
+                         "HoloMap.collapse() instead to return a Dataset.")
 
         from .data.interface import Interface
         from ..element.tabular import Table
