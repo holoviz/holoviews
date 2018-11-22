@@ -639,6 +639,21 @@ class LabelledData(param.Parameterized):
         """
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
+
+        Arguments
+        ---------
+        label: str (optional)
+            New label to apply to returned element
+        group: str (optional)
+            New group to apply to returned element
+        depth: int (optional, default=0)
+            If applied to container allows applying relabeling to
+            contained objects up to the specified depth
+
+        Returns
+        -------
+        relabelled: LabelledData
+            Returns relabelled LabelledData object
         """
         new_data = self.data
         if (depth > 0) and getattr(self, '_deep_indexable', False):
@@ -689,10 +704,30 @@ class LabelledData(param.Parameterized):
         specifications. The output of these function calls are
         collected and returned in the accumulator list.
 
-        If specs is None, all constituent elements are
-        processed. Otherwise, specs must be a list of
-        type.group.label specs, types, and functions.
+        If specs is None, all constituent elements are processed.
+        Otherwise, specs must be a list of type.group.label specs,
+        types, and functions.
+
+        Arguments
+        ---------
+        fn: function (optional)
+            Function that will be evaluated on all objects
+        specs: list (optional)
+            List of types, functions or type[.group][.label] specs
+            to select objects to return, by default applies to all
+            objects.
+        full_breadth: bool (optional, default=True)
+            Whether to traverse the full set of objects on each
+            container or only the first.
+
+        Returns
+        -------
+        matched: list
+            List of objects that were selected and returned by the
+            supplied function
         """
+        if fn is None:
+            fn = lambda x: x
         if specs is not None and not isinstance(specs, (list, set, tuple)):
             specs = [specs]
         accumulator = []
@@ -718,6 +753,22 @@ class LabelledData(param.Parameterized):
         """
         Recursively replaces elements using a map function when the
         specification applies.
+
+        Arguments
+        ---------
+        map_fn: function
+            Function to apply to each object
+        specs: list (optional)
+            List of types, functions or type[.group][.label] specs
+            to select objects to return, by default applies to all
+            objects.
+        clone: bool (optional, default=True)
+            Whether to clone container objects or transform inplace
+
+        Returns
+        -------
+        mapped:
+            Returns the object after the map_fn has been applied
         """
         if specs is not None and not isinstance(specs, (list, set, tuple)):
             specs = [specs]
@@ -808,7 +859,7 @@ class Dimensioned(LabelledData):
                       object 'obj', then obj[80,175] indexes a weight
                       of 80 and height of 175.
 
-                      Accessed using either kdims or key_dimensions.
+                      Accessed using either kdims.
 
     * value dimensions: These dimensions correspond to any data held
                         on the Dimensioned object not in the key
@@ -820,8 +871,7 @@ class Dimensioned(LabelledData):
                         returned at once. Note that it is not possible
                         to mix value dimensions and deep dimensions.
 
-                        Accessed using either vdims or value_dimensions.
-
+                        Accessed using either vdims.
 
     * deep dimensions: These are dynamically computed dimensions that
                        belong to other Dimensioned objects that are
@@ -830,7 +880,7 @@ class Dimensioned(LabelledData):
                        that it is not possible to mix value dimensions
                        and deep dimensions.
 
-                       Accessed using either ddims or deep_dimensions.
+                       Accessed using either ddims.
 
     Dimensioned class support generalized methods for finding the
     range and type of values along a particular Dimension. The range
@@ -914,10 +964,23 @@ class Dimensioned(LabelledData):
 
     def dimensions(self, selection='all', label=False):
         """
-        Provides convenient access to Dimensions on nested
-        Dimensioned objects. Dimensions can be selected
-        by their type, i.e. 'key' or 'value' dimensions.
-        By default 'all' dimensions are returned.
+        Provides convenient access to Dimensions on nested Dimensioned
+        objects. Dimensions can be selected by their type, i.e. 'key'
+        or 'value' dimensions. By default 'all' dimensions are returned.
+
+        Arguments
+        ---------
+        selection: str (optional, default='all')
+            Type of dimensions to return, one of 'key', 'value',
+            'constant' or 'all'.
+        label: bool or str (optional, default=False)
+            Whether to return the Dimension objects, their names or
+            labels. Options include True, False, 'name', 'label'.
+
+        Returns
+        -------
+        dimensions: list
+            List of Dimension objects or their names or labels
         """
         if label in ['name', True]:
             label = 'short'
@@ -952,9 +1015,20 @@ class Dimensioned(LabelledData):
     def get_dimension(self, dimension, default=None, strict=False):
         """
         Access a Dimension object by name or index.
-        Returns the default value if the dimension is not found and
-        strict is False. If strict is True, a KeyError is raised
-        instead.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            Dimension to look up by name or by index
+        default: object (optional, default=None)
+            Object to return if Dimension is not found
+        strict: bool (optional, default=False)
+            Whether to raise a KeyError if Dimension is not found
+
+        Returns
+        -------
+        dimension: Dimension
+            Dimension object for the requested dimension
         """
         if dimension is not None and not isinstance(dimension, (int, basestring, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
@@ -978,17 +1052,27 @@ class Dimensioned(LabelledData):
             return name_map.get(dimension, default)
 
 
-    def get_dimension_index(self, dim):
+    def get_dimension_index(self, dimension):
         """
         Returns the index of the requested dimension.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            Dimension to look up by name or by index
+
+        Returns
+        -------
+        dimension_index: int
+            Integer index of the requested dimension
         """
-        if isinstance(dim, int):
-            if (dim < (self.ndims + len(self.vdims)) or
-                dim < len(self.dimensions())):
-                return dim
+        if isinstance(dimension, int):
+            if (dimension < (self.ndims + len(self.vdims)) or
+                dimension < len(self.dimensions())):
+                return dimension
             else:
                 return IndexError('Dimension index out of bounds')
-        dim = dimension_name(dim)
+        dim = dimension_name(dimension)
         try:
             dimensions = self.kdims+self.vdims
             return [i for i, d in enumerate(dimensions) if d == dim][0]
@@ -1000,8 +1084,17 @@ class Dimensioned(LabelledData):
     def get_dimension_type(self, dim):
         """
         Returns the specified Dimension type if specified or
-        if the dimension_values types are consistent otherwise
-        None is returned.
+        if the dimension_values types are consistent.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            Dimension to look up by name or by index
+
+        Returns
+        -------
+        dimension_type: int
+            Declared type of values along the dimension
         """
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
@@ -1011,6 +1104,7 @@ class Dimensioned(LabelledData):
             return dim_vals[0]
         else:
             return None
+
 
     def __getitem__(self, key):
         """
@@ -1028,17 +1122,32 @@ class Dimensioned(LabelledData):
 
     def select(self, selection_specs=None, **kwargs):
         """
-        Allows slicing or indexing into the Dimensioned object
-        by supplying the dimension and index/slice as key
-        value pairs. Select descends recursively through the
-        data structure applying the key dimension selection.
-        The 'value' keyword allows selecting the
-        value dimensions on objects which have any declared.
+        Allows slicing or indexing into the Dimensioned object by
+        supplying the dimension and index/slice as key value
+        pairs. Select descends recursively through the data structure
+        applying the key dimension selection. The 'value' keyword
+        allows selecting the value dimensions on objects which have
+        any declared.
 
-        The selection may also be selectively applied to
-        specific objects by supplying the selection_specs
-        as an iterable of type.group.label specs, types or
-        functions.
+        The selection may also be selectively applied to specific
+        objects by supplying the selection_specs as an iterable of
+        type.group.label specs, types or functions.
+
+        Arguments
+        ---------
+        selection_specs: list
+            A list of types, functions, or type[.group][.label] strings
+            specifying which objects to apply the selection on
+        **selection: dict
+            Selection to apply mapping from dimension name to selection.
+            Selections can be scalar values, tuple ranges, lists of
+            discrete values and boolean arrays
+
+        Returns
+        -------
+        selection: Dimensioned or scalar
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
         """
 
         # Apply all indexes applying on this object
@@ -1099,8 +1208,26 @@ class Dimensioned(LabelledData):
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """
-        Returns the values along the specified dimension. This method
-        must be implemented for all Dimensioned type.
+        Returns the values along a particular dimension. If unique
+        values are requested will return only unique values.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            The dimension to query values on
+        expanded: boolean (optional, default=True)
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+              - Columnar: If false returns unique values
+              - Geometry: If false returns scalar values per geometry
+              - Gridded: If false returns 1D coordinates
+        flat: boolean (optional, default=True)
+            Whether the array should be flattened to a 1D array
+
+        Returns
+        -------
+        array: numpy.ndarray
+            NumPy array of values along the requested dimension
         """
         val = self._cached_constants.get(dimension, None)
         if val:
@@ -1114,6 +1241,8 @@ class Dimensioned(LabelledData):
         """
         Returns the range of values along the specified dimension.
 
+        Arguments
+        ---------
         dimension: str or int or Dimension
             The dimension to compute the range on.
         data_range: bool (optional)
@@ -1122,6 +1251,11 @@ class Dimensioned(LabelledData):
         dimension_range: bool (optional)
             Whether to compute the range including the Dimension range
             and soft_range.
+
+        Returns
+        -------
+        range: tuple
+            Tuple of length two containing the lower and upper bound
         """
         dimension = self.get_dimension(dimension)
         if dimension is None or (not data_range and not dimension_range):
