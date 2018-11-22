@@ -366,7 +366,7 @@ class Layout(ViewableTree):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
-        super(ViewableTree, self).__init__(items, identifier, parent, **kwargs)
+        super(Layout, self).__init__(items, identifier, parent, **kwargs)
 
     @property
     def shape(self):

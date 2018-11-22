@@ -16,16 +16,11 @@ from functools import reduce
 import param
 import numpy as np
 
+from . import util
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import (
-    basestring, sanitize_identifier, isfinite, group_sanitizer,
-    label_sanitizer, max_range, find_range, dimension_sanitizer,
-    OrderedDict, bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-    builtins, config, dimension_range, disable_constant, get_path,
-    make_path_unique, int_to_roman
-)
+from .util import basestring, OrderedDict, bytes_to_unicode, unicode
 
 # Alias parameter support for pickle loading
 
@@ -209,7 +204,7 @@ class redim(object):
             return obj.redim(specs, **dimensions)
         dmap = Dynamic(parent, streams=parent.streams, operation=dynamic_redim)
         dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
-        with disable_constant(dmap):
+        with util.disable_constant(dmap):
             dmap.kdims = kdims
             dmap.vdims = vdims
         return dmap
@@ -405,7 +400,7 @@ class Dimension(param.Parameterized):
             self.warning("The 'initial' string for dimension values is no longer supported.")
             values = []
 
-        all_params['values'] = list(unique_array(values))
+        all_params['values'] = list(util.unique_array(values))
         super(Dimension, self).__init__(**all_params)
         if self.default is not None:
             if self.values and self.default not in values:
@@ -469,7 +464,7 @@ class Dimension(param.Parameterized):
             return self.spec == other.spec
 
         # For comparison to strings. Name may be sanitized.
-        return other in [self.name, self.label,  dimension_sanitizer(self.name)]
+        return other in [self.name, self.label, util.dimension_sanitizer(self.name)]
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
@@ -519,7 +514,7 @@ class Dimension(param.Parameterized):
                 if isinstance(value, (dt.datetime, dt.date)):
                     return value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
-                    return dt64_to_dt(value).strftime(formatter)
+                    return util.dt64_to_dt(value).strftime(formatter)
                 elif re.findall(r"\{(\w+)\}", formatter):
                     return formatter.format(value)
                 else:
@@ -589,22 +584,22 @@ class LabelledData(param.Parameterized):
         """
         self.data = data
         self.id = id
-        self._plot_id = plot_id or builtins.id(self)
+        self._plot_id = plot_id or util.builtins.id(self)
         if isinstance(params.get('label',None), tuple):
             (alias, long_name) = params['label']
-            label_sanitizer.add_aliases(**{alias:long_name})
+            util.label_sanitizer.add_aliases(**{alias:long_name})
             params['label'] = long_name
 
         if isinstance(params.get('group',None), tuple):
             (alias, long_name) = params['group']
-            group_sanitizer.add_aliases(**{alias:long_name})
+            util.group_sanitizer.add_aliases(**{alias:long_name})
             params['group'] = long_name
 
         super(LabelledData, self).__init__(**params)
-        if not group_sanitizer.allowable(self.group):
+        if not util.group_sanitizer.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
-        elif not label_sanitizer.allowable(self.label):
+        elif not util.label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 
@@ -679,7 +674,7 @@ class LabelledData(param.Parameterized):
         self_spec = match_fn(split_spec)
         unescaped_match = match_fn(specification[:len(split_spec)]) == self_spec
         if unescaped_match: return True
-        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
+        sanitizers = [util.sanitize_identifier, util.group_sanitizer, util.label_sanitizer]
         identifier_specification = tuple(fn(ident, escape=False)
                                          for ident, fn in zip(specification, sanitizers))
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
@@ -976,7 +971,7 @@ class Dimensioned(LabelledData):
         dimension = dimension_name(dimension)
         name_map = {dim.name: dim for dim in all_dims}
         name_map.update({dim.label: dim for dim in all_dims})
-        name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
+        name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %r not found." % dimension)
         else:
@@ -1131,18 +1126,18 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None or (not data_range and not dimension_range):
             return (None, None)
-        elif all(isfinite(v) for v in dimension.range) and dimension_range:
+        elif all(util.isfinite(v) for v in dimension.range) and dimension_range:
             return dimension.range
         elif data_range:
             if dimension in self.kdims+self.vdims:
                 dim_vals = self.dimension_values(dimension.name)
-                lower, upper = find_range(dim_vals)
+                lower, upper = util.find_range(dim_vals)
             else:
                 dname = dimension.name
                 match_fn = lambda x: dname in x.kdims + x.vdims
                 range_fn = lambda x: x.range(dname)
                 ranges = self.traverse(range_fn, [match_fn])
-                lower, upper = max_range(ranges)
+                lower, upper = util.max_range(ranges)
         else:
             lower, upper = (np.NaN, np.NaN)
         if not dimension_range:
@@ -1161,7 +1156,7 @@ class Dimensioned(LabelledData):
 
 
     def __call__(self, options=None, **kwargs):
-        if config.warn_options_call:
+        if util.config.warn_options_call:
             self.warning('Use of __call__ to set options will be deprecated '
                          'in future. Use the equivalent opts method or use '
                          'the recommended .options method instead.')
@@ -1210,11 +1205,11 @@ class Dimensioned(LabelledData):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
             elif not any(targets):
                 # Not targets specified - add current object as target
-                sanitized_group = group_sanitizer(self.group)
+                sanitized_group = util.group_sanitizer(self.group)
                 if self.label:
-                    identifier = ('%s.%s.%s' % (self.__class__.__name__,
-                                                sanitized_group,
-                                                label_sanitizer(self.label)))
+                    identifier = ('%s.%s.%s' % (
+                        self.__class__.__name__, sanitized_group,
+                        util.label_sanitizer(self.label)))
                 elif  sanitized_group != self.__class__.__name__:
                     identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
                 else:
@@ -1329,6 +1324,7 @@ class ViewableTree(AttrTree, Dimensioned):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
         params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
+
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
 
@@ -1374,9 +1370,9 @@ class ViewableTree(AttrTree, Dimensioned):
         counts = defaultdict(lambda: 0)
         for i, (path, item) in enumerate(items):
             if counter[path] > 1:
-                path = path + (int_to_roman(counts[path]+1),)
+                path = path + (util.int_to_roman(counts[path]+1),)
             elif counts[path]:
-                path = path[:-1] + (int_to_roman(counts[path]+1),)
+                path = path[:-1] + (util.int_to_roman(counts[path]+1),)
             new_items.append((path, item))
             counts[path] += 1
         return new_items
@@ -1396,8 +1392,8 @@ class ViewableTree(AttrTree, Dimensioned):
                 cls._unpack_paths(obj, items, counts)
                 continue
             new = path is None or len(path) == 1
-            path = get_path(item) if new else path
-            new_path = make_path_unique(path, counts, new)
+            path = util.get_path(item) if new else path
+            new_path = util.make_path_unique(path, counts, new)
             items.append((new_path, obj))
 
 
@@ -1415,10 +1411,10 @@ class ViewableTree(AttrTree, Dimensioned):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions(label=True)]
             vals = np.concatenate(values)
-            return vals if expanded else unique_array(vals)
+            return vals if expanded else util.unique_array(vals)
         else:
             return super(ViewableTree, self).dimension_values(dimension,
-                                                                 expanded, flat)
+                                                              expanded, flat)
 
 
     def regroup(self, group):
