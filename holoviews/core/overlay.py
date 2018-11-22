@@ -11,7 +11,7 @@ from functools import reduce
 import numpy as np
 
 import param
-from .dimension import Dimension, Dimensioned, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
 from .util import sanitize_identifier, unique_array
@@ -89,17 +89,16 @@ class CompositeOverlay(ViewableElement, Composable):
         return vals if expanded else unique_array(vals)
 
 
-class Overlay(Layout, CompositeOverlay):
+class Overlay(ViewableTree, CompositeOverlay):
     """
-    An Overlay consists of multiple Views (potentially of
+    An Overlay consists of multiple Elements (potentially of
     heterogeneous type) presented one on top each other with a
     particular z-ordering.
 
-    Overlays along with Views constitute the only valid leaf types of
+    Overlays along with elements constitute the only valid leaf types of
     a Layout and in fact extend the Layout structure. Overlays are
     constructed using the * operator (building an identical structure
-    to the + operator) and are the only objects that inherit both from
-    Layout and CompositeOverlay.
+    to the + operator).
     """
 
     def __init__(self, items=None, group=None, label=None, **params):
@@ -107,8 +106,8 @@ class Overlay(Layout, CompositeOverlay):
         self.__dict__['_fixed'] = False
         self.__dict__['_group'] = group
         self.__dict__['_label'] = label
-        Layout.__init__(self, items,
-                          **{k:v for k,v in params.items() if k not in view_params})
+        ViewableTree.__init__(self, items,
+                              **{k:v for k,v in params.items() if k not in view_params})
         ViewableElement.__init__(self, self.data,
                                  **{k:v for k,v in params.items() if k in view_params})
 

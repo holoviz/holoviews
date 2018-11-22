@@ -10,6 +10,7 @@ from .overlay import *         # noqa (API import)
 from .sheetcoords import *     # noqa (API import)
 from .spaces import *          # noqa (API import)
 from .tree import *            # noqa (API import)
+from .util import config       # noqa (API import)
 from .io import FileArchive
 
 archive = FileArchive()
