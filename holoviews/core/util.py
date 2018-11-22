@@ -10,7 +10,7 @@ import datetime as dt
 from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion as _LooseVersion
 
 from threading import Thread, Event
 import numpy as np
@@ -28,14 +28,42 @@ try:
 except:
    import builtins as builtins   # noqa (compatibility)
 
-try:
-    # Python 3
+# Python3 compatibility
+if sys.version_info.major >= 3:
+    basestring = str
+    unicode = str
+    long = int
+    cmp = lambda a, b: (a>b)-(a<b)
+    generator_types = (zip, range, types.GeneratorType)
+    RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
     _getargspec = inspect.getfullargspec
     get_keywords = operator.attrgetter('varkw')
-except AttributeError:
-    # Python 2
+    LooseVersion = _LooseVersion
+else:
+    basestring = basestring
+    unicode = unicode
+    from itertools import izip
+    generator_types = (izip, xrange, types.GeneratorType) # noqa
+    RecursionError = RuntimeError
     _getargspec = inspect.getargspec
     get_keywords = operator.attrgetter('keywords')
+
+    class LooseVersion(_LooseVersion):
+        """
+        Subclassed to avoid unicode issues in python2
+        """
+
+        def __init__ (self, vstring=None):
+            if isinstance(vstring, unicode):
+                vstring = str(vstring)
+            self.parse(vstring)
+
+        def __cmp__(self, other):
+            if isinstance(other, unicode):
+                other = str(other)
+            if isinstance(other, basestring):
+                other = LooseVersion(other)
+            return cmp(self.version, other.version)
 
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
@@ -249,21 +277,6 @@ def deephash(obj):
         return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
     except:
         return None
-
-
-# Python3 compatibility
-if sys.version_info.major >= 3:
-    basestring = str
-    unicode = str
-    long = int
-    generator_types = (zip, range, types.GeneratorType)
-    RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
-else:
-    basestring = basestring
-    unicode = unicode
-    from itertools import izip
-    generator_types = (izip, xrange, types.GeneratorType) # noqa
-    RecursionError = RuntimeError
 
 
 def argspec(callable_obj):

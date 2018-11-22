@@ -1,10 +1,9 @@
 from __future__ import absolute_import
 
-from unittest import SkipTest
-
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.element import Graph, TriMesh, Chord, circular_layout
+from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
+from holoviews.util.transform import dim
 
 try:
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, Patches)
@@ -131,8 +130,6 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'Weight', 'transform': cmapper})
 
     def test_graph_edges_categorical_colormapped(self):
-        raise SkipTest('Temporarily disabled until array interface is simplified.')
-
         g = self.graph3.opts(plot=dict(edge_color_index='start'),
                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = bokeh_renderer.get_plot(g)
@@ -157,6 +154,127 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(cmapper.high, self.weights.max())
         self.assertEqual(edge_source.data['Weight'], self.node_info2['Weight'])
         self.assertEqual(glyph.line_color, {'field': 'Weight', 'transform': cmapper})
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_graph_op_node_color(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 'red'), (0, 1, 1, 'green'), (1, 1, 2, 'blue')],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color'})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array(['red', 'green', 'blue']))
+
+    def test_graph_op_node_color_linear(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 0.5), (0, 1, 1, 1.5), (1, 1, 2, 2.5)],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        cmapper = plot.handles['node_color_color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array([0.5, 1.5, 2.5]))
+
+    def test_graph_op_node_color_categorical(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 'A'), (0, 1, 1, 'B'), (1, 1, 2, 'C')],
+                      vdims='color')
+        graph = Graph((edges, nodes)).options(node_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        cmapper = plot.handles['node_color_color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array(['A', 'B', 'C']))
+
+    def test_graph_op_node_size(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)],
+                      vdims='size')
+        graph = Graph((edges, nodes)).options(node_size='size')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.size, {'field': 'node_size'})
+        self.assertEqual(cds.data['node_size'], np.array([2, 4, 6]))
+
+    def test_graph_op_node_alpha(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
+        graph = Graph((edges, nodes)).options(node_alpha='alpha')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.fill_alpha, {'field': 'node_alpha'})
+        self.assertEqual(glyph.line_alpha, {'field': 'node_alpha'})
+        self.assertEqual(cds.data['node_alpha'], np.array([0.2, 0.6, 1]))
+
+    def test_graph_op_node_line_width(self):
+        edges = [(0, 1), (0, 2)]
+        nodes = Nodes([(0, 0, 0, 2), (0, 1, 1, 4), (1, 1, 2, 6)], vdims='line_width')
+        graph = Graph((edges, nodes)).options(node_line_width='line_width')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.line_width, {'field': 'node_line_width'})
+        self.assertEqual(cds.data['node_line_width'], np.array([2, 4, 6]))
+
+    def test_graph_op_edge_color(self):
+        edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color'})
+        self.assertEqual(cds.data['edge_color'], np.array(['red', 'green', 'blue']))
+
+    def test_graph_op_edge_color_linear(self):
+        edges = [(0, 1, 2), (0, 2, 0.5), (1, 3, 3)]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(cds.data['edge_color'], np.array([2, 0.5, 3]))
+
+    def test_graph_op_edge_color_categorical(self):
+        edges = [(0, 1, 'C'), (0, 2, 'B'), (1, 3, 'A')]
+        graph = Graph(edges, vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(cds.data['edge_color'], np.array(['C', 'B', 'A']))
+
+    def test_graph_op_edge_alpha(self):
+        edges = [(0, 1, 0.1), (0, 2, 0.5), (1, 3, 0.3)]
+        graph = Graph(edges, vdims='alpha').options(edge_alpha='alpha')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_alpha, {'field': 'edge_alpha'})
+        self.assertEqual(cds.data['edge_alpha'], np.array([0.1, 0.5, 0.3]))
+
+    def test_graph_op_edge_line_width(self):
+        edges = [(0, 1, 2), (0, 2, 10), (1, 3, 6)]
+        graph = Graph(edges, vdims='line_width').options(edge_line_width='line_width')
+        plot = bokeh_renderer.get_plot(graph)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_width, {'field': 'edge_line_width'})
+        self.assertEqual(cds.data['edge_line_width'], np.array([2, 10, 6]))
 
 
 class TestBokehTriMeshPlot(TestBokehPlot):
@@ -192,10 +310,11 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         layout = {str(int(z)): (x, y) for x, y, z in self.trimesh.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
 
-    def test_graph_edges_categorical_colormapped(self):
+    def test_trimesh_edges_categorical_colormapped(self):
         g = self.trimesh.opts(plot=dict(edge_color_index='node1'),
-                                       style=dict(edge_cmap=['#FFFFFF', '#000000']))
+                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = bokeh_renderer.get_plot(g)
+        print(plot.handles)
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']
@@ -205,7 +324,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertEqual(edge_source.data['node1_str__'], ['0', '1'])
         self.assertEqual(glyph.line_color, {'field': 'node1_str__', 'transform': cmapper})
 
-    def test_graph_nodes_numerically_colormapped(self):
+    def test_trimesh_nodes_numerically_colormapped(self):
         g = self.trimesh_weighted.opts(plot=dict(edge_color_index='weight'),
                                        style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = bokeh_renderer.get_plot(g)
@@ -218,6 +337,160 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         self.assertEqual(edge_source.data['weight'], np.array([0, 1]))
         self.assertEqual(glyph.line_color, {'field': 'weight', 'transform': cmapper})
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_trimesh_op_node_color(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 'red'), (0, 0, 1, 'green'), (0, 1, 2, 'blue'), (1, 0, 3, 'black')]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color'})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array(['red', 'green', 'blue', 'black']))
+    
+    def test_trimesh_op_node_color_linear(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        cmapper = plot.handles['node_color_color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array([2, 1, 3, 4]))
+        self.assertEqual(cmapper.low, 1) 
+        self.assertEqual(cmapper.high, 4)
+
+    def test_trimesh_op_node_color_categorical(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 'B'), (0, 0, 1, 'C'), (0, 1, 2, 'A'), (1, 0, 3, 'B')]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        cmapper = plot.handles['node_color_color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['node_color'], np.array(['B', 'C', 'A', 'B']))
+
+    def test_trimesh_op_node_size(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 3), (0, 0, 1, 2), (0, 1, 2, 8), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='size'))).options(node_size='size')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.size, {'field': 'node_size'})
+        self.assertEqual(cds.data['node_size'], np.array([3, 2, 8, 4]))
+
+    def test_trimesh_op_node_alpha(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.fill_alpha, {'field': 'node_alpha'})
+        self.assertEqual(glyph.line_alpha, {'field': 'node_alpha'})
+        self.assertEqual(cds.data['node_alpha'], np.array([0.2, 0.6, 1, 0.3]))
+
+    def test_trimesh_op_node_line_width(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='line_width'))).options(node_line_width='line_width')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertEqual(glyph.line_width, {'field': 'node_line_width'})
+        self.assertEqual(cds.data['node_line_width'], np.array([0.2, 0.6, 1, 0.3]))
+
+    def test_trimesh_op_edge_color_linear_mean_node(self):
+        edges = [(0, 1, 2), (1, 2, 3)]
+        nodes = [(-1, -1, 0, 2), (0, 0, 1, 1), (0, 1, 2, 3), (1, 0, 3, 4)]
+        trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(edge_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(cds.data['edge_color'], np.array([2, 8/3.]))
+        self.assertEqual(cmapper.low, 1)
+        self.assertEqual(cmapper.high, 4)
+
+    def test_trimesh_op_edge_color(self):
+        edges = [(0, 1, 2, 'red'), (1, 2, 3, 'blue')]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color'})
+        self.assertEqual(cds.data['edge_color'], np.array(['red', 'blue']))
+
+    def test_trimesh_op_edge_color_linear(self):
+        edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(cds.data['edge_color'], np.array([2.4, 3.6]))
+        self.assertEqual(cmapper.low, 2.4)
+        self.assertEqual(cmapper.high, 3.6)
+
+    def test_trimesh_op_edge_color_linear_filled(self):
+        edges = [(0, 1, 2, 2.4), (1, 2, 3, 3.6)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color', filled=True)
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['patches_1_source']
+        glyph = plot.handles['patches_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.fill_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(cds.data['edge_color'], np.array([2.4, 3.6]))
+        self.assertEqual(cmapper.low, 2.4)
+        self.assertEqual(cmapper.high, 3.6)
+
+    def test_trimesh_op_edge_color_categorical(self):
+        edges = [(0, 1, 2, 'A'), (1, 2, 3, 'B')]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        cmapper = plot.handles['edge_color_color_mapper']
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})
+        self.assertEqual(cds.data['edge_color'], np.array(['A', 'B']))
+        self.assertEqual(cmapper.factors, ['A', 'B'])
+
+    def test_trimesh_op_edge_alpha(self):
+        edges = [(0, 1, 2, 0.7), (1, 2, 3, 0.3)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='alpha').options(edge_alpha='alpha')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_alpha, {'field': 'edge_alpha'})
+        self.assertEqual(cds.data['edge_alpha'], np.array([0.7, 0.3]))
+
+    def test_trimesh_op_edge_line_width(self):
+        edges = [(0, 1, 2, 7), (1, 2, 3, 3)]
+        nodes = [(-1, -1, 0), (0, 0, 1), (0, 1, 2), (1, 0, 3)]
+        trimesh = TriMesh((edges, nodes), vdims='line_width').options(edge_line_width='line_width')
+        plot = bokeh_renderer.get_plot(trimesh)
+        cds = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(glyph.line_width, {'field': 'edge_line_width'})
+        self.assertEqual(cds.data['edge_line_width'], np.array([7, 3]))
+
 
 class TestBokehChordPlot(TestBokehPlot):
 
@@ -229,6 +502,12 @@ class TestBokehChordPlot(TestBokehPlot):
 
     def test_chord_nodes_label_text(self):
         g = self.chord.opts(plot=dict(label_index='Label'))
+        plot = bokeh_renderer.get_plot(g)
+        source = plot.handles['text_1_source']
+        self.assertEqual(source.data['text'], ['A', 'B', 'C'])
+
+    def test_chord_nodes_labels_mapping(self):
+        g = self.chord.opts(plot=dict(labels='Label'))
         plot = bokeh_renderer.get_plot(g)
         source = plot.handles['text_1_source']
         self.assertEqual(source.data['text'], ['A', 'B', 'C'])
@@ -248,6 +527,23 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
         self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
 
+    def test_chord_nodes_style_map_node_color_colormapped(self):
+        g = self.chord.opts(plot=dict(labels='Label'),
+                            style=dict(node_color='Label', cmap=['#FFFFFF', '#888888', '#000000']))
+        plot = bokeh_renderer.get_plot(g)
+        cmapper = plot.handles['node_color_color_mapper']
+        source = plot.handles['scatter_1_source']
+        arc_source = plot.handles['multi_line_2_source']
+        glyph = plot.handles['scatter_1_glyph']
+        arc_glyph = plot.handles['multi_line_2_glyph']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
+        self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
+        self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
+        self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
+        self.assertEqual(arc_glyph.line_color, {'field': 'node_color', 'transform': cmapper})
+
     def test_chord_edges_categorically_colormapped(self):
         g = self.chord.opts(plot=dict(edge_color_index='start'),
                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
@@ -261,3 +557,14 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(edge_source.data['start_str__'], ['0', '0', '1'])
         self.assertEqual(glyph.line_color, {'field': 'start_str__', 'transform': cmapper})
 
+    def test_chord_edge_color_style_mapping(self):
+        g = self.chord.opts(style=dict(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']))
+        plot = bokeh_renderer.get_plot(g)
+        cmapper = plot.handles['edge_color_color_mapper']
+        edge_source = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
+        self.assertEqual(cmapper.factors, ['0', '1', '2'])
+        self.assertEqual(edge_source.data['edge_color'], np.array(['0', '0', '1']))
+        self.assertEqual(glyph.line_color, {'field': 'edge_color', 'transform': cmapper})

@@ -1,5 +1,6 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import os
-from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap
@@ -7,7 +8,7 @@ from matplotlib.colors import ListedColormap
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
-from ...core.util import pd
+from ...core.util import LooseVersion, pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
@@ -224,10 +225,10 @@ options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 if not config.style_17:
     options.Points = Options('plot', show_frame=True)
 
-options.ErrorBars = Options('style', ecolor='k')
+options.ErrorBars = Options('style', edgecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
-options.Bars = Options('style', ec='k', color=Cycle())
-options.Histogram = Options('style', ec='k', facecolor=Cycle())
+options.Bars = Options('style', edgecolor='k', color=Cycle())
+options.Histogram = Options('style', edgecolor='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)

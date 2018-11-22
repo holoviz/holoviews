@@ -1,17 +1,126 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import re
 import warnings
-from distutils.version import LooseVersion
 
 import numpy as np
 import matplotlib
 from matplotlib import ticker
+from matplotlib.colors import cnames
+from matplotlib.lines import Line2D
+from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-
-mpl_version = LooseVersion(matplotlib.__version__)  # noqa
-
-from ...core.util import basestring, _getargspec
+from matplotlib.rcsetup import (
+    validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
+    validate_joinstyle)
+from ...core.util import LooseVersion, _getargspec, basestring, is_number
 from ...element import Raster, RGB, Polygons
+from ..util import COLOR_ALIASES, RGB_HEX_REGEX
+
+mpl_version = LooseVersion(matplotlib.__version__)
+
+
+def is_color(color):
+    """
+    Checks if supplied object is a valid color spec.
+    """
+    if not isinstance(color, basestring):
+        return False
+    elif RGB_HEX_REGEX.match(color):
+        return True
+    elif color in COLOR_ALIASES:
+        return True
+    elif color in cnames:
+        return True
+    return False
+
+validators = {
+    'alpha': lambda x: is_number(x) and (0 <= x <= 1),
+    'capstyle': validate_capstyle,
+    'color': is_color,
+    'fontsize': validate_fontsize,
+    'fonttype': validate_fonttype,
+    'hatch': validate_hatch,
+    'joinstyle': validate_joinstyle,
+    'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
+                         or isinstance(x, Path) or
+                         (isinstance(x, basestring) and x.startswith('$')
+                          and x.endswith('$'))),
+    's': lambda x: is_number(x) and (x >= 0)
+}
+
+
+def get_validator(style):
+    for k, v in validators.items():
+        if style.endswith(k) and (len(style) != 1 or style == k):
+            return v
+
+
+def validate(style, value, vectorized=True):
+    """
+    Validates a style and associated value.
+
+    Arguments
+    ---------
+    style: str
+       The style to validate (e.g. 'color', 'size' or 'marker')
+    value:
+       The style value to validate
+    vectorized: bool
+       Whether validator should allow vectorized setting
+
+    Returns
+    -------
+    valid: boolean or None
+       If validation is supported returns boolean, otherwise None
+    """
+    validator = get_validator(style)
+    if validator is None:
+        return None
+    if isinstance(value, (np.ndarray, list)) and vectorized:
+        return all(validator(v) for v in value)
+    try:
+        valid = validator(value)
+        return False if valid == False else True
+    except:
+        return False
+
+
+def filter_styles(style, group, other_groups, blacklist=[]):
+    """
+    Filters styles which are specific to a particular artist, e.g.
+    for a GraphPlot this will filter options specific to the nodes and
+    edges.
+
+    Arguments
+    ---------
+    style: dict
+        Dictionary of styles and values
+    group: str
+        Group within the styles to filter for
+    other_groups: list
+        Other groups to filter out
+    blacklist: list (optional)
+        List of options to filter out
+
+    Returns
+    -------
+    filtered: dict
+        Filtered dictionary of styles
+    """
+    group = group+'_'
+    filtered = {}
+    for k, v in style.items():
+        if (any(k.startswith(p) for p in other_groups)
+            or k.startswith(group) or k in blacklist):
+            continue
+        filtered[k] = v
+    for k, v in style.items():
+        if not k.startswith(group) or k in blacklist:
+            continue
+        filtered[k[len(group):]] = v
+    return filtered
 
 
 def wrap_formatter(formatter):

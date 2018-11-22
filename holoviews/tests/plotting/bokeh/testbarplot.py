@@ -1,7 +1,11 @@
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
 from holoviews.element import Bars
 
+from bokeh.models import CategoricalColorMapper, LinearColorMapper
+
+from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
@@ -122,3 +126,119 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.033483695221017122)
         self.assertEqual(y_range.end, 3.3483695221017129)
 
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_bars_color_op(self):
+        bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(glyph.line_color, 'black')
+
+    def test_bars_linear_color_op(self):
+        bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(cds.data['color'], np.array([0, 1, 2]))
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+
+    def test_bars_categorical_color_op(self):
+        bars = Bars([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
+        self.assertEqual(cds.data['color'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, 'black')
+
+    def test_bars_line_color_op(self):
+        bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(line_color='color')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertNotEqual(glyph.fill_color, {'field': 'line_color'})
+        self.assertEqual(glyph.line_color, {'field': 'line_color'})
+
+    def test_bars_fill_color_op(self):
+        bars = Bars([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(fill_color='color')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['fill_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertNotEqual(glyph.line_color, {'field': 'fill_color'})
+
+    def test_bars_alpha_op(self):
+        bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+
+    def test_bars_line_alpha_op(self):
+        bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(line_alpha='alpha')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.line_alpha, {'field': 'line_alpha'})
+        self.assertNotEqual(glyph.fill_alpha, {'field': 'line_alpha'})
+
+    def test_bars_fill_alpha_op(self):
+        bars = Bars([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(fill_alpha='alpha')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['fill_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertNotEqual(glyph.line_alpha, {'field': 'fill_alpha'})
+        self.assertEqual(glyph.fill_alpha, {'field': 'fill_alpha'})
+
+    def test_bars_line_width_op(self):
+        bars = Bars([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                              vdims=['y', 'line_width']).options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(bars)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['line_width'], np.array([1, 4, 8]))
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+
+    def test_op_ndoverlay_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Bars(np.arange(i+2)) for i, color in enumerate(colors)}, 'Color').options('Bars', fill_color='Color')
+        plot = bokeh_renderer.get_plot(overlay)
+        for subplot, color in zip(plot.subplots.values(),  colors):
+            self.assertEqual(subplot.handles['glyph'].fill_color, color)
+
+    def test_bars_color_index_color_clash(self):
+        bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                    vdims=['y', 'color']).options(color='color', color_index='color')
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(bars)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index; ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)

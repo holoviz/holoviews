@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 from collections import defaultdict
 
 import param
@@ -9,22 +11,15 @@ from ...core.data import Dataset
 from ...core.util import (basestring, dimension_sanitizer, unique_array,
                           max_range)
 from ...core.options import Cycle
-from .chart import ColorbarPlot, PointPlot
-from .element import (CompositeElementPlot, LegendPlot, line_properties,
-                      fill_properties, text_properties)
+from ...util.transform import dim
 from ..util import process_cmap
-from .util import rgba_tuple
+from .chart import ColorbarPlot, PointPlot
+from .element import CompositeElementPlot, LegendPlot
+from .styles import line_properties, fill_properties, text_properties, rgba_tuple
+
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
 
     selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
@@ -37,12 +32,24 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     tools = param.List(default=['hover', 'tap'], doc="""
         A list of plugin tools to use on the plot.""")
 
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
+
+    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
+
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge', 'bezier': 'edge'}
 
     style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
-                  ['node_size', 'cmap', 'edge_cmap'])
+                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap'])
+
+    _nonvectorized_styles =  ['cmap', 'edge_cmap', 'node_cmap']
 
     # Filled is only supported for subclasses
     filled = False
@@ -74,8 +81,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
+
     def get_extents(self, element, ranges, range_type='combined'):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
+
 
     def _get_axis_labels(self, *args, **kwargs):
         """
@@ -125,7 +134,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             edge_data[field] = cvals
         edge_style = dict(style, cmap=cmap)
         mapper = self._get_colormapper(cdim, element, ranges, edge_style,
-                                       factors, colors, 'edge_colormapper')
+                                       factors, colors, 'edge', 'edge_colormapper')
         transform = {'field': field, 'transform': mapper}
         color_type = 'fill_color' if self.filled else 'line_color'
         edge_mapping['edge_'+color_type] = transform
@@ -246,16 +255,19 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 continue
             source = self._init_datasource(data.pop(key, {}))
             self.handles[key+'_source'] = source
-            glyph_props = self._glyph_properties(plot, element, source, ranges, style)
-            properties.update(glyph_props)
+            group_style = dict(style)
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+            others = [sg for sg in self._style_groups.values() if sg != style_group]
+            glyph_props = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
+            for k, p in glyph_props.items():
+                if any(k.startswith(o) for o in others):
+                    continue
+                properties[k] = p
             mappings.update(mapping.pop(key, {}))
         properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}
         properties.update(mappings)
 
         layout = data.pop('layout', {})
-        if data and mapping:
-            CompositeElementPlot._init_glyphs(self, plot, element, ranges, source,
-                                              data, mapping, style)
 
         # Define static layout
         layout = StaticLayoutProvider(graph_layout=layout)
@@ -290,10 +302,16 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 glyph = getattr(renderer.edge_renderer, glyph_type+'glyph', None)
                 if glyph is None:
                     continue
-                props = self._process_properties(self.edge_glyph, properties, mappings)
+                group_properties = dict(properties)
+                props = self._process_properties(self.edge_glyph, group_properties, mappings)
                 filtered = self._filter_properties(props, glyph_type, allowed_properties)
                 new_glyph = glyph_model(**dict(filtered, **edge_mapping))
                 setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
+
+        if data and mapping:
+            CompositeElementPlot._init_glyphs(self, plot, element, ranges, source,
+                                              data, mapping, style)
+
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             if self.handles['hover'].renderers == 'auto':
@@ -304,12 +322,17 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 class ChordPlot(GraphPlot):
 
-    label_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the node labels will be drawn""")
+    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+        The dimension or dimension value transform used to draw labels from.""")
 
     show_frame = param.Boolean(default=False, doc="""
         Whether or not to show a complete frame around the plot.""")
+
+    # Deprecated options
+
+    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the node labels will be drawn""")
 
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label',
@@ -326,37 +349,68 @@ class ChordPlot(GraphPlot):
         xdim, ydim = element.nodes.kdims[:2]
         if range_type not in ('combined', 'data', 'extents'):
             return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
+        no_labels = (element.nodes.get_dimension(self.label_index) is None and
+                     self.labels is None)
+        rng = 1.1 if no_labels else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
         y0, y1 = max_range([ydim.range, (-rng, rng)])
         return (x0, y0, x1, y1)
 
+    def _sync_arcs(self):
+        arc_renderer = self.handles['multi_line_2_glyph_renderer']
+        scatter_renderer = self.handles['scatter_1_glyph_renderer']
+        for gtype in ('selection_', 'nonselection_', 'muted_', 'hover_', ''):
+            glyph = getattr(scatter_renderer, gtype+'glyph')
+            arc_glyph = getattr(arc_renderer, gtype+'glyph')
+            if not glyph or not arc_glyph:
+                continue
+            scatter_props = glyph.properties_with_values(include_defaults=False)
+            styles = {k.replace('fill', 'line'): v for k, v in scatter_props.items()
+                      if 'fill' in k}
+            arc_glyph.update(**styles)
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super(ChordPlot, self)._init_glyphs(plot, element, ranges, source)
+        # Ensure that arc glyph matches node style
+        if 'multi_line_2_glyph' in self.handles:
+            arc_renderer = self.handles['multi_line_2_glyph_renderer']
+            scatter_renderer = self.handles['scatter_1_glyph_renderer']
+            arc_renderer.view = scatter_renderer.view
+            arc_renderer.data_source = scatter_renderer.data_source
+            self.handles['multi_line_2_source'] = scatter_renderer.data_source
+            self._sync_arcs()
+
+    def _update_glyphs(self, element, ranges, style):
+        if 'multi_line_2_glyph' in self.handles:
+            self._sync_arcs()
+        super(ChordPlot, self)._update_glyphs(element, ranges, style)
+
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
         data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
-        if 'node_fill_color' in mapping['scatter_1']:
-            angles = element._angles
-            arcs = defaultdict(list)
-            for i in range(len(element.nodes)):
-                start, end = angles[i:i+2]
-                vals = np.linspace(start, end, 20)
-                xs, ys = np.cos(vals), np.sin(vals)
-                arcs['arc_xs'].append(xs)
-                arcs['arc_ys'].append(ys)
-            data['scatter_1'].update(arcs)
-            data['multi_line_2'] = data['scatter_1']
-            mapping['multi_line_2'] = {'xs': 'arc_xs', 'ys': 'arc_ys', 'line_width': 10}
-            mapping['multi_line_2']['line_color'] = mapping['scatter_1']['node_fill_color']
-            mapping['multi_line_2']['nonselection_line_color'] = mapping['scatter_1']['node_fill_color']
-            mapping['multi_line_2']['selection_line_color'] = mapping['scatter_1']['node_fill_color']
+        angles = element._angles
+        arcs = defaultdict(list)
+        for i in range(len(element.nodes)):
+            start, end = angles[i:i+2]
+            vals = np.linspace(start, end, 20)
+            xs, ys = np.cos(vals), np.sin(vals)
+            arcs['arc_xs'].append(xs)
+            arcs['arc_ys'].append(ys)
+        data['scatter_1'].update(arcs)
+        data['multi_line_2'] = data['scatter_1']
+        mapping['multi_line_2'] = {'xs': 'arc_xs', 'ys': 'arc_ys', 'line_width': 10}
 
-        lidx = element.nodes.get_dimension(self.label_index)
-        if lidx is None:
-            if self.label_index is not None:
-                dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Chord not found, "
-                             "expected one of %s, got %s." %
-                             (dims, self.label_index))
+        label_dim = element.nodes.get_dimension(self.label_index)
+        labels = self.labels
+        if label_dim and labels:
+            self.warning("Cannot declare style mapping for 'labels' option "
+                         "and declare a label_index; ignoring the label_index.")
+        elif label_dim:
+            labels = label_dim
+        elif isinstance(labels, basestring):
+            labels = element.nodes.get_dimension(labels)
+
+        if labels is None:
             return data, mapping, style
 
         nodes = element.nodes
@@ -367,9 +421,13 @@ class ChordPlot(GraphPlot):
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
-        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
+        if isinstance(labels, dim):
+            text = labels.apply(element, flat=True)
+        else:
+            text = element.nodes.dimension_values(labels)
+            text = [labels.pprint_value(v) for v in text]
         angles = np.arctan2(ys, xs)
-        data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in labels], angle=angles)
+        data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in text], angle=angles)
         mapping['text_1'] = dict(text='text', x='x', y='y', angle='angle', text_baseline='middle')
         return data, mapping, style
 
@@ -392,20 +450,30 @@ class TriMeshPlot(GraphPlot):
 
     style_opts = (['edge_'+p for p in line_properties+fill_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
-                  ['node_size', 'cmap', 'edge_cmap'])
+                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap'])
 
     # Declares that three columns in TriMesh refer to edges
     _node_columns = [0, 1, 2]
 
-    def get_data(self, element, ranges, style):
-        # Ensure the edgepaths for the triangles are generated before plotting
-        simplex_dim = element.get_dimension(self.edge_color_index)
-        vertex_dim = element.nodes.get_dimension(self.edge_color_index)
-        if not isinstance(self.edge_color_index, int) and vertex_dim and not simplex_dim:
+    def _process_vertices(self, element):
+        style = self.style[self.cyclic_index]
+        edge_color = style.get('edge_color')
+        if edge_color not in element.nodes:
+            edge_color = self.edge_color_index
+        simplex_dim = element.get_dimension(edge_color)
+        vertex_dim = element.nodes.get_dimension(edge_color)
+        if vertex_dim and not simplex_dim:
             simplices = element.array([0, 1, 2])
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
         element.edgepaths
-        return super(TriMeshPlot, self).get_data(element, ranges, style)
+        return element
 
+    def _init_glyphs(self, plot, element, ranges, source):
+        element = self._process_vertices(element)
+        super(TriMeshPlot, self)._init_glyphs(plot, element, ranges, source)
+
+    def _update_glyphs(self, element, ranges, style):
+        element = self._process_vertices(element)
+        super(TriMeshPlot, self)._update_glyphs(element, ranges, style)

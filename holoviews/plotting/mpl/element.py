@@ -1,23 +1,26 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import math
+import warnings
 from types import FunctionType
 
 import param
 import numpy as np
-import matplotlib as mpl
 import matplotlib.colors as mpl_colors
+
 from matplotlib import ticker
 from matplotlib.dates import date2num
 
 from ...core import util
-from ...core import (OrderedDict, NdOverlay, DynamicMap,
+from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph
+from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals
+from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import wrap_formatter
-from distutils.version import LooseVersion
+from .util import mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -73,6 +76,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
+    # Declare which styles cannot be mapped to a non-scalar dimension
+    _nonvectorized_styles = ['marker', 'alpha', 'cmap', 'angle']
+
     # Whether plot has axes, disables setting axis limits, labels and ticks
     _has_axes = True
 
@@ -113,7 +119,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                if LooseVersion(mpl.__version__) <= '1.5.9':
+                if mpl_version <= '1.5.9':
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
@@ -510,6 +516,91 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self.handles.update(handles)
         return axis_kwargs
 
+
+    def _apply_transforms(self, element, ranges, style):
+        new_style = dict(style)
+        for k, v in style.items():
+            if isinstance(v, util.basestring):
+                if validate(k, v) == True:
+                    continue
+                elif v in element or (isinstance(element, Graph) and v in element.nodes):
+                    v = dim(v)
+                elif any(d==v for d in self.overlay_dims):
+                    v = dim([d for d in self.overlay_dims if d==v][0])
+
+            if not isinstance(v, dim):
+                continue
+            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
+                new_style.pop(k)
+                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                             'dimensions could be resolved.' % (k, v))
+                continue
+
+            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
+                val = self.overlay_dims[v.dimension]
+            else:
+                val = v.apply(element, ranges)
+
+            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+                (not 'color' in k or validate('color', val))):
+                val = val[0]
+
+            if not np.isscalar(val) and k in self._nonvectorized_styles:
+                element = type(element).__name__
+                raise ValueError('Mapping a dimension to the "{style}" '
+                                 'style option is not supported by the '
+                                 '{element} element using the {backend} '
+                                 'backend. To map the "{dim}" dimension '
+                                 'to the {style} use a groupby operation '
+                                 'to overlay your data along the dimension.'.format(
+                                     style=k, dim=v.dimension, element=element,
+                                     backend=self.renderer.backend
+                                 )
+                )
+
+            style_groups = getattr(self, '_style_groups', [])
+            groups = [sg for sg in style_groups if k.startswith(sg)]
+            group = groups[0] if groups else None
+            prefix = '' if group is None else group+'_'
+            if (k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray)
+                and not validate('color', val)):
+                new_style.pop(k)
+                self._norm_kwargs(element, ranges, new_style, v, val, prefix)
+                if val.dtype.kind in 'OSUM':
+                    range_key = dim_range_key(v)
+                    if range_key in ranges and 'factors' in ranges[range_key]:
+                        factors = ranges[range_key]['factors']
+                    else:
+                        factors = util.unique_array(val)
+                    val = util.search_indices(val, factors)
+                k = prefix+'c'
+
+            new_style[k] = val
+
+        for k, val in list(new_style.items()):
+            # If mapped to color/alpha override static fill/line style
+            if k == 'c':
+                new_style.pop('color', None)
+
+            style_groups = getattr(self, '_style_groups', [])
+            groups = [sg for sg in style_groups if k.startswith(sg)]
+            group = groups[0] if groups else None
+            prefix = '' if group is None else group+'_'
+            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray):
+                fill_style = new_style.get(prefix+'facecolor')
+                if fill_style and validate('color', fill_style):
+                    new_style.pop('facecolor')
+                line_style = new_style.get(prefix+'edgecolor')
+                if line_style and validate('color', line_style):
+                    new_style.pop('edgecolor')
+            elif k == 'facecolors' and not isinstance(new_style.get('color', new_style.get('c')), np.ndarray):
+                # Color overrides facecolors if defined
+                new_style.pop('color', None)
+                new_style.pop('c', None)
+
+        return new_style
+
+
     def teardown_handles(self):
         """
         If no custom update_handles method is supplied this method
@@ -641,20 +732,44 @@ class ColorbarPlot(ElementPlot):
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
 
 
-    def _norm_kwargs(self, element, ranges, opts, vdim, prefix=''):
+    def _norm_kwargs(self, element, ranges, opts, vdim, values=None, prefix=''):
         """
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
+        dim_name = dim_range_key(vdim)
+        if values is None:
+            if isinstance(vdim, dim):
+                values = vdim.apply(element, flat=True)
+            else:
+                expanded = not (
+                    isinstance(element, Dataset) and
+                    element.interface.multi and
+                    (getattr(element, 'level', None) is not None or
+                     element.interface.isscalar(element, vdim.name))
+                )
+                values = np.asarray(element.dimension_values(vdim, expanded=expanded))
+
         clim = opts.pop(prefix+'clims', None)
-        values = np.asarray(element.dimension_values(vdim))
         if clim is None:
             if not len(values):
                 clim = (0, 0)
                 categorical = False
             elif values.dtype.kind in 'uif':
-                if vdim.name in ranges:
-                    clim = ranges[vdim.name]['combined']
+                if dim_name in ranges:
+                    clim = ranges[dim_name]['combined']
+                elif isinstance(vdim, dim):
+                    if values.dtype.kind == 'M':
+                        clim = values.min(), values.max()
+                    elif len(values) == 0:
+                        clim = np.NaN, np.NaN
+                    else:
+                        try:
+                            with warnings.catch_warnings():
+                                warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                                clim = (np.nanmin(values), np.nanmax(values))
+                        except:
+                            clim = np.NaN, np.NaN
                 else:
                     clim = element.range(vdim)
                 if self.logz:
@@ -667,7 +782,12 @@ class ColorbarPlot(ElementPlot):
                     clim = -np.abs(clim).max(), np.abs(clim).max()
                 categorical = False
             else:
-                clim = (0, len(np.unique(values))-1)
+                range_key = dim_range_key(vdim)
+                if range_key in ranges and 'factors' in ranges[range_key]:
+                    factors = ranges[range_key]['factors']
+                else:
+                    factors = util.unique_array(values)
+                clim = (0, len(factors)-1)
                 categorical = True
         else:
             categorical = values.dtype.kind not in 'uif'
@@ -682,7 +802,7 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmin'] = clim[0]
         opts[prefix+'vmax'] = clim[1]
 
-        cmap = opts.get(prefix+'cmap', 'viridis')
+        cmap = opts.get(prefix+'cmap', opts.get('cmap', 'viridis'))
         if values.dtype.kind not in 'OSUM':
             ncolors = None
             if isinstance(self.color_levels, int):
@@ -728,7 +848,7 @@ class ColorbarPlot(ElementPlot):
 
         if not isinstance(cmap, mpl_colors.Colormap):
             if isinstance(cmap, dict):
-                factors = np.unique(values)
+                factors = util.unique_array(values)
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:

@@ -1,4 +1,4 @@
-from __future__ import division
+from __future__ import absolute_import, division, unicode_literals
 
 import param
 import numpy as np
@@ -12,7 +12,9 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
-from .element import ColorbarPlot, line_properties, fill_properties
+from ...util.transform import dim
+from .element import ColorbarPlot
+from .styles import line_properties, fill_properties
 from .util import bokeh_version
 
 
@@ -47,7 +49,10 @@ class hex_binning(Operation):
         xsize = ((x1-x0)/sx)*(2.0/3.0)
         ysize = ((y1-y0)/sy)*(2.0/3.0)
         size = xsize if self.orientation == 'flat' else ysize
-        scale = ysize/xsize
+        if isfinite(ysize) and isfinite(xsize) and not xsize == 0:
+            scale = ysize/xsize
+        else:
+            scale = 1
 
         # Compute hexagonal coordinates
         x, y = (element.dimension_values(i) for i in indexes)
@@ -95,15 +100,25 @@ class HexTilesPlot(ColorbarPlot):
       reduction is allowed, defaulting to np.size to count the number
       of values in each bin.""")
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the colors will the drawn.""")
-
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
       sampling along both axes when setting and integer but independent
       bin sampling can be specified a tuple of integers corresponding to
       the number of bins along each axis.""")
+
+    min_count = param.Number(default=None, doc="""
+      The display threshold before a bin is shown, by default bins with
+      a count of less than 1 are hidden.""")
+
+    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+                                       doc="""
+      The orientation of hexagon bins. By default the pointy side is on top.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     max_scale = param.Number(default=0.9, bounds=(0, None), doc="""
       When size_index is enabled this defines the maximum size of each
@@ -117,21 +132,15 @@ class HexTilesPlot(ColorbarPlot):
       smallest bin will match the size of bins when scaling is disabled.
       Setting value larger than 1 will result in overlapping bins.""")
 
-    min_count = param.Number(default=None, doc="""
-      The display threshold before a bin is shown, by default bins with
-      a count of less than 1 are hidden.""")
-
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
-                                       doc="""
-      The orientation of hexagon bins. By default the pointy side is on top.""")
-
     size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     _plot_methods = dict(single='hex_tile')
 
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+    style_opts = ['cmap', 'color', 'scale'] + line_properties + fill_properties
+
+    _nonvectorized_styles = ['cmap', 'line_dash']
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:
@@ -175,6 +184,11 @@ class HexTilesPlot(ColorbarPlot):
         style['size'] = size
         style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
+        scale = style.get('scale')
+        if scale_dim and ((isinstance(scale, basestring) and scale in element) or isinstance(scale, dim)):
+            self.warning("Cannot declare style mapping for 'scale' option "
+                         "and declare a size_index; ignoring the size_index.")
+            scale_dim = None
         if scale_dim is not None:
             sizes = element.dimension_values(scale_dim)
             if self.aggregator is np.size:

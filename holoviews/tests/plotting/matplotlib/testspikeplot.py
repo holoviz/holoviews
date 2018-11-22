@@ -1,7 +1,10 @@
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Spikes
 
+from ..utils import ParamLogStream
 from .testplot import TestMPLPlot, mpl_renderer
 
 
@@ -86,3 +89,113 @@ class TestSpikesPlot(TestMPLPlot):
         x_range = plot.handles['axis'].get_xlim()
         self.assertEqual(x_range[0], 736054.90000000002)
         self.assertEqual(x_range[1], 736057.09999999998)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_spikes_color_op(self):
+        spikes = Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_edgecolors(), np.array([
+            [0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]
+        ))
+
+    def test_spikes_color_op_update(self):
+        spikes = HoloMap({
+            0: Spikes([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                      vdims=['y', 'color']),
+            1: Spikes([(0, 0, '#FF0000'), (0, 1, '#00FF00'), (0, 2, '#0000FF')],
+                      vdims=['y', 'color'])}).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_edgecolors(), np.array([
+            [0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]
+        ))
+        plot.update((1,))
+        self.assertEqual(artist.get_edgecolors(), np.array([
+            [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
+        ))
+        
+    def test_spikes_linear_color_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(artist.get_clim(), (0, 2))
+
+    def test_spikes_linear_color_op_update(self):
+        spikes = HoloMap({
+            0: Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
+                      vdims=['y', 'color']),
+            1: Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
+                      vdims=['y', 'color'])}).options(color='color', framewise=True)
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0.5, 3.2, 1.8]))
+        self.assertEqual(artist.get_clim(), (0.5, 3.2))
+        plot.update((1,))
+        self.assertEqual(artist.get_array(), np.array([0.1, 0.8, 0.3]))
+        self.assertEqual(artist.get_clim(), (0.1, 0.8))
+
+    def test_spikes_categorical_color_op(self):
+        spikes = Spikes([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+                        vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_spikes_alpha_op(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(spikes)
+
+    def test_spikes_line_width_op(self):
+        spikes = Spikes([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                              vdims=['y', 'line_width']).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+
+
+    def test_spikes_line_width_op_update(self):
+        spikes = HoloMap({
+            0: Spikes([(0, 0, 0.5), (0, 1, 3.2), (0, 2, 1.8)],
+                      vdims=['y', 'line_width']),
+            1: Spikes([(0, 0, 0.1), (0, 1, 0.8), (0, 2, 0.3)],
+                      vdims=['y', 'line_width'])}).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(spikes)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [0.5, 3.2, 1.8])
+        plot.update((1,))
+        self.assertEqual(artist.get_linewidths(), [0.1, 0.8, 0.3])
+
+    def test_op_ndoverlay_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Spikes(np.arange(i+2))
+                             for i, color in enumerate(colors)}, 'Color').options(
+                                     'Spikes', color='Color'
+                             )
+        plot = mpl_renderer.get_plot(overlay)
+        colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
+        for subplot, color in zip(plot.subplots.values(),  colors):
+            children = subplot.handles['artist'].get_children()
+            for c in children:
+                self.assertEqual(c.get_facecolor(), color)
+
+    def test_spikes_color_index_color_clash(self):
+        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims=['y', 'color']).options(color='color', color_index='color')
+        with ParamLogStream() as log:
+            plot = mpl_renderer.get_plot(spikes)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index; ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)
+

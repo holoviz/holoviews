@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 from collections import defaultdict
 
 import param
@@ -5,18 +7,23 @@ import numpy as np
 
 from ...core import util
 from ...element import Polygons
-from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
-from .util import expand_batched_style, mpl_to_bokeh, bokeh_version, multi_polygons_data
+from ...util.transform import dim
+from .element import ColorbarPlot, LegendPlot
+from .styles import (expand_batched_style, line_properties, fill_properties,
+                     mpl_to_bokeh, validate)
+from .util import bokeh_version, multi_polygons_data
 
 
 class PathPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     style_opts = line_properties + ['cmap']
     _plot_methods = dict(single='multi_line', batched='multi_line')
@@ -48,7 +55,12 @@ class PathPlot(ColorbarPlot):
 
 
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
+        color = style.get('color', None)
+        cdim = None
+        if isinstance(color, util.basestring) and validate('color', color) == False:
+            cdim = element.get_dimension(color)
+        elif self.color_index is not None:
+            cdim = element.get_dimension(self.color_index)
         inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
         if not cdim:
@@ -120,12 +132,14 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(LegendPlot, PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     _color_style = 'line_color'
 
@@ -174,7 +188,10 @@ class ContourPlot(LegendPlot, PathPlot):
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-        if None not in [element.level, self.color_index] and element.vdims:
+        color = style.get('color')
+        if (isinstance(color, dim) and color.applies(element)) or color in element:
+            cdim = None
+        elif None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
@@ -189,7 +206,10 @@ class ContourPlot(LegendPlot, PathPlot):
         else:
             values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
-        factors = list(np.unique(values)) if values.dtype.kind in 'SUO' else None
+        if cdim.name in ranges and 'factors' in ranges[cdim.name]:
+            factors = ranges[cdim.name]['factors']
+        else:
+            factors = util.unique_array(values) if values.dtype.kind in 'SUO' else None
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         self._get_hover_data(data, element)
@@ -210,8 +230,11 @@ class ContourPlot(LegendPlot, PathPlot):
         elif plot_method is None:
             plot_method = self._plot_methods.get('single')
         renderer = getattr(plot, plot_method)(**data)
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k[:-12])
         return renderer, renderer.glyph
 
 

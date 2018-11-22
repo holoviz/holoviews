@@ -1,31 +1,42 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import numpy as np
 
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
-from ...core.options import Cycle
-from ...core.util import basestring, unique_array, search_indices, max_range
+from ...core.options import Cycle, abbreviated_exception
+from ...core.util import basestring, unique_array, search_indices, max_range, is_number, isscalar
+from ...util.transform import dim
 from ..util import process_cmap
 from .element import ColorbarPlot
+from .util import filter_styles
 
 
 class GraphPlot(ColorbarPlot):
 
+    # Deprecated options
+
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                  allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
 
     edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
+        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
     style_opts = ['edge_alpha', 'edge_color', 'edge_linestyle', 'edge_linewidth',
                   'node_alpha', 'node_color', 'node_edgecolors', 'node_facecolors',
                   'node_linewidth', 'node_marker', 'node_size', 'visible', 'cmap',
-                  'edge_cmap']
+                  'edge_cmap', 'node_cmap']
 
     _style_groups = ['node', 'edge']
+
+    _nonvectorized_styles = [
+        'edge_alpha', 'edge_linestyle', 'edge_cmap', 'cmap', 'visible',
+        'node_marker'
+    ]
 
     filled = False
 
@@ -38,7 +49,7 @@ class GraphPlot(ColorbarPlot):
             cs = element.nodes.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
             if cs.dtype.kind == 'f':
-                style['c'] = cs
+                style['node_c'] = cs
             else:
                 factors = unique_array(cs)
                 cmap = color if isinstance(color, Cycle) else cmap
@@ -50,14 +61,19 @@ class GraphPlot(ColorbarPlot):
                 cs = search_indices(cs, factors)
                 style['node_facecolors'] = [colors[v%len(colors)] for v in cs]
                 style.pop('node_color', None)
-            if 'c' in style:
+            if 'node_c' in style:
                 self._norm_kwargs(element.nodes, ranges, style, cdim)
-        elif color:
-            style['c'] = style.pop('node_color')
+        elif color and 'node_color' in style:
+            style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
+        if is_number(style.get('node_size')):
+            style['node_s'] = style.pop('node_size')**2
 
         edge_cdim = element.get_dimension(self.edge_color_index)
         if not edge_cdim:
+            if not isscalar(style.get('edge_color')):
+                opt = 'edge_facecolors' if self.filled else 'edge_edgecolors'
+                style[opt] = style.pop('edge_color')
             return style
 
         elstyle = self.lookup_options(element, 'style')
@@ -71,7 +87,7 @@ class GraphPlot(ColorbarPlot):
         else:
             factors = unique_array(cvals)
         if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
-            style['edge_array'] = cvals
+            style['edge_c'] = cvals
         else:
             cvals = search_indices(cvals, factors)
             factors = list(factors)
@@ -84,22 +100,28 @@ class GraphPlot(ColorbarPlot):
                 colors = process_cmap(cmap, len(factors))
             style['edge_colors'] = [colors[v%len(colors)] for v in cvals]
             style.pop('edge_color', None)
-        if 'edge_array' in style:
-            self._norm_kwargs(element, ranges, style, edge_cdim, 'edge_')
+        if 'edge_c' in style:
+            self._norm_kwargs(element, ranges, style, edge_cdim, prefix='edge_')
         else:
             style.pop('edge_cmap', None)
-        if 'edge_vmin' in style:
-            style['edge_clim'] = (style.pop('edge_vmin'), style.pop('edge_vmax'))
         return style
 
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))
         dims = element.nodes.dimensions()
         self._compute_styles(element, ranges, style)
 
-        paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
+        if 'edge_vmin' in style:
+            style['edge_clim'] = (style.pop('edge_vmin'), style.pop('edge_vmax'))
+        if 'edge_c' in style:
+            style['edge_array'] = style.pop('edge_c')
+
+        paths = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims[:2])
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
@@ -113,10 +135,9 @@ class GraphPlot(ColorbarPlot):
         # Draw edges
         color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
         groups = [g for g in self._style_groups if g != 'edge']
-        edge_opts = {k[5:] if 'edge_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)
-                     and k not in color_opts}
+        edge_opts = filter_styles(plot_kwargs, 'edge', groups, color_opts)
+        if 'c' in edge_opts:
+            edge_opts['array'] = edge_opts.pop('c')
         paths = plot_args['edges']
         if self.filled:
             coll = PolyCollection
@@ -124,16 +145,16 @@ class GraphPlot(ColorbarPlot):
                 edge_opts['facecolors'] = edge_opts.pop('colors')
         else:
             coll = LineCollection
+        edgecolors = edge_opts.pop('edgecolors', None)
         edges = coll(paths, **edge_opts)
+        if edgecolors is not None:
+            edges.set_edgecolors(edgecolors)
         ax.add_collection(edges)
 
         # Draw nodes
         xs, ys = plot_args['nodes']
         groups = [g for g in self._style_groups if g != 'node']
-        node_opts = {k[5:] if 'node_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)}
-        if 'size' in node_opts: node_opts['s'] = node_opts.pop('size')**2
+        node_opts = filter_styles(plot_kwargs, 'node', groups)
         nodes = ax.scatter(xs, ys, **node_opts)
 
         return {'nodes': nodes, 'edges': edges}
@@ -143,12 +164,24 @@ class GraphPlot(ColorbarPlot):
         nodes = self.handles['nodes']
         xs, ys = data['nodes']
         nodes.set_offsets(np.column_stack([xs, ys]))
-        cdim = element.nodes.get_dimension(self.color_index)
-        if cdim and 'c' in style:
-            nodes.set_clim((style['vmin'], style['vmax']))
-            nodes.set_array(style['c'])
-            if 'norm' in style:
-                nodes.norm = style['norm']
+        if 'node_facecolors' in style:
+            nodes.set_facecolors(style['node_facecolors'])
+        if 'node_edgecolors' in style:
+            nodes.set_edgecolors(style['node_edgecolors'])
+        if 'node_c' in style:
+            nodes.set_array(style['node_c'])
+        if 'node_vmin' in style:
+            nodes.set_clim((style['node_vmin'], style['node_vmax']))
+        if 'node_norm' in style:
+            nodes.norm = style['norm']
+        if 'node_linewidth' in style:
+            nodes.set_linewidths(style['node_linewidth'])
+        if 'node_s' in style:
+            sizes = style['node_s']
+            if isscalar(sizes):
+                nodes.set_sizes([sizes])
+            else:
+                nodes.set_sizes(sizes)
 
 
     def _update_edges(self, element, data, style):
@@ -156,18 +189,23 @@ class GraphPlot(ColorbarPlot):
         paths = data['edges']
         edges.set_paths(paths)
         edges.set_visible(style.get('visible', True))
-        cdim = element.get_dimension(self.edge_color_index)
-        if cdim:
-            if 'edge_array' in style:
-                edges.set_clim(style['edge_clim'])
-                edges.set_array(style['edge_array'])
-                if 'norm' in style:
-                    edges.norm = style['edge_norm']
-            elif 'edge_colors' in style:
-                if self.filled:
-                    edges.set_facecolors(style['edge_colors'])
-                else:
-                    edges.set_edgecolors(style['edge_colors'])
+        if 'edge_facecolors' in style:
+            edges.set_facecolors(style['edge_facecolors'])
+        if 'edge_edgecolors' in style:
+            edges.set_edgecolors(style['edge_edgecolors'])
+        if 'edge_array' in style:
+            edges.set_array(style['edge_array'])
+        elif 'edge_colors' in style:
+            if self.filled:
+                edges.set_facecolors(style['edge_colors'])
+            else:
+                edges.set_edgecolors(style['edge_colors'])
+        if 'edge_clim' in style:
+            edges.set_clim(style['edge_clim'])
+        if 'edge_norm' in style:
+            edges.norm = style['edge_norm']
+        if 'edge_linewidth' in style:
+            edges.set_linewidths(style['edge_linewidth'])
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -186,8 +224,11 @@ class TriMeshPlot(GraphPlot):
     style_opts = GraphPlot.style_opts + ['edge_facecolors']
 
     def get_data(self, element, ranges, style):
-        simplex_dim = element.get_dimension(self.edge_color_index)
-        vertex_dim = element.nodes.get_dimension(self.edge_color_index)
+        edge_color = style.get('edge_color')
+        if edge_color not in element.nodes:
+            edge_color = self.edge_color_index
+        simplex_dim = element.get_dimension(edge_color)
+        vertex_dim = element.nodes.get_dimension(edge_color)
         if not isinstance(self.edge_color_index, int) and vertex_dim and not simplex_dim:
             simplices = element.array([0, 1, 2])
             z = element.nodes.dimension_values(vertex_dim)
@@ -200,6 +241,11 @@ class TriMeshPlot(GraphPlot):
 
 
 class ChordPlot(GraphPlot):
+
+    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+        The dimension or dimension value transform used to draw labels from.""")
+
+    # Deprecated options
 
     label_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -216,7 +262,9 @@ class ChordPlot(GraphPlot):
         xdim, ydim = element.nodes.kdims[:2]
         if range_type not in ('combined', 'data'):
             return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
+        no_labels = (element.nodes.get_dimension(self.label_index) is None and
+                     self.labels is None)
+        rng = 1.1 if no_labels else 1.4
         x0, x1 = max_range([xdim.range, (-rng, rng)])
         y0, y1 = max_range([ydim.range, (-rng, rng)])
         return (x0, y0, x1, y1)
@@ -224,25 +272,34 @@ class ChordPlot(GraphPlot):
 
     def get_data(self, element, ranges, style):
         data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
-        if isinstance(style.get('node_facecolors'), list):
-            angles = element._angles
-            paths = []
-            for i in range(len(element.nodes)):
-                start, end = angles[i:i+2]
-                vals = np.linspace(start, end, 20)
-                paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
-            data['arcs'] = paths
+        angles = element._angles
+        paths = []
+        for i in range(len(element.nodes)):
+            start, end = angles[i:i+2]
+            vals = np.linspace(start, end, 20)
+            paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
+        data['arcs'] = paths
+        if 'node_c' in style:
+            style['arc_array'] = style['node_c']
+            style['arc_clim'] = style['node_vmin'], style['node_vmax']
+            style['arc_cmap'] = style['node_cmap']
+        elif 'node_facecolors' in style:
             style['arc_colors'] = style['node_facecolors']
-            style['arc_linewidth'] = 10
+        style['arc_linewidth'] = 10
 
-        lidx = element.nodes.get_dimension(self.label_index)
-        if lidx is None:
-            if self.label_index is not None:
-                dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Chord not found, "
-                             "expected one of %s, got %s." %
-                             (dims, self.label_index))
+        label_dim = element.nodes.get_dimension(self.label_index)
+        labels = self.labels
+        if label_dim and labels:
+            self.warning("Cannot declare style mapping for 'labels' option "
+                         "and declare a label_index; ignoring the label_index.")
+        elif label_dim:
+            labels = label_dim
+        if isinstance(labels, basestring):
+            labels = element.nodes.get_dimension(labels)
+
+        if labels is None:
             return data, style, plot_kwargs
+
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
@@ -252,9 +309,13 @@ class ChordPlot(GraphPlot):
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         offset = style.get('label_offset', 1.05)
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
-        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
+        if isinstance(labels, dim):
+            text = labels.apply(element, flat=True)
+        else:
+            text = element.nodes.dimension_values(labels)
+            text = [labels.pprint_value(v) for v in text]
         angles = np.rad2deg(np.arctan2(ys, xs))
-        data['text'] = (xs, ys, labels, angles)
+        data['text'] = (xs, ys, text, angles)
         return data, style, plot_kwargs
 
 
@@ -263,10 +324,7 @@ class ChordPlot(GraphPlot):
         if 'arcs' in plot_args:
             color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
             groups = [g for g in self._style_groups if g != 'arc']
-            edge_opts = {k[4:] if 'arc_' in k else k: v
-                         for k, v in plot_kwargs.items()
-                         if not any(k.startswith(p) for p in groups)
-                         and k not in color_opts}
+            edge_opts = filter_styles(plot_kwargs, 'arc', groups, color_opts)
             paths = plot_args['arcs']
             edges = LineCollection(paths, **edge_opts)
             ax.add_collection(edges)
@@ -289,7 +347,16 @@ class ChordPlot(GraphPlot):
         paths = data['arcs']
         edges.set_paths(paths)
         edges.set_visible(style.get('visible', True))
-
+        if 'arc_array' in style:
+            edges.set_array(style['arc_array'])
+        if 'arc_clim' in style:
+            edges.set_clim(style['arc_clim'])
+        if 'arc_norm' in style:
+            edges.set_norm(style['arc_norm'])
+        if 'arc_colors' in style:
+            edges.set_edgecolors(style['arc_colors'])
+        elif 'arc_edgecolors' in style:
+            edges.set_edgecolors(style['arc_edgecolors'])
 
     def _update_labels(self, ax, element, data, style):
         labels = self.handles.get('labels', [])
@@ -309,7 +376,6 @@ class ChordPlot(GraphPlot):
                                 verticalalignment='center', rotation_mode='anchor')
             labels.append(label)
         self.handles['labels'] = labels
-
 
     def update_handles(self, key, axis, element, ranges, style):
         data, style, axis_kwargs = self.get_data(element, ranges, style)

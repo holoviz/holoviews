@@ -2,6 +2,7 @@ from __future__ import unicode_literals, absolute_import, division
 
 from collections import defaultdict, namedtuple
 
+import re
 import traceback
 import warnings
 import bisect
@@ -14,8 +15,11 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match, is_number, isfinite)
+                         unique_iterator, closest_match, is_number, isfinite,
+                         python2sort)
 from ..streams import LinkedStream
+from ..util.transform import dim
+
 
 def displayable(obj):
     """
@@ -717,7 +721,7 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
 
     # Return results sorted by category if category information is provided
     if records:
-        return list(unique_iterator(sorted(matches,
+        return list(unique_iterator(python2sort(matches,
                     key=lambda r: (r.category.split(" ")[-1],r.bg,r.name.lower(),r.provider,r.source))))
     else:
         return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))
@@ -967,11 +971,26 @@ def rgb2hex(rgb):
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
+def dim_range_key(eldim):
+    """
+    Returns the key to look up a dimension range.
+    """
+    if isinstance(eldim, dim):
+        dim_name = repr(eldim)
+        if dim_name.startswith("'") and dim_name.endswith("'"):
+            dim_name = dim_name[1:-1]
+    else:
+        dim_name = eldim.name
+    return dim_name
+
+
 def hex2rgb(hex):
   ''' "#FFFFFF" -> [255,255,255] '''
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
+
+RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
 COLOR_ALIASES = {
     'b': (0, 0, 1),

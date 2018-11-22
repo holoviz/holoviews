@@ -1,6 +1,4 @@
-from __future__ import absolute_import
-
-from distutils.version import LooseVersion
+from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 import bokeh
@@ -16,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey)
 from ...core.options import Options, Cycle, Palette
-from ...core.util import VersionError
+from ...core.util import LooseVersion, VersionError
 
 if LooseVersion(bokeh.__version__) < '0.12.10':
     raise VersionError("The bokeh extension requires a bokeh version >=0.12.10, "
@@ -170,7 +168,7 @@ if not config.style_17:
 options.Histogram = Options('style', line_color='black', fill_color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
-options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8, muted_alpha=0.2)
+options.Bars = Options('style', color=Cycle(), line_color='black', bar_width=0.8, muted_alpha=0.2)
 
 options.Spikes = Options('style', color='black', cmap='fire', muted_alpha=0.2)
 options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', muted_alpha=0.2)
@@ -249,9 +247,10 @@ options.Sankey = Options(
     selection_policy='nodes', width=1000, height=600, show_frame=False
 )
 options.Sankey = Options(
-    'style', node_line_alpha=0, node_nonselection_alpha=0.2,
-    node_size=10, edge_nonselection_alpha=0.2, edge_line_alpha=0,
-    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20'
+    'style', node_nonselection_alpha=0.2, node_size=10, edge_nonselection_alpha=0.2,
+    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20',
+    node_line_color='black', node_selection_line_color='black', node_hover_alpha=1,
+    edge_hover_alpha=0.9
 )
 
 

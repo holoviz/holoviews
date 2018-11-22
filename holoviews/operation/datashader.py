@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division
 
 from collections import Callable, Iterable
-from distutils.version import LooseVersion
 import warnings
 
 import param
@@ -14,8 +13,6 @@ import datashader.transfer_functions as tf
 import dask.dataframe as dd
 from param.parameterized import bothmethod
 
-ds_version = LooseVersion(ds.__version__)
-
 try:
     from datashader.bundling import (directly_connect_edges as connect_edges,
                                      hammer_bundle)
@@ -26,9 +23,11 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay)
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
-from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
+from ..core.util import LooseVersion, get_param_values, basestring, datetime_types, dt_to_int
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours)
 from ..streams import RangeXY, PlotSize
+
+ds_version = LooseVersion(ds.__version__)
 
 
 class LinkableOperation(Operation):

@@ -1,5 +1,7 @@
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -56,7 +58,7 @@ class TestPointPlot(TestMPLPlot):
         ax = plot.state.axes[0]
         lines = ax.get_xgridlines()
         self.assertEqual(lines[0].get_color(), 'red')
-    
+
     def test_points_padding_square(self):
         points = Points([1, 2, 3]).options(padding=0.1)
         plot = mpl_renderer.get_plot(points)
@@ -150,3 +152,162 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 736057.09999999998)
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_point_color_op(self):
+        points = Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                        vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_facecolors(),
+                         np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
+
+    def test_point_color_op_update(self):
+        points = HoloMap({0: Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                                    vdims='color'),
+                          1: Points([(0, 0, '#0000FF'), (0, 1, '#00FF00'), (0, 2, '#FF0000')],
+                                    vdims='color')}).options(color='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        plot.update((1,))
+        self.assertEqual(artist.get_facecolors(),
+                         np.array([[0, 0, 1, 1], [0, 1, 0, 1], [1, 0, 0, 1]]))
+
+    def test_point_line_color_op(self):
+        points = Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                        vdims='color').options(edgecolors='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_edgecolors(),
+                         np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
+
+    def test_point_line_color_op_update(self):
+        points = HoloMap({0: Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                                    vdims='color'),
+                          1: Points([(0, 0, '#0000FF'), (0, 1, '#00FF00'), (0, 2, '#FF0000')],
+                                    vdims='color')}).options(edgecolors='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        plot.update((1,))
+        self.assertEqual(artist.get_edgecolors(),
+                         np.array([[0, 0, 1, 1], [0, 1, 0, 1], [1, 0, 0, 1]]))
+
+    def test_point_fill_color_op(self):
+        points = Points([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                        vdims='color').options(facecolors='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_facecolors(),
+                         np.array([[0, 0, 0, 1], [1, 0, 0, 1], [0, 1, 0, 1]]))
+
+    def test_point_linear_color_op(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(artist.get_clim(), (0, 2))
+
+    def test_point_linear_color_op_update(self):
+        points = HoloMap({0: Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                                    vdims='color'),
+                          1: Points([(0, 0, 2.5), (0, 1, 3), (0, 2, 1.2)],
+                                    vdims='color')}).options(color='color', framewise=True)
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_clim(), (0, 2))
+        plot.update((1,))
+        self.assertEqual(artist.get_array(), np.array([2.5, 3, 1.2]))
+        self.assertEqual(artist.get_clim(), (1.2, 3))
+
+    def test_point_categorical_color_op(self):
+        points = Points([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
+                        vdims='color').options(color='color')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(artist.get_clim(), (0, 1))
+
+    def test_point_size_op(self):
+        points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                        vdims='size').options(s='size')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_sizes(), np.array([1, 4, 8]))
+
+    def test_point_size_op_update(self):
+        points = HoloMap({0: Points([(0, 0, 3), (0, 1, 1), (0, 2, 2)],
+                                    vdims='size'),
+                          1: Points([(0, 0, 2.5), (0, 1, 3), (0, 2, 1.2)],
+                                    vdims='size')}).options(s='size')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_sizes(), np.array([3, 1, 2]))
+        plot.update((1,))
+        self.assertEqual(artist.get_sizes(), np.array([2.5, 3, 1.2]))
+
+    def test_point_line_width_op(self):
+        points = Points([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                        vdims='line_width').options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [1, 4, 8])
+
+    def test_point_line_width_op_update(self):
+        points = HoloMap({0: Points([(0, 0, 3), (0, 1, 1), (0, 2, 2)],
+                                    vdims='line_width'),
+                          1: Points([(0, 0, 2.5), (0, 1, 3), (0, 2, 1.2)],
+                                    vdims='line_width')}).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(points)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [3, 1, 2])
+        plot.update((1,))
+        self.assertEqual(artist.get_linewidths(), [2.5, 3, 1.2])
+
+    def test_point_marker_op(self):
+        points = Points([(0, 0, 'circle'), (0, 1, 'triangle'), (0, 2, 'square')],
+                        vdims='marker').options(marker='marker')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(points)
+
+    def test_point_alpha_op(self):
+        points = Points([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(points)
+
+    def test_op_ndoverlay_value(self):
+        markers = ['d', 's']
+        overlay = NdOverlay({marker: Points(np.arange(i))
+                             for i, marker in enumerate(markers)},
+                            'Marker').options('Points', marker='Marker')
+        plot = mpl_renderer.get_plot(overlay)
+        for subplot, marker in zip(plot.subplots.values(), markers):
+            style = dict(subplot.style[subplot.cyclic_index])
+            style = subplot._apply_transforms(subplot.current_frame, {}, style)
+            self.assertEqual(style['marker'], marker)
+
+    def test_point_color_index_color_clash(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(color='color', color_index='color')
+        with ParamLogStream() as log:
+            plot = mpl_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'color' option "
+                   "and declare a color_index; ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)
+
+    def test_point_size_index_size_clash(self):
+        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='size').options(s='size', size_index='size')
+        with ParamLogStream() as log:
+            plot = mpl_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 's' option "
+                   "and declare a size_index; ignoring the size_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)

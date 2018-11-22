@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import warnings
 from types import FunctionType
 
@@ -5,6 +7,7 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
+
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
@@ -24,33 +27,22 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph
+from ...element import Graph, VectorField
 from ...streams import Buffer
+from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals
+from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .plot import BokehPlot, TOOLS
-from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
-                   rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes, bokeh_version, theme_attr_json,
-                   cds_column_replace, hold_policy)
+from .styles import (
+    legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
+    rgba_tuple, text_properties, validate
+)
+from .util import (
+    bokeh_version, decode_bytes, get_tab_title, glyph_order,
+    py2js_tickformatter, recursive_model_update, theme_attr_json,
+    cds_column_replace, hold_policy
+)
 
-property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
-
-# Define shared style properties for bokeh plots
-line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
-                   'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
-                    for prefix in property_prefixes]
-
-fill_properties = ['fill_color', 'fill_alpha']
-fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
-                    for prefix in property_prefixes]
-
-text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
-                   'text_alpha', 'text_align', 'text_baseline']
-
-legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
-                     'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -125,6 +117,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Formatter for ticks along the x-axis.""")
 
     _categorical = False
+
+    # Declare which styles cannot be mapped to a non-scalar dimension
+    _nonvectorized_styles = []
 
     # Declares the default types for continuous x- and y-axes
     _x_range_type = Range1d
@@ -663,8 +658,127 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _glyph_properties(self, plot, element, source, ranges, style):
-        properties = dict(style, source=source)
+    def _apply_transforms(self, element, source, ranges, style, group=None):
+        new_style = dict(style)
+        prefix = group+'_' if group else ''
+        for k, v in dict(style).items():
+            if isinstance(v, util.basestring):
+                if validate(k, v) == True:
+                    continue
+                elif v in element or (isinstance(element, Graph) and v in element.nodes):
+                    v = dim(v)
+                elif any(d==v for d in self.overlay_dims):
+                    v = dim([d for d in self.overlay_dims if d==v][0])
+
+            if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
+                continue
+            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
+                new_style.pop(k)
+                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                             'dimensions could be resolved.' % (k, v))
+                continue
+
+            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
+                val = self.overlay_dims[v.dimension]
+            else:
+                val = v.apply(element, ranges=ranges, flat=True)
+
+            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+                (not 'color' in k or validate('color', val))):
+                val = val[0]
+
+            if not np.isscalar(val):
+                if k in self._nonvectorized_styles:
+                    element = type(element).__name__
+                    raise ValueError('Mapping a dimension to the "{style}" '
+                                     'style option is not supported by the '
+                                     '{element} element using the {backend} '
+                                     'backend. To map the "{dim}" dimension '
+                                     'to the {style} use a groupby operation '
+                                     'to overlay your data along the dimension.'.format(
+                                         style=k, dim=v.dimension, element=element,
+                                         backend=self.renderer.backend
+                                 )
+                    )
+                elif source.data and len(val) != len(list(source.data.values())[0]):
+                    if isinstance(element, VectorField):
+                        val = np.tile(val, 3)
+                    else:
+                        continue
+
+            if k == 'angle':
+                val = np.deg2rad(val)
+            elif k.endswith('font_size'):
+                if np.isscalar(val) and isinstance(val, int):
+                    val = str(v)+'pt'
+                elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
+                    val = [str(int(s))+'pt' for s in val]
+            if np.isscalar(val):
+                key = val
+            else:
+                key = {'field': k}
+                source.data[k] = val
+
+            # If color is not valid colorspec add colormapper
+            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            if ('color' in k and isinstance(val, np.ndarray) and
+                (numeric or not validate('color', val))):
+                kwargs = {}
+                if val.dtype.kind not in 'ifMu':
+                    range_key = dim_range_key(v)
+                    if range_key in ranges and 'factors' in ranges[range_key]:
+                        factors = ranges[range_key]['factors']
+                    else:
+                        factors = util.unique_array(val)
+                    kwargs['factors'] = factors
+                cmapper = self._get_colormapper(v, element, ranges,
+                                                dict(style), name=k+'_color_mapper',
+                                                group=group, **kwargs)
+                key = {'field': k, 'transform': cmapper}
+            new_style[k] = key
+
+        # Process color/alpha styles and expand to fill/line style
+        for style, val in list(new_style.items()):
+            for s in ('alpha', 'color'):
+                if prefix+s != style or style not in source.data:
+                    continue
+                supports_fill = any(
+                    o.startswith(prefix+'fill') and (prefix != 'edge_' or getattr(self, 'filled', True))
+                    for o in self.style_opts)
+                for pprefix in [p+'_' for p in property_prefixes]+['']:
+                    fill_key = prefix+pprefix+'fill_'+s
+                    fill_style = new_style.get(fill_key)
+
+                    # Do not override custom nonselection/muted alpha
+                    if ((pprefix in ('nonselection_', 'muted_') and s == 'alpha')
+                        or fill_key not in self.style_opts):
+                        continue
+
+                    # Override empty and non-vectorized fill_style if not hover style
+                    hover = pprefix == 'hover_'
+                    if ((fill_style is None or (validate(s, fill_style, True) and not hover))
+                        and supports_fill):
+                        new_style[fill_key] = val
+
+                    line_key = prefix+pprefix+'line_'+s
+                    line_style = new_style.get(line_key)
+
+                    # If glyph has fill and line style is set overriding line color
+                    if supports_fill and line_style is not None:
+                        continue
+
+                    # If glyph does not support fill override non-vectorized line_color
+                    if ((line_style is not None and (validate(s, line_style) and not hover)) or
+                        (line_style is None and not supports_fill)):
+                        new_style[line_key] = val
+
+        return new_style
+
+
+    def _glyph_properties(self, plot, element, source, ranges, style, group=None):
+        with abbreviated_exception():
+            new_style = self._apply_transforms(element, source, ranges, style, group)
+        properties = dict(new_style, source=source)
         if self.show_legend:
             if self.overlay_dims:
                 legend = ', '.join([d.pprint_value(v) for d, v in
@@ -848,7 +962,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot
 
 
-    def _update_glyphs(self, element, ranges):
+    def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
         glyph = self.handles.get('glyph')
         source = self.handles['source']
@@ -862,7 +976,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        style = self.style[self.cyclic_index]
         if self.batched:
             data, mapping, style = self.get_batched_data(element, ranges)
         else:
@@ -919,7 +1032,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
 
-        self._update_glyphs(element, ranges)
+        self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
 
 
@@ -972,6 +1085,7 @@ class CompositeElementPlot(ElementPlot):
             style = self.style[self.cyclic_index]
             data, mapping, style = self.get_data(element, ranges, style)
 
+
         keys = glyph_order(dict(data, **mapping), self._draw_order)
 
         source_cache = {}
@@ -985,8 +1099,11 @@ class CompositeElementPlot(ElementPlot):
                 source = self._init_datasource(ds_data)
                 source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
-            properties = self._glyph_properties(plot, element, source, ranges, style)
+            group_style = dict(style)
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+            properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
             properties = self._process_properties(key, properties, mapping.get(key, {}))
+
             with abbreviated_exception():
                 renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
             self.handles[key+'_glyph'] = glyph
@@ -1018,7 +1135,7 @@ class CompositeElementPlot(ElementPlot):
         return group_props
 
 
-    def _update_glyphs(self, element, ranges):
+    def _update_glyphs(self, element, ranges, style):
         plot = self.handles['plot']
 
         # Cache frame object id to skip updating data if unchanged
@@ -1029,7 +1146,6 @@ class CompositeElementPlot(ElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
         keys = glyph_order(dict(data, **mapping), self._draw_order)
@@ -1037,9 +1153,10 @@ class CompositeElementPlot(ElementPlot):
             gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
-
             if glyph:
-                properties = self._glyph_properties(plot, element, source, ranges, style)
+                group_style = dict(style)
+                style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+                properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
                 properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
@@ -1128,7 +1245,9 @@ class ColorbarPlot(ElementPlot):
 
     _default_nan = '#8b8b8b'
 
-    def _draw_colorbar(self, plot, color_mapper):
+    _nonvectorized_styles = ['cmap', 'palette']
+
+    def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
         if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
@@ -1147,19 +1266,23 @@ class ColorbarPlot(ElementPlot):
                              **dict(opts, **self.colorbar_opts))
 
         plot.add_layout(color_bar, pos)
-        self.handles['colorbar'] = color_bar
+        self.handles[prefix+'colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
-                         name='color_mapper'):
+    def _get_colormapper(self, eldim, element, ranges, style, factors=None, colors=None,
+                         group=None, name='color_mapper'):
         # The initial colormapper instance is cached the first time
         # and then only updated
-        if dim is None and colors is None:
+        if eldim is None and colors is None:
             return None
+        dim_name = dim_range_key(eldim)
+
+        # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:
+            cmapper_name = dim_name+name
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get(name)))
-            cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
+                                                         x.handles.get(name, x.handles.get(cmapper_name))))
+            cmappers = [cmap for cdim, cmap in cmappers if cdim == eldim]
             if cmappers:
                 cmapper = cmappers[0]
                 self.handles['color_mapper'] = cmapper
@@ -1168,24 +1291,34 @@ class ColorbarPlot(ElementPlot):
                 return None
 
         ncolors = None if factors is None else len(factors)
-        if dim:
-            if dim.name in ranges:
-                low, high = ranges[dim.name]['combined']
+        if eldim:
+            if dim_name in ranges:
+                low, high = ranges[dim_name]['combined']
+            elif isinstance(eldim, dim):
+                low, high = np.nan, np.nan
             else:
-                low, high = element.range(dim.name)
+                low, high = element.range(eldim.name)
             if self.symmetric:
                 sym_max = max(abs(low), high)
                 low, high = -sym_max, sym_max
         else:
             low, high = None, None
 
-        cmap = colors or style.pop('cmap', 'viridis')
+        prefix = '' if group is None else group+'_'
+        cmap = colors or style.get(prefix+'cmap', style.get('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
-            if not factors:
+            if factors is None:
                 factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
-            factors = [dim.pprint_value(f) for f in factors]
+            if isinstance(eldim, dim):
+                if eldim.dimension in element:
+                    formatter = element.get_dimension(eldim.dimension).pprint_value
+                else:
+                    formatter = str
+            else:
+                formatter = eldim.pprint_value
+            factors = [formatter(f) for f in factors]
         else:
             categorical = ncolors is not None
             if isinstance(self.color_levels, int):
@@ -1213,7 +1346,7 @@ class ColorbarPlot(ElementPlot):
         else:
             cmapper = colormapper(palette=palette, **opts)
             self.handles[name] = cmapper
-            self.handles['color_dim'] = dim
+            self.handles['color_dim'] = eldim
         return cmapper
 
 
@@ -1221,25 +1354,36 @@ class ColorbarPlot(ElementPlot):
                         int_categories=False):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
+        color = style.get(name, None)
+        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
+            self.warning("Cannot declare style mapping for '%s' option "
+                         "and declare a color_index; ignoring the color_index."
+                         % name)
+            cdim = None
         if not cdim:
             return data, mapping
 
         cdata = element.dimension_values(cdim)
         field = util.dimension_sanitizer(cdim.name)
         dtypes = 'iOSU' if int_categories else 'OSU'
+
         if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
-            factors = list(util.unique_array(cdata))
-        if factors and int_categories and cdata.dtype.kind == 'i':
+            range_key = dim_range_key(cdim)
+            if range_key in ranges and 'factors' in ranges[range_key]:
+                factors = ranges[range_key]['factors']
+            else:
+                factors = util.unique_array(cdata)
+        if factors is not None and int_categories and cdata.dtype.kind == 'i':
             field += '_str__'
             cdata = [str(f) for f in cdata]
             factors = [str(f) for f in factors]
 
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
-        if not factors and isinstance(mapper, CategoricalColorMapper):
+        if factors is None and isinstance(mapper, CategoricalColorMapper):
             field += '_str__'
             cdata = [cdim.pprint_value(c) for c in cdata]
-            factors = mapper.factors
+            factors = True
 
         data[field] = cdata
         if factors is not None and self.show_legend:
@@ -1263,7 +1407,7 @@ class ColorbarPlot(ElementPlot):
         else:
             colormapper = CategoricalColorMapper
             factors = decode_bytes(factors)
-            opts = dict(factors=factors)
+            opts = dict(factors=list(factors))
             if 'NaN' in colors:
                 opts['nan_color'] = colors['NaN']
         return colormapper, opts
@@ -1274,8 +1418,11 @@ class ColorbarPlot(ElementPlot):
         Returns a Bokeh glyph object and optionally creates a colorbar.
         """
         ret = super(ColorbarPlot, self)._init_glyph(plot, mapping, properties)
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
+        if self.colorbar:
+            for k, v in list(self.handles.items()):
+                if not k.endswith('color_mapper'):
+                    continue
+                self._draw_colorbar(plot, v, k[:-12])
         return ret
 
 

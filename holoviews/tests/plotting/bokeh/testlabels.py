@@ -3,6 +3,12 @@ import numpy as np
 from holoviews.core.dimension import Dimension
 from holoviews.element import Labels
 
+try:
+    from bokeh.models import LinearColorMapper, CategoricalColorMapper
+except:
+    pass
+
+from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
@@ -94,3 +100,88 @@ class TestLabelsPlot(TestBokehPlot):
         self.assertEqual(glyph.text_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(cmapper.low, 1)
         self.assertEqual(cmapper.high, 2)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_label_color_op(self):
+        labels = Labels([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                        vdims='color').options(text_color='color')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['text_color'], np.array(['#000', '#F00', '#0F0']))
+        self.assertEqual(glyph.text_color, {'field': 'text_color'})
+
+    def test_label_linear_color_op(self):
+        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(text_color='color')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['text_color_color_mapper']
+        self.assertTrue(cmapper, LinearColorMapper)
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(cds.data['text_color'], np.array([0, 1, 2]))
+        self.assertEqual(glyph.text_color, {'field': 'text_color', 'transform': cmapper})
+
+    def test_label_categorical_color_op(self):
+        labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                        vdims='color').options(text_color='color')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['text_color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
+        self.assertEqual(cds.data['text_color'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.text_color, {'field': 'text_color', 'transform': cmapper})
+
+    def test_label_angle_op(self):
+        labels = Labels([(0, 0, 0), (0, 1, 45), (0, 2, 90)],
+                        vdims='angle').options(angle='angle')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['angle'], np.array([0, 0.785398, 1.570796]))
+        self.assertEqual(glyph.angle, {'field': 'angle'})
+
+    def test_label_alpha_op(self):
+        labels = Labels([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                        vdims='alpha').options(text_alpha='alpha')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['text_alpha'], np.array([0, 0.2, 0.7]))
+        self.assertEqual(glyph.text_alpha, {'field': 'text_alpha'})
+
+    def test_label_font_size_op_strings(self):
+        labels = Labels([(0, 0, '10pt'), (0, 1, '4pt'), (0, 2, '8pt')],
+                        vdims='size').options(text_font_size='size')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['text_font_size'], np.array(['10pt', '4pt', '8pt']))
+        self.assertEqual(glyph.text_font_size, {'field': 'text_font_size'})
+
+    def test_label_font_size_op_ints(self):
+        labels = Labels([(0, 0, 10), (0, 1, 4), (0, 2, 8)],
+                        vdims='size').options(text_font_size='size')
+        plot = bokeh_renderer.get_plot(labels)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        self.assertEqual(cds.data['text_font_size'], ['10pt', '4pt', '8pt'])
+        self.assertEqual(glyph.text_font_size, {'field': 'text_font_size'})
+
+    def test_labels_color_index_color_clash(self):
+        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                        vdims='color').options(text_color='color', color_index='color')        
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(labels)
+        log_msg = log.stream.read()
+        warning = ("%s: Cannot declare style mapping for 'text_color' option "
+                   "and declare a color_index; ignoring the color_index.\n"
+                   % plot.name)
+        self.assertEqual(log_msg, warning)

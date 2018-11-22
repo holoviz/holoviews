@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 from collections import defaultdict
 
 import param
@@ -17,8 +19,8 @@ except:
 from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine
 from ..plot import GenericElementPlot
-from .element import (AnnotationPlot, CompositeElementPlot, ColorbarPlot,
-                      ElementPlot, text_properties, line_properties)
+from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .styles import text_properties, line_properties
 from .plot import BokehPlot
 from .util import date_to_integer
 
@@ -68,10 +70,6 @@ class TextPlot(ElementPlot, AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -81,14 +79,23 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
     yoffset = param.Number(default=None, doc="""
       Amount of offset to apply to labels along x-axis.""")
 
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
+
     style_opts = text_properties + ['cmap', 'angle']
+
+    _nonvectorized_styles = ['cmap']
 
     _plot_methods = dict(single='text', batched='text')
     _batched_style_opts = text_properties
 
     def get_data(self, element, ranges, style):
         style = self.style[self.cyclic_index]
-        style['angle'] = np.deg2rad(style.get('angle', 0))
+        if 'angle' in style and isinstance(style['angle'], (int, float)):
+            style['angle'] = np.deg2rad(style.get('angle', 0))
 
         dims = element.dimensions()
         coords = (1, 0) if self.invert_axes else (0, 1)
@@ -107,7 +114,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
             return data, mapping, style
 
         cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
-        if dims[2] is cdim:
+        if dims[2] is cdim and cdata:
             # If color dim is same as text dim, rename color column
             data['text_color'] = cdata[tdim]
             mapping['text_color'] = dict(cmapping['text_color'], field='text_color')

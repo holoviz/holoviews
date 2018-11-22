@@ -4,6 +4,7 @@ plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
 
+import warnings
 from itertools import groupby, product
 from collections import Counter, defaultdict
 
@@ -19,7 +20,8 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table
+from ..element import Table, Graph
+from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
@@ -436,24 +438,76 @@ class DimensionedPlot(Plot):
         return norm_opts
 
 
-    @staticmethod
-    def _compute_group_range(group, elements, ranges):
+    @classmethod
+    def _compute_group_range(cls, group, elements, ranges):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions('ranges'):
-                data_range = el.range(dim, dimension_range=False)
-                if dim.name not in group_ranges:
-                    group_ranges[dim.name] = {'data': [], 'hard': [], 'soft': []}
-                group_ranges[dim.name]['data'].append(data_range)
-                group_ranges[dim.name]['hard'].append(dim.range)
-                group_ranges[dim.name]['soft'].append(dim.soft_range)
+            opts = cls.lookup_options(el, 'style')
+            plot_opts = cls.lookup_options(el, 'plot')
+
+            # Compute normalization for color dim transforms
+            for k, v in dict(opts.kwargs, **plot_opts.kwargs).items():
+                if not isinstance(v, dim) or ('color' not in k and k != 'magnitude'):
+                    continue
+                if isinstance(v, dim) and v.applies(el):
+                    dim_name = repr(v)
+                    values = v.apply(el, expanded=False, all_values=True)
+                    factors = None
+                    if values.dtype.kind == 'M':
+                        drange = values.min(), values.max()
+                    elif util.isscalar(values):
+                        drange = values, values
+                    elif len(values) == 0:
+                        drange = np.NaN, np.NaN
+                    else:
+                        try:
+                            with warnings.catch_warnings():
+                                warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+                                drange = (np.nanmin(values), np.nanmax(values))
+                        except:
+                            factors = util.unique_array(values)
+                    if dim_name not in group_ranges:
+                        group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                    if factors is not None:
+                        if 'factors' not in group_ranges[dim_name]:
+                            group_ranges[dim_name]['factors'] = []
+                        group_ranges[dim_name]['factors'].append(factors)
+                    else:
+                        group_ranges[dim_name]['data'].append(drange)
+
+            # Compute dimension normalization
+            for el_dim in el.dimensions('ranges'):
+                if isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                    data_range = el.nodes.range(2, dimension_range=False)
+                else:
+                    data_range = el.range(el_dim, dimension_range=False)
+                if el_dim.name not in group_ranges:
+                    group_ranges[el_dim.name] = {'data': [], 'hard': [], 'soft': []}
+                group_ranges[el_dim.name]['data'].append(data_range)
+                group_ranges[el_dim.name]['hard'].append(el_dim.range)
+                group_ranges[el_dim.name]['soft'].append(el_dim.soft_range)
+                if any(isinstance(r, util.basestring) for r in data_range):
+                    if 'factors' not in group_ranges[el_dim.name]:
+                        group_ranges[el_dim.name]['factors'] = []
+                    if el_dim.values not in ([], None):
+                        values = el_dim.values
+                    elif el_dim in el:
+                        if isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                            # Graph start/end normalization should include all node indices
+                            values = el.nodes.dimension_values(2, expanded=False)
+                        else:
+                            values = el.dimension_values(el_dim, expanded=False)
+                    elif isinstance(el, Graph) and el_dim in el.nodes:
+                        values = el.nodes.dimension_values(el_dim, expanded=False)
+                    factors = util.unique_array(values)
+                    group_ranges[el_dim.name]['factors'].append(factors)
 
         dim_ranges = []
-        for dim, values in group_ranges.items():
+        for gdim, values in group_ranges.items():
             hard_range = util.max_range(values['hard'], combined=False)
             soft_range = util.max_range(values['soft'])
             data_range = util.max_range(values['data'])
@@ -461,7 +515,10 @@ class DimensionedPlot(Plot):
                                             hard_range, soft_range)
             dranges = {'data': data_range, 'hard': hard_range,
                        'soft': soft_range, 'combined': combined}
-            dim_ranges.append((dim, dranges))
+            if 'factors' in values:
+                dranges['factors'] = util.unique_array([
+                    v for fctrs in values['factors'] for v in fctrs])
+            dim_ranges.append((gdim, dranges))
         ranges[group] = OrderedDict(dim_ranges)
 
 

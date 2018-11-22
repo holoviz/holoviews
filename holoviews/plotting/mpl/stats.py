@@ -1,4 +1,7 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
+import numpy as np
 
 from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot
@@ -55,6 +58,8 @@ class BoxPlot(ChartPlot):
                   'show_caps', 'showfliers', 'boxprops',
                   'whiskerprops', 'capprops', 'flierprops',
                   'medianprops', 'meanprops', 'meanline']
+
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='boxplot')
 
@@ -150,6 +155,10 @@ class ViolinPlot(BoxPlot):
     style_opts = ['showmeans', 'facecolors', 'showextrema', 'bw_method',
                   'widths', 'stats_color', 'box_color', 'alpha', 'edgecolors']
 
+    _nonvectorized_styles = [
+        s for s in style_opts if s not in ('facecolors', 'edgecolors', 'widths')
+    ]
+
     def init_artists(self, ax, plot_args, plot_kwargs):
         box_color = plot_kwargs.pop('box_color', 'black')
         stats_color = plot_kwargs.pop('stats_color', 'black')
@@ -198,7 +207,13 @@ class ViolinPlot(BoxPlot):
         style['positions'] = list(range(len(data)))
         style['labels'] = labels
         style['facecolors'] = colors
-        style = {k: v for k, v in style.items()
+
+        if element.ndims > 0:
+            element = element.aggregate(function=np.mean)
+        else:
+            element = element.clone([(element.aggregate(function=np.mean),)])
+        new_style = self._apply_transforms(element, ranges, style)
+        style = {k: v for k, v in new_style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]

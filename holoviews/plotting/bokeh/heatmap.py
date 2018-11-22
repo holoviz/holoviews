@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import numpy as np
 
@@ -6,10 +8,8 @@ from bokeh.models.glyphs import AnnularWedge
 
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
-from .element import (ColorbarPlot, CompositeElementPlot,
-                      line_properties, fill_properties, text_properties)
-from .util import mpl_to_bokeh
-
+from .element import ColorbarPlot, CompositeElementPlot
+from .styles import line_properties, fill_properties, mpl_to_bokeh, text_properties
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -149,8 +149,8 @@ class HeatMapPlot(ColorbarPlot):
         self._draw_markers(plot, element, self.ymarks, axis='y')
 
 
-    def _update_glyphs(self, element, ranges):
-        super(HeatMapPlot, self)._update_glyphs(element, ranges)
+    def _update_glyphs(self, element, ranges, style):
+        super(HeatMapPlot, self)._update_glyphs(element, ranges, style)
         plot = self.handles['plot']
         self._draw_markers(plot, element, self.xmarks, axis='x')
         self._draw_markers(plot, element, self.ymarks, axis='y')

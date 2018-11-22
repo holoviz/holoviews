@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import os
 import sys
 import base64
@@ -5,16 +7,15 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 from itertools import chain
-from distutils.version import LooseVersion
 
+import param
 import matplotlib as mpl
+
 from matplotlib import pyplot as plt
 from param.parameterized import bothmethod
 
-import param
 from ...core import HoloMap
 from ...core.options import Store
-
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox, mpl_version
@@ -40,7 +41,7 @@ ANIMATION_OPTS = {
     'scrubber': ('html', None, {'fps': 5}, None)
 }
 
-if LooseVersion(mpl.__version__) >= '2.2':
+if mpl_version >= '2.2':
     ANIMATION_OPTS['gif'] = ('pillow', 'gif', {'fps': 10}, [])
 
 
@@ -132,9 +133,9 @@ class MPLRenderer(Renderer):
                 plots.append(self.get_plot(o))
             plt.show()
         except:
-            MPLPlot._close_figures = True
             raise
-        MPLPlot._close_figures = True
+        finally:
+            MPLPlot._close_figures = True
         return plots[0] if len(plots) == 1 else plots
 
 

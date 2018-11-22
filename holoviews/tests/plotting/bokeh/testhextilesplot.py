@@ -101,3 +101,25 @@ class TestHexTilesPlot(TestBokehPlot):
         dims, opts = plot._hover_opts(tiles)
         self.assertEqual(dims, [Dimension('z')])
         self.assertEqual(opts, {})
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_hex_tile_line_width_op(self):
+        hextiles = HexTiles(np.random.randn(1000, 2)).options(line_width='Count')
+        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_width, {'field': 'line_width'})
+
+    def test_hex_tile_alpha_op(self):
+        hextiles = HexTiles(np.random.randn(1000, 2)).options(alpha='Count')
+        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
+
+    def test_hex_tile_scale_op(self):
+        hextiles = HexTiles(np.random.randn(1000, 2)).options(scale='Count')
+        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.scale, {'field': 'scale'})

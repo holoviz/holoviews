@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 import numpy as np
 
@@ -28,6 +30,8 @@ class HexTilesPlot(ColorbarPlot):
       a count of less than 1 are hidden.""")
 
     style_opts = ['edgecolors', 'alpha', 'linewidths', 'marginals']
+
+    _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='hexbin')
 

@@ -1,8 +1,7 @@
-from distutils.version import LooseVersion
+from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 import param
-import matplotlib as mpl
 import matplotlib.cm as cm
 
 from ...core import Dimension
@@ -10,6 +9,7 @@ from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
+from .util import mpl_version
 
 
 class Plot3D(ColorbarPlot):
@@ -77,7 +77,7 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        if LooseVersion(mpl.__version__) <= '1.5.9':
+        if mpl_version <= '1.5.9':
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
@@ -128,7 +128,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         # Temporary fix until color handling is deterministic in mpl+py3
         if not element.get_dimension(self.color_index) and 'c' in style:
             color = style.pop('c')
-            if LooseVersion(mpl.__version__) >= '1.5':
+            if mpl_version >= '1.5':
                 style['color'] = color
             else:
                 style['facecolors'] = color

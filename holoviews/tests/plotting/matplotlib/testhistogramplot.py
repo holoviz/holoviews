@@ -2,8 +2,10 @@ import datetime as dt
 
 import numpy as np
 
+from holoviews.core.overlay import NdOverlay
 from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
+from holoviews.plotting.util import hex2rgb
 
 from .testplot import TestMPLPlot, mpl_renderer
 
@@ -95,3 +97,62 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 736057.65000000002)
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
+
+    ###########################
+    #    Styling mapping      #
+    ###########################
+
+    def test_histogram_color_op(self):
+        histogram = Histogram([(0, 0, '#000000'), (0, 1, '#FF0000'), (0, 2, '#00FF00')],
+                              vdims=['y', 'color']).options(color='color')
+        plot = mpl_renderer.get_plot(histogram)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        for c, w in zip(children, ['#000000', '#FF0000', '#00FF00']):
+            self.assertEqual(c.get_facecolor(), tuple(c/255. for c in hex2rgb(w))+(1,))
+
+    def test_histogram_linear_color_op(self):
+        histogram = Histogram([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
+                              vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(histogram)
+
+    def test_histogram_categorical_color_op(self):
+        histogram = Histogram([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'C')],
+                              vdims=['y', 'color']).options(color='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(histogram)
+        
+    def test_histogram_line_color_op(self):
+        histogram = Histogram([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(edgecolor='color')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(histogram)
+
+    def test_histogram_alpha_op(self):
+        histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
+                              vdims=['y', 'alpha']).options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(histogram)
+
+    def test_histogram_line_width_op(self):
+        histogram = Histogram([(0, 0, 1), (0, 1, 4), (0, 2, 8)],
+                              vdims=['y', 'line_width']).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(histogram)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        for c, w in zip(children, np.array([1, 4, 8])):
+            self.assertEqual(c.get_linewidth(), w)
+
+    def test_op_ndoverlay_value(self):
+        colors = ['blue', 'red']
+        overlay = NdOverlay({color: Histogram(np.arange(i+2))
+                             for i, color in enumerate(colors)}, 'Color').options(
+                                     'Histogram', facecolor='Color'
+                             )
+        plot = mpl_renderer.get_plot(overlay)
+        colors = [(0, 0, 1, 1), (1, 0, 0, 1)]
+        for subplot, color in zip(plot.subplots.values(),  colors):
+            children = subplot.handles['artist'].get_children()
+            for c in children:
+                self.assertEqual(c.get_facecolor(), color)
