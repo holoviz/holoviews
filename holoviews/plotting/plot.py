@@ -1171,7 +1171,7 @@ class GenericOverlayPlot(GenericElementPlot):
             keys, vmaps = [()], [self.hmap]
         else:
             self.batched = False
-            keys, vmaps = self.hmap.split_overlays()
+            keys, vmaps = self.hmap._split_overlays()
 
         if isinstance(self.hmap, DynamicMap):
             dmap_streams = [get_nested_streams(layer) for layer in

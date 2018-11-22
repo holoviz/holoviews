@@ -125,6 +125,16 @@ class HoloMap(UniformNdMapping, Overlayable):
 
     def split_overlays(self):
         """
+        Deprecated method to split overlays inside the HoloMap.
+        """
+        if config.future_deprecations:
+            self.warning("split_overlays is deprecated and is now "
+                         "a private method.")
+        return self._split_overlays()
+
+
+    def _split_overlays(self):
+        """
         Given a UniformNdMapping of Overlays of N layers, split out the layers into
         N separate Maps.
         """
@@ -1231,6 +1241,16 @@ class DynamicMap(HoloMap):
 
 
     def split_overlays(self):
+        """
+        Deprecated method to split overlays inside the DynamicMap.
+        """
+        if config.future_deprecations:
+            self.warning("split_overlays is deprecated and is now "
+                         "a private method.")
+        return self._split_overlays()
+
+
+    def _split_overlays(self):
         """
         Splits a DynamicMap into its components. Only well defined for
         DynamicMap with consistent number and order of layers.
