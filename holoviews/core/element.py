@@ -92,47 +92,111 @@ class Element(ViewableElement, Composable, Overlayable):
     @classmethod
     def collapse_data(cls, data, function=None, kdims=None, **kwargs):
         """
-        Class method to collapse a list of data matching the
-        data format of the Element type. By implementing this
-        method HoloMap can collapse multiple Elements of the
-        same type. The kwargs are passed to the collapse
-        function. The collapse function must support the numpy
-        style axis selection. Valid function include:
-        np.mean, np.sum, np.product, np.std, scipy.stats.kurtosis etc.
-        Some data backends also require the key dimensions
-        to aggregate over.
+        Class method to collapse a list of data matching the data
+        format of the Element type. By implementing this method
+        HoloMap can collapse multiple Elements of the same type. The
+        kwargs are passed to the collapse function. The collapse
+        function must support the numpy style axis selection. Valid
+        function include: np.mean, np.sum, np.product, np.std,
+        scipy.stats.kurtosis etc. Some data backends also require the
+        key dimensions to aggregate over.
         """
         raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
 
 
     def closest(self, coords):
         """
-        Class method that returns the exact keys for a given list of
-        coordinates. The supplied bounds defines the extent within
-        which the samples are drawn and the optional shape argument is
-        the shape of the numpy array (typically the shape of the .data
-        attribute) when applicable.
+        Given a single coordinate or multiple coordinates as
+        a tuple or list of tuples or keyword arguments matching
+        the dimension closest will find the closest actual x/y
+        coordinates. Different Element types should implement this
+        appropriately depending on the space they represent, if the
+        Element does not support snapping raise NotImplementedError.
+
+        Arguments
+        ---------
+        coords: list (optional)
+            List of nd-coordinates
+        **kwargs: dictionary
+            Coordinates specified as keyword pairs of dimension and
+            coordinate
+
+        Returns
+        -------
+        closest: list
+            List of tuples of the snapped coordinates
+
+        Raises
+        ------
+        NotImplementedError:
+            Raised if the element does not implement snapping
         """
-        return coords
+        raise NotImplementedError
 
 
     def sample(self, samples=[], **sample_values):
         """
-        Base class signature to demonstrate API for sampling Elements.
-        To sample an Element supply either a list of samples or keyword
-        arguments, where the key should match an existing key dimension
-        on the Element.
+        Allows sampling of Dataset as an iterator of coordinates
+        matching the key dimensions, returning a new object containing
+        just the selected samples. Supports two signatures:
+
+        Sampling with a list of coordinates, e.g.:
+
+            ds.sample([(0, 0), (0.1, 0.2), ...])
+
+        Sampling by keyword, e.g.:
+
+            ds.sample(x=0)
+
+        Arguments
+        ---------
+        samples: list (optional)
+            List of nd-coordinates to sample
+        closest: bool (optional, default=True)
+            Whether to snap to the closest coordinate (if the Element supports it)
+        **kwargs: dict (optional)
+            Keywords of dimensions and scalar coordinates
+
+        Returns
+        -------
+        sampled: Element
+            Element containing the sampled coordinates
         """
         raise NotImplementedError
 
 
     def reduce(self, dimensions=[], function=None, **reduce_map):
         """
-        Base class signature to demonstrate API for reducing Elements,
-        using some reduce function, e.g. np.mean, which is applied
-        along a particular Dimension. The dimensions and reduce functions
-        should be passed as keyword arguments or as a list of dimensions
-        and a single function.
+        Allows reducing the values along one or more key dimension with
+        the supplied function (reciprocal operation to aggregate).
+        Supports two signatures:
+
+        Reducing with a list of coordinates, e.g.:
+
+            ds.reduce(['x'], np.mean)
+
+        Sampling by keyword, e.g.:
+
+            ds.reduce(x=np.mean)
+
+        Arguments
+        ---------
+        dimensions: Dimension/str or list (optional)
+            Dimension or list of dimensions to aggregate on, defaults
+            to all current key dimensions
+        function: function (optional)
+            Function to compute aggregate with, e.g. numpy.mean
+        spreadfn: function (optional)
+            Function to compute a secondary aggregate, e.g. to compute
+            a confidence interval, spread, or standard deviation
+        **reductions:
+            Reductions specified as keyword pairs of the dimension name
+            and reduction function, e.g. Dataset.reduce(x=np.mean)
+
+        Returns
+        -------
+        reduced: Dataset
+            Returns the reduced Dataset
         """
         raise NotImplementedError
 
