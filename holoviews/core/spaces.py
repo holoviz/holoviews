@@ -386,7 +386,9 @@ class HoloMap(UniformNdMapping, Overlayable):
         sampled = self.clone([(k, view.sample(samples, closest=False,
                                               **sample_values))
                               for k, view in self.data.items()])
-        return sampled.table()
+
+        from ..element import Table
+        return Table(sampled.collapse())
 
 
     def reduce(self, dimensions=None, function=None, **reduce_map):
@@ -402,7 +404,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             params = dict(util.get_param_values(self.last),
                           kdims=self.kdims, vdims=self.last.vdims)
             return Table(reduced_items, **params)
-        return self.clone(reduced_items).table()
+        return Table(self.clone(reduced_items).collapse())
 
 
     def relabel(self, label=None, group=None, depth=1):
