@@ -268,9 +268,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         properties.update(mappings)
 
         layout = data.pop('layout', {})
-        if data and mapping:
-            CompositeElementPlot._init_glyphs(self, plot, element, ranges, source,
-                                              data, mapping, style)
 
         # Define static layout
         layout = StaticLayoutProvider(graph_layout=layout)
@@ -310,6 +307,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 filtered = self._filter_properties(props, glyph_type, allowed_properties)
                 new_glyph = glyph_model(**dict(filtered, **edge_mapping))
                 setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
+
+        if data and mapping:
+            CompositeElementPlot._init_glyphs(self, plot, element, ranges, source,
+                                              data, mapping, style)
+
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             if self.handles['hover'].renderers == 'auto':
@@ -381,7 +383,7 @@ class ChordPlot(GraphPlot):
     def _update_glyphs(self, element, ranges, style):
         if 'multi_line_2_glyph' in self.handles:
             self._sync_arcs()
-        super(ChordPlot, self)._init_glyphs(element, ranges, style)
+        super(ChordPlot, self)._update_glyphs(element, ranges, style)
 
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)

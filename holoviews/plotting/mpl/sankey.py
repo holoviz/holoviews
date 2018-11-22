@@ -6,19 +6,15 @@ from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
 from ...core.util import basestring, max_range
+from ...util.transform import dim
 from .graphs import GraphPlot
 from .util import filter_styles
 
 
 class SankeyPlot(GraphPlot):
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
-
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
+    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+        The dimension or dimension value transform used to draw labels from.""")
 
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
@@ -35,6 +31,16 @@ class SankeyPlot(GraphPlot):
 
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
+
+    # Deprecated options
+
+    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Index of the dimension from which the node labels will be drawn""")
+
+    label_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Index of the dimension from which the node labels will be drawn""")
 
     filled = True
 
@@ -61,25 +67,50 @@ class SankeyPlot(GraphPlot):
     def get_data(self, element, ranges, style):
         data, style, axis_kwargs = super(SankeyPlot, self).get_data(element, ranges, style)
         rects, labels = [], []
+
         label_dim = element.nodes.get_dimension(self.label_index)
+        labels = self.labels
+        if label_dim and labels:
+            if self.label_index not in [2, None]:
+                self.warning("Cannot declare style mapping for 'labels' option "
+                             "and declare a label_index; ignoring the label_index.")
+        elif label_dim:
+            labels = label_dim
+        if isinstance(labels, basestring):
+            labels = element.nodes.get_dimension(labels)
+
+        if labels is None:
+            text = []
+        if isinstance(labels, dim):
+            text = labels.apply(element, flat=True)
+        else:
+            text = element.nodes.dimension_values(labels)
+            text = [labels.pprint_value(v) for v in text]
+
         value_dim = element.vdims[0]
-        values = [] if label_dim is None else element.nodes.dimension_values(label_dim)
+        text_labels = []
         for i, node in enumerate(element._sankey['nodes']):
             x0, x1, y0, y1 = (node[a+i] for a in 'xy' for i in '01')
             rect = {'height': y1-y0, 'width': x1-x0, 'xy': (x0, y0)}
             rects.append(rect)
-            if len(values):
-                label = label_dim.pprint_value(values[i])
-                if self.show_values:
-                    value = value_dim.pprint_value(node['value'])
+            if len(text):
+                label = text[i]
+            else:
+                label = ''
+            if self.show_values:
+                value = value_dim.pprint_value(node['value'])
+                if label:
                     label = '%s - %s' % (label, value)
-                    if value_dim.unit:
-                        label += ' %s' % value_dim.unit
+                else:
+                    label = value
+            if value_dim.unit:
+                label += ' %s' % value_dim.unit
+            if label:
                 x = x1+(x1-x0)/4. if self.label_position == 'right' else x0-(x1-x0)/4.
-                labels.append((label, (x, (y0+y1)/2.)))
+                text_labels.append((label, (x, (y0+y1)/2.)))
         data['rects'] = rects
-        if labels:
-            data['text'] = labels
+        if text_labels:
+            data['text'] = text_labels
         return data, style, axis_kwargs
 
     def _update_labels(self, ax, data, style):
@@ -107,6 +138,10 @@ class SankeyPlot(GraphPlot):
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups, ('s', 'node_s'))
         rects = [Rectangle(**rect) for rect in plot_args['rects']]
+        if 'vmin' in node_opts:
+            node_opts['clim'] = node_opts.pop('vmin'), node_opts.pop('vmax')
+        if 'c' in node_opts:
+            node_opts['array'] = node_opts.pop('c')
         artists['rects'] = ax.add_collection(PatchCollection(rects, **node_opts))
         artists['labels'] = self._update_labels(ax, plot_args, plot_kwargs)
         return artists

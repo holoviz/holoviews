@@ -247,9 +247,10 @@ options.Sankey = Options(
     selection_policy='nodes', width=1000, height=600, show_frame=False
 )
 options.Sankey = Options(
-    'style', node_line_alpha=0, node_nonselection_alpha=0.2,
-    node_size=10, edge_nonselection_alpha=0.2, edge_line_alpha=0,
-    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20'
+    'style', node_nonselection_alpha=0.2, node_size=10, edge_nonselection_alpha=0.2,
+    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20',
+    node_line_color='black', node_selection_line_color='black', node_hover_alpha=1,
+    edge_hover_alpha=0.9
 )
 
 

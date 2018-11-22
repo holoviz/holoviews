@@ -7,19 +7,15 @@ from bokeh.models import Patches
 
 from ...core.data import Dataset
 from ...core.util import basestring, max_range, dimension_sanitizer
+from ...util.transform import dim
 from .graphs import GraphPlot
 
 
 
 class SankeyPlot(GraphPlot):
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node colors will be drawn""")
-
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
+    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+        The dimension or dimension value transform used to draw labels from.""")
 
     label_position = param.ObjectSelector(default='right', objects=['left', 'right'],
                                           doc="""
@@ -37,9 +33,19 @@ class SankeyPlot(GraphPlot):
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
 
-    _style_groups = dict(GraphPlot._style_groups, quad='nodes', text='label')
+    # Deprecated options
 
-    _draw_order = ['patches', 'quad', 'text']
+    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Index of the dimension from which the node labels will be drawn""")
+
+    label_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Index of the dimension from which the node labels will be drawn""")
+
+    _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
+
+    _draw_order = ['patches', 'quad', 'scatter', 'text']
 
     style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
                                          'label_text_font_size']
@@ -56,19 +62,43 @@ class SankeyPlot(GraphPlot):
         data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
         self._compute_quads(element, data, mapping)
         style['nodes_line_color'] = 'black'
-
-        lidx = element.nodes.get_dimension(self.label_index)
-        if lidx is None:
-            if self.label_index is not None:
-                dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Sankey not found, "
-                             "expected one of %s, got %s." %
-                             (dims, self.label_index))
-            return data, mapping, style
-
         self._compute_labels(element, data, mapping)
         self._patch_hover(element, data)
         return data, mapping, style
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
+        arc_renderer = self.handles['quad_1_glyph_renderer']
+        scatter_renderer = self.handles['scatter_1_glyph_renderer']
+        arc_renderer.view = scatter_renderer.view
+        arc_renderer.data_source = scatter_renderer.data_source
+        self.handles['quad_1_source'] = scatter_renderer.data_source
+        self._sync_nodes()
+
+    def _init_glyph(self, plot, mapping, properties, key):
+        if key == 'quad_1':
+            properties.pop('size', None)
+            mapping.pop('size', None)
+        return super(SankeyPlot, self)._init_glyph(plot, mapping, properties, key)
+
+    def _update_glyphs(self, element, ranges, style):
+        self._sync_nodes()
+        super(SankeyPlot, self)._update_glyphs(element, ranges, style)
+    
+    def _sync_nodes(self):
+        arc_renderer = self.handles['quad_1_glyph_renderer']
+        scatter_renderer = self.handles['scatter_1_glyph_renderer']
+        for gtype in ('selection_', 'nonselection_', 'muted_', 'hover_', ''):
+            glyph = getattr(scatter_renderer, gtype+'glyph')
+            arc_glyph = getattr(arc_renderer, gtype+'glyph')
+            print(gtype, glyph, arc_glyph)
+            if not glyph or not arc_glyph:
+                continue
+            scatter_props = glyph.properties_with_values(include_defaults=False)
+            styles = {k: v for k, v in scatter_props.items()
+                      if k in arc_glyph.properties()}
+            print(styles)
+            arc_glyph.update(**styles)
 
     def _compute_quads(self, element, data, mapping):
         """
@@ -82,16 +112,14 @@ class SankeyPlot(GraphPlot):
             quad_data['y0'].append(node['y0'])
             quad_data['x1'].append(node['x1'])
             quad_data['y1'].append(node['y1'])
-        data['quad_1'] = quad_data
-        if 'node_fill_color' in mapping['scatter_1']:
-            quad_mapping['fill_color'] = mapping['scatter_1']['node_fill_color']
+            data['scatter_1'].update(quad_data)
+        data['quad_1'] = data['scatter_1']
         mapping['quad_1'] = quad_mapping
 
     def _compute_labels(self, element, data, mapping):
         """
         Computes labels for the nodes and adds it to the data.
         """
-        lidx = element.nodes.get_dimension(self.label_index)
         if element.vdims:
             edges = Dataset(element)[element[element.vdims[0].name]>0]
             nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
@@ -99,17 +127,42 @@ class SankeyPlot(GraphPlot):
         else:
             nodes = element
 
+        label_dim = nodes.get_dimension(self.label_index)
+        labels = self.labels
+        if label_dim and labels:
+            if self.label_index not in [2, None]:
+                self.warning("Cannot declare style mapping for 'labels' option "
+                             "and declare a label_index; ignoring the label_index.")
+        elif label_dim:
+            labels = label_dim
+        if isinstance(labels, basestring):
+            labels = element.nodes.get_dimension(labels)
+
+        if labels is None:
+            text = []
+        if isinstance(labels, dim):
+            text = labels.apply(element, flat=True)
+        else:
+            text = element.nodes.dimension_values(labels)
+            text = [labels.pprint_value(v) for v in text]
+
         value_dim = element.vdims[0]
-        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
-        if self.show_values:
-            value_labels = []
-            for i, node in enumerate(element._sankey['nodes']):
+        text_labels = []
+        for i, node in enumerate(element._sankey['nodes']):
+            if len(text):
+                label = text[i]
+            else:
+                label = ''
+            if self.show_values:
                 value = value_dim.pprint_value(node['value'])
-                label = '%s - %s' % (labels[i], value)
-                if value_dim.unit:
-                    label += ' %s' % value_dim.unit
-                value_labels.append(label)
-            labels = value_labels
+                if label:
+                    label = '%s - %s' % (label, value)
+                else:
+                    label = value
+            if value_dim.unit:
+                label += ' %s' % value_dim.unit
+            if label:
+                text_labels.append(label)
 
         ys = nodes.dimension_values(1)
         nodes = element._sankey['nodes']
@@ -118,7 +171,7 @@ class SankeyPlot(GraphPlot):
             xs = np.array([node['x1'] for node in nodes])+offset
         else:
             xs = np.array([node['x0'] for node in nodes])-offset
-        data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in labels])
+        data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in text_labels])
         align = 'left' if self.label_position == 'right' else 'right'
         mapping['text_1'] = dict(text='text', x='x', y='y', text_baseline='middle', text_align=align)
 

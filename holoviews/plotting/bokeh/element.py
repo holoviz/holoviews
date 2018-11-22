@@ -732,7 +732,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         factors = util.unique_array(val)
                     kwargs['factors'] = factors
                 cmapper = self._get_colormapper(v, element, ranges,
-                                                style, name=k+'_color_mapper',
+                                                dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
                 key = {'field': k, 'transform': cmapper}
             new_style[k] = key
@@ -1305,7 +1305,7 @@ class ColorbarPlot(ElementPlot):
             low, high = None, None
 
         prefix = '' if group is None else group+'_'
-        cmap = colors or style.get(prefix+'cmap', style.pop('cmap', 'viridis'))
+        cmap = colors or style.get(prefix+'cmap', style.get('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
             if factors is None:
