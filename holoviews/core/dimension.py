@@ -619,7 +619,7 @@ class LabelledData(param.Parameterized):
             New data replacing the existing data
         shared_data: bool (optional, default=True)
             Whether to use the existing data
-        new_type: LabelledData type
+        new_type: type
             An LabelledData type to cast the clone to
         *args:
             Additional arguments
@@ -628,8 +628,8 @@ class LabelledData(param.Parameterized):
 
         Returns
         -------
-        clone: MultiDimensionalMapping
-            Cloned mapping object
+        clone: LabelledData
+            Cloned object
         """
         params = dict(self.get_param_values())
         if new_type is None:

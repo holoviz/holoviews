@@ -161,15 +161,67 @@ class AdjointLayout(Dimensioned):
 
 
     def relabel(self, label=None, group=None, depth=1):
-        # Identical to standard relabel method except for default depth of 1
+        """
+        Assign a new label and/or group to objects in the AdjointLayout,
+        creating a clone of the object with the new settings.
+
+        Arguments
+        ---------
+        label: str (optional)
+            New label to apply to returned object
+        group: str (optional)
+            New group to apply to returned object
+        depth: int (optional, default=1)
+            If applied to container allows applying relabeling to
+            contained objects up to the specified depth
+
+        Returns
+        -------
+        relabelled: AdjointLayout
+            Returns relabelled AdjointLayout object
+        """
         return super(AdjointLayout, self).relabel(label=label, group=group, depth=depth)
 
 
     def get(self, key, default=None):
+        """
+        Returns the viewable corresponding to the supplied string
+        or integer based key.
+
+        Arguments
+        ---------
+        key: str or int
+            Numeric or string index: 0) 'main', 1) 'right', 2) 'top'
+        default: object (optional, default=None)
+            Value returned if key not found in data
+        """
         return self.data[key] if key in self.data else default
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """
+        Returns the values along a particular dimension on the main
+        item in the AdjoinLayout. If unique values are requested will
+        return only unique values.
+
+        Arguments
+        ---------
+        dimension: Dimension, str or int
+            The dimension to query values on
+        expanded: boolean (optional, default=True)
+            Whether to return the expanded values, behavior depends
+            on the type of data:
+              - Columnar: If false returns unique values
+              - Geometry: If false returns scalar values per geometry
+              - Gridded: If false returns 1D coordinates
+        flat: boolean (optional, default=True)
+            Whether the array should be flattened to a 1D array
+
+        Returns
+        -------
+        array: numpy.ndarray
+            NumPy array of values along the requested dimension
+        """
         dimension = self.get_dimension(dimension, strict=True).name
         return self.main.dimension_values(dimension, expanded, flat)
 
@@ -335,8 +387,30 @@ class NdLayout(UniformNdMapping):
 
     def clone(self, *args, **overrides):
         """
-        Clone method for NdLayout matches Dimensioned.clone except the
-        display mode is also propagated.
+        Returns a clone of the NdLayout with matching parameter values
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original. May also supply
+        a new_type, which will inherit all shared parameters.
+
+        Arguments
+        ---------
+        data: dict or list (optional)
+            New data replacing the existing data
+        shared_data: bool (optional, default=True)
+            Whether to use the existing data
+        new_type: LabelledData type
+            An LabelledData type to cast the clone to
+        *args:
+            Additional arguments
+        **overrides:
+            Additional keyword arguments to pass to cloned constructor
+
+        Returns
+        -------
+        clone: NdLayout
+            Cloned NdLayout object
         """
         clone = super(NdLayout, self).clone(*args, **overrides)
         clone._max_cols = self._max_cols
@@ -395,8 +469,30 @@ class Layout(ViewableTree):
 
     def clone(self, *args, **overrides):
         """
-        Clone method for Layout matches Dimensioned.clone except the
-        cols setting is also propagated.
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original. May also supply
+        a new_type, which will inherit all shared parameters.
+
+        Arguments
+        ---------
+        data: dict or list (optional)
+            New data replacing the existing data
+        shared_data: bool (optional, default=True)
+            Whether to use the existing data
+        new_type: type
+            An ViewableTree type to cast the clone to
+        *args:
+            Additional arguments
+        **overrides:
+            Additional keyword arguments to pass to cloned constructor
+
+        Returns
+        -------
+        clone: ViewableTree
+            Cloned object
         """
         clone = super(Layout, self).clone(*args, **overrides)
         clone._max_cols = self._max_cols
@@ -404,6 +500,16 @@ class Layout(ViewableTree):
 
 
     def cols(self, ncols):
+        """
+        Sets the maximum number of columns of the Layout beyond which
+        objects flows onto a new row. The number of columns control
+        the indexing and display semantics of the Layout.
+
+        Arguments
+        ---------
+        ncols: int
+            Number of columns to set on the Layout
+        """
         self._max_cols = ncols
         return self
 
