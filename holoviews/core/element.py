@@ -107,14 +107,8 @@ class Element(ViewableElement, Composable, Overlayable):
     @classmethod
     def collapse_data(cls, data, function=None, kdims=None, **kwargs):
         """
-        Class method to collapse a list of data matching the data
-        format of the Element type. By implementing this method
-        HoloMap can collapse multiple Elements of the same type. The
-        kwargs are passed to the collapse function. The collapse
-        function must support the numpy style axis selection. Valid
-        function include: np.mean, np.sum, np.product, np.std,
-        scipy.stats.kurtosis etc. Some data backends also require the
-        key dimensions to aggregate over.
+        Deprecated method to perform collapse operations, which may
+        now be performed through concatenation and aggregation.
         """
         raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
 
