@@ -102,9 +102,9 @@ class Raster(Element2D):
     @classmethod
     def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         if util.config.future_deprecations:
-            self.warning('Raster.collapse_data is deprecated, collapsing '
-                         'may now be performed through concatenation '
-                         'and aggregation.')
+            param.main.warning('Raster.collapse_data is deprecated, collapsing '
+                               'may now be performed through concatenation '
+                               'and aggregation.')
         if isinstance(function, np.ufunc):
             return function.reduce(data_list)
         else:

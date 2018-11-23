@@ -151,7 +151,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         """
         Deprecated method to split overlays inside the HoloMap.
         """
-        if config.future_deprecations:
+        if util.config.future_deprecations:
             self.warning("split_overlays is deprecated and is now "
                          "a private method.")
         return self._split_overlays()
@@ -431,8 +431,12 @@ class HoloMap(UniformNdMapping, Overlayable):
         ---------
         samples: list (optional)
             List of nd-coordinates to sample
+        bounds: tuple (optional)
+            If samples is an integer bounds defines the region
+            to sample
         closest: bool (optional, default=True)
-            Whether to snap to the closest coordinate (if the Element supports it)
+            Whether to snap to the closest coordinate (if the
+            Element supports it)
         **kwargs: dict (optional)
             Keywords of dimensions and scalar coordinates
 
@@ -545,7 +549,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
 
 
-    def hist(self, dimension=None, num_bins=20, bin_range=None
+    def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, individually=True, **kwargs):
         """
         Computes a histogram of the data along the specified dimension
@@ -1456,7 +1460,7 @@ class DynamicMap(HoloMap):
         """
         Deprecated method to split overlays inside the DynamicMap.
         """
-        if config.future_deprecations:
+        if util.config.future_deprecations:
             self.warning("split_overlays is deprecated and is now "
                          "a private method.")
         return self._split_overlays()

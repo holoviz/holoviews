@@ -532,7 +532,7 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[], closest=True, **kwargs):
+    def sample(self, samples=[], bounds=None, closest=True, **kwargs):
         """
         Allows sampling the values of the Dataset at certain coordinates.
         Coordinates may be defined by passing either a list of samples
@@ -556,6 +556,8 @@ class Dataset(Element):
         ---------
         samples: list (optional)
             List of nd-coordinates to sample
+        bounds: 2-tuple or 4-tuple (optional)
+            If samples is an integer bounds defines the region to sample
         closest: bool (optional, default=True)
             Whether to snap to the closest coordinate (if the Element supports it)
         **kwargs: dict (optional)
@@ -843,7 +845,7 @@ class Dataset(Element):
         array: numpy.ndarray
             NumPy array of values along the requested dimension
         """
-        dim = self.get_dimension(dim, strict=True)
+        dim = self.get_dimension(dimension, strict=True)
         return self.interface.values(self, dim, expanded, flat)
 
 

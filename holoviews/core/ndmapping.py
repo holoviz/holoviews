@@ -317,7 +317,7 @@ class MultiDimensionalMapping(Dimensioned):
                                           group_type, sort=True, **kwargs)
 
 
-    def add_dimension(self, dimension, dim_pos, dim_val, **kwargs):
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """
         Create a new object with the additional key dimension.
         Requires the dimension name or object, the desired position in
@@ -332,6 +332,8 @@ class MultiDimensionalMapping(Dimensioned):
             Integer index to insert dimension at
         dim_val: scalar or numpy.ndarray
             Dimension value(s) to add
+        vdim: bool (disabled, default=False)
+            Disabled (dimensions added on an NdMapping must key dimensions)
         **kwargs:
             Keyword arguments passed to the cloned element
 

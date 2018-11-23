@@ -110,9 +110,9 @@ class Path(Dataset, Element2D):
     @classmethod
     def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
         if config.future_deprecations:
-            self.warning('Path.collapse_data is deprecated, collapsing '
-                         'may now be performed through concatenation '
-                         'and aggregation.')
+            param.main.warning('Path.collapse_data is deprecated, collapsing '
+                               'may now be performed through concatenation '
+                               'and aggregation.')
         if function is None:
             return [path for paths in data_list for path in paths]
         else:
