@@ -15,7 +15,7 @@ from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
-from ...element import Graph
+from ...element import Graph, Path, Contours
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
@@ -538,6 +538,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
+            elif isinstance(element, Path) and not isinstance(element, Contours):
+                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
+                                      for el in element.split()])
             else:
                 val = v.apply(element, ranges)
 
@@ -554,9 +557,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                                  'to the {style} use a groupby operation '
                                  'to overlay your data along the dimension.'.format(
                                      style=k, dim=v.dimension, element=element,
-                                     backend=self.renderer.backend
-                                 )
-                )
+                                     backend=self.renderer.backend))
 
             style_groups = getattr(self, '_style_groups', [])
             groups = [sg for sg in style_groups if k.startswith(sg)]

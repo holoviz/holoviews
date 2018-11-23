@@ -37,22 +37,26 @@ class PathPlot(ColorbarPlot):
 
         cdim = element.get_dimension(self.color_index)
         if cdim: cidx = element.get_dimension_index(cdim)
-        if not cdim:
+        style_mapping = any(True for v in style.values() if isinstance(v, np.ndarray))
+        if not (cdim or style_mapping):
             paths = element.split(datatype='array', dimensions=element.kdims)
             if self.invert_axes:
                 paths = [p[:, ::-1] for p in paths]
             return (paths,), style, {}
         paths, cvals = [], []
         for path in element.split(datatype='array'):
-            splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
-            if len(splits) == 1:
-                splits.append(len(path))
-            for (s1, s2) in zip(splits[:-1], splits[1:]):
-                cvals.append(path[s1, cidx])
+            length = len(path)
+            for (s1, s2) in zip(range(length-1), range(1, length+1)):
+                if cdim:
+                    cvals.append(path[s1, cidx])
                 paths.append(path[s1:s2+1, :2])
-        self._norm_kwargs(element, ranges, style, cdim)
-        style['array'] = np.array(cvals)
-        style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
+        if cdim:
+            self._norm_kwargs(element, ranges, style, cdim)
+            style['array'] = np.array(cvals)
+        if 'c' in style:
+            style['array'] = style.pop('c')
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
         return (paths,), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):

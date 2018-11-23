@@ -61,9 +61,12 @@ class PathPlot(ColorbarPlot):
             cdim = element.get_dimension(color)
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
+        style_mapping = any(
+            s for s, v in style.items() if (s not in self._nonvectorized_styles) and
+            (isinstance(v, util.basestring) and v in element) or isinstance(v, dim))
         inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
-        if not cdim:
+        if not cdim and not style_mapping:
             if self.static_source:
                 data = {}
             else:
@@ -72,33 +75,33 @@ class PathPlot(ColorbarPlot):
                 data = dict(xs=xs, ys=ys)
             return data, mapping, style
 
-        dim_name = util.dimension_sanitizer(cdim.name)
-        if not self.static_source:
-            paths = []
-            vals = {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
-            for path in element.split():
+        vals = {util.dimension_sanitizer(vd.name): [] for vd in element.vdims}
+        if cdim:
+            dim_name = util.dimension_sanitizer(cdim.name)
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
+            mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
+
+        paths = []
+        for path in element.split():
+            if cdim:
                 cvals = path.dimension_values(cdim)
-                array = path.array(path.kdims)
-                splits = [0]+list(np.where(np.diff(cvals)!=0)[0]+1)
-                cols = {vd.name: path.dimension_values(vd) for vd in element.vdims}
-                if len(splits) == 1:
-                    splits.append(len(path))
-                for (s1, s2) in zip(splits[:-1], splits[1:]):
-                    for i, vd in enumerate(element.vdims):
-                        path_val = cols[vd.name][s1]
-                        vd_column = util.dimension_sanitizer(vd.name)
-                        dt_column = vd_column+'_dt_strings'
-                        vals[vd_column].append(path_val)
-                        if isinstance(path_val, util.datetime_types):
-                            if dt_column not in vals:
-                                vals[dt_column] = []
-                            vals[dt_column].append(vd.pprint_value(path_val))
-                    paths.append(array[s1:s2+1])
-            xs, ys = ([path[:, idx] for path in paths] for idx in inds)
-            data = dict(xs=xs, ys=ys, **{d: np.array(vs) for d, vs in vals.items()})
-        cmapper = self._get_colormapper(cdim, element, ranges, style)
-        mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
-        self._get_hover_data(data, element)
+                vals[dim_name] = cvals[:-1]
+            array = path.array(path.kdims)
+            cols = {vd.name: path.dimension_values(vd) for vd in element.vdims}
+            length = len(array)
+            for i, (s1, s2) in enumerate(zip(range(length-1), range(1, length+1))):
+                for i, vd in enumerate(element.vdims):
+                    path_val = cols[vd.name][s1]
+                    vd_column = util.dimension_sanitizer(vd.name)
+                    dt_column = vd_column+'_dt_strings'
+                    vals[vd_column].append(path_val)
+                    if isinstance(path_val, util.datetime_types):
+                        if dt_column not in vals:
+                            vals[dt_column] = []
+                        vals[dt_column].append(vd.pprint_value(path_val))
+                paths.append(array[s1:s2+1])
+        xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+        data = dict(xs=xs, ys=ys, **{d: np.asarray(vs) for d, vs in vals.items()})
         return data, mapping, style
 
 
