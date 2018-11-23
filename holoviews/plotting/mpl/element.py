@@ -77,7 +77,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     style_opts = []
 
     # Declare which styles cannot be mapped to a non-scalar dimension
-    _nonvectorized_styles = ['marker', 'alpha', 'cmap', 'angle']
+    _nonvectorized_styles = ['marker', 'alpha', 'cmap', 'angle', 'visible']
 
     # Whether plot has axes, disables setting axis limits, labels and ticks
     _has_axes = True
