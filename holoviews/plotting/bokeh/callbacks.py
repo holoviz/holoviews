@@ -16,7 +16,6 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw)
-from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..links import Link, RangeToolLink, DataLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp, bokeh_version
@@ -1075,7 +1074,6 @@ callbacks[MouseLeave]  = MouseLeaveCallback
 callbacks[RangeXY]     = RangeXYCallback
 callbacks[RangeX]      = RangeXCallback
 callbacks[RangeY]      = RangeYCallback
-callbacks[Bounds]      = BoundsCallback
 callbacks[BoundsXY]    = BoundsCallback
 callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
@@ -1090,10 +1088,6 @@ callbacks[FreehandDraw]   = FreehandDrawCallback
 callbacks[PolyDraw]    = PolyDrawCallback
 callbacks[PolyEdit]    = PolyEditCallback
 
-# Aliases for deprecated streams
-callbacks[PositionXY]  = PointerXYCallback
-callbacks[PositionX]   = PointerXCallback
-callbacks[PositionY]   = PointerYCallback
 
 
 class LinkCallback(param.Parameterized):

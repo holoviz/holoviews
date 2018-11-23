@@ -311,9 +311,10 @@ class Element(ViewableElement, Composable, Overlayable):
         Deprecated method to convert Element data to an old dictionary
         format which is no longer supported.
         """
-        self.warning("The mapping method is deprecated and should no "
-                     "longer be used. Use another one of the common "
-                     "formats instead, e.g. .dframe, .array or .columns.")
+        if config.future_deprecations:
+            self.warning("The mapping method is deprecated and should no "
+                         "longer be used. Use another one of the common "
+                         "formats instead, e.g. .dframe, .array or .columns.")
 
         length = len(self)
         if not kdims: kdims = self.kdims

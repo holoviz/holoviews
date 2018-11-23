@@ -344,10 +344,6 @@ class NdLayout(UniformNdMapping):
         return clone
 
 
-# To be removed after 1.3.0
-class Warning(param.Parameterized): pass
-collate_deprecation = Warning(name='Deprecation Warning')
-
 class Layout(ViewableTree):
     """
     A Layout is an ViewableTree with ViewableElement objects as leaf
@@ -409,12 +405,6 @@ class Layout(ViewableTree):
 
     def cols(self, ncols):
         self._max_cols = ncols
-        return self
-
-
-    def display(self, option):
-        "Sets the display policy of the Layout before returning self"
-        self.warning('Layout display option is deprecated and no longer needs to be used')
         return self
 
 

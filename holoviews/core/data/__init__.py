@@ -102,16 +102,6 @@ class DataConversion(object):
         can be automatically sorted via the sort option and kwargs can
         be passed through.
         """
-        if 'mdims' in kwargs:
-            if groupby:
-                raise ValueError('Cannot supply both mdims and groupby')
-            else:
-                self._element.warning("'mdims' keyword has been renamed "
-                                      "to 'groupby'; the name mdims is "
-                                      "deprecated and will be removed "
-                                      "after version 1.7.")
-                groupby = kwargs.pop('mdims')
-
         element_params = new_type.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']

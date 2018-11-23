@@ -1,5 +1,4 @@
 from ..core.operation import Operation                # noqa (API import)
-from ..core.operation import ElementOperation         # noqa (Deprecated API import)
 from ..core.options import Compositor
 
 from .element import *      # noqa (API import)
