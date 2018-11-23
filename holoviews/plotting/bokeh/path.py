@@ -82,26 +82,25 @@ class PathPlot(ColorbarPlot):
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
 
         paths = []
+        hover = 'hover' in self.handles
         for path in element.split():
             if cdim:
                 cvals = path.dimension_values(cdim)
                 vals[dim_name] = cvals[:-1]
             array = path.array(path.kdims)
-            cols = {vd.name: path.dimension_values(vd) for vd in element.vdims}
-            length = len(array)
-            for i, (s1, s2) in enumerate(zip(range(length-1), range(1, length+1))):
-                for i, vd in enumerate(element.vdims):
-                    path_val = cols[vd.name][s1]
-                    vd_column = util.dimension_sanitizer(vd.name)
-                    dt_column = vd_column+'_dt_strings'
-                    vals[vd_column].append(path_val)
-                    if isinstance(path_val, util.datetime_types):
-                        if dt_column not in vals:
-                            vals[dt_column] = []
-                        vals[dt_column].append(vd.pprint_value(path_val))
-                paths.append(array[s1:s2+1])
+            alen = len(array)
+            paths = [array[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
+            if not hover:
+                continue
+            for vd in element.vdims:
+                values = path.dimension_values(vd)[:-1]
+                vd_name = util.dimension_sanitizer(vd.name)
+                vals[vd_name] = values
+                if values.dtype.kind == 'M':
+                    vals[vd_name+'_dt_strings'] = [vd.pprint_value(v) for v in values]
+
         xs, ys = ([path[:, idx] for path in paths] for idx in inds)
-        data = dict(xs=xs, ys=ys, **{d: np.asarray(vs) for d, vs in vals.items()})
+        data = dict(xs=xs, ys=ys, **{d: np.asarray(vs) for d, vs in vals.items() if vs != []})
         return data, mapping, style
 
 
