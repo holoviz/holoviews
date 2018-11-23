@@ -288,7 +288,8 @@ class dim(object):
                     arg = arg.apply(dataset, flat, expanded, ranges, all_values)
                 fn_args.append(arg)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            drange = ranges.get(str(self), {})
+            eldim = dataset.get_dimension(dimension)
+            drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
             if o['fn'] is _norm and drange != {}:
                 data = o['fn'](data, *drange)
