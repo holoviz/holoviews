@@ -9,7 +9,7 @@ from ..core.util import basestring, unique_iterator
 from ..element import Graph
 
 
-def _norm(values, min=None, max=None):
+def norm(values, min=None, max=None):
     """
     min-max normalizes to scale data into 0-1 range.
 
@@ -32,7 +32,7 @@ def _norm(values, min=None, max=None):
     return (values - min) / (max-min)
 
 
-def _bin(values, bins, labels=None):
+def bin(values, bins, labels=None):
     """
     Bins data into declared bins. By default each bin is labelled
     with bin center values but an explicit list of bin labels may be
@@ -65,7 +65,7 @@ def _bin(values, bins, labels=None):
     return binned
 
 
-def _categorize(values, categories, empty=None):
+def categorize(values, categories, empty=None):
     """
     Replaces discrete values in input array into a fixed set of
     categories defined either as a list or dictionary.
@@ -108,7 +108,7 @@ class dim(object):
     binning and categorizing data.
     """
 
-    _op_registry = {'norm': _norm, 'bin': _bin, 'categorize': _categorize}
+    _op_registry = {'norm': norm, 'bin': bin, 'categorize': categorize}
 
     def __init__(self, obj, *args, **kwargs):
         ops = []
@@ -194,7 +194,7 @@ class dim(object):
         empty: any (optional)
            Value assigned to input values no category could be assigned to
         """
-        return dim(self, _bin, bins, labels=labels)
+        return dim(self, bin, bins, labels=labels)
 
     def categorize(self, categories, empty=None):
         """
@@ -209,13 +209,16 @@ class dim(object):
         labels: np.ndarray or list (optional)
            Labels for bins should have length N-1 compared to bins
         """
-        return dim(self, _categorize, categories=categories, empty=empty)
+        return dim(self, categorize, categories=categories, empty=empty)
 
-    def norm(self):
+    def norm(self, limits=None):
         """
         min-max normalizes to scale data into 0-1 range.
         """
-        return dim(self, _norm)
+        kwargs = {}
+        if limits is not None:
+            kwargs = {'min': limits[0], 'max': limits[1]}
+        return dim(self, norm, **kwargs)
 
     def str(self):
         """
@@ -288,12 +291,14 @@ class dim(object):
                     arg = arg.apply(dataset, flat, expanded, ranges, all_values)
                 fn_args.append(arg)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            drange = ranges.get(str(self), {})
+            eldim = dataset.get_dimension(dimension)
+            drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
-            if o['fn'] is _norm and drange != {}:
+            kwargs = o['kwargs']
+            if o['fn'] is norm and drange != {} and not ('min' in kwargs and 'max' in kwargs):
                 data = o['fn'](data, *drange)
             else:
-                data = o['fn'](*args, **o['kwargs'])
+                data = o['fn'](*args, **kwargs)
         return data
 
     def __repr__(self):
@@ -301,7 +306,13 @@ class dim(object):
         for o in self.ops:
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
             kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
-            kwargs = ', %s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
-            op_repr = '{fn}({repr}, {args}{kwargs})'.format(fn=o['fn'].__name__, repr=op_repr,
-                                                            args=args, kwargs=kwargs)
+            kwargs = '%s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
+            format_string = '{fn}({repr}'
+            if args:
+                format_string += ', {args}'
+            if kwargs:
+                format_string += ', {kwargs}'
+            format_string += ')'
+            op_repr = format_string.format(fn=o['fn'].__name__, repr=op_repr,
+                                           args=args, kwargs=kwargs)
         return op_repr

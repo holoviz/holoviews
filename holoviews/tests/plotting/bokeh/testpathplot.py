@@ -71,7 +71,7 @@ class TestPathPlot(TestBokehPlot):
         color = [0, 0.25, 0.5, 0.75]
         other = ['A', 'B', 'C', 'D']
         data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color_index='color')
+        path = Path([data], vdims=['color','other']).options(color_index='color', tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
@@ -89,9 +89,9 @@ class TestPathPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
 
-        self.assertEqual(source.data['xs'], [np.array([1, 2, 3, 4])])
-        self.assertEqual(source.data['ys'], [np.array([4, 3, 2, 1])])
-        self.assertEqual(source.data['color'], np.array([1]))
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['color'], np.array([1, 1, 1]))
 
     def test_path_colored_by_levels_single_value(self):
         xs = [1, 2, 3, 4]
@@ -101,20 +101,71 @@ class TestPathPlot(TestBokehPlot):
         data = {'x': xs, 'y': ys, 'color': color, 'date': date}
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
-        path = Path([data], vdims=['color', 'date']).options(color_index='color', color_levels=levels, cmap=colors)
+        path = Path([data], vdims=['color', 'date']).options(
+            color_index='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         cmapper = plot.handles['color_mapper']
 
-        self.assertEqual(source.data['xs'], [np.array([1, 2, 3, 4])])
-        self.assertEqual(source.data['ys'], [np.array([4, 3, 2, 1])])
-        self.assertEqual(source.data['color'], np.array([998]))
-        self.assertEqual(source.data['date'], np.array([1533081600000000000]))
-        self.assertEqual(source.data['date_dt_strings'], np.array(['2018-08-01 00:00:00']))
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['color'], np.array([998, 998, 998]))
+        self.assertEqual(source.data['date'],
+                         np.array([1533081600000000000, 1533081600000000000, 1533081600000000000]))
+        self.assertEqual(source.data['date_dt_strings'],
+                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
         self.assertEqual(cmapper.low, 156)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
 
+    def test_path_continuously_varying_color_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        color = [998, 999, 998, 994]
+        date = np.datetime64(dt.datetime(2018, 8, 1))
+        data = {'x': xs, 'y': ys, 'color': color, 'date': date}
+        levels = [0, 38, 73, 95, 110, 130, 156, 999]
+        colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
+        path = Path([data], vdims=['color', 'date']).options(
+            color='color', color_levels=levels, cmap=colors, tools=['hover'])
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        cmapper = plot.handles['color_color_mapper']
+
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['color'], np.array([998, 999, 998]))
+        self.assertEqual(source.data['date'],
+                         np.array([1533081600000000000, 1533081600000000000, 1533081600000000000]))
+        self.assertEqual(source.data['date_dt_strings'],
+                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
+        self.assertEqual(cmapper.low, 994)
+        self.assertEqual(cmapper.high, 999)
+        self.assertEqual(cmapper.palette, colors[-1:])
+
+    def test_path_continuously_varying_alpha_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        alpha = [0.1, 0.7, 0.3, 0.2]
+        data = {'x': xs, 'y': ys, 'alpha': alpha}
+        path = Path([data], vdims='alpha').options(alpha='alpha')
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['alpha'], np.array([0.1, 0.7, 0.3]))
+
+    def test_path_continuously_varying_line_width_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        line_width = [1, 7, 3, 2]
+        data = {'x': xs, 'y': ys, 'line_width': line_width}
+        path = Path([data], vdims='line_width').options(line_width='line_width')
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['line_width'], np.array([1, 7, 3]))
 
 
 class TestPolygonPlot(TestBokehPlot):

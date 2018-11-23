@@ -2,9 +2,58 @@ import numpy as np
 
 from holoviews.core import NdOverlay
 from holoviews.core.spaces import HoloMap
-from holoviews.element import Polygons, Contours
+from holoviews.element import Polygons, Contours, Path
 
 from .testplot import TestMPLPlot, mpl_renderer
+
+
+class TestPathPlot(TestMPLPlot):
+
+    def test_path_continuously_varying_color_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        color = [998, 999, 998, 994]
+        data = {'x': xs, 'y': ys, 'color': color}
+        levels = [0, 38, 73, 95, 110, 130, 156, 999]
+        colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
+        path = Path([data], vdims='color').options(
+            color='color', color_levels=levels, cmap=colors)
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array(), np.array([998, 999, 998]))
+        self.assertEqual(artist.get_clim(), (994, 999))
+
+    def test_path_continuously_varying_alpha_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        alpha = [0.1, 0.7, 0.3, 0.2]
+        data = {'x': xs, 'y': ys, 'alpha': alpha}
+        path = Path([data], vdims='alpha').options(alpha='alpha')
+        with self.assertRaises(Exception):
+            mpl_renderer.get_plot(path)
+
+    def test_path_continuously_varying_line_width_op(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        line_width = [1, 7, 3, 2]
+        data = {'x': xs, 'y': ys, 'line_width': line_width}
+        path = Path([data], vdims='line_width').options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [1, 7, 3])
+
+    def test_path_continuously_varying_line_width_op_update(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        path = HoloMap({
+            0: Path([{'x': xs, 'y': ys, 'line_width': [1, 7, 3, 2]}], vdims='line_width'),
+            1: Path([{'x': xs, 'y': ys, 'line_width': [3, 8, 2, 3]}], vdims='line_width')
+        }).options(linewidth='line_width')
+        plot = mpl_renderer.get_plot(path)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_linewidths(), [1, 7, 3])
+        plot.update((1,))
+        self.assertEqual(artist.get_linewidths(), [3, 8, 2])
 
 
 class TestPolygonPlot(TestMPLPlot):

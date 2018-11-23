@@ -27,7 +27,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField
+from ...element import Graph, VectorField, Path, Contours
 from ...streams import Buffer
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -680,6 +680,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
+            elif isinstance(element, Path) and not isinstance(element, Contours):
+                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
+                                      for el in element.split()])
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
@@ -697,9 +700,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      'to the {style} use a groupby operation '
                                      'to overlay your data along the dimension.'.format(
                                          style=k, dim=v.dimension, element=element,
-                                         backend=self.renderer.backend
-                                 )
-                    )
+                                         backend=self.renderer.backend))
                 elif source.data and len(val) != len(list(source.data.values())[0]):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
