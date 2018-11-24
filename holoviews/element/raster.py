@@ -246,7 +246,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         of a string or dimension object.""")
 
     vdims = param.List(default=[Dimension('z')],
-                       bounds=(1, 1), doc="""
+                       bounds=(1, None), doc="""
         The dimension description of the data held in the matrix.""")
 
     rtol = param.Number(default=None, doc="""

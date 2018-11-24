@@ -27,8 +27,11 @@ class RasterPlot(ColorbarPlot):
         xdim, ydim = element.kdims
         tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
         if bokeh_version >= '0.12.16' and not isinstance(element, (RGB, HSV)):
-            vdim = element.vdims[0]
-            tooltips.append((vdim.pprint_label, '@image'))
+            vdims = element.vdims
+            tooltips.append((vdims[0].pprint_label, '@image'))
+            for vdim in vdims[1:]:
+                tooltips.append((vdim.pprint_label,
+                                '@{0}'.format(vdim.pprint_label)))
         return tooltips, {}
 
     def __init__(self, *args, **kwargs):
@@ -38,40 +41,47 @@ class RasterPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
-        val_dim = [d for d in element.vdims][0]
+        val_dim = element.vdims[0]
         style['color_mapper'] = self._get_colormapper(val_dim, element, ranges, style)
 
         if self.static_source:
             return {}, mapping, style
 
-        img = element.dimension_values(2, flat=False)
-        if img.dtype.kind == 'b':
-            img = img.astype(np.int8)
+        for i, vdim in enumerate(element.vdims, 2):
+            img = element.dimension_values(i, flat=False)
+            if img.dtype.kind == 'b':
+                img = img.astype(np.int8)
 
-        if type(element) is Raster:
-            l, b, r, t = element.extents
-            if self.invert_axes:
-                l, b, r, t = b, l, t, r
+            if type(element) is Raster:
+                l, b, r, t = element.extents
+                if self.invert_axes:
+                    l, b, r, t = b, l, t, r
+                else:
+                    img = img.T
             else:
-                img = img.T
-        else:
-            l, b, r, t = element.bounds.lbrt()
-            if self.invert_axes:
-                img = img.T
-                l, b, r, t = b, l, t, r
+                l, b, r, t = element.bounds.lbrt()
+                if self.invert_axes:
+                    img = img.T
+                    l, b, r, t = b, l, t, r
 
-        if self.invert_xaxis:
-            l, r = r, l
-            img = img[:, ::-1]
-        if self.invert_yaxis:
-            img = img[::-1]
-            b, t = t, b
-        dh, dw = t-b, r-l
+            if self.invert_xaxis:
+                l, r = r, l
+                img = img[:, ::-1]
+            if self.invert_yaxis:
+                img = img[::-1]
+                b, t = t, b
+            dh, dw = t-b, r-l
 
-        if 0 in img.shape:
-            img = np.array([[np.NaN]])
+            if 0 in img.shape:
+                img = np.array([[np.NaN]])
 
-        data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
+            if i == 2:
+                key = 'image'
+                data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
+            else:
+                key = vdim.pprint_label
+
+            data[key] = [img]
         return (data, mapping, style)
 
 
