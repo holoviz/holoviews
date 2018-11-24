@@ -77,44 +77,64 @@ class opts(param.ParameterizedFunction):
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
 
-    def __call__(self, *args, **params):
+    _deprecate_magics_call = 'error' # 'warn', 'error' or None
 
-        if args and set(params.keys()) - set(['strict']):
-            raise TypeError('When used with positional arguments, hv.opts accepts only strings and dictionaries, not keywords.')
+    def __call__(self, *args, **params):
         if params and not args:
             return Options(**params)
 
-        p = param.ParamOverrides(self, params)
-        if len(args) not in [1,2]:
-            raise TypeError('The opts utility accepts one or two positional arguments.')
-        elif len(args) == 1:
-            options, obj = args[0], None
-        elif len(args) == 2:
-            (options, obj) = args
+        if len(args) == 1:
+            msg = ("Use opts.linemagic instead as a direct replacement "
+                   "although opts.defaults is the recommended approach.")
 
+            if self._deprecate_magics_call == 'error':
+                raise DeprecationWarning(msg)
+            elif self._deprecate_magics_call == 'warn':
+                self.warning(msg)
+            self.linemagic(args[0])
+        elif len(args) == 2:
+            msg = ("Use opts.cellmagic instead as a direct replacement "
+                   "although using the .options method is the "
+                   "recommended approach.")
+
+            if self._deprecate_magics_call == 'error':
+                raise DeprecationWarning(msg)
+            elif self._deprecate_magics_call == 'warn':
+                self.warning(msg)
+
+            self.cellmagic(args[0], args[1])
+
+    @classmethod
+    def _process_magic(cls, options, strict):
         if isinstance(options, basestring):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
-
         errmsg = StoreOptions.validation_error_message(options)
         if errmsg:
             sys.stderr.write(errmsg)
-            if p.strict:
+            if strict:
                 sys.stderr.write(' Options specification will not be applied.')
-                if obj: return obj
-                else:   return
+                return options, True
+        return options, False
 
-        if obj is None:
-            with options_policy(skip_invalid=True, warn_on_skip=False):
-                StoreOptions.apply_customizations(options, Store.options())
-        elif not isinstance(obj, Dimensioned):
+    @classmethod
+    def cellmagic(cls, options, obj, strict=False):
+        options, failure = cls._process_magic(options, strict)
+        if failure: return obj
+        if not isinstance(obj, Dimensioned):
             return obj
         else:
             return StoreOptions.set_options(obj, options)
 
+    @classmethod
+    def linemagic(cls, options, strict=False):
+        options, failure = cls._process_magic(options, strict)
+        if failure: return
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            StoreOptions.apply_customizations(options, Store.options())
 
     @classmethod
     def expand_options(cls, options, backend=None):

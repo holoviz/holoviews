@@ -98,7 +98,7 @@ class TestOptsUtil(ComparisonTestCase):
     def test_cell_opts_util_style(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
         self.assertEqual(mat1.id, None)
-        opts("Image (cmap='hot')", mat1)
+        opts.cellmagic("Image (cmap='hot')", mat1)
         self.assertNotEqual(mat1.id, None)
 
         self.assertEqual(
@@ -111,7 +111,7 @@ class TestOptsUtil(ComparisonTestCase):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
 
         self.assertEqual(mat1.id, None)
-        opts("Image [show_title=False]", mat1)
+        opts.cellmagic("Image [show_title=False]", mat1)
         self.assertNotEqual(mat1.id, None)
         self.assertEqual(
             Store.lookup_options('matplotlib',
@@ -121,7 +121,7 @@ class TestOptsUtil(ComparisonTestCase):
     def test_cell_opts_util_norm(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
         self.assertEqual(mat1.id, None)
-        opts("Image {+axiswise}", mat1)
+        opts.cellmagic("Image {+axiswise}", mat1)
         self.assertNotEqual(mat1.id, None)
 
         self.assertEqual(
