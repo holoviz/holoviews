@@ -238,7 +238,7 @@ class opts(param.ParameterizedFunction):
                              'found.' % (opt, objtype))
 
     @classmethod
-    def _completer_reprs(cls, options, namespace=None):
+    def _completer_reprs(cls, options, namespace=None, ns=None):
         """
         Given a list of Option objects (such as those returned from
         OptsSpec.parse_options) or an %opts or %%opts magic string,
@@ -248,8 +248,9 @@ class opts(param.ParameterizedFunction):
         """
         if isinstance(options, basestring):
             from .parser import OptsSpec
-            try:     ns = get_ipython().user_ns  # noqa
-            except:  ns = globals()
+            if ns is None:
+                try:     ns = get_ipython().user_ns  # noqa
+                except:  ns = globals()
             options = options.replace('%%opts','').replace('%opts','')
             options = OptsSpec.parse_options(options, ns=ns)
 
