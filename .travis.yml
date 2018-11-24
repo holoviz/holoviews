@@ -28,7 +28,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   - conda create -q -n holoviews python=$TRAVIS_PYTHON_VERSION
-  - conda env update -n holoviews -q -f environment.yml
+  - travis_wait conda env update -n holoviews -q -f environment.yml
   - source activate holoviews
   - python setup.py develop
   - conda env export
