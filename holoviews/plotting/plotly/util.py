@@ -14,7 +14,7 @@ def add_figure(fig, subfig, r, c, idx):
     fig['layout']['yaxis%s'%ref].update(layout.get('yaxis', {}))
     fig['layout']['annotations'] += layout.get('annotations', ())
     for d in subfig['data']:
-        fig.append_trace(d, r+1, c+1)
+        fig.add_trace(d, row=r+1, col=c+1)
 
 
 def replace_refs(obj, ind):
