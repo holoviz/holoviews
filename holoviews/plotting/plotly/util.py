@@ -8,7 +8,7 @@ def add_figure(fig, subfig, r, c, idx):
     axis layout options.
     """
     ref = fig._grid_ref[r][c][0][1:]
-    layout = replace_refs(subfig['layout'], ref)
+    layout = replace_refs(subfig['layout'].to_plotly_json(), ref)
 
     fig['layout']['xaxis%s'%ref].update(layout.get('xaxis', {}))
     fig['layout']['yaxis%s'%ref].update(layout.get('yaxis', {}))
@@ -21,9 +21,9 @@ def replace_refs(obj, ind):
     """
     Replaces xref and yref to allow combining multiple plots
     """
-    if isinstance(obj, go.graph_objs.PlotlyList):
+    if isinstance(obj, tuple):
         return [replace_refs(o, ind) for o in obj]
-    elif isinstance(obj, go.graph_objs.PlotlyDict):
+    elif isinstance(obj, dict):
         new_obj = {}
         for k, v in obj.items():
             if k in ['xref', 'yref']:

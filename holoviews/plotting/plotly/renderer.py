@@ -70,8 +70,7 @@ class PlotlyRenderer(Renderer):
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        diff = {'data': plot.state.get('data', []),
-                'layout': plot.state.get('layout', {})}
+        diff = plot.state.to_plotly_json()
         if serialize:
             return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
         else:
@@ -83,8 +82,8 @@ class PlotlyRenderer(Renderer):
         if divuuid is None:
             divuuid = plot.id
 
-        jdata = json.dumps(figure.get('data', []), cls=utils.PlotlyJSONEncoder)
-        jlayout = json.dumps(figure.get('layout', {}), cls=utils.PlotlyJSONEncoder)
+        jdata = json.dumps(figure.data, cls=utils.PlotlyJSONEncoder)
+        jlayout = json.dumps(figure.layout, cls=utils.PlotlyJSONEncoder)
 
         config = {}
         config['showLink'] = False
