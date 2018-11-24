@@ -19,8 +19,9 @@ $.each(data.data, function(i, obj) {{
     plot.data[i][key] = obj[key];
   }});
 }});
-_Plotly.relayout(plot, data.layout);
-_Plotly.redraw(plot);
+var plotly = window._Plotly || window.Plotly;
+plotly.relayout(plot, data.layout);
+plotly.redraw(plot);
 """
 
 PLOTLY_WARNING = """
@@ -97,7 +98,8 @@ class PlotlyRenderer(Renderer):
                       '</script>')
 
         script = '\n'.join([
-            '_Plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
+            'var plotly = window._Plotly || window.Plotly;'
+            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
             '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
             '}})']).format(id=divuuid,
                            data=jdata,
