@@ -5,7 +5,7 @@ import param
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_option_dicts  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -136,6 +136,16 @@ class opts(param.ParameterizedFunction):
         with options_policy(skip_invalid=True, warn_on_skip=False):
             StoreOptions.apply_customizations(options, Store.options())
 
+
+    @classmethod
+    def defaults(cls, *options):
+        """
+        Set default options for a session, whether in a Python script or
+        a Jupyter notebook.
+        """
+        cls.linemagic(cls.expand_options(merge_options_to_dict(options)))
+
+
     @classmethod
     def expand_options(cls, options, backend=None):
         """
@@ -156,15 +166,7 @@ class opts(param.ParameterizedFunction):
             raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
         expanded = {}
         if isinstance(options, list):
-            merged_options = {}
-            for obj in options:
-                if isinstance(obj,dict):
-                    new_opts = obj
-                else:
-                    new_opts = {obj.key: obj.kwargs}
-
-                merged_options = merge_option_dicts(merged_options, new_opts)
-            options = merged_options
+            options = merge_options_to_dict(options)
 
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
