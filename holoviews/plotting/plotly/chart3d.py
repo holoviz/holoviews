@@ -3,7 +3,6 @@ import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
 from plotly import colors
 from plotly.tools import FigureFactory as FF
-from plotly.graph_objs import Scene, XAxis, YAxis, ZAxis
 
 try:
     from plotly.figure_factory._trisurf import trisurf as trisurface
@@ -50,8 +49,8 @@ class Chart3DPlot(ElementPlot):
         else:
             opts['aspectmode'] = 'manual'
             opts['aspectratio'] = self.aspect
-        scene = Scene(xaxis=XAxis(xaxis), yaxis=YAxis(yaxis),
-                      zaxis=ZAxis(zaxis), **opts)
+        scene = go.layout.Scene(xaxis=xaxis, yaxis=yaxis,
+                                zaxis=zaxis, **opts)
 
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),
