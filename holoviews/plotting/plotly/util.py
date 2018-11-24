@@ -1,6 +1,3 @@
-import plotly.graph_objs as go
-
-
 def add_figure(fig, subfig, r, c, idx):
     """
     Combines a figure with an existing figure created with
