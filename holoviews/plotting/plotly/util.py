@@ -12,7 +12,7 @@ def add_figure(fig, subfig, r, c, idx):
 
     fig['layout']['xaxis%s'%ref].update(layout.get('xaxis', {}))
     fig['layout']['yaxis%s'%ref].update(layout.get('yaxis', {}))
-    fig['layout']['annotations'].extend(layout.get('annotations', []))
+    fig['layout']['annotations'] += layout.get('annotations', ())
     for d in subfig['data']:
         fig.append_trace(d, r+1, c+1)
 
