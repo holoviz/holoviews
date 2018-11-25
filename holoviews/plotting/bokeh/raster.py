@@ -30,8 +30,8 @@ class RasterPlot(ColorbarPlot):
             vdims = element.vdims
             tooltips.append((vdims[0].pprint_label, '@image'))
             for vdim in vdims[1:]:
-                tooltips.append((vdim.pprint_label,
-                                '@{0}'.format(vdim.pprint_label)))
+                vname = dimension_sanitizer(vdim.name)
+                tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
         return tooltips, {}
 
     def __init__(self, *args, **kwargs):
@@ -47,41 +47,40 @@ class RasterPlot(ColorbarPlot):
         if self.static_source:
             return {}, mapping, style
 
+        if type(element) is Raster:
+            l, b, r, t = element.extents
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
+        else:
+            l, b, r, t = element.bounds.lbrt()
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
+
+        if self.invert_xaxis:
+            l, r = r, l
+        if self.invert_yaxis:
+            b, t = t, b
+        dh, dw = t-b, r-l
+        data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
+
         for i, vdim in enumerate(element.vdims, 2):
+            if i > 2 and 'hover' not in self.handles:
+                continue
             img = element.dimension_values(i, flat=False)
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
-
-            if type(element) is Raster:
-                l, b, r, t = element.extents
-                if self.invert_axes:
-                    l, b, r, t = b, l, t, r
-                else:
-                    img = img.T
-            else:
-                l, b, r, t = element.bounds.lbrt()
-                if self.invert_axes:
-                    img = img.T
-                    l, b, r, t = b, l, t, r
-
+            if 0 in img.shape:
+                img = np.array([[np.NaN]])
+            if ((self.invert_axes and not type(element) is Raster) or
+                (not self.invert_axes and type(element) is Raster)):
+                img = img.T
             if self.invert_xaxis:
-                l, r = r, l
                 img = img[:, ::-1]
             if self.invert_yaxis:
                 img = img[::-1]
-                b, t = t, b
-            dh, dw = t-b, r-l
-
-            if 0 in img.shape:
-                img = np.array([[np.NaN]])
-
-            if i == 2:
-                key = 'image'
-                data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
-            else:
-                key = vdim.pprint_label
-
+            key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
+
         return (data, mapping, style)
 
 
