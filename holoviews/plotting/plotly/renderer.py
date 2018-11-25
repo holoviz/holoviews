@@ -19,8 +19,9 @@ $.each(data.data, function(i, obj) {{
     plot.data[i][key] = obj[key];
   }});
 }});
-Plotly.relayout(plot, data.layout);
-Plotly.redraw(plot);
+var plotly = window._Plotly || window.Plotly;
+plotly.relayout(plot, data.layout);
+plotly.redraw(plot);
 """
 
 PLOTLY_WARNING = """
@@ -70,8 +71,7 @@ class PlotlyRenderer(Renderer):
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        diff = {'data': plot.state.get('data', []),
-                'layout': plot.state.get('layout', {})}
+        diff = plot.state.to_plotly_json()
         if serialize:
             return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
         else:
@@ -83,8 +83,8 @@ class PlotlyRenderer(Renderer):
         if divuuid is None:
             divuuid = plot.id
 
-        jdata = json.dumps(figure.get('data', []), cls=utils.PlotlyJSONEncoder)
-        jlayout = json.dumps(figure.get('layout', {}), cls=utils.PlotlyJSONEncoder)
+        jdata = json.dumps(figure.data, cls=utils.PlotlyJSONEncoder)
+        jlayout = json.dumps(figure.layout, cls=utils.PlotlyJSONEncoder)
 
         config = {}
         config['showLink'] = False
@@ -98,7 +98,8 @@ class PlotlyRenderer(Renderer):
                       '</script>')
 
         script = '\n'.join([
-            'Plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
+            'var plotly = window._Plotly || window.Plotly;'
+            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
             '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
             '}})']).format(id=divuuid,
                            data=jdata,

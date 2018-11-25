@@ -32,8 +32,9 @@ var PlotlyMethods = {
         plot.data[i][key] = data.data[i][key];
       }
     }
-    Plotly.relayout(plot, data.layout);
-    Plotly.redraw(plot);
+    var plotly = window._Plotly || window.Plotly;
+    plotly.relayout(plot, data.layout);
+    plotly.redraw(plot);
   }
 }
 

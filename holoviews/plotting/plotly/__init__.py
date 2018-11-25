@@ -10,6 +10,14 @@ from .chart3d import *               # noqa (API import)
 from .raster import *                # noqa (API import)
 from .plot import *                  # noqa (API import)
 from .tabular import *               # noqa (API import)
+from ...core.util import LooseVersion, VersionError
+import plotly
+
+if LooseVersion(plotly.__version__) < '3.4.0':
+    raise VersionError(
+        "The plotly extension requires a plotly version >=3.4.0, "
+        "please upgrade from plotly %s to a more recent version."
+        % plotly.__version__, plotly.__version__, '3.4.0')
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 
