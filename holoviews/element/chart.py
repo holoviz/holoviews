@@ -5,32 +5,43 @@ import param
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
+from .geom import Points, VectorField # noqa: backward compatible import
 
 
 class Chart(Dataset, Element2D):
     """
-    The data held within Chart is a numpy array of shape (N, D),
-    where N is the number of samples and D the number of dimensions.
-    Chart Elements are sliceable along up to two key dimensions.
-    The data may be supplied in one of three formats:
+    A Chart is an abstract baseclass for elements representing one or
+    more independent and dependent variables defining a 1D coordinate
+    system with associated values. The independent variables or key
+    dimensions map onto the x-axis while the dependent variables are
+    usually mapped to the location, height or spread along the
+    y-axis. Any number of additional value dimensions may be
+    associated with a Chart.
 
-    1) As a numpy array of shape (N, D).
-    2) As a list of length N containing tuples of length D.
-    3) As a tuple of length D containing iterables of length N.
+    If a chart's independent variable (or key dimension) is numeric
+    the chart will represent a discretely sampled version of the
+    underlying continuously sampled 1D space. Therefore indexing along
+    this variable will automatically snap to the closest coordinate.
+
+    Since a Chart is a subclass of a Dataset it supports the full set
+    of data interfaces but usually each dimension of a chart represents
+    a column stored in a dictionary, array or DataFrame.
     """
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
-        The key dimensions of the Chart, determining the number of
-        indexable dimensions.""")
+        The key dimension(s) of a Chart represent the independent
+        variable(s).""")
 
     group = param.String(default='Chart', constant=True)
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1,None), doc="""
+    vdims = param.List(default=[Dimension('y')], bounds=(1, None), doc="""
         The value dimensions of the Chart, usually corresponding to a
         number of dependent variables.""")
 
     # Enables adding index if 1D array like data is supplied
     _auto_indexable_1d = True
+
+    __abstract = True
 
     def __getitem__(self, index):
         sliced = super(Chart, self).__getitem__(index)
@@ -52,18 +63,22 @@ class Chart(Dataset, Element2D):
 
 class Scatter(Chart):
     """
-    Scatter is a Element2D type which gets displayed as a number of
-    disconnected points.
+    Scatter is a Chart element representing a set of points in a 1D
+    coordinate system where the key dimension maps to the points
+    location along the x-axis while the first value dimension
+    represents the location of the point along the y-axis.
     """
-
+    
     group = param.String(default='Scatter', constant=True)
 
 
 
 class Curve(Chart):
     """
-    Curve is a simple Chart Element providing 1D indexing along
-    the x-axis.
+    Curve is a Chart element representing a line in a 1D coordinate
+    system where the key dimension maps on the line x-coordinate and
+    the first value dimension represents the height of the line along
+    the y-axis.
     """
 
     group = param.String(default='Curve', constant=True)
@@ -72,26 +87,35 @@ class Curve(Chart):
 
 class ErrorBars(Chart):
     """
-    ErrorBars is a Chart Element type representing any number of
-    errorbars situated in a 2D space. The errors must be supplied
-    as an Nx3 or Nx4 array representing the x/y-positions and
-    either the symmetric error or asymmetric errors respectively.
+    ErrorBars is a Chart element representing error bars in a 1D
+    coordinate system where the key dimension corresponds to the
+    location along the x-axis and the value dimensions define the
+    location along the y-axis and the symmetric or assymetric spread.
     """
-
     group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantity measured by the ErrorBars
         object.""")
-
-    kdims = param.List(default=[Dimension('x')],
-                       bounds=(1, 2), constant=True, doc="""
-        The Dimensions corresponding to the x- and y-positions of
-        the error bars.""")
 
     vdims = param.List(default=[Dimension('y'), Dimension('yerror')],
                        bounds=(1, None), constant=True)
 
 
     def range(self, dim, data_range=True, dimension_range=True):
+        """Return the lower and upper bounds of values along dimension.
+
+        Range of the y-dimension includes the symmetric or assymetric
+        error.
+
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
+        """
         didx = self.get_dimension_index(dim)
         dim = self.get_dimension(dim)
         if didx == 1 and data_range and len(self):
@@ -112,13 +136,11 @@ class ErrorBars(Chart):
 
 class Spread(ErrorBars):
     """
-    Spread is a Chart Element type representing a spread of
-    values as given by a mean and standard error or confidence
-    intervals. Just like the ErrorBars Element type, mean and
-    deviations from the mean should be supplied as either an
-    Nx3 or Nx4 array representing the x-values, mean values
-    and symmetric or asymmetric errors respective. Internally
-    the data is always expanded to an Nx4 array.
+    Spread is a Chart element representing a spread of values or
+    confidence band in a 1D coordinate system. The key dimension(s)
+    corresponds to the location along the x-axis and the value
+    dimensions define the location along the y-axis as well as the
+    symmetric or assymetric spread.
     """
 
     group = param.String(default='Spread', constant=True)
@@ -127,24 +149,26 @@ class Spread(ErrorBars):
 
 class Bars(Chart):
     """
-    Bars is an Element type, representing a number of stacked and
-    grouped bars, depending the dimensionality of the key and value
-    dimensions. Bars is useful for categorical data, which may be
-    laid via groups, categories and stacks.
+    Bars is a Chart element representing categorical observations
+    using the height of rectangular bars. The key dimensions represent
+    the categorical groupings of the data, but may also be used to
+    stack the bars, while the first value dimension represents the
+    height of each bar.
     """
 
     group = param.String(default='Bars', constant=True)
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1, None))
-
 
 
 class Histogram(Chart):
     """
-    Histogram contains a number of bins, which are defined by the
-    upper and lower bounds of their edges and the computed bin values.
+    Histogram is a Chart element representing a number of bins in a 1D
+    coordinate system. The key dimension represents the binned values,
+    which may be declared as bin edges or bin centers, while the value
+    dimensions usually defines a count, frequency or density associated
+    with each bin.
     """
 
     datatype = param.List(default=['grid'])
@@ -186,102 +210,30 @@ class Histogram(Chart):
     @property
     def values(self):
         "Property to access the Histogram values provided for backward compatibility"
+        if util.config.future_deprecations:
+            self.warning('Histogram.values is deprecated in favor of '
+                         'common dimension_values method.')
         return self.dimension_values(1)
 
 
     @property
     def edges(self):
         "Property to access the Histogram edges provided for backward compatibility"
+        if util.config.future_deprecations:
+            self.warning('Histogram.edges is deprecated in favor of '
+                         'common dimension_values method.')
         return self.interface.coords(self, self.kdims[0], edges=True)
-
-
-class Points(Chart):
-    """
-    Allows sets of points to be positioned over a sheet coordinate
-    system. Each points may optionally be associated with a chosen
-    numeric value.
-
-    The input data can be a Nx2 or Nx3 Numpy array where the first two
-    columns corresponds to the X,Y coordinates in sheet coordinates,
-    within the declared bounding region. For Nx3 arrays, the third
-    column corresponds to the magnitude values of the points. Any
-    additional columns will be ignored (use VectorFields instead).
-
-    The input data may be also be passed as a tuple of elements that
-    may be numpy arrays or values that can be cast to arrays. When
-    such a tuple is supplied, the elements are joined column-wise into
-    a single array, allowing the magnitudes to be easily supplied
-    separately.
-
-    Note that if magnitudes are to be rendered correctly by default,
-    they should lie in the range [0,1].
-    """
-
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2, 2), constant=True, doc="""
-        The label of the x- and y-dimension of the Points in form
-        of a string or dimension object.""")
-
-    group = param.String(default='Points', constant=True)
-
-    vdims = param.List(default=[])
-
-    _min_dims = 2                      # Minimum number of columns
-
-
-
-class VectorField(Points):
-    """
-    A VectorField contains is a collection of vectors where each
-    vector has an associated position in sheet coordinates.
-
-    The constructor of VectorField is similar to the constructor of
-    Points: the input data can be an NxM Numpy array where the first
-    two columns corresponds to the X,Y coordinates in sheet
-    coordinates, within the declared bounding region. As with Points,
-    the input can be a tuple of array objects or of objects that can
-    be cast to arrays (the tuple elements are joined column-wise).
-
-    The third column maps to the vector angle which must be specified
-    in radians. Note that it is possible to supply a collection which
-    isn't a numpy array, whereby each element of the collection is
-    assumed to be an iterable corresponding to a single column of the
-    NxM array.
-
-    The visualization of any additional columns is decided by the
-    plotting code. For instance, the fourth and fifth columns could
-    correspond to arrow length and colour map value. All that is
-    assumed is that these additional dimension are normalized between
-    0.0 and 1.0 for the default visualization to work well.
-
-    The only restriction is that the final data array is NxM where
-    M>3. In other words, the vector must have a dimensionality of 2 or
-    higher.
-    """
-
-    group = param.String(default='VectorField', constant=True)
-
-    vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
-                                Dimension('Magnitude')], bounds=(1, None))
-
-    _null_value = np.array([[], [], [], []]).T # For when data is None
-    _min_dims = 3                              # Minimum number of columns
-
-    def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, list) and data and all(isinstance(d, np.ndarray) for d in data):
-            data = np.column_stack([d.flat if d.ndim > 1 else d for d in data])
-        super(VectorField, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-
 
 
 class Spikes(Chart):
     """
-    Spikes is a 1D or 2D Element, which represents a series of
-    vertical or horizontal lines distributed along some dimension. If
-    an additional dimension is supplied it will be used to specify the
-    height of the lines. The Element may therefore be used to
-    represent 1D distributions, spectrograms or spike trains in
-    electrophysiology.
+    Spikes is a Chart element which represents a number of discrete
+    spikes, events or observations in a 1D coordinate system. The key
+    dimension therefore represents the position of each spike along
+    the x-axis while the first value dimension, if defined, controls
+    the height along the y-axis. It may therefore be used to visualize
+    the distribution of discrete events, representing a rug plot, or
+    to draw the strength some signal.
     """
 
     group = param.String(default='Spikes', constant=True)
@@ -295,13 +247,14 @@ class Spikes(Chart):
 
 class Area(Curve):
     """
-    An Area Element represents the area under a Curve
-    and is specified in the same format as a regular
-    Curve, with the key dimension corresponding to a
-    column of x-values and the value dimension
-    corresponding to a column of y-values. Optionally
-    a second value dimension may be supplied to shade
-    the region between the curves.
+    Area is a Chart element representing the area under a curve or
+    between two curves in a 1D coordinate system. The key dimension
+    represents the location of each coordinate along the x-axis, while
+    the value dimension(s) represent the height of the area or the
+    lower and upper bounds of the area between curves.
+
+    Multiple areas may be stacked by overlaying them an passing them
+    to the stack method.
     """
 
     group = param.String(default='Area', constant=True)
@@ -324,20 +277,3 @@ class Area(Curve):
                                     new_type=Area)
             baseline = baseline + y
         return stacked
-
-
-class BoxWhisker(Chart):
-    """
-    BoxWhisker represent data as a distributions highlighting the
-    median, mean and various percentiles. It may have a single value
-    dimension and any number of key dimensions declaring the grouping
-    of each violin.
-    """
-
-    group = param.String(default='BoxWhisker', constant=True)
-
-    kdims = param.List(default=[], bounds=(0,None))
-
-    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
-
-    _auto_indexable_1d = False

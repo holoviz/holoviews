@@ -267,7 +267,7 @@ class Overlay(ViewableTree, CompositeOverlay):
     def shape(self):
         raise NotImplementedError
 
-    ## Deprecated methods
+    # Deprecated methods
 
     def collapse(self, function):
         "Deprecated method to collapse layers in the Overlay."

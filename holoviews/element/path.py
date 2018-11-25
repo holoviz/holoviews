@@ -1,14 +1,8 @@
 """
-A Path element is a way of drawing arbitrary shapes that can be
-overlayed on top of other elements.
-
-Subclasses of Path are designed to generate certain common shapes
-quickly and conveniently. For instance, the Box path is often useful
-for marking areas of a raster image.
-
-Contours is also a subclass of Path but in addition to simply
-displaying some information, there is a numeric value associated with
-each collection of paths.
+The path module provides a set of elements to draw paths and polygon
+geometries in 2D space. In addition to three general elements are
+Path, Contours and Polygons, it defines a number of elements to
+quickly draw common shapes.
 """
 
 import numpy as np
@@ -18,9 +12,10 @@ from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
 from ..core.util import config, disable_constant
+from .geom import Geometry
 
 
-class Path(Dataset, Element2D):
+class Path(Geometry):
     """
     The Path element represents a collection of path geometries with
     associated values. Each path geometry may be split into
@@ -52,11 +47,6 @@ class Path(Dataset, Element2D):
     representation where all paths are separated by NaN values.
     """
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       constant=True, bounds=(2, 2), doc="""
-        The label of the x- and y-dimension of the Image in form
-        of a string or dimension object.""")
-
     group = param.String(default="Path", constant=True)
 
     datatype = param.ObjectSelector(default=['multitabular'])
@@ -72,18 +62,6 @@ class Path(Dataset, Element2D):
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
             data = [p for path in data for p in path.data]
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Path types without an interface
-        use the MultiInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if 'interface' not in state:
-            self.interface = MultiInterface
-        super(Dataset, self).__setstate__(state)
 
 
     def __getitem__(self, key):
@@ -107,18 +85,6 @@ class Path(Dataset, Element2D):
         return super(Element2D, self).select(selection_specs, **kwargs)
 
 
-    @classmethod
-    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
-        if config.future_deprecations:
-            param.main.warning('Path.collapse_data is deprecated, collapsing '
-                               'may now be performed through concatenation '
-                               'and aggregation.')
-        if function is None:
-            return [path for paths in data_list for path in paths]
-        else:
-            raise Exception("Path types are not uniformly sampled and"
-                            "therefore cannot be collapsed with a function.")
-
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """
         The split method allows splitting a Path type into a list of
@@ -138,6 +104,34 @@ class Path(Dataset, Element2D):
                 raise ValueError("%s datatype not support" % datatype)
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
+
+    # Deprecated methods
+
+    @classmethod
+    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
+        if config.future_deprecations:
+            param.main.warning('Path.collapse_data is deprecated, collapsing '
+                               'may now be performed through concatenation '
+                               'and aggregation.')
+        if function is None:
+            return [path for paths in data_list for path in paths]
+        else:
+            raise Exception("Path types are not uniformly sampled and"
+                            "therefore cannot be collapsed with a function.")
+
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style unpickled Path types without an interface
+        use the MultiInterface.
+
+        Note: Deprecate as part of 2.0
+        """
+        self.__dict__ = state
+        if 'interface' not in state:
+            self.interface = MultiInterface
+        super(Dataset, self).__setstate__(state)
+
 
 
 class Contours(Path):
@@ -447,8 +441,8 @@ class Bounds(BaseShape):
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
 
-
     __pos_params = ['lbrt']
+
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)

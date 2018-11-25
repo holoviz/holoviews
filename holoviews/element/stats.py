@@ -5,15 +5,15 @@ from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
 from ..core.util import get_param_values, OrderedDict
-from .chart import Chart, BoxWhisker
+from .chart import Chart
 
 
 class StatisticsElement(Chart):
     """
     StatisticsElement provides a baseclass for Element types that
-    compute statistics based on the input data. The baseclass
-    overrides standard Dataset methods emulating the existence
-    of the value dimensions.
+    compute statistics based on the input data, usually a density.
+    The value dimension of such elements are therefore usually virtual
+    and not computed until the element is plotted.
     """
 
     __abstract = True
@@ -38,14 +38,37 @@ class StatisticsElement(Chart):
 
 
     def range(self, dim, data_range=True, dimension_range=True):
+        """Return the lower and upper bounds of values along dimension.
+
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
+        """
         iskdim = self.get_dimension(dim) not in self.vdims
         return super(StatisticsElement, self).range(dim, iskdim, dimension_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """
-        Returns the values along a particular dimension. If unique
-        values are requested will return only unique values.
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dim, strict=True)
         if dim in self.vdims:
@@ -54,10 +77,16 @@ class StatisticsElement(Chart):
 
 
     def get_dimension_type(self, dim):
-        """
-        Returns the specified Dimension type if specified or
-        if the dimension_values types are consistent otherwise
-        None is returned.
+        """Get the type of the requested dimension.
+
+        Type is determined by Dimension.type attribute or common
+        type of the dimension values, otherwise None.
+
+        Args:
+            dimension: Dimension to look up by name or by index
+
+        Returns:
+            Declared type of values along the dimension
         """
         dim = self.get_dimension(dim)
         if dim is None:
@@ -70,19 +99,16 @@ class StatisticsElement(Chart):
 
 
     def dframe(self, dimensions=None, multi_index=False):
-        """
-        Returns a pandas dataframe of columns along each dimension.
+        """Convert dimension values to DataFrame.
 
-        Arguments
-        ---------
-        dimensions: list (optional)
-            List of dimensions to return (defaults to all dimensions)
-        multi_index: boolean (optional, default=False)
-            Whether to treat key dimensions as (multi-)indexes
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
 
-        Returns
-        -------
-        dataframe: pandas.DataFrame
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
             DataFrame of columns corresponding to each dimension
         """
         if dimensions:
@@ -99,18 +125,15 @@ class StatisticsElement(Chart):
 
 
     def columns(self, dimensions=None):
-        """
+        """Convert dimension values to a dictionary.
+
         Returns a dictionary of column arrays along each dimension
         of the element.
 
-        Arguments
-        ---------
-        dimensions: list (optional)
-            List of dimensions to return (defaults to all dimensions)
+        Args:
+            dimensions: Dimensions to return as columns
 
-        Returns
-        -------
-        columns: OrderedDict
+        Returns:
             Dictionary of arrays for each dimension
         """
         if dimensions is None:
@@ -129,9 +152,9 @@ class StatisticsElement(Chart):
 
 class Bivariate(StatisticsElement):
     """
-    Bivariate elements are containers for two dimensional data,
-    which is to be visualized as a kernel density estimate. The
-    data should be supplied in a tabular format of x- and y-columns.
+    Bivariate elements are containers for two dimensional data, which
+    is to be visualized as a kernel density estimate. The data should
+    be supplied in a tabular format of x- and y-columns.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -158,6 +181,23 @@ class Distribution(StatisticsElement):
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
 
+class BoxWhisker(Chart):
+    """
+    BoxWhisker represent data as a distributions highlighting the
+    median, mean and various percentiles. It may have a single value
+    dimension and any number of key dimensions declaring the grouping
+    of each violin.
+    """
+
+    group = param.String(default='BoxWhisker', constant=True)
+
+    kdims = param.List(default=[], bounds=(0,None))
+
+    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+
+    _auto_indexable_1d = False
+
+
 class Violin(BoxWhisker):
     """
     Violin elements represent data as 1D distributions visualized
@@ -182,4 +222,6 @@ class HexTiles(Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
+
+
 
