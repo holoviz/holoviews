@@ -448,8 +448,9 @@ class Dimension(param.Parameterized):
 
 
     def __call__(self, spec=None, **overrides):
-        self.warning('Dimension.__call__ method has been deprecated, '
-                     'use the clone method instead.')
+        if util.config.future_deprecations:
+            self.warning('Dimension.__call__ method has been deprecated, '
+                         'use the clone method instead.')
         return self.clone(spec=spec, **overrides)
 
 
