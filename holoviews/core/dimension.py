@@ -1388,7 +1388,7 @@ class Dimensioned(LabelledData):
         return obj
 
 
-    def options(self, *args, backend=None, clone=True, **kwargs):
+    def options(self, *args, **kwargs):
         """Applies simplified option definition
 
         Applies options on an object or nested group of objects in a
