@@ -188,12 +188,12 @@ class AdjointLayout(Dimensioned):
         Returns the viewable corresponding to the supplied string
         or integer based key.
 
-        Arguments
-        ---------
-        key: str or int
-            Numeric or string index: 0) 'main', 1) 'right', 2) 'top'
-        default: object (optional, default=None)
-            Value returned if key not found in data
+        Args:
+            key: Numeric or string index: 0) 'main' 1) 'right' 2) 'top'
+            default: Value returned if key not found
+
+        Returns:
+            Indexed value or supplied default
         """
         return self.data[key] if key in self.data else default
 

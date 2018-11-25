@@ -328,7 +328,8 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def collate(self, merge_type=None, drop=[], drop_constant=False):
-        """
+        """Collate allows reordering nested containers
+
         Collation allows collapsing nested mapping types by merging
         their dimensions. In simple terms in merges nested containers
         into a single merged type.
@@ -343,16 +344,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         type.
 
         Args:
-        merge_type: UniformNdMapping (optional)
-           Type of the object to merge dimensions with, defaults to
-           current element type.
-        drop: list
-            List of dimensions to drop
-        drop_constant: bool (optional, default=False)
-            Whether to drop constant dimensions automatically
+            merge_type: Type of the object to merge with
+            drop: List of dimensions to drop
+            drop_constant: Drop constant dimensions automatically
 
         Returns:
-        collated: Layout or UniformNdMapping
             Collated Layout or HoloMap
         """
         from .element import Collator
