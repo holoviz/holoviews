@@ -269,7 +269,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 figure = fig
             else:
                 figure.add_traces(fig.data)
-        print(type(self), self.projection)
+
         layout = self.init_layout(key, element, ranges)
         figure['layout'].update(layout)
         self.handles['fig'] = figure
