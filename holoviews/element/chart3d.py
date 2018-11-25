@@ -1,7 +1,7 @@
 import param
 
 from ..core import Dimension, Element3D
-from .chart import Chart, Points
+from .geom import Points
 from .raster import Image
 
 
@@ -59,7 +59,7 @@ class TriSurface(Element3D, Points):
         information about each 3D coordinate.""")
 
     def __getitem__(self, slc):
-        return Chart.__getitem__(self, slc)
+        return Points.__getitem__(self, slc)
 
 
 class Trisurface(TriSurface):
@@ -94,4 +94,4 @@ class Scatter3D(Element3D, Points):
     group = param.String(default='Scatter3D', constant=True)
 
     def __getitem__(self, slc):
-        return Chart.__getitem__(self, slc)
+        return Points.__getitem__(self, slc)

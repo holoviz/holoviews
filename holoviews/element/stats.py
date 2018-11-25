@@ -5,10 +5,9 @@ from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
 from ..core.util import get_param_values, OrderedDict
-from .chart import Chart
 
 
-class StatisticsElement(Chart):
+class StatisticsElement(Dataset, Element2D):
     """
     StatisticsElement provides a baseclass for Element types that
     compute statistics based on the input data, usually a density.
@@ -181,7 +180,7 @@ class Distribution(StatisticsElement):
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
 
-class BoxWhisker(Chart):
+class BoxWhisker(Dataset, Element2D):
     """
     BoxWhisker represent data as a distributions highlighting the
     median, mean and various percentiles. It may have a single value
@@ -194,8 +193,6 @@ class BoxWhisker(Chart):
     kdims = param.List(default=[], bounds=(0,None))
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
-
-    _auto_indexable_1d = False
 
 
 class Violin(BoxWhisker):
@@ -222,6 +219,4 @@ class HexTiles(Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
-
-
 

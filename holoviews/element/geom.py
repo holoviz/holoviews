@@ -34,6 +34,8 @@ class Points(Geometry):
 
     group = param.String(default='Points', constant=True)
 
+    _auto_indexable_1d = True
+
 
 class VectorField(Geometry):
     """

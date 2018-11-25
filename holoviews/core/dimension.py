@@ -1507,8 +1507,8 @@ class ViewableTree(AttrTree, Dimensioned):
     def from_values(cls, vals):
         "Deprecated method to construct tree from list of objects"
         if util.config.future_deprecations:
-            self.warning("%s.from_values is deprecated, the %s "
-                         "may now be used directly.")
+            param.main.warning("%s.from_values is deprecated, the %s "
+                               "constructor may now be used directly.")
         return cls(items=cls._process_items(vals))
 
 
