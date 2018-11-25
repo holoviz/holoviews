@@ -24,6 +24,7 @@ class Overlayable(object):
     """
 
     def __mul__(self, other):
+        "Overlay object with other object."
         if type(other).__name__ == 'DynamicMap':
             from .spaces import Callable
             def dynamic_mul(*args, **kwargs):
@@ -39,7 +40,7 @@ class Overlayable(object):
         elif isinstance(other, AdjointLayout):
             return NotImplemented
 
-        return Overlay.from_values([self, other])
+        return Overlay([self, other])
 
 
 
@@ -52,30 +53,21 @@ class CompositeOverlay(ViewableElement, Composable):
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, index=0, **kwargs):
-        """
-        Computes a histogram of the data along the specified dimension
-        (defaulting to the first value dimension) and adjoins the
-        histogram to the plot. Uses first item in the overlay by default.
+        """Computes and adjoins histogram along specified dimension(s).
+        
+        Defaults to first value dimension if present otherwise falls
+        back to first key dimension.
 
-        Arguments
-        ---------
-        dimension: Dimension/str or list (optional)
-            Dimension(s) to compute histogram on, defaults to first
-            value dimension
-        num_bins: int (optional, default=20)
-            Number of bins of the Histogram
-        bin_range: tuple (optional)
-            Explicit lower and upper range to bin on, defaults to full
-            range along the dimension
-        adjoin: bool (optional, default=True)
-            Whether to return adjoined histogram
-        index: int (optional, default=0)
-            The index of the overlay layer to compute the histogram on
+        Args:
+            dimension: Dimension(s) to compute histogram on
+            num_bins (int, optional): Number of bins
+            bin_range (tuple optional): Lower and upper bounds of bins
+            adjoin (bool, optional): Whether to adjoin histogram
+            index (int, optional): Index of layer to apply hist to
 
-        Returns
-        -------
-        hist: Histogram or AdjointLayout
-            AdjointLayout or just a Histogram if adjoin=False
+        Returns:
+            AdjointLayout of element and histogram or just the
+            histogram
         """
         valid_ind = isinstance(index, int) and (0 <= index < len(self))
         valid_label = index in [el.label for el in self]
@@ -102,25 +94,19 @@ class CompositeOverlay(ViewableElement, Composable):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """
-        Returns the values along a particular dimension.
+        """Return the values along the requested dimension.
 
-        Arguments
-        ---------
-        dimension: Dimension, str or int
-            The dimension to query values on
-        expanded: boolean (optional, default=True)
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-              - Columnar: If false returns unique values
-              - Geometry: If false returns scalar values per geometry
-              - Gridded: If false returns 1D coordinates
-        flat: boolean (optional, default=True)
-            Whether the array should be flattened to a 1D array
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
 
-        Returns
-        -------
-        array: numpy.ndarray
+        Returns:
             NumPy array of values along the requested dimension
         """
         values = []
@@ -196,10 +182,12 @@ class Overlay(ViewableTree, CompositeOverlay):
 
 
     def __add__(self, other):
-        return Layout.from_values([self, other])
+        "Composes Overlay with other object into a Layout"
+        return Layout([self, other])
 
 
     def __mul__(self, other):
+        "Adds layer(s) from other object to Overlay"
         if type(other).__name__ == 'DynamicMap':
             from .spaces import Callable
             def dynamic_mul(*args, **kwargs):
@@ -211,7 +199,7 @@ class Overlay(ViewableTree, CompositeOverlay):
                                streams=[])
         elif not isinstance(other, ViewableElement):
             raise NotImplementedError
-        return Overlay.from_values([self, other])
+        return Overlay([self, other])
 
 
     def collate(self):
@@ -220,25 +208,6 @@ class Overlay(ViewableTree, CompositeOverlay):
         the recommended nesting structure.
         """
         return reduce(lambda x,y: x*y, self.values())
-
-
-    def collapse(self, function):
-        """
-        Deprecated method to collapse layers in the Overlay.
-        """
-        if config.future_deprecations:
-            self.warning('Overlay.collapse has been deprecated, to'
-                         'collapse multiple elements use a HoloMap.')
-
-        elements = list(self)
-        types = [type(el) for el in elements]
-        values = [el.group for el in elements]
-        if not len(set(types)) == 1 and len(set(values)) == 1:
-            raise Exception("Overlay is not homogeneous in type or group "
-                            "and cannot be collapsed.")
-        else:
-            return elements[0].clone(types[0].collapse_data([el.data for el in elements],
-                                                            function, self.kdims))
 
     @property
     def group(self):
@@ -297,6 +266,25 @@ class Overlay(ViewableTree, CompositeOverlay):
     @property
     def shape(self):
         raise NotImplementedError
+
+    ## Deprecated methods
+
+    def collapse(self, function):
+        "Deprecated method to collapse layers in the Overlay."
+        if config.future_deprecations:
+            self.warning('Overlay.collapse has been deprecated, to'
+                         'collapse multiple elements use a HoloMap.')
+
+        elements = list(self)
+        types = [type(el) for el in elements]
+        values = [el.group for el in elements]
+        if not len(set(types)) == 1 and len(set(values)) == 1:
+            raise Exception("Overlay is not homogeneous in type or group "
+                            "and cannot be collapsed.")
+        else:
+            return elements[0].clone(types[0].collapse_data([el.data for el in elements],
+                                                            function, self.kdims))
+
 
 
 

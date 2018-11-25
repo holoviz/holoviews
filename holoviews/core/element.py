@@ -14,10 +14,12 @@ from .util import config, get_param_values
 
 class Element(ViewableElement, Composable, Overlayable):
     """
-    Element is the baseclass for all ViewableElement types, with an x- and
-    y-dimension. Subclasses should define the data storage in the
-    constructor, as well as methods and properties, which define how
-    the data maps onto the x- and y- and value dimensions.
+    Element is the atomic datastructure used to wrap some data with
+    an associated visual representation, e.g. an element may
+    represent a set of points, an image or a curve. Elements provide
+    a common API for interacting with data of different types and
+    define how the data map to a set of dimensions and how those
+    map to the visual representation.
     """
 
     group = param.String(default='Element', constant=True)
@@ -26,28 +28,20 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
-        """
-        Computes a histogram of the data along the specified dimension
-        (defaulting to the first value dimension) and adjoins the
-        histogram to the plot.
+        """Computes and adjoins histogram along specified dimension(s).
+        
+        Defaults to first value dimension if present otherwise falls
+        back to first key dimension.
 
-        Arguments
-        ---------
-        dimension: Dimension/str or list (optional)
-            Dimension(s) to compute histogram on, defaults to first
-            value dimension
-        num_bins: int (optional, default=20)
-            Number of bins of the Histogram
-        bin_range: tuple (optional)
-            Explicit lower and upper range to bin on, defaults to full
-            range along the dimension
-        adjoin: bool (optional, default=True)
-            Whether to return adjoined histogram
+        Args:
+            dimension: Dimension(s) to compute histogram on
+            num_bins (int, optional): Number of bins
+            bin_range (tuple optional): Lower and upper bounds of bins
+            adjoin (bool, optional): Whether to adjoin histogram
 
-        Returns
-        -------
-        hist: Histogram or AdjointLayout
-            AdjointLayout or just a Histogram if adjoin=False
+        Returns:
+            AdjointLayout of element and histogram or just the
+            histogram
         """
         from ..operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]
@@ -79,25 +73,21 @@ class Element(ViewableElement, Composable, Overlayable):
                                       type(self).__name__)
 
     def __nonzero__(self):
-        """
-        Subclasses may override this to signal that the Element contains
-        no data and can safely be dropped during indexing.
+        """Indicates whether the element is empty.
+
+        Subclasses may override this to signal that the Element
+        contains no data and can safely be dropped during indexing.
         """
         return True
 
 
     def __contains__(self, dimension):
-        """
-        Allows checking whether a Dimension is in the Elements key or
-        value dimensions.
-        """
+        "Whether element contains the Dimension" 
         return dimension in self.dimensions()
 
 
     def __iter__(self):
-        """
-        Disable iterator interface.
-        """
+        "Disable iterator interface."
         raise NotImplementedError('Iteration on Elements is not supported.')
 
 
@@ -113,99 +103,84 @@ class Element(ViewableElement, Composable, Overlayable):
         raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
 
 
-    def closest(self, coords):
-        """
-        Given a single coordinate or multiple coordinates as
-        a tuple or list of tuples or keyword arguments matching
-        the dimension closest will find the closest actual x/y
-        coordinates. Different Element types should implement this
-        appropriately depending on the space they represent, if the
-        Element does not support snapping raise NotImplementedError.
+    def closest(self, coords, **kwargs):
+        """Snap list or dict of coordinates to closest position.
+ 
+        Args:
+            coords: List of 1D or 2D coordinates
+            **kwargs: Coordinates specified as keyword pairs
 
-        Arguments
-        ---------
-        coords: list (optional)
-            List of nd-coordinates
-        **kwargs: dictionary
-            Coordinates specified as keyword pairs of dimension and
-            coordinate
-
-        Returns
-        -------
-        closest: list
+        Returns:
             List of tuples of the snapped coordinates
 
-        Raises
-        ------
-        NotImplementedError:
-            Raised if the element does not implement snapping
+        Raises:
+            NotImplementedError: Raised if snapping is not supported
         """
         raise NotImplementedError
 
 
-    def sample(self, samples=[], **sample_values):
-        """
-        Allows sampling of Dataset as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Supports two signatures:
+    def sample(self, samples=[], bounds=None, closest=False, **sample_values):
+        """Samples values at supplied coordinates.
+
+        Allows sampling of element with a list of coordinates matching
+        the key dimensions, returning a new object containing just the
+        selected samples. Supports multiple signatures:
 
         Sampling with a list of coordinates, e.g.:
 
             ds.sample([(0, 0), (0.1, 0.2), ...])
 
+        Sampling a range or grid of coordinates, e.g.:
+
+            1D: ds.sample(3)
+            2D: ds.sample((3, 3))
+
         Sampling by keyword, e.g.:
 
             ds.sample(x=0)
 
-        Arguments
-        ---------
-        samples: list (optional)
-            List of nd-coordinates to sample
-        closest: bool (optional, default=True)
-            Whether to snap to the closest coordinate (if the Element supports it)
-        **kwargs: dict (optional)
-            Keywords of dimensions and scalar coordinates
+        Args:
+            samples: List of nd-coordinates to sample
+            bounds: Bounds of the region to sample
+                Defined as two-tuple for 1D sampling and four-tuple
+                for 2D sampling.
+            closest: Whether to snap to closest coordinates
+            **kwargs: Coordinates specified as keyword pairs
+                Keywords of dimensions and scalar coordinates
 
-        Returns
-        -------
-        sampled: Element
+        Returns:
             Element containing the sampled coordinates
         """
         raise NotImplementedError
 
 
-    def reduce(self, dimensions=[], function=None, **reduce_map):
-        """
-        Allows reducing the values along one or more key dimension with
-        the supplied function (reciprocal operation to aggregate).
-        Supports two signatures:
+    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduction):
+        """Applies reduction along the specified dimension(s).
 
-        Reducing with a list of coordinates, e.g.:
+        Allows reducing the values along one or more key dimension
+        with the supplied function. Supports two signatures:
+
+        Reducing with a list of dimensions, e.g.:
 
             ds.reduce(['x'], np.mean)
 
-        Sampling by keyword, e.g.:
+        Defining a reduction using keywords, e.g.:
 
             ds.reduce(x=np.mean)
 
-        Arguments
-        ---------
-        dimensions: Dimension/str or list (optional)
-            Dimension or list of dimensions to aggregate on, defaults
-            to all current key dimensions
-        function: function (optional)
-            Function to compute aggregate with, e.g. numpy.mean
-        spreadfn: function (optional)
-            Function to compute a secondary aggregate, e.g. to compute
-            a confidence interval, spread, or standard deviation
-        **reductions:
-            Reductions specified as keyword pairs of the dimension name
-            and reduction function, e.g. Dataset.reduce(x=np.mean)
+        Args:
+            dimensions: Dimension(s) to apply reduction on
+                Defaults to all key dimensions
+            function: Reduction operation to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **reductions: Keyword argument defining reduction
+                Allows reduction to be defined as keyword pair of
+                dimension and function
 
-        Returns
-        -------
-        reduced: Dataset
-            Returns the reduced Dataset
+        Returns:
+            The element after reductions have been applied.
         """
         raise NotImplementedError
 
@@ -230,19 +205,16 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def dframe(self, dimensions=None, multi_index=False):
-        """
-        Returns a pandas dataframe of columns along each dimension.
+        """Convert dimension values to DataFrame.
 
-        Arguments
-        ---------
-        dimensions: list (optional)
-            List of dimensions to return (defaults to all dimensions)
-        multi_index: boolean (optional, default=False)
-            Whether to treat key dimensions as (multi-)indexes
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
 
-        Returns
-        -------
-        dataframe: pandas.DataFrame
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
             DataFrame of columns corresponding to each dimension
         """
         import pandas as pd
@@ -259,17 +231,12 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def array(self, dimensions=None):
-        """
-        Returns an array of columns along each dimension.
+        """Convert dimension values to columnar array.
 
-        Arguments
-        ---------
-        dimensions: list (optional)
-            List of dimensions to return (defaults to all dimensions)
+        Args:
+            dimensions: List of dimensions to return
 
-        Returns
-        -------
-        array: numpy.ndarray
+        Returns:
             Array of columns corresponding to each dimension
         """
         if dimensions is None:
@@ -292,9 +259,7 @@ class Element(ViewableElement, Composable, Overlayable):
     ######################
 
     def table(self, datatype=None):
-        """
-        Deprecated method to convert any Element to a Table.
-        """
+        "Deprecated method to convert any Element to a Table."
         if config.future_deprecations:
             self.warning("The table method is deprecated and should no "
                          "longer be used. Instead cast the %s to a "
@@ -307,10 +272,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def mapping(self, kdims=None, vdims=None, **kwargs):
-        """
-        Deprecated method to convert Element data to an old dictionary
-        format which is no longer supported.
-        """
+        "Deprecated method to convert data to dictionary"
         if config.future_deprecations:
             self.warning("The mapping method is deprecated and should no "
                          "longer be used. Use another one of the common "
@@ -336,24 +298,32 @@ class Element(ViewableElement, Composable, Overlayable):
 
 class Tabular(Element):
     """
-    Baseclass to give an NdMapping objects an API to generate a
-    table representation.
+    Baseclass to give an elements providing an API to generate a
+    tabular representation of the object.
     """
 
     __abstract = True
 
     @property
     def rows(self):
+        "Number of rows in table (including header)"
         return len(self) + 1
 
     @property
     def cols(self):
+        "Number of columns in table"
         return len(self.dimensions())
 
 
     def pprint_cell(self, row, col):
-        """
-        Get the formatted cell value for the given row and column indices.
+        """Formatted contents of table cell.
+        
+        Args:
+            row (int): Integer index of table row
+            col (int): Integer index of table column
+
+        Returns:
+            Formatted table cell contents
         """
         ndims = self.ndims
         if col >= self.cols:
@@ -373,9 +343,14 @@ class Tabular(Element):
 
 
     def cell_type(self, row, col):
-        """
-        Returns the cell type given a row and column index. The common
-        basic cell types are 'data' and 'heading'.
+        """Type of the table cell, either 'data' or 'heading'
+
+        Args:
+            row (int): Integer index of table row
+            col (int): Integer index of table column
+
+        Returns:
+            Type of the table cell, either 'data' or 'heading'
         """
         return 'heading' if row == 0 else 'data'
 

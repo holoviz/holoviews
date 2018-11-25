@@ -63,7 +63,7 @@ class MultiDimensionalMapping(Dimensioned):
     keys. This behaves like a sparse N-dimensional array that does not
     require a dense sampling over the multidimensional space.
 
-    If the underlying value for each (key,value) pair also supports
+    If the underlying value for each (key, value) pair also supports
     indexing (such as a dictionary, array, or list), fully qualified
     (deep) indexing may be used from the top level, with the first N
     dimensions of the index selecting a particular Dimensioned object
@@ -250,29 +250,17 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs.
+        """Clones the object, overriding data and parameters.
 
-        If shared_data is set to True and no data explicitly supplied,
-        the clone will share data with the original. May also supply
-        a new_type, which will inherit all shared parameters.
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
 
-        Arguments
-        ---------
-        data: dict or list (optional)
-            New data replacing the existing data
-        shared_data: bool (optional, default=True)
-            Whether to use the existing data
-        *args:
-            Additional arguments
-        **overrides:
-            Additional keyword arguments to pass to cloned constructor
-
-        Returns
-        -------
-        clone: MultiDimensionalMapping
-            Cloned mapping object
+        Returns:
+            Cloned object
         """
         with item_check(not shared_data and self._check_items):
             return super(MultiDimensionalMapping, self).clone(data, shared_data,
@@ -280,27 +268,20 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
-        """
+        """Groups object by one or more dimensions
+
         Applies groupby operation over the specified dimensions
         returning an object of type container_type (expected to be
         dictionary-like) containing the groups.
 
-        Arguments
-        ---------
-        dimensions: Dimension/str or list
-            Dimension or list of dimensions to group by
-        container_type: NdMapping, list or dict (optional, default=HoloMap)
-            Container type to wrap groups in
-        group_type: Element type (optional)
-            If supplied casts each group to this type
-        dynamic: bool (optional, default=False)
-            Whether to apply dynamic groupby and return a DynamicMap
-        **kwargs:
-            Keyword arguments to pass to each group
+        Args:
+            dimensions: Dimension(s) to group by
+            container_type: Type to cast group container to
+            group_type: Type to cast each group to
+            dynamic: Whether to return a DynamicMap
+            **kwargs: Keyword arguments to pass to each group
 
-        Returns
-        -------
-        grouped: container_type
+        Returns:
             Returns object of supplied container_type containing the
             groups. If dynamic=True returns a DynamicMap instead.
         """
@@ -318,29 +299,21 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
-        """
-        Create a new object with the additional key dimension.
+        """Adds a dimension and its values to the object
+        
         Requires the dimension name or object, the desired position in
         the key dimensions and a key value scalar or sequence of the
         same length as the existing keys.
 
-        Arguments
-        ---------
-        dimension: Dimension, str or tuple
-            Dimension or dimension spec to add
-        dim_pos: int
-            Integer index to insert dimension at
-        dim_val: scalar or numpy.ndarray
-            Dimension value(s) to add
-        vdim: bool (disabled, default=False)
-            Disabled (dimensions added on an NdMapping must key dimensions)
-        **kwargs:
-            Keyword arguments passed to the cloned element
+        Args:
+            dimension: Dimension or dimension spec to add
+            dim_pos (int) Integer index to insert dimension at
+            dim_val (scalar or ndarray): Dimension value(s) to add
+            vdim: Disabled, this type does not have value dimensions
+            **kwargs: Keyword arguments passed to the cloned element
 
-        Returns
-        -------
-        clone: Dataset
-            Cloned Dataset containing the new dimension
+        Returns:
+            Cloned object containing the new dimension
         """
         dimension = asdim(dimension)
 
@@ -382,18 +355,13 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def drop_dimension(self, dimensions):
-        """
-        Returns a new mapping with the specified dimension(s) dropped.
+        """Drops dimension(s) from keys
 
-        Arguments
-        ---------
-        dimensions: Dimension/str or list
-            Dimension or list of dimensions to drop
+        Args:
+            dimensions: Dimension(s) to drop
 
-        Returns
-        -------
-        ds: MultiDimensionalMapping
-            Dataset with dropped dimension
+        Returns:
+            Clone of object with with dropped dimension(s)
         """
         dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
         dims = [d for d in self.kdims if d not in dimensions]
@@ -404,25 +372,19 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        """
-        Returns the values along a particular dimension.
+        """Return the values along the requested dimension.
 
-        Arguments
-        ---------
-        dimension: Dimension, str or int
-            The dimension to query values on
-        expanded: boolean (optional, default=True)
-            Whether to return the expanded values, behavior depends
-            on the type of data:
-              - Columnar: If false returns unique values
-              - Geometry: If false returns scalar values per geometry
-              - Gridded: If false returns 1D coordinates
-        flat: boolean (optional, default=True)
-            Whether the array should be flattened to a 1D array
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
 
-        Returns
-        -------
-        array: numpy.ndarray
+        Returns:
             NumPy array of values along the requested dimension
         """
         dimension = self.get_dimension(dimension, strict=True)
@@ -438,26 +400,22 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def reindex(self, kdims=[], force=False):
-        """
-        Create a new object with a reordered or reduced set of key
-        dimensions.
+        """Reindexes object dropping static or supplied kdims
+
+        Creates a new object with a reordered or reduced set of key
+        dimensions. By default drops all non-varying key dimensions.
 
         Reducing the number of key dimensions will discard information
         from the keys. All data values are accessible in the newly
         created object as the new labels must be sufficient to address
         each value uniquely.
 
-        Arguments
-        ---------
-        kdims: list
-            List of dimensions to reindex the mapping with
-        force: bool (optional, default=False)
-            Whether to drop non-unique items
+        Args:
+            kdims (optional): New list of key dimensions after reindexing
+            force (bool, optional): Whether to drop non-unique items
 
-        Returns
-        -------
-        reindexed: MultiDimensionalMapping
-            Reindexed mapping
+        Returns:
+            Reindexed object
         """
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
@@ -528,11 +486,11 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def update(self, other):
-        """
-        Updates the current mapping with some other mapping or
-        OrderedDict instance, making sure that they are indexed along
-        the same set of dimensions. The order of key dimensions remains
-        unchanged after the update.
+        """Merges other item with this object
+        
+        Args:
+            other: Object containing items to merge into this object
+                Must be a dictionary or NdMapping type
         """
         if isinstance(other, NdMapping):
             dims = [d for d in other.kdims if d not in self.kdims]
@@ -557,7 +515,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def values(self):
-        " Returns the values of all the elements."
+        "Returns the values of all the elements."
         return list(self.data.values())
 
 
@@ -595,6 +553,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __setitem__(self, key, value):
+        "Adds item to mapping"
         self._add_item(key, value, update=False)
 
 
@@ -603,6 +562,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __iter__(self):
+        "Iterates over mapping values"
         return iter(self.values())
 
 
@@ -849,31 +809,17 @@ class UniformNdMapping(NdMapping):
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs.
+        """Clones the object, overriding data and parameters.
 
-        If shared_data is set to True and no data explicitly supplied,
-        the clone will share data with the original. May also supply
-        a new_type, which will inherit all shared parameters.
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
 
-        Arguments
-        ---------
-        data: dict or list (optional)
-            New data replacing the existing data
-        shared_data: bool (optional, default=True)
-            Whether to use the existing data
-        new_type: UniformNdMapping type
-            An UniformNdMapping type to cast the clone to, e.g. HoloMap
-        *args:
-            Additional arguments
-        **overrides:
-            Additional keyword arguments to pass to cloned constructor
-
-        Returns
-        -------
-        clone: MultiDimensionalMapping
-            Cloned mapping object
+        Returns:
+            Cloned object
         """
         settings = dict(self.get_param_values())
         if settings.get('group', None) != self._group:
@@ -902,20 +848,16 @@ class UniformNdMapping(NdMapping):
 
 
     def dframe(self, dimensions=None, multi_index=False):
-        """
-        Returns a pandas dataframe of columns along each dimension.
-        Collapses all elements into each
+        """Convert dimension values to DataFrame.
 
-        Arguments
-        ---------
-        dimensions: list (optional)
-            List of dimensions to return (defaults to all dimensions)
-        multi_index: boolean (optional, default=False)
-            Whether to treat key dimensions as (multi-)indexes
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
 
-        Returns
-        -------
-        dataframe: pandas.DataFrame
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
             DataFrame of columns corresponding to each dimension
         """
         import pandas as pd
@@ -956,6 +898,7 @@ class UniformNdMapping(NdMapping):
 
     @property
     def group(self):
+        "Group inherited from items"
         if self._group:
             return self._group
         group =  get_ndmapping_label(self, 'group') if len(self) else None
@@ -974,6 +917,7 @@ class UniformNdMapping(NdMapping):
 
     @property
     def label(self):
+        "Label inherited from items"
         if self._label:
             return self._label
         else:
@@ -993,12 +937,11 @@ class UniformNdMapping(NdMapping):
 
     @property
     def type(self):
-        """
-        The type of elements stored in the map.
-        """
+        "The type of elements stored in the mapping."
         if self._type is None and len(self):
             self._type = self.values()[0].__class__
         return self._type
+
 
     @property
     def empty_element(self):
