@@ -1607,7 +1607,7 @@ class ViewableTree(AttrTree, Dimensioned):
 
             ViewableTree(tree.relabel(group='Group').values())
         """
-        if config.future_deprecations:
+        if util.config.future_deprecations:
             self.warning('%s.regroup is deprecated, use relabel '
                          'method with a group argument instead.'
                          % type(self).__name__)
