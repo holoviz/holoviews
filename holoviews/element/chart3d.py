@@ -38,7 +38,7 @@ class Surface(Image, Element3D):
 
 
 
-class TriSurface(Element3D, Scatter):
+class TriSurface(Element3D, Points):
     """
     TriSurface represents a set of coordinates in 3D space which
     define a surface via a triangulation algorithm (usually Delauney
