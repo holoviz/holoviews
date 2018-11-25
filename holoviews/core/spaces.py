@@ -830,16 +830,19 @@ class periodic(object):
         self.instance = None
 
     def __call__(self, period, count=None, param_fn=None, timeout=None, block=True):
-        """
+        """Periodically trigger the streams on the DynamicMap.
+
         Run a non-blocking loop that updates the stream parameters using
         the event method. Runs count times with the specified period. If
         count is None, runs indefinitely.
 
-        If param_fn is not specified, the event method is called without
-        arguments. If it is specified, it must be a callable accepting a
-        single argument (the iteration count, starting at 1) that
-        returns a dictionary of the new stream values to be passed to
-        the event method.
+        Args:
+            period: Timeout between events in seconds
+            count: Number of events to trigger
+            param_fn: Function returning stream updates given count
+               Stream parameter values should be returned as dictionary
+            timeout: Overall timeout in seconds
+            block: Whether the periodic callbacks should be blocking
         """
 
         if self.instance is not None and not self.instance.completed:
@@ -848,12 +851,15 @@ class periodic(object):
                                'stop() before running a new periodic process')
         def inner(i):
             kwargs = {} if param_fn is None else param_fn(i)
-            self.dmap.event(**kwargs)
+            if kwargs:
+                self.dmap.event(**kwargs)
+            else:
+                Stream.trigger(self.dmap.streams)
 
         instance = self._periodic_util(period, count, inner,
                                        timeout=timeout, block=block)
         instance.start()
-        self.instance= instance
+        self.instance = instance
 
     def stop(self):
         "Stop the periodic process."
