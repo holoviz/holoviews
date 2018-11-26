@@ -1512,7 +1512,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
-                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim']
+                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
+                          'xformatter', 'yformatter']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
