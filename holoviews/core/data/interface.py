@@ -283,30 +283,35 @@ class Interface(param.Parameterized):
         have been selected.
         """
         mask = np.ones(len(dataset), dtype=np.bool)
-        for dim, k in selection.items():
-            if isinstance(k, tuple):
-                k = slice(*k)
+        for dim, sel in selection.items():
+            if isinstance(sel, tuple):
+                sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if isinstance(k, slice):
+            if arr.dtype.kind == 'M' and util.pd:
+                try:
+                    sel = util.parse_datetime_selection(sel)
+                except:
+                    pass
+            if isinstance(sel, slice):
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if k.start is not None:
-                        mask &= k.start <= arr
-                    if k.stop is not None:
-                        mask &= arr < k.stop
-            elif isinstance(k, (set, list)):
+                    if sel.start is not None:
+                        mask &= sel.start <= arr
+                    if sel.stop is not None:
+                        mask &= arr < sel.stop
+            elif isinstance(sel, (set, list)):
                 iter_slcs = []
-                for ik in k:
+                for ik in sel:
                     with warnings.catch_warnings():
                         warnings.filterwarnings('ignore', r'invalid value encountered')
                         iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
-            elif callable(k):
-                mask &= k(arr)
+            elif callable(sel):
+                mask &= sel(arr)
             else:
-                index_mask = arr == k
+                index_mask = arr == sel
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
-                    data_index = np.argmin(np.abs(arr - k))
+                    data_index = np.argmin(np.abs(arr - sel))
                     mask = np.zeros(len(dataset), dtype=np.bool)
                     mask[data_index] = True
                 else:
