@@ -87,6 +87,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * threshold - Number of samples before downsampling is enabled.
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
+
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
@@ -517,7 +518,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
         else:
-            replace = ['bounds', 'bands']
+            replace = ['bounds', 'bands', 'visible']
             style_items = list(self.gridstyle.items())
             both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
             xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
@@ -831,7 +832,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 old_spec = getattr(glyph, spec)
                 new_field = new_spec.get('field') if isinstance(new_spec, dict) else new_spec
                 old_field = old_spec.get('field') if isinstance(old_spec, dict) else old_spec
-                if new_field not in data or new_field in source.data or new_field == old_field:
+                if (data is None) or (new_field not in data or new_field in source.data or new_field == old_field):
                     continue
                 columns.append(new_field)
             glyph_updates.append((glyph, filtered))
@@ -839,7 +840,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # If a dataspec has changed and the CDS.data will be replaced
         # the GlyphRenderer will not find the column, therefore we
         # craft an event which will make the column available.
-        cds_replace = cds_column_replace(source, data)
+        cds_replace = True if data is None else cds_column_replace(source, data)
         if not cds_replace:
             if not self.static_source:
                 self._update_datasource(source, data)
@@ -861,7 +862,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for glyph, update in glyph_updates:
             glyph.update(**update)
 
-        if cds_replace and not self.static_source:
+        if data is not None and cds_replace and not self.static_source:
             return self._update_datasource(source, data)
 
 
@@ -1512,7 +1513,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
-                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim']
+                          'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
+                          'xformatter', 'yformatter']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
