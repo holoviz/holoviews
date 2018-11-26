@@ -517,7 +517,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
         else:
-            replace = ['bounds', 'bands']
+            replace = ['bounds', 'bands', 'visible']
             style_items = list(self.gridstyle.items())
             both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
             xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
