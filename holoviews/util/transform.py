@@ -1,6 +1,7 @@
 from __future__ import division
 
 import operator
+from types import FunctionType, MethodType
 
 import numpy as np
 
@@ -108,7 +109,29 @@ class dim(object):
     binning and categorizing data.
     """
 
-    _op_registry = {'norm': norm, 'bin': bin, 'categorize': categorize}
+    _binary_funcs = {
+        operator.add: '+', operator.and_: '&', operator.div: '/',
+        operator.eq: '=', operator.floordiv: '//', operator.ge: '>=',
+        operator.gt: '>', operator.le: '<=', operator.lshift: '<<',
+        operator.lt: '<', operator.matmul: '@', operator.mod: '%',
+        operator.mul: '*', operator.ne: '!=', operator.or_: '|',
+        operator.pow: '**', operator.rshift: '>>', operator.sub: '-',
+        operator.truediv: '/'}
+
+    _builtin_funcs = {abs: 'abs', len: 'len'}
+
+    _custom_funcs = {norm: 'norm', bin: 'bin', categorize: 'categorize'}
+
+    _numpy_funcs = {
+        np.any: 'any', np.all: 'all', np.asarray: 'astype',
+        np.cumprod: 'cumprod', np.cumsum: 'cumsum', np.max: 'max',
+        np.mean: 'mean', np.min: 'min', np.round: 'round',
+        np.sum: 'sum', np.std: 'std', np.var: 'var'}
+
+    _unary_funcs = {operator.pos: '+', operator.neg: '-', operator.not: '~'}
+
+    _all_funcs = [_binary_funcs, _builtin_funcs, _custom_funcs,
+                  _numpy_funcs, _unary_funcs]
 
     def __init__(self, obj, *args, **kwargs):
         ops = []
@@ -123,11 +146,11 @@ class dim(object):
             fn = args[0]
         else:
             fn = None
-        if isinstance(fn, str) or fn in self._op_registry:
-            fn = self._op_registry.get(fn)
-            if fn is None:
-                raise ValueError('dim transform %s not found' % fn)
         if fn is not None:
+            if not (isinstance(fn, (FunctionType, MethodType, np.ufunc)) or
+                    any(fn in funcs for funcs in self._all_funcs)):
+                raise ValueError('Second argument must be a function, '
+                                 'found %s type' % type(fn))
             ops = ops + [{'args': args[1:], 'fn': fn, 'kwargs': kwargs,
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
@@ -138,39 +161,67 @@ class dim(object):
         Register a custom dim transform function which can from then
         on be referenced by the key.
         """
-        cls._op_registry[key] = function
+        cls._custom_funcs[key] = function
+
+    # Builtin functions
+    def __abs__(self): return dim(self, abs)
+    def __len__(self): return dim(self, len)
 
     # Unary operators
-    def __abs__(self): return dim(self, operator.abs)
     def __neg__(self): return dim(self, operator.neg)
+    def __not__(self): return dim(self, operator.not_)
     def __pos__(self): return dim(self, operator.pos)
 
     # Binary operators
     def __add__(self, other):       return dim(self, operator.add, other)
+    def __and__(self, other):       return dim(self, operator.and_, other)
     def __div__(self, other):       return dim(self, operator.div, other)
+    def __eq__(self, other):        return dim(self, operator.eq, other)
     def __floordiv__(self, other):  return dim(self, operator.floordiv, other)
+    def __ge__(self, other):        return dim(self, operator.ge, other)
+    def __gt__(self, other):        return dim(self, operator.gt, other)
+    def __le__(self, other):        return dim(self, operator.le, other)
+    def __lt__(self, other):        return dim(self, operator.lt, other)
+    def __lshift__(self, other):    return dim(self, operator.lshift, other)
+    def __matmul__(self, other):    return dim(self, operator.matmul, other)
     def __mod__(self, other):       return dim(self, operator.mod, other)
     def __mul__(self, other):       return dim(self, operator.mul, other)
+    def __ne__(self, other):        return dim(self, operator.ne, other)
+    def __or__(self, other):        return dim(self, operator.or_, other)
+    def __rshift__(self, other):    return dim(self, operator.rshift, other)
     def __pow__(self, other):       return dim(self, operator.pow, other)
     def __sub__(self, other):       return dim(self, operator.sub, other)
     def __truediv__(self, other):   return dim(self, operator.truediv, other)
 
     # Reverse binary operators
     def __radd__(self, other):      return dim(self, operator.add, other, reverse=True)
+    def __rand__(self, other):      return dim(self, operator.and_, other)
     def __rdiv__(self, other):      return dim(self, operator.div, other, reverse=True)
     def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, reverse=True)
+    def __rlshift__(self, other):   return dim(self, operator.rlshift, other)
     def __rmod__(self, other):      return dim(self, operator.mod, other, reverse=True)
     def __rmul__(self, other):      return dim(self, operator.mul, other, reverse=True)
+    def __ror__(self, other):       return dim(self, operator.or_, other, reverse=True)
+    def __rpow__(self, other):      return dim(self, operator.pow, other, reverse=True)
+    def __rrshift__(self, other):   return dim(self, operator.rrshift, other)
     def __rsub__(self, other):      return dim(self, operator.sub, other, reverse=True)
     def __rtruediv__(self, other):  return dim(self, operator.truediv, other, reverse=True)
 
     ## NumPy operations
     def __array_ufunc__(self, *args, **kwargs):
-        ufunc = getattr(args[0], args[1])
+        ufunc = args[0]
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return dim(self, ufunc, **kwargs)
 
+    def clip(self, min=None, max=None):
+        if min is None and max is None:
+            raise ValueError('One of max or min must be given.')
+        return dim(self, np.clip, min=min, max=max)
+
+    def any(self, **kwargs):     return dim(self, np.any, **kwargs)     
+    def all(self, **kwargs):     return dim(self, np.all, **kwargs)
     def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
+    def cumprod(self, **kwargs): return dim(self, np.cumprod, **kwargs)
     def cumsum(self, **kwargs):  return dim(self, np.cumsum, **kwargs)
     def max(self, **kwargs):     return dim(self, np.max, **kwargs)
     def mean(self, **kwargs):    return dim(self, np.mean, **kwargs)
@@ -304,15 +355,44 @@ class dim(object):
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
         for o in self.ops:
+            if 'dim(' in op_repr:
+                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
+            else:
+                prev = 'dim({repr})'
+            fn = o['fn']
+            ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
             kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
             kwargs = '%s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
-            format_string = '{fn}({repr}'
-            if args:
-                format_string += ', {args}'
-            if kwargs:
-                format_string += ', {kwargs}'
-            format_string += ')'
-            op_repr = format_string.format(fn=o['fn'].__name__, repr=op_repr,
+            if fn in self._binary_funcs:
+                fn_name = self._binary_funcs[o['fn']]
+                if o['reverse']:
+                    format_string = '{args}{fn}'+prev
+                else:
+                    format_string = prev+'{fn}{args}'
+            elif fn in self._unary_funcs:
+                fn_name = self._unary_funcs[fn]
+                format_string = '{fn}' + prev
+            else:
+                fn_name = fn.__name__
+                if fn in self._numpy_funcs:
+                    fn_name = self._numpy_funcs[fn]
+                    format_string = prev+'.{fn}('
+                elif fn in self._custom_funcs:
+                    fn_name = self._custom_funcs[fn]
+                    format_string = prev+'.{fn}('
+                elif ufunc:
+                    fn_name = str(fn)[8:-2]
+                    format_string = '{fn}' + prev
+                    if fn_name in dir(np):
+                        format_string = 'np.'+format_string
+                else:
+                    format_string = prev+', {fn}'
+                if args:
+                    format_string += ', {args}'
+                if kwargs:
+                    format_string += ', {kwargs}'
+                format_string += ')'
+            op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
         return op_repr
