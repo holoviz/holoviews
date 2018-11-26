@@ -110,12 +110,12 @@ class dim(object):
     """
 
     _binary_funcs = {
-        operator.add: '+', operator.and_: '&', operator.div: '/',
-        operator.eq: '=', operator.floordiv: '//', operator.ge: '>=',
-        operator.gt: '>', operator.le: '<=', operator.lshift: '<<',
-        operator.lt: '<', operator.matmul: '@', operator.mod: '%',
-        operator.mul: '*', operator.ne: '!=', operator.or_: '|',
-        operator.pow: '**', operator.rshift: '>>', operator.sub: '-',
+        operator.add: '+', operator.and_: '&', operator.eq: '=',
+        operator.floordiv: '//', operator.ge: '>=', operator.gt: '>',
+        operator.le: '<=', operator.lshift: '<<', operator.lt: '<',
+        operator.matmul: '@', operator.mod: '%', operator.mul: '*',
+        operator.ne: '!=', operator.or_: '|', operator.pow: '**',
+        operator.rshift: '>>', operator.sub: '-',
         operator.truediv: '/'}
 
     _builtin_funcs = {abs: 'abs', len: 'len'}
@@ -128,7 +128,7 @@ class dim(object):
         np.mean: 'mean', np.min: 'min', np.round: 'round',
         np.sum: 'sum', np.std: 'std', np.var: 'var'}
 
-    _unary_funcs = {operator.pos: '+', operator.neg: '-', operator.not: '~'}
+    _unary_funcs = {operator.pos: '+', operator.neg: '-', operator.not_: '~'}
 
     _all_funcs = [_binary_funcs, _builtin_funcs, _custom_funcs,
                   _numpy_funcs, _unary_funcs]
@@ -375,7 +375,10 @@ class dim(object):
                 format_string = '{fn}' + prev
             else:
                 fn_name = fn.__name__
-                if fn in self._numpy_funcs:
+                if fn in self._builtin_funcs:
+                    fn_name = self._builtin_funcs[fn]
+                    format_string = {fn}+prev
+                elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+'.{fn}('
                 elif fn in self._custom_funcs:
@@ -390,8 +393,10 @@ class dim(object):
                     format_string = prev+', {fn}'
                 if args:
                     format_string += ', {args}'
-                if kwargs:
-                    format_string += ', {kwargs}'
+                    if kwargs:
+                        format_string += ', {kwargs}'
+                elif kwargs:
+                    format_string += '{kwargs}'
                 format_string += ')'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
