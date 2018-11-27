@@ -40,34 +40,31 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
 
 class opts(param.ParameterizedFunction):
     """
-    Utility function to set options either at the global level or on a
-    specific object.
+    Utility function to set options at the global level or to provide an
+    Options object that can be used with the .options method of an
+    element or container.
 
-    To set opts globally use:
+    Option objects can be generated and validated in a tab-completable
+    way (in appropriate environments such as Jupyter notebooks) using
+    completers such as opts.Curve, opts.Image, opts.Overlay, etc.
 
-    opts(options)
+    To set opts globally you can pass these option objects into opts.defaults:
 
-    Where options may be an options specification string (as accepted by
-    the %opts magic) or an options specifications dictionary.
+    opts.defaults(*options)
 
     For instance:
 
-    opts("Curve (color='k')") # Or equivalently
-    opts({'Curve': {'style': {'color':'k'}}})
+    opts.defaults(opts.Curve(color='red'))
 
-    To set opts on a specific object, just supply it as the second
-    argument:
-
-    opts(options, obj)
+    To set opts on a specific object, you can supply these option
+    objects to the .options method.
 
     For instance:
 
     curve = hv.Curve([1,2,3])
-    opts("Curve (color='k')", curve) # Or equivalently
-    opts({'Curve': {'style': {'color':'k'}}}, curve)
+    curve.options(opts.Curve(color='red'))
 
-    These two modes are equivalent to the %opts line magic and the
-    %%opts cell magic respectively.
+    The options method also accepts lists of Option objects.
     """
 
     __original_docstring__ = None
