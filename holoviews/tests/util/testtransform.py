@@ -133,8 +133,8 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square', 'C': 'triangle'}).apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
-    def test_categorize_transform_dict_with_empty(self):
-        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, empty='triangle').apply(self.dataset),
+    def test_categorize_transform_dict_with_default(self):
+        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, default='triangle').apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
     # Complex expressions
@@ -152,9 +152,24 @@ class TestDimTransforms(ComparisonTestCase):
     def test_dim_repr(self):
         self.assertEqual(repr(dim('float')), "'float'")
 
+    def test_unary_op_repr(self):
+        self.assertEqual(repr(-dim('float')), "-dim('float')")
+
+    def test_binary_op_repr(self):
+        self.assertEqual(repr(dim('float')*2), "dim('float')*2")
+
+    def test_reverse_binary_op_repr(self):
+        self.assertEqual(repr(1+dim('float')), "1+dim('float')")
+
+    def test_ufunc_expression_repr(self):
+        self.assertEqual(repr(np.log(dim('float'))), "np.log(dim('float'))")
+
+    def test_custom_func_repr(self):
+        self.assertEqual(repr(dim('float').norm()), "dim('float').norm()")
+
     def test_multi_operator_expression_repr(self):
         self.assertEqual(repr(((dim('float')-2)*3)**2),
-                         "pow(mul(sub('float', 2), 3), 2)")
+                         "((dim('float')-2)*3)**2")
 
     # Applies method
 
