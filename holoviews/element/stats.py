@@ -5,15 +5,14 @@ from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
 from ..core.util import get_param_values, OrderedDict
-from .chart import Chart, BoxWhisker
 
 
-class StatisticsElement(Chart):
+class StatisticsElement(Dataset, Element2D):
     """
     StatisticsElement provides a baseclass for Element types that
-    compute statistics based on the input data. The baseclass
-    overrides standard Dataset methods emulating the existence
-    of the value dimensions.
+    compute statistics based on the input data, usually a density.
+    The value dimension of such elements are therefore usually virtual
+    and not computed until the element is plotted.
     """
 
     __abstract = True
@@ -38,14 +37,37 @@ class StatisticsElement(Chart):
 
 
     def range(self, dim, data_range=True, dimension_range=True):
+        """Return the lower and upper bounds of values along dimension.
+
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
+        """
         iskdim = self.get_dimension(dim) not in self.vdims
         return super(StatisticsElement, self).range(dim, iskdim, dimension_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
-        """
-        Returns the values along a particular dimension. If unique
-        values are requested will return only unique values.
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dim, strict=True)
         if dim in self.vdims:
@@ -54,10 +76,16 @@ class StatisticsElement(Chart):
 
 
     def get_dimension_type(self, dim):
-        """
-        Returns the specified Dimension type if specified or
-        if the dimension_values types are consistent otherwise
-        None is returned.
+        """Get the type of the requested dimension.
+
+        Type is determined by Dimension.type attribute or common
+        type of the dimension values, otherwise None.
+
+        Args:
+            dimension: Dimension to look up by name or by index
+
+        Returns:
+            Declared type of values along the dimension
         """
         dim = self.get_dimension(dim)
         if dim is None:
@@ -69,35 +97,63 @@ class StatisticsElement(Chart):
         return self.interface.dimension_type(self, dim)
 
 
-    def dframe(self, dimensions=None):
-        """
-        Returns the data in the form of a DataFrame. Supplying a list
-        of dimensions filters the dataframe. If the data is already
-        a DataFrame a copy is returned.
+    def dframe(self, dimensions=None, multi_index=False):
+        """Convert dimension values to DataFrame.
+
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
+
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
+            DataFrame of columns corresponding to each dimension
         """
         if dimensions:
-            dimensions = [self.get_dimension(d, strict=True) for d in dimensions
-                          if d in dimensions.kdims]
+            dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         else:
             dimensions = self.kdims
-        return self.interface.dframe(self, dimensions)
+        vdims = [d for d in dimensions if d in self.vdims]
+        if vdims:
+            raise ValueError('%s element does not hold data for value '
+                             'dimensions. Could not return data for %s '
+                             'dimension(s).' %
+                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+        return super(StatisticsElement, self).dframe(dimensions, False)
 
 
     def columns(self, dimensions=None):
+        """Convert dimension values to a dictionary.
+
+        Returns a dictionary of column arrays along each dimension
+        of the element.
+
+        Args:
+            dimensions: Dimensions to return as columns
+
+        Returns:
+            Dictionary of arrays for each dimension
+        """
         if dimensions is None:
             dimensions = self.kdims
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return OrderedDict([(d.name, self.dimension_values(d))
-                            for d in dimensions if d in self.kdims])
+        vdims = [d for d in dimensions if d in self.vdims]
+        if vdims:
+            raise ValueError('%s element does not hold data for value '
+                             'dimensions. Could not return data for %s '
+                             'dimension(s).' %
+                             (type(self).__name__, ', '.join([d.name for d in vdims])))
+        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
 
 class Bivariate(StatisticsElement):
     """
-    Bivariate elements are containers for two dimensional data,
-    which is to be visualized as a kernel density estimate. The
-    data should be supplied in a tabular format of x- and y-columns.
+    Bivariate elements are containers for two dimensional data, which
+    is to be visualized as a kernel density estimate. The data should
+    be supplied in a tabular format of x- and y-columns.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -122,6 +178,21 @@ class Distribution(StatisticsElement):
     group = param.String(default='Distribution', constant=True)
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
+
+
+class BoxWhisker(Dataset, Element2D):
+    """
+    BoxWhisker represent data as a distributions highlighting the
+    median, mean and various percentiles. It may have a single value
+    dimension and any number of key dimensions declaring the grouping
+    of each violin.
+    """
+
+    group = param.String(default='BoxWhisker', constant=True)
+
+    kdims = param.List(default=[], bounds=(0,None))
+
+    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
 
 class Violin(BoxWhisker):

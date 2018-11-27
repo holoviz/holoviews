@@ -55,7 +55,8 @@ if 'multitabular' not in datatypes:
 
 
 def concat(datasets, datatype=None):
-    """
+    """Concatenates collection of datasets along NdMapping dimensions.
+
     Concatenates multiple datasets wrapped in an NdMapping type along
     all of its dimensions. Before concatenation all datasets are cast
     to the same datatype, which may be explicitly defined or
@@ -66,13 +67,12 @@ def concat(datasets, datatype=None):
     for each dimension being concatenated along and then
     hierarchically concatenates along each dimension.
 
-    Signature
-    ---------
+    Args:
+        datasets: NdMapping of Datasets to concatenate
+        datatype: Datatype to cast data to before concatenation
 
-    datasets: NdMapping of Datasets defining dimensions to concatenate on
-    datatype: Datatype to cast data to before concatenation
-
-    Returns: Dataset
+    Returns:
+        Concatenated dataset
     """
     return Interface.concatenate(datasets, datatype)
 
@@ -97,16 +97,6 @@ class DataConversion(object):
         can be automatically sorted via the sort option and kwargs can
         be passed through.
         """
-        if 'mdims' in kwargs:
-            if groupby:
-                raise ValueError('Cannot supply both mdims and groupby')
-            else:
-                self._element.warning("'mdims' keyword has been renamed "
-                                      "to 'groupby'; the name mdims is "
-                                      "deprecated and will be removed "
-                                      "after version 1.7.")
-                groupby = kwargs.pop('mdims')
-
         element_params = new_type.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
@@ -178,10 +168,11 @@ class Dataset(Element):
     Dataset provides a general baseclass for Element types that
     contain structured data and supports a range of data formats.
 
-    The Dataset class supports various methods offering a consistent way
-    of working with the stored data regardless of the storage format
-    used. These operations include indexing, selection and various ways
-    of aggregating or collapsing the data with a supplied function.
+    The Dataset class supports various methods offering a consistent
+    way of working with the stored data regardless of the storage
+    format used. These operations include indexing, selection and
+    various ways of aggregating or collapsing the data with a supplied
+    function.
     """
 
     datatype = param.List(datatypes, doc="""
@@ -225,13 +216,17 @@ class Dataset(Element):
 
 
     def closest(self, coords=[], **kwargs):
-        """
-        Given a single coordinate or multiple coordinates as
-        a tuple or list of tuples or keyword arguments matching
-        the dimension closest will find the closest actual x/y
-        coordinates. Different Element types should implement this
-        appropriately depending on the space they represent, if the
-        Element does not support snapping raise NotImplementedError.
+        """Snaps coordinate(s) to closest coordinate in Dataset 
+
+        Args:
+            coords: List of coordinates expressed as tuples
+            **kwargs: Coordinates defined as keyword pairs
+
+        Returns:
+            List of tuples of the snapped coordinates
+
+        Raises:
+            NotImplementedError: Raised if snapping is not supported
         """
         if self.ndims > 1:
             raise NotImplementedError("Closest method currently only "
@@ -251,29 +246,37 @@ class Dataset(Element):
         return [xs[idx] for idx in idxs]
 
 
-    def sort(self, by=[], reverse=False):
+    def sort(self, by=None, reverse=False):
         """
         Sorts the data by the values along the supplied dimensions.
-        """
-        if not by: by = self.kdims
-        if not isinstance(by, list): by = [by]
 
+        Args:
+            by: Dimension(s) to sort by
+            reverse (bool, optional): Reverse sort order
+
+        Returns:
+            Sorted Dataset 
+        """
+        if by is None:
+            by = self.kdims
+        elif not isinstance(by, list):
+            by = [by]
         sorted_columns = self.interface.sort(self, by, reverse)
         return self.clone(sorted_columns)
 
 
     def range(self, dim, data_range=True, dimension_range=True):
-        """
-        Returns the range of values along the specified dimension.
+        """Return the lower and upper bounds of values along dimension.
 
-        dimension: str/int/Dimension
-            The dimension to compute the range on.
-        data_range: bool
-            Whether the range should include the data range or only
-            the dimension ranges
-        dimension_range:
-            Whether to compute the range including the Dimension range
-            and soft_range
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
         """
         dim = self.get_dimension(dim)
 
@@ -291,11 +294,21 @@ class Dataset(Element):
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
-        """
-        Create a new object with an additional key dimensions.  Requires
-        the dimension name or object, the desired position in the key
-        dimensions and a key value scalar or sequence of the same length
-        as the existing keys.
+        """Adds a dimension and its values to the Dataset
+
+        Requires the dimension name or object, the desired position in
+        the key dimensions and a key value scalar or array of values,
+        matching the length o shape of the Dataset.
+
+        Args:
+            dimension: Dimension or dimension spec to add
+            dim_pos (int) Integer index to insert dimension at
+            dim_val (scalar or ndarray): Dimension value(s) to add
+            vdim: Disabled, this type does not have value dimensions
+            **kwargs: Keyword arguments passed to the cloned element
+
+        Returns:
+            Cloned object containing the new dimension
         """
         if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
@@ -322,15 +335,45 @@ class Dataset(Element):
 
 
     def select(self, selection_specs=None, **selection):
+        """Applies selection by dimension name
+
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        Args:
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
         """
-        Allows selecting data by the slices, sets and scalar values
-        along a particular dimension. The indices should be supplied as
-        keywords mapping between the selected dimension and
-        value. Additionally selection_specs (taking the form of a list
-        of type.group.label strings, types or functions) may be
-        supplied, which will ensure the selection is only applied if the
-        specs match the selected object.
-        """
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
+            selection_specs = [selection_specs]
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
@@ -346,9 +389,17 @@ class Dataset(Element):
 
 
     def reindex(self, kdims=None, vdims=None):
-        """
-        Create a new object with a re-ordered set of dimensions.  Allows
-        converting key dimensions to value dimensions and vice versa.
+        """Reindexes Dataset dropping static or supplied kdims
+
+        Creates a new object with a reordered or reduced set of key
+        dimensions. By default drops all non-varying key dimensions.x
+
+        Args:
+            kdims (optional): New list of key dimensionsx
+            vdims (optional): New list of value dimensions
+
+        Returns:
+            Reindexed object
         """
         gridded = self.interface.gridded
         scalars = []
@@ -426,22 +477,70 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[], closest=True, **kwargs):
+    def sample(self, samples=[], bounds=None, closest=True, **kwargs):
+        """Samples values at supplied coordinates.
+
+        Allows sampling of element with a list of coordinates matching
+        the key dimensions, returning a new object containing just the
+        selected samples. Supports multiple signatures:
+
+        Sampling with a list of coordinates, e.g.:
+
+            ds.sample([(0, 0), (0.1, 0.2), ...])
+
+        Sampling a range or grid of coordinates, e.g.:
+
+            1D: ds.sample(3)
+            2D: ds.sample((3, 3))
+
+        Sampling by keyword, e.g.:
+
+            ds.sample(x=0)
+
+        Args:
+            samples: List of nd-coordinates to sample
+            bounds: Bounds of the region to sample
+                Defined as two-tuple for 1D sampling and four-tuple
+                for 2D sampling.
+            closest: Whether to snap to closest coordinates
+            **kwargs: Coordinates specified as keyword pairs
+                Keywords of dimensions and scalar coordinates
+
+        Returns:
+            Element containing the sampled coordinates
         """
-        Allows sampling of Dataset as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Alternatively may supply kwargs
-        to sample a coordinate on an object. By default it will attempt
-        to snap to the nearest coordinate if the Element supports it,
-        snapping may be disabled with the closest argument.
-        """
-        if kwargs and samples:
+        if kwargs and samples != []:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
         elif kwargs:
             sample = [slice(None) for _ in range(self.ndims)]
             for dim, val in kwargs.items():
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
+        elif isinstance(samples, tuple) or util.isscalar(samples):
+            if self.ndims == 1:
+                xlim = self.range(0)
+                lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
+                edges = np.linspace(lower, upper, samples+1)
+                linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
+            elif self.ndims == 2:
+                (rows, cols) = samples
+                if bounds:
+                    (l,b,r,t) = bounds
+                else:
+                    l, r = self.range(0)
+                    b, t = self.range(1)
+
+                xedges = np.linspace(l, r, cols+1)
+                yedges = np.linspace(b, t, rows+1)
+                xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
+                ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
+
+                Y,X = np.meshgrid(ysamples, xsamples)
+                linsamples = list(zip(X.flat, Y.flat))
+            else:
+                raise NotImplementedError("Regular sampling not implemented "
+                                          "for elements with more than two dimensions.")
+            samples = list(util.unique_iterator(self.closest(linsamples)))
 
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
@@ -483,24 +582,58 @@ class Dataset(Element):
         return self.clone(self.interface.sample(self, samples), new_type=Table)
 
 
-    def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
-        """
-        Allows reducing the values along one or more key dimension with
-        the supplied function. The dimensions may be supplied as a list
-        and a function to apply or a mapping between the dimensions and
-        functions to apply along each dimension.
+    def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
+        """Applies reduction along the specified dimension(s).
+
+        Allows reducing the values along one or more key dimension
+        with the supplied function. Supports two signatures:
+
+        Reducing with a list of dimensions, e.g.:
+
+            ds.reduce(['x'], np.mean)
+
+        Defining a reduction using keywords, e.g.:
+
+            ds.reduce(x=np.mean)
+
+        Args:
+            dimensions: Dimension(s) to apply reduction on
+                Defaults to all key dimensions
+            function: Reduction operation to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **reductions: Keyword argument defining reduction
+                Allows reduction to be defined as keyword pair of
+                dimension and function
+
+        Returns:
+            The Dataset after reductions have been applied.
         """
         if any(dim in self.vdims for dim in dimensions):
             raise Exception("Reduce cannot be applied to value dimensions")
-        function, dims = self._reduce_map(dimensions, function, reduce_map)
+        function, dims = self._reduce_map(dimensions, function, reductions)
         dims = [d for d in self.kdims if d not in dims]
         return self.aggregate(dims, function, spreadfn)
 
 
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
-        """
+        """Aggregates data on the supplied dimensions.
+
         Aggregates over the supplied key dimensions with the defined
         function.
+
+        Args:
+            dimensions: Dimension(s) to aggregate on
+                Default to all key dimensions
+            function: Aggregation function to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **kwargs: Keyword arguments passed to the aggregation function
+
+        Returns:
+            Returns the aggregated Dataset
         """
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
@@ -550,18 +683,22 @@ class Dataset(Element):
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
                 dynamic=False, **kwargs):
-        """Return the results of a groupby operation over the specified
-        dimensions as an object of type container_type (expected to be
-        dictionary-like).
+        """Groups object by one or more dimensions
 
-        Keys vary over the columns (dimensions) and the corresponding
-        values are collections of group_type (e.g an Element, list, tuple)
-        constructed with kwargs (if supplied).
+        Applies groupby operation over the specified dimensions
+        returning an object of type container_type (expected to be
+        dictionary-like) containing the groups.
 
-        If dynamic is requested container_type is automatically set to
-        a DynamicMap, allowing dynamic exploration of large
-        datasets. If the data does not represent a full cartesian grid
-        of the requested dimensions some Elements will be empty.
+        Args:
+            dimensions: Dimension(s) to group by
+            container_type: Type to cast group container to
+            group_type: Type to cast each group to
+            dynamic: Whether to return a DynamicMap
+            **kwargs: Keyword arguments to pass to each group
+
+        Returns:
+            Returns object of supplied container_type containing the
+            groups. If dynamic=True returns a DynamicMap instead.
         """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
@@ -594,12 +731,11 @@ class Dataset(Element):
                                       group_type, **kwargs)
 
     def __len__(self):
-        """
-        Returns the number of rows in the Dataset object.
-        """
+        "Number of values in the Dataset."
         return self.interface.length(self)
 
     def __nonzero__(self):
+        "Whether the Dataset contains any values"
         return self.interface.nonzero(self)
 
     __bool__ = __nonzero__
@@ -610,20 +746,37 @@ class Dataset(Element):
         return self.interface.shape(self)
 
 
-    def dimension_values(self, dim, expanded=True, flat=True):
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
         """
-        Returns the values along a particular dimension. If unique
-        values are requested will return only unique values.
-        """
-        dim = self.get_dimension(dim, strict=True)
+        dim = self.get_dimension(dimension, strict=True)
         return self.interface.values(self, dim, expanded, flat)
 
 
     def get_dimension_type(self, dim):
-        """
-        Returns the specified Dimension type if specified or
-        if the dimension_values types are consistent otherwise
-        None is returned.
+        """Get the type of the requested dimension.
+
+        Type is determined by Dimension.type attribute or common
+        type of the dimension values, otherwise None.
+
+        Args:
+            dimension: Dimension to look up by name or by index
+
+        Returns:
+            Declared type of values along the dimension
         """
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
@@ -631,18 +784,41 @@ class Dataset(Element):
         return self.interface.dimension_type(self, dim_obj)
 
 
-    def dframe(self, dimensions=None):
+    def dframe(self, dimensions=None, multi_index=False):
+        """Convert dimension values to DataFrame.
+
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
+
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
+            DataFrame of columns corresponding to each dimension
         """
-        Returns the data in the form of a DataFrame. Supplying a list
-        of dimensions filters the dataframe. If the data is already
-        a DataFrame a copy is returned.
-        """
-        if dimensions:
+        if dimensions is None:
+            dimensions = [d.name for d in self.dimensions()]
+        else:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
-        return self.interface.dframe(self, dimensions)
+        df = self.interface.dframe(self, dimensions)
+        if multi_index:
+            df = df.set_index([d for d in dimensions if d in self.kdims])
+        return df
 
 
     def columns(self, dimensions=None):
+        """Convert dimension values to a dictionary.
+
+        Returns a dictionary of column arrays along each dimension
+        of the element.
+
+        Args:
+            dimensions: Dimensions to return as columns
+
+        Returns:
+            Dictionary of arrays for each dimension
+        """
         if dimensions is None:
             dimensions = self.dimensions()
         else:
@@ -652,21 +828,22 @@ class Dataset(Element):
 
     @property
     def to(self):
-        """
-        Property to create a conversion interface with methods to
-        convert to other Element types.
-        """
+        "Returns the conversion interface with methods to convert Dataset"
         return self._conversion_interface(self)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs.
+        """Clones the object, overriding data and parameters.
 
-        If shared_data is set to True and no data explicitly supplied,
-        the clone will share data with the original. May also supply
-        a new_type, which will inherit all shared parameters.
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned object
         """
         if 'datatype' not in overrides:
             datatypes = [self.interface.datatype] + self.datatype
@@ -676,7 +853,8 @@ class Dataset(Element):
 
     @property
     def iloc(self):
-        """
+        """Returns iloc indexer with support for columnar indexing.
+
         Returns an iloc object providing a convenient interface to
         slice and index into the Dataset using row and column indices.
         Allow selection by integer index, slice and list of integer
@@ -701,7 +879,8 @@ class Dataset(Element):
 
     @property
     def ndloc(self):
-        """
+        """Returns ndloc indexer with support for gridded indexing.
+
         Returns an ndloc object providing nd-array like indexing for
         gridded datasets. Follows NumPy array indexing conventions,
         allowing for indexing, slicing and selecting a list of indices

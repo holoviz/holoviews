@@ -1,19 +1,28 @@
 import param
 
 from ..core import Dimension, Element3D
-from .chart import Chart, Scatter
+from .geom import Points
 from .raster import Image
 
 
 class Surface(Image, Element3D):
     """
-    Surface Element represents a 3D surface in space.
-    The data should be supplied as a dense NxM matrix.
+    A Surface represents a regularly sampled 2D grid with associated
+    values defining the height along the z-axis. The key dimensions of
+    a Surface represent the 2D coordinates along the x- and y-axes
+    while the value dimension declares the height at each grid
+    location.
+
+    The data of a Surface is usually defined as a 2D array of values
+    and either a bounds tuple defining the extent in the 2D space or
+    explicit x- and y-coordinate arrays.
     """
 
     extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
         Allows overriding the extents of the Element in 3D space
         defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
+
+    group = param.String(default='Surface', constant=True)
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2,2), doc="""
@@ -23,38 +32,40 @@ class Surface(Image, Element3D):
     vdims = param.List(default=[Dimension('z')], bounds=(1,1), doc="""
         The Surface height dimension.""")
 
-    group = param.String(default='Surface', constant=True)
-
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
         extents = extents if extents else (None, None, None, None, None, None)
         Image.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
 
 
-class TriSurface(Element3D, Scatter):
+class TriSurface(Element3D, Points):
     """
-    TriSurface object represents a number of coordinates in 3D-space,
-    represented as a Surface of triangular polygons.
+    TriSurface represents a set of coordinates in 3D space which
+    define a surface via a triangulation algorithm (usually Delauney
+    triangulation). They key dimensions of a TriSurface define the
+    position of each point along the x-, y- and z-axes, while value
+    dimensions can provide additional information about each point.
     """
-
-    kdims = param.List(default=[Dimension('x'),
-                                Dimension('y'),
-                                Dimension('z')])
-
-    vdims = param.List(default=[], doc="""
-        TriSurface can have optional value dimensions,
-        which may be mapped onto color and size.""")
 
     group = param.String(default='TriSurface', constant=True)
 
+    kdims = param.List(default=[
+        Dimension('x'), Dimension('y'), Dimension('z')], doc="""
+        The key dimensions of a TriSurface represent the 3D coordinates
+        of each point.""")
+
+    vdims = param.List(default=[], doc="""
+        The value dimensions of a TriSurface can provide additional
+        information about each 3D coordinate.""")
+
     def __getitem__(self, slc):
-        return Chart.__getitem__(self, slc)
+        return Points.__getitem__(self, slc)
 
 
 class Trisurface(TriSurface):
     """
-    Old name for TriSurface. Retaining for backwards compatibility till
-    holoviews 2.0.
+    Old name for TriSurface. Retaining for backwards compatibility
+    until holoviews 2.0.
     """
 
     group = param.String(default='Trisurface', constant=True)
@@ -64,13 +75,12 @@ class Trisurface(TriSurface):
         super(TriSurface, self).__init__(*args, **kwargs)
 
 
-class Scatter3D(Element3D, Scatter):
+class Scatter3D(Element3D, Points):
     """
-    Scatter3D object represents a number of coordinates in
-    3D-space. Additionally Scatter3D points may have any number
-    of value dimensions. The data may therefore be supplied
-    as NxD matrix where N represents the number of samples,
-    and D the number of key and value dimensions.
+    Scatter3D is a 3D element representing the position of a collection
+    of coordinates in a 3D space. The key dimensions represent the 
+    position of each coordinate along the x-, y- and z-axis while the
+    value dimensions can optionally supply additional information.
     """
 
     kdims = param.List(default=[Dimension('x'),
@@ -84,4 +94,4 @@ class Scatter3D(Element3D, Scatter):
     group = param.String(default='Scatter3D', constant=True)
 
     def __getitem__(self, slc):
-        return Chart.__getitem__(self, slc)
+        return Points.__getitem__(self, slc)

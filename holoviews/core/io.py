@@ -388,7 +388,7 @@ class Unpickler(Importer):
         if len(components) == 1 and not single_layout:
             return components[0]
         else:
-            return Layout.from_values(components)
+            return Layout(components)
 
     @bothmethod
     def _load_metadata(self_or_cls, filename, name):

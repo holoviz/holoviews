@@ -15,15 +15,17 @@ from . import traversal
 
 class Composable(object):
     """
-    Composable is a mix-in class to allow Dimensioned object to be
+    Composable is a mix-in class to allow Dimensioned objects to be
     embedded within Layouts and GridSpaces.
     """
 
     def __add__(self, obj):
-        return Layout.from_values([self, obj])
+        "Compose objects into a Layout"
+        return Layout([self, obj])
 
 
     def __lshift__(self, other):
+        "Compose objects into an AdjointLayout"
         if isinstance(other, (ViewableElement, NdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
@@ -35,10 +37,10 @@ class Composable(object):
 
 class Empty(Dimensioned, Composable):
     """
-    Empty may be used to define an empty placeholder in a Layout. It can be
-    placed in a Layout just like any regular Element and container
-    type via the + operator or by passing it to the Layout constructor
-    as a part of a list.
+    Empty may be used to define an empty placeholder in a Layout. It
+    can be placed in a Layout just like any regular Element and
+    container type via the + operator or by passing it to the Layout
+    constructor as a part of a list.
     """
 
     group = param.String(default='Empty')
@@ -50,18 +52,20 @@ class Empty(Dimensioned, Composable):
 
 class AdjointLayout(Dimensioned):
     """
-    A AdjointLayout provides a convenient container to lay out a primary plot
-    with some additional supplemental plots, e.g. an image in a
-    Image annotated with a luminance histogram. AdjointLayout accepts a
-    list of three ViewableElement elements, which are laid out as follows with
-    the names 'main', 'top' and 'right':
-     ___________ __
-    |____ 3_____|__|
-    |           |  |  1:  main
-    |           |  |  2:  right
-    |     1     |2 |  3:  top
-    |           |  |
-    |___________|__|
+    An AdjointLayout provides a convenient container to lay out some
+    marginal plots next to a primary plot. This is often useful to
+    display the marginal distributions of a plot next to the primary
+    plot. AdjointLayout accepts a list of up to three elements, which
+    are laid out as follows with the names 'main', 'top' and 'right':
+
+     _______________
+    |     3     |   |
+    |___________|___|
+    |           |   |  1:  main
+    |           |   |  2:  right
+    |     1     | 2 |  3:  top
+    |           |   |
+    |___________|___|
     """
 
     kdims = param.List(default=[Dimension('AdjointLayout')], constant=True)
@@ -72,7 +76,6 @@ class AdjointLayout(Dimensioned):
     _auxiliary_component = False
 
     def __init__(self, data, **params):
-
         self.main_layer = 0 # The index of the main layer if .main is an overlay
         if data and len(data) > 3:
             raise Exception('AdjointLayout accepts no more than three elements.')
@@ -143,6 +146,7 @@ class AdjointLayout(Dimensioned):
 
     @property
     def group(self):
+        "Group inherited from main element"
         if self.main and self.main.group != type(self.main).__name__:
             return self.main.group
         else:
@@ -150,6 +154,7 @@ class AdjointLayout(Dimensioned):
 
     @property
     def label(self):
+        "Label inherited from main element"
         return self.main.label if self.main else ''
 
 
@@ -161,20 +166,62 @@ class AdjointLayout(Dimensioned):
 
 
     def relabel(self, label=None, group=None, depth=1):
-        # Identical to standard relabel method except for default depth of 1
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to child up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
+        """
         return super(AdjointLayout, self).relabel(label=label, group=group, depth=depth)
 
 
     def get(self, key, default=None):
+        """
+        Returns the viewable corresponding to the supplied string
+        or integer based key.
+
+        Args:
+            key: Numeric or string index: 0) 'main' 1) 'right' 2) 'top'
+            default: Value returned if key not found
+
+        Returns:
+            Indexed value or supplied default
+        """
         return self.data[key] if key in self.data else default
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Applies to the main object in the AdjointLayout.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         dimension = self.get_dimension(dimension, strict=True).name
         return self.main.dimension_values(dimension, expanded, flat)
 
 
     def __getitem__(self, key):
+        "Index into the AdjointLayout by index or label"
         if key is ():
             return self
 
@@ -212,6 +259,7 @@ class AdjointLayout(Dimensioned):
 
 
     def __lshift__(self, other):
+        "Add another plot to the AdjointLayout"
         views = [self.data.get(k, None) for k in self.layout_order]
         return AdjointLayout([v for v in views if v is not None] + [other])
 
@@ -222,14 +270,17 @@ class AdjointLayout(Dimensioned):
 
     @property
     def main(self):
+        "Returns the main element in the AdjointLayout"
         return self.data.get('main', None)
 
     @property
     def right(self):
+        "Returns the right marginal element in the AdjointLayout"
         return self.data.get('right', None)
 
     @property
     def top(self):
+        "Returns the top marginal element in the AdjointLayout"
         return self.data.get('top', None)
 
     @property
@@ -255,10 +306,12 @@ class AdjointLayout(Dimensioned):
 
 
     def __add__(self, obj):
-        return Layout.from_values([self, obj])
+        "Composes plot into a Layout with another object."
+        return Layout([self, obj])
 
 
     def __len__(self):
+        "Number of items in the AdjointLayout"
         return len(self.data)
 
 
@@ -287,6 +340,7 @@ class NdLayout(UniformNdMapping):
 
     @property
     def shape(self):
+        "Tuple indicating the number of rows and columns in the NdLayout."
         num = len(self.keys())
         if num <= self._max_cols:
             return (1, num)
@@ -306,13 +360,23 @@ class NdLayout(UniformNdMapping):
                 for idx, (key, item) in enumerate(self.data.items())}
 
 
-    def cols(self, n):
-        self._max_cols = n
+    def cols(self, ncols):
+        """Sets the maximum number of columns in the NdLayout.
+        
+        Any items beyond the set number of cols will flow onto a new
+        row. The number of columns control the indexing and display
+        semantics of the NdLayout.
+
+        Args:
+            ncols (int): Number of columns to set on the NdLayout
+        """
+        self._max_cols = ncols
         return self
 
 
     def __add__(self, obj):
-        return Layout.from_values([self, obj])
+        "Composes the NdLayout with another object into a Layout"
+        return Layout([self, obj])
 
 
     @property
@@ -334,19 +398,23 @@ class NdLayout(UniformNdMapping):
 
 
     def clone(self, *args, **overrides):
-        """
-        Clone method for NdLayout matches Dimensioned.clone except the
-        display mode is also propagated.
+        """Clones the NdLayout, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned NdLayout object
         """
         clone = super(NdLayout, self).clone(*args, **overrides)
         clone._max_cols = self._max_cols
         clone.id = self.id
         return clone
 
-
-# To be removed after 1.3.0
-class Warning(param.Parameterized): pass
-collate_deprecation = Warning(name='Deprecation Warning')
 
 class Layout(ViewableTree):
     """
@@ -370,6 +438,7 @@ class Layout(ViewableTree):
 
     @property
     def shape(self):
+        "Tuple indicating the number of rows and columns in the Layout."
         num = len(self)
         if num <= self._max_cols:
             return (1, num)
@@ -379,6 +448,7 @@ class Layout(ViewableTree):
 
 
     def __getitem__(self, key):
+        "Allows indexing Layout by row and column or path"
         if isinstance(key, int):
             if key < len(self):
                 return list(self.data.values())[key]
@@ -398,9 +468,17 @@ class Layout(ViewableTree):
 
 
     def clone(self, *args, **overrides):
-        """
-        Clone method for Layout matches Dimensioned.clone except the
-        cols setting is also propagated.
+        """Clones the Layout, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned Layout object
         """
         clone = super(Layout, self).clone(*args, **overrides)
         clone._max_cols = self._max_cols
@@ -408,13 +486,16 @@ class Layout(ViewableTree):
 
 
     def cols(self, ncols):
+        """Sets the maximum number of columns in the NdLayout.
+        
+        Any items beyond the set number of cols will flow onto a new
+        row. The number of columns control the indexing and display
+        semantics of the NdLayout.
+
+        Args:
+            ncols (int): Number of columns to set on the NdLayout
+        """
         self._max_cols = ncols
-        return self
-
-
-    def display(self, option):
-        "Sets the display policy of the Layout before returning self"
-        self.warning('Layout display option is deprecated and no longer needs to be used')
         return self
 
 
@@ -424,7 +505,8 @@ class Layout(ViewableTree):
 
 
     def __add__(self, other):
-        return Layout.from_values([self, other])
+        "Composes the Layout with another object returning a merged Layout."
+        return Layout([self, other])
 
 
 

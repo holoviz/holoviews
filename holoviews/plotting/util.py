@@ -377,7 +377,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
-            range_item = [hm for hm in main.split_overlays()[1]
+            range_item = [hm for hm in main._split_overlays()[1]
                           if dim in hm.dimensions('all')][0]
     else:
         range_item = HoloMap({0: main}, kdims=['Frame'])

@@ -4,6 +4,7 @@ import param
 
 from ..core import OrderedDict, Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
+from ..core.util import config
 
 
 class ItemTable(Element):
@@ -66,6 +67,9 @@ class ItemTable(Element):
 
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
+        if config.future_deprecations:
+            param.main.warning('ItemTable.collapse_data is deprecated and '
+                               'should no longer be used.')
         groups = np.vstack([np.array(odict.values()) for odict in data]).T
         return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
@@ -122,19 +126,15 @@ class ItemTable(Element):
         else:         return 'data'
 
 
-    def dframe(self):
-        """
-        Generates a Pandas dframe from the ItemTable.
-        """
-        from pandas import DataFrame
-        return DataFrame({dimension_name(k): [v] for k, v in self.data.items()})
-
-
-    def table(self, datatype=None):
-        return Table(OrderedDict([((), self.values())]), kdims=[],
-                     vdims=self.vdims)
+    ######################
+    #    Deprecations    #
+    ######################
 
     def values(self):
+        """
+        Deprecated method to access the ItemTable value dimension values.
+        """
+        self.warning('ItemTable values method is deprecated.')
         return tuple(self.data.get(d.name, np.NaN)
                      for d in self.vdims)
 
@@ -148,20 +148,3 @@ class Table(Dataset, Tabular):
 
     group = param.String(default='Table', constant=True, doc="""
          The group is used to describe the Table.""")
-
-    def _add_item(self, key, value, sort=True):
-        if self.indexed and ((key != len(self)) and (key != (len(self),))):
-            raise Exception("Supplied key %s does not correspond to the items row number." % key)
-
-        if isinstance(value, (dict, OrderedDict)):
-            if all(isinstance(k, str) for k in key):
-                value = ItemTable(value)
-            else:
-                raise ValueError("Tables only supports string inner"
-                                 "keys when supplied nested dictionary")
-        if isinstance(value, ItemTable):
-            if value.vdims != self.vdims:
-                raise Exception("Input ItemTables dimensions must match value dimensions.")
-            value = value.data.values()
-        super(Table, self)._add_item(key, value, sort)
-
