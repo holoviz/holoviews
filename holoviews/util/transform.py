@@ -113,10 +113,9 @@ class dim(object):
         operator.add: '+', operator.and_: '&', operator.eq: '=',
         operator.floordiv: '//', operator.ge: '>=', operator.gt: '>',
         operator.le: '<=', operator.lshift: '<<', operator.lt: '<',
-        operator.matmul: '@', operator.mod: '%', operator.mul: '*',
-        operator.ne: '!=', operator.or_: '|', operator.pow: '**',
-        operator.rshift: '>>', operator.sub: '-',
-        operator.truediv: '/'}
+        operator.mod: '%', operator.mul: '*', operator.ne: '!=',
+        operator.or_: '|', operator.pow: '**', operator.rshift: '>>',
+        operator.sub: '-', operator.truediv: '/'}
 
     _builtin_funcs = {abs: 'abs', len: 'len'}
 
@@ -183,7 +182,6 @@ class dim(object):
     def __le__(self, other):        return dim(self, operator.le, other)
     def __lt__(self, other):        return dim(self, operator.lt, other)
     def __lshift__(self, other):    return dim(self, operator.lshift, other)
-    def __matmul__(self, other):    return dim(self, operator.matmul, other)
     def __mod__(self, other):       return dim(self, operator.mod, other)
     def __mul__(self, other):       return dim(self, operator.mul, other)
     def __ne__(self, other):        return dim(self, operator.ne, other)
