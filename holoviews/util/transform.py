@@ -386,7 +386,10 @@ class dim(object):
                     format_string = prev+'.{fn}('
                 elif ufunc:
                     fn_name = str(fn)[8:-2]
-                    format_string = '{fn}' + prev
+                    if not (prev.startswith('dim') or prev.endswith(')')):
+                        format_string = '{fn}' + prev
+                    else:
+                        format_string = '{fn}(' + prev
                     if fn_name in dir(np):
                         format_string = 'np.'+format_string
                 else:
