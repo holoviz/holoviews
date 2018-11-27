@@ -103,10 +103,10 @@ def categorize(values, categories, empty=None):
 
 class dim(object):
     """
-    dim transform objects are a way to express deferred transformations
-    on HoloViews Datasets. Dims support all mathematical operations
-    and NumPy ufuncs, and provide a number of useful methods for normalizing,
-    binning and categorizing data.
+    dim transform objects are a way to express deferred transforms on
+    Datasets. dim transforms support all mathematical and bitwise
+    operators, NumPy ufuncs and methods, and provide a number of
+    useful methods for normalizing, binning and categorizing data.
     """
 
     _binary_funcs = {
@@ -117,7 +117,7 @@ class dim(object):
         operator.or_: '|', operator.pow: '**', operator.rshift: '>>',
         operator.sub: '-', operator.truediv: '/'}
 
-    _builtin_funcs = {abs: 'abs', len: 'len'}
+    _builtin_funcs = {abs: 'abs', round: 'round'}
 
     _custom_funcs = {norm: 'norm', bin: 'bin', categorize: 'categorize'}
 
@@ -131,6 +131,8 @@ class dim(object):
 
     _all_funcs = [_binary_funcs, _builtin_funcs, _custom_funcs,
                   _numpy_funcs, _unary_funcs]
+
+    _namespaces = {'numpy': 'np'}
 
     def __init__(self, obj, *args, **kwargs):
         ops = []
@@ -154,10 +156,6 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
-    def __bool__(self):
-        "Ensure dim is truthy"
-        return True
-
     @classmethod
     def register(cls, key, function):
         """
@@ -167,8 +165,10 @@ class dim(object):
         cls._custom_funcs[key] = function
 
     # Builtin functions
-    def __abs__(self): return dim(self, abs)
-    def __len__(self): return dim(self, len)
+    def __abs__(self):            return dim(self, abs)
+    def __round__(self, ndigits=None):
+        args = () if ndigits is None else (ndigits,)
+        return dim(self, round, *args)
 
     # Unary operators
     def __neg__(self): return dim(self, operator.neg)
@@ -393,7 +393,7 @@ class dim(object):
                     else:
                         format_string = '{fn}(' + prev
                     if fn_name in dir(np):
-                        format_string = 'np.'+format_string
+                        format_string = self._namespaces['numpy']+format_string
                 else:
                     format_string = prev+', {fn}'
                 if args:
