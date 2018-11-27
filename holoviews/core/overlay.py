@@ -156,20 +156,16 @@ class Overlay(ViewableTree, CompositeOverlay):
 
 
     def get(self, identifier, default=None):
-        """
+        """Get a layer in the Overlay.
+
         Get a particular layer in the Overlay using its path string
         or an integer index.
 
-        Arguments
-        ---------
-        identifier: str or int
-            Index or path string of the item to return
-        default: object
-            Value to return if no item is found
+        Args:
+            identifier: Index or path string of the item to return
+            default: Value to return if no item is found
 
-        Returns
-        -------
-        layer: Element or NdOverlay
+        Returns:
             The indexed layer of the Overlay
         """
         if isinstance(identifier, int):
