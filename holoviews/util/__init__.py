@@ -91,7 +91,7 @@ class opts(param.ParameterizedFunction):
                 raise DeprecationWarning(msg)
             elif self._deprecate_magics_call == 'warn':
                 self.warning(msg)
-            self.linemagic(args[0])
+            self._linemagic(args[0])
         elif len(args) == 2:
             msg = ("Use opts.cellmagic instead as a direct replacement "
                    "although using the .options method is the "
@@ -102,7 +102,7 @@ class opts(param.ParameterizedFunction):
             elif self._deprecate_magics_call == 'warn':
                 self.warning(msg)
 
-            self.cellmagic(args[0], args[1])
+            self._cellmagic(args[0], args[1])
 
     @classmethod
     def _process_magic(cls, options, strict):
@@ -121,7 +121,8 @@ class opts(param.ParameterizedFunction):
         return options, False
 
     @classmethod
-    def cellmagic(cls, options, obj, strict=False):
+    def _cellmagic(cls, options, obj, strict=False):
+        "Deprecated, not expected to be used by any current code"
         options, failure = cls._process_magic(options, strict)
         if failure: return obj
         if not isinstance(obj, Dimensioned):
@@ -130,7 +131,8 @@ class opts(param.ParameterizedFunction):
             return StoreOptions.set_options(obj, options)
 
     @classmethod
-    def linemagic(cls, options, strict=False):
+    def _linemagic(cls, options, strict=False):
+        "Deprecated, not expected to be used by any current code"
         options, failure = cls._process_magic(options, strict)
         if failure: return
         with options_policy(skip_invalid=True, warn_on_skip=False):
