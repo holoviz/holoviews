@@ -154,6 +154,10 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+    def __bool__(self):
+        "Ensure dim is truthy"
+        return True
+
     @classmethod
     def register(cls, key, function):
         """
