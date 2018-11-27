@@ -1165,7 +1165,7 @@ class LinkCallback(param.Parameterized):
         found = []
         for plot, links in source_links:
             for link in links:
-                if link.target is None:
+                if not link._requires_target:
                     # If link has no target don't look further
                     found.append((link, plot, None))
                     continue

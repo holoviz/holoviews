@@ -28,9 +28,14 @@ class Link(param.Parameterized):
     # e.g. Link._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
 
+    # Whether the link requires a target
+    _requires_target = False
+
     def __init__(self, source, target=None, **params):
         if source is None:
             raise ValueError('%s must define a source' % type(self).__name__)
+        if self._requires_target and target is None:
+            raise ValueError('%s must define a target.' % type(self).__name__)
 
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
@@ -84,6 +89,8 @@ class RangeToolLink(Link):
     axes = param.ListSelector(default=['x'], objects=['x', 'y'], doc="""
         Which axes to link the tool to.""")
 
+    _requires_target = True
+
 
 class DataLink(Link):
     """
@@ -91,8 +98,5 @@ class DataLink(Link):
     them to be selected together. In order for a DataLink to be
     established the source and target data must be of the same length.
     """
- 
-    def __init__(self, source, target, **params):
-        if source is None or target is None:
-            raise ValueError('%s must define a source and a target.')
-        super(DataLink, self).__init__(source=source, target=target, **params)
+
+    _requires_target = True
