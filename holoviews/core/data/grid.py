@@ -136,7 +136,7 @@ class GridInterface(DictInterface):
                                 'of arrays must match. %s found that arrays '
                                 'along the %s dimension do not match.' %
                                 (cls.__name__, vdim.name))
-            stack = np.stack if any(is_dask(arr) for arr in arrays) else dask_array_module().stack
+            stack = dask_array_module().stack if any(is_dask(arr) for arr in arrays) else np.stack
             new_data[vdim.name] = stack(arrays, -1)
         return new_data
 
