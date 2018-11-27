@@ -194,12 +194,12 @@ class opts(param.ParameterizedFunction):
         matches = sorted(kws.fuzzy_match(opt))
         if backend is not None:
             if matches:
-                raise ValueError('Unexpected option %r for %s types '
+                raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. Similar '
                                  'options are: %s.' %
                                  (opt, objtype, backend, matches))
             else:
-                raise ValueError('Unexpected option %r for %s types '
+                raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. No '
                                  'similar options founds.' %
                                  (opt, objtype, backend))
@@ -221,12 +221,12 @@ class opts(param.ParameterizedFunction):
             return
 
         if matches:
-            raise ValueError('Unexpected option %r for %s types '
+            raise ValueError('Unexpected option %r for %s type '
                              'across all extensions. Similar options '
                              'for current extension (%r) are: %s.' %
                              (opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option %r for %s types '
+            raise ValueError('Unexpected option %r for %s type '
                              'across all extensions. No similar options '
                              'found.' % (opt, objtype))
 
@@ -267,6 +267,16 @@ class opts(param.ParameterizedFunction):
     def _build_completer(cls, element, allowed):
         def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
+            invalid = set(kws.keys()) - set(allowed)
+            if invalid:
+                try:
+                    cls._options_error(list(invalid)[0], element,
+                                       Store.current_backend, allowed)
+                except ValueError as e:
+                    prefix = 'In opts.{element}(...), '.format(element=element)
+                    msg = str(e)[0].lower() + str(e)[1:]
+                raise ValueError(prefix + msg)
+
             return Options(spec, **kws)
 
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(allowed))
