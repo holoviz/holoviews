@@ -84,8 +84,9 @@ class opts(param.ParameterizedFunction):
             return Options(**params)
 
         if len(args) == 1:
-            msg = ("Use opts.linemagic instead as a direct replacement "
-                   "although opts.defaults is the recommended approach.")
+            msg = ("Positional argument signature of opts is deprecated, "
+                   "use opts.defaults instead.\nFor instance, instead of "
+                   "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
 
             if self._deprecate_magics_call == 'error':
                 raise DeprecationWarning(msg)
@@ -93,9 +94,9 @@ class opts(param.ParameterizedFunction):
                 self.warning(msg)
             self._linemagic(args[0])
         elif len(args) == 2:
-            msg = ("Use opts.cellmagic instead as a direct replacement "
-                   "although using the .options method is the "
-                   "recommended approach.")
+            msg = ("Double positional argument signature of opts is deprecated, "
+                   "use the .options method instead.\nFor instance, instead of "
+                   "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
 
             if self._deprecate_magics_call == 'error':
                 raise DeprecationWarning(msg)
