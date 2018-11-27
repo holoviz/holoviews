@@ -846,13 +846,6 @@ class BoundsXY(LinkedStream):
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
-class Bounds(BoundsXY):
-
-    def __init__(self, *args, **kwargs):
-        self.warning('Bounds is deprecated use BoundsXY instead.')
-        super(Bounds, self).__init__(*args, **kwargs)
-
-
 class BoundsX(LinkedStream):
     """
     A stream representing the bounds of a box selection as an
@@ -896,24 +889,6 @@ class PlotReset(LinkedStream):
         super(PlotReset, self).__init__(self, *args, **dict(params, transient=True))
 
 
-
-class PositionX(PointerX):
-    def __init__(self, **params):
-        self.warning('PositionX stream deprecated: use PointerX instead')
-        super(PositionX, self).__init__(**params)
-
-class PositionY(PointerY):
-    def __init__(self, **params):
-        self.warning('PositionY stream deprecated: use PointerY instead')
-        super(PositionY, self).__init__(**params)
-
-class PositionXY(PointerXY):
-    def __init__(self, **params):
-        self.warning('PositionXY stream deprecated: use PointerXY instead')
-        super(PositionXY, self).__init__(**params)
-
-
-
 class CDSStream(LinkedStream):
     """
     A Stream that syncs a bokeh ColumnDataSource with python.
@@ -924,7 +899,6 @@ class CDSStream(LinkedStream):
         dictionary of columns, where each column is a list of values
         (for point-like data) or list of lists of values (for
         path-like data).""")
-
 
 
 class PointDraw(CDSStream):

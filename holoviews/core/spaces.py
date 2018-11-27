@@ -23,19 +23,29 @@ from ..streams import Stream
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
-    A HoloMap can hold any number of DataLayers indexed by a list of
-    dimension values. It also has a number of properties, which can find
-    the x- and y-dimension limits and labels.
+    A HoloMap is an n-dimensional mapping of viewable elements or
+    overlays. Each item in a HoloMap has an tuple key defining the
+    values along each of the declared key dimensions, defining the
+    discretely sampled space of values.
+
+    The visual representation of a HoloMap consists of the viewable
+    objects inside the HoloMap which can be explored by varying one
+    or more widgets mapping onto the key dimensions of the HoloMap.
     """
 
     data_type = (ViewableElement, NdMapping, Layout)
 
     def overlay(self, dimensions=None, **kwargs):
-        """
-        Splits the UniformNdMapping along a specified number of dimensions and
-        overlays items in the split out Maps.
+        """Group by supplied dimension(s) and overlay each group
 
-        Shows all HoloMap data When no dimensions are specified.
+        Groups data by supplied dimension(s) overlaying the groups
+        along the dimension(s).
+
+        Args:
+            dimensions: Dimension(s) of dimensions to group by
+
+        Returns:
+            NdOverlay object(s) with supplied dimensions
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
@@ -47,11 +57,17 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def grid(self, dimensions=None, **kwargs):
-        """
-        GridSpace takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a GridSpace.
+        """Group by supplied dimension(s) and lay out groups in grid
 
-        Shows all HoloMap data When no dimensions are specified.
+        Groups data by supplied dimension(s) laying the groups along
+        the dimension(s) out in a GridSpace.
+
+        Args:
+        dimensions: Dimension/str or list
+            Dimension or list of dimensions to group by
+
+        Returns:
+            GridSpace with supplied dimensions
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
@@ -61,11 +77,16 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def layout(self, dimensions=None, **kwargs):
-        """
-        GridSpace takes a list of one or two dimensions, and lays out the containing
-        Views along these axes in a GridSpace.
+        """Group by supplied dimension(s) and lay out groups
 
-        Shows all HoloMap data When no dimensions are specified.
+        Groups data by supplied dimension(s) laying the groups along
+        the dimension(s) out in a NdLayout.
+
+        Args:
+            dimensions: Dimension(s) to group by
+
+        Returns:
+            NdLayout with supplied dimensions
         """
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
@@ -98,7 +119,8 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def options(self, *args, **kwargs):
-        """
+        """Applies simplified option definition
+
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
         applied. If the options are to be set directly on the object a
@@ -115,8 +137,21 @@ class HoloMap(UniformNdMapping, Overlayable):
 
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
 
-        If no options are supplied all options on the object will be reset.
-        Disabling clone will modify the object inplace.
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        Returns:
+            Returns the cloned object with the options applied
         """
         data = OrderedDict([(k, v.options(*args, **kwargs))
                              for k, v in self.data.items()])
@@ -124,10 +159,15 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def split_overlays(self):
-        """
-        Given a UniformNdMapping of Overlays of N layers, split out the layers into
-        N separate Maps.
-        """
+        "Deprecated method to split overlays inside the HoloMap."
+        if util.config.future_deprecations:
+            self.warning("split_overlays is deprecated and is now "
+                         "a private method.")
+        return self._split_overlays()
+
+
+    def _split_overlays(self):
+        "Splits overlays inside the HoloMap into list of HoloMaps"
         if not issubclass(self.type, CompositeOverlay):
             return None, self.clone()
 
@@ -203,11 +243,12 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def __mul__(self, other):
-        """
-        The mul (*) operator implements overlaying of different Views.
-        This method tries to intelligently overlay Maps with differing
-        keys. If the UniformNdMapping is mulled with a simple
-        ViewableElement each element in the UniformNdMapping is
+        """Overlays items in the object with another object
+
+        The mul (*) operator implements overlaying of different
+        objects.  This method tries to intelligently overlay mappings
+        with differing keys. If the UniformNdMapping is mulled with a
+        simple ViewableElement each element in the UniformNdMapping is
         overlaid with the ViewableElement. If the element the
         UniformNdMapping is mulled with is another UniformNdMapping it
         will try to match up the dimensions, making sure that items
@@ -272,10 +313,12 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def __add__(self, obj):
-        return Layout.from_values([self, obj])
+        "Composes HoloMap with other object into a Layout"
+        return Layout([self, obj])
 
 
     def __lshift__(self, other):
+        "Adjoin another object to this one returning an AdjointLayout"
         if isinstance(other, (ViewableElement, UniformNdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
@@ -285,20 +328,28 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def collate(self, merge_type=None, drop=[], drop_constant=False):
-        """
-        Collation allows collapsing nested HoloMaps by merging
-        their dimensions. In the simple case a HoloMap containing
-        other HoloMaps can easily be joined in this way. However
-        collation is particularly useful when the objects being
-        joined are deeply nested, e.g. you want to join multiple
-        Layouts recorded at different times, collation will return
-        one Layout containing HoloMaps indexed by Time. Changing
-        the merge_type will allow merging the outer Dimension
-        into any other UniformNdMapping type.
+        """Collate allows reordering nested containers
 
-        Specific dimensions may be dropped if they are redundant
-        by supplying them in a list. Enabling drop_constant allows
-        ignoring any non-varying dimensions during collation.
+        Collation allows collapsing nested mapping types by merging
+        their dimensions. In simple terms in merges nested containers
+        into a single merged type.
+
+        In the simple case a HoloMap containing other HoloMaps can
+        easily be joined in this way. However collation is
+        particularly useful when the objects being joined are deeply
+        nested, e.g. you want to join multiple Layouts recorded at
+        different times, collation will return one Layout containing
+        HoloMaps indexed by Time. Changing the merge_type will allow
+        merging the outer Dimension into any other UniformNdMapping
+        type.
+
+        Args:
+            merge_type: Type of the object to merge with
+            drop: List of dimensions to drop
+            drop_constant: Drop constant dimensions automatically
+
+        Returns:
+            Collated Layout or HoloMap
         """
         from .element import Collator
         merge_type=merge_type if merge_type else self.__class__
@@ -307,10 +358,23 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
-        """
-        Allows collapsing one of any number of key dimensions
-        on the HoloMap. Homogeneous Elements may be collapsed by
-        supplying a function, inhomogeneous elements are merged.
+        """Concatenates and aggregates along supplied dimensions
+
+        Useful to collapse stacks of objects into a single object,
+        e.g. to average a stack of Images or Curves.
+
+        Args:
+            dimensions: Dimension(s) to collapse
+                Defaults to all key dimensions
+            function: Aggregation function to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **kwargs: Keyword arguments passed to the aggregation function
+
+        Returns:
+            Returns the collapsed element or HoloMap of collapsed
+            elements
         """
         from .data import concat
         if not dimensions:
@@ -341,19 +405,36 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def sample(self, samples=[], bounds=None, **sample_values):
-        """
-        Sample each Element in the UniformNdMapping by passing either a list of
-        samples or a tuple specifying the number of regularly spaced
-        samples per dimension. Alternatively, a single sample may be
-        requested using dimension-value pairs. Optionally, the bounds
-        argument can be used to specify the bounding extent from which
-        the coordinates are to regularly sampled. Regular sampling
-        assumes homogeneous and regularly sampled data.
+        """Samples element values at supplied coordinates.
 
-        For 1D sampling, the shape is simply as the desired number of
-        samples (and not a tuple). The bounds format for 1D sampling
-        is the tuple (lower, upper) and the tuple (left, bottom,
-        right, top) for 2D sampling.
+        Allows sampling of element with a list of coordinates matching
+        the key dimensions, returning a new object containing just the
+        selected samples. Supports multiple signatures:
+
+        Sampling with a list of coordinates, e.g.:
+
+            ds.sample([(0, 0), (0.1, 0.2), ...])
+
+        Sampling a range or grid of coordinates, e.g.:
+
+            1D: ds.sample(3)
+            2D: ds.sample((3, 3))
+
+        Sampling by keyword, e.g.:
+
+            ds.sample(x=0)
+
+        Args:
+            samples: List of nd-coordinates to sample
+            bounds: Bounds of the region to sample
+                Defined as two-tuple for 1D sampling and four-tuple
+                for 2D sampling.
+            closest: Whether to snap to closest coordinates
+            **kwargs: Coordinates specified as keyword pairs
+                Keywords of dimensions and scalar coordinates
+
+        Returns:
+            A Table containing the sampled coordinates
         """
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
@@ -379,38 +460,91 @@ class HoloMap(UniformNdMapping, Overlayable):
                 linsamples = list(zip(X.flat, Y.flat))
             else:
                 raise NotImplementedError("Regular sampling not implemented "
-                                          "for high-dimensional Views.")
+                                          "for elements with more than two dimensions.")
 
             samples = list(util.unique_iterator(self.last.closest(linsamples)))
 
         sampled = self.clone([(k, view.sample(samples, closest=False,
                                               **sample_values))
                               for k, view in self.data.items()])
-        return sampled.table()
+
+        from ..element import Table
+        return Table(sampled.collapse())
 
 
-    def reduce(self, dimensions=None, function=None, **reduce_map):
-        """
-        Reduce each Element in the HoloMap using a function supplied
-        via the kwargs, where the keyword has to match a particular
-        dimension in the Elements.
+    def reduce(self, dimensions=None, function=None, spread_fn=None, **reduce_map):
+        """Applies reduction to elements along the specified dimension(s).
+
+        Allows reducing the values along one or more key dimension
+        with the supplied function. Supports two signatures:
+
+        Reducing with a list of dimensions, e.g.:
+
+            ds.reduce(['x'], np.mean)
+
+        Defining a reduction using keywords, e.g.:
+
+            ds.reduce(x=np.mean)
+
+        Args:
+            dimensions: Dimension(s) to apply reduction on
+                Defaults to all key dimensions
+            function: Reduction operation to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **reductions: Keyword argument defining reduction
+                Allows reduction to be defined as keyword pair of
+                dimension and function
+
+        Returns:
+            The Dataset after reductions have been applied.
         """
         from ..element import Table
-        reduced_items = [(k, v.reduce(dimensions, function, **reduce_map))
+        reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
                          for k, v in self.items()]
         if not isinstance(reduced_items[0][1], Table):
             params = dict(util.get_param_values(self.last),
                           kdims=self.kdims, vdims=self.last.vdims)
             return Table(reduced_items, **params)
-        return self.clone(reduced_items).table()
+        return Table(self.clone(reduced_items).collapse())
 
 
     def relabel(self, label=None, group=None, depth=1):
-        # Identical to standard relabel method except for default depth of 1
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to children up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
+        """
         return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
 
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+    def hist(self, dimension=None, num_bins=20, bin_range=None,
+             adjoin=True, individually=True, **kwargs):
+        """Computes and adjoins histogram along specified dimension(s).
+
+        Defaults to first value dimension if present otherwise falls
+        back to first key dimension.
+
+        Args:
+            dimension: Dimension(s) to compute histogram on
+            num_bins (int, optional): Number of bins
+            bin_range (tuple optional): Lower and upper bounds of bins
+            adjoin (bool, optional): Whether to adjoin histogram
+
+        Returns:
+            AdjointLayout of HoloMap and histograms or just the
+            histograms
+        """
         histmaps = [self.clone(shared_data=False) for _ in
                     kwargs.get('dimension', range(1))]
 
@@ -442,7 +576,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             return layout
         else:
             if len(histmaps) > 1:
-                return Layout.from_values(histmaps)
+                return Layout(histmaps)
             else:
                 return histmaps[0]
 
@@ -527,9 +661,14 @@ class Callable(param.Parameterized):
 
 
     def clone(self, callable=None, **overrides):
-        """
-        Allows making a copy of the Callable optionally overriding
-        the callable and other parameters.
+        """Clones the Callable optionally with new settings
+
+        Args:
+            callable: New callable function to wrap
+            **overrides: Parameter overrides to apply
+
+        Returns:
+            Cloned Callable object
         """
         old = {k: v for k, v in self.get_param_values()
                if k not in ['callable', 'name']}
@@ -539,6 +678,18 @@ class Callable(param.Parameterized):
 
 
     def __call__(self, *args, **kwargs):
+        """Calls the callable function with supplied args and kwargs.
+
+        If enabled uses memoization to avoid calling function
+        unneccessarily.
+
+        Args:
+            *args: Arguments passed to the callable function
+            **kwargs: Keyword arguments passed to the callable function
+
+        Returns:
+            Return value of the wrapped callable function
+        """
         # Nothing to do for callbacks that accept no arguments
         kwarg_hash = kwargs.pop('_memoization_hash_', ())
         (self.args, self.kwargs) = (args, kwargs)
@@ -618,8 +769,13 @@ class Generator(Callable):
 
 
 def get_nested_dmaps(dmap):
-    """
-    Get all DynamicMaps referenced by the supplied DynamicMap's callback.
+    """Recurses DynamicMap to find DynamicMaps inputs
+
+    Args:
+        dmap: DynamicMap to recurse to look for DynamicMap inputs
+
+    Returns:
+        List of DynamicMap instances that were found
     """
     if not isinstance(dmap, DynamicMap):
         return []
@@ -630,9 +786,13 @@ def get_nested_dmaps(dmap):
 
 
 def get_nested_streams(dmap):
-    """
-    Get all (potentially nested) streams from DynamicMap with Callable
-    callback.
+    """Recurses supplied DynamicMap to find all streams
+
+    Args:
+        dmap: DynamicMap to recurse to look for streams
+
+    Returns:
+        List of streams that were found
     """
     return list({s for dmap in get_nested_dmaps(dmap) for s in dmap.streams})
 
@@ -670,16 +830,19 @@ class periodic(object):
         self.instance = None
 
     def __call__(self, period, count=None, param_fn=None, timeout=None, block=True):
-        """
+        """Periodically trigger the streams on the DynamicMap.
+
         Run a non-blocking loop that updates the stream parameters using
         the event method. Runs count times with the specified period. If
         count is None, runs indefinitely.
 
-        If param_fn is not specified, the event method is called without
-        arguments. If it is specified, it must be a callable accepting a
-        single argument (the iteration count, starting at 1) that
-        returns a dictionary of the new stream values to be passed to
-        the event method.
+        Args:
+            period: Timeout between events in seconds
+            count: Number of events to trigger
+            param_fn: Function returning stream updates given count
+               Stream parameter values should be returned as dictionary
+            timeout: Overall timeout in seconds
+            block: Whether the periodic callbacks should be blocking
         """
 
         if self.instance is not None and not self.instance.completed:
@@ -688,12 +851,15 @@ class periodic(object):
                                'stop() before running a new periodic process')
         def inner(i):
             kwargs = {} if param_fn is None else param_fn(i)
-            self.dmap.event(**kwargs)
+            if kwargs:
+                self.dmap.event(**kwargs)
+            else:
+                Stream.trigger(self.dmap.streams)
 
         instance = self._periodic_util(period, count, inner,
                                        timeout=timeout, block=block)
         instance.start()
-        self.instance= instance
+        self.instance = instance
 
     def stop(self):
         "Stop the periodic process."
@@ -763,7 +929,7 @@ class DynamicMap(HoloMap):
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
         super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
-        
+
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
@@ -855,9 +1021,13 @@ class DynamicMap(HoloMap):
                                    % (val, high))
 
     def event(self, **kwargs):
-        """
-        This method allows any of the available stream parameters
-        (renamed as appropriate) to be updated in an event.
+        """Updates attached streams and triggers events
+
+        Automatically find streams matching the supplied kwargs to
+        update and trigger events on them.
+
+        Args:
+            **kwargs: Events to update streams with
         """
         if self.callback.noargs and self.streams == []:
             self.warning('No streams declared. To update a DynamicMaps using '
@@ -873,19 +1043,21 @@ class DynamicMap(HoloMap):
             msg = 'Key(s) {invalid} do not correspond to stream parameters'
             raise KeyError(msg.format(invalid = ', '.join('%r' % i for i in invalid)))
 
+        streams = []
         for stream in self.streams:
             applicable_kws = {k:v for k,v in kwargs.items()
                               if k in set(stream.contents.keys())}
+            if not applicable_kws:
+                continue
+            streams.append(stream)
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
             stream.update(**rkwargs)
 
-        Stream.trigger(self.streams)
+        Stream.trigger(streams)
+
 
     def _style(self, retval):
-        """
-        Use any applicable OptionTree of the DynamicMap to apply options
-        to the return values of the callback.
-        """
+        "Applies custom option tree to values return by the callback."
         if self.id not in Store.custom_options():
             return retval
         spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
@@ -893,10 +1065,7 @@ class DynamicMap(HoloMap):
 
 
     def _execute_callback(self, *args):
-        """
-        Execute the callback, validating both the input key and output
-        key where applicable.
-        """
+        "Executes the callback with the appropriate args and kwargs"
         self._validate_key(args)      # Validate input key
 
         # Additional validation needed to ensure kwargs don't clash
@@ -920,7 +1089,8 @@ class DynamicMap(HoloMap):
 
 
     def opts(self, options=None, backend=None, clone=True, **kwargs):
-        """
+        """Applies nested options definition
+
         Applies options on an object or nested group of objects in a
         by options group returning a new object with the options
         applied. If the options are to be set directly on the object a
@@ -935,7 +1105,23 @@ class DynamicMap(HoloMap):
                                 'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
-        Disabling clone will modify the object inplace.
+
+        Args:
+            options (dict): Options specification
+                Options specification should be indexed by
+                type[.group][.label] or option type ('plot', 'style',
+                'norm').
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options by type
+                Applies options directly to the object by type
+                (e.g. 'plot', 'style', 'norm') specified as
+                dictionaries.
+
+        Returns:
+            Returns the cloned object with the options applied
         """
         from ..util import Dynamic
         dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend,
@@ -947,7 +1133,8 @@ class DynamicMap(HoloMap):
 
 
     def options(self, *args, **kwargs):
-        """
+        """Applies simplified option definition
+
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
         applied. If the options are to be set directly on the object a
@@ -964,8 +1151,21 @@ class DynamicMap(HoloMap):
 
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
 
-        If no options are supplied all options on the object will be reset.
-        Disabling clone will modify the object inplace.
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        Returns:
+            Returns the cloned object with the options applied
         """
         from ..util import Dynamic
         clone = kwargs.get('clone', True)
@@ -986,10 +1186,17 @@ class DynamicMap(HoloMap):
 
     def clone(self, data=None, shared_data=True, new_type=None, link_inputs=True,
               *args, **overrides):
-        """
-        Clone method to adapt the slightly different signature of
-        DynamicMap that also overrides Dimensioned clone to avoid
-        checking items if data is unchanged.
+        """Clones the object, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned object
         """
         if data is None and shared_data:
             data = self.data
@@ -1008,9 +1215,7 @@ class DynamicMap(HoloMap):
 
 
     def reset(self):
-        """
-        Return a cleared dynamic map with a cleared cached
-        """
+        "Clear the DynamicMap cache"
         self.data = OrderedDict()
         return self
 
@@ -1097,10 +1302,25 @@ class DynamicMap(HoloMap):
 
 
     def __getitem__(self, key):
-        """
-        Return an element for any key chosen key. Also allows for usual
-        deep slicing semantics by slicing values in the cache and
-        applying the deep slice to newly generated values.
+        """Evaluates DynamicMap with specified key.
+
+        Indexing into a DynamicMap evaluates the dynamic function with
+        the specified key unless the key and corresponding value are
+        already in the cache. This may also be used to evaluate
+        multiple keys or even a cross-product of keys if a list of
+        values per Dimension are defined. Once values are in the cache
+        the DynamicMap can be cast to a HoloMap.
+
+        Args:
+            key: n-dimensional key corresponding to the key dimensions
+               Scalar values will be evaluated as normal while lists
+               of values will be combined to form the cross-product,
+               making it possible to evaluate many keys at once.
+
+        Returns:
+            Returns evaluated callback return value for scalar key
+            otherwise returns cloned DynamicMap containing the cross-
+            product of evaluated items.
         """
         # Split key dimensions and data slices
         sample = False
@@ -1145,16 +1365,42 @@ class DynamicMap(HoloMap):
 
 
     def select(self, selection_specs=None, **kwargs):
-        """
-        Allows slicing or indexing into the DynamicMap objects by
-        supplying the dimension and index/slice as key value
-        pairs. Select descends recursively through the data structure
-        applying the key dimension selection and applies to dynamically
-        generated items by wrapping the callback.
+        """Applies selection by dimension name
 
-        The selection may also be selectively applied to specific
-        objects by supplying the selection_specs as an iterable of
-        type.group.label specs, types or functions.
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        Args:
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
         """
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
@@ -1190,12 +1436,24 @@ class DynamicMap(HoloMap):
 
 
     def map(self, map_fn, specs=None, clone=True, link_inputs=True):
-        """
+        """Map a function to all objects matching the specs
+
         Recursively replaces elements using a map function when the
-        specification applies. Extends regular map with functionality
-        to dynamically apply functions. By default all streams are
-        still linked to the mapped object, to disable linked streams
-        set linked_inputs=False.
+        specs apply, by default applies to all objects, e.g. to apply
+        the function to all contained Curve objects:
+
+            dmap.map(fn, hv.Curve)
+
+        Args:
+            map_fn: Function to apply to each object
+            specs: List of specs to match
+                List of types, functions or type[.group][.label] specs
+                to select objects to return, by default applies to all
+                objects.
+            clone: Whether to clone the object or transform inplace
+
+        Returns:
+            Returns the object after the map_fn has been applied
         """
         deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
@@ -1210,9 +1468,19 @@ class DynamicMap(HoloMap):
 
 
     def relabel(self, label=None, group=None, depth=1):
-        """
-        Assign a new label and/or group to an existing LabelledData
-        object, creating a clone of the object with the new settings.
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to children up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
         """
         relabelled = super(DynamicMap, self).relabel(label, group, depth)
         if depth > 0:
@@ -1229,6 +1497,14 @@ class DynamicMap(HoloMap):
 
 
     def split_overlays(self):
+        "Deprecated method to split overlays inside the DynamicMap."
+        if util.config.future_deprecations:
+            self.warning("split_overlays is deprecated and is now "
+                         "a private method.")
+        return self._split_overlays()
+
+
+    def _split_overlays(self):
         """
         Splits a DynamicMap into its components. Only well defined for
         DynamicMap with consistent number and order of layers.
@@ -1262,14 +1538,15 @@ class DynamicMap(HoloMap):
 
 
     def collate(self):
-        """
-        Collation allows reorganizing DynamicMaps with invalid nesting
-        hierarchies. This is particularly useful when defining
-        DynamicMaps returning an (Nd)Layout or GridSpace
-        types. Collating will split the DynamicMap into individual
-        DynamicMaps for each item in the container. Note that the
-        composite object has to be of consistent length and types for
-        this to work correctly.
+        """Unpacks DynamicMap into container of DynamicMaps
+
+        Collation allows unpacking DynamicMaps which return Layout,
+        NdLayout or GridSpace objects into a single such object
+        containing DynamicMaps. Assumes that the items in the layout
+        or grid that is returned do not change.
+
+        Returns:
+            Collated container containing DynamicMaps
         """
         # Initialize
         if self.last is not None:
@@ -1360,19 +1637,22 @@ class DynamicMap(HoloMap):
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
-        """
-        Implements a dynamic version of a groupby, which will
-        intelligently expand either the inner or outer dimensions
-        depending on whether the container_type or group_type is dynamic.
+        """Groups DynamicMap by one or more dimensions
 
-        To apply a groupby to a DynamicMap the dimensions, which are
-        expanded into a non-dynamic type must define a fixed sampling
-        via the values attribute.
+        Applies groupby operation over the specified dimensions
+        returning an object of type container_type (expected to be
+        dictionary-like) containing the groups.
 
-        Using the dynamic groupby makes it incredibly easy to generate
-        dynamic views into a high-dimensional space while taking
-        advantage of the capabilities of NdOverlay, GridSpace and
-        NdLayout types to visualize more than one Element at a time.
+        Args:
+            dimensions: Dimension(s) to group by
+            container_type: Type to cast group container to
+            group_type: Type to cast each group to
+            dynamic: Whether to return a DynamicMap
+            **kwargs: Keyword arguments to pass to each group
+
+        Returns:
+            Returns object of supplied container_type containing the
+            groups. If dynamic=True returns a DynamicMap instead.
         """
         if dimensions is None:
             dimensions = self.kdims
@@ -1442,14 +1722,49 @@ class DynamicMap(HoloMap):
 
 
     def grid(self, dimensions=None, **kwargs):
+        """
+        Groups data by supplied dimension(s) laying the groups along
+        the dimension(s) out in a GridSpace.
+
+        Args:
+        dimensions: Dimension/str or list
+            Dimension or list of dimensions to group by
+
+        Returns:
+        grid: GridSpace
+            GridSpace with supplied dimensions
+        """
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
     def layout(self, dimensions=None, **kwargs):
+        """
+        Groups data by supplied dimension(s) laying the groups along
+        the dimension(s) out in a NdLayout.
+
+        Args:
+        dimensions: Dimension/str or list
+            Dimension or list of dimensions to group by
+
+        Returns:
+        layout: NdLayout
+            NdLayout with supplied dimensions
+        """
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
     def overlay(self, dimensions=None, **kwargs):
+        """Group by supplied dimension(s) and overlay each group
+
+        Groups data by supplied dimension(s) overlaying the groups
+        along the dimension(s).
+
+        Args:
+            dimensions: Dimension(s) of dimensions to group by
+
+        Returns:
+            NdOverlay object(s) with supplied dimensions
+        """
         if dimensions is None:
             dimensions = self.kdims
         else:
@@ -1461,13 +1776,22 @@ class DynamicMap(HoloMap):
         return self.groupby(dims, group_type=NdOverlay)
 
 
-    def hist(self, num_bins=20, bin_range=None, adjoin=True, **kwargs):
-        """
-        Computes a histogram from the object and adjoins it by
-        default.  By default the histogram is computed for the bottom
-        layer, which can be overriden by supplying an ``index`` and
-        for the first value dimension, which may be overridden by
-        supplying an explicit ``dimension``.
+    def hist(self, dimension=None, num_bins=20, bin_range=None,
+             adjoin=True, **kwargs):
+        """Computes and adjoins histogram along specified dimension(s).
+
+        Defaults to first value dimension if present otherwise falls
+        back to first key dimension.
+
+        Args:
+            dimension: Dimension(s) to compute histogram on
+            num_bins (int, optional): Number of bins
+            bin_range (tuple optional): Lower and upper bounds of bins
+            adjoin (bool, optional): Whether to adjoin histogram
+
+        Returns:
+            AdjointLayout of DynamicMap and adjoined histogram if
+            adjoin=True, otherwise just the histogram
         """
         def dynamic_hist(obj, **dynkwargs):
             if isinstance(obj, (NdOverlay, Overlay)):
@@ -1486,11 +1810,17 @@ class DynamicMap(HoloMap):
 
 
     def reindex(self, kdims=[], force=False):
-        """
-        Reindexing a DynamicMap allows reordering the dimensions but
-        not dropping an individual dimension. The force argument which
-        usually allows dropping non-constant dimensions is therefore
-        ignored and only for API consistency.
+        """Reorders key dimensions on DynamicMap
+
+        Create a new object with a reordered set of key dimensions.
+        Dropping dimensions is not allowed on a DynamicMap.
+
+        Args:
+            kdims: List of dimensions to reindex the mapping with
+            force: Not applicable to a DynamicMap
+
+        Returns:
+            Reindexed DynamicMap
         """
         if not isinstance(kdims, list):
             kdims = [kdims]
@@ -1541,6 +1871,7 @@ class GridSpace(UniformNdMapping):
 
 
     def __lshift__(self, other):
+        "Adjoins another object to the GridSpace"
         if isinstance(other, (ViewableElement, UniformNdMapping)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
@@ -1550,9 +1881,13 @@ class GridSpace(UniformNdMapping):
 
 
     def _transform_indices(self, key):
-        """
-        Transforms indices by snapping to the closest value if
-        values are numeric, otherwise applies no transformation.
+        """Snaps indices into the GridSpace to the closest coordinate.
+
+        Args:
+            key: Tuple index into the GridSpace
+
+        Returns:
+            Transformed key snapped to closest numeric coordinates
         """
         ndims = self.ndims
         if all(not (isinstance(el, slice) or callable(el)) for el in key):
@@ -1590,10 +1925,13 @@ class GridSpace(UniformNdMapping):
 
 
     def keys(self, full_grid=False):
-        """
-        Returns a complete set of keys on a GridSpace, even when GridSpace isn't fully
-        populated. This makes it easier to identify missing elements in the
-        GridSpace.
+        """Returns the keys of the GridSpace
+
+        Args:
+            full_grid (bool, optional): Return full cross-product of keys
+
+        Returns:
+            List of keys
         """
         keys = super(GridSpace, self).keys()
         if self.ndims == 1 or not full_grid:
@@ -1629,11 +1967,13 @@ class GridSpace(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return Layout.from_values([self, obj])
+        "Composes the GridSpace with another object into a Layout."
+        return Layout([self, obj])
 
 
     @property
     def shape(self):
+        "Returns the 2D shape of the GridSpace as (rows, cols)."
         keys = self.keys()
         if self.ndims == 1:
             return (len(keys), 1)

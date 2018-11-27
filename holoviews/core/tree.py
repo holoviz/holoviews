@@ -279,6 +279,15 @@ class AttrTree(object):
 
 
     def get(self, identifier, default=None):
+        """Get a node of the AttrTree using its path string.
+
+        Args:
+            identifier: Path string of the node to return
+            default: Value to return if no node is found
+
+        Returns:
+            The indexed node of the AttrTree
+        """
         split_label = (tuple(identifier.split('.'))
                        if isinstance(identifier, str) else tuple(identifier))
         if len(split_label) == 1:
@@ -292,18 +301,30 @@ class AttrTree(object):
         return path_item
 
     def keys(self):
+        "Keys of nodes in the AttrTree"
         return list(self.data.keys())
 
 
     def items(self):
+        "Keys and nodes of the AttrTree"
         return list(self.data.items())
 
 
     def values(self):
+        "Nodes of the AttrTree"
         return list(self.data.values())
 
 
     def pop(self, identifier, default=None):
+        """Pop a node of the AttrTree using its path string.
+
+        Args:
+            identifier: Path string of the node to return
+            default: Value to return if no node is found
+
+        Returns:
+            The node that was removed from the AttrTree
+        """
         if identifier in self.children:
             item = self[identifier]
             self.__delitem__(identifier)

@@ -12,7 +12,7 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (unique_iterator, sanitize_identifier, dimension_sort,
+from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 
@@ -63,7 +63,7 @@ class MultiDimensionalMapping(Dimensioned):
     keys. This behaves like a sparse N-dimensional array that does not
     require a dense sampling over the multidimensional space.
 
-    If the underlying value for each (key,value) pair also supports
+    If the underlying value for each (key, value) pair also supports
     indexing (such as a dictionary, array, or list), fully qualified
     (deep) indexing may be used from the top level, with the first N
     dimensions of the index selecting a particular Dimensioned object
@@ -250,9 +250,17 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
-        """
-        Overrides Dimensioned clone to avoid checking items if data
-        is unchanged.
+        """Clones the object, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned object
         """
         with item_check(not shared_data and self._check_items):
             return super(MultiDimensionalMapping, self).clone(data, shared_data,
@@ -260,12 +268,22 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
-        """
-        Splits the mapping into groups by key dimension which are then
-        returned together in a mapping of class container_type. The
-        individual groups are of the same type as the original map.
-        This operation will always sort the groups and the items in
-        each group.
+        """Groups object by one or more dimensions
+
+        Applies groupby operation over the specified dimensions
+        returning an object of type container_type (expected to be
+        dictionary-like) containing the groups.
+
+        Args:
+            dimensions: Dimension(s) to group by
+            container_type: Type to cast group container to
+            group_type: Type to cast each group to
+            dynamic: Whether to return a DynamicMap
+            **kwargs: Keyword arguments to pass to each group
+
+        Returns:
+            Returns object of supplied container_type containing the
+            groups. If dynamic=True returns a DynamicMap instead.
         """
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
@@ -281,11 +299,21 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
-        """
-        Create a new object with an additional key dimensions.
-        Requires the dimension name or object, the desired position
-        in the key dimensions and a key value scalar or sequence of
-        the same length as the existing keys.
+        """Adds a dimension and its values to the object
+        
+        Requires the dimension name or object, the desired position in
+        the key dimensions and a key value scalar or sequence of the
+        same length as the existing keys.
+
+        Args:
+            dimension: Dimension or dimension spec to add
+            dim_pos (int) Integer index to insert dimension at
+            dim_val (scalar or ndarray): Dimension value(s) to add
+            vdim: Disabled, this type does not have value dimensions
+            **kwargs: Keyword arguments passed to the cloned element
+
+        Returns:
+            Cloned object containing the new dimension
         """
         dimension = asdim(dimension)
 
@@ -327,8 +355,13 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def drop_dimension(self, dimensions):
-        """
-        Returns a new mapping with the named dimension(s) removed.
+        """Drops dimension(s) from keys
+
+        Args:
+            dimensions: Dimension(s) to drop
+
+        Returns:
+            Clone of object with with dropped dimension(s)
         """
         dimensions = [dimensions] if np.isscalar(dimensions) else dimensions
         dims = [d for d in self.kdims if d not in dimensions]
@@ -339,12 +372,26 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
-        "Returns the values along the specified dimension."
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+                Whether to return the expanded values, behavior depends
+                on the type of data:
+                  * Columnar: If false returns unique values
+                  * Geometry: If false returns scalar values per geometry
+                  * Gridded: If false returns 1D coordinates
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
         if dimension in self.dimensions():
-            values = [el.dimension_values(dimension) for el in self
+            values = [el.dimension_values(dimension, expanded, flat) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
@@ -353,14 +400,22 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def reindex(self, kdims=[], force=False):
-        """
-        Create a new object with a re-ordered or reduced set of key
-        dimensions.
+        """Reindexes object dropping static or supplied kdims
+
+        Creates a new object with a reordered or reduced set of key
+        dimensions. By default drops all non-varying key dimensions.
 
         Reducing the number of key dimensions will discard information
         from the keys. All data values are accessible in the newly
         created object as the new labels must be sufficient to address
         each value uniquely.
+
+        Args:
+            kdims (optional): New list of key dimensions after reindexing
+            force (bool, optional): Whether to drop non-unique items
+
+        Returns:
+            Reindexed object
         """
         old_kdims = [d.name for d in self.kdims]
         if not isinstance(kdims, list):
@@ -430,33 +485,12 @@ class MultiDimensionalMapping(Dimensioned):
         print(info_str)
 
 
-    def table(self, datatype=None, **kwargs):
-        "Creates a table from the stored keys and data."
-        from .data.interface import Interface
-        from ..element.tabular import Table
-        new_data = [(key, value.table(datatype=datatype, **kwargs))
-                    for key, value in self.data.items()]
-        tables = self.clone(new_data)
-        return Interface.concatenate(tables, new_type=Table)
-
-
-    def dframe(self):
-        "Creates a pandas DataFrame from the stored keys and data."
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('key', True) + [self.group]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
     def update(self, other):
-        """
-        Updates the current mapping with some other mapping or
-        OrderedDict instance, making sure that they are indexed along
-        the same set of dimensions. The order of key dimensions remains
-        unchanged after the update.
+        """Merges other item with this object
+        
+        Args:
+            other: Object containing items to merge into this object
+                Must be a dictionary or NdMapping type
         """
         if isinstance(other, NdMapping):
             dims = [d for d in other.kdims if d not in self.kdims]
@@ -481,7 +515,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def values(self):
-        " Returns the values of all the elements."
+        "Returns the values of all the elements."
         return list(self.data.values())
 
 
@@ -519,6 +553,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __setitem__(self, key, value):
+        "Adds item to mapping"
         self._add_item(key, value, update=False)
 
 
@@ -527,6 +562,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __iter__(self):
+        "Iterates over mapping values"
         return iter(self.values())
 
 
@@ -539,6 +575,46 @@ class MultiDimensionalMapping(Dimensioned):
     def __len__(self):
         return len(self.data)
 
+    ######################
+    #    Deprecations    #
+    ######################
+
+    def table(self, datatype=None, **kwargs):
+        """
+        Deprecated method to convert an MultiDimensionalMapping of
+        Elements to a Table.
+        """
+        if config.future_deprecations:
+            self.warning("The table method is deprecated and should no "
+                         "longer be used. If using a HoloMap use "
+                         "HoloMap.collapse() instead to return a Dataset.")
+
+        from .data.interface import Interface
+        from ..element.tabular import Table
+        new_data = [(key, value.table(datatype=datatype, **kwargs))
+                    for key, value in self.data.items()]
+        tables = self.clone(new_data)
+        return Interface.concatenate(tables, new_type=Table)
+
+
+    def dframe(self):
+        """
+        Deprecated method to convert a MultiDimensionalMapping to
+        a pandas DataFrame. Conversion to a dataframe now only
+        supported by specific subclasses such as UniformNdMapping
+        types.
+        """
+        self.warning("The MultiDimensionalMapping.dframe method is "
+                     "deprecated and should no longer be used. "
+                     "Use a more specific subclass which does support "
+                     "the dframe method instead, e.g. a HoloMap.")
+        try:
+            import pandas
+        except ImportError:
+            raise Exception("Cannot build a DataFrame without the pandas library.")
+        labels = self.dimensions('key', True) + [self.group]
+        return pandas.DataFrame(
+            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
 
 
 
@@ -714,9 +790,9 @@ class UniformNdMapping(NdMapping):
     sequence) or any other combination of Dimensions.
 
     UniformNdMapping objects can be sliced, sampled, reduced, overlaid
-    and split along its and its containing Views
-    dimensions. Subclasses should implement the appropriate slicing,
-    sampling and reduction methods for their Dimensioned type.
+    and split along its and its containing Element's dimensions.
+    Subclasses should implement the appropriate slicing, sampling and
+    reduction methods for their Dimensioned type.
     """
 
     data_type = (ViewableElement, NdMapping)
@@ -733,12 +809,17 @@ class UniformNdMapping(NdMapping):
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
-        """
-        Returns a clone of the object with matching parameter values
-        containing the specified args and kwargs.
+        """Clones the object, overriding data and parameters.
 
-        If shared_data is set to True and no data explicitly supplied,
-        the clone will share data with the original.
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned object
         """
         settings = dict(self.get_param_values())
         if settings.get('group', None) != self._group:
@@ -766,8 +847,58 @@ class UniformNdMapping(NdMapping):
                                               if k not in pos_args})
 
 
+    def dframe(self, dimensions=None, multi_index=False):
+        """Convert dimension values to DataFrame.
+
+        Returns a pandas dataframe of columns along each dimension,
+        either completely flat or indexed by key dimensions.
+
+        Args:
+            dimensions: Dimensions to return as columns
+            multi_index: Convert key dimensions to (multi-)index
+
+        Returns:
+            DataFrame of columns corresponding to each dimension
+        """
+        import pandas as pd
+        if dimensions is None:
+            outer_dimensions = self.kdims
+            inner_dimensions = None
+        else:
+            outer_dimensions = [self.get_dimension(d) for d in dimensions
+                                if d in self.kdims]
+            inner_dimensions = [d for d in dimensions
+                                if d not in outer_dimensions]
+        inds = [(d, self.get_dimension_index(d)) for d in outer_dimensions]
+
+        dframes = []
+        for key, element in self.data.items():
+            df = element.dframe(inner_dimensions, multi_index)
+            names = [d.name for d in outer_dimensions]
+            key_dims = [(d, key[i]) for d, i in inds]
+            if multi_index:
+                length = len(df)
+                indexes = [[v]*length for _, v in key_dims]
+                if df.index.names != [None]:
+                    indexes += [df.index]
+                    names += list(df.index.names)
+                df = df.set_index(indexes)
+                df.index.names = names
+            else:
+                for dim, val in key_dims:
+                    dimn = 1
+                    while dim in df:
+                        dim = dim+'_%d' % dimn
+                        if dim in df:
+                            dimn += 1
+                    df.insert(0, dim, val)
+            dframes.append(df)
+        return pd.concat(dframes)
+
+
     @property
     def group(self):
+        "Group inherited from items"
         if self._group:
             return self._group
         group =  get_ndmapping_label(self, 'group') if len(self) else None
@@ -786,6 +917,7 @@ class UniformNdMapping(NdMapping):
 
     @property
     def label(self):
+        "Label inherited from items"
         if self._label:
             return self._label
         else:
@@ -805,12 +937,11 @@ class UniformNdMapping(NdMapping):
 
     @property
     def type(self):
-        """
-        The type of elements stored in the map.
-        """
+        "The type of elements stored in the mapping."
         if self._type is None and len(self):
             self._type = self.values()[0].__class__
         return self._type
+
 
     @property
     def empty_element(self):
@@ -822,28 +953,6 @@ class UniformNdMapping(NdMapping):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
         super(UniformNdMapping, self)._item_check(dim_vals, data)
-
-
-    def dframe(self):
-        """
-        Gets a dframe for each Element in the HoloMap, appends the
-        dimensions of the HoloMap as series and concatenates the
-        dframes.
-        """
-        import pandas
-        dframes = []
-        for key, view in self.data.items():
-            view_frame = view.dframe()
-            key_dims = reversed(list(zip(key, self.dimensions('key', True))))
-            for val, dim in key_dims:
-                dimn = 1
-                while dim in view_frame:
-                    dim = dim+'_%d' % dimn
-                    if dim in view_frame:
-                        dimn += 1
-                view_frame.insert(0, dim, val)
-            dframes.append(view_frame)
-        return pandas.concat(dframes)
 
 
     def __mul__(self, other, reverse=False):

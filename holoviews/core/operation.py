@@ -177,12 +177,6 @@ class Operation(param.ParameterizedFunction):
         return processed
 
 
-class ElementOperation(Operation):
-
-    def __init__(self, *args, **kwargs):
-        self.warning('ElementOperation has been deprecated and renamed to Operation.')
-        super(ElementOperation, self).__init__(*args, **kwargs)
-
 
 class OperationCallable(Callable):
     """
