@@ -77,8 +77,6 @@ class opts(param.ParameterizedFunction):
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
 
-    _deprecate_magics_call = 'error' # 'warn', 'error' or None
-
     def __call__(self, *args, **params):
         if params and not args:
             return Options(**params)
@@ -87,10 +85,7 @@ class opts(param.ParameterizedFunction):
             msg = ("Positional argument signature of opts is deprecated, "
                    "use opts.defaults instead.\nFor instance, instead of "
                    "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
-
-            if self._deprecate_magics_call == 'error':
-                raise DeprecationWarning(msg)
-            elif self._deprecate_magics_call == 'warn':
+            if util.config.future_deprecations:
                 self.warning(msg)
             self._linemagic(args[0])
         elif len(args) == 2:
@@ -98,9 +93,7 @@ class opts(param.ParameterizedFunction):
                    "use the .options method instead.\nFor instance, instead of "
                    "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
 
-            if self._deprecate_magics_call == 'error':
-                raise DeprecationWarning(msg)
-            elif self._deprecate_magics_call == 'warn':
+            if util.config.future_deprecations:
                 self.warning(msg)
 
             self._cellmagic(args[0], args[1])
