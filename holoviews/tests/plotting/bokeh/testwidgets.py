@@ -183,7 +183,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['default'], 0)
         self.assertIs(slider['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr(['0.0']))
+        self.assertEqual(init_dim_vals, [0.0])
 
     def test_holomap_slider_unsorted(self):
         data = {(i, j): Curve([1, 2, 3]) for i in range(3) for j in range(3)}
@@ -195,6 +195,16 @@ class TestSelectionWidget(ComparisonTestCase):
         slider = widgets[1]
         self.assertEqual(slider['vals'], repr([repr(float(v)) for v in range(3)]))
         self.assertEqual(slider['labels'], repr([str(v) for v in range(3)]))
+
+    def test_holomap_slider_unsorted_initialization(self):
+        data = [(3, Curve([3, 2, 1])), (1, Curve([1, 2, 3]))]
+        hmap = HoloMap(data, ['X'], sort=False)
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['vals'], "['1.0', '3.0']")
+        self.assertEqual(slider['labels'], "['1', '3']")
 
     def test_holomap_dropdown(self):
         hmap = HoloMap({chr(65+i): Curve([1, 2, 3]) for i in range(10)}, 'X')
@@ -211,7 +221,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(dropdown['default'], 0)
         self.assertIs(dropdown['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr(['A']))
+        self.assertEqual(init_dim_vals, ['A'])
 
     def test_holomap_slider_and_dropdown(self):
         hmap = HoloMap({(i, chr(65+i)): Curve([1, 2, 3]) for i in range(10)}, ['X', 'Y'])
@@ -242,7 +252,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertIs(dropdown['next_dim'], None)
 
         self.assertEqual(dimensions, ['X', 'Y'])
-        self.assertEqual(init_dim_vals, repr(['0.0', 'A']))
+        self.assertEqual(init_dim_vals, [0.0, 'A'])
 
     def test_dynamicmap_int_range_slider(self):
         hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[Dimension('X', range=(0, 5))])
@@ -259,7 +269,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['default'], 0)
         self.assertIs(slider['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr([0.0]))
+        self.assertEqual(init_dim_vals, [0.0])
 
     def test_dynamicmap_float_range_slider(self):
         hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[Dimension('X', range=(0., 5.))])
@@ -276,7 +286,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['default'], 0.0)
         self.assertIs(slider['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr([0.0]))
+        self.assertEqual(init_dim_vals, [0.0])
 
     def test_dynamicmap_float_range_slider_with_step(self):
         dimension = Dimension('X', range=(0., 5.), step=0.05)
@@ -308,7 +318,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['default'], 0)
         self.assertIs(slider['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr([0.0]))
+        self.assertEqual(init_dim_vals, [0.0])
 
     def test_dynamicmap_values_dropdown(self):
         values = [chr(65+i) for i in range(10)]
@@ -327,7 +337,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(dropdown['default'], 0)
         self.assertIs(dropdown['next_dim'], None)
         self.assertEqual(dimensions, ['X'])
-        self.assertEqual(init_dim_vals, repr([0.0]))
+        self.assertEqual(init_dim_vals, [0.0])
 
     def test_dynamicmap_values_default(self):
         values = [chr(65+i) for i in range(10)]
@@ -336,7 +346,7 @@ class TestSelectionWidget(ComparisonTestCase):
         widgets = bokeh_renderer.get_widget(hmap, 'widgets')
         widgets, dimensions, init_dim_vals =  widgets.get_widgets()
         self.assertEqual(widgets[0]['default'], '2')
-        self.assertEqual(init_dim_vals, repr(['2']))
+        self.assertEqual(init_dim_vals, ['2'])
 
     def test_dynamicmap_range_default(self):
         dimension = Dimension('X', range=(0., 5.), default=0.05)
@@ -344,7 +354,7 @@ class TestSelectionWidget(ComparisonTestCase):
         widgets = bokeh_renderer.get_widget(hmap, 'widgets')
         widgets, dimensions, init_dim_vals =  widgets.get_widgets()
         self.assertEqual(widgets[0]['default'], 0.05)
-        self.assertEqual(init_dim_vals, '[0.050000000]')
+        self.assertEqual(init_dim_vals, [0.05])
 
     def test_holomap_slider_default(self):
         dim = Dimension('X', default=3)
@@ -352,7 +362,7 @@ class TestSelectionWidget(ComparisonTestCase):
         widgets = bokeh_renderer.get_widget(hmap, 'widgets')
         widgets, dimensions, init_dim_vals =  widgets.get_widgets()
         self.assertEqual(widgets[0]['default'], '2')
-        self.assertEqual(init_dim_vals, "['3.0']")
+        self.assertEqual(init_dim_vals, [3.0])
 
     def test_holomap_slider_bad_default(self):
         dim = Dimension('X', default=42)
@@ -366,7 +376,7 @@ class TestSelectionWidget(ComparisonTestCase):
         widgets = bokeh_renderer.get_widget(hmap, 'widgets')
         widgets, dimensions, init_dim_vals =  widgets.get_widgets()
         self.assertEqual(widgets[0]['default'], '2')
-        self.assertEqual(init_dim_vals, "['C']")
+        self.assertEqual(init_dim_vals, ['C'])
 
     def test_holomap_dropdown_bad_default(self):
         dim = Dimension('X', default='Z')

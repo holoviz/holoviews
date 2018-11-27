@@ -341,7 +341,6 @@ class SelectionWidget(NdWidget):
                                dim_idx=idx, visibility=visibility)
             widgets.append(widget_data)
             dimensions.append(escaped_dim)
-        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
 
@@ -363,9 +362,6 @@ class SelectionWidget(NdWidget):
         else:
             next_vals = {}
 
-        value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                for v in dim_vals]))
-
         if isinstance(dim_vals[0], np.datetime64):
             dim_vals = sorted([str(v.astype('datetime64[ns]')) for v in dim_vals])
             widget_type = 'slider'
@@ -379,6 +375,9 @@ class SelectionWidget(NdWidget):
         else:
             next_vals = dict(next_vals)
             widget_type = 'dropdown'
+
+        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                for v in dim_vals]))
 
         if dim.default is None:
             default = 0
@@ -460,6 +459,7 @@ class SelectionWidget(NdWidget):
     def _get_data(self):
         data = super(SelectionWidget, self)._get_data()
         widgets, dimensions, init_dim_vals = self.get_widgets()
+        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         key_data = {} if self.plot.dynamic else self.get_key_data()
         notfound_msg = "<h2 style='vertical-align: middle>No frame at selected dimension value.<h2>"
         throttle = self.throttle[self.embed]

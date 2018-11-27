@@ -10,6 +10,9 @@ class PlotlyWidget(NdWidget):
 
     def _get_data(self):
         # Get initial frame to draw immediately
+        if not self.plot.dynamic:
+            _, _, init_dim_vals = self.get_widgets()
+            self.plot.update(tuple(init_dim_vals))
         msg, metadata = self.renderer.components(self.plot, divuuid=self.id, comm=False)
         data = super(PlotlyWidget, self)._get_data()
         return dict(data, init_html=msg['text/html'],
