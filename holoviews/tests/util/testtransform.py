@@ -133,8 +133,8 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square', 'C': 'triangle'}).apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
-    def test_categorize_transform_dict_with_empty(self):
-        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, empty='triangle').apply(self.dataset),
+    def test_categorize_transform_dict_with_default(self):
+        self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, default='triangle').apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
     # Complex expressions

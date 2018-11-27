@@ -11,22 +11,15 @@ from ..element import Graph
 
 
 def norm(values, min=None, max=None):
-    """
-    min-max normalizes to scale data into 0-1 range.
+    """min-max normalization to scale data into 0-1 range.
 
-    Arguments
-    ---------
-    values: np.ndarray
-       Array of values to be binned
-    min: float (optional)
-       Lower bound of normalization range
-    max: float (optional)
-       Upper bound of normalization range
+    Args:
+        values: Array of values to be normalized
+        min (float, optional): Lower bound of normalization range
+        max (float, optional): Upper bound of normalization range
 
-    Returns
-    -------
-    normalized: np.ndarray
-       Array of normalized values
+    Returns:
+        Array of normalized values
     """
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
@@ -34,24 +27,20 @@ def norm(values, min=None, max=None):
 
 
 def bin(values, bins, labels=None):
-    """
+    """Bins data into declared bins
+
     Bins data into declared bins. By default each bin is labelled
     with bin center values but an explicit list of bin labels may be
     defined.
 
-    Arguments
-    ---------
-    values: np.ndarray
-       Array of values to be binned
-    bins: np.ndarray or list
-       Bin edges to place bins into
-    labels: np.ndarray or list (optional)
-       Labels for bins should have length N-1 compared to bins
+    Args:
+        values: Array of values to be binned
+        bins: List or array containing the bin boundaries
+        labels: List of labels to assign to each bin
+            If the bins are length N the labels should be length N-1
 
-    Returns
-    -------
-    binned: np.ndarray
-       Array of binned values
+    Returns:
+        Array of binned values
     """
     bins = np.asarray(bins)
     if labels is None:
@@ -66,24 +55,19 @@ def bin(values, bins, labels=None):
     return binned
 
 
-def categorize(values, categories, empty=None):
-    """
-    Replaces discrete values in input array into a fixed set of
+def categorize(values, categories, default=None):
+    """Maps discrete values to supplied categories.
+
+    Replaces discrete values in input array with a fixed set of
     categories defined either as a list or dictionary.
 
-    Arguments
-    ---------
-    values: np.ndarray
-       Array of values to be categorized
-    categories: list or dict
-       Categories to assign to input values
-    empty: any (optional)
-       Value assigned to input values no category could be assigned to
+    Args:
+        values: Array of values to be categorized
+        categories: List or dict of categories to map inputs to
+        default: Default value to assign if value not in categories
 
-    Returns
-    -------
-    categorized: np.ndarray
-       Array of categorized values
+    Returns:
+        Array of categorized values
     """
     uniq_cats = list(unique_iterator(values))
     cats = []
@@ -93,9 +77,9 @@ def categorize(values, categories, empty=None):
             if cat_ind < len(categories):
                 cat = categories[cat_ind]
             else:
-                cat = empty
+                cat = default
         else:
-            cat = categories.get(c, empty)
+            cat = categories.get(c, default)
         cats.append(cat)
     return np.asarray(cats)
 
@@ -220,7 +204,7 @@ class dim(object):
             raise ValueError('One of max or min must be given.')
         return dim(self, np.clip, min=min, max=max)
 
-    def any(self, **kwargs):     return dim(self, np.any, **kwargs)     
+    def any(self, **kwargs):     return dim(self, np.any, **kwargs)
     def all(self, **kwargs):     return dim(self, np.all, **kwargs)
     def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
     def cumprod(self, **kwargs): return dim(self, np.cumprod, **kwargs)
@@ -236,33 +220,30 @@ class dim(object):
     ## Custom functions
 
     def bin(self, bins, labels=None):
-        """
-        Replaces discrete values in input array into a fixed set of
-        categories defined either as a list or dictionary.
+        """Bins continuous values.
 
-        Arguments
-        ---------
-        categories: list or dict
-           Categories to assign to input values
-        empty: any (optional)
-           Value assigned to input values no category could be assigned to
+        Bins continuous using the provided bins and assigns labels
+        either computed from each bins center point or from the
+        supplied labels.
+
+        Args:
+            bins: List or array containing the bin boundaries
+            labels: List of labels to assign to each bin
+                If the bins are length N the labels should be length N-1
         """
         return dim(self, bin, bins, labels=labels)
 
-    def categorize(self, categories, empty=None):
-        """
-        Bins data into declared bins. By default each bin is labelled
-        with bin center values but an explicit list of bin labels may be
-        defined.
+    def categorize(self, categories, default=None):
+        """Replaces discrete values with supplied categories
 
-        Arguments
-        ---------
-        bins: np.ndarray or list
-           Bin edges to place bins into
-        labels: np.ndarray or list (optional)
-           Labels for bins should have length N-1 compared to bins
+        Replaces discrete values in input array into a fixed set of
+        categories defined either as a list or dictionary.
+
+        Args:
+            categories: List or dict of categories to map inputs to
+            default: Default value to assign if value not in categories
         """
-        return dim(self, categorize, categories=categories, empty=empty)
+        return dim(self, categorize, categories=categories, default=default)
 
     def norm(self, limits=None):
         """
@@ -280,7 +261,7 @@ class dim(object):
         return self.astype(str)
 
     # Other methods
-    
+
     def applies(self, dataset):
         """
         Determines whether the dim transform can be applied to the
@@ -303,29 +284,20 @@ class dim(object):
         return applies
 
     def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False):
-        """
-        Evaluates the transform on the supplied dataset.
+        """Evaluates the transform on the supplied dataset.
 
-        Arguments
-        ---------
+        Args:
+            dataset: Dataset object to evaluate the expression on
+            flat: Whether to flatten the returned array
+            expanded: Whether to use the expanded expand values
+            ranges: Dictionary for ranges for normalization
+            all_values: Whether to evaluate on all values
+               Whether to evaluate on all available values, for some
+               element types, such as Graphs, this may include values
+               not included in the referenced column
 
-        dataset: Dataset
-            Dataset object to evaluate the expression on
-        flat: boolean
-            Whether to flatten the returned array
-        expanded: boolean
-            Whether to use the expanded expression
-        ranges: dict
-            Dictionary for ranges along each dimension used for norm function
-        all_values: boolean
-            Whether to evaluate on all available values, for some element
-            types, such as Graphs, this may include values not included
-            in the referenced column
-
-        Returns
-        -------
-        values: np.ndarray
-            Array containing evaluated expression
+        Returns:
+            values: NumPy array computed by evaluating the expression
         """
         dimension = self.dimension
         if expanded is None:
@@ -393,7 +365,7 @@ class dim(object):
                     else:
                         format_string = '{fn}(' + prev
                     if fn_name in dir(np):
-                        format_string = self._namespaces['numpy']+format_string
+                        format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
                     format_string = prev+', {fn}'
                 if args:
