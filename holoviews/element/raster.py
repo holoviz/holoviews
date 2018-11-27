@@ -38,7 +38,7 @@ class Raster(Element2D):
     group = param.String(default='Raster', constant=True)
 
     vdims = param.List(default=[Dimension('z')],
-                       bounds=(1, 1), doc="""
+                       bounds=(1, None), doc="""
         The dimension description of the data held in the matrix.""")
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
@@ -277,7 +277,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = 0
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
-        elif isinstance(data, np.ndarray) and data.ndim != self._ndim:
+        elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
             raise ValueError('%s type expects %d-D array received %d-D'
                              'array.' % (self._ndim, data.ndim))
 
@@ -633,7 +633,7 @@ class RGB(Image):
 
     vdims = param.List(
         default=[Dimension('R', range=(0,1)), Dimension('G',range=(0,1)),
-                 Dimension('B', range=(0,1))], bounds=(3, 4), doc="""
+                 Dimension('B', range=(0,1))], bounds=(3, None), doc="""
         The dimension description of the data held in the matrix.
 
         If an alpha channel is supplied, the defined alpha_dimension
@@ -754,7 +754,7 @@ class HSV(RGB):
     vdims = param.List(
         default=[Dimension('H', range=(0,1), cyclic=True),
                  Dimension('S',range=(0,1)),
-                 Dimension('V', range=(0,1))], bounds=(3, 4), doc="""
+                 Dimension('V', range=(0,1))], bounds=(3, None), doc="""
         The dimension description of the data held in the array.
 
         If an alpha channel is supplied, the defined alpha_dimension
