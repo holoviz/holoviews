@@ -3,7 +3,6 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews.element import Curve, Polygons, Table, Scatter, Path
-from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
 try:
