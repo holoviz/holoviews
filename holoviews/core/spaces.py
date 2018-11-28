@@ -242,7 +242,8 @@ class HoloMap(UniformNdMapping, Overlayable):
                               streams=streams)
 
 
-    def __mul__(self, other):
+
+    def __mul__(self, other, reverse=False):
         """Overlays items in the object with another object
 
         The mul (*) operator implements overlaying of different
@@ -291,7 +292,11 @@ class HoloMap(UniformNdMapping, Overlayable):
                 new_key = self_key if other_in_self else other_key
                 # Append SheetOverlay of combined items
                 if (self_key in self) and (other_key in other):
-                    items.append((new_key, self[self_key] * other[other_key]))
+                    if reverse:
+                        value = other[other_key] * self[self_key]
+                    else:
+                        value = self[self_key] * other[other_key]
+                    items.append((new_key, value))
                 elif self_key in self:
                     items.append((new_key, Overlay([self[self_key]])))
                 else:
@@ -301,12 +306,16 @@ class HoloMap(UniformNdMapping, Overlayable):
             if isinstance(self, DynamicMap):
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
-                    return element * other
+                    if reverse:
+                        return other * element
+                    else:
+                        return element * other
                 callback = Callable(dynamic_mul, inputs=[self, other])
                 callback._is_overlay = True
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
-            items = [(k, v * other) for (k, v) in self.data.items()]
+            items = [(k, other * v) if reverse else (k, v * other)
+                     for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
             return NotImplemented

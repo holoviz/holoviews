@@ -194,7 +194,7 @@ class Overlay(ViewableTree, CompositeOverlay):
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         elif not isinstance(other, ViewableElement):
-            raise NotImplementedError
+            return NotImplemented
         return Overlay([self, other])
 
 

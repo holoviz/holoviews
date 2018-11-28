@@ -3,7 +3,7 @@ Test cases for the composite types built with + and * i.e Layout
 and Overlay (does *not* test HoloMaps).
 """
 
-from holoviews import Element, Layout, Overlay
+from holoviews import Element, Layout, Overlay, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -310,6 +310,10 @@ class OverlayTestCase(ElementTestCase):
         paths = Overlay.from_values([overlay, self.el2]).keys()
         self.assertEqual(paths, [('Custom', 'LabelA'), ('Element', 'I')])
 
+    def test_overlay_with_holomap(self):
+        overlay = Overlay([('Custom', self.el6)])
+        composite = overlay * HoloMap({0: Element(None, group='HoloMap')})
+        self.assertEqual(composite.last.keys(), [('Custom', 'LabelA'), ('HoloMap', 'I')])
 
 
 class CompositeTestCase(ElementTestCase):
