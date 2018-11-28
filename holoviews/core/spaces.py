@@ -1210,7 +1210,7 @@ class DynamicMap(HoloMap):
         Returns:
             Cloned object
         """
-        if 'link_inputs' in overrides and config.future_deprecations:
+        if 'link_inputs' in overrides and util.config.future_deprecations:
             self.warning('link_inputs argument to the clone method is '
                          'deprecated, use the more general link '
                          'argument instead.')
