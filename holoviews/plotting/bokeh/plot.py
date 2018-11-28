@@ -407,6 +407,8 @@ class BokehPlot(DimensionedPlot):
         callbacks = []
         for link, src_plot, tgt_plot in links:
             cb = Link._callbacks['bokeh'][type(link)]
+            if src_plot is None or (link._requires_target and tgt_plot is None):
+                continue
             callbacks.append(cb(self.root, link, src_plot, tgt_plot))
         return callbacks
 
