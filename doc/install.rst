@@ -10,7 +10,7 @@ the
 `Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
 Python distributions::
 
-  conda install -c ioam holoviews bokeh
+  conda install -c pyviz holoviews bokeh
 
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
