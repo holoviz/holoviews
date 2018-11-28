@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Curve, Polygons, Table, Scatter
+from holoviews.element import Curve, Polygons, Table, Scatter, Path
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
@@ -73,3 +73,12 @@ class TestLinkCallbacks(ComparisonTestCase):
         layout = polys + table
         with self.assertRaises(Exception):
             bokeh_renderer.get_plot(layout)
+
+    def test_data_link_list(self):
+        path = Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims='color').options(color='color')
+        table = Table([('A', 1), ('B', 2)], 'A', 'B')
+        DataLink(path, table)
+        layout = path + table
+        plot = bokeh_renderer.get_plot(layout)
+        path_plot, table_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        self.assertIs(path_plot.handles['source'], table_plot.handles['source'])

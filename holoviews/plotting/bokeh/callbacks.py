@@ -1233,6 +1233,7 @@ class DataLinkCallback(LinkCallback):
         for k, v in tgt_cds.data.items():
             if k not in src_cds.data:
                 continue
+            v = np.asarray(v)
             col = np.asarray(src_cds.data[k])
             if not ((isscalar(v) and v == col) or
                     (v.dtype.kind not in 'iufc' and (v==col).all()) or
