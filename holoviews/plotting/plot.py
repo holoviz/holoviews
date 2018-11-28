@@ -13,7 +13,7 @@ import param
 
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.element import Element
+from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
@@ -575,6 +575,9 @@ class DimensionedPlot(Plot):
         type is found an exception is raised.
         """
         isoverlay = lambda x: isinstance(x, CompositeOverlay)
+        element3d = obj.traverse(lambda x: x, [Element3D])
+        if element3d:
+            return '3d'
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
