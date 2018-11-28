@@ -145,7 +145,6 @@ class TestHeatMapPlot(TestBokehPlot):
             self.assertEqual(marker.dimension, 'width')
 
     def test_heatmap_dilate(self):
-        # This just ensures that the dilate kwarg is now accepted by heatmap
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
         glyph = plot.handles['glyph']
