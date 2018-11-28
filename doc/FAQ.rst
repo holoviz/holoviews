@@ -35,10 +35,10 @@ passing arguments (or an unpacked dictionary) to .redim.label():
 To override a label for plotting it is also possible to use the
 `xlabel` and `ylabel` plot options:
 
-  hv.Curve(df, 'x_col', 'y_col').options(
-      xlabel='X Label', ylabel='Label for Y'
-  )
+.. code:: python
 
+  curve = hv.Curve(df, 'x_col', 'y_col')
+  curve = curve.options(xlabel='X Label', ylabel='Label for Y')
 
 **Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
 
