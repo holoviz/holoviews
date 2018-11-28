@@ -2,20 +2,19 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Curve, Polygons, Table, Scatter
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element import Curve, Polygons, Table, Scatter, Path
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
 try:
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
     from holoviews.plotting.bokeh.util import bokeh_version
     from bokeh.models import ColumnDataSource
-    bokeh_renderer = BokehRenderer.instance()
 except:
-    bokeh_renderer = None
+    pass
+
+from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class TestLinkCallbacks(ComparisonTestCase):
+class TestLinkCallbacks(TestBokehPlot):
 
     def setUp(self):
         if not bokeh_renderer or bokeh_version < '0.13':
@@ -73,3 +72,12 @@ class TestLinkCallbacks(ComparisonTestCase):
         layout = polys + table
         with self.assertRaises(Exception):
             bokeh_renderer.get_plot(layout)
+
+    def test_data_link_list(self):
+        path = Path([[(0, 0, 0), (1, 1, 1), (2, 2, 2)]], vdims='color').options(color='color')
+        table = Table([('A', 1), ('B', 2)], 'A', 'B')
+        DataLink(path, table)
+        layout = path + table
+        plot = bokeh_renderer.get_plot(layout)
+        path_plot, table_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        self.assertIs(path_plot.handles['source'], table_plot.handles['source'])
