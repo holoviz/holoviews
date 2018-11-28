@@ -169,11 +169,15 @@ class BokehPlot(DimensionedPlot):
             sources = [(self.zorder, self.hmap.last)]
 
         cb_classes = set()
+        registry = list(Stream.registry.items())
+        callbacks = Stream._callbacks['bokeh']
         for _, source in sources:
-            streams = Stream.registry.get(source, [])
-            registry = Stream._callbacks['bokeh']
-            cb_classes |= {(registry[type(stream)], stream) for stream in streams
-                           if type(stream) in registry and stream.linked
+            streams = [
+                s for src, streams in registry for s in streams
+                if src is source or (src._plot_id is not None and
+                                     src._plot_id == source._plot_id)]
+            cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
+                           if type(stream) in callbacks and stream.linked
                            and stream.source is not None}
         cbs = []
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))

@@ -292,10 +292,11 @@ class BaseShape(Path):
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
         """
+        link = overrides.pop('link', True)
         settings = dict(self.get_param_values(), **overrides)
         if 'id' not in settings:
             settings['id'] = self.id
-        if not args:
+        if not args and link:
             settings['plot_id'] = self._plot_id
 
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])

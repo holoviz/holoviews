@@ -65,7 +65,29 @@ class TestLinkCallbacks(ComparisonTestCase):
                        'A': np.array(['A', 'B']), 'B': np.array([1, 2])}
         for k, v in cds[0].data.items():
             self.assertEqual(v, merged_data[k])
-    
+
+    def test_data_link_poly_table_on_clone(self):
+        arr1 = np.random.rand(10, 2)
+        arr2 = np.random.rand(10, 2)
+        polys = Polygons([arr1, arr2])
+        table = Table([('A', 1), ('B', 2)], 'A', 'B')
+        DataLink(polys, table)
+        layout = polys.clone() + table.clone()
+        plot = bokeh_renderer.get_plot(layout)
+        cds = list(plot.state.select({'type': ColumnDataSource}))
+        self.assertEqual(len(cds), 1)
+
+    def test_data_link_poly_table_on_unlinked_clone(self):
+        arr1 = np.random.rand(10, 2)
+        arr2 = np.random.rand(10, 2)
+        polys = Polygons([arr1, arr2])
+        table = Table([('A', 1), ('B', 2)], 'A', 'B')
+        DataLink(polys, table)
+        layout = polys.clone() + table.clone(link=False)
+        plot = bokeh_renderer.get_plot(layout)
+        cds = list(plot.state.select({'type': ColumnDataSource}))
+        self.assertEqual(len(cds), 2)
+
     def test_data_link_mismatch(self):
         polys = Polygons([np.random.rand(10, 2)])
         table = Table([('A', 1), ('B', 2)], 'A', 'B')
