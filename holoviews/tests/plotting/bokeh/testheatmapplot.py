@@ -143,3 +143,9 @@ class TestHeatMapPlot(TestBokehPlot):
         for marker, pos in zip(plot.handles['ymarks'], (2, 1)):
             self.assertEqual(marker.location, pos)
             self.assertEqual(marker.dimension, 'width')
+
+    def test_heatmap_dilate(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(dilate=True)
+        plot = bokeh_renderer.get_plot(hmap)
+        glyph = plot.handles['glyph']
+        self.assertTrue(glyph.dilate) 
