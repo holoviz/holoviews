@@ -52,6 +52,16 @@ class Annotation(Element2D):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data if np.isscalar(self.data) else self.data[index]])
@@ -88,6 +98,16 @@ class VLine(Annotation):
         super(VLine, self).__init__(x, x=x, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.data])
@@ -111,6 +131,16 @@ class HLine(Annotation):
         super(HLine, self).__init__(y, y=y, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([])
@@ -143,7 +173,33 @@ class Spline(Annotation):
         super(Spline, self).__init__(spline_points, **params)
 
 
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        """Clones the object, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned Spline
+        """
+        return Element2D.clone(self, data, shared_data, new_type,
+                               *args, **overrides)
+
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
             return np.array([point[index] for point in self.data[0]])
@@ -205,6 +261,16 @@ class Arrow(Annotation):
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([self.x])
