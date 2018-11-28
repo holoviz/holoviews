@@ -633,7 +633,7 @@ class RGB(Image):
 
     vdims = param.List(
         default=[Dimension('R', range=(0,1)), Dimension('G',range=(0,1)),
-                 Dimension('B', range=(0,1))], bounds=(3, None), doc="""
+                 Dimension('B', range=(0,1))], bounds=(3, 3), doc="""
         The dimension description of the data held in the matrix.
 
         If an alpha channel is supplied, the defined alpha_dimension
@@ -754,7 +754,7 @@ class HSV(RGB):
     vdims = param.List(
         default=[Dimension('H', range=(0,1), cyclic=True),
                  Dimension('S',range=(0,1)),
-                 Dimension('V', range=(0,1))], bounds=(3, None), doc="""
+                 Dimension('V', range=(0,1))], bounds=(3, 3), doc="""
         The dimension description of the data held in the array.
 
         If an alpha channel is supplied, the defined alpha_dimension
