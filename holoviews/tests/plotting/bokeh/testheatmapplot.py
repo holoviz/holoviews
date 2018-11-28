@@ -143,3 +143,7 @@ class TestHeatMapPlot(TestBokehPlot):
         for marker, pos in zip(plot.handles['ymarks'], (2, 1)):
             self.assertEqual(marker.location, pos)
             self.assertEqual(marker.dimension, 'width')
+
+    def test_heatmap_dilate(self):
+        # This just ensures that the dilate kwarg is now accepted by heatmap
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(dilate=True)
