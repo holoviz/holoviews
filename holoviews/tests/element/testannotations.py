@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews import HLine, VLine, Text, Arrow, Annotation
+from holoviews import HLine, VLine, Text, Arrow, Annotation, Spline
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Points
 
@@ -53,3 +53,9 @@ class AnnotationTests(ComparisonTestCase):
         self.assertEqual(mapped.Arrow.I, Arrow(0, 0, **kwargs))
         self.assertEqual(mapped.HLine.I, HLine(0, **kwargs))
         self.assertEqual(mapped.VLine.I, VLine(0, **kwargs))
+
+    def test_spline_clone(self):
+        points = [(-0.3, -0.3), (0,0), (0.25, -0.25), (0.3, 0.3)]
+        spline = Spline((points,[])).clone()
+        self.assertEqual(spline.dimension_values(0), np.array([-0.3, 0, 0.25, 0.3]))
+        self.assertEqual(spline.dimension_values(1), np.array([-0.3, 0, -0.25, 0.3]))
