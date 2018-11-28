@@ -7,15 +7,15 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
 try:
-    from holoviews.plotting.bokeh.renderer import BokehRenderer
     from holoviews.plotting.bokeh.util import bokeh_version
     from bokeh.models import ColumnDataSource
-    bokeh_renderer = BokehRenderer.instance()
 except:
-    bokeh_renderer = None
+    pass
+
+from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class TestLinkCallbacks(ComparisonTestCase):
+class TestLinkCallbacks(TestBokehPlot):
 
     def setUp(self):
         if not bokeh_renderer or bokeh_version < '0.13':
