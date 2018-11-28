@@ -742,7 +742,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Process color/alpha styles and expand to fill/line style
         for style, val in list(new_style.items()):
             for s in ('alpha', 'color'):
-                if prefix+s != style or style not in source.data:
+                if prefix+s != style or style not in source.data or validate(s, val, True):
                     continue
                 supports_fill = any(
                     o.startswith(prefix+'fill') and (prefix != 'edge_' or getattr(self, 'filled', True))
