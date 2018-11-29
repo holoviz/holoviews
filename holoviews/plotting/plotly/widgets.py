@@ -32,7 +32,7 @@ class PlotlySelectionWidget(PlotlyWidget, SelectionWidget):
 
     def _get_data(self):
         if not self.plot.dynamic:
-            _, _, init_dim_vals = self.get_widgets()
+            key = tuple(w['value'] for w in widgets)
             self.plot.update(tuple(init_dim_vals))
         return super(PlotlySelectionWidget, self)._get_data()
 
