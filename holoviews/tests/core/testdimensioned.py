@@ -46,27 +46,27 @@ class TestDimensioned_options(CustomBackendTestCase):
         assert opts.options == {'style_opt1': 'A'}
 
     def test_apply_options_current_backend_style_invalid(self):
-        err = ("Unexpected option 'style_opt3' for TestObj types "
+        err = ("Unexpected option 'style_opt3' for TestObj type "
                "across all extensions. Similar options for current "
                "extension \('backend_1'\) are: \['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegexp(ValueError, err):
             TestObj([]).options(style_opt3='A')
 
     def test_apply_options_current_backend_style_invalid_no_match(self):
-        err = ("Unexpected option 'zxy' for TestObj types across all extensions\. "
+        err = ("Unexpected option 'zxy' for TestObj type across all extensions\. "
                "No similar options found\.")
         with self.assertRaisesRegexp(ValueError, err):
             TestObj([]).options(zxy='A')
 
     def test_apply_options_explicit_backend_style_invalid_cross_backend(self):
-        err = ("Unexpected option 'style_opt3' for TestObj types when "
+        err = ("Unexpected option 'style_opt3' for TestObj type when "
                "using the 'backend_2' extension. Similar options are: "
                "\['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegexp(ValueError, err):
             TestObj([]).options(style_opt3='A', backend='backend_2')
 
     def test_apply_options_explicit_backend_style_invalid_no_match(self):
-        err = ("Unexpected option 'zxy' for TestObj types when using the "
+        err = ("Unexpected option 'zxy' for TestObj type when using the "
                "'backend_2' extension. No similar options founds\.")
         with self.assertRaisesRegexp(ValueError, err):
             TestObj([]).options(zxy='A', backend='backend_2')
@@ -79,7 +79,7 @@ class TestDimensioned_options(CustomBackendTestCase):
         self.log_handler.assertEndsWith('WARNING', substr)
 
     def test_apply_options_explicit_backend_style_invalid(self):
-        err = ("Unexpected option 'style_opt3' for TestObj types when "
+        err = ("Unexpected option 'style_opt3' for TestObj type when "
                "using the 'backend_2' extension. Similar options are: "
                "\['style_opt1', 'style_opt2'\]\.")
         with self.assertRaisesRegexp(ValueError, err):

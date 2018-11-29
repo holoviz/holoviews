@@ -5,7 +5,7 @@ import param
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_option_dicts  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -40,34 +40,31 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
 
 class opts(param.ParameterizedFunction):
     """
-    Utility function to set options either at the global level or on a
-    specific object.
+    Utility function to set options at the global level or to provide an
+    Options object that can be used with the .options method of an
+    element or container.
 
-    To set opts globally use:
+    Option objects can be generated and validated in a tab-completable
+    way (in appropriate environments such as Jupyter notebooks) using
+    completers such as opts.Curve, opts.Image, opts.Overlay, etc.
 
-    opts(options)
+    To set opts globally you can pass these option objects into opts.defaults:
 
-    Where options may be an options specification string (as accepted by
-    the %opts magic) or an options specifications dictionary.
+    opts.defaults(*options)
 
     For instance:
 
-    opts("Curve (color='k')") # Or equivalently
-    opts({'Curve': {'style': {'color':'k'}}})
+    opts.defaults(opts.Curve(color='red'))
 
-    To set opts on a specific object, just supply it as the second
-    argument:
-
-    opts(options, obj)
+    To set opts on a specific object, you can supply these option
+    objects to the .options method.
 
     For instance:
 
     curve = hv.Curve([1,2,3])
-    opts("Curve (color='k')", curve) # Or equivalently
-    opts({'Curve': {'style': {'color':'k'}}}, curve)
+    curve.options(opts.Curve(color='red'))
 
-    These two modes are equivalent to the %opts line magic and the
-    %%opts cell magic respectively.
+    The options method also accepts lists of Option objects.
     """
 
     __original_docstring__ = None
@@ -78,42 +75,68 @@ class opts(param.ParameterizedFunction):
        strict, invalid keywords prevent the options being applied.""")
 
     def __call__(self, *args, **params):
-
-        if args and set(params.keys()) - set(['strict']):
-            raise TypeError('When used with positional arguments, hv.opts accepts only strings and dictionaries, not keywords.')
         if params and not args:
             return Options(**params)
 
-        p = param.ParamOverrides(self, params)
-        if len(args) not in [1,2]:
-            raise TypeError('The opts utility accepts one or two positional arguments.')
-        elif len(args) == 1:
-            options, obj = args[0], None
+        if len(args) == 1:
+            msg = ("Positional argument signature of opts is deprecated, "
+                   "use opts.defaults instead.\nFor instance, instead of "
+                   "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
+            if util.config.future_deprecations:
+                self.warning(msg)
+            self._linemagic(args[0])
         elif len(args) == 2:
-            (options, obj) = args
+            msg = ("Double positional argument signature of opts is deprecated, "
+                   "use the .options method instead.\nFor instance, instead of "
+                   "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
 
+            if util.config.future_deprecations:
+                self.warning(msg)
+
+            self._cellmagic(args[0], args[1])
+
+    @classmethod
+    def _process_magic(cls, options, strict):
         if isinstance(options, basestring):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
-
         errmsg = StoreOptions.validation_error_message(options)
         if errmsg:
             sys.stderr.write(errmsg)
-            if p.strict:
+            if strict:
                 sys.stderr.write(' Options specification will not be applied.')
-                if obj: return obj
-                else:   return
+                return options, True
+        return options, False
 
-        if obj is None:
-            with options_policy(skip_invalid=True, warn_on_skip=False):
-                StoreOptions.apply_customizations(options, Store.options())
-        elif not isinstance(obj, Dimensioned):
+    @classmethod
+    def _cellmagic(cls, options, obj, strict=False):
+        "Deprecated, not expected to be used by any current code"
+        options, failure = cls._process_magic(options, strict)
+        if failure: return obj
+        if not isinstance(obj, Dimensioned):
             return obj
         else:
             return StoreOptions.set_options(obj, options)
+
+    @classmethod
+    def _linemagic(cls, options, strict=False):
+        "Deprecated, not expected to be used by any current code"
+        options, failure = cls._process_magic(options, strict)
+        if failure: return
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            StoreOptions.apply_customizations(options, Store.options())
+
+
+    @classmethod
+    def defaults(cls, *options):
+        """
+        Set default options for a session, whether in a Python script or
+        a Jupyter notebook.
+        """
+        cls.linemagic(cls.expand_options(merge_options_to_dict(options)))
 
 
     @classmethod
@@ -136,15 +159,7 @@ class opts(param.ParameterizedFunction):
             raise Exception('The %s backend is not loaded. Please load the backend using hv.extension.' % str(e))
         expanded = {}
         if isinstance(options, list):
-            merged_options = {}
-            for obj in options:
-                if isinstance(obj,dict):
-                    new_opts = obj
-                else:
-                    new_opts = {obj.key: obj.kwargs}
-
-                merged_options = merge_option_dicts(merged_options, new_opts)
-            options = merged_options
+            options = merge_options_to_dict(options)
 
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
@@ -179,12 +194,12 @@ class opts(param.ParameterizedFunction):
         matches = sorted(kws.fuzzy_match(opt))
         if backend is not None:
             if matches:
-                raise ValueError('Unexpected option %r for %s types '
+                raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. Similar '
                                  'options are: %s.' %
                                  (opt, objtype, backend, matches))
             else:
-                raise ValueError('Unexpected option %r for %s types '
+                raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. No '
                                  'similar options founds.' %
                                  (opt, objtype, backend))
@@ -206,19 +221,62 @@ class opts(param.ParameterizedFunction):
             return
 
         if matches:
-            raise ValueError('Unexpected option %r for %s types '
+            raise ValueError('Unexpected option %r for %s type '
                              'across all extensions. Similar options '
                              'for current extension (%r) are: %s.' %
                              (opt, objtype, current_backend, matches))
         else:
-            raise ValueError('Unexpected option %r for %s types '
+            raise ValueError('Unexpected option %r for %s type '
                              'across all extensions. No similar options '
                              'found.' % (opt, objtype))
+
+    @classmethod
+    def _completer_reprs(cls, options, namespace=None, ns=None):
+        """
+        Given a list of Option objects (such as those returned from
+        OptsSpec.parse_options) or an %opts or %%opts magic string,
+        return a list of corresponding completer reprs. The namespace is
+        typically given as 'hv' if fully qualified namespaces are
+        desired.
+        """
+        if isinstance(options, basestring):
+            from .parser import OptsSpec
+            if ns is None:
+                try:     ns = get_ipython().user_ns  # noqa
+                except:  ns = globals()
+            options = options.replace('%%opts','').replace('%opts','')
+            options = OptsSpec.parse_options(options, ns=ns)
+
+
+        reprs = []
+        ns = '{namespace}.'.format(namespace=namespace) if namespace else ''
+        for option in options:
+            kws = ', '.join('%s=%r' % (k,option.kwargs[k]) for k in sorted(option.kwargs))
+            if '.' in option.key:
+                element = option.key.split('.')[0]
+                spec = repr('.'.join(option.key.split('.')[1:])) + ', '
+            else:
+                element = option.key
+                spec = ''
+
+            opts_format = '{ns}opts.{element}({spec}{kws})'
+            reprs.append(opts_format.format(ns=ns, spec=spec, kws=kws, element=element))
+        return reprs
 
     @classmethod
     def _build_completer(cls, element, allowed):
         def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
+            invalid = set(kws.keys()) - set(allowed)
+            if invalid:
+                try:
+                    cls._options_error(list(invalid)[0], element,
+                                       Store.current_backend, allowed)
+                except ValueError as e:
+                    prefix = 'In opts.{element}(...), '.format(element=element)
+                    msg = str(e)[0].lower() + str(e)[1:]
+                raise ValueError(prefix + msg)
+
             return Options(spec, **kws)
 
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(allowed))

@@ -200,6 +200,22 @@ def merge_option_dicts(old_opts, new_opts):
     return merged
 
 
+def merge_options_to_dict(options):
+    """
+    Given a collection of Option objects or partial option dictionaries,
+    merge everything to a single dictionary.
+    """
+    merged_options = {}
+    for obj in options:
+        if isinstance(obj,dict):
+            new_opts = obj
+        else:
+            new_opts = {obj.key: obj.kwargs}
+
+        merged_options = merge_option_dicts(merged_options, new_opts)
+    return merged_options
+
+
 class periodic(Thread):
     """
     Run a callback count times with a given period without blocking.

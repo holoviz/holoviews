@@ -345,6 +345,23 @@ class OptsSpec(Parser):
             for path, options in parse.items()
         }
 
+    @classmethod
+    def parse_options(cls, line, ns={}):
+        """
+        Similar to parse but returns a list of Options objects instead
+        of the dictionary format.
+        """
+        parsed = cls.parse(line, ns=ns)
+        options_list = []
+        for spec in sorted(parsed.keys()):
+            options = parsed[spec]
+            merged = {}
+            for group in options.values():
+                merged = dict(group.kwargs, **merged)
+            options_list.append(Options(spec, **merged))
+        return options_list
+
+
 
 
 class CompositorSpec(Parser):
