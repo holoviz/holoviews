@@ -274,10 +274,6 @@ class BokehWidget(NdWidget):
         Optional javascript extension file for a particular backend.""")
 
     def _get_data(self):
-        # Get initial frame to draw immediately
-        if not self.plot.dynamic:
-            _, _, init_dim_vals = self.get_widgets()
-            self.plot.update(tuple(init_dim_vals))
         msg, metadata = self.renderer.components(self.plot, comm=False)
         data = super(BokehWidget, self)._get_data()
         return dict(data, init_html=msg['text/html'],
@@ -316,8 +312,12 @@ class BokehWidget(NdWidget):
 
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):
-    pass
 
+    def _get_data(self):
+        if not self.plot.dynamic:
+            _, _, init_dim_vals = self.get_widgets()
+            self.plot.update(tuple(init_dim_vals))
+        return super(BokehSelectionWidget, self)._get_data()
 
 class BokehScrubberWidget(BokehWidget, ScrubberWidget):
     pass
