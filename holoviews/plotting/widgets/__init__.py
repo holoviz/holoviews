@@ -9,7 +9,7 @@ from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.ndmapping import item_check
 from ...core.util import (
-    dimension_sanitizer, bytes_to_unicode, unique_array, unicode,
+    dimension_sanitizer, bytes_to_unicode, unique_iterator, unicode,
     isnumeric, cross_index, wrap_tuple_streams, drop_streams
 )
 from ...core.traversal import hierarchical
@@ -341,7 +341,6 @@ class SelectionWidget(NdWidget):
                                dim_idx=idx, visibility=visibility)
             widgets.append(widget_data)
             dimensions.append(escaped_dim)
-        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
 
@@ -354,7 +353,7 @@ class SelectionWidget(NdWidget):
             values = next_vals[init_dim_vals[idx-1]]
         else:
             values = (list(dim.values) if dim.values else
-                        list(unique_array(mock_obj.dimension_values(dim.name))))
+                        list(unique_iterator(mock_obj.dimension_values(dim.name))))
             visible = visible and len(values) > 1
 
         if idx < mock_obj.ndims-1:
@@ -465,6 +464,7 @@ class SelectionWidget(NdWidget):
     def _get_data(self):
         data = super(SelectionWidget, self)._get_data()
         widgets, dimensions, init_dim_vals = self.get_widgets()
+        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         key_data = {} if self.plot.dynamic else self.get_key_data()
         notfound_msg = "<h2 style='vertical-align: middle>No frame at selected dimension value.<h2>"
         throttle = self.throttle[self.embed]
