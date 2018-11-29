@@ -53,6 +53,22 @@ class TestCallbacks(CallbackTestCase):
         self.assertEqual(data['x'], np.array([10]))
         self.assertEqual(data['y'], np.array([-10]))
 
+    def test_stream_callback_on_clone(self):
+        points = Points([])
+        stream = PointerXY(source=points)
+        plot = bokeh_server_renderer.get_plot(points.clone())
+        bokeh_server_renderer(plot)
+        plot.callbacks[0].on_msg({"x": 10, "y": -10})
+        self.assertEqual(stream.x, 10)
+        self.assertEqual(stream.y, -10)
+
+    def test_stream_callback_on_unlinked_clone(self):
+        points = Points([])
+        PointerXY(source=points)
+        plot = bokeh_server_renderer.get_plot(points.clone(link=False))
+        bokeh_server_renderer(plot)
+        self.assertTrue(len(plot.callbacks) == 0)
+
     def test_stream_callback_with_ids(self):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)

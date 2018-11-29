@@ -388,7 +388,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         super(Dataset, self).__setstate__(state)
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
@@ -401,7 +402,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
                                 ydensity=self.ydensity)
             overrides = dict(sheet_params, **overrides)
-        return super(Image, self).clone(data, shared_data, new_type, *args, **overrides)
+        return super(Image, self).clone(data, shared_data, new_type, link,
+                                        *args, **overrides)
 
 
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):

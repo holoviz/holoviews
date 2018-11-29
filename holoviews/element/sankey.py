@@ -350,7 +350,9 @@ class Sankey(Graph):
         self._validate()
         self.redim = redim_graph(self, mode='dataset')
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
         if data is None:
             overrides['sankey'] = self._sankey
-        return super(Sankey, self).clone(data, shared_data, new_type, *args, **overrides)
+        return super(Sankey, self).clone(data, shared_data, new_type, link,
+                                         *args, **overrides)

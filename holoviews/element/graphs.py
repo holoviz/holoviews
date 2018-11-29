@@ -234,7 +234,8 @@ class Graph(Dataset, Element2D):
                                  'edgepaths (%d)' % (nedges, npaths))
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
         if data is None:
             data = (self.data, self.nodes)
             if self._edgepaths is not None:
@@ -244,7 +245,8 @@ class Graph(Dataset, Element2D):
             data = (data, self.nodes)
             if self._edgepaths:
                 data = data + (self.edgepaths,)
-        return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
+        return super(Graph, self).clone(data, shared_data, new_type, link,
+                                        *args, **overrides)
 
 
     def select(self, selection_specs=None, selection_mode='edges', **selection):

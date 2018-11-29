@@ -1193,7 +1193,7 @@ class DynamicMap(HoloMap):
         return dmap
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, link_inputs=True,
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         """Clones the object, overriding data and parameters.
 
@@ -1201,25 +1201,35 @@ class DynamicMap(HoloMap):
             data: New data replacing the existing data
             shared_data (bool, optional): Whether to use existing data
             new_type (optional): Type to cast object to
+            link (bool, optional): Whether clone should be linked
+                Determines whether Streams and Links attached to
+                original object will be inherited.
             *args: Additional arguments to pass to constructor
             **overrides: New keyword arguments to pass to constructor
 
         Returns:
             Cloned object
         """
+        if 'link_inputs' in overrides and util.config.future_deprecations:
+            self.warning('link_inputs argument to the clone method is '
+                         'deprecated, use the more general link '
+                         'argument instead.')
+        link = link and overrides.pop('link_inputs', True)
+        callback = overrides.pop('callback', self.callback)
         if data is None and shared_data:
             data = self.data
-            overrides['plot_id'] = self._plot_id
-        clone = super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
-                                                    shared_data, new_type,
-                                                    *(data,) + args, **overrides)
+            if link and callback is self.callback:
+                overrides['plot_id'] = self._plot_id
+        clone = super(UniformNdMapping, self).clone(
+            callback, shared_data, new_type, link,
+            *(data,) + args, **overrides)
 
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
             with util.disable_constant(clone):
                 clone.callback = clone.callback.clone(inputs=[self],
-                                                      link_inputs=link_inputs)
+                                                      link_inputs=link)
         return clone
 
 

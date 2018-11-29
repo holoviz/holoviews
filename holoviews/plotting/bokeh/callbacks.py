@@ -1175,12 +1175,19 @@ class LinkCallback(param.Parameterized):
         Searches a GenericElementPlot for a Link.
         """
         sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
-        for src in sources:
+        registry = Link.registry.items()
+        for source in sources:
             if link is None:
-                if src in Link.registry:
-                    return (plot, Link.registry[src])
+                links = [
+                    l for src, links in registry for l in links
+                    if src is source or (src._plot_id is not None and
+                                         src._plot_id == source._plot_id)]
+                if links:
+                    return (plot, links)
             else:
-                if link.target is src:
+                if ((link.target is source) or
+                    (link.target._plot_id is not None and
+                     link.target._plot_id == source._plot_id)):
                     return (plot, [link])
 
     def validate(self):

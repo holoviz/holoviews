@@ -256,6 +256,9 @@ class MultiDimensionalMapping(Dimensioned):
             data: New data replacing the existing data
             shared_data (bool, optional): Whether to use existing data
             new_type (optional): Type to cast object to
+            link (bool, optional): Whether clone should be linked
+                Determines whether Streams and Links attached to
+                original object will be inherited.
             *args: Additional arguments to pass to constructor
             **overrides: New keyword arguments to pass to constructor
 
@@ -808,13 +811,17 @@ class UniformNdMapping(NdMapping):
         super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
         """Clones the object, overriding data and parameters.
 
         Args:
             data: New data replacing the existing data
             shared_data (bool, optional): Whether to use existing data
             new_type (optional): Type to cast object to
+            link (bool, optional): Whether clone should be linked
+                Determines whether Streams and Links attached to
+                original object will be inherited.
             *args: Additional arguments to pass to constructor
             **overrides: New keyword arguments to pass to constructor
 
@@ -839,7 +846,8 @@ class UniformNdMapping(NdMapping):
 
         if data is None and shared_data:
             data = self.data
-            settings['plot_id'] = self._plot_id
+            if link:
+                settings['plot_id'] = self._plot_id
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         with item_check(not shared_data and self._check_items):
