@@ -72,7 +72,7 @@ HoloViewsWidget.prototype.update = function(current){
 
 HoloViewsWidget.prototype.init_comms = function() {
   var that = this
-  HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.msg_handler(msg) })
+  window.PyViz.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.msg_handler(msg) })
   if (!this.cached || this.dynamic) {
     function ack_callback(msg) {
       var msg = msg.metadata;
@@ -91,7 +91,7 @@ HoloViewsWidget.prototype.init_comms = function() {
         console.log("Python failed with the following traceback:", msg.traceback)
       }
     }
-    var comm = HoloViews.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
+    var comm = window.PyViz.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
     return comm
   }
 }
@@ -463,7 +463,7 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
         var text = $('#textInput'+id+'_'+dim);
         text.val(label);
         adjustFontSize(text);
-        HoloViews.index[plot_id].set_frame(dim_val, dim_idx);
+        window.PyViz.index[plot_id].set_frame(dim_val, dim_idx);
         if (Object.keys(next_vals).length > 0) {
           var new_vals = next_vals[dim_val];
           var next_widget = $('#_anim_widget'+id+'_'+next_dim);
@@ -533,21 +533,16 @@ function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_di
       var next_widget = $('#_anim_widget'+id+'_'+next_dim);
       update_widget(next_widget, new_vals);
     }
-    var widgets = HoloViews.index[plot_id]
+    var widgets = window.PyViz.index[plot_id]
     if (widgets) {
       widgets.set_frame(dim_val, dim_idx);
     }
   });
 }
 
-
-if (window.HoloViews === undefined) {
-  window.HoloViews = {}
-  window.PyViz = window.HoloViews
-} else if (window.PyViz === undefined) {
-  window.PyViz = window.HoloViews
+if (window.PyViz === undefined) {
+  window.PyViz = {}
 }
-
 
 var _namespace = {
   init_slider: init_slider,
@@ -561,7 +556,7 @@ var _namespace = {
 }
 
 for (var k in _namespace) {
-  if (!(k in window.HoloViews)) {
-    window.HoloViews[k] = _namespace[k];
+  if (!(k in window.PyViz)) {
+    window.PyViz[k] = _namespace[k];
   }
 }
