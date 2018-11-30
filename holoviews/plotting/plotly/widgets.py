@@ -32,8 +32,9 @@ class PlotlySelectionWidget(PlotlyWidget, SelectionWidget):
 
     def _get_data(self):
         if not self.plot.dynamic:
+            widgets, _, _ = self.get_widgets()
             key = tuple(w['value'] for w in widgets)
-            self.plot.update(tuple(init_dim_vals))
+            self.plot.update(tuple(key))
         return super(PlotlySelectionWidget, self)._get_data()
 
 class PlotlyScrubberWidget(PlotlyWidget, ScrubberWidget):
