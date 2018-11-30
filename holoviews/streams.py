@@ -1084,5 +1084,4 @@ class PolyEdit(PolyDraw):
 
     def __init__(self, vertex_style={}, shared=True, **params):
         self.shared = shared
-        self.vertex_style = vertex_style
-        super(PolyEdit, self).__init__(**params)
+        super(PolyEdit, self).__init__(vertex_style=vertex_style, **params)
