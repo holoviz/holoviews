@@ -1,13 +1,17 @@
 from __future__ import division
 
 import operator
-from types import FunctionType, MethodType
+from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
 
 from ..core.dimension import Dimension
 from ..core.util import basestring, unique_iterator
 from ..element import Graph
+
+function_types = (
+    BuiltinFunctionType, BuiltinMethodType, FunctionType,
+    MethodType, np.ufunc)
 
 
 def norm(values, min=None, max=None):
@@ -132,7 +136,7 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, (FunctionType, MethodType, np.ufunc)) or
+            if not (isinstance(fn, function_types) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
