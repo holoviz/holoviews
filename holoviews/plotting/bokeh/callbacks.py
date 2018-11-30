@@ -522,13 +522,42 @@ class PointerXYCallback(Callback):
     }
     """
 
+    def _process_out_of_bounds(self, value, start, end):
+        "Clips out of bounds values"
+        if value < start:
+            value = start
+        elif value > end:
+            value = end
+        return value
+
     def _process_msg(self, msg):
         x_range = self.plot.handles.get('x_range')
         y_range = self.plot.handles.get('y_range')
+
+        server_mode = self.plot.renderer.mode == 'server'
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
             msg['x'] = x_range.factors[int(msg['x'])]
+        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)) and server_mode:
+            xstart, xend = x_range.start, x_range.end
+            if xstart > xend:
+                xstart, xend = xend, xstart
+            x = self._process_out_of_bounds(msg['x'], xstart, xend)
+            if x is None:
+                msg = {}
+            else:
+                msg['x'] = x
+
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
             msg['y'] = y_range.factors[int(msg['y'])]
+        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)) and server_mode:
+            ystart, yend = y_range.start, y_range.end
+            if ystart > yend:
+                ystart, yend = yend, ystart
+            y = self._process_out_of_bounds(msg['y'], ystart, yend)
+            if y is None:
+                msg = {}
+            else:
+                msg['y'] = y
 
         xaxis = self.plot.handles.get('xaxis')
         yaxis = self.plot.handles.get('yaxis')
@@ -635,23 +664,25 @@ class TapCallback(PointerXYCallback):
 
     on_events = ['tap', 'doubletap']
 
+    def _process_out_of_bounds(self, value, start, end):
+        "Sets out of bounds values to None"
+        if value < start or value > end:
+            value = None
+        return value
 
-class SingleTapCallback(PointerXYCallback):
+
+class SingleTapCallback(TapCallback):
     """
     Returns the mouse x/y-position on tap event.
     """
 
-    code = TapCallback.code
-
     on_events = ['tap']
 
 
-class DoubleTapCallback(PointerXYCallback):
+class DoubleTapCallback(TapCallback):
     """
     Returns the mouse x/y-position on doubletap event.
     """
-
-    code = TapCallback.code
 
     on_events = ['doubletap']
 
