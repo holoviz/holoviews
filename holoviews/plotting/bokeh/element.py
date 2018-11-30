@@ -687,11 +687,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+            if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
                 (not 'color' in k or validate('color', val))):
                 val = val[0]
 
-            if not np.isscalar(val):
+            if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
                     raise ValueError('Mapping a dimension to the "{style}" '
@@ -711,11 +711,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if k == 'angle':
                 val = np.deg2rad(val)
             elif k.endswith('font_size'):
-                if np.isscalar(val) and isinstance(val, int):
+                if util.isscalar(val) and isinstance(val, int):
                     val = str(v)+'pt'
                 elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
                     val = [str(int(s))+'pt' for s in val]
-            if np.isscalar(val):
+            if util.isscalar(val):
                 key = val
             else:
                 key = {'field': k}
