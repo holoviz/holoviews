@@ -47,7 +47,7 @@ class TestSelectionWidget(TestMPLPlot):
             'step': 1, 'default': 0, 'next_vals': '{}', 'next_dim': None,
             'init_val': '2017-01-01T00:00:00.000000000', 'visible': True,
             'dim': 'Default', 'dim_label': 'Default', 'dim_idx': 0,
-            'visibility': ''
+            'visibility': '', 'value': np.datetime64(dt.datetime(2017, 1, 1))
         }
         self.assertEqual(widget_data[0], expected)
 
