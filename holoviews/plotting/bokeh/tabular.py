@@ -68,6 +68,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = self.handles['cds'] = source
+        self.handles['selected'] = source.selected
 
         columns = self._get_columns(element, data)
         style['reorderable'] = False
