@@ -206,6 +206,14 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['vals'], "['1.0', '3.0']")
         self.assertEqual(slider['labels'], "['1', '3']")
 
+    def test_holomap_slider_unsorted_datetime_values_initialization(self):
+        hmap = HoloMap([(np.datetime64(10005, 'D'), Curve([1, 2, 3])),
+                        (np.datetime64(10000, 'D'), Curve([1, 2, 4]))], sort=False)
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets()
+        self.assertEqual(widgets.plot.current_key, (np.datetime64(10000, 'D'),))
+        self.assertEqual(widgets.plot.current_frame, hmap[np.datetime64(10000, 'D')])
+
     def test_holomap_dropdown(self):
         hmap = HoloMap({chr(65+i): Curve([1, 2, 3]) for i in range(10)}, 'X')
         widgets = bokeh_renderer.get_widget(hmap, 'widgets')

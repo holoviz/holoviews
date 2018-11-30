@@ -9,7 +9,7 @@ from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.ndmapping import item_check
 from ...core.util import (
-    dimension_sanitizer, bytes_to_unicode, unique_array, unicode,
+    dimension_sanitizer, bytes_to_unicode, unique_iterator, unicode,
     isnumeric, cross_index, wrap_tuple_streams, drop_streams
 )
 from ...core.traversal import hierarchical
@@ -350,11 +350,11 @@ class SelectionWidget(NdWidget):
         next_vals = {}
         visible = True
         if next_vals:
-            dim_vals = next_vals[init_dim_vals[idx-1]]
+            values = next_vals[init_dim_vals[idx-1]]
         else:
-            dim_vals = (list(dim.values) if dim.values else
-                        list(unique_array(mock_obj.dimension_values(dim.name))))
-            visible = visible and len(dim_vals) > 1
+            values = (list(dim.values) if dim.values else
+                        list(unique_iterator(mock_obj.dimension_values(dim.name))))
+            visible = visible and len(values) > 1
 
         if idx < mock_obj.ndims-1:
             next_vals = hierarchy[idx]
@@ -362,20 +362,24 @@ class SelectionWidget(NdWidget):
         else:
             next_vals = {}
 
-        if isinstance(dim_vals[0], np.datetime64):
-            dim_vals = sorted([str(v.astype('datetime64[ns]')) for v in dim_vals])
+        if isinstance(values[0], np.datetime64):
+            values = sorted(values)
+            dim_vals = [str(v.astype('datetime64[ns]')) for v in values]
             widget_type = 'slider'
-        elif isnumeric(dim_vals[0]):
-            dim_vals = sorted([round(v, 10) for v in dim_vals])
+        elif isnumeric(values[0]):
+            values = sorted(values)
+            dim_vals = [round(v, 10) for v in values]
             if next_vals:
                 next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
                                             for v in vals]
                              for k, vals in next_vals.items()}
             widget_type = 'slider'
         else:
+            dim_vals = values
             next_vals = dict(next_vals)
             widget_type = 'dropdown'
 
+        value = values[0] if dim.default is None else dim.default
         value_labels = escape_list(escape_vals([dim.pprint_value(v)
                                                 for v in dim_vals]))
 
@@ -393,7 +397,8 @@ class SelectionWidget(NdWidget):
         next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
         return {'type': widget_type, 'vals': dim_vals, 'labels': value_labels,
                 'step': 1, 'default': default, 'next_vals': next_vals,
-                'next_dim': next_dim or None, 'init_val': init_val, 'visible': visible}
+                'next_dim': next_dim or None, 'init_val': init_val,
+                'visible': visible, 'value': value}
 
 
     @classmethod
