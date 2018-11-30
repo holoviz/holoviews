@@ -48,19 +48,28 @@ class TestCallbacks(CallbackTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
-        plot.callbacks[0].on_msg({"x": 10, "y": -10})
+        plot.callbacks[0].on_msg({"x": 0.3, "y": 0.2})
         data = plot.handles['source'].data
-        self.assertEqual(data['x'], np.array([10]))
-        self.assertEqual(data['y'], np.array([-10]))
+        self.assertEqual(data['x'], np.array([0.3]))
+        self.assertEqual(data['y'], np.array([0.2]))
+
+    def test_point_stream_callback_clip(self):
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        plot = bokeh_server_renderer.get_plot(dmap)
+        bokeh_server_renderer(plot)
+        plot.callbacks[0].on_msg({"x": -0.3, "y": 1.2})
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.array([0]))
+        self.assertEqual(data['y'], np.array([1]))
 
     def test_stream_callback_on_clone(self):
         points = Points([])
         stream = PointerXY(source=points)
         plot = bokeh_server_renderer.get_plot(points.clone())
         bokeh_server_renderer(plot)
-        plot.callbacks[0].on_msg({"x": 10, "y": -10})
-        self.assertEqual(stream.x, 10)
-        self.assertEqual(stream.y, -10)
+        plot.callbacks[0].on_msg({"x": 0.8, "y": 0.3})
+        self.assertEqual(stream.x, 0.8)
+        self.assertEqual(stream.y, 0.3)
 
     def test_stream_callback_on_unlinked_clone(self):
         points = Points([])
@@ -74,11 +83,11 @@ class TestCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
         model = plot.state
-        plot.callbacks[0].on_msg({"x": {'id': model.ref['id'], 'value': 10},
-                                  "y": {'id': model.ref['id'], 'value': -10}})
+        plot.callbacks[0].on_msg({"x": {'id': model.ref['id'], 'value': 0.5},
+                                  "y": {'id': model.ref['id'], 'value': 0.4}})
         data = plot.handles['source'].data
-        self.assertEqual(data['x'], np.array([10]))
-        self.assertEqual(data['y'], np.array([-10]))
+        self.assertEqual(data['x'], np.array([0.5]))
+        self.assertEqual(data['y'], np.array([0.4]))
 
     def test_stream_callback_single_call(self):
         def history_callback(x, history=deque(maxlen=10)):
