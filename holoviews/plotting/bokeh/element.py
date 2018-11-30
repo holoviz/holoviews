@@ -733,6 +733,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     else:
                         factors = util.unique_array(val)
                     kwargs['factors'] = factors
+                    if factors is not None and getattr(self, 'show_legend', False):
+                        new_style['legend'] = key
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
@@ -1460,13 +1462,11 @@ class LegendPlot(ElementPlot):
         if not plot.legend:
             return
         legend = plot.legend[0]
-        cmapper = self.handles.get('color_mapper')
-        if cmapper:
-            categorical = isinstance(cmapper, CategoricalColorMapper)
-        else:
-            categorical = False
-
-        if (not categorical and  not self.overlaid and len(legend.items) == 1) or not self.show_legend:
+        cmappers = [cmapper for cmapper in self.handles.values()
+                   if isinstance(cmapper, CategoricalColorMapper)]
+        categorical = bool(cmappers)
+        if ((not categorical and not self.overlaid and len(legend.items) == 1)
+            or not self.show_legend):
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
