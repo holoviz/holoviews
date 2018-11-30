@@ -5,7 +5,8 @@ from collections import defaultdict
 import param
 import numpy as np
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox
+    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox,
+    Range1d, DataRange1d
 )
 from pyviz_comms import JS_CALLBACK
 
