@@ -72,11 +72,11 @@ HoloViewsWidget.prototype.update = function(current){
 
 HoloViewsWidget.prototype.init_comms = function() {
   var that = this
-  HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.process_msg(msg) })
+  HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.msg_handler(msg) })
   if (!this.cached || this.dynamic) {
     function ack_callback(msg) {
-      msg = JSON.parse(msg.content.data);
-      var comm_id = msg["comm_id"]
+      var msg = msg.metadata;
+      var comm_id = msg.comm_id;
       var comm_status = HoloViews.comm_status[comm_id];
       if (that.queue.length > 0) {
         that.time = Date.now();
@@ -88,12 +88,26 @@ HoloViewsWidget.prototype.init_comms = function() {
       if ((msg.msg_type == "Ready") && msg.content) {
         console.log("Python callback returned following output:", msg.content);
       } else if (msg.msg_type == "Error") {
-        console.log("Python failed with the following traceback:", msg['traceback'])
+        console.log("Python failed with the following traceback:", msg.traceback)
       }
     }
     var comm = HoloViews.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
     return comm
   }
+}
+
+HoloViewsWidget.prototype.msg_handler = function(msg) {
+  var metadata = msg.metadata;
+  if ((metadata.msg_type == "Ready")) {
+    if (metadata.content) {
+      console.log("Python callback returned following output:", metadata.content);
+    }
+	return;
+  } else if (metadata.msg_type == "Error") {
+    console.log("Python failed with the following traceback:", metadata.traceback)
+    return
+  }
+  this.process_msg(msg)
 }
 
 HoloViewsWidget.prototype.process_msg = function(msg) {

@@ -287,7 +287,7 @@ class BokehRenderer(Renderer):
                 js = ''
         else:
             try:
-                js, div, _ = notebook_content(model, comm_id)
+                js, div, _ = notebook_content(model)
                 html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
                 data = encode_utf8(html)
                 doc.hold()
