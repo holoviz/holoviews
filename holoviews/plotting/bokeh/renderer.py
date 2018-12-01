@@ -8,6 +8,7 @@ from io import BytesIO
 import param
 import bokeh
 
+from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
@@ -32,36 +33,6 @@ NOTEBOOK_DIV = """
 <script type="text/javascript">
   {plot_script}
 </script>
-"""
-
-# Following JS block becomes body of the message handler callback
-bokeh_msg_handler = """
-var plot_id = "{plot_id}";
-if (plot_id in HoloViews.plot_index) {{
-  var plot = HoloViews.plot_index[plot_id];
-}} else {{
-  var plot = Bokeh.index[plot_id];
-}}
-
-if (plot_id in HoloViews.receivers) {{
-  var receiver = HoloViews.receivers[plot_id];
-}} else if (Bokeh.protocol === undefined) {{
-  return;
-}} else {{
-  var receiver = new Bokeh.protocol.Receiver();
-  HoloViews.receivers[plot_id] = receiver;
-}}
-
-if (buffers.length > 0) {{
-  receiver.consume(buffers[0].buffer)
-}} else {{
-  receiver.consume(msg)
-}}
-
-const comm_msg = receiver.message;
-if (comm_msg != null) {{
-  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
-}}
 """
 
 default_theme = Theme(json={
