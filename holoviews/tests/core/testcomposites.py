@@ -157,6 +157,24 @@ class LayoutTestCase(ElementTestCase):
         self.assertEqual(t[0], self.el1)
         self.assertEqual(t[1], self.el2)
 
+    def test_layout_overlay_element(self):
+        t = (self.el1 + self.el2) * self.el3
+        self.assertEqual(t, Layout([self.el1*self.el3, self.el2*self.el3]))
+
+    def test_layout_overlay_element_reverse(self):
+        t = self.el3 * (self.el1 + self.el2)
+        self.assertEqual(t, Layout([self.el3*self.el1, self.el3*self.el2]))
+
+    def test_layout_overlay_holomap(self):
+        t = (self.el1 + self.el2) * HoloMap({0: self.el3})
+        self.assertEqual(t, Layout([HoloMap({0: self.el1*self.el3}),
+                                    HoloMap({0: self.el2*self.el3})]))
+
+    def test_layout_overlay_holomap_reverse(self):
+        t = HoloMap({0: self.el3}) * (self.el1 + self.el2)
+        self.assertEqual(t, Layout([HoloMap({0: self.el3*self.el1}),
+                                    HoloMap({0: self.el3*self.el2})]))
+
 
 
 class OverlayTestCase(ElementTestCase):
