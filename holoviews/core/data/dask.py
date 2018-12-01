@@ -210,13 +210,19 @@ class DaskInterface(PandasInterface):
                 agg = getattr(groups, inbuilts[function.__name__])()
             else:
                 agg = groups.apply(function)
-            return agg.reset_index()
+            df = agg.reset_index()
         else:
             if (function.__name__ in inbuilts):
                 agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
-            return pd.DataFrame(agg.compute()).T
+            df = pd.DataFrame(agg.compute()).T
+
+        dropped = []
+        for vd in vdims:
+            if vd not in df.columns:
+                dropped.append(vd)
+        return df, dropped
 
     @classmethod
     def unpack_scalar(cls, dataset, data):

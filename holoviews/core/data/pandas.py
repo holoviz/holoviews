@@ -214,11 +214,17 @@ class PandasInterface(Interface):
             fn = function
         if len(dimensions):
             grouped = reindexed.groupby(cols, sort=False)
-            return grouped.aggregate(fn, **kwargs).reset_index()
+            df = grouped.aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
             data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))
-            return pd.DataFrame(data, columns=list(agg.index))
+            df = pd.DataFrame(data, columns=list(agg.index))
+
+        dropped = []
+        for vd in vdims:
+            if vd not in df.columns:
+                dropped.append(vd)
+        return df, dropped
 
 
     @classmethod

@@ -288,12 +288,12 @@ class ImageInterface(GridInterface):
         data = np.atleast_1d(function(dataset.data, axis=axes, **kwargs))
         if not kdims:
             if len(dataset.vdims) == 1:
-                return data if np.isscalar(data) else data[0]
+                return (data if np.isscalar(data) else data[0], [])
             else:
-                return {vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data)}
+                return ({vd.name: np.array([v]) for vd, v in zip(dataset.vdims, data)}, [])
         elif len(axes) == 1:
-            return {kdims[0]: cls.values(dataset, axes[0], expanded=False),
-                    dataset.vdims[0].name: data[::-1] if axes[0] else data}
+            return ({kdims[0]: cls.values(dataset, axes[0], expanded=False),
+                    dataset.vdims[0].name: data[::-1] if axes[0] else data}, [])
 
 
 Interface.register(ImageInterface)
