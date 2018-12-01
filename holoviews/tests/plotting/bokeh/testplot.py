@@ -1,6 +1,5 @@
 from unittest import SkipTest
 
-
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase

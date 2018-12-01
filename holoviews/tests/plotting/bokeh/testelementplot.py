@@ -1,3 +1,4 @@
+from unittest import SkipTest
 from collections import OrderedDict
 from nose.plugins.attrib import attr
 
@@ -40,6 +41,10 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(yaxis.formatter.format, '%d')
 
     def test_element_xformatter_function(self):
+        try:
+            import flexx # noqa
+        except:
+            raise SkipTest('Test requires flexx')
         def formatter(value):
             return str(value) + ' %'
         curve = Curve(range(10)).options(xformatter=formatter)
@@ -48,6 +53,10 @@ class TestElementPlot(TestBokehPlot):
         self.assertIsInstance(xaxis.formatter, FuncTickFormatter)
 
     def test_element_yformatter_function(self):
+        try:
+            import flexx # noqa
+        except:
+            raise SkipTest('Test requires flexx')
         def formatter(value):
             return str(value) + ' %'
         curve = Curve(range(10)).options(yformatter=formatter)
@@ -148,16 +157,22 @@ class TestElementPlot(TestBokehPlot):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
 
-    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_xaxis(self):
+        try:
+            import flexx # noqa
+        except:
+            raise SkipTest('Test requires flexx')
         def formatter(x):
             return '%s' % x
         curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
 
-    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_yaxis(self):
+        try:
+            import flexx # noqa
+        except:
+            raise SkipTest('Test requires flexx')
         def formatter(x):
             return '%s' % x
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
