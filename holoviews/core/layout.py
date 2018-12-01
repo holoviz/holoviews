@@ -508,6 +508,14 @@ class Layout(ViewableTree):
         "Composes the Layout with another object returning a merged Layout."
         return Layout([self, other])
 
+    def __mul__(self, other, reverse=False):
+        from .spaces import HoloMap
+        if not isinstance(other, (ViewableElement, HoloMap)):
+            return NotImplemented
+        return Layout([other*v if reverse else v*other for v in self])
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
