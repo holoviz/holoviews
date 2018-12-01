@@ -148,8 +148,6 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Define glyph-data mapping
         width = style.get('box_width', style.get('width', 0.7))
         whisker_width = style.pop('whisker_width', 0.4)/2.
-        vmin, vmax = ranges[element.vdims[0].name]['combined']
-        vrange = vmax-vmin 
         if 'width' in style:
             self.warning("BoxWhisker width option is deprecated use 'box_width' instead.")
         if self.invert_axes:
