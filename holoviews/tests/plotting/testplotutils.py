@@ -653,6 +653,10 @@ class TestBokehUtils(ComparisonTestCase):
     def setUp(self):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test bokeh plot utils.")
+        try:
+            import flexx # noqa
+        except:
+            raise SkipTest("Flexx required to test transpiling formatter functions.")
 
 
     def test_py2js_funcformatter_single_arg(self):
