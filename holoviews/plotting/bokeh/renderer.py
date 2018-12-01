@@ -85,7 +85,7 @@ class BokehRenderer(Renderer):
     _loaded = False
 
     # Define the handler for updating bokeh plots
-    comm_msg_handler = bokeh_msg_handler if bokeh_version > '0.12.14' else None
+    comm_msg_handler = bokeh_msg_handler
 
     def __call__(self, obj, fmt=None, doc=None):
         """
@@ -267,7 +267,6 @@ class BokehRenderer(Renderer):
         doc.theme = self.theme
         doc.add_root(model)
 
-        comm_id = plot.comm.id if plot.comm else None
         # Bokeh raises warnings about duplicate tools and empty subplots
         # but at the holoviews level these are not issues
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
