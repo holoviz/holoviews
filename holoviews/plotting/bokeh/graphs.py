@@ -249,7 +249,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         """
         if isinstance(source, ColumnDataSource):
             if self.handles['static_source']:
-                source.trigger('data')
+                source.trigger('data', source.data, data)
             else:
                 source.data.update(data)
         else:
