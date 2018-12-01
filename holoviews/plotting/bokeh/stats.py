@@ -74,15 +74,14 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _x_range_type = FactorRange
 
     # Map each glyph to a style group
-    _style_groups = {'rect': 'whisker', 'segment': 'whisker',
-                     'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
+    _style_groups = {'segment': 'whisker', 'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
     style_opts = (['whisker_'+p for p in line_properties] +
                   ['box_'+p for p in fill_properties+line_properties] +
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['width', 'box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = ['box_width', 'width', 'cmap', 'box_cmap']
+    _nonvectorized_styles = ['box_width', 'whisker_width', 'width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
@@ -143,22 +142,21 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Define CDS data
         r1_data, r2_data = ({'index': [], 'top': [], 'bottom': []} for i in range(2))
         s1_data, s2_data = ({'x0': [], 'y0': [], 'x1': [], 'y1': []} for i in range(2))
-        w1_data, w2_data = ({'index': [], vdim: []} for i in range(2))
+        w1_data, w2_data = ({'x0': [], 'y0': [], 'x1': [], 'y1': []} for i in range(2))
         out_data = defaultdict(list, {'index': [], vdim: []})
 
         # Define glyph-data mapping
         width = style.get('box_width', style.get('width', 0.7))
+        whisker_width = style.pop('whisker_width', 0.4)/2.
         if 'width' in style:
             self.warning("BoxWhisker width option is deprecated use 'box_width' instead.")
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
-            whisk_map = {'y': 'index', 'x': vdim, 'height': 0.2, 'width': 0.001}
             out_map = {'y': 'index', 'x': vdim}
         else:
             vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-            whisk_map = {'x': 'index', 'y': vdim, 'width': 0.2, 'height': 0.001}
             out_map = {'x': 'index', 'y': vdim}
         vbar2_map = dict(vbar_map)
 
@@ -200,11 +198,14 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 lower, upper = 0, 0
             outliers = vals[(vals>upper) | (vals<lower)]
             # Add to CDS data
-            for data in [r1_data, r2_data, w1_data, w2_data]:
+            for data in [r1_data, r2_data]:
                 data['index'].append(label)
             for data in [s1_data, s2_data]:
                 data['x0'].append(label)
                 data['x1'].append(label)
+            for data in [w1_data, w2_data]:
+                data['x0'].append(wrap_tuple(label)+(-whisker_width,))
+                data['x1'].append(wrap_tuple(label)+(whisker_width,))
             r1_data['top'].append(q2)
             r2_data['top'].append(q1)
             r1_data['bottom'].append(q3)
@@ -213,8 +214,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             s2_data['y0'].append(lower)
             s1_data['y1'].append(q3)
             s2_data['y1'].append(q1)
-            w1_data[vdim].append(lower)
-            w2_data[vdim].append(upper)
+            w1_data['y0'].append(lower)
+            w1_data['y1'].append(lower)
+            w2_data['y0'].append(upper)
+            w2_data['y1'].append(upper)
             if len(outliers):
                 out_data['index'] += [label]*len(outliers)
                 out_data[vdim] += list(outliers)
@@ -245,17 +248,17 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         bar_glyph = 'hbar' if self.invert_axes else 'vbar'
         data = {
             bar_glyph+'_1': r1_data, bar_glyph+'_2': r2_data, 'segment_1': s1_data,
-            'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
+            'segment_2': s2_data, 'segment_3': w1_data, 'segment_4': w2_data,
             'circle_1': out_data
         }
         mapping = {
             bar_glyph+'_1': vbar_map, bar_glyph+'_2': vbar2_map, 'segment_1': seg_map,
-            'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
+            'segment_2': seg_map, 'segment_3': seg_map, 'segment_4': seg_map,
             'circle_1': out_map
         }
 
         # Cast data to arrays to take advantage of base64 encoding
-        for gdata in [r1_data, r2_data, s1_data, s2_data, w1_data, w2_data, out_data]:
+        for gdata in [r1_data, r2_data, s1_data, s2_data, out_data]:
             for k, values in gdata.items():
                 gdata[k] = np.array(values)
 
