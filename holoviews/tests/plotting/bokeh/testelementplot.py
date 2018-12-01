@@ -1,6 +1,5 @@
 from unittest import SkipTest
 from collections import OrderedDict
-from nose.plugins.attrib import attr
 
 import numpy as np
 
