@@ -65,7 +65,7 @@ class RasterPlot(ColorbarPlot):
 
         for i, vdim in enumerate(element.vdims, 2):
             if i > 2 and 'hover' not in self.handles:
-                continue
+                break
             img = element.dimension_values(i, flat=False)
             if img.dtype.kind == 'b':
                 img = img.astype(np.int8)
@@ -155,6 +155,7 @@ class QuadMeshPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         x, y, z = element.dimensions()[:3]
+
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(z, element, ranges, style)
         cmapper = {'field': z.name, 'transform': cmapper}
@@ -208,9 +209,17 @@ class QuadMeshPlot(ColorbarPlot):
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
             data = {'left': x0, 'right': x1, dimension_sanitizer(z.name): zvals,
                     'bottom': y0, 'top': y1}
+
             if 'hover' in self.handles and not self.static_source:
+                hover_dims = element.dimensions()[3:]
+                hover_data = [element.dimension_values(hover_dim, flat=False)
+                              for hover_dim in hover_dims]
+                for hdim, hdat in zip(hover_dims, hover_data):
+                    data[dimension_sanitizer(hdim.name)] = (hdat.flatten()
+                        if self.invert_axes else hdat.T.flatten())
                 data[x] = element.dimension_values(x)
                 data[y] = element.dimension_values(y)
+
         return data, mapping, style
 
 
