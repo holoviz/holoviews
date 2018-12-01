@@ -119,7 +119,7 @@ class MessageCallback(object):
             ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
-            if not processed_msg and not stream.transient:
+            if not processed_msg:
                 continue
             stream.update(**processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
