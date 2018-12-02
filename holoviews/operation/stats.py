@@ -78,7 +78,7 @@ class univariate_kde(Operation):
             params['label'] = element.label
             vdim = element.vdims[0]
             vdim_name = '{}_density'.format(selected_dim.name)
-            vdim_label = '{} Density'.format(selected_dim.label)
+            vdim_label = 'Density'.format(selected_dim.label)
             vdims = [vdim(vdim_name, label=vdim_label) if vdim.name == 'Density' else vdim]
         else:
             if self.p.dimension:
@@ -91,7 +91,7 @@ class univariate_kde(Operation):
                                      type(element).__name__)
                 selected_dim = dimensions[0]
             vdim_name = '{}_density'.format(selected_dim.name)
-            vdim_label = '{} Density'.format(selected_dim.label)
+            vdim_label = 'Density'.format(selected_dim.label)
             vdims = [Dimension(vdim_name, label=vdim_label)]
 
         data = element.dimension_values(selected_dim)
