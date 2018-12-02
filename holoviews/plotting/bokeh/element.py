@@ -298,7 +298,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 categorical_x = True
             else:
                 if isinstance(el, Graph):
-                    print(xdims)
                     xtype = el.nodes.get_dimension_type(xdims[0])
                 else:
                     xtype = el.get_dimension_type(xdims[0])
