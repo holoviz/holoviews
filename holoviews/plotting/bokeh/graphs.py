@@ -94,8 +94,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
 
-    def _get_axis_dims(self):
-        return el.nodes.dimensions()[:2]
+    def _get_axis_dims(self, element):
+        return element.nodes.dimensions()[:2]
 
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):

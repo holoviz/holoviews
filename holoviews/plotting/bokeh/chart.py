@@ -14,7 +14,7 @@ from ...core.util import OrderedDict, max_range, basestring, dimension_sanitizer
 from ...element import Bars
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..util import compute_sizes, get_min_distance, dim_axis_label, get_axis_padding
+from ..util import compute_sizes, get_min_distance, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)

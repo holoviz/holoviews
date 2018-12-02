@@ -1049,7 +1049,7 @@ class GenericElementPlot(DimensionedPlot):
             ylabel = self.ylabel
         elif len(dimensions) >= 2 and ylabel is None:
             ydims = dimensions[1]
-            xlabel = dim_axis_label(ydims) if ydims else ''
+            ylabel = dim_axis_label(ydims) if ydims else ''
 
         if getattr(self, 'zlabel', None) is not None:
             zlabel = self.zlabel
