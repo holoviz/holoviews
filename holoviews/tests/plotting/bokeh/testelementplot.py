@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 
+from bokeh.core.properties import value
 from holoviews.core import Dimension, DynamicMap, NdOverlay
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream
@@ -24,6 +25,78 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve(range(10)).opts(plot=dict(show_frame=False))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.outline_line_alpha, 0)
+
+    def test_element_xaxis_top(self):
+        curve = Curve(range(10)).options(xaxis='top')
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertTrue(xaxis in plot.state.above)
+
+    def test_element_xaxis_bare(self):
+        curve = Curve(range(10)).options(xaxis='bare')
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertEqual(xaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.minor_tick_line_color, None)
+        self.assertEqual(xaxis.major_tick_line_color, None)
+        self.assertTrue(xaxis in plot.state.below)
+
+    def test_element_xaxis_bottom_bare(self):
+        curve = Curve(range(10)).options(xaxis='bottom-bare')
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertEqual(xaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.minor_tick_line_color, None)
+        self.assertEqual(xaxis.major_tick_line_color, None)
+        self.assertTrue(xaxis in plot.state.below)
+
+    def test_element_xaxis_top_bare(self):
+        curve = Curve(range(10)).options(xaxis='top-bare')
+        plot = bokeh_renderer.get_plot(curve)
+        xaxis = plot.handles['xaxis']
+        self.assertEqual(xaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(xaxis.minor_tick_line_color, None)
+        self.assertEqual(xaxis.major_tick_line_color, None)
+        self.assertTrue(xaxis in plot.state.above)
+
+    def test_element_yaxis_right(self):
+        curve = Curve(range(10)).options(yaxis='right')
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertTrue(yaxis in plot.state.right)
+
+    def test_element_yaxis_bare(self):
+        curve = Curve(range(10)).options(yaxis='bare')
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertEqual(yaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.minor_tick_line_color, None)
+        self.assertEqual(yaxis.major_tick_line_color, None)
+        self.assertTrue(yaxis in plot.state.left)
+
+    def test_element_yaxis_left_bare(self):
+        curve = Curve(range(10)).options(yaxis='left-bare')
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertEqual(yaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.minor_tick_line_color, None)
+        self.assertEqual(yaxis.major_tick_line_color, None)
+        self.assertTrue(yaxis in plot.state.left)
+
+    def test_element_yaxis_right_bare(self):
+        curve = Curve(range(10)).options(yaxis='right-bare')
+        plot = bokeh_renderer.get_plot(curve)
+        yaxis = plot.handles['yaxis']
+        self.assertEqual(yaxis.axis_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.major_label_text_font_size, value('0pt'))
+        self.assertEqual(yaxis.minor_tick_line_color, None)
+        self.assertEqual(yaxis.major_tick_line_color, None)
+        self.assertTrue(yaxis in plot.state.right)
 
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).options(xformatter='%d')
