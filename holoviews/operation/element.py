@@ -519,7 +519,7 @@ class histogram(Operation):
     dimension = param.String(default=None, doc="""
       Along which dimension of the Element to compute the histogram.""")
 
-    frequency_label = param.String(default='{dim} Frequency', doc="""
+    frequency_label = param.String(default=None, doc="""
       Format string defining the label of the frequency dimension of the Histogram.""")
 
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
@@ -552,31 +552,32 @@ class histogram(Operation):
     style_prefix = param.String(default=None, allow_None=None, doc="""
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
-    def _process(self, view, key=None):
+    def _process(self, element, key=None):
         if self.p.groupby:
-            if not isinstance(view, Dataset):
+            if not isinstance(element, Dataset):
                 raise ValueError('Cannot use histogram groupby on non-Dataset Element')
-            grouped = view.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
+            grouped = element.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
-            selected_dim = [d.name for d in view.vdims + view.kdims][0]
-        data = np.array(view.dimension_values(selected_dim))
+            selected_dim = [d.name for d in element.vdims + element.kdims][0]
+        dim = element.get_dimension(selected_dim)
+        data = np.array(element.dimension_values(selected_dim))
         if self.p.nonzero:
             mask = data > 0
             data = data[mask]
         if self.p.weight_dimension:
-            weights = np.array(view.dimension_values(self.p.weight_dimension))
+            weights = np.array(element.dimension_values(self.p.weight_dimension))
             if self.p.nonzero:
                 weights = weights[mask]
         else:
             weights = None
 
         data = data[isfinite(data)]
-        hist_range = self.p.bin_range or view.range(selected_dim)
+        hist_range = self.p.bin_range or element.range(selected_dim)
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
             hist_range = (0, 1)
@@ -625,27 +626,30 @@ class histogram(Operation):
 
         params = {}
         if self.p.weight_dimension:
-            params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
+            params['vdims'] = [element.get_dimension(self.p.weight_dimension)]
+        elif self.p.frequency_label:
+            label = self.p.frequency_label.format(dim=dim.pprint_label)
+            params['vdims'] = [Dimension('Frequency', label=label)]
         else:
-            label = self.p.frequency_label.format(dim=selected_dim)
-            params['vdims'] = [Dimension('{}_frequency'.format(selected_dim),
+            label = 'Frequency' if normed else 'Count'
+            params['vdims'] = [Dimension('{0} {1}'.format(dim.name, label),
                                          label=label)]
 
-        if view.group != view.__class__.__name__:
-            params['group'] = view.group
+        if element.group != element.__class__.__name__:
+            params['group'] = element.group
 
         if self.p.cumulative:
             hist = np.cumsum(hist)
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
-        return Histogram((edges, hist), kdims=[view.get_dimension(selected_dim)],
-                         label=view.label, **params)
+        return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
+                         label=element.label, **params)
 
 
 class decimate(Operation):
     """
     Decimates any column based Element to a specified number of random
-    rows if the current view defined by the x_range and y_range
+    rows if the current element defined by the x_range and y_range
     contains more than max_samples. By default the operation returns a
     DynamicMap with a RangeXY stream allowing dynamic downsampling.
     """
