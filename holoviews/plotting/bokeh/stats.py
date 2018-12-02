@@ -118,12 +118,13 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if not element.kdims:
             xfactors, yfactors = [element.label], []
         else:
-            factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
-                       for key in element.groupby(element.kdims).data.keys()]
+            factors = [key for key in element.groupby(element.kdims).data.keys()]
+            if element.ndims > 1:
+                factors = sorted(factors)
+            factors = [tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
+                       for key in factors]
             factors = [f[0] if len(f) == 1 else f for f in factors]
             xfactors, yfactors = factors, []
-            if element.ndims > 1:
-                xfactors = sorted(xfactors)
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
     def _postprocess_hover(self, renderer, source):
