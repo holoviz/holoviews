@@ -241,7 +241,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _get_axis_dims(self, element):
-        return element.dimensions()
+        """Returns the dimensions corresponding to each axis.
+
+        Should return a list of dimensions or list of lists of
+        dimensions, which will be formatted to label the axis
+        and to link axes.
+        """
+        return element.dimensions()[:2]
 
 
     def _axes_props(self, plots, subplots, element, ranges):
