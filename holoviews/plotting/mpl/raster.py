@@ -330,8 +330,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         xticks = (self._xticks, [xdim.pprint_value(l) for l in self._xkeys])
         yticks = (self._yticks, [ydim.pprint_value(l) if ydim else ''
                                  for l in self._ykeys])
-        return dict(xlabel=xdim.pprint_label, ylabel=ydim.pprint_label if ydim else '',
-                    xticks=xticks, yticks=yticks)
+        return dict(dimensions=[xdim, ydim], xticks=xticks, yticks=yticks)
 
 
     def _compute_borders(self):

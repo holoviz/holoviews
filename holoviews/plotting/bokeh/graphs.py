@@ -94,13 +94,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
 
 
-    def _get_axis_labels(self, *args, **kwargs):
-        """
-        Override axis labels to group all key dimensions together.
-        """
-        element = self.current_frame
-        xlabel, ylabel = [kd.pprint_label for kd in element.nodes.kdims[:2]]
-        return xlabel, ylabel, None
+    def _get_axis_dims(self):
+        return el.nodes.dimensions()[:2]
 
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):

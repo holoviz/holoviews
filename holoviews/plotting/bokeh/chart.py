@@ -824,22 +824,13 @@ class BarPlot(ColorbarPlot, LegendPlot):
         return coords
 
 
-    def _get_axis_labels(self, *args, **kwargs):
-        """
-        Override axis mapping by setting the first key and value
-        dimension as the x-axis and y-axis labels.
-        """
-        element = self.current_frame
-        if self.batched:
-            element = element.last
-        xlabel = dim_axis_label(element.kdims[0])
+    def _get_axis_dims(self, element):
         if element.ndims > 1 and not (self.stacked or self.stack_index):
-            gdim = element.get_dimension(1)
+            xdims = element.kdims
         else:
-            gdim = None
-        if gdim and gdim in element.kdims:
-            xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
-        return (xlabel, dim_axis_label(element.vdims[0]), None)
+            xdims = element.kdims[0]
+        return (xdims, element.vdims[0])
+
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """

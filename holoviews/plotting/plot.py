@@ -1042,11 +1042,15 @@ class GenericElementPlot(DimensionedPlot):
         if self.xlabel is not None:
             xlabel = self.xlabel
         elif dimensions and xlabel is None:
-            xlabel = dim_axis_label(dimensions[0]) if dimensions[0] else ''
+            xdims = dimensions[0]
+            xlabel = dim_axis_label(xdims) if xdims else ''
+
         if self.ylabel is not None:
             ylabel = self.ylabel
         elif len(dimensions) >= 2 and ylabel is None:
-            ylabel = dim_axis_label(dimensions[1]) if dimensions[1] else ''
+            ydims = dimensions[1]
+            xlabel = dim_axis_label(ydims) if ydims else ''
+
         if getattr(self, 'zlabel', None) is not None:
             zlabel = self.zlabel
         elif self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:

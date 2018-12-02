@@ -217,7 +217,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
-    def _merge_ranges(self, plots, xlabel, ylabel):
+    def _merge_ranges(self, plots, xspecs, yspecs):
         """
         Given a list of other plots return axes that are shared
         with another plot by matching the axes labels
@@ -226,17 +226,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for plot in plots:
             if plot is None:
                 continue
-            if hasattr(plot, 'xaxis'):
-                if plot.xaxis[0].axis_label == xlabel:
+
+            if hasattr(plot, 'x_range') and plot.x_range.tags and xspecs is not None:
+                if plot.x_range.tags[0] == xspecs:
                     plot_ranges['x_range'] = plot.x_range
-                if plot.xaxis[0].axis_label == ylabel:
+                if plot.x_range.tags[0] == yspecs:
                     plot_ranges['y_range'] = plot.x_range
-            if hasattr(plot, 'yaxis'):
-                if plot.yaxis[0].axis_label == ylabel:
+            if hasattr(plot, 'y_range') and plot.y_range.tags and yspecs is not None:
+                if plot.y_range.tags[0] == yspecs:
                     plot_ranges['y_range'] = plot.y_range
-                if plot.yaxis[0].axis_label == xlabel:
+                if plot.y_range.tags[0] == xspecs:
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
+
+
+    def _get_axis_dims(self, element):
+        return element.dimensions()
 
 
     def _axes_props(self, plots, subplots, element, ranges):
@@ -244,16 +249,30 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
 
-        dims = el.nodes.dimensions() if isinstance(el, Graph) else el.dimensions()
+        dims = self._get_axis_dims(el)
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
+            dims = dims[:2:-1]
+        xdims, ydims = dims[:2]
+        if xdims:
+            if not isinstance(xdims, list):
+                xdims = [xdims]
+            xspecs = tuple((xd.name, xd.label) for xd in xdims)
+        else:
+            xspecs = None
+        if ydims:
+            if not isinstance(ydims, list):
+                ydims = [ydims]
+            yspecs = tuple((yd.name, yd.label) for yd in ydims)
+        else:
+            yspecs = None
 
         plot_ranges = {}
         # Try finding shared ranges in other plots in the same Layout
         norm_opts = self.lookup_options(el, 'norm').options
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-            plot_ranges = self._merge_ranges(plots, xlabel, ylabel)
+            plot_ranges = self._merge_ranges(plots, xspecs, yspecs)
 
         # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
@@ -299,6 +318,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
             plot_ranges['y_range'] = y_range_type()
+
+        x_range, y_range = plot_ranges['x_range'], plot_ranges['y_range']
+        if not x_range.tags and xspecs is not None:
+            x_range.tags.append(xspecs)
+        if not y_range.tags and yspecs is not None:
+            y_range.tags.append(yspecs)
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
@@ -495,9 +520,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
-        dimensions = el.nodes.dimensions() if isinstance(el, Graph) else el.dimensions()
-        if not len(dimensions) >= 2:
-            dimensions = dimensions+[None]
+        dimensions = self._get_axis_dims(el)
         plot.update(**self._plot_properties(key, plot, element))
 
         props = {axis: self._axis_properties(axis, key, plot, dim)
