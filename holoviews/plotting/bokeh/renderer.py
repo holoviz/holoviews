@@ -8,7 +8,6 @@ from io import BytesIO
 import param
 import bokeh
 
-from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
@@ -33,6 +32,36 @@ NOTEBOOK_DIV = """
 <script type="text/javascript">
   {plot_script}
 </script>
+"""
+
+# Following JS block becomes body of the message handler callback
+bokeh_msg_handler = """
+var plot_id = "{plot_id}";
+if (plot_id in HoloViews.plot_index) {{
+  var plot = HoloViews.plot_index[plot_id];
+}} else {{
+  var plot = Bokeh.index[plot_id];
+}}
+
+if (plot_id in HoloViews.receivers) {{
+  var receiver = HoloViews.receivers[plot_id];
+}} else if (Bokeh.protocol === undefined) {{
+  return;
+}} else {{
+  var receiver = new Bokeh.protocol.Receiver();
+  HoloViews.receivers[plot_id] = receiver;
+}}
+
+if (buffers.length > 0) {{
+  receiver.consume(buffers[0].buffer)
+}} else {{
+  receiver.consume(msg)
+}}
+
+const comm_msg = receiver.message;
+if (comm_msg != null) {{
+  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
+}}
 """
 
 default_theme = Theme(json={
@@ -85,7 +114,7 @@ class BokehRenderer(Renderer):
     _loaded = False
 
     # Define the handler for updating bokeh plots
-    comm_msg_handler = bokeh_msg_handler
+    comm_msg_handler = bokeh_msg_handler if bokeh_version > '0.12.14' else None
 
     def __call__(self, obj, fmt=None, doc=None):
         """
@@ -267,6 +296,7 @@ class BokehRenderer(Renderer):
         doc.theme = self.theme
         doc.add_root(model)
 
+        comm_id = plot.comm.id if plot.comm else None
         # Bokeh raises warnings about duplicate tools and empty subplots
         # but at the holoviews level these are not issues
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
@@ -286,7 +316,7 @@ class BokehRenderer(Renderer):
                 js = ''
         else:
             try:
-                js, div, _ = notebook_content(model)
+                js, div, _ = notebook_content(model, comm_id)
                 html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
                 data = encode_utf8(html)
                 doc.hold()
