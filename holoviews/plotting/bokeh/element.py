@@ -405,8 +405,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # need to copy dictionary by calling dict() on it
         axis_props = dict(theme_attr_json(self.renderer.theme, 'Axis'))
 
-        if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
-            (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
+        if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
+            (axis == 'y' and self.yaxis in ['left-bare', 'right-bare', 'bare'])):
             axis_props['axis_label_text_font_size'] = value('0pt')
             axis_props['major_label_text_font_size'] = value('0pt')
             axis_props['major_tick_line_color'] = None
