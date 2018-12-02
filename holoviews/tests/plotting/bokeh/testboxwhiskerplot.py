@@ -36,6 +36,14 @@ class TestBoxWhiskerPlot(TestBokehPlot):
         self.assertIn(plot.handles['vbar_2_glyph_renderer'], hover_tool.renderers)
         self.assertIn(plot.handles['circle_1_glyph_renderer'], hover_tool.renderers)
 
+    def test_box_whisker_multi_level(self):
+        box= BoxWhisker((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
+                        ['Group', 'Category'], 'Value')
+        plot = bokeh_renderer.get_plot(box)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, [
+            ('A', '1'), ('A', '3'), ('A', '10'), ('B', '1'), ('B', '3'), ('B', '10')])
+
     def test_box_whisker_padding_square(self):
         curve = BoxWhisker([1, 2, 3]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)

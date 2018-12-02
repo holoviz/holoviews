@@ -48,6 +48,14 @@ class TestBarPlot(TestBokehPlot):
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
 
+    def test_box_whisker_multi_level_sorted(self):
+        box= Bars((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
+                  ['Group', 'Category'], 'Value').aggregate(function=np.mean)
+        plot = bokeh_renderer.get_plot(box)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, [
+            ('A', '1'), ('A', '3'), ('A', '10'), ('B', '1'), ('B', '3'), ('B', '10')])
+        
     def test_bars_positive_negative_mixed(self):
         bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],
                     kdims=['Index', 'Category'], vdims=['Value'])
