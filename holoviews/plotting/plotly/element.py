@@ -138,10 +138,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     legendgroup=element.group,
                     name=legend)
 
-        if self.layout_num:
-            opts['xaxis'] = 'x' + str(self.layout_num)
-            opts['yaxis'] = 'y' + str(self.layout_num)
-
         return opts
 
 
