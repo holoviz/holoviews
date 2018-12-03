@@ -303,7 +303,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         """Adds a dimension and its values to the object
-        
+
         Requires the dimension name or object, the desired position in
         the key dimensions and a key value scalar or sequence of the
         same length as the existing keys.
@@ -490,7 +490,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def update(self, other):
         """Merges other item with this object
-        
+
         Args:
             other: Object containing items to merge into this object
                 Must be a dictionary or NdMapping type

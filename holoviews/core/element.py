@@ -29,7 +29,7 @@ class Element(ViewableElement, Composable, Overlayable):
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
-        
+
         Defaults to first value dimension if present otherwise falls
         back to first key dimension.
 
@@ -82,7 +82,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def __contains__(self, dimension):
-        "Whether element contains the Dimension" 
+        "Whether element contains the Dimension"
         return dimension in self.dimensions()
 
 
@@ -105,7 +105,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
- 
+
         Args:
             coords: List of 1D or 2D coordinates
             **kwargs: Coordinates specified as keyword pairs
@@ -317,7 +317,7 @@ class Tabular(Element):
 
     def pprint_cell(self, row, col):
         """Formatted contents of table cell.
-        
+
         Args:
             row (int): Integer index of table row
             col (int): Integer index of table column
