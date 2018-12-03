@@ -47,6 +47,14 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertEqual(patch_source.data['xs'], [kde['y']])
         self.assertEqual(patch_source.data['ys'], [kde['x']])
 
+    def test_box_whisker_multi_level(self):
+        box= Violin((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
+                    ['Group', 'Category'], 'Value')
+        plot = bokeh_renderer.get_plot(box)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, [
+            ('A', '1'), ('A', '3'), ('A', '10'), ('B', '1'), ('B', '3'), ('B', '10')])
+
     def test_violin_inner_quartiles(self):
         values = np.random.rand(100)
         violin = Violin(values).opts(plot=dict(inner='quartiles'))
