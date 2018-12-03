@@ -44,8 +44,14 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         plotly_renderer.comm_manager = self.comm_manager
 
     def _get_plot_state(self, element):
+        import plotly.graph_objs as go
+
         plot = plotly_renderer.get_plot(element)
         plot.initialize_plot()
+
+        # Pass to plotly.py for full property validation
+        go.Figure(plot.state)
+
         return plot.state
 
     def test_curve_state(self):
