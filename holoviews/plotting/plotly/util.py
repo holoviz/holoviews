@@ -414,20 +414,6 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
             y_domain = yaxis.get('domain', [0, 1])
             yaxis['domain'] = scale_translate_y(y_domain)
 
-    # shapes
-    for obj in layout.get('shapes', []):
-        if obj.get('xref', None) == 'paper':
-            new_x_domain = scale_translate_x(
-                [obj.get('x0', 0.25), obj.get('x1', 0.75)])
-            obj['x0'] = new_x_domain[0]
-            obj['x1'] = new_x_domain[1]
-
-        if obj.get('yref', None) == 'paper':
-            new_y_domain = scale_translate_y(
-                [obj.get('y0', 0.25), obj.get('y1', 0.75)])
-            obj['y0'] = new_y_domain[0]
-            obj['y1'] = new_y_domain[1]
-
     # convert title to annotation
     # This way the annotation will be scaled with the reset of the figure
     annotations = layout.get('annotations', [])
