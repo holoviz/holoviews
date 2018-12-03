@@ -6,7 +6,7 @@ import numpy as np
 from bokeh.core.properties import value
 from holoviews.core import Dimension, DynamicMap, NdOverlay
 from holoviews.element import Curve, Image, Scatter, Labels
-from holoviews.streams import Stream
+from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
 
 from .testplot import TestBokehPlot, bokeh_renderer
@@ -14,6 +14,7 @@ from ...utils import LoggingComparisonTestCase
 
 try:
     from bokeh.document import Document
+    from bokeh.models import tools
     from bokeh.models import FuncTickFormatter, PrintfTickFormatter, NumeralTickFormatter
 except:
     pass
@@ -332,6 +333,32 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
             "tick formatting switch to the matplotlib backend.")
         self.log_handler.assertEndsWith('WARNING', substr)
 
+    def test_active_tools_drag(self):
+        curve = Curve([1, 2, 3]).options(active_tools=['box_zoom'])
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_drag, tools.BoxZoomTool)
+
+    def test_active_tools_scroll(self):
+        curve = Curve([1, 2, 3]).options(active_tools=['wheel_zoom'])
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
+
+    def test_active_tools_scroll(self):
+        curve = Curve([1, 2, 3]).options(active_tools=['tap'], tools=['tap'])
+        plot = bokeh_renderer.get_plot(curve)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_tap, tools.TapTool)
+
+    def test_active_tools_draw_stream(self):
+        scatter = Scatter([1, 2, 3]).options(active_tools=['point_draw'])
+        PointDraw(source=scatter)
+        plot = bokeh_renderer.get_plot(scatter)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
+        self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
+
 
 class TestColorbarPlot(TestBokehPlot):
 
@@ -408,3 +435,37 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for sp in plot.subplots.values():
             self.assertTrue(sp.handles['glyph_renderer'].muted)
+
+    def test_active_tools_drag(self):
+        curve = Curve([1, 2, 3])
+        scatter = Scatter([1, 2, 3])
+        overlay = (scatter * curve).options(active_tools=['box_zoom'])
+        plot = bokeh_renderer.get_plot(overlay)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_drag, tools.BoxZoomTool)
+
+    def test_active_tools_scroll(self):
+        curve = Curve([1, 2, 3])
+        scatter = Scatter([1, 2, 3])
+        overlay = (scatter * curve).options(active_tools=['wheel_zoom'])
+        plot = bokeh_renderer.get_plot(overlay)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
+
+    def test_active_tools_scroll(self):
+        curve = Curve([1, 2, 3])
+        scatter = Scatter([1, 2, 3]).options(tools=['tap'])
+        overlay = (scatter * curve).options(active_tools=['tap'])
+        plot = bokeh_renderer.get_plot(overlay)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_tap, tools.TapTool)
+
+    def test_active_tools_draw_stream(self):
+        curve = Curve([1, 2, 3])
+        scatter = Scatter([1, 2, 3]).options(active_tools=['point_draw'])
+        PointDraw(source=scatter)
+        overlay = (scatter * curve)
+        plot = bokeh_renderer.get_plot(overlay)
+        toolbar = plot.state.toolbar
+        self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
+        self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)

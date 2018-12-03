@@ -16,6 +16,7 @@ import numpy as np
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.layouts import WidgetBox, Row, Column
+from bokeh.models import tools
 from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
@@ -39,6 +40,46 @@ from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
 bokeh_version = LooseVersion(bokeh.__version__)  # noqa
+
+
+TOOL_TYPES = {
+    'pan': tools.PanTool,
+    'xpan': tools.PanTool,
+    'ypan': tools.PanTool,
+    'xwheel_pan': tools.WheelPanTool,
+    'ywheel_pan': tools.WheelPanTool,
+    'wheel_zoom': tools.WheelZoomTool,
+    'xwheel_zoom': tools.WheelZoomTool,
+    'ywheel_zoom': tools.WheelZoomTool,
+    'zoom_in': tools.ZoomInTool,
+    'xzoom_in': tools.ZoomInTool,
+    'yzoom_in': tools.ZoomInTool,
+    'zoom_out': tools.ZoomOutTool,
+    'xzoom_out': tools.ZoomOutTool,
+    'yzoom_out': tools.ZoomOutTool,
+    'click': tools.TapTool,
+    'tap': tools.TapTool,
+    'crosshair': tools.CrosshairTool,
+    'box_select': tools.BoxSelectTool,
+    'xbox_select': tools.BoxSelectTool,
+    'ybox_select': tools.BoxSelectTool,
+    'poly_select': tools.PolySelectTool,
+    'lasso_select': tools.LassoSelectTool,
+    'box_zoom': tools.BoxZoomTool,
+    'xbox_zoom': tools.BoxZoomTool,
+    'ybox_zoom': tools.BoxZoomTool,
+    'hover': tools.HoverTool,
+    'save': tools.SaveTool,
+    'undo': tools.UndoTool,
+    'redo': tools.RedoTool,
+    'reset': tools.ResetTool,
+    'help': tools.HelpTool,
+    'box_edit': tools.BoxEditTool,
+    'point_draw': tools.PointDrawTool,
+    'poly_draw': tools.PolyDrawTool,
+    'poly_edit': tools.PolyEditTool,
+    'freehand_draw': tools.FreehandDrawTool
+}
 
 
 def convert_timestamp(timestamp):
