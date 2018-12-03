@@ -40,7 +40,7 @@ from .styles import (
 from .util import (
     bokeh_version, decode_bytes, get_tab_title, glyph_order,
     py2js_tickformatter, recursive_model_update, theme_attr_json,
-    cds_column_replace, hold_policy
+    cds_column_replace, hold_policy, match_dim_specs
 )
 
 
@@ -220,22 +220,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _merge_ranges(self, plots, xspecs, yspecs):
         """
         Given a list of other plots return axes that are shared
-        with another plot by matching the axes labels
+        with another plot by matching the dimensions specs stored
+        as tags on the dimensions.
         """
         plot_ranges = {}
         for plot in plots:
             if plot is None:
                 continue
-
             if hasattr(plot, 'x_range') and plot.x_range.tags and xspecs is not None:
-                if plot.x_range.tags[0] == xspecs:
+                if match_dim_specs(plot.x_range.tags[0], xspecs):
                     plot_ranges['x_range'] = plot.x_range
-                if plot.x_range.tags[0] == yspecs:
+                if match_dim_specs(plot.x_range.tags[0], yspecs):
                     plot_ranges['y_range'] = plot.x_range
             if hasattr(plot, 'y_range') and plot.y_range.tags and yspecs is not None:
-                if plot.y_range.tags[0] == yspecs:
+                if match_dim_specs(plot.y_range.tags[0], yspecs):
                     plot_ranges['y_range'] = plot.y_range
-                if plot.y_range.tags[0] == xspecs:
+                if match_dim_specs(plot.y_range.tags[0], xspecs):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
@@ -265,13 +265,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if xdims:
             if not isinstance(xdims, list):
                 xdims = [xdims]
-            xspecs = tuple((xd.name, xd.label) for xd in xdims)
+            xspecs = tuple((xd.name, xd.label, xd.unit) for xd in xdims)
         else:
             xspecs = None
         if ydims:
             if not isinstance(ydims, list):
                 ydims = [ydims]
-            yspecs = tuple((yd.name, yd.label) for yd in ydims)
+            yspecs = tuple((yd.name, yd.label, yd.unit) for yd in ydims)
         else:
             yspecs = None
 
