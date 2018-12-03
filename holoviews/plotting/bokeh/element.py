@@ -687,11 +687,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if (not np.isscalar(val) and len(util.unique_array(val)) == 1 and
+            if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
                 (not 'color' in k or validate('color', val))):
                 val = val[0]
 
-            if not np.isscalar(val):
+            if not util.isscalar(val):
                 if k in self._nonvectorized_styles:
                     element = type(element).__name__
                     raise ValueError('Mapping a dimension to the "{style}" '
@@ -711,11 +711,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if k == 'angle':
                 val = np.deg2rad(val)
             elif k.endswith('font_size'):
-                if np.isscalar(val) and isinstance(val, int):
+                if util.isscalar(val) and isinstance(val, int):
                     val = str(v)+'pt'
                 elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
                     val = [str(int(s))+'pt' for s in val]
-            if np.isscalar(val):
+            if util.isscalar(val):
                 key = val
             else:
                 key = {'field': k}
@@ -733,6 +733,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     else:
                         factors = util.unique_array(val)
                     kwargs['factors'] = factors
+                    if factors is not None and getattr(self, 'show_legend', False):
+                        new_style['legend'] = key
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
@@ -1460,13 +1462,11 @@ class LegendPlot(ElementPlot):
         if not plot.legend:
             return
         legend = plot.legend[0]
-        cmapper = self.handles.get('color_mapper')
-        if cmapper:
-            categorical = isinstance(cmapper, CategoricalColorMapper)
-        else:
-            categorical = False
-
-        if (not categorical and  not self.overlaid and len(legend.items) == 1) or not self.show_legend:
+        cmappers = [cmapper for cmapper in self.handles.values()
+                   if isinstance(cmapper, CategoricalColorMapper)]
+        categorical = bool(cmappers)
+        if ((not categorical and not self.overlaid and len(legend.items) == 1)
+            or not self.show_legend):
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'

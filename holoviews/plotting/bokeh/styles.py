@@ -16,6 +16,7 @@ except ImportError:
 
 from ...core.options import abbreviated_exception
 from ...core.util import basestring
+from ...util.transform import dim
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
 # Define shared style properties for bokeh plots
@@ -71,7 +72,7 @@ def mpl_to_bokeh(properties):
             new_properties['size'] = v
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
-        elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
+        elif (k == 'color' or k.endswith('_color')) and not isinstance(v, (dict, dim)):
             with abbreviated_exception():
                 v = COLOR_ALIASES.get(v, v)
             if isinstance(v, tuple):
