@@ -630,11 +630,10 @@ def match_dim_specs(specs1, specs2):
     The name and label must match exactly while the unit only has to
     match if both specs define one.
     """
-    if len(specs1) != len(specs2):
+    if (specs1 is None or specs2 is None) or (len(specs1) != len(specs2)):
         return False
     for spec1, spec2 in zip(specs1, specs2):
         for s1, s2 in zip(spec1, spec2):
-            print(s1, s2)
             if s1 is None or s2 is None:
                 continue
             if s1 != s2:
