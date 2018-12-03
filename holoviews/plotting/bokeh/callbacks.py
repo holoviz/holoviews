@@ -1260,6 +1260,9 @@ class DataLinkCallback(LinkCallback):
     def __init__(self, root_model, link, source_plot, target_plot):
         src_cds = source_plot.handles['source']
         tgt_cds = target_plot.handles['source']
+        if src_cds is tgt_cds:
+            return
+
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
         if src_len[0] != tgt_len[0]:
