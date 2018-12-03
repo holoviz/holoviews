@@ -71,7 +71,7 @@ class PlotlyRenderer(Renderer):
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        diff = plot.state.to_plotly_json()
+        diff = plot.state
         if serialize:
             return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
         else:

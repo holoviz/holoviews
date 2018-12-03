@@ -16,7 +16,7 @@ class TablePlot(ElementPlot):
         return (headings+data,), {}
 
     def init_graph(self, plot_args, plot_kwargs):
-        return create_table(*plot_args, **plot_kwargs)
+        return create_table(*plot_args, **plot_kwargs).to_plotly_json()
 
 
     def graph_options(self, element, ranges):

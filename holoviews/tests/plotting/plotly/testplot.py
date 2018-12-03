@@ -52,7 +52,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         curve = Curve([1, 2, 3])
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
-        self.assertEqual(state['layout']['yaxis']['range'], (1, 3))
+        self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
 
     def test_scatter3d_state(self):
         scatter = Scatter3D(([0,1], [2,3], [4,5]))
@@ -60,16 +60,16 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         self.assertEqual(state['data'][0]['x'], np.array([0, 1]))
         self.assertEqual(state['data'][0]['y'], np.array([2, 3]))
         self.assertEqual(state['data'][0]['z'], np.array([4, 5]))
-        self.assertEqual(state['layout']['scene']['xaxis']['range'], (0, 1))
-        self.assertEqual(state['layout']['scene']['yaxis']['range'], (2, 3))
-        self.assertEqual(state['layout']['scene']['zaxis']['range'], (4, 5))
+        self.assertEqual(state['layout']['scene']['xaxis']['range'], [0, 1])
+        self.assertEqual(state['layout']['scene']['yaxis']['range'], [2, 3])
+        self.assertEqual(state['layout']['scene']['zaxis']['range'], [4, 5])
 
     def test_overlay_state(self):
         layout = Curve([1, 2, 3]) * Curve([2, 4, 6])
         state = self._get_plot_state(layout)
         self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
         self.assertEqual(state['data'][1]['y'], np.array([2, 4, 6]))
-        self.assertEqual(state['layout']['yaxis']['range'], (1, 6))
+        self.assertEqual(state['layout']['yaxis']['range'], [1, 6])
 
     def test_layout_state(self):
         layout = Curve([1, 2, 3]) + Curve([2, 4, 6])

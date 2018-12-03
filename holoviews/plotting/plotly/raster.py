@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objs as go
 
 from ...core.options import SkipRendering
 from ...element import Image, Raster
@@ -10,7 +9,7 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
 
-    graph_obj = go.Heatmap
+    trace_type = 'heatmap'
 
     def graph_options(self, element, ranges):
         opts = super(RasterPlot, self).graph_options(element, ranges)
