@@ -54,7 +54,7 @@ class CompositeOverlay(ViewableElement, Composable):
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, index=0, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
-        
+
         Defaults to first value dimension if present otherwise falls
         back to first key dimension.
 

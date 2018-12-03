@@ -565,7 +565,7 @@ class Dimension(param.Parameterized):
 
     def pprint_value_string(self, value):
         """Pretty print the dimension value and unit.
-        
+
         Args:
             value: Dimension value to format
 
@@ -1008,7 +1008,7 @@ class Dimensioned(LabelledData):
             selection: Type of dimensions to return
                 The type of dimension, i.e. one of 'key', 'value',
                 'constant' or 'all'.
-            label: Whether to return the name, label or Dimension 
+            label: Whether to return the name, label or Dimension
                 Whether to return the Dimension objects (False),
                 the Dimension names (True/'name') or labels ('label').
 
@@ -1341,7 +1341,7 @@ class Dimensioned(LabelledData):
             **kwargs: Keywords of options by type
                 Applies options directly to the object by type
                 (e.g. 'plot', 'style', 'norm') specified as
-                dictionaries. 
+                dictionaries.
 
         Returns:
             Returns the cloned object with the options applied

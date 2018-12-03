@@ -362,7 +362,7 @@ class NdLayout(UniformNdMapping):
 
     def cols(self, ncols):
         """Sets the maximum number of columns in the NdLayout.
-        
+
         Any items beyond the set number of cols will flow onto a new
         row. The number of columns control the indexing and display
         semantics of the NdLayout.
@@ -487,7 +487,7 @@ class Layout(ViewableTree):
 
     def cols(self, ncols):
         """Sets the maximum number of columns in the NdLayout.
-        
+
         Any items beyond the set number of cols will flow onto a new
         row. The number of columns control the indexing and display
         semantics of the NdLayout.

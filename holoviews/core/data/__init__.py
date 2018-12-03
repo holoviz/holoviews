@@ -216,7 +216,7 @@ class Dataset(Element):
 
 
     def closest(self, coords=[], **kwargs):
-        """Snaps coordinate(s) to closest coordinate in Dataset 
+        """Snaps coordinate(s) to closest coordinate in Dataset
 
         Args:
             coords: List of coordinates expressed as tuples
@@ -255,7 +255,7 @@ class Dataset(Element):
             reverse (bool, optional): Reverse sort order
 
         Returns:
-            Sorted Dataset 
+            Sorted Dataset
         """
         if by is None:
             by = self.kdims
