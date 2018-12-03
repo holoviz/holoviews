@@ -37,9 +37,9 @@ class PlotlyPlot(DimensionedPlot):
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
-    hspacing = param.Number(default=0.2, bounds=(0, 1))
+    hspacing = param.Number(default=0.15, bounds=(0, 1))
 
-    vspacing = param.Number(default=0.2, bounds=(0, 1))
+    vspacing = param.Number(default=0.15, bounds=(0, 1))
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
