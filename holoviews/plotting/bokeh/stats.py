@@ -90,14 +90,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
-    def _get_axis_labels(self, *args, **kwargs):
-        """
-        Override axis labels to group all key dimensions together.
-        """
-        element = self.current_frame
-        xlabel = ', '.join([kd.pprint_label for kd in element.kdims])
-        ylabel = element.vdims[0].pprint_label
-        return xlabel, ylabel, None
+    def _get_axis_dims(self, element):
+        return element.kdims, element.vdims[0]
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         if element.ndims > 0:

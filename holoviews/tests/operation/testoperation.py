@@ -128,42 +128,24 @@ class OperationTests(ComparisonTestCase):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3)
 
-        # Make sure that the name and label are as desired
-        op_freq_dim = op_hist.get_dimension('x_frequency')
-        self.assertEqual(op_freq_dim.label, 'x Frequency')
-
-        # Because the operation labels are now different from the
-        #  default Element label, change back before comparing.
-        op_hist = op_hist.redim(x_frequency='Frequency')
-        hist = Histogram(([0.1, 0.1, 0.133333], [0, 3, 6, 9]))
+        hist = Histogram(([0.1, 0.1, 0.133333], [0, 3, 6, 9]),
+                         vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, bin_range=(0, 3))
 
-        # Make sure that the name and label are as desired
-        op_freq_dim = op_hist.get_dimension('x_frequency')
-        self.assertEqual(op_freq_dim.label, 'x Frequency')
-
-        # Because the operation labels are now different from the
-        #  default Element label, change back before comparing.
-        op_hist = op_hist.redim(x_frequency='Frequency')
-        hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]))
+        hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]),
+                         vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_explicit_bins(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, bins=[0, 1, 3], normed=False)
 
-        # Make sure that the name and label are as desired
-        op_freq_dim = op_hist.get_dimension('x_frequency')
-        self.assertEqual(op_freq_dim.label, 'x Frequency')
-
-        # Because the operation labels are now different from the
-        #  default Element label, change back before comparing.
-        op_hist = op_hist.redim(x_frequency='Frequency')
-        hist = Histogram(([0, 1, 3], [1, 3]))
+        hist = Histogram(([0, 1, 3], [1, 3]),
+                         vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_cumulative(self):
@@ -171,28 +153,16 @@ class OperationTests(ComparisonTestCase):
         points = Points(arr)
         op_hist = histogram(points, cumulative=True, num_bins=3, normed=False)
 
-        # Make sure that the name and label are as desired
-        op_freq_dim = op_hist.get_dimension('x_frequency')
-        self.assertEqual(op_freq_dim.label, 'x Frequency')
-
-        # Because the operation labels are now different from the
-        #  default Element label, change back before comparing.
-        op_hist = op_hist.redim(x_frequency='Frequency')
-        hist = Histogram(([0, 1, 2, 3], [1, 2, 4]))
+        hist = Histogram(([0, 1, 2, 3], [1, 2, 4]),
+                         vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_not_normed(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, normed=False)
 
-        # Make sure that the name and label are as desired
-        op_freq_dim = op_hist.get_dimension('x_frequency')
-        self.assertEqual(op_freq_dim.label, 'x Frequency')
-
-        # Because the operation labels are now different from the
-        #  default Element label, change back before comparing.
-        op_hist = op_hist.redim(x_frequency='Frequency')
-        hist = Histogram(([3, 3, 4], [0, 3, 6, 9]))
+        hist = Histogram(([3, 3, 4], [0, 3, 6, 9]),
+                         vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
     def test_histogram_operation_datetime(self):
@@ -203,7 +173,7 @@ class OperationTests(ComparisonTestCase):
                                        '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
                      'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
                                                    3.85802469e-18])}
-        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_histogram_operation_datetime64(self):
@@ -214,7 +184,7 @@ class OperationTests(ComparisonTestCase):
                                        '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
                      'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
                                                    3.85802469e-18])}
-        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     @attr(optional=1) # Requires matplotlib
@@ -226,7 +196,7 @@ class OperationTests(ComparisonTestCase):
                                        '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
                      'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
                                                    3.85802469e-18])}
-        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_weighted(self):

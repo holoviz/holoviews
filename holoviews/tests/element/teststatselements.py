@@ -122,7 +122,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
         dist = Distribution(np.array([0, 1, 2]))
         area = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(area, Area)
-        self.assertEqual(area.vdims, [Dimension(('Value_density', 'Value Density'))])
+        self.assertEqual(area.vdims, [Dimension(('Value_density', 'Density'))])
 
     def test_distribution_composite_transfer_opts(self):
         dist = Distribution(np.array([0, 1, 2])).opts(style=dict(color='red'))
@@ -146,13 +146,13 @@ class StatisticalCompositorTest(ComparisonTestCase):
         dist = Distribution(np.array([0, 1, 2]), ).opts(plot=dict(filled=False))
         curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
-        self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
+        self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Density'))])
 
     def test_distribution_composite_empty_not_filled(self):
         dist = Distribution([]).opts(plot=dict(filled=False))
         curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
-        self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
+        self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Density'))])
 
     def test_bivariate_composite(self):
         dist = Bivariate(np.random.rand(10, 2))

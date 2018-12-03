@@ -620,3 +620,22 @@ def multi_polygons_data(element):
         xsh.append(multi_xs)
         ysh.append(multi_ys)
     return xsh, ysh
+
+
+def match_dim_specs(specs1, specs2):
+    """Matches dimension specs used to link axes.
+
+    Axis dimension specs consists of a list of tuples corresponding
+    to each dimension, each tuple spec has the form (name, label, unit).
+    The name and label must match exactly while the unit only has to
+    match if both specs define one.
+    """
+    if (specs1 is None or specs2 is None) or (len(specs1) != len(specs2)):
+        return False
+    for spec1, spec2 in zip(specs1, specs2):
+        for s1, s2 in zip(spec1, spec2):
+            if s1 is None or s2 is None:
+                continue
+            if s1 != s2:
+                return False
+    return True
