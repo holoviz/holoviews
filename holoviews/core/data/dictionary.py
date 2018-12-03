@@ -335,6 +335,7 @@ class DictInterface(Interface):
         groups = cls.groupby(dataset, kdims, list, OrderedDict)
         aggregated = OrderedDict([(k, []) for k in kdims+vdims])
 
+        dropped = []
         for key, group in groups:
             key = key if isinstance(key, tuple) else (key,)
             for kdim, val in zip(kdims, key):
@@ -342,13 +343,17 @@ class DictInterface(Interface):
             for vdim, arr in group.items():
                 if vdim in dataset.vdims:
                     if isscalar(arr):
-                        reduced = arr
-                    elif isinstance(function, np.ufunc):
-                        reduced = function.reduce(arr, **kwargs)
-                    else:
-                        reduced = function(arr, **kwargs)
-                    aggregated[vdim].append(reduced)
-        return aggregated
+                        aggregated[vdim].append(arr)
+                        continue
+                    try:
+                        if isinstance(function, np.ufunc):
+                            reduced = function.reduce(arr, **kwargs)
+                        else:
+                            reduced = function(arr, **kwargs)
+                        aggregated[vdim].append(reduced)
+                    except TypeError:
+                        dropped.append(vdim)
+        return aggregated, list(util.unique_iterator(dropped))
 
 
     @classmethod

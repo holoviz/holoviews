@@ -575,11 +575,15 @@ class GridInterface(DictInterface):
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
         da = dask_array_module()
+        dropped = []
         for vdim in dataset.vdims:
             values = dataset.data[vdim.name]
             atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
-            data[vdim.name] = atleast_1d(function(values, axis=axes, **kwargs))
-        return data
+            try:
+                data[vdim.name] = atleast_1d(function(values, axis=axes, **kwargs))
+            except TypeError:
+                dropped.append(vdim)
+        return data, dropped
 
 
     @classmethod

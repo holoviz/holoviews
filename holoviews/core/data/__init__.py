@@ -648,16 +648,17 @@ class Dataset(Element):
                 vdims = self.vdims
             return self.clone([], kdims=kdims, vdims=vdims)
 
-        aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
+        vdims = self.vdims
+        aggregated, dropped = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
+        vdims = [vd for vd in vdims if vd not in dropped]
 
         ndims = len(dimensions)
         min_d, max_d = self.params('kdims').bounds
         generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
 
-        vdims = self.vdims
         if spreadfn:
-            error = self.interface.aggregate(self, dimensions, spreadfn)
+            error, _ = self.interface.aggregate(self, dimensions, spreadfn)
             spread_name = spreadfn.__name__
             ndims = len(vdims)
             error = self.clone(error, kdims=kdims, new_type=Dataset)

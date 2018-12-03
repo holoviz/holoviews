@@ -238,7 +238,7 @@ class ArrayInterface(Interface):
             else:
                 reduced = function(group, axis=0, **kwargs)
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
-        return np.atleast_2d(rows)
+        return np.atleast_2d(rows), []
 
 
     @classmethod

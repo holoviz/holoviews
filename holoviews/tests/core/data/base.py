@@ -559,6 +559,20 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                              kdims=self.kdims[:1], vdims=self.vdims)
         self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
 
+    def test_dataset_aggregate_string_types(self):
+        ds = Dataset({'Gender':['M', 'M'], 'Weight':[20, 10], 'Name':['Peter', 'Matt']},
+                             kdims='Gender', vdims=['Weight', 'Name'])
+        aggregated = Dataset({'Gender': ['M'], 'Weight': [15]},
+                             kdims='Gender', vdims=['Weight'])
+        self.compare_dataset(ds.aggregate(['Gender'], np.mean), aggregated)
+
+    def test_dataset_aggregate_string_types_size(self):
+        ds = Dataset({'Gender':['M', 'M'], 'Weight':[20, 10], 'Name':['Peter', 'Matt']},
+                             kdims='Gender', vdims=['Weight', 'Name'])
+        aggregated = Dataset({'Gender': ['M'], 'Weight': [2], 'Name': [2]},
+                             kdims='Gender', vdims=['Weight', 'Name'])
+        self.compare_dataset(ds.aggregate(['Gender'], np.size), aggregated)
+
     def test_dataset_aggregate_ht_alias(self):
         aggregated = Dataset({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]},
                              kdims=self.alias_kdims[:1], vdims=self.alias_vdims)

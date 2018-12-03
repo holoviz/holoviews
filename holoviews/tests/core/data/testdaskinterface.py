@@ -54,6 +54,9 @@ class DaskDatasetTest(PandasInterfaceTests):
     def test_dataset_boolean_index(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_aggregate_string_types_size(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_from_multi_index(self):
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
