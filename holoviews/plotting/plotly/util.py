@@ -597,11 +597,7 @@ def figure_grid(figures_grid,
 
     # Compute domain widths/heights for subplots
     column_domains = _compute_subplot_domains(column_widths, column_spacing)
-
-    # Reverse heights/domains so that row 0 corresponds to top and row 1
-    # second from the top, and so on
-    row_domains = _compute_subplot_domains(list(reversed(row_heights)), row_spacing)
-    row_domains = reversed(row_domains)
+    row_domains = _compute_subplot_domains(row_heights, row_spacing)
 
     output_figure = {'data': [], 'layout': {}}
 
@@ -616,7 +612,7 @@ def figure_grid(figures_grid,
 
                 if share_xaxis:
                     subplot_offsets['xaxis'] = c
-                    if r != (rows - 1):
+                    if r != 0:
                         # Only use xaxes from bottom row
                         fig.get('layout', {}).pop('xaxis', None)
 

@@ -209,7 +209,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
         width, height = self._get_size()
 
-        fig = figure_grid(plots,
+        fig = figure_grid(list(reversed(plots)),
                           column_spacing=self.hspacing,
                           row_spacing=self.vspacing)
 
