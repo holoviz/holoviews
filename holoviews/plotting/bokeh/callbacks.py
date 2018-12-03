@@ -10,7 +10,7 @@ from bokeh.models import (
 )
 from pyviz_comms import JS_CALLBACK
 
-from ...core import OrderedDict, ViewableElement
+from ...core import OrderedDict
 from ...core.util import dimension_sanitizer, isscalar
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
@@ -1206,9 +1206,8 @@ class LinkCallback(param.Parameterized):
         """
         Searches a GenericElementPlot for a Link.
         """
-        sources = plot.hmap.traverse(lambda x: x, [ViewableElement])
         registry = Link.registry.items()
-        for source in sources:
+        for source in plot.link_sources:
             if link is None:
                 links = [
                     l for src, links in registry for l in links

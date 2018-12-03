@@ -148,11 +148,9 @@ class BokehPlot(DimensionedPlot):
         raise NotImplementedError
 
 
-    def _construct_callbacks(self):
-        """
-        Initializes any callbacks for streams which have defined
-        the plotted object as a source.
-        """
+    @property
+    def link_sources(self):
+        "Returns potential Link or Stream sources."
         if isinstance(self, GenericOverlayPlot):
             zorders = []
         elif self.batched:
@@ -163,15 +161,22 @@ class BokehPlot(DimensionedPlot):
         if isinstance(self, GenericOverlayPlot) and not self.batched:
             sources = []
         elif not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [(i, o) for i, inputs in self.stream_sources.items()
+            sources = [o for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
         else:
-            sources = [(self.zorder, self.hmap.last)]
+            sources = [self.hmap.last]
+        return sources
 
+
+    def _construct_callbacks(self):
+        """
+        Initializes any callbacks for streams which have defined
+        the plotted object as a source.
+        """
         cb_classes = set()
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks['bokeh']
-        for _, source in sources:
+        for source in self.link_sources:
             streams = [
                 s for src, streams in registry for s in streams
                 if src is source or (src._plot_id is not None and

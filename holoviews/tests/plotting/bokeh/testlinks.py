@@ -2,7 +2,8 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.element import Curve, Polygons, Table, Scatter, Path
+from holoviews.core.spaces import DynamicMap
+from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
 from holoviews.plotting.links import (RangeToolLink, DataLink)
 
 try:
@@ -48,6 +49,18 @@ class TestLinkCallbacks(TestBokehPlot):
         range_tool = src_plot.state.select_one({'type': RangeTool})
         self.assertEqual(range_tool.x_range, tgt_plot.handles['x_range'])
         self.assertEqual(range_tool.y_range, tgt_plot.handles['y_range'])
+
+    def test_data_link_dynamicmap_table(self):
+        dmap = DynamicMap(lambda X: Points([(0, X)]), kdims='X').redim.range(X=(-1, 1))
+        table = Table([(-1,)], vdims='y')
+        DataLink(dmap, table)
+        layout = dmap + table
+        plot = bokeh_renderer.get_plot(layout)
+        cds = list(plot.state.select({'type': ColumnDataSource}))
+        self.assertEqual(len(cds), 1)
+        data = {'x': np.array([0]), 'y': np.array([-1])}
+        for k, v in cds[0].data.items():
+            self.assertEqual(v, data[k])
 
     def test_data_link_poly_table(self):
         arr1 = np.random.rand(10, 2)
