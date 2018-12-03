@@ -119,6 +119,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(graph, dict) and 'data' in graph:
             merge_figure(graph, {'layout': layout})
             self.handles['fig'] = graph
+            return self.handles['fig']
         else:
             if not isinstance(graph, list):
                 graph = [graph]
