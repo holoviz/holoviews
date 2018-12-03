@@ -10,7 +10,6 @@ import param
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,

@@ -12,8 +12,8 @@ from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
 from bokeh.models import tools
 from bokeh.models import (
-    HoverTool, Renderer, Range1d, DataRange1d, Title, FactorRange,
-    FuncTickFormatter, Legend, TickFormatter, PrintfTickFormatter)
+    Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper

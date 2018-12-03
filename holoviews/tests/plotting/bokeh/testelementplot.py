@@ -345,7 +345,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         toolbar = plot.state.toolbar
         self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
 
-    def test_active_tools_scroll(self):
+    def test_active_tools_tap(self):
         curve = Curve([1, 2, 3]).options(active_tools=['tap'], tools=['tap'])
         plot = bokeh_renderer.get_plot(curve)
         toolbar = plot.state.toolbar
@@ -452,7 +452,7 @@ class TestOverlayPlot(TestBokehPlot):
         toolbar = plot.state.toolbar
         self.assertIsInstance(toolbar.active_scroll, tools.WheelZoomTool)
 
-    def test_active_tools_scroll(self):
+    def test_active_tools_tap(self):
         curve = Curve([1, 2, 3])
         scatter = Scatter([1, 2, 3]).options(tools=['tap'])
         overlay = (scatter * curve).options(active_tools=['tap'])
