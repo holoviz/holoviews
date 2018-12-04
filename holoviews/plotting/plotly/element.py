@@ -1,7 +1,7 @@
 import numpy as np
-import plotly.graph_objs as go
 import param
 
+from holoviews.plotting.plotly.util import merge_figure
 from ...core.util import basestring
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -84,7 +84,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         An explicit override of the z-axis label, if set takes precedence
         over the dimension label.""")
 
-    graph_obj = None
+    trace_type = None
 
     def initialize_plot(self, ranges=None):
         """
@@ -116,13 +116,14 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         layout = self.init_layout(key, element, ranges)
         self.handles['layout'] = layout
 
-        if isinstance(graph, go.Figure):
-            graph.update({'layout': layout})
+        if isinstance(graph, dict) and 'data' in graph:
+            merge_figure(graph, {'layout': layout})
             self.handles['fig'] = graph
+            return self.handles['fig']
         else:
             if not isinstance(graph, list):
                 graph = [graph]
-            fig = go.Figure(data=graph, layout=layout)
+            fig = dict(data=graph, layout=layout)
             self.handles['fig'] = fig
             return fig
 
@@ -138,15 +139,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     legendgroup=element.group,
                     name=legend)
 
-        if self.layout_num:
-            opts['xaxis'] = 'x' + str(self.layout_num)
-            opts['yaxis'] = 'y' + str(self.layout_num)
-
         return opts
 
 
     def init_graph(self, plot_args, plot_kwargs):
-        return self.graph_obj(*plot_args, **plot_kwargs)
+        plot_kwargs['type'] = self.trace_type
+        return dict(*plot_args, **plot_kwargs)
 
 
     def get_data(self, element, ranges):
@@ -191,11 +189,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             options['yaxis'] = yaxis
 
         l, b, r, t = self.margins
-        margin = go.layout.Margin(l=l, r=r, b=b, t=t, pad=4)
-        return go.Layout(width=self.width, height=self.height,
-                         title=self._format_title(key, separator=' '),
-                         plot_bgcolor=self.bgcolor, margin=margin,
-                         **options)
+        margin = dict(l=l, r=r, b=b, t=t, pad=4)
+        return dict(width=self.width, height=self.height,
+                    title=self._format_title(key, separator=' '),
+                    plot_bgcolor=self.bgcolor, margin=margin,
+                    **options)
 
 
     def update_frame(self, key, ranges=None):
@@ -268,7 +266,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             if figure is None:
                 figure = fig
             else:
-                figure.add_traces(fig.data)
+                merge_figure(figure, fig)
 
         layout = self.init_layout(key, element, ranges)
         figure['layout'].update(layout)

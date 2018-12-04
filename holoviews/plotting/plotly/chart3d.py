@@ -1,5 +1,4 @@
 import numpy as np
-import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
 from plotly import colors
 from plotly.tools import FigureFactory as FF
@@ -49,8 +48,8 @@ class Chart3DPlot(ElementPlot):
         else:
             opts['aspectmode'] = 'manual'
             opts['aspectratio'] = self.aspect
-        scene = go.layout.Scene(xaxis=xaxis, yaxis=yaxis,
-                                zaxis=zaxis, **opts)
+        scene = dict(xaxis=xaxis, yaxis=yaxis,
+                     zaxis=zaxis, **opts)
 
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),
@@ -59,7 +58,7 @@ class Chart3DPlot(ElementPlot):
 
 class SurfacePlot(ColorbarPlot, Chart3DPlot):
 
-    graph_obj = go.Surface
+    trace_type = 'surface'
 
     style_opts = ['opacity', 'lighting', 'lightposition', 'cmap']
 
@@ -78,7 +77,7 @@ class SurfacePlot(ColorbarPlot, Chart3DPlot):
 
 class Scatter3dPlot(ScatterPlot, Chart3DPlot):
 
-    graph_obj = go.Scatter3d
+    trace_type = 'scatter3d'
 
     def get_data(self, element, ranges):
         return (), dict(x=element.dimension_values(0),
@@ -117,4 +116,4 @@ class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
             trisurf = FF._trisurf(*plot_args[:-1], **plot_kwargs)
         else:
             trisurf = trisurface(*plot_args, **plot_kwargs)
-        return trisurf[0]
+        return trisurf[0].to_plotly_json()

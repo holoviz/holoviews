@@ -3,6 +3,7 @@ import json
 import param
 with param.logging_level('CRITICAL'):
     from plotly.offline.offline import utils, get_plotlyjs, init_notebook_mode
+    import plotly.graph_objs as go
 
 from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
@@ -71,7 +72,7 @@ class PlotlyRenderer(Renderer):
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        diff = plot.state.to_plotly_json()
+        diff = plot.state
         if serialize:
             return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
         else:
@@ -79,7 +80,9 @@ class PlotlyRenderer(Renderer):
 
 
     def _figure_data(self, plot, fmt=None, divuuid=None, comm=True, as_script=False, width=800, height=600):
-        figure = plot.state
+        # Wrapping plot.state in go.Figure here performs validation
+        # and applies any default theme.
+        figure = go.Figure(plot.state)
         if divuuid is None:
             divuuid = plot.id
 

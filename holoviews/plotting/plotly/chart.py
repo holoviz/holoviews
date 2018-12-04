@@ -1,5 +1,4 @@
 import param
-import plotly.graph_objs as go
 
 from ...core import util
 from ...operation import interpolate_curve
@@ -14,7 +13,7 @@ class ScatterPlot(ColorbarPlot):
 
     style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity', 'fill', 'marker', 'size']
 
-    graph_obj = go.Scatter
+    trace_type = 'scatter'
 
     def graph_options(self, element, ranges):
         opts = super(ScatterPlot, self).graph_options(element, ranges)
@@ -47,7 +46,7 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    graph_obj = go.Scatter
+    trace_type = 'scatter'
 
     style_opts = ['color', 'dash', 'width', 'line_width']
 
@@ -69,7 +68,7 @@ class CurvePlot(ElementPlot):
 
 class ErrorBarsPlot(ElementPlot):
 
-    graph_obj = go.Scatter
+    trace_type = 'scatter'
 
     style_opts = ['color', 'dash', 'width', 'opacity', 'thickness']
 
@@ -98,7 +97,7 @@ class BivariatePlot(ColorbarPlot):
 
     ncontours = param.Integer(default=None)
 
-    graph_obj = go.Histogram2dcontour
+    trace_type = 'histogram2dcontour'
 
     style_opts = ['cmap']
 
@@ -118,7 +117,7 @@ class BivariatePlot(ColorbarPlot):
 
 class DistributionPlot(ElementPlot):
 
-    graph_obj = go.Histogram
+    trace_type = 'histogram'
 
     def get_data(self, element, ranges):
         return (), dict(x=element.dimension_values(0))
@@ -138,7 +137,7 @@ class BarPlot(ElementPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
-    graph_obj = go.Bar
+    trace_type = 'bar'
 
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)
@@ -154,20 +153,22 @@ class BarPlot(ElementPlot):
                          "on a bar chart at the same time.")
 
         if element.ndims == 1:
-            bars = [go.Bar(x=element.dimension_values(x_dim),
-                          y=element.dimension_values(vdim))]
+            bars = [dict(type='bar',
+                         x=element.dimension_values(x_dim),
+                         y=element.dimension_values(vdim))]
         else:
             group_dim = cat_dim if cat_dim else stack_dim
             els = element.groupby(group_dim)
             bars = []
             for k, el in els.items():
-                bars.append(go.Bar(x=el.dimension_values(x_dim),
-                                   y=el.dimension_values(vdim), name=k))
+                bars.append(dict(type='bar',
+                                 x=el.dimension_values(x_dim),
+                                 y=el.dimension_values(vdim), name=k))
         layout = self.init_layout(key, element, ranges, x_dim, vdim)
         self.handles['layout'] = layout
         layout['barmode'] = 'group' if cat_dim else 'stacked'
 
-        fig = go.Figure(data=bars, layout=layout)
+        fig = dict(data=bars, layout=layout)
         self.handles['fig'] = fig
         return fig
 
@@ -214,10 +215,10 @@ class BoxWhiskerPlot(ElementPlot):
             else:
                 label = key
             data = {axis: group.dimension_values(group.vdims[0])}
-            plots.append(go.Box(name=label, **dict(box_opts, **data)))
+            plots.append(dict(type='box', name=label, **dict(box_opts, **data)))
         layout = self.init_layout(key, element, ranges, element.kdims, element.vdims)
         self.handles['layout'] = layout
-        fig = go.Figure(data=plots, layout=layout)
+        fig = dict(data=plots, layout=layout)
         self.handles['fig'] = fig
         return fig
 

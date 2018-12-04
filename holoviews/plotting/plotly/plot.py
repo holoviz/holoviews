@@ -1,5 +1,4 @@
 import param
-from plotly import tools
 
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
@@ -7,7 +6,8 @@ from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
-from .util import add_figure
+from .util import figure_grid
+
 
 class PlotlyPlot(DimensionedPlot):
 
@@ -37,9 +37,9 @@ class PlotlyPlot(DimensionedPlot):
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
-    hspacing = param.Number(default=0.2, bounds=(0, 1))
+    hspacing = param.Number(default=0.15, bounds=(0, 1))
 
-    vspacing = param.Number(default=0.2, bounds=(0, 1))
+    vspacing = param.Number(default=0.15, bounds=(0, 1))
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
@@ -207,18 +207,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 if len(subplots) == 1 and c in insert_cols:
                     plots[r+offset].append(None)
 
-        rows, cols = len(plots), len(plots[0])
-        fig = tools.make_subplots(rows=rows, cols=cols, print_grid=False,
-                                  horizontal_spacing=self.hspacing,
-                                  vertical_spacing=self.vspacing)
-
         width, height = self._get_size()
-        ax_idx = 0
-        for r, row in enumerate(plots):
-            for c, plot in enumerate(row):
-                ax_idx += 1
-                if plot:
-                    add_figure(fig, plot, r, c, ax_idx)
+
+        fig = figure_grid(list(reversed(plots)),
+                          column_spacing=self.hspacing,
+                          row_spacing=self.vspacing)
+
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
@@ -340,17 +334,12 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
 
-        rows, cols = len(plots), len(plots[0])
-        fig = tools.make_subplots(rows=rows, cols=cols, print_grid=False,
-                                  shared_xaxes=True, shared_yaxes=True,
-                                  horizontal_spacing=self.hspacing,
-                                  vertical_spacing=self.vspacing)
-        ax_idx = 0
-        for r, row in enumerate(plots):
-            for c, plot in enumerate(row):
-                ax_idx += 1
-                if plot:
-                    add_figure(fig, plot, r, c, ax_idx)
+        fig = figure_grid(plots,
+                          column_spacing=self.hspacing,
+                          row_spacing=self.vspacing,
+                          share_xaxis=True,
+                          share_yaxis=True)
+
         w, h = self._get_size(subplot.width, subplot.height)
         fig['layout'].update(width=w, height=h,
                              title=self._format_title(key))
