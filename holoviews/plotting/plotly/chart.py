@@ -1,19 +1,23 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import param
+import numpy as np
 
+from ...core.data import Dataset
 from ...core import util
+from ...element import Bars
 from ...operation import interpolate_curve
+from ..util import get_axis_padding
 from .element import ElementPlot, ColorbarPlot
+
 
 class ChartPlot(ElementPlot):
 
     trace_kwargs = {'type': 'scatter'}
 
     def get_data(self, element, ranges, style):
-        data = dict(x=element.dimension_values(0),
-                    y=element.dimension_values(1))
-        return (), data
+        return [dict(x=element.dimension_values(0),
+                     y=element.dimension_values(1))]
 
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
@@ -22,8 +26,9 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity',
-                  'fill', 'marker', 'size']
+    style_opts = ['symbol', 'color', 'cmap', 'alpha', 'size', 'sizemin']
+
+    _nonvectorized_styles = ['cmap', 'opacity', 'sizemin']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
 
@@ -50,28 +55,81 @@ class CurvePlot(ChartPlot):
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
-    style_opts = ['color', 'dash', 'width', 'line_width']
+    style_opts = ['color', 'dash', 'line_width']
 
     _nonvectorized_styles = style_opts
+
+    _style_key = 'line'
 
     def get_data(self, element, ranges, style):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return (), dict(x=element.dimension_values(0),
-                        y=element.dimension_values(1))
+        return [dict(x=element.dimension_values(0),
+                     y=element.dimension_values(1))]
 
 
 class AreaPlot(ChartPlot):
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'fill': 'tozeroy'}
+    style_opts = ['color', 'dash', 'line_width']
+
+    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+
+    _style_key = 'line'
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        vdims = element.vdims[:2]
+        vdim = vdims[0].name
+        if len(vdims) > 1:
+            new_range = {}
+            for r in ranges[vdim]:
+                new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
+            ranges[vdim] = new_range
+        else:
+            s0, s1 = ranges[vdim]['soft']
+            s0 = min(s0, 0) if util.isfinite(s0) else 0
+            s1 = max(s1, 0) if util.isfinite(s1) else 0
+            ranges[vdim]['soft'] = (s0, s1)
+        return super(AreaPlot, self).get_extents(element, ranges, range_type)
+
+    def get_data(self, element, ranges, style):
+        if len(element.vdims) == 1:
+            kwargs = super(AreaPlot, self).get_data(element, ranges, style)[0]
+            kwargs['fill'] = 'tozeroy'
+            return [kwargs]
+        xs = element.dimension_values(0)
+        ys = element.dimension_values(1)
+        bottom = element.dimension_values(2)
+        return [dict(x=xs, y=bottom, fill=None),
+                dict(x=xs, y=ys, fill='tonexty')]
 
 
+class SpreadPlot(ChartPlot):
+
+    style_opts = ['color', 'dash', 'line_width']
+
+    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
+
+    _style_key = 'line'
+
+    def get_data(self, element, ranges, style):
+        xs = element.dimension_values(0)
+        mean = element.dimension_values(1)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+        lower = mean - neg_error
+        upper = mean + pos_error
+        return [dict(x=xs, y=lower, fill=None),
+                dict(x=xs, y=upper, fill='tonexty')]
+    
 
 class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
 
-    style_opts = ['color', 'dash', 'width', 'opacity', 'thickness']
+    style_opts = ['color', 'dash', 'line_width', 'thickness']
+
+    _nonvectorized_styles = style_opts
 
     _style_key = 'error_y'
 
@@ -80,34 +138,10 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
         error_y = dict(type='data', array=pos_error, arrayminus=neg_error)
-        return (), dict(x=element.dimension_values(0),
-                        y=element.dimension_values(1),
-                        error_y=error_y)
+        return [dict(x=element.dimension_values(0),
+                     y=element.dimension_values(1),
+                     error_y=error_y)]
 
-
-class BivariatePlot(ChartPlot, ColorbarPlot):
-
-    ncontours = param.Integer(default=None)
-
-    trace_kwargs = {'type': 'histogram2dcontour'}
-
-    style_opts = ['cmap']
-
-    def graph_options(self, element, ranges, style):
-        opts = super(BivariatePlot, self).graph_options(element, ranges, style)
-        if self.ncontours:
-            opts['autocontour'] = False
-            opts['ncontours'] = self.ncontours
-        copts = self.get_color_opts(None, element, ranges, style)
-        return dict(opts, **copts)
-
-
-class DistributionPlot(ElementPlot):
-
-    trace_kwargs = {'type': 'histogram'}
-
-    def get_data(self, element, ranges, style):
-        return (), dict(x=element.dimension_values(0))
 
 
 class BarPlot(ElementPlot):
@@ -124,7 +158,52 @@ class BarPlot(ElementPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
+    stacked = param.Boolean(default=False)
+
     trace_kwargs = {'type': 'bar'}
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        """
+        Make adjustments to plot extents by computing
+        stacked bar heights, adjusting the bar baseline
+        and forcing the x-axis to be categorical.
+        """
+        if self.batched:
+            overlay = self.current_frame
+            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
+                           vdims=element.vdims)
+            for kd in overlay.kdims:
+                ranges[kd.name]['combined'] = overlay.range(kd)
+
+        extents = super(BarPlot, self).get_extents(element, ranges, range_type)
+        xdim = element.kdims[0]
+        ydim = element.vdims[0]
+
+        # Compute stack heights
+        if self.stacked or self.stack_index:
+            ds = Dataset(element)
+            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
+            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
+            y0, y1 = util.max_range([pos_range, neg_range])
+        else:
+            y0, y1 = ranges[ydim.name]['combined']
+
+        padding = 0 if self.overlaid else self.padding
+        _, ypad, _ = get_axis_padding(padding)
+        y0, y1 = util.range_pad(y0, y1, ypad, self.logy)
+
+        # Set y-baseline
+        if y0 < 0:
+            y1 = max([y1, 0])
+        elif self.logy:
+            y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
+        else:
+            y0 = 0
+
+        # Ensure x-axis is picked up as categorical
+        x0 = xdim.pprint_value(extents[0])
+        x1 = xdim.pprint_value(extents[2])
+        return (x0, y0, x1, y1)
 
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)
@@ -158,56 +237,3 @@ class BarPlot(ElementPlot):
         fig = dict(data=bars, layout=layout)
         self.handles['fig'] = fig
         return fig
-
-
-class BoxWhiskerPlot(ElementPlot):
-
-    boxpoints = param.ObjectSelector(objects=["all", "outliers",
-                                              "suspectedoutliers", False],
-                                     default='outliers', doc="""
-        Which points to show, valid options are 'all', 'outliers',
-        'suspectedoutliers' and False""")
-
-    jitter = param.Number(default=0, doc="""
-        Sets the amount of jitter in the sample points drawn. If "0",
-        the sample points align along the distribution axis. If "1",
-        the sample points are drawn in a random jitter of width equal
-        to the width of the box(es).""")
-
-    mean = param.ObjectSelector(default=False, objects=[True, False, 'sd'],
-                                doc="""
-        If "True", the mean of the box(es)' underlying distribution
-        is drawn as a dashed line inside the box(es). If "sd" the
-        standard deviation is also drawn.""")
-
-    style_opts = ['color', 'opacity', 'outliercolor', 'symbol',
-                  'size']
-
-    def generate_plot(self, key, ranges):
-        element = self._get_frame(key)
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = util.match_spec(element, ranges)
-
-        style = self.style[self.cyclic_index]
-        orientation = 'h' if self.invert_axes else 'v'
-        axis = 'x' if self.invert_axes else 'y'
-        box_opts = dict(boxmean=self.mean, jitter=self.jitter,
-                        marker=style, orientation=orientation)
-        groups = element.groupby(element.kdims)
-        groups = groups.data.items() if element.kdims else [(element.label, element)]
-        plots = []
-        for key, group in groups:
-            if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
-            else:
-                label = key
-            data = {axis: group.dimension_values(group.vdims[0])}
-            plots.append(dict(type='box', name=label, **dict(box_opts, **data)))
-        layout = self.init_layout(key, element, ranges, element.kdims, element.vdims)
-        self.handles['layout'] = layout
-        fig = dict(data=plots, layout=layout)
-        self.handles['fig'] = fig
-        return fig
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return (None, None, None, None)

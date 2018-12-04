@@ -11,6 +11,7 @@ from .chart import *                 # noqa (API import)
 from .chart3d import *               # noqa (API import)
 from .raster import *                # noqa (API import)
 from .plot import *                  # noqa (API import)
+from .stats import *               # noqa (API import)
 from .tabular import *               # noqa (API import)
 from ...core.util import LooseVersion, VersionError
 import plotly
@@ -29,7 +30,11 @@ if len(Store.renderers) == 1:
 Store.register({Points: ScatterPlot,
                 Scatter: ScatterPlot,
                 Curve: CurvePlot,
+                Area: AreaPlot,
+                Spread: SpreadPlot,
                 ErrorBars: ErrorBarsPlot,
+
+                # Statistics elements
                 Bivariate: BivariatePlot,
                 Distribution: DistributionPlot,
                 Bars: BarPlot,
@@ -69,7 +74,7 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
 # Charts
-options.Curve = Options('style', color=Cycle(), width=2)
+options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
 options.Scatter = Options('style', color=Cycle())
 options.Points = Options('style', color=Cycle())

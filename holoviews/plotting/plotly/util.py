@@ -74,6 +74,10 @@ _trace_to_subplot = {
     'scattermapbox': ['mapbox']
 }
 
+# Aliases - map common style options to more common names
+
+STYLE_ALIASES = {'line_width': 'width', 'alpha': 'opacity','cell_height': 'height'}
+
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
 _subplot_re = re.compile('\D*(\d+)')

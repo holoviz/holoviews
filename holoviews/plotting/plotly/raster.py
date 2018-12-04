@@ -31,7 +31,7 @@ class RasterPlot(ColorbarPlot):
             array=array.T[::-1,...]
         ny, nx = array.shape
         dx, dy = float(r-l)/nx, float(t-b)/ny
-        return (), dict(x0=l, y0=b, dx=dx, dy=dy, z=array)
+        return [dict(x0=l+dx/2., y0=b+dy/2., dx=dx, dy=dy, z=array)]
 
 
 class HeatMapPlot(RasterPlot):
@@ -40,16 +40,20 @@ class HeatMapPlot(RasterPlot):
         return (np.NaN,)*4
 
     def get_data(self, element, ranges, style):
-        gridded = element.gridded.sort()
-        return (), dict(x=gridded.dimension_values(0, False),
-                        y=gridded.dimension_values(1, False),
-                        z=gridded.dimension_values(2, flat=False))
+        gridded = element.gridded
+        return [dict(x=gridded.dimension_values(0, False, False),
+                     y=gridded.dimension_values(1, False, False),
+                     z=gridded.dimension_values(2, flat=False))]
 
 
 class QuadMeshPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
-        if len(set(v.shape for v in element.data)) == 1:
-            raise SkipRendering("Plotly QuadMeshPlot only supports rectangular meshes")
-        return (), dict(x=element.data[0], y=element.data[1],
-                        z=element.data[2])
+        x, y, z = element.dimensions()[:3]
+        irregular = element.interface.irregular(element, x)
+        if irregular:
+            raise SkipRendering("Plotly QuadMeshPlot only supports rectilinear meshes")
+        xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
+                  element.interface.coords(element, y, edges=True, ordered=True))
+        zdata = element.dimension_values(z, flat=False)
+        return [dict(x=xc, y=yc, z=zdata)]

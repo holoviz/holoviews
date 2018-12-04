@@ -8,7 +8,7 @@ from ...util.transform import dim
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, fire_colors
-from .util import merge_figure
+from .util import STYLE_ALIASES, merge_figure
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -123,33 +123,30 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         style = self.style[self.cyclic_index]
 
         # Get data and options and merge them 
-        data_args, data_kwargs = self.get_data(element, ranges, style)
+        data = self.get_data(element, ranges, style)
         opts = self.graph_options(element, ranges, style)
-        for k, v in data_kwargs.items():
-            if k in opts and isinstance(opts[k], dict):
-                opts[k].update(v)
-            else:
-                opts[k] = v
+        graphs = []
+        for d in data:
+            trace = dict(opts)
+            for k, v in d.items():
+                if k in trace and isinstance(trace[k], dict):
+                    trace[k].update(v)
+                else:
+                    trace[k] = v
 
-        # Initialize graph
-        graph = self.init_graph(data_args, dict(opts, **data_kwargs))
-        self.handles['graph'] = graph
+            # Initialize graph
+            graph = self.init_graph(trace)
+            graphs.append(graph)
+        self.handles['graphs'] = graphs
 
         # Initialize layout
         layout = self.init_layout(key, element, ranges)
         self.handles['layout'] = layout
 
         # Create figure and return it
-        if isinstance(graph, dict) and 'data' in graph:
-            merge_figure(graph, {'layout': layout})
-            self.handles['fig'] = graph
-            return self.handles['fig']
-        else:
-            if not isinstance(graph, list):
-                graph = [graph]
-            fig = dict(data=graph, layout=layout)
-            self.handles['fig'] = fig
-            return fig
+        fig = dict(data=graphs, layout=layout)
+        self.handles['fig'] = fig
+        return fig
 
 
     def graph_options(self, element, ranges, style):
@@ -164,16 +161,19 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             name=legend, **self.trace_kwargs)
 
         if self._style_key is not None:
-            opts[self._style_key] = self._apply_transforms(element, ranges, style)
+            styles = self._apply_transforms(element, ranges, style)
+            opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
+                                     for k, v in styles.items()}
+
         return opts
 
 
-    def init_graph(self, plot_args, plot_kwargs):
-        return dict(*plot_args, **plot_kwargs)
+    def init_graph(self, trace):
+        return dict(**trace)
 
 
     def get_data(self, element, ranges, style):
-        return (), {}
+        return []
 
 
     def get_aspect(self, xspan, yspan):
@@ -183,9 +183,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return self.width/self.height
 
     
-    def _apply_transforms(self, element, ranges, style, group=None):
+    def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
-        prefix = group+'_' if group else ''
         for k, v in dict(style).items():
             if isinstance(v, util.basestring):
                 if v in element:
@@ -193,7 +192,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])
 
-            if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
+            if not isinstance(v, dim):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)

@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import param
 import numpy as np
+
 from matplotlib.cm import get_cmap
 from plotly import colors
 from plotly.tools import FigureFactory as FF
@@ -10,11 +12,10 @@ try:
 except ImportError:
     pass
 
-import param
-
 from ...core.options import SkipRendering
 from .element import ElementPlot, ColorbarPlot
 from .chart import ScatterPlot
+
 
 class Chart3DPlot(ElementPlot):
 
@@ -27,6 +28,10 @@ class Chart3DPlot(ElementPlot):
     camera_zoom = param.Integer(default=3)
 
     projection = param.String(default='3d')
+
+    width = param.Integer(default=500)
+
+    height = param.Integer(default=500)
 
     def init_layout(self, key, element, ranges):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
@@ -57,8 +62,13 @@ class Chart3DPlot(ElementPlot):
                     title=self._format_title(key, separator=' '),
                     plot_bgcolor=self.bgcolor, scene=scene)
 
+    def get_data(self, element, ranges, style):
+        return [dict(x=element.dimension_values(0),
+                     y=element.dimension_values(1),
+                     z=element.dimension_values(2))]
 
-class SurfacePlot(ColorbarPlot, Chart3DPlot):
+
+class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'surface'}
 
@@ -69,26 +79,21 @@ class SurfacePlot(ColorbarPlot, Chart3DPlot):
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         return dict(opts, **copts)
 
-
     def get_data(self, element, ranges, style):
-        return (), dict(x=element.dimension_values(0, False),
-                        y=element.dimension_values(1, False),
-                        z=element.dimension_values(2, flat=False))
+        return [dict(x=element.dimension_values(0, False),
+                     y=element.dimension_values(1, False),
+                     z=element.dimension_values(2, flat=False))]
 
 
-class Scatter3dPlot(ScatterPlot, Chart3DPlot):
 
-    trace_kwargs = {'type': 'scatter3d'}
+class Scatter3dPlot(Chart3DPlot, ScatterPlot):
 
-    def get_data(self, element, ranges, style):
-        return (), dict(x=element.dimension_values(0),
-                        y=element.dimension_values(1),
-                        z=element.dimension_values(2))
+    trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
 
 
-class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
+class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
 
-    style_opts = ['cmap']
+    style_opts = ['cmap', 'edges_color', 'facecolor']
 
     def get_data(self, element, ranges, style):
         try:
@@ -99,21 +104,19 @@ class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
-        return (x, y, z, simplices, self.colorbar, 'black', None), {}
+        return [dict(x=x, y=y, z=z, simplices=simplices, edges_color='black',
+                     scale=None)]
 
     def graph_options(self, element, ranges, style):
-        if 'cmap' in opts:
-            cmap = opts.pop('cmap')
+        if 'cmap' in style:
+            cmap = style.pop('cmap')
             if cmap in colors.PLOTLY_SCALES:
-                opts['colormap'] = colors.PLOTLY_SCALES[cmap]
+                style['colormap'] = colors.PLOTLY_SCALES[cmap]
             else:
                 cmap = get_cmap(cmap)
-                opts['colormap'] = [cmap(i) for i in np.linspace(0, 1)]
-        return opts
+                style['colormap'] = [cmap(i) for i in np.linspace(0, 1)]
+        style['show_colorbar'] = self.colorbar
+        return style
 
-    def init_graph(self, plot_args, plot_kwargs):
-        if hasattr(FF, '_trisurf'):
-            trisurf = FF._trisurf(*plot_args[:-1], **plot_kwargs)
-        else:
-            trisurf = trisurface(*plot_args, **plot_kwargs)
-        return trisurf[0].to_plotly_json()
+    def init_graph(self, trace):
+        return trisurface(**trace)[0].to_plotly_json()
