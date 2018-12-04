@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import numpy as np
 from matplotlib.cm import get_cmap
 from plotly import colors
@@ -58,18 +60,17 @@ class Chart3DPlot(ElementPlot):
 
 class SurfacePlot(ColorbarPlot, Chart3DPlot):
 
-    trace_type = 'surface'
+    trace_kwargs = {'type': 'surface'}
 
     style_opts = ['opacity', 'lighting', 'lightposition', 'cmap']
 
-    def graph_options(self, element, ranges):
-        opts = super(SurfacePlot, self).graph_options(element, ranges)
-        style = self.style[self.cyclic_index]
+    def graph_options(self, element, ranges, style):
+        opts = super(SurfacePlot, self).graph_options(element, ranges, style)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         return dict(opts, **copts)
 
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         return (), dict(x=element.dimension_values(0, False),
                         y=element.dimension_values(1, False),
                         z=element.dimension_values(2, flat=False))
@@ -77,9 +78,9 @@ class SurfacePlot(ColorbarPlot, Chart3DPlot):
 
 class Scatter3dPlot(ScatterPlot, Chart3DPlot):
 
-    trace_type = 'scatter3d'
+    trace_kwargs = {'type': 'scatter3d'}
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         return (), dict(x=element.dimension_values(0),
                         y=element.dimension_values(1),
                         z=element.dimension_values(2))
@@ -89,7 +90,7 @@ class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
 
     style_opts = ['cmap']
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         try:
             from scipy.spatial import Delaunay
         except:
@@ -100,8 +101,7 @@ class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
         simplices = tri.simplices
         return (x, y, z, simplices, self.colorbar, 'black', None), {}
 
-    def graph_options(self, element, ranges):
-        opts = self.style[self.cyclic_index]
+    def graph_options(self, element, ranges, style):
         if 'cmap' in opts:
             cmap = opts.pop('cmap')
             if cmap in colors.PLOTLY_SCALES:

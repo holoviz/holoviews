@@ -1,43 +1,45 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import param
 
 from ...core import util
 from ...operation import interpolate_curve
 from .element import ElementPlot, ColorbarPlot
 
+class ChartPlot(ElementPlot):
 
-class ScatterPlot(ColorbarPlot):
+    trace_kwargs = {'type': 'scatter'}
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity', 'fill', 'marker', 'size']
-
-    trace_type = 'scatter'
-
-    def graph_options(self, element, ranges):
-        opts = super(ScatterPlot, self).graph_options(element, ranges)
-        opts['mode'] = 'markers'
-        style = self.style[self.cyclic_index]
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            copts = self.get_color_opts(cdim, element, ranges, style)
-            copts['color'] = element.dimension_values(cdim)
-            opts['marker'] = copts
-        else:
-            opts['marker'] = style
-        return opts
-
-
-class PointPlot(ScatterPlot):
-
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         data = dict(x=element.dimension_values(0),
                     y=element.dimension_values(1))
         return (), data
 
 
-class CurvePlot(ElementPlot):
+class ScatterPlot(ChartPlot, ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity',
+                  'fill', 'marker', 'size']
+
+    trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
+
+    _style_key = 'marker'
+
+    def graph_options(self, element, ranges, style):
+        opts = super(ScatterPlot, self).graph_options(element, ranges, style)
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
+            copts = self.get_color_opts(cdim, element, ranges, style)
+            copts['color'] = element.dimension_values(cdim)
+            opts['marker'].update(opts)
+        return opts
+
+
+class CurvePlot(ChartPlot):
 
     interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
@@ -46,80 +48,65 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    trace_type = 'scatter'
+    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
     style_opts = ['color', 'dash', 'width', 'line_width']
 
-    def graph_options(self, element, ranges):
+    _nonvectorized_styles = style_opts
+
+    def get_data(self, element, ranges, style):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        opts = super(CurvePlot, self).graph_options(element, ranges)
-        opts['mode'] = 'lines'
-        style = self.style[self.cyclic_index]
-        if 'line_width' in style:
-            style['width'] = style.pop('line_width')
-        opts['line'] = style
-        return opts
-
-    def get_data(self, element, ranges):
         return (), dict(x=element.dimension_values(0),
                         y=element.dimension_values(1))
 
 
-class ErrorBarsPlot(ElementPlot):
+class AreaPlot(ChartPlot):
 
-    trace_type = 'scatter'
+    trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'fill': 'tozeroy'}
+
+
+
+class ErrorBarsPlot(ChartPlot, ColorbarPlot):
+
+    trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
 
     style_opts = ['color', 'dash', 'width', 'opacity', 'thickness']
 
-    def graph_options(self, element, ranges):
-        opts = super(ErrorBarsPlot, self).graph_options(element, ranges)
-        opts['mode'] = 'lines'
-        opts['line'] = {'width': 0}
-        return opts
+    _style_key = 'error_y'
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
-
-        style = self.style[self.cyclic_index]
-        if 'line_width' in style:
-            style['width'] = style.pop('line_width')
-        error_y = dict(type='data', array=pos_error,
-                       arrayminus=neg_error, visible=True, **style)
+        error_y = dict(type='data', array=pos_error, arrayminus=neg_error)
         return (), dict(x=element.dimension_values(0),
                         y=element.dimension_values(1),
                         error_y=error_y)
 
 
-class BivariatePlot(ColorbarPlot):
+class BivariatePlot(ChartPlot, ColorbarPlot):
 
     ncontours = param.Integer(default=None)
 
-    trace_type = 'histogram2dcontour'
+    trace_kwargs = {'type': 'histogram2dcontour'}
 
     style_opts = ['cmap']
 
-    def graph_options(self, element, ranges):
-        opts = super(BivariatePlot, self).graph_options(element, ranges)
+    def graph_options(self, element, ranges, style):
+        opts = super(BivariatePlot, self).graph_options(element, ranges, style)
         if self.ncontours:
             opts['autocontour'] = False
             opts['ncontours'] = self.ncontours
-        style = self.style[self.cyclic_index]
         copts = self.get_color_opts(None, element, ranges, style)
         return dict(opts, **copts)
-
-    def get_data(self, element, ranges):
-        return (), dict(x=element.dimension_values(0),
-                        y=element.dimension_values(1))
 
 
 class DistributionPlot(ElementPlot):
 
-    trace_type = 'histogram'
+    trace_kwargs = {'type': 'histogram'}
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         return (), dict(x=element.dimension_values(0))
 
 
@@ -137,7 +124,7 @@ class BarPlot(ElementPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
-    trace_type = 'bar'
+    trace_kwargs = {'type': 'bar'}
 
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)

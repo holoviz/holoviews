@@ -1,11 +1,14 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import numpy as np
 import param
 
-from holoviews.plotting.plotly.util import merge_figure
-from ...core.util import basestring
+from ...core import util
+from ...util.transform import dim
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .. import util
+from ..util import dim_range_key, fire_colors
+from .util import merge_figure
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -84,7 +87,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         An explicit override of the z-axis label, if set takes precedence
         over the dimension label.""")
 
-    trace_type = None
+    trace_kwargs = {}
+
+    _style_key = None
+
+    # Declare which styles cannot be mapped to a non-scalar dimension
+    _nonvectorized_styles = []
 
     def initialize_plot(self, ranges=None):
         """
@@ -100,22 +108,38 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         element = self._get_frame(key)
         if element is None:
             return self.handles['fig']
+
+        # Set plot options
         plot_opts = self.lookup_options(element, 'plot').options
         self.set_param(**{k: v for k, v in plot_opts.items()
                           if k in self.params()})
-        self.style = self.lookup_options(element, 'style')
 
+        # Get ranges
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
-        data_args, data_kwargs = self.get_data(element, ranges)
-        opts = self.graph_options(element, ranges)
+        # Get style
+        self.style = self.lookup_options(element, 'style')
+        style = self.style[self.cyclic_index]
+
+        # Get data and options and merge them 
+        data_args, data_kwargs = self.get_data(element, ranges, style)
+        opts = self.graph_options(element, ranges, style)
+        for k, v in data_kwargs.items():
+            if k in opts and isinstance(opts[k], dict):
+                opts[k].update(v)
+            else:
+                opts[k] = v
+
+        # Initialize graph
         graph = self.init_graph(data_args, dict(opts, **data_kwargs))
         self.handles['graph'] = graph
 
+        # Initialize layout
         layout = self.init_layout(key, element, ranges)
         self.handles['layout'] = layout
 
+        # Create figure and return it
         if isinstance(graph, dict) and 'data' in graph:
             merge_figure(graph, {'layout': layout})
             self.handles['fig'] = graph
@@ -128,27 +152,28 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             return fig
 
 
-    def graph_options(self, element, ranges):
+    def graph_options(self, element, ranges, style):
         if self.overlay_dims:
             legend = ', '.join([d.pprint_value_string(v) for d, v in
                                 self.overlay_dims.items()])
         else:
             legend = element.label
 
-        opts = dict(showlegend=self.show_legend,
-                    legendgroup=element.group,
-                    name=legend)
+        opts = dict(
+            showlegend=self.show_legend, legendgroup=element.group,
+            name=legend, **self.trace_kwargs)
 
+        if self._style_key is not None:
+            opts[self._style_key] = self._apply_transforms(element, ranges, style)
         return opts
 
 
     def init_graph(self, plot_args, plot_kwargs):
-        plot_kwargs['type'] = self.trace_type
         return dict(*plot_args, **plot_kwargs)
 
 
-    def get_data(self, element, ranges):
-        return {}
+    def get_data(self, element, ranges, style):
+        return (), {}
 
 
     def get_aspect(self, xspan, yspan):
@@ -156,6 +181,55 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Computes the aspect ratio of the plot
         """
         return self.width/self.height
+
+    
+    def _apply_transforms(self, element, ranges, style, group=None):
+        new_style = dict(style)
+        prefix = group+'_' if group else ''
+        for k, v in dict(style).items():
+            if isinstance(v, util.basestring):
+                if v in element:
+                    v = dim(v)
+                elif any(d==v for d in self.overlay_dims):
+                    v = dim([d for d in self.overlay_dims if d==v][0])
+
+            if (not isinstance(v, dim) or (group is not None and not k.startswith(group))):
+                continue
+            elif (not v.applies(element) and v.dimension not in self.overlay_dims):
+                new_style.pop(k)
+                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                             'dimensions could be resolved.' % (k, v))
+                continue
+
+            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
+                val = self.overlay_dims[v.dimension]
+            else:
+                val = v.apply(element, ranges=ranges, flat=True)
+
+            if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
+                (not 'color' in k or validate('color', val))):
+                val = val[0]
+
+            if not util.isscalar(val):
+                if k in self._nonvectorized_styles:
+                    element = type(element).__name__
+                    raise ValueError('Mapping a dimension to the "{style}" '
+                                     'style option is not supported by the '
+                                     '{element} element using the {backend} '
+                                     'backend. To map the "{dim}" dimension '
+                                     'to the {style} use a groupby operation '
+                                     'to overlay your data along the dimension.'.format(
+                                         style=k, dim=v.dimension, element=element,
+                                         backend=self.renderer.backend))
+
+            # If color is not valid colorspec add colormapper
+            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
+            if ('color' in k and isinstance(val, np.ndarray) and numeric):
+                copts = self.get_color_opts(v, element, ranges, style)
+                new_style.pop('cmap', None)
+                new_style.update(copts)
+            new_style[k] = val
+        return new_style
 
 
     def init_layout(self, key, element, ranges, xdim=None, ydim=None):
@@ -214,8 +288,9 @@ class ColorbarPlot(ElementPlot):
         outlinecolor, thickness, bgcolor, outlinewidth, bordercolor,
         ticklen, xpad, ypad, tickangle...""")
 
-    def get_color_opts(self, dim, element, ranges, style):
+    def get_color_opts(self, eldim, element, ranges, style):
         opts = {}
+        dim_name = dim_range_key(eldim)
         if self.colorbar:
             opts['colorbar'] = dict(title=dim.pprint_label,
                                     **self.colorbar_opts)
@@ -224,10 +299,10 @@ class ColorbarPlot(ElementPlot):
 
         cmap = style.pop('cmap', 'viridis')
         if cmap == 'fire':
-            values = np.linspace(0, 1, len(util.fire_colors))
+            values = np.linspace(0, 1, len(fire_colors))
             cmap = [(v, 'rgb(%d, %d, %d)' % tuple(c))
-                    for v, c in zip(values, np.array(util.fire_colors)*255)]
-        elif isinstance(cmap, basestring):
+                    for v, c in zip(values, np.array(fire_colors)*255)]
+        elif isinstance(cmap, util.basestring):
             if cmap[0] == cmap[0].lower():
                 cmap = cmap[0].upper() + cmap[1:]
             if cmap.endswith('_r'):
@@ -235,13 +310,17 @@ class ColorbarPlot(ElementPlot):
                 opts['reversescale'] = True
         opts['colorscale'] = cmap
         if dim:
-            if dim.name in ranges:
-                cmin, cmax = ranges[dim.name]['combined']
+            auto = False
+            if dim_name in ranges:
+                cmin, cmax = ranges[dim_name]['combined']
+            elif isinstance(eldim, dim):
+                cmin, cmax = np.nan, np.nan
+                auto = True
             else:
-                cmin, cmax = element.range(dim.name)
+                cmin, cmax = element.range(dim_name)
             opts['cmin'] = cmin
             opts['cmax'] = cmax
-            opts['cauto'] = False
+            opts['cauto'] = auto
         return dict(style, **opts)
 
 

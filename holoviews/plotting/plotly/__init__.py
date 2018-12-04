@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 from ...core.options import Store, Cycle, Options
 from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
                      GridMatrix, config)
@@ -24,8 +26,8 @@ Store.renderers['plotly'] = PlotlyRenderer.instance()
 if len(Store.renderers) == 1:
     Store.set_current_backend('plotly')
 
-Store.register({Points: PointPlot,
-                Scatter: PointPlot,
+Store.register({Points: ScatterPlot,
+                Scatter: ScatterPlot,
                 Curve: CurvePlot,
                 ErrorBars: ErrorBarsPlot,
                 Bivariate: BivariatePlot,

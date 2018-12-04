@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import json
 
 import param
@@ -25,15 +27,6 @@ plotly.relayout(plot, data.layout);
 plotly.redraw(plot);
 """
 
-PLOTLY_WARNING = """
-<div class="alert alert-warning">
-The plotly backend is experimental, and is
-not supported at this time.  If you would like to volunteer to help
-maintain this backend by adding documentation, responding to user
-issues, keeping the backend up to date as other code changes, or by
-adding support for other elements, please email holoviews@gmail.com
-</div>
-"""
 
 class PlotlyRenderer(Renderer):
 
@@ -143,9 +136,7 @@ class PlotlyRenderer(Renderer):
         Loads the plotly notebook resources.
         """
         from IPython.display import display, HTML, publish_display_data
-        if not cls._loaded:
-            display(HTML(PLOTLY_WARNING))
-            cls._loaded = True
+        cls._loaded = True
         init_notebook_mode(connected=not inline)
         publish_display_data(data={MIME_TYPES['jlab-hv-load']:
                                    get_plotlyjs()})

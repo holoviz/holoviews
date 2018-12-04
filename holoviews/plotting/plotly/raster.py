@@ -1,3 +1,5 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import numpy as np
 
 from ...core.options import SkipRendering
@@ -9,18 +11,17 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
 
-    trace_type = 'heatmap'
+    trace_kwargs = {'type': 'heatmap'}
 
-    def graph_options(self, element, ranges):
-        opts = super(RasterPlot, self).graph_options(element, ranges)
-        style = self.style[self.cyclic_index]
+    def graph_options(self, element, ranges, style):
+        opts = super(RasterPlot, self).graph_options(element, ranges, style)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         opts['zmin'] = copts.pop('cmin')
         opts['zmax'] = copts.pop('cmax')
         opts['zauto'] = copts.pop('cauto')
         return dict(opts, **copts)
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -38,7 +39,7 @@ class HeatMapPlot(RasterPlot):
     def get_extents(self, element, ranges, range_type='combined'):
         return (np.NaN,)*4
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         gridded = element.gridded.sort()
         return (), dict(x=gridded.dimension_values(0, False),
                         y=gridded.dimension_values(1, False),
@@ -47,7 +48,7 @@ class HeatMapPlot(RasterPlot):
 
 class QuadMeshPlot(RasterPlot):
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         if len(set(v.shape for v in element.data)) == 1:
             raise SkipRendering("Plotly QuadMeshPlot only supports rectangular meshes")
         return (), dict(x=element.data[0], y=element.data[1],
