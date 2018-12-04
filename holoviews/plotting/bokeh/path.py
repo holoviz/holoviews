@@ -185,6 +185,7 @@ class ContourPlot(LegendPlot, PathPlot):
         has_holes = isinstance(element, Polygons) and element.has_holes
         if self.static_source:
             data = dict()
+            xs = self.handles['cds'].data['xs']
         else:
             if has_holes and bokeh_version >= '1.0':
                 xs, ys = multi_polygons_data(element)

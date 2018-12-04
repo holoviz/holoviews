@@ -157,7 +157,7 @@ class Raster(Element2D):
 
             # Sample data
             x_vals = self.dimension_values(other_dimension[0].name, False)
-            ydata = self._zdata[sample[::-1]]
+            ydata = self._zdata[tuple(sample[::-1])]
             if hasattr(self, 'bounds') and sample_ind == 0: ydata = ydata[::-1]
             data = list(zip(x_vals, ydata))
             params['kdims'] = other_dimension
