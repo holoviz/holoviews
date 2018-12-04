@@ -4,7 +4,7 @@ import numpy as np
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Polygons, Table, Scatter, Path, Points
-from holoviews.plotting.links import (RangeToolLink, DataLink)
+from holoviews.plotting.links import (Link, RangeToolLink, DataLink)
 
 try:
     from holoviews.plotting.bokeh.util import bokeh_version
@@ -116,3 +116,12 @@ class TestLinkCallbacks(TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         path_plot, table_plot = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIs(path_plot.handles['source'], table_plot.handles['source'])
+
+    def test_data_link_idempotent(self):
+        table1 = Table([], 'A', 'B')
+        table2 = Table([], 'C', 'D')
+        link1 = DataLink(table1, table2)
+        DataLink(table1, table2)
+        self.assertEqual(len(Link.registry[table1]), 1)
+        self.assertIn(link1, Link.registry[table1])
+
