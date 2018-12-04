@@ -121,7 +121,7 @@ class TestLinkCallbacks(TestBokehPlot):
         table1 = Table([], 'A', 'B')
         table2 = Table([], 'C', 'D')
         link1 = DataLink(table1, table2)
-        link2 = DataLink(table1, table2)
+        DataLink(table1, table2)
         self.assertEqual(len(Link.registry[table1]), 1)
         self.assertIn(link1, Link.registry[table1])
 
