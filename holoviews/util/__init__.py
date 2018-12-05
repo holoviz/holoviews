@@ -136,7 +136,7 @@ class opts(param.ParameterizedFunction):
         Set default options for a session, whether in a Python script or
         a Jupyter notebook.
         """
-        cls.linemagic(cls.expand_options(merge_options_to_dict(options)))
+        cls._linemagic(cls.expand_options(merge_options_to_dict(options)))
 
 
     @classmethod
@@ -268,14 +268,15 @@ class opts(param.ParameterizedFunction):
         def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
             invalid = set(kws.keys()) - set(allowed)
+            prefix = None
             if invalid:
                 try:
-                    cls._options_error(list(invalid)[0], element,
-                                       Store.current_backend, allowed)
+                    cls._options_error(list(invalid)[0], element, None, allowed)
                 except ValueError as e:
                     prefix = 'In opts.{element}(...), '.format(element=element)
                     msg = str(e)[0].lower() + str(e)[1:]
-                raise ValueError(prefix + msg)
+                if prefix:
+                    raise ValueError(prefix + msg)
 
             return Options(spec, **kws)
 
