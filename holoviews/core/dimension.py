@@ -1456,7 +1456,7 @@ class Dimensioned(LabelledData):
         if options is None:
             expanded = {}
         else:
-            expanded = opts.expand_options(options, backend)
+            expanded = opts._expand_options(options, backend)
         return self.opts(expanded, backend, clone)
 
 

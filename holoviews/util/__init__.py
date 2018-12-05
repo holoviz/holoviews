@@ -136,17 +136,17 @@ class opts(param.ParameterizedFunction):
         Set default options for a session, whether in a Python script or
         a Jupyter notebook.
         """
-        cls._linemagic(cls.expand_options(merge_options_to_dict(options)))
+        cls._linemagic(cls._expand_options(merge_options_to_dict(options)))
 
 
     @classmethod
-    def expand_options(cls, options, backend=None):
+    def _expand_options(cls, options, backend=None):
         """
         Validates and expands a dictionaries of options indexed by
         type[.group][.label] keys into separate style, plot and norm
         options.
 
-            opts.expand_options({'Image': dict(cmap='viridis', show_title=False)})
+            opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
         returns
 
