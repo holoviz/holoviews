@@ -339,11 +339,8 @@ def polygons_to_path_patches(element):
     return mpl_paths
 
 try:
-    if cftime_types:
-        from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
-    else:
-        from matplotlib.dates import DateConverter
-        NetCDFTimeConverter = DateConverter
+    import cftime
+    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
     nc_axis_available = True
 except:
     from matplotlib.dates import DateConverter
