@@ -342,15 +342,19 @@ try:
     if cftime_types:
         from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
     else:
-        import matplotlib.dates import DateConverter
+        from matplotlib.dates import DateConverter
         NetCDFTimeConverter = DateConverter
     nc_axis_available = True
 except:
-    import matplotlib.dates import DateConverter
+    from matplotlib.dates import DateConverter
     NetCDFTimeConverter = DateConverter
     nc_axis_available = False
 
+
 class CFTimeConverter(NetCDFTimeConverter):
+    """
+    Defines conversions for cftime types by extending nc_time_axis.
+    """
 
     @classmethod
     def convert(cls, value, unit, axis):
@@ -365,6 +369,7 @@ class CFTimeConverter(NetCDFTimeConverter):
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(cftime.datetime(*v.timetuple()[0:6]), v.calendar) for v in value])
         return super(CFTimeConverter, cls).convert(value, unit, axis)
+
 
 for cft in cftime_types:
     munits.registry[cft] = CFTimeConverter()
