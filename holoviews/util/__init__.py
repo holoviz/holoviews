@@ -268,13 +268,19 @@ class opts(param.ParameterizedFunction):
         def fn(cls, spec=None, **kws):
             backend = kws.pop('backend', None)
             if backend:
-                allowed = cls._element_keywords(backend, elements=[element])[element]
+                allowed_kws = cls._element_keywords(backend,
+                                                    elements=[element])[element]
+                invalid = set(kws.keys()) - set(allowed_kws)
+            else:
+                allowed_kws = allowed
+                invalid = set(kws.keys()) - set(allowed)
+
             spec = element if spec is None else '%s.%s' % (element, spec)
-            invalid = set(kws.keys()) - set(allowed)
+
             prefix = None
             if invalid:
                 try:
-                    cls._options_error(list(invalid)[0], element, backend, allowed)
+                    cls._options_error(list(invalid)[0], element, backend, allowed_kws)
                 except ValueError as e:
                     prefix = 'In opts.{element}(...), '.format(element=element)
                     msg = str(e)[0].lower() + str(e)[1:]
