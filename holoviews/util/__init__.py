@@ -266,12 +266,15 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _build_completer(cls, element, allowed):
         def fn(cls, spec=None, **kws):
+            backend = kws.pop('backend', None)
+            if backend:
+                allowed = cls._element_keywords(backend, elements=[element])[element]
             spec = element if spec is None else '%s.%s' % (element, spec)
             invalid = set(kws.keys()) - set(allowed)
             prefix = None
             if invalid:
                 try:
-                    cls._options_error(list(invalid)[0], element, None, allowed)
+                    cls._options_error(list(invalid)[0], element, backend, allowed)
                 except ValueError as e:
                     prefix = 'In opts.{element}(...), '.format(element=element)
                     msg = str(e)[0].lower() + str(e)[1:]
@@ -284,29 +287,41 @@ class opts(param.ParameterizedFunction):
         fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
         return classmethod(fn)
 
+
+    @classmethod
+    def _element_keywords(cls, backend, elements=None):
+        "Returns a dictionary of element names to allowed keywords"
+        if backend not in Store.loaded_backends():
+            return {}
+
+        mapping = {}
+        backend_options = Store.options(backend)
+        elements = elements if elements is not None else backend_options.keys()
+        for element in elements:
+            if '.' in element: continue
+            element = element if isinstance(element, tuple) else (element,)
+            element_keywords = []
+            options = backend_options['.'.join(element)]
+            for group in Options._option_groups:
+                element_keywords.extend(options[group].allowed_keywords)
+
+            mapping[element[0]] = element_keywords
+        return mapping
+
+
     @classmethod
     def _update_backend(cls, backend):
 
         if cls.__original_docstring__ is None:
             cls.__original_docstring__ = cls.__doc__
 
-        if backend not in Store.loaded_backends():
-            return
-
-        backend_options = Store.options(backend)
         all_keywords = set()
-        for element in backend_options.keys():
-            if '.' in element: continue
-            element_keywords = []
-            options = backend_options['.'.join(element)]
-            for group in Options._option_groups:
-                element_keywords.extend(options[group].allowed_keywords)
-
-            all_keywords |= set(element_keywords)
+        element_keywords = cls._element_keywords(backend)
+        for element, keywords in element_keywords.items():
             with param.logging_level('CRITICAL'):
-                setattr(cls, element[0],
-                        cls._build_completer(element[0],
-                                             element_keywords))
+                all_keywords |= set(keywords)
+                setattr(cls, element,
+                        cls._build_completer(element, keywords))
 
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(all_keywords))
         old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
