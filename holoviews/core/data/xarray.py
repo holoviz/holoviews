@@ -14,14 +14,16 @@ from .interface import Interface, DataError, dask_array_module
 
 try:
     import cftime
-    util.datetime_types += (
+    cftime_types = (
         cftime._cftime.DatetimeGregorian,
         cftime._cftime.Datetime360Day,
         cftime._cftime.DatetimeJulian,
         cftime._cftime.DatetimeNoLeap,
-        cftime._cftime.DatetimeProlepticGregorian)
+        cftime._cftime.DatetimeProlepticGregorian
+    )
+    util.datetime_types += cftime_types
 except:
-    pass
+    cftime_types = ()
 
 
 class XArrayInterface(GridInterface):

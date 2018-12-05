@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import matplotlib
+from matplotlib import units as munits
 from matplotlib import ticker
 from matplotlib.colors import cnames
 from matplotlib.lines import Line2D
@@ -14,6 +15,8 @@ from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
     validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
     validate_joinstyle)
+
+from ...core.data.xarray import cftime_types
 from ...core.util import LooseVersion, _getargspec, basestring, is_number
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
@@ -334,3 +337,34 @@ def polygons_to_path_patches(element):
             subpath.append(PathPatch(Path(vertices, codes)))
         mpl_paths.append(subpath)
     return mpl_paths
+
+try:
+    if cftime_types:
+        from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
+    else:
+        import matplotlib.dates import DateConverter
+        NetCDFTimeConverter = DateConverter
+    nc_axis_available = True
+except:
+    import matplotlib.dates import DateConverter
+    NetCDFTimeConverter = DateConverter
+    nc_axis_available = False
+
+class CFTimeConverter(NetCDFTimeConverter):
+
+    @classmethod
+    def convert(cls, value, unit, axis):
+        if not nc_axis_available:
+            raise ValueError('In order to display cftime types with '
+                             'matplotlib install the nc_time_axis '
+                             'library using pip or from conda-forge '
+                             'using:\n\tconda install -c conda-forge '
+                             'nc_time_axis')
+        if isinstance(value, cftime_types):
+            value = CalendarDateTime(cftime.datetime(*value.timetuple()[0:6]), value.calendar)
+        elif isinstance(value, np.ndarray):
+            value = np.array([CalendarDateTime(cftime.datetime(*v.timetuple()[0:6]), v.calendar) for v in value])
+        return super(CFTimeConverter, cls).convert(value, unit, axis)
+
+for cft in cftime_types:
+    munits.registry[cft] = CFTimeConverter()
