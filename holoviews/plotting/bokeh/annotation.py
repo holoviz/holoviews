@@ -278,7 +278,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         super(DivPlot, self).__init__(element, **params)
         self.callbacks = []
         self.handles = {} if plot is None else self.handles['plot']
-
+        self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
 
     def get_data(self, element, ranges, style):
         return element.data, {}, style
