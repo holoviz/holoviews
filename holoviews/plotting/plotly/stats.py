@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
-from ...core import util
 from .chart import ChartPlot
 from .element import ElementPlot, ColorbarPlot
 

@@ -2,8 +2,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
-from plotly.figure_factory import create_table
-
 from .element import ElementPlot
 
 

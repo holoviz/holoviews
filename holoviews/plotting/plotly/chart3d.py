@@ -5,12 +5,7 @@ import numpy as np
 
 from matplotlib.cm import get_cmap
 from plotly import colors
-from plotly.tools import FigureFactory as FF
-
-try:
-    from plotly.figure_factory._trisurf import trisurf as trisurface
-except ImportError:
-    pass
+from plotly.figure_factory._trisurf import trisurf as trisurface
 
 from ...core.options import SkipRendering
 from .element import ElementPlot, ColorbarPlot

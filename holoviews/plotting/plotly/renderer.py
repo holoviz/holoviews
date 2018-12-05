@@ -135,7 +135,7 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import display, HTML, publish_display_data
+        from IPython.display import publish_display_data
         cls._loaded = True
         init_notebook_mode(connected=not inline)
         publish_display_data(data={MIME_TYPES['jlab-hv-load']:

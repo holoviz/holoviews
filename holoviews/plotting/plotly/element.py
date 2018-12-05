@@ -127,15 +127,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         opts = self.graph_options(element, ranges, style)
         graphs = []
         for d in data:
-            trace = dict(opts)
-            for k, v in d.items():
-                if k in trace and isinstance(trace[k], dict):
-                    trace[k].update(v)
-                else:
-                    trace[k] = v
-
             # Initialize graph
-            graph = self.init_graph(trace)
+            graph = self.init_graph(d, opts)
             graphs.append(graph)
         self.handles['graphs'] = graphs
 
@@ -168,8 +161,17 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return opts
 
 
-    def init_graph(self, trace):
-        return dict(**trace)
+    def init_graph(self, data, options):
+        """
+        Initializes graph from a trace.
+        """
+        trace = dict(options)
+        for k, v in d.items():
+            if k in trace and isinstance(trace[k], dict):
+                trace[k].update(v)
+            else:
+                trace[k] = v
+        return trace
 
 
     def get_data(self, element, ranges, style):
@@ -219,8 +221,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
-            if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
-                (not 'color' in k or validate('color', val))):
+            if (not util.isscalar(val) and len(util.unique_array(val)) == 1
+                and not 'color' in k):
                 val = val[0]
 
             if not util.isscalar(val):
