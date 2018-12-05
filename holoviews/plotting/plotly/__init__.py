@@ -39,6 +39,7 @@ Store.register({Points: ScatterPlot,
                 Distribution: DistributionPlot,
                 Bars: BarPlot,
                 BoxWhisker: BoxWhiskerPlot,
+                Violin: ViolinPlot,
 
                 # Raster plots
                 Raster: RasterPlot,

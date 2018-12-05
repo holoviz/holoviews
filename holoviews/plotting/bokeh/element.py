@@ -257,7 +257,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         and to link axes.
         """
         dims = element.dimensions()[:2]
-        return dims+[None] if len(dims) < 2 else dims
+        if len(dims) == 1:
+            return dims + [None, None]
+        else:
+            return dims + [None]
 
 
     def _axes_props(self, plots, subplots, element, ranges):

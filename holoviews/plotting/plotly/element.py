@@ -122,7 +122,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         self.style = self.lookup_options(element, 'style')
         style = self.style[self.cyclic_index]
 
-        # Get data and options and merge them 
+        # Get data and options and merge them
         data = self.get_data(element, ranges, style)
         opts = self.graph_options(element, ranges, style)
         graphs = []
@@ -182,7 +182,21 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         """
         return self.width/self.height
 
-    
+
+    def _get_axis_dims(self, element):
+        """Returns the dimensions corresponding to each axis.
+
+        Should return a list of dimensions or list of lists of
+        dimensions, which will be formatted to label the axis
+        and to link axes.
+        """
+        dims = element.dimensions()[:2]
+        if len(dims) == 1:
+            return dims + [None, None]
+        else:
+            return dims + [None]
+
+
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
@@ -236,9 +250,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         options = {}
 
-        xdim = element.get_dimension(0) if xdim is None else xdim
-        ydim = element.get_dimension(1) if ydim is None else ydim
-        xlabel, ylabel, zlabel = self._get_axis_labels([xdim, ydim])
+        dims = self._get_axis_dims(element)
+        if len(dims) > 2:
+            xdim, ydim, _ = dims
+        else:
+            xdim, ydim = dims
+        xlabel, ylabel, zlabel = self._get_axis_labels(dims)
 
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
