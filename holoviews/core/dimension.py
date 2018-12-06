@@ -1356,20 +1356,7 @@ class Dimensioned(LabelledData):
         Returns:
             Returns the object or a clone with the options applied
         """
-        signature = ['plot','style', 'norm', 'clone', 'backend']
-        apply_groups = False
-        if len(args) > 0 and isinstance(args[0], dict):
-            apply_groups = True
-            options = args[0]
-        elif kwargs and set(kwargs.keys()).issubset(set(signature)):
-            apply_groups = True
-            options = None
-        elif 'options' in kwargs:
-            apply_groups = True
-            options = kwargs['options']
-        elif not args and not kwargs:
-            apply_groups = True
-            options = None
+        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
 
         # By default do not clone in .opts method
         clone = kwargs.pop('clone', None)
