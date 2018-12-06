@@ -1175,16 +1175,24 @@ class DynamicMap(HoloMap):
         Returns:
             Returns the object or a clone with the options applied
         """
+        from ..util import Dynamic
+
         clone = kwargs.pop('clone', None)
         apply_groups, _ = util.deprecated_opts_signature(args, kwargs)
         # By default do not clone in .opts method
         clone = (apply_groups if clone is None else clone)
 
-        from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
+        obj = self if clone else self.clone()
+        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
                        streams=self.streams, link_inputs=True)
-        dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
-                                 for k, v in self.data.items()])
+        if not clone:
+            with util.disable_constant(self):
+                self.callback = dmap.callback
+            self.callback.inputs[:] = [obj]
+            obj.callback.inputs[:] = []
+            dmap = self
+            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
+                                     for k, v in self.data.items()])
         return dmap
 
 
