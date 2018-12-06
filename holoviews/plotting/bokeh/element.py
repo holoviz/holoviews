@@ -25,6 +25,7 @@ except ImportError:
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
+from ...core.data.xarray import cftime_types
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField, Path, Contours
@@ -606,7 +607,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
-            if (low == high and low is not None):
+            if isinstance(low, cftime_types):
+                pass
+            elif (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
                     offset = np.timedelta64(500, 'ms')
                     low -= offset
@@ -634,7 +637,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if reset_supported:
                     updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
-                if isinstance(new, util.datetime_types):
+                if isinstance(new, cftime_types):
                     new = date_to_integer(new)
                 axis_range.update(**{k:new})
                 if streaming and not k.startswith('reset_'):

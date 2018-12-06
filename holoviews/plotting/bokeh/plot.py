@@ -12,20 +12,29 @@ from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
-                     Empty, GridSpace, HoloMap, Element, DynamicMap)
+from ...core import (
+    OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
+    GridSpace, HoloMap, Element, DynamicMap
+)
+from ...core.data.xarray import cftime_types
 from ...core.options import SkipRendering
-from ...core.util import (basestring, wrap_tuple, unique_iterator,
-                          get_method_owner, datetime_types, wrap_tuple_streams)
+from ...core.util import (
+    basestring, wrap_tuple, unique_iterator, get_method_owner,
+    datetime_types, wrap_tuple_streams)
+
 from ...streams import Stream
 from ..links import Link
-from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-                    GenericElementPlot, GenericOverlayPlot)
+from ..plot import (
+    DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
+    GenericElementPlot, GenericOverlayPlot
+)
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
-from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
-                   update_shared_sources, empty_plot, decode_bytes,
-                   theme_attr_json, cds_column_replace, date_to_integer)
+from .util import (
+    layout_padding, pad_plots, filter_toolboxes, make_axis,
+    update_shared_sources, empty_plot, decode_bytes, theme_attr_json,
+    cds_column_replace, cftime_to_timestamp
+)
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -240,8 +249,8 @@ class BokehPlot(DimensionedPlot):
             values = decode_bytes(values) # Bytes need decoding to strings
 
             # Certain datetime types need to be converted
-            if len(values) and isinstance(values[0], datetime_types):
-                values = np.array([date_to_integer(v) for v in values])
+            if len(values) and isinstance(values[0], cftime_types):
+                values = cftime_to_timestamp(values)
             new_data[k] = values
         return new_data
 
