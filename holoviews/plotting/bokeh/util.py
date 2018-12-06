@@ -31,10 +31,10 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
-from ...core.data.xarray import cftime_types
 from ...core.overlay import Overlay
-from ...core.util import (LooseVersion, _getargspec, basestring,
-                          callable_name, dt64_to_dt, pd, unique_array)
+from ...core.util import (
+    LooseVersion, _getargspec, basestring, callable_name, cftime_types,
+    cftime_to_timestamp, dt64_to_dt, pd, unique_array)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -532,26 +532,6 @@ def attach_periodic(plot):
         for dmap in get_nested_dmaps(dmap):
             dmap.periodic._periodic_util = periodic(plot.document)
     return plot.hmap.traverse(append_refresh, [DynamicMap])
-
-
-def cftime_to_timestamp(date):
-    """Converts cftime to timestamp since epoch in milliseconds
-
-    Non-standard calendars (e.g. Julian or no leap calendars)
-    are converted to standard Gregorian calendar. This can cause
-    extra space to be added for dates that don't exist in the original
-    calendar. In order to handle these dates correctly a custom bokeh
-    model with support for other calendars would have to be defind.
-
-    Args:
-        date: cftime datetime object (or array)
-
-    Returns:
-        Milliseconds since 1970-01-01 00:00:00
-    """
-    import cftime
-    utime = cftime.utime('days since 1970-01-01')
-    return utime.date2num(date)*86400000
 
 
 def date_to_integer(date):

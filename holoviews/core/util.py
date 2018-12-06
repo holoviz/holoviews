@@ -92,6 +92,19 @@ try:
 except ImportError:
     pd = None
 
+try:
+    import cftime
+    cftime_types = (
+        cftime._cftime.DatetimeGregorian,
+        cftime._cftime.Datetime360Day,
+        cftime._cftime.DatetimeJulian,
+        cftime._cftime.DatetimeNoLeap,
+        cftime._cftime.DatetimeProlepticGregorian
+    )
+    datetime_types += cftime_types
+except:
+    cftime_types = ()
+
 
 class VersionError(Exception):
     "Raised when there is a library version mismatch."
@@ -1805,8 +1818,12 @@ def dt_to_int(value, time_unit='us'):
         if isinstance(value, pd.Period):
             value = value.to_timestamp()
         if isinstance(value, pd.Timestamp):
-            value = value.to_pydatetime()
-        value = np.datetime64(value)
+            try:
+                value = value.to_datetime64()
+            except:
+                value = np.datetime64(value.to_pydatetime())
+    elif isinstance(value, cftime_types):
+        return cftime_to_timestamp(value, time_unit)
 
     if isinstance(value, np.datetime64):
         value = np.datetime64(value, 'ns')
@@ -1831,6 +1848,30 @@ def dt_to_int(value, time_unit='us'):
     except:
         # Handle python2
         return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
+
+
+def cftime_to_timestamp(date, time_unit='us'):
+    """Converts cftime to timestamp since epoch in milliseconds
+
+    Non-standard calendars (e.g. Julian or no leap calendars)
+    are converted to standard Gregorian calendar. This can cause
+    extra space to be added for dates that don't exist in the original
+    calendar. In order to handle these dates correctly a custom bokeh
+    model with support for other calendars would have to be defind.
+
+    Args:
+        date: cftime datetime object (or array)
+
+    Returns:
+        Milliseconds since 1970-01-01 00:00:00
+    """
+    import cftime
+    utime = cftime.utime('microseconds since 1970-01-01')
+    if time_unit == 'us':
+        tscale = 1
+    else:
+        tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'us')) * 1000.
+    return utime.date2num(date)*tscale
 
 
 def search_indices(values, source):

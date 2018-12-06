@@ -16,8 +16,17 @@ from matplotlib.rcsetup import (
     validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
     validate_joinstyle)
 
-from ...core.data.xarray import cftime_types
-from ...core.util import LooseVersion, _getargspec, basestring, is_number
+try:
+    import cftime
+    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
+    nc_axis_available = True
+except:
+    from matplotlib.dates import DateConverter
+    NetCDFTimeConverter = DateConverter
+    nc_axis_available = False
+
+from ...core.util import (
+    LooseVersion, _getargspec, basestring, cftime_types, is_number)
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
@@ -337,15 +346,6 @@ def polygons_to_path_patches(element):
             subpath.append(PathPatch(Path(vertices, codes)))
         mpl_paths.append(subpath)
     return mpl_paths
-
-try:
-    import cftime
-    from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
-    nc_axis_available = True
-except:
-    from matplotlib.dates import DateConverter
-    NetCDFTimeConverter = DateConverter
-    nc_axis_available = False
 
 
 class CFTimeConverter(NetCDFTimeConverter):

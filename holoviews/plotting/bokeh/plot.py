@@ -16,12 +16,10 @@ from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
     GridSpace, HoloMap, Element, DynamicMap
 )
-from ...core.data.xarray import cftime_types
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, wrap_tuple, unique_iterator, get_method_owner,
-    datetime_types, wrap_tuple_streams)
-
+    basestring, cftime_to_timestamp, cftime_types, datetime_types,
+    get_method_owner, unique_iterator, wrap_tuple, wrap_tuple_streams)
 from ...streams import Stream
 from ..links import Link
 from ..plot import (
@@ -33,7 +31,7 @@ from .callbacks import LinkCallback
 from .util import (
     layout_padding, pad_plots, filter_toolboxes, make_axis,
     update_shared_sources, empty_plot, decode_bytes, theme_attr_json,
-    cds_column_replace, cftime_to_timestamp
+    cds_column_replace
 )
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())

@@ -14,7 +14,6 @@ from matplotlib.dates import date2num
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
-from ...core.data.xarray import cftime_types
 from ...core.options import abbreviated_exception
 from ...element import Graph, Path, Contours
 from ...util.transform import dim
@@ -333,7 +332,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
 
-            if isinstance(l, cftime_types) or l != r:
+            if isinstance(l, util.cftime_types) or l != r:
                 lims = {}
                 if valid_lim(l):
                     lims['left'] = l
@@ -345,7 +344,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_xlim(**lims)
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
-            if isinstance(b, cftime_types) or b != t:
+            if isinstance(b, util.cftime_types) or b != t:
                 lims = {}
                 if valid_lim(b):
                     lims['bottom'] = b
