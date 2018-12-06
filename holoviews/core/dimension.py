@@ -1356,11 +1356,12 @@ class Dimensioned(LabelledData):
         Returns:
             Returns the object or a clone with the options applied
         """
+        signature = ['plot','style', 'norm', 'clone', 'backend']
         apply_option_types = False
         if len(args) > 0 and isinstance(args[0], dict):
             apply_option_types = True
             options = args[0]
-        elif kwargs and set(kwargs.keys()).issubset(set(['plot','style', 'norm'])):
+        elif kwargs and set(kwargs.keys()).issubset(set(signature)):
             apply_option_types = True
             options = None
         elif 'options' in kwargs:
@@ -1369,7 +1370,10 @@ class Dimensioned(LabelledData):
 
         # By default do not clone in .opts method
         clone = kwargs.pop('clone', None)
-        if clone is None:
+
+        if not args and not kwargs:
+            kwargs['clone'] = True # i.e opts() still returns a clone. FIXME?
+        elif clone is None:
             kwargs['clone'] = False
         else:
             kwargs['clone'] = clone
