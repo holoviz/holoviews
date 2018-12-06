@@ -23,7 +23,9 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay)
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
-from ..core.util import LooseVersion, get_param_values, basestring, datetime_types, dt_to_int
+from ..core.util import (
+    LooseVersion, basestring, cftime_types, cftime_to_timestamp,
+    datetime_types, dt_to_int, get_param_values)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours)
 from ..streams import RangeXY, PlotSize
 
@@ -321,11 +323,18 @@ class aggregate(AggregationOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
-        if any(df[d.name].dtype.kind == 'M' for d in (x, y)):
+        if any(df[d.name].dtype.kind == 'M' or isinstance(df[d.name].values[0], cftime_types)
+               for d in (x, y)):
             df = df.copy()
         for d in (x, y):
-            if df[d.name].dtype.kind == 'M':
-                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 1000.
+            vals = df[d.name].values
+            if len(vals) and isinstance(vals[0], cftime_types):
+                vals = cftime_to_timestamp(vals, 'ns')
+            elif df[d.name].dtype.kind == 'M':
+                vals = vals.astype('datetime64[ns]')
+            else:
+                continue
+            df[d.name] = vals.astype('int64')
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
@@ -344,9 +353,9 @@ class aggregate(AggregationOperation):
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         if xtype == 'datetime':
-            x_range = tuple((np.array(x_range)/10e5).astype('datetime64[us]'))
+            x_range = tuple((np.array(x_range)/1e3).astype('datetime64[us]'))
         if ytype == 'datetime':
-            y_range = tuple((np.array(y_range)/10e5).astype('datetime64[us]'))
+            y_range = tuple((np.array(y_range)/1e3).astype('datetime64[us]'))
         agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
                            if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
@@ -433,11 +442,11 @@ class aggregate(AggregationOperation):
 
         (x0, x1), (y0, y1) = x_range, y_range
         if xtype == 'datetime':
-            x0, x1 = (np.array([x0, x1])/10e5).astype('datetime64[us]')
-            xs = (xs/10e5).astype('datetime64[us]')
+            x0, x1 = (np.array([x0, x1])/1e3).astype('datetime64[us]')
+            xs = (xs/1e3).astype('datetime64[us]')
         if ytype == 'datetime':
-            y0, y1 = (np.array([y0, y1])/10e5).astype('datetime64[us]')
-            ys = (ys/10e5).astype('datetime64[us]')
+            y0, y1 = (np.array([y0, y1])/1e3).astype('datetime64[us]')
+            ys = (ys/1e3).astype('datetime64[us]')
         bounds = (x0, y0, x1, y1)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
@@ -483,9 +492,9 @@ class aggregate(AggregationOperation):
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
-            agg[x.name] = (agg[x.name]/10e5).astype('datetime64[us]')
+            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
         if ytype == 'datetime':
-            agg[y.name] = (agg[y.name]/10e5).astype('datetime64[us]')
+            agg[y.name] = (agg[y.name]/1e3).astype('datetime64[us]')
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
@@ -606,11 +615,11 @@ class regrid(AggregationOperation):
 
         # Compute bounds (converting datetimes)
         if xtype == 'datetime':
-            xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
-            xs = (xs/10e5).astype('datetime64[us]')
+            xstart, xend = (np.array([xstart, xend])/1e3).astype('datetime64[us]')
+            xs = (xs/1e3).astype('datetime64[us]')
         if ytype == 'datetime':
-            ystart, yend = (np.array([ystart, yend])/10e5).astype('datetime64[us]')
-            ys = (ys/10e5).astype('datetime64[us]')
+            ystart, yend = (np.array([ystart, yend])/1e3).astype('datetime64[us]')
+            ys = (ys/1e3).astype('datetime64[us]')
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
 
         params = dict(bounds=bbox)
@@ -632,9 +641,9 @@ class regrid(AggregationOperation):
 
             # Convert datetime coordinates
             if xtype == "datetime":
-                rarray[x.name] = (rarray[x.name]/10e5).astype('datetime64[us]')
+                rarray[x.name] = (rarray[x.name]/1e3).astype('datetime64[us]')
             if ytype == "datetime":
-                rarray[y.name] = (rarray[y.name]/10e5).astype('datetime64[us]')
+                rarray[y.name] = (rarray[y.name]/1e3).astype('datetime64[us]')
             regridded[vd] = rarray
         regridded = xr.Dataset(regridded)
 
@@ -957,7 +966,7 @@ class shade(LinkableOperation):
 
         for d in kdims:
             if array[d.name].dtype.kind == 'M':
-                array[d.name] = array[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
+                array[d.name] = array[d.name].astype('datetime64[us]').astype('int64')
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
