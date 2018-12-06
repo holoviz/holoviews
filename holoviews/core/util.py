@@ -1820,24 +1820,21 @@ def dt_to_int(value, time_unit='us'):
     elif isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
 
+    # Handle datetime64 separately
     if isinstance(value, np.datetime64):
-        value = np.datetime64(value, 'ns')
-        if time_unit == 'ns':
-            tscale = 1
-        else:
-            tscale = (np.timedelta64(1, 'ns')/np.timedelta64(1, time_unit))
-    elif time_unit == 'ns':
+        try:
+            value = np.datetime64(value, 'ns')
+            tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
+            return value.tolist()/tscale
+        except:
+            # If it can't handle ns precision fall back to datetime
+            value = value.tolist()
+
+    if time_unit == 'ns':
         tscale = 1e9
     else:
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
 
-    if isinstance(value, np.datetime64):
-        value = value.tolist()
-
-    if isinstance(value, (int, long)):
-        # Handle special case of nanosecond precision which cannot be
-        # represented by python datetime
-        return value * 10**-(np.log10(tscale))
     try:
         # Handle python3
         return int(value.timestamp() * tscale)
