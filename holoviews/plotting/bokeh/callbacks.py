@@ -1223,7 +1223,8 @@ class LinkCallback(param.Parameterized):
                     return (plot, links)
             else:
                 if ((link.target is source) or
-                    (link.target._plot_id is not None and
+                    (link.target is not None and
+                     link.target._plot_id is not None and
                      link.target._plot_id == source._plot_id)):
                     return (plot, [link])
 
