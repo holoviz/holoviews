@@ -1367,16 +1367,12 @@ class Dimensioned(LabelledData):
         elif 'options' in kwargs:
             apply_option_types = True
             options = kwargs['options']
+        elif not args and not kwargs:
+            apply_option_types = True
+            options = None
 
         # By default do not clone in .opts method
         clone = kwargs.pop('clone', None)
-
-        if not args and not kwargs:
-            kwargs['clone'] = True # i.e opts() still returns a clone. FIXME?
-        elif clone is None:
-            kwargs['clone'] = False
-        else:
-            kwargs['clone'] = clone
 
         if apply_option_types and util.config.future_deprecations:
             msg = ("Calling the .opts method with options broken down by options "
@@ -1384,10 +1380,12 @@ class Dimensioned(LabelledData):
                    "Use the .options method converting to the simplified format "
                    "instead or use hv.opts.apply_option_types for backward compatibility.")
             param.main.warning(msg)
+        if apply_option_types:
             from ..util import opts
+            kwargs['clone'] = True if clone is None else clone
             return opts.apply_option_types(self, options=options, **kwargs)
 
-
+        kwargs['clone'] = False if clone is None else clone
         return self.options(*args, **kwargs)
 
 
