@@ -18,9 +18,8 @@ from ...core import (
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, cftime_to_timestamp, cftime_types, datetime_types,
-    get_method_owner, unique_iterator, wrap_tuple, wrap_tuple_streams,
-    _STANDARD_CALENDARS)
+    basestring, cftime_to_timestamp, cftime_types, get_method_owner,
+    unique_iterator, wrap_tuple, wrap_tuple_streams, _STANDARD_CALENDARS)
 from ...streams import Stream
 from ..links import Link
 from ..plot import (

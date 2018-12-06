@@ -17,7 +17,6 @@ from matplotlib.rcsetup import (
     validate_joinstyle)
 
 try:
-    import cftime
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
     nc_axis_available = True
 except:
@@ -362,7 +361,7 @@ class CFTimeConverter(NetCDFTimeConverter):
                              'using:\n\tconda install -c conda-forge '
                              'nc_time_axis')
         if isinstance(value, cftime_types):
-            value = CalendarDateTime(v.datetime, value.calendar)
+            value = CalendarDateTime(value.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
         return super(CFTimeConverter, cls).convert(value, unit, axis)

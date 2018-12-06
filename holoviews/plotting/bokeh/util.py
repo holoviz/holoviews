@@ -34,7 +34,7 @@ except:
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, dt64_to_dt, pd, unique_array)
+    cftime_to_timestamp, pd, unique_array)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
