@@ -95,27 +95,61 @@ class HoloMap(UniformNdMapping, Overlayable):
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
-    def opts(self, options=None, backend=None, clone=True, **kwargs):
-        """
+    def opts(self, *args, **kwargs):
+        """Applies nested options definition.
+
         Applies options on an object or nested group of objects in a
-        by options group returning a new object with the options
+        flat format returning a new object with the options
         applied. If the options are to be set directly on the object a
         simple format may be used, e.g.:
 
-            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+            obj.opts(cmap='viridis', show_title=False)
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            obj.opts({'Image': {'plot':  {'show_title': False},
-                                'style': {'cmap': 'viridis}}})
+            obj.opts('Image', cmap='viridis', show_title=False)
 
-        If no opts are supplied all options on the object will be reset.
-        Disabling clone will modify the object inplace.
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        Identical to the .options method but returns the object by
+        default and not a clone.
+
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the
+        hv.opts.apply_groups utility. This usage will be
+        deprecated and for more information see the apply_options_type
+        docstring.
+
+        Returns:
+            Returns the object or a clone with the options applied
         """
-        data = OrderedDict([(k, v.opts(options, backend, clone, **kwargs))
+        clone = kwargs.pop('clone', None)
+        apply_groups, _ = util.deprecated_opts_signature(args, kwargs)
+        data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self.data.items()])
-        return self.clone(data)
+
+        # By default do not clone in .opts method
+        if (apply_groups if clone is None else clone):
+            return self.clone(data)
+        else:
+            self.data = data
+            return self
 
 
     def options(self, *args, **kwargs):
