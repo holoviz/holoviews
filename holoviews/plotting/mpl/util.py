@@ -362,7 +362,7 @@ class CFTimeConverter(NetCDFTimeConverter):
                              'using:\n\tconda install -c conda-forge '
                              'nc_time_axis')
         if isinstance(value, cftime_types):
-            value = CalendarDateTime(cftime.datetime(*value.timetuple()[0:6]), value.calendar)
+            value = CalendarDateTime(v.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
         return super(CFTimeConverter, cls).convert(value, unit, axis)
