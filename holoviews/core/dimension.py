@@ -1379,9 +1379,11 @@ class Dimensioned(LabelledData):
             kwargs['clone'] = clone
 
         if apply_option_types and util.config.future_deprecations:
-            param.main.warning("Dictionary signature of opts method deprecated. "
-                               "Use hv.opts.apply_option_types instead.")
-        if apply_option_types:
+            msg = ("Calling the .opts method with options broken down by options "
+                   "group (i.e. separate plot, style and norm groups) is deprecated. "
+                   "Use the .options method converting to the simplified format "
+                   "instead or use hv.opts.apply_option_types for backward compatibility.")
+            param.main.warning(msg)
             from ..util import opts
             return opts.apply_option_types(self, options=options, **kwargs)
 
