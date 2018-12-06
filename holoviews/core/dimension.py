@@ -1311,10 +1311,78 @@ class Dimensioned(LabelledData):
 
         return self.opts(options, **kwargs)
 
-    def opts(self, options=None, backend=None, clone=True, **kwargs):
-        from ..util import opts
-        return opts.apply_option_types(self, options=options,
-                                       backend=backend, clone=clone, **kwargs)
+
+    def opts(self, *args, **kwargs):
+        """Applies nested options definition.
+
+        Applies options on an object or nested group of objects in a
+        flat format returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.opts(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        Identical to the .options method but returns the object by
+        default and not a clone.
+
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the
+        hv.opts.apply_options_type utility. This usage will be
+        deprecated and for more information see the apply_options_type
+        docstring.
+
+        Returns:
+            Returns the object or a clone with the options applied
+        """
+        apply_option_types = False
+        if len(args) > 0 and isinstance(args[0], dict):
+            apply_option_types = True
+            options = args[0]
+        elif kwargs and set(kwargs.keys()).issubset(set(['plot','style', 'norm'])):
+            apply_option_types = True
+            options = None
+        elif 'options' in kwargs:
+            apply_option_types = True
+            options = kwargs['options']
+
+        # By default do not clone in .opts method
+        clone = kwargs.pop('clone', None)
+        if clone is None:
+            kwargs['clone'] = False
+        else:
+            kwargs['clone'] = clone
+
+        if apply_option_types and util.config.future_deprecations:
+            param.main.warning("Dictionary signature of opts method deprecated. "
+                               "Use hv.opts.apply_option_types instead.")
+        if apply_option_types:
+            from ..util import opts
+            return opts.apply_option_types(self, options=options, **kwargs)
+
+
+        return self.options(*args, **kwargs)
 
 
     def options(self, *args, **kwargs):
@@ -1335,6 +1403,9 @@ class Dimensioned(LabelledData):
         or using:
 
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        Identical to the .opts method but returns a clone of the object
+        by default.
 
         Args:
             *args: Sets of options to apply to object
@@ -1380,7 +1451,7 @@ class Dimensioned(LabelledData):
             expanded = {}
         else:
             expanded = opts._expand_options(options, backend)
-        return self.opts(expanded, backend, clone)
+        return self.opts(expanded, backend=backend, clone=clone)
 
 
     def _repr_mimebundle_(self, include=None, exclude=None):

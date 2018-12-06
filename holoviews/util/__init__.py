@@ -134,7 +134,7 @@ class opts(param.ParameterizedFunction):
                 dictionaries.
 
         Returns:
-            Returns the cloned object with the options applied
+            Returns the object or a clone with the options applied
         """
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
