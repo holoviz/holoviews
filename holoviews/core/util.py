@@ -98,6 +98,7 @@ try:
     datetime_types += cftime_types
 except:
     cftime_types = ()
+_STANDARD_CALENDARS = set(['standard', 'gregorian', 'proleptic_gregorian'])
 
 
 class VersionError(Exception):

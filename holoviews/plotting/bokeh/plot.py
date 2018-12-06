@@ -19,7 +19,8 @@ from ...core import (
 from ...core.options import SkipRendering
 from ...core.util import (
     basestring, cftime_to_timestamp, cftime_types, datetime_types,
-    get_method_owner, unique_iterator, wrap_tuple, wrap_tuple_streams)
+    get_method_owner, unique_iterator, wrap_tuple, wrap_tuple_streams,
+    _STANDARD_CALENDARS)
 from ...streams import Stream
 from ..links import Link
 from ..plot import (
@@ -248,6 +249,13 @@ class BokehPlot(DimensionedPlot):
 
             # Certain datetime types need to be converted
             if len(values) and isinstance(values[0], cftime_types):
+                if any(v.calendar not in _STANDARD_CALENDARS for v in values):
+                    self.param.warning(
+                        'Converting cftime.datetime from a non-standard '
+                        'calendar (%s) to a standard calendar for plotting. '
+                        'This may lead to subtle errors in formatting '
+                        'dates, for accurate tick formatting switch to '
+                        'the matplotlib backend.' % values[0].calendar)
                 values = cftime_to_timestamp(values, 'ms')
             new_data[k] = values
         return new_data
