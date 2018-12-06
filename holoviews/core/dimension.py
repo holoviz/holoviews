@@ -17,7 +17,7 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, StoreOptions
+from .options import Store
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
