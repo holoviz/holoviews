@@ -96,12 +96,13 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def opts(self, *args, **kwargs):
-        """Applies nested options definition.
+        """Applies simplified option definition
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        Applies options defined in a flat format to the objects in the
+        HoloMap. Unlike the .options method .opts, modifies the
+        options inplace by default. If the options are to be set
+        directly on the objects in the HoloMap a simple format may be
+        used, e.g.:
 
             obj.opts(cmap='viridis', show_title=False)
 
@@ -113,9 +114,6 @@ class HoloMap(UniformNdMapping, Overlayable):
         or using:
 
             obj.opts({'Image': dict(cmap='viridis', show_title=False)})
-
-        Identical to the .options method but returns the object by
-        default and not a clone.
 
         Args:
             *args: Sets of options to apply to object
@@ -131,10 +129,9 @@ class HoloMap(UniformNdMapping, Overlayable):
                 Set of options to apply to the object
 
         For backwards compatibility, this method also supports the
-        option group semantics now offered by the
-        hv.opts.apply_groups utility. This usage will be
-        deprecated and for more information see the apply_options_type
-        docstring.
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
 
         Returns:
             Returns the object or a clone with the options applied
@@ -153,12 +150,12 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def options(self, *args, **kwargs):
-        """Applies simplified option definition
+        """Applies simplified option definition returning a new object
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. If the options are to be set
+        directly on the objects in the HoloMap a simple format may be
+        used, e.g.:
 
             obj.options(cmap='viridis', show_title=False)
 
@@ -1132,11 +1129,12 @@ class DynamicMap(HoloMap):
 
 
     def opts(self, *args, **kwargs):
-        """Applies nested options definition.
+        """Applies simplified options definition.
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. Unlike the .options method, .opts
+        modifies the options inplace by default. If the options are to
+        be set directly on the objects returned by the DynamicMap a
         simple format may be used, e.g.:
 
             obj.opts(cmap='viridis', show_title=False)
@@ -1149,9 +1147,6 @@ class DynamicMap(HoloMap):
         or using:
 
             obj.opts({'Image': dict(cmap='viridis', show_title=False)})
-
-        Identical to the .options method but returns the object by
-        default and not a clone.
 
         Args:
             *args: Sets of options to apply to object
@@ -1167,10 +1162,9 @@ class DynamicMap(HoloMap):
                 Set of options to apply to the object
 
         For backwards compatibility, this method also supports the
-        option group semantics now offered by the
-        hv.opts.apply_groups utility. This usage will be
-        deprecated and for more information see the apply_options_type
-        docstring.
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
 
         Returns:
             Returns the object or a clone with the options applied
@@ -1197,12 +1191,12 @@ class DynamicMap(HoloMap):
 
 
     def options(self, *args, **kwargs):
-        """Applies simplified option definition
+        """Applies simplified option definition returning a new object.
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. If the options are to be set
+        directly on the objects returned by the DynamicMap a simple
+        format may be used, e.g.:
 
             obj.options(cmap='viridis', show_title=False)
 
