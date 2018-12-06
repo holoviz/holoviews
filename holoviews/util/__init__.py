@@ -95,6 +95,94 @@ class opts(param.ParameterizedFunction):
 
             self._cellmagic(args[0], args[1])
 
+
+    @classmethod
+    def apply_option_types(cls, obj, options=None, backend=None, clone=True, **kwargs):
+        """Applies nested options definition grouped by type.
+
+        Applies options on an object or nested group of objects,
+        returning a new object with the options applied. This method
+        accepts the separate option namespaces explicitly (i.e 'plot',
+        'style' and 'norm').
+
+        If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            opts.apply_option_types(obj, style={'cmap': 'viridis'},
+                                         plot={'show_title': False})
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            opts.apply_option_types(obj, {'Image': {'plot':  {'show_title': False},
+                                                    'style': {'cmap': 'viridis}}})
+
+        If no opts are supplied all options on the object will be reset.
+
+        Args:
+            options (dict): Options specification
+                Options specification should be indexed by
+                type[.group][.label] or option type ('plot', 'style',
+                'norm').
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options by type
+                Applies options directly to the object by type
+                (e.g. 'plot', 'style', 'norm') specified as
+                dictionaries.
+
+        Returns:
+            Returns the cloned object with the options applied
+        """
+        backend = backend or Store.current_backend
+        if isinstance(options, basestring):
+            from ..util.parser import OptsSpec
+            try:
+                options = OptsSpec.parse(options)
+            except SyntaxError:
+                options = OptsSpec.parse(
+                    '{clsname} {options}'.format(clsname=obj.__class__.__name__,
+                                                 options=options))
+
+        backend_options = Store.options(backend=backend)
+        groups = set(backend_options.groups.keys())
+        if kwargs and set(kwargs) <= groups:
+            if not all(isinstance(v, dict) for v in kwargs.values()):
+                raise Exception("The %s options must be specified using dictionary groups" %
+                                ','.join(repr(k) for k in kwargs.keys()))
+
+            # Check whether the user is specifying targets (such as 'Image.Foo')
+            entries = backend_options.children
+            targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
+            if any(targets) and not all(targets):
+                raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
+            elif not any(targets):
+                # Not targets specified - add current object as target
+                sanitized_group = util.group_sanitizer(obj.group)
+                if obj.label:
+                    identifier = ('%s.%s.%s' % (
+                        obj.__class__.__name__, sanitized_group,
+                        util.label_sanitizer(obj.label)))
+                elif  sanitized_group != obj.__class__.__name__:
+                    identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+                else:
+                    identifier = obj.__class__.__name__
+
+                kwargs = {k:{identifier:v} for k,v in kwargs.items()}
+
+        obj = obj
+        if options is None and kwargs == {}:
+            if clone:
+                obj = obj.map(lambda x: x.clone(id=None))
+            else:
+                obj.map(lambda x: setattr(x, 'id', None))
+        elif clone:
+            obj = obj.map(lambda x: x.clone(id=x.id))
+        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
+        return obj
+
     @classmethod
     def _process_magic(cls, options, strict):
         if isinstance(options, basestring):
