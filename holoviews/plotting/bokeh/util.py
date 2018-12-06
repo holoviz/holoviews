@@ -540,7 +540,7 @@ def date_to_integer(date):
     Attempts highest precision conversion of different datetime
     formats to milliseconds since the epoch (1970-01-01 00:00:00).
     If datetime is a cftime with a non-standard calendar the
-    caveats describd in cftime_to_timestamp apply.
+    caveats described in hv.core.util.cftime_to_timestamp apply.
 
     Args:
         date: Date- or datetime-like object
@@ -557,7 +557,7 @@ def date_to_integer(date):
     if isinstance(date, np.datetime64):
         return time.astype('datetime64[ms]').astype(float)
     elif isinstance(date, cftime_types):
-        return cftime_to_timestamp(date)
+        return cftime_to_timestamp(date, 'ms')
 
     if hasattr(date, 'timetuple'):
         dt_int = calendar.timegm(date.timetuple())*1000

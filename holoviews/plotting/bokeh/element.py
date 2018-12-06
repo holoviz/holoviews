@@ -301,7 +301,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xtype = el.nodes.get_dimension_type(xdims[0])
                 else:
                     xtype = el.get_dimension_type(xdims[0])
-                if ((xtype is np.object_ and type(l) in util.datetime_types) or
+                if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
                     xtype in util.datetime_types):
                     x_axis_type = 'datetime'
 
@@ -315,7 +315,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     ytype = el.nodes.get_dimension_type(ydims[0])
                 else:
                     ytype = el.get_dimension_type(ydims[0])
-                if ((ytype is np.object_ and type(b) in util.datetime_types)
+                if ((ytype is np.object_ and issubclass(type(b), util.datetime_types))
                     or ytype in util.datetime_types):
                     y_axis_type = 'datetime'
 

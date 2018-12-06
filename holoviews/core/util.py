@@ -94,13 +94,7 @@ except ImportError:
 
 try:
     import cftime
-    cftime_types = (
-        cftime._cftime.DatetimeGregorian,
-        cftime._cftime.Datetime360Day,
-        cftime._cftime.DatetimeJulian,
-        cftime._cftime.DatetimeNoLeap,
-        cftime._cftime.DatetimeProlepticGregorian
-    )
+    cftime_types = (cftime.datetime,)
     datetime_types += cftime_types
 except:
     cftime_types = ()
@@ -1857,7 +1851,7 @@ def cftime_to_timestamp(date, time_unit='us'):
     are converted to standard Gregorian calendar. This can cause
     extra space to be added for dates that don't exist in the original
     calendar. In order to handle these dates correctly a custom bokeh
-    model with support for other calendars would have to be defind.
+    model with support for other calendars would have to be defined.
 
     Args:
         date: cftime datetime object (or array)
@@ -1870,7 +1864,7 @@ def cftime_to_timestamp(date, time_unit='us'):
     if time_unit == 'us':
         tscale = 1
     else:
-        tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'us')) * 1000.
+        tscale = (np.timedelta64(1, 'us')/np.timedelta64(1, time_unit))
     return utime.date2num(date)*tscale
 
 

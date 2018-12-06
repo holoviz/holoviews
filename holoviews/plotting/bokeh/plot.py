@@ -248,7 +248,7 @@ class BokehPlot(DimensionedPlot):
 
             # Certain datetime types need to be converted
             if len(values) and isinstance(values[0], cftime_types):
-                values = cftime_to_timestamp(values)
+                values = cftime_to_timestamp(values, 'ms')
             new_data[k] = values
         return new_data
 

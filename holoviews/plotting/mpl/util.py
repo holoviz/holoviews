@@ -364,7 +364,7 @@ class CFTimeConverter(NetCDFTimeConverter):
         if isinstance(value, cftime_types):
             value = CalendarDateTime(cftime.datetime(*value.timetuple()[0:6]), value.calendar)
         elif isinstance(value, np.ndarray):
-            value = np.array([CalendarDateTime(cftime.datetime(*v.timetuple()[0:6]), v.calendar) for v in value])
+            value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
         return super(CFTimeConverter, cls).convert(value, unit, axis)
 
 
