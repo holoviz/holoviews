@@ -118,8 +118,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         # Set plot options
         plot_opts = self.lookup_options(element, 'plot').options
-        self.set_param(**{k: v for k, v in plot_opts.items()
-                          if k in self.params()})
+        self.param.set_param(**{k: v for k, v in plot_opts.items()
+                                if k in self.params()})
 
         # Get ranges
         ranges = self.compute_ranges(self.hmap, key, ranges)

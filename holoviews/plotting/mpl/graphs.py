@@ -307,8 +307,9 @@ class ChordPlot(GraphPlot):
         label_dim = element.nodes.get_dimension(self.label_index)
         labels = self.labels
         if label_dim and labels:
-            self.warning("Cannot declare style mapping for 'labels' option "
-                         "and declare a label_index; ignoring the label_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'labels' option "
+                "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
         if isinstance(labels, basestring):

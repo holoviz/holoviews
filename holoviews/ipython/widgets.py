@@ -117,10 +117,10 @@ class ProgressBar(ProgressIndicator):
                                             min_port=min_port,
                                             max_port=max_port,
                                             max_tries=max_tries)
-            self.message("Progress broadcast bound to port %d" % port)
+            self.param.message("Progress broadcast bound to port %d" % port)
             return sock
         except:
-            self.message("No suitable port found for progress broadcast.")
+            self.param.message("No suitable port found for progress broadcast.")
             return None
 
 
@@ -155,11 +155,11 @@ class RemoteProgress(ProgressBar):
                 super(RemoteProgress, self).__call__(percent)
             except KeyboardInterrupt:
                 if percent is not None:
-                    self.message("Exited at %.3f%% completion" % percent)
+                    self.param.message("Exited at %.3f%% completion" % percent)
                 break
             except:
-                self.message("Could not process socket message: %r"
-                             % message)
+                self.param.message("Could not process socket message: %r"
+                                  % message)
 
 
 class RunProgress(ProgressBar):

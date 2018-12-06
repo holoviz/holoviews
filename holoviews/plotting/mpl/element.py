@@ -94,7 +94,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             try:
                 hook(self, element)
             except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook %r could not be "
+                                   "applied:\n\n %s" % (hook, e))
 
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
@@ -440,7 +441,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self.current_frame = element
 
         if element is not None:
-            self.set_param(**self.lookup_options(element, 'plot').options)
+            self.param.set_param(**self.lookup_options(element, 'plot').options)
         axis = self.handles['axis']
 
         axes_visible = element is not None or self.overlaid
@@ -533,8 +534,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.warning('Specified %s dim transform %r could not be applied, as not all '
-                             'dimensions could be resolved.' % (k, v))
+                self.param.warning(
+                    'Specified %s dim transform %r could not be '
+                    'applied, as not all dimensions could be resolved.'
+                    % (k, v))
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -1064,7 +1067,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items()
                             if k not in plot_opts})
-        self.set_param(**plot_opts)
+        self.param.set_param(**plot_opts)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

@@ -115,7 +115,7 @@ class PathPlot(ColorbarPlot):
 
         zorders = self._updated_zorders(element)
         for (key, el), zorder in zip(element.data.items(), zorders):
-            self.set_param(**self.lookup_options(el, 'plot').options)
+            self.param.set_param(**self.lookup_options(el, 'plot').options)
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             self.overlay_dims = dict(zip(element.kdims, key))

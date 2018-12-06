@@ -144,7 +144,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         width = style.get('box_width', style.get('width', 0.7))
         whisker_width = style.pop('whisker_width', 0.4)/2.
         if 'width' in style:
-            self.warning("BoxWhisker width option is deprecated use 'box_width' instead.")
+            self.param.warning("BoxWhisker width option is deprecated "
+                               "use 'box_width' instead.")
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}

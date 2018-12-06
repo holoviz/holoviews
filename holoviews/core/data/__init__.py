@@ -33,8 +33,8 @@ except ImportError:
     pd = None
 except Exception as e:
     pd = None
-    param.main.warning('Pandas interface failed to import with '
-                       'following error: %s' % e)
+    param.main.param.warning('Pandas interface failed to import with '
+                             'following error: %s' % e)
 
 try:
     from .xarray import XArrayInterface # noqa (Conditional API import)

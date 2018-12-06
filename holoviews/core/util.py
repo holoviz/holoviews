@@ -136,7 +136,7 @@ class Config(param.ParameterizedFunction):
       locations.""")
 
     def __call__(self, **params):
-        self.set_param(**params)
+        self.param.set_param(**params)
         return self
 
 config = Config()

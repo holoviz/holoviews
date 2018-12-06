@@ -47,12 +47,12 @@ def collate(obj):
     if isinstance(obj, Overlay):
         nested_type = [type(o).__name__ for o in obj
                        if isinstance(o, (HoloMap, GridSpace))][0]
-        display_warning.warning("Nesting %ss within an Overlay makes it difficult "
-                                "to access your data or control how it appears; "
-                                "we recommend calling .collate() on the Overlay "
-                                "in order to follow the recommended nesting "
-                                "structure shown in the Composing Data tutorial"
-                                "(http://goo.gl/2YS8LJ)" % nested_type)
+        display_warning.param.warning(
+            "Nesting %ss within an Overlay makes it difficult to "
+            "access your data or control how it appears; we recommend "
+            "calling .collate() on the Overlay in order to follow the "
+            "recommended nesting structure shown in the Composing Data "
+            "user guide (http://goo.gl/2YS8LJ)" % nested_type)
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
@@ -65,16 +65,17 @@ def collate(obj):
                             "setting dynamic=False." % obj_name)
         return obj.collate()
     if isinstance(obj, HoloMap):
-        display_warning.warning("Nesting {0}s within a {1} makes it difficult "
-                                "to access your data or control how it appears; "
-                                "we recommend calling .collate() on the {1} "
-                                "in order to follow the recommended nesting "
-                                "structure shown in the Composing Data tutorial"
-                                "(https://goo.gl/2YS8LJ)".format(obj.type.__name__, type(obj).__name__))
+        display_warning.param.warning(
+            "Nesting {0}s within a {1} makes it difficult to access "
+            "your data or control how it appears; we recommend "
+            "calling .collate() on the {1} in order to follow the "
+            "recommended nesting structure shown in the Composing "
+            "Data user guide (https://goo.gl/2YS8LJ)".format(
+                obj.type.__name__, type(obj).__name__))
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
-            display_warning.warning(
+            display_warning.param.warning(
                 "Layout contains HoloMaps which are not nested in the "
                 "recommended format for accessing your data; calling "
                 ".collate() on these objects will resolve any violations "

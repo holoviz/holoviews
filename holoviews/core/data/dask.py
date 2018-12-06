@@ -86,7 +86,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        dataset.warning('Dask dataframes do not support sorting')
+        dataset.param.warning('Dask dataframes do not support sorting')
         return dataset.data
 
     @classmethod

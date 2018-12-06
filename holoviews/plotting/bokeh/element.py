@@ -417,7 +417,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.border is not None:
             for p in ['left', 'right', 'top', 'bottom']:
                 plot_props['min_border_'+p] = self.border
-        lod = dict(self.defaults().get('lod', {}), **self.lod)
+        lod = dict(self.param.defaults().get('lod', {}), **self.lod)
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
@@ -661,8 +661,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if invert: low, high = high, low
             if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
-                self.warning("Logarithmic axis range encountered value less than or equal to zero, "
-                             "please supply explicit lower-bound to override default of %.3f." % low)
+                self.param.warning(
+                    "Logarithmic axis range encountered value less "
+                    "than or equal to zero, please supply explicit "
+                    "lower-bound to override default of %.3f." % low)
             updates = {}
             reset_supported = bokeh_version > '0.12.16'
             if util.isfinite(low):
@@ -762,8 +764,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.warning('Specified %s dim transform %r could not be applied, as not all '
-                             'dimensions could be resolved.' % (k, v))
+                self.param.warning(
+                    'Specified %s dim transform %r could not be applied, '
+                    'as not all dimensions could be resolved.' % (k, v))
                 continue
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
@@ -1129,7 +1132,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        self.set_param(**self.lookup_options(style_element, 'plot').options)
+        self.param.set_param(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
         plot = self.handles['plot']
@@ -1466,9 +1469,10 @@ class ColorbarPlot(ElementPlot):
         cdim = element.get_dimension(self.color_index)
         color = style.get(name, None)
         if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
-            self.warning("Cannot declare style mapping for '%s' option "
-                         "and declare a color_index; ignoring the color_index."
-                         % name)
+            self.param.warning(
+                "Cannot declare style mapping for '%s' option and "
+                "declare a color_index; ignoring the color_index."
+                % name)
             cdim = None
         if not cdim:
             return data, mapping
@@ -1897,7 +1901,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                                            self._propagate_options,
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.set_param(**plot_opts)
+        self.param.set_param(**plot_opts)
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)

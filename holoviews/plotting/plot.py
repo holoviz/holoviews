@@ -254,7 +254,7 @@ class DimensionedPlot(Plot):
         Get the state of the Plot for a given frame number.
         """
         if isinstance(frame, int) and frame > len(self):
-            self.warning("Showing last frame available: %d" % len(self))
+            self.param.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
         if not isinstance(frame, tuple):
             frame = self.keys[frame]
@@ -334,7 +334,7 @@ class DimensionedPlot(Plot):
         unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
-            self.warning(msg %  (list(unknown_keys), self._fontsize_keys))
+            self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
             for key in unknown_keys: self.fontsize.pop(key, None)
 
         if key in self.fontsize:
@@ -842,7 +842,7 @@ class GenericElementPlot(DimensionedPlot):
             self.ordering = util.layer_sort(self.hmap)
             overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
             opts = {k: v for k, v in overlay_opts if k in self.params()}
-            self.set_param(**opts)
+            self.param.set_param(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
@@ -888,14 +888,16 @@ class GenericElementPlot(DimensionedPlot):
         Executes finalize hooks
         """
         if self.hooks and self.finalize_hooks:
-            self.warning("Supply either hooks or finalize_hooks not both, "
-                         "using hooks and ignoring finalize_hooks.")
+            self.param.warning(
+                "Supply either hooks or finalize_hooks not both, "
+                "using hooks and ignoring finalize_hooks.")
         hooks = self.hooks or self.finalize_hooks
         for hook in hooks:
             try:
                 hook(self, element)
             except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+                self.param.warning("Plotting hook %r could not be "
+                                   "applied:\n\n %s" % (hook, e))
 
 
     def get_aspect(self, xspan, yspan):
@@ -1246,8 +1248,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
         plottype = registry.get(vtype, None)
         if plottype is None:
-            self.warning("No plotting class for %s type and %s backend "
-                         "found. " % (vtype.__name__, self.renderer.backend))
+            self.param.warning(
+                "No plotting class for %s type and %s backend "
+                "found. " % (vtype.__name__, self.renderer.backend))
             return None
 
         # Get zorder and style counter
@@ -1263,8 +1266,8 @@ class GenericOverlayPlot(GenericElementPlot):
             opts['group_counter'] = self.group_counter
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
-                self.warning('%s is empty and will be skipped during plotting'
-                             % obj.last)
+                self.param.warning('%s is empty and will be skipped '
+                                   'during plotting' % obj.last)
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
             param_vals = dict(self.get_param_values())

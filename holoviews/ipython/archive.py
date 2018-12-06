@@ -142,7 +142,7 @@ class NotebookArchive(FileArchive):
         display(Javascript(cmd))
         time.sleep(0.5)
         self._auto=enabled
-        self.set_param(**kwargs)
+        self.param.set_param(**kwargs)
 
         tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
         print("Automatic capture is now %s.%s"

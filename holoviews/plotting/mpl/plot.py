@@ -942,7 +942,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             elif empty:
                 obj = AdjointLayout([])
             elif not view.traverse(lambda x: x, [Element]):
-                self.warning('%s is empty, skipping subplot.' % obj.main)
+                self.param.warning('%s is empty, skipping subplot.' % obj.main)
                 continue
             elif self.transpose:
                 layout_count = (c*self.rows+(r+1))
