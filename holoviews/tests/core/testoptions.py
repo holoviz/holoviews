@@ -546,8 +546,8 @@ class TestStoreInheritance(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest("test_style_transfer requires matplotlib")
 
-        hist = self.hist.opts(style={'style1':'style_child'}, clone=True)
-        hist2 = self.hist.opts(clone=True)
+        hist = self.hist.opts(style={'style1':'style_child'})
+        hist2 = self.hist.opts()
         opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
         self.assertEqual(opts, {'style1': 'style1', 'style2': 'style2'})
         Store.transfer_options(hist, hist2, 'matplotlib')
