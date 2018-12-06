@@ -589,9 +589,9 @@ class histogram(Operation):
         if data.dtype.kind == 'M' or (data.dtype.kind == 'O' and isinstance(data[0], datetime_types)):
             start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             datetimes = True
-            data = data.astype('datetime64[ns]').astype('int64') * 1000.
+            data = data.astype('datetime64[ns]').astype('int64')
             if bins is not None:
-                bins = bins.astype('datetime64[ns]').astype('int64') * 1000.
+                bins = bins.astype('datetime64[ns]').astype('int64')
             else:
                 hist_range = start, end
 
@@ -622,7 +622,7 @@ class histogram(Operation):
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
         if datetimes:
-            edges = (edges/10e5).astype('datetime64[us]')
+            edges = (edges/1e3).astype('datetime64[us]')
 
         params = {}
         if self.p.weight_dimension:

@@ -650,7 +650,7 @@ class NdMapping(MultiDimensionalMapping):
             return self.data[()]
         elif indexslice in [Ellipsis, ()]:
             return self
-        elif Ellipsis in wrap_tuple(indexslice):
+        elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
             indexslice = process_ellipses(self, indexslice)
 
         map_slice, data_slice = self._split_index(indexslice)

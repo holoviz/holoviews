@@ -59,13 +59,19 @@ class TestSideHistogramPlot(TestBokehPlot):
         hist = histogram(Dataset(dates, 'Date'), num_bins=4)
         plot = bokeh_renderer.get_plot(hist)
         source = plot.handles['source']
-        data = {'top': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18, 3.85802469e-18]),
-                'left': np.array(['2017-01-01T00:00:00.000000', '2017-01-01T17:59:59.999999',
-                                  '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000'],
-                                 dtype='datetime64[us]'),
-                'right': np.array(['2017-01-01T17:59:59.999999', '2017-01-02T12:00:00.000000',
-                                   '2017-01-03T06:00:00.000000', '2017-01-04T00:00:00.000000'],
-                                  dtype='datetime64[us]')}
+        print(source.data)
+        data = {
+            'top': np.array([
+                3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]),
+            'left': np.array([
+                '2017-01-01T00:00:00.000000', '2017-01-01T18:00:00.000000',
+                '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000'],
+                dtype='datetime64[us]'),
+            'right': np.array([
+                '2017-01-01T18:00:00.000000', '2017-01-02T12:00:00.000000',
+                '2017-01-03T06:00:00.000000', '2017-01-04T00:00:00.000000'],
+                dtype='datetime64[us]')
+        }
         for k, v in data.items():
             self.assertEqual(source.data[k], v)
         xaxis = plot.handles['xaxis']

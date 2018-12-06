@@ -92,6 +92,14 @@ try:
 except ImportError:
     pd = None
 
+try:
+    import cftime
+    cftime_types = (cftime.datetime,)
+    datetime_types += cftime_types
+except:
+    cftime_types = ()
+_STANDARD_CALENDARS = set(['standard', 'gregorian', 'proleptic_gregorian'])
+
 
 class VersionError(Exception):
     "Raised when there is a library version mismatch."
@@ -1805,32 +1813,58 @@ def dt_to_int(value, time_unit='us'):
         if isinstance(value, pd.Period):
             value = value.to_timestamp()
         if isinstance(value, pd.Timestamp):
-            value = value.to_pydatetime()
-        value = np.datetime64(value)
+            try:
+                value = value.to_datetime64()
+            except:
+                value = np.datetime64(value.to_pydatetime())
+    elif isinstance(value, cftime_types):
+        return cftime_to_timestamp(value, time_unit)
 
+    # Handle datetime64 separately
     if isinstance(value, np.datetime64):
-        value = np.datetime64(value, 'ns')
-        if time_unit == 'ns':
-            tscale = 1
-        else:
-            tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns')) * 1000.
-    elif time_unit == 'ns':
-        tscale = 1000.
+        try:
+            value = np.datetime64(value, 'ns')
+            tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
+            return value.tolist()/tscale
+        except:
+            # If it can't handle ns precision fall back to datetime
+            value = value.tolist()
+
+    if time_unit == 'ns':
+        tscale = 1e9
     else:
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
 
-    if isinstance(value, np.datetime64):
-        value = value.tolist()
-    if isinstance(value, (int, long)):
-        # Handle special case of nanosecond precision which cannot be
-        # represented by python datetime
-        return value * 10**-(np.log10(tscale)-3)
     try:
         # Handle python3
         return int(value.timestamp() * tscale)
     except:
         # Handle python2
         return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
+
+
+def cftime_to_timestamp(date, time_unit='us'):
+    """Converts cftime to timestamp since epoch in milliseconds
+
+    Non-standard calendars (e.g. Julian or no leap calendars)
+    are converted to standard Gregorian calendar. This can cause
+    extra space to be added for dates that don't exist in the original
+    calendar. In order to handle these dates correctly a custom bokeh
+    model with support for other calendars would have to be defined.
+
+    Args:
+        date: cftime datetime object (or array)
+
+    Returns:
+        Milliseconds since 1970-01-01 00:00:00
+    """
+    import cftime
+    utime = cftime.utime('microseconds since 1970-01-01')
+    if time_unit == 'us':
+        tscale = 1
+    else:
+        tscale = (np.timedelta64(1, 'us')/np.timedelta64(1, time_unit))
+    return utime.date2num(date)*tscale
 
 
 def search_indices(values, source):

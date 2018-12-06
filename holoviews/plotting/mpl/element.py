@@ -331,7 +331,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
-            if l != r:
+
+            if isinstance(l, util.cftime_types) or l != r:
                 lims = {}
                 if valid_lim(l):
                     lims['left'] = l
@@ -343,7 +344,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_xlim(**lims)
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
-            if b != t:
+            if isinstance(b, util.cftime_types) or b != t:
                 lims = {}
                 if valid_lim(b):
                     lims['bottom'] = b

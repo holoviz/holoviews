@@ -40,7 +40,7 @@ from .styles import (
 from .util import (
     bokeh_version, decode_bytes, get_tab_title, glyph_order,
     py2js_tickformatter, recursive_model_update, theme_attr_json,
-    cds_column_replace, hold_policy, match_dim_specs
+    cds_column_replace, hold_policy, match_dim_specs, date_to_integer
 )
 
 
@@ -301,7 +301,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xtype = el.nodes.get_dimension_type(xdims[0])
                 else:
                     xtype = el.get_dimension_type(xdims[0])
-                if ((xtype is np.object_ and type(l) in util.datetime_types) or
+                if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
                     xtype in util.datetime_types):
                     x_axis_type = 'datetime'
 
@@ -315,7 +315,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     ytype = el.nodes.get_dimension_type(ydims[0])
                 else:
                     ytype = el.get_dimension_type(ydims[0])
-                if ((ytype is np.object_ and type(b) in util.datetime_types)
+                if ((ytype is np.object_ and issubclass(type(b), util.datetime_types))
                     or ytype in util.datetime_types):
                     y_axis_type = 'datetime'
 
@@ -606,7 +606,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
-            if (low == high and low is not None):
+            if isinstance(low, util.cftime_types):
+                pass
+            elif (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
                     offset = np.timedelta64(500, 'ms')
                     low -= offset
@@ -634,6 +636,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if reset_supported:
                     updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
+                if isinstance(new, util.cftime_types):
+                    new = date_to_integer(new)
                 axis_range.update(**{k:new})
                 if streaming and not k.startswith('reset_'):
                     axis_range.trigger(k, old, new)

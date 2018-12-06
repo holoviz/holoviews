@@ -584,15 +584,15 @@ class TestDatetimeUtils(unittest.TestCase):
 
     def test_datetime64_s_to_ns_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
-        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000.0)
 
     def test_datetime64_us_to_ns_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
-        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000.0)
 
     def test_datetime64_to_ns_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1))
-        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000.0)
 
     def test_datetime64_us_to_us_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')

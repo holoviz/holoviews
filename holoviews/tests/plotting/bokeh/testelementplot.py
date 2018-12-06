@@ -10,6 +10,7 @@ from holoviews.streams import Stream
 from holoviews.plotting.util import process_cmap
 
 from .testplot import TestBokehPlot, bokeh_renderer
+from ...utils import LoggingComparisonTestCase
 
 try:
     from bokeh.document import Document
@@ -19,7 +20,7 @@ except:
 
 
 
-class TestElementPlot(TestBokehPlot):
+class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_element_show_frame_disabled(self):
         curve = Curve(range(10)).opts(plot=dict(show_frame=False))
@@ -287,7 +288,6 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve([('A', 1), ('B', 2)]).options(fontsize={'minor_xticks': '6pt', 'xticks': 18})
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
-        print(xaxis.properties_with_values())
         self.assertEqual(xaxis.major_label_text_font_size, '6pt')
         self.assertEqual(xaxis.group_text_font_size, {'value': '18pt'})
 
@@ -298,6 +298,39 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(xaxis.major_label_text_font_size, {'value': '18pt'})
         self.assertEqual(xaxis.group_text_font_size, {'value': '18pt'})
 
+    def test_cftime_transform_gregorian_no_warn(self):
+        try:
+            import cftime
+        except:
+            raise SkipTest('Test requires cftime library')
+        gregorian_dates = [cftime.DatetimeGregorian(2000, 2, 28),
+                           cftime.DatetimeGregorian(2000, 3, 1),
+                           cftime.DatetimeGregorian(2000, 3, 2)]
+        curve = Curve((gregorian_dates, [1, 2, 3]))
+        plot = bokeh_renderer.get_plot(curve)
+        xs = plot.handles['cds'].data['x']
+        self.assertEqual(xs.astype('int'),
+                         np.array([951696000000, 951868800000, 951955200000]))
+
+    def test_cftime_transform_noleap_warn(self):
+        try:
+            import cftime
+        except:
+            raise SkipTest('Test requires cftime library')
+        gregorian_dates = [cftime.DatetimeNoLeap(2000, 2, 28),
+                           cftime.DatetimeNoLeap(2000, 3, 1),
+                           cftime.DatetimeNoLeap(2000, 3, 2)]
+        curve = Curve((gregorian_dates, [1, 2, 3]))
+        plot = bokeh_renderer.get_plot(curve)
+        xs = plot.handles['cds'].data['x']
+        self.assertEqual(xs.astype('int'),
+                         np.array([951696000000, 951868800000, 951955200000]))
+        substr = (
+            "Converting cftime.datetime from a non-standard calendar "
+            "(noleap) to a standard calendar for plotting. This may "
+            "lead to subtle errors in formatting dates, for accurate "
+            "tick formatting switch to the matplotlib backend.")
+        self.log_handler.assertEndsWith('WARNING', substr)
 
 
 class TestColorbarPlot(TestBokehPlot):
