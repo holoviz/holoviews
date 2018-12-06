@@ -1349,7 +1349,7 @@ class Dimensioned(LabelledData):
 
         For backwards compatibility, this method also supports the
         option group semantics now offered by the
-        hv.opts.apply_options_type utility. This usage will be
+        hv.opts.apply_groups utility. This usage will be
         deprecated and for more information see the apply_options_type
         docstring.
 
@@ -1357,33 +1357,33 @@ class Dimensioned(LabelledData):
             Returns the object or a clone with the options applied
         """
         signature = ['plot','style', 'norm', 'clone', 'backend']
-        apply_option_types = False
+        apply_groups = False
         if len(args) > 0 and isinstance(args[0], dict):
-            apply_option_types = True
+            apply_groups = True
             options = args[0]
         elif kwargs and set(kwargs.keys()).issubset(set(signature)):
-            apply_option_types = True
+            apply_groups = True
             options = None
         elif 'options' in kwargs:
-            apply_option_types = True
+            apply_groups = True
             options = kwargs['options']
         elif not args and not kwargs:
-            apply_option_types = True
+            apply_groups = True
             options = None
 
         # By default do not clone in .opts method
         clone = kwargs.pop('clone', None)
 
-        if apply_option_types and util.config.future_deprecations:
+        if apply_groups and util.config.future_deprecations:
             msg = ("Calling the .opts method with options broken down by options "
                    "group (i.e. separate plot, style and norm groups) is deprecated. "
                    "Use the .options method converting to the simplified format "
-                   "instead or use hv.opts.apply_option_types for backward compatibility.")
+                   "instead or use hv.opts.apply_groups for backward compatibility.")
             param.main.warning(msg)
-        if apply_option_types:
+        if apply_groups:
             from ..util import opts
             kwargs['clone'] = True if clone is None else clone
-            return opts.apply_option_types(self, options=options, **kwargs)
+            return opts.apply_groups(self, options=options, **kwargs)
 
         kwargs['clone'] = False if clone is None else clone
         return self.options(*args, **kwargs)

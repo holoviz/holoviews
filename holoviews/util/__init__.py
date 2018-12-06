@@ -97,7 +97,7 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
-    def apply_option_types(cls, obj, options=None, backend=None, clone=True, **kwargs):
+    def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
         """Applies nested options definition grouped by type.
 
         Applies options on an object or nested group of objects,
@@ -108,13 +108,13 @@ class opts(param.ParameterizedFunction):
         If the options are to be set directly on the object a
         simple format may be used, e.g.:
 
-            opts.apply_option_types(obj, style={'cmap': 'viridis'},
+            opts.apply_groups(obj, style={'cmap': 'viridis'},
                                          plot={'show_title': False})
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            opts.apply_option_types(obj, {'Image': {'plot':  {'show_title': False},
+            opts.apply_groups(obj, {'Image': {'plot':  {'show_title': False},
                                                     'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
