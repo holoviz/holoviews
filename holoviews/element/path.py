@@ -9,7 +9,7 @@ import numpy as np
 
 import param
 from ..core import Element2D, Dataset
-from ..core.data import MultiInterface
+from ..core.data import MultiInterface, datatypes
 from ..core.dimension import Dimension, asdim
 from ..core.util import config, disable_constant
 from .geom import Geometry
@@ -49,18 +49,18 @@ class Path(Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multitabular'])
+    datatype = param.ObjectSelector(default=['multitabular']+datatypes)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
             x, y = map(np.asarray, data)
-            if y.ndim == 1:
-                y = np.atleast_2d(y).T
-            if len(x) != y.shape[0]:
-                raise ValueError("Path x and y values must be the same length.")
-            data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
+            if y.ndim > 1:
+                if len(x) != y.shape[0]:
+                    raise ValueError("Path x and y values must be the same length.")
+                data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
-            data = [p for path in data for p in path.data]
+            data = [p for path in data for p in
+                    (path.data if isinstance(path.data, list) else [path.data])]
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
