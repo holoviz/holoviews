@@ -9,9 +9,9 @@ import numpy as np
 
 import param
 from ..core import Element2D, Dataset
-from ..core.data import MultiInterface, datatypes
+from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import config, disable_constant
+from ..core.util import config, disable_constant, isscalar
 from .geom import Geometry
 
 
@@ -49,19 +49,32 @@ class Path(Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multitabular']+datatypes)
+    datatype = param.ObjectSelector(default=[
+        'multitabular', 'dataframe', 'dictionary', 'dask', 'array'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
+        if 'datatype' in params:
+            datatype = params.pop('datatype')
+        elif (not isinstance(data, list) or (isinstance(data, list) and
+            all(isinstance(d, tuple) and all(isscalar(v) for v in d) for d in data))):
+            # Ensure that a list of tuples of scalars is interpreted as a single path
+            datatype = [dt for dt in self.datatype if dt != 'multitabular']
+        else:
+            datatype = self.datatype
+
         if isinstance(data, tuple) and len(data) == 2:
+            # Add support for (x, ys) where ys defines multiple paths
             x, y = map(np.asarray, data)
             if y.ndim > 1:
                 if len(x) != y.shape[0]:
                     raise ValueError("Path x and y values must be the same length.")
                 data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
+            # Allow unpacking of a list of Path objects
             data = [p for path in data for p in
                     (path.data if isinstance(path.data, list) else [path.data])]
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+        super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
+                                   datatype=datatype, **params)
 
 
     def __getitem__(self, key):
