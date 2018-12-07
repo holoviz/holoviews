@@ -58,7 +58,7 @@ class PathTests(ComparisonTestCase):
         self.assertEqual(path.dimension_values(1), np.array([
             1, 2, 3, 4]))
 
-    def test_multi_path_list_constructor(self):
+    def test_multi_path_list_split(self):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
         subpaths = path.split()
         self.assertEqual(len(subpaths), 2)
