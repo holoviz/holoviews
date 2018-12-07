@@ -643,10 +643,10 @@ class TestOptsMethod(ComparisonTestCase):
         self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
 
         assert styled_im is not im
-        self.assertEqual(self.lookup_options(im, 'style').options,
-                         {'cmap': 'fire', 'interpolation': 'nearest'})
-        self.assertEqual(self.lookup_options(styled_im, 'style').options,
-                         {'cmap': 'jet', 'interpolation': 'nearest'})
+        im_lookup = self.lookup_options(im, 'style').options
+        self.assertEqual(im_lookup['cmap'] == 'jet', False)
+        styled_im_lookup =  self.lookup_options(styled_im, 'style').options
+        self.assertEqual(styled_im_lookup['cmap'] == 'jet', True)
 
     def test_opts_method_with_utility(self):
         im = Image(np.random.rand(10,10))
