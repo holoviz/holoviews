@@ -64,7 +64,7 @@ class Path(Geometry):
             # Allow unpacking of a list of Path elements
             paths = []
             for path in data:
-                if path.interface.multi:
+                if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
                 else:
                     paths.append(path.data)
