@@ -142,6 +142,7 @@ Store.register({Curve: CurvePlot,
                 TriSurface: TriSurfacePlot,
                 Trisurface: TriSurfacePlot, # Alias, remove in 2.0
                 Scatter3D: Scatter3DPlot,
+                Line3D: Line3DPlot,
 
                 # Tabular plots
                 ItemTable: TablePlot,

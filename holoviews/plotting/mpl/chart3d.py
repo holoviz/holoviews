@@ -5,6 +5,7 @@ import param
 import matplotlib.cm as cm
 
 from ...core import Dimension
+from ...core.options import abbreviated_exception
 from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
@@ -125,13 +126,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
-        # Temporary fix until color handling is deterministic in mpl+py3
-        if not element.get_dimension(self.color_index) and 'c' in style:
-            color = style.pop('c')
-            if mpl_version >= '1.5':
-                style['color'] = color
-            else:
-                style['facecolors'] = color
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
         return (xs, ys, zs), style, {}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -145,6 +141,28 @@ class Scatter3DPlot(Plot3D, PointPlot):
         if element.get_dimension(self.size_index):
             artist.set_sizes(style['s'])
 
+
+class Line3DPlot(Plot3D):
+    """
+    Subclass of CurvePlot allowing plotting of lines
+    on a 3D axis.
+    """
+    style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker', 'ms']
+
+    _nonvectorized_styles = style_opts
+
+    _plot_methods = dict(single='plot')
+
+    def get_data(self, element, ranges, style):
+        xs, ys, zs = (element.dimension_values(i) for i in range(3))
+        return (xs, ys, zs), style, {}
+
+    def update_handles(self, key, axis, element, ranges, style):
+        artist = self.handles['artist']
+        (xs, ys, zs), _, _ = self.get_data(element, ranges, style)
+        artist.set_xdata(xs)
+        artist.set_ydata(ys)
+        artist.set_3d_properties(zs)
 
 
 class SurfacePlot(Plot3D):

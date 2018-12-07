@@ -247,7 +247,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def init_layout(self, key, element, ranges):
-        l, b, r, t = self.get_extents(element, ranges)
+        extent = self.get_extents(element, ranges)
+
+        if len(extent) == 4:
+            l, b, r, t = extent
+        else:
+            l, b, z0, r, t, z1 = extent
 
         options = {}
 

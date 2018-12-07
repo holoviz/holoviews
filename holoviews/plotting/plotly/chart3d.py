@@ -9,7 +9,7 @@ from plotly.figure_factory._trisurf import trisurf as trisurface
 
 from ...core.options import SkipRendering
 from .element import ElementPlot, ColorbarPlot
-from .chart import ScatterPlot
+from .chart import ScatterPlot, CurvePlot
 
 
 class Chart3DPlot(ElementPlot):
@@ -90,6 +90,11 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 class Scatter3dPlot(Chart3DPlot, ScatterPlot):
 
     trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
+
+
+class Line3dPlot(Chart3DPlot, CurvePlot):
+
+    trace_kwargs = {'type': 'scatter3d', 'mode': 'lines'}
 
 
 class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
