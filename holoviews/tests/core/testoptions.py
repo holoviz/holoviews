@@ -1,7 +1,7 @@
 import os
 import pickle
 import numpy as np
-from holoviews import Store, Histogram, Image, opts
+from holoviews import Store, Histogram, Image, Curve, DynamicMap, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
@@ -573,18 +573,12 @@ class TestOptionsMethod(ComparisonTestCase):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestOptionsMethod, self).tearDown()
 
-    def initialize_option_tree(self):
-        Store.options(val=OptionTree(groups=['plot', 'style']))
-        options = Store.options()
-        options.Image = Options('style', cmap='hot', interpolation='nearest')
-        return options
-
     def test_plot_options_keywords(self):
         im = Image(np.random.rand(10,10))
-        styled_im = im.options(interpolation='nearest', cmap='fire')
+        styled_im = im.options(interpolation='nearest', cmap='jet')
         self.assertEqual(self.lookup_options(im, 'plot').options, {})
         self.assertEqual(self.lookup_options(styled_im, 'style').options,
-                         dict(cmap='fire', interpolation='nearest'))
+                         dict(cmap='jet', interpolation='nearest'))
 
     def test_plot_options_one_object(self):
         im = Image(np.random.rand(10,10))
@@ -611,6 +605,66 @@ class TestOptionsMethod(ComparisonTestCase):
         self.assertEqual(self.lookup_options(im, 'plot').options, {})
         self.assertEqual(self.lookup_options(styled_im, 'style').options,
                          dict(cmap='summer', interpolation='nearest'))
+
+
+class TestOptsMethod(ComparisonTestCase):
+
+    def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=['style', 'plot', 'norm'])
+        self.backend = 'matplotlib'
+        Store.set_current_backend(self.backend)
+        super(TestOptsMethod, self).setUp()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
+
+    def tearDown(self):
+        Store.options(val=self.store_copy)
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
+        super(TestOptsMethod, self).tearDown()
+
+    def test_simple_clone_disabled(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(interpolation='nearest', cmap='jet', clone=False)
+
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
+
+        assert styled_im is im
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest'})
+
+    def test_simple_opts_clone_enabled(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(interpolation='nearest', cmap='jet', clone=True)
+
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
+
+        assert styled_im is not im
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'fire', 'interpolation': 'nearest'})
+        self.assertEqual(self.lookup_options(styled_im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest'})
+
+    def test_opts_method_with_utility(self):
+        im = Image(np.random.rand(10,10))
+        imopts = opts.Image(cmap='Blues')
+        styled_im = im.opts(imopts)
+
+        assert styled_im is im
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'Blues', 'interpolation': 'nearest'})
+
+    def test_opts_method_dynamicmap_grouped(self):
+        dmap = DynamicMap(lambda X: Curve([1, 2, X]),
+                          kdims=['X']).redim.range(X=(0, 3))
+        retval = dmap.opts({'plot': dict(width=700)})
+        assert retval is not dmap
+        self.assertEqual(self.lookup_options(retval[0], 'plot').options,
+                         {'width':700})
+
 
 @attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):
