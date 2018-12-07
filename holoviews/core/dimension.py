@@ -1365,8 +1365,8 @@ class Dimensioned(LabelledData):
             param.main.warning(msg)
         if apply_groups:
             from ..util import opts
-            kwargs['clone'] = True if clone is None else clone
-            return opts.apply_groups(self, options=options, **kwargs)
+            kwargs['options'] = options
+            return opts.apply_groups(self, **kwargs)
 
         kwargs['clone'] = False if clone is None else clone
         return self.options(*args, **kwargs)
