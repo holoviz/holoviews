@@ -7,6 +7,12 @@ from .chart import ScatterPlot
 
 class LabelPlot(ScatterPlot):
 
+    xoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    yoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
     style_opts = ['color', 'family', 'size']
 
     _nonvectorized_styles = []
@@ -17,7 +23,11 @@ class LabelPlot(ScatterPlot):
 
     def get_data(self, element, ranges, style):
         text_dim = element.vdims[0]
-        return [dict(x=element.dimension_values(0),
-                     y=element.dimension_values(1),
-                     text=[text_dim.pprint_value(v)
-                           for v in element.dimension_values(2)])]
+        xs = element.dimension_values(0)
+        if self.xoffset:
+            xs = xs + self.xoffset
+        ys = element.dimension_values(1)
+        if self.yoffset:
+            ys = ys + self.yoffset
+        text = [text_dim.pprint_value(v) for v in element.dimension_values(2)]
+        return [dict(x=xs, y=ys, text=text)]
