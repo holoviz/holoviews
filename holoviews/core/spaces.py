@@ -95,36 +95,67 @@ class HoloMap(UniformNdMapping, Overlayable):
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
-    def opts(self, options=None, backend=None, clone=True, **kwargs):
-        """
-        Applies options on an object or nested group of objects in a
-        by options group returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+    def opts(self, *args, **kwargs):
+        """Applies simplified option definition
 
-            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+        Applies options defined in a flat format to the objects in the
+        HoloMap. Unlike the .options method .opts, modifies the
+        options inplace by default. If the options are to be set
+        directly on the objects in the HoloMap a simple format may be
+        used, e.g.:
+
+            obj.opts(cmap='viridis', show_title=False)
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            obj.opts({'Image': {'plot':  {'show_title': False},
-                                'style': {'cmap': 'viridis}}})
+            obj.opts('Image', cmap='viridis', show_title=False)
 
-        If no opts are supplied all options on the object will be reset.
-        Disabling clone will modify the object inplace.
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied inplace with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
+
+        Returns:
+            Returns the object or a clone with the options applied
         """
-        data = OrderedDict([(k, v.opts(options, backend, clone, **kwargs))
+        clone = kwargs.pop('clone', None)
+        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
+        data = OrderedDict([(k, v.opts(*args, **dict(kwargs, options=options)))
                              for k, v in self.data.items()])
-        return self.clone(data)
+
+        # By default do not clone in .opts method
+        if (apply_groups if clone is None else clone):
+            return self.clone(data)
+        else:
+            self.data = data
+            return self
 
 
     def options(self, *args, **kwargs):
-        """Applies simplified option definition
+        """Applies simplified option definition returning a new object
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. If the options are to be set
+        directly on the objects in the HoloMap a simple format may be
+        used, e.g.:
 
             obj.options(cmap='viridis', show_title=False)
 
@@ -1097,57 +1128,76 @@ class DynamicMap(HoloMap):
         return self._style(retval)
 
 
-    def opts(self, options=None, backend=None, clone=True, **kwargs):
-        """Applies nested options definition
+    def opts(self, *args, **kwargs):
+        """Applies simplified options definition.
 
-        Applies options on an object or nested group of objects in a
-        by options group returning a new object with the options
-        applied. If the options are to be set directly on the object a
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. Unlike the .options method, .opts
+        modifies the options inplace by default. If the options are to
+        be set directly on the objects returned by the DynamicMap a
         simple format may be used, e.g.:
 
-            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+            obj.opts(cmap='viridis', show_title=False)
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            obj.opts({'Image': {'plot':  {'show_title': False},
-                                'style': {'cmap': 'viridis}}})
+            obj.opts('Image', cmap='viridis', show_title=False)
 
-        If no opts are supplied all options on the object will be reset.
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
 
         Args:
-            options (dict): Options specification
-                Options specification should be indexed by
-                type[.group][.label] or option type ('plot', 'style',
-                'norm').
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
             backend (optional): Backend to apply options to
                 Defaults to current selected backend
             clone (bool, optional): Whether to clone object
                 Options can be applied inplace with clone=False
-            **kwargs: Keywords of options by type
-                Applies options directly to the object by type
-                (e.g. 'plot', 'style', 'norm') specified as
-                dictionaries.
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
 
         Returns:
-            Returns the cloned object with the options applied
+            Returns the object or a clone with the options applied
         """
         from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend,
-                                                                         clone, **kwargs),
+
+        clone = kwargs.pop('clone', None)
+        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
+        kwargs['options'] = options
+        # By default do not clone in .opts method
+        clone = (apply_groups if clone is None else clone)
+
+        obj = self if clone else self.clone()
+        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
                        streams=self.streams, link_inputs=True)
-        dmap.data = OrderedDict([(k, v.opts(options, **kwargs))
-                                 for k, v in self.data.items()])
+        if not clone:
+            with util.disable_constant(self):
+                self.callback = dmap.callback
+            self.callback.inputs[:] = [obj]
+            obj.callback.inputs[:] = []
+            dmap = self
+            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
+                                     for k, v in self.data.items()])
         return dmap
 
 
     def options(self, *args, **kwargs):
-        """Applies simplified option definition
+        """Applies simplified option definition returning a new object.
 
-        Applies options on an object or nested group of objects in a
-        flat format returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        Applies options defined in a flat format to the objects
+        returned by the DynamicMap. If the options are to be set
+        directly on the objects returned by the DynamicMap a simple
+        format may be used, e.g.:
 
             obj.options(cmap='viridis', show_title=False)
 

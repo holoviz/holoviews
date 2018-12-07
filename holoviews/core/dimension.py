@@ -17,7 +17,7 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, StoreOptions
+from .options import Store
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -1311,91 +1311,69 @@ class Dimensioned(LabelledData):
 
         return self.opts(options, **kwargs)
 
-    def opts(self, options=None, backend=None, clone=True, **kwargs):
-        """Applies nested options definition
+
+    def opts(self, *args, **kwargs):
+        """Applies nested options definition.
 
         Applies options on an object or nested group of objects in a
-        by options group returning a new object with the options
-        applied. If the options are to be set directly on the object a
-        simple format may be used, e.g.:
+        flat format. Unlike the .options method, .opts modifies the
+        options inplace by default. If the options are to be set
+        directly on the object a simple format may be used, e.g.:
 
-            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+            obj.opts(cmap='viridis', show_title=False)
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
-            obj.opts({'Image': {'plot':  {'show_title': False},
-                                'style': {'cmap': 'viridis}}})
+            obj.opts('Image', cmap='viridis', show_title=False)
 
-        If no opts are supplied all options on the object will be reset.
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
 
         Args:
-            options (dict): Options specification
-                Options specification should be indexed by
-                type[.group][.label] or option type ('plot', 'style',
-                'norm').
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
             backend (optional): Backend to apply options to
                 Defaults to current selected backend
             clone (bool, optional): Whether to clone object
                 Options can be applied inplace with clone=False
-            **kwargs: Keywords of options by type
-                Applies options directly to the object by type
-                (e.g. 'plot', 'style', 'norm') specified as
-                dictionaries.
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
 
         Returns:
-            Returns the cloned object with the options applied
+            Returns the object or a clone with the options applied
         """
-        backend = backend or Store.current_backend
-        if isinstance(options, basestring):
-            from ..util.parser import OptsSpec
-            try:
-                options = OptsSpec.parse(options)
-            except SyntaxError:
-                options = OptsSpec.parse(
-                    '{clsname} {options}'.format(clsname=self.__class__.__name__,
-                                                 options=options))
+        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
 
-        backend_options = Store.options(backend=backend)
-        groups = set(backend_options.groups.keys())
-        if kwargs and set(kwargs) <= groups:
-            if not all(isinstance(v, dict) for v in kwargs.values()):
-                raise Exception("The %s options must be specified using dictionary groups" %
-                                ','.join(repr(k) for k in kwargs.keys()))
+        # By default do not clone in .opts method
+        clone = kwargs.pop('clone', None)
 
-            # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = backend_options.children
-            targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
-            if any(targets) and not all(targets):
-                raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
-            elif not any(targets):
-                # Not targets specified - add current object as target
-                sanitized_group = util.group_sanitizer(self.group)
-                if self.label:
-                    identifier = ('%s.%s.%s' % (
-                        self.__class__.__name__, sanitized_group,
-                        util.label_sanitizer(self.label)))
-                elif  sanitized_group != self.__class__.__name__:
-                    identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
-                else:
-                    identifier = self.__class__.__name__
+        if apply_groups and util.config.future_deprecations:
+            msg = ("Calling the .opts method with options broken down by options "
+                   "group (i.e. separate plot, style and norm groups) is deprecated. "
+                   "Use the .options method converting to the simplified format "
+                   "instead or use hv.opts.apply_groups for backward compatibility.")
+            param.main.warning(msg)
+        if apply_groups:
+            from ..util import opts
+            kwargs['clone'] = True if clone is None else clone
+            return opts.apply_groups(self, options=options, **kwargs)
 
-                kwargs = {k:{identifier:v} for k,v in kwargs.items()}
-
-        obj = self
-        if options is None and kwargs == {}:
-            if clone:
-                obj = self.map(lambda x: x.clone(id=None))
-            else:
-                self.map(lambda x: setattr(x, 'id', None))
-        elif clone:
-            obj = self.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
-        return obj
+        kwargs['clone'] = False if clone is None else clone
+        return self.options(*args, **kwargs)
 
 
     def options(self, *args, **kwargs):
-        """Applies simplified option definition
+        """Applies simplified option definition returning a new object.
 
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -1412,6 +1390,9 @@ class Dimensioned(LabelledData):
         or using:
 
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        Identical to the .opts method but returns a clone of the object
+        by default.
 
         Args:
             *args: Sets of options to apply to object
@@ -1456,8 +1437,8 @@ class Dimensioned(LabelledData):
         if options is None:
             expanded = {}
         else:
-            expanded = opts.expand_options(options, backend)
-        return self.opts(expanded, backend, clone)
+            expanded = opts._expand_options(options, backend)
+        return self.opts(expanded, backend=backend, clone=clone)
 
 
     def _repr_mimebundle_(self, include=None, exclude=None):

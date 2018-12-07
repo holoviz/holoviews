@@ -224,6 +224,31 @@ def merge_options_to_dict(options):
     return merged_options
 
 
+def deprecated_opts_signature(args, kwargs):
+    """
+    Utility to help with the deprecation of the old .opts method signature
+
+    Returns whether opts.apply_groups should be used (as a bool) and the
+    corresponding options.
+    """
+    signature = ['plot','style', 'norm', 'clone', 'backend']
+    apply_groups = False
+    options = None
+    if len(args) > 0 and isinstance(args[0], dict):
+        apply_groups = True
+        options = args[0]
+    elif kwargs and set(kwargs.keys()).issubset(set(signature)):
+        apply_groups = True
+        options = None
+    elif 'options' in kwargs:
+        apply_groups = True
+        options = kwargs.pop('options')
+    elif not args and not kwargs:
+        apply_groups = True
+        options = None
+    return apply_groups, options
+
+
 class periodic(Thread):
     """
     Run a callback count times with a given period without blocking.
