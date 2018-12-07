@@ -225,6 +225,7 @@ def deprecated_opts_signature(args, kwargs):
     """
     signature = ['plot','style', 'norm', 'clone', 'backend']
     apply_groups = False
+    options = None
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
         options = args[0]
