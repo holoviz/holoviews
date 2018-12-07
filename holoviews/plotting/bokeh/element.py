@@ -10,9 +10,10 @@ import bokeh.plotting
 
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
-from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
-                          FactorRange, FuncTickFormatter, Tool, Legend,
-                          TickFormatter, PrintfTickFormatter)
+from bokeh.models import tools
+from bokeh.models import (
+    Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -32,20 +33,27 @@ from ...streams import Buffer
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
-from .plot import BokehPlot, TOOLS
+from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
     rgba_tuple, text_properties, validate
 )
 from .util import (
-    bokeh_version, decode_bytes, get_tab_title, glyph_order,
-    py2js_tickformatter, recursive_model_update, theme_attr_json,
-    cds_column_replace, hold_policy, match_dim_specs, date_to_integer
+    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes,
+    get_tab_title, glyph_order, py2js_tickformatter,
+    recursive_model_update, theme_attr_json, cds_column_replace,
+    hold_policy, match_dim_specs
 )
 
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
+
+    active_tools = param.List(default=[], doc="""
+        Allows specifying which tools are active by default. Note
+        that only one tool per gesture type can be active, e.g.
+        both 'pan' and 'box_zoom' are drag tools, so if both are
+        listed only the last one will be active.""")
 
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
@@ -168,26 +176,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
-                        tool = HoverTool(tooltips=tooltips, **hover_opts)
+                        tool = tools.HoverTool(tooltips=tooltips, **hover_opts)
                         hover = tool
                     else:
                         tool = known_tools[handle]()
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tools = [t for t in cb_tools + self.default_tools + self.tools
-                 if t not in tool_names]
+        tool_list = [
+            t for t in cb_tools + self.default_tools + self.tools
+            if t not in tool_names]
 
         copied_tools = []
-        for tool in tools:
-            if isinstance(tool, Tool):
+        for tool in tool_list:
+            if isinstance(tool, tools.Tool):
                 properties = tool.properties_with_values(include_defaults=False)
                 tool = type(tool)(**properties)
             copied_tools.append(tool)
 
-        hover_tools = [t for t in copied_tools if isinstance(t, HoverTool)]
+        hover_tools = [t for t in copied_tools if isinstance(t, tools.HoverTool)]
         if 'hover' in copied_tools:
-            hover = HoverTool(tooltips=tooltips, **hover_opts)
+            hover = tools.HoverTool(tooltips=tooltips, **hover_opts)
             copied_tools[copied_tools.index('hover')] = hover
         elif any(hover_tools):
             hover = hover_tools[0]
@@ -406,6 +415,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
+
+
+    def _set_active_tools(self, plot):
+        "Activates the list of active tools"
+        for tool in self.active_tools:
+            if isinstance(tool, util.basestring):
+                tool_type = TOOL_TYPES[tool]
+                matching = [t for t in plot.toolbar.tools
+                            if isinstance(t, tool_type)]
+                if not matching:
+                    raise ValueError('Tool of type %r could not be found '
+                                     'and could not be activated by default.'
+                                     % tool)
+                tool = matching[0]
+            if isinstance(tool, tools.Drag):
+                plot.toolbar.active_drag = tool
+            if isinstance(tool, tools.Scroll):
+                plot.toolbar.active_scroll = tool
+            if isinstance(tool, tools.Tap):
+                plot.toolbar.active_tap = tool
+            if isinstance(tool, tools.Inspection):
+                plot.toolbar.active_inspect.append(tool)
 
 
     def _title_properties(self, key, plot, element):
@@ -1007,6 +1038,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cb.initialize()
 
         if not self.overlaid:
+            self._set_active_tools(plot)
             self._process_legend()
         self._execute_hooks(element)
 
@@ -1084,6 +1116,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
+            self._set_active_tools(plot)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)
@@ -1563,7 +1596,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter']
+                          'xformatter', 'yformatter', 'active_tools']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
@@ -1677,19 +1710,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tools = []
         hover_tools = {}
-        tool_types = []
+        init_tools, tool_types = [], []
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
                 for tool in el_tools:
                     if isinstance(tool, util.basestring):
-                        tool_type = TOOLS.get(tool)
+                        tool_type = TOOL_TYPES.get(tool)
                     else:
                         tool_type = type(tool)
-                    if isinstance(tool, HoverTool):
+                    if isinstance(tool, tools.HoverTool):
                         tooltips = tuple(tool.tooltips) if tool.tooltips else ()
                         if tooltips in hover_tools:
                             continue
@@ -1699,9 +1731,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         continue
                     else:
                         tool_types.append(tool_type)
-                    tools.append(tool)
+                    init_tools.append(tool)
         self.handles['hover_tools'] = hover_tools
-        return tools
+        return init_tools
 
 
     def _merge_tools(self, subplot):
@@ -1791,6 +1823,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['plot'] = Tabs(tabs=panels)
         elif not self.overlaid:
             self._process_legend()
+            self._set_active_tools(plot)
         self.drawn = True
         self.handles['plots'] = plots
 
@@ -1880,7 +1913,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 self._process_legend()
 
         if element and not self.overlaid and not self.tabs and not self.batched:
-            self._update_plot(key, self.handles['plot'], element)
+            plot = self.handles['plot']
+            self._update_plot(key, plot, element)
+            self._set_active_tools(plot)
 
         self._process_legend()
 

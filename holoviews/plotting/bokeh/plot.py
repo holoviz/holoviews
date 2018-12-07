@@ -10,7 +10,6 @@ import param
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
@@ -29,13 +28,10 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (
-    layout_padding, pad_plots, filter_toolboxes, make_axis,
-    update_shared_sources, empty_plot, decode_bytes, theme_attr_json,
-    cds_column_replace
+    TOOL_TYPES, layout_padding, pad_plots, filter_toolboxes,
+    make_axis, update_shared_sources, empty_plot, decode_bytes,
+    theme_attr_json, cds_column_replace
 )
-
-TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
-         for name, tool in known_tools.items()}
 
 
 class BokehPlot(DimensionedPlot):
@@ -290,7 +286,7 @@ class BokehPlot(DimensionedPlot):
         the root level bokeh model.
         """
         subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
+        merged_tools = {t: list(plot.select({'type': TOOL_TYPES[t]}))
                         for t in self._merged_tools}
         for subplot in subplots:
             for cb in subplot.callbacks:
