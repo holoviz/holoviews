@@ -233,7 +233,7 @@ def deprecated_opts_signature(args, kwargs):
         options = None
     elif 'options' in kwargs:
         apply_groups = True
-        options = kwargs['options']
+        options = kwargs.pop('options')
     elif not args and not kwargs:
         apply_groups = True
         options = None
