@@ -6,12 +6,13 @@ from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
 from ...element import *              # noqa (Element import for registration)
 from .renderer import PlotlyRenderer
 
-from .element import *                # noqa (API import)
+from .annotation import *            # noqa (API import)
+from .element import *               # noqa (API import)
 from .chart import *                 # noqa (API import)
 from .chart3d import *               # noqa (API import)
 from .raster import *                # noqa (API import)
 from .plot import *                  # noqa (API import)
-from .stats import *               # noqa (API import)
+from .stats import *                 # noqa (API import)
 from .tabular import *               # noqa (API import)
 from ...core.util import LooseVersion, VersionError
 import plotly
@@ -57,6 +58,9 @@ Store.register({Points: ScatterPlot,
                 Table: TablePlot,
                 ItemTable: TablePlot,
 
+                # Annotations
+                Labels: LabelPlot,
+
                 # Container Plots
                 Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
@@ -79,6 +83,8 @@ options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
 options.Scatter = Options('style', color=Cycle())
 options.Points = Options('style', color=Cycle())
+options.Area = Options('style', color=Cycle(), line_width=2)
+options.Spread = Options('style', color=Cycle(), line_width=2)
 options.TriSurface = Options('style', cmap='viridis')
 
 # Rasters
