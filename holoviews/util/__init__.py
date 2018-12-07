@@ -172,16 +172,16 @@ class opts(param.ParameterizedFunction):
 
                 kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
-        obj = obj
+        obj_handle = obj
         if options is None and kwargs == {}:
             if clone:
-                obj = obj.map(lambda x: x.clone(id=None))
+                obj_handle = obj.map(lambda x: x.clone(id=None))
             else:
                 obj.map(lambda x: setattr(x, 'id', None))
         elif clone:
-            obj = obj.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
-        return obj
+            obj_handle = obj.map(lambda x: x.clone(id=x.id))
+        StoreOptions.set_options(obj_handle, options, backend=backend, **kwargs)
+        return obj_handle
 
     @classmethod
     def _process_magic(cls, options, strict):
