@@ -70,9 +70,14 @@ class Path(Geometry):
                     raise ValueError("Path x and y values must be the same length.")
                 data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
-            # Allow unpacking of a list of Path objects
-            data = [p for path in data for p in
-                    (path.data if isinstance(path.data, list) else [path.data])]
+            # Allow unpacking of a list of Path elements
+            paths = []
+            for path in data:
+                if path.interface.multi:
+                    paths += path.data
+                else:
+                    paths.append(path.data)
+            data = paths
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
                                    datatype=datatype, **params)
 
