@@ -1355,7 +1355,7 @@ class Dimensioned(LabelledData):
         apply_groups, options = util.deprecated_opts_signature(args, kwargs)
 
         # By default do not clone in .opts method
-        clone = kwargs.pop('clone', None)
+        clone = kwargs.get('clone', None)
 
         if apply_groups and util.config.future_deprecations:
             msg = ("Calling the .opts method with options broken down by options "

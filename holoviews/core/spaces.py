@@ -1171,9 +1171,8 @@ class DynamicMap(HoloMap):
         """
         from ..util import Dynamic
 
-        clone = kwargs.pop('clone', None)
+        clone = kwargs.get('clone', None)
         apply_groups, options = util.deprecated_opts_signature(args, kwargs)
-        kwargs['options'] = options
         # By default do not clone in .opts method
         clone = (apply_groups if clone is None else clone)
 
