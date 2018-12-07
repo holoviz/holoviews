@@ -146,15 +146,20 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
 class BarPlot(ElementPlot):
 
-    group_index = param.Integer(default=0, doc="""
+    stacked = param.Boolean(default=False, doc="""
+       Whether the bars should be stacked or grouped.""")
+
+    # Deprecated parameters
+
+    group_index = param.Integer(default=1, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
-    category_index = param.Integer(default=1, doc="""
+    category_index = param.Integer(default=None, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into categories.""")
 
-    stack_index = param.Integer(default=2, doc="""
+    stack_index = param.Integer(default=None, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
@@ -201,39 +206,93 @@ class BarPlot(ElementPlot):
             y0 = 0
 
         # Ensure x-axis is picked up as categorical
-        x0 = xdim.pprint_value(extents[0])
-        x1 = xdim.pprint_value(extents[2])
-        return (x0, y0, x1, y1)
+        nx = len(element.dimension_values(0, False))
+        return (-0.5, y0, nx-0.5, y1)
+
+    def _get_factors(self, element):
+        """
+        Get factors for categorical axes.
+        """
+        gdim = None
+        sdim = None
+        if element.ndims == 1:
+            pass
+        elif not (self.stacked or self.stack_index):
+            gdim = element.get_dimension(1)
+        else:
+            sdim = element.get_dimension(1)
+
+        xdim, ydim = element.dimensions()[:2]
+        xvals = element.dimension_values(0, False)
+        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
+                 for x in xvals]
+        if gdim and not sdim:
+            gvals = element.dimension_values(gdim, False)
+            xvals = sorted([(x, g) for x in xvals for g in gvals])
+            is_str = gvals.dtype.kind in 'SU'
+            xvals = [(x, g if is_str else gdim.pprint_value(g)) for (x, g) in xvals]
+        coords = xvals, []
+        if self.invert_axes: coords = coords[::-1]
+        return coords
+
+
+    def _get_axis_dims(self, element):
+        if element.ndims > 1 and not (self.stacked or self.stack_index):
+            xdims = element.kdims
+        else:
+            xdims = element.kdims[0]
+        return (xdims, element.vdims[0])
+
 
     def generate_plot(self, key, ranges):
+        if self.stack_index is not None:
+            self.warning('Bars stack_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.category_index is not None:
+            self.warning('Bars category_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.group_index not in (None, 1):
+            self.warning('Bars group_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
-        cat_dim = element.get_dimension(self.category_index)
-        stack_dim = element.get_dimension(self.stack_index)
-        x_dim = element.get_dimension(self.group_index)
-        vdim = element.get_dimension(element.ndims)
-        if cat_dim and stack_dim:
-            self.warning("Plotly does not support stacking and categories "
-                         "on a bar chart at the same time.")
-
+        # Get x, y, group, stack and color dimensions
+        xdim = element.kdims[0]
+        vdim = element.vdims[0]
+        group_dim, stack_dim = None, None
         if element.ndims == 1:
-            bars = [dict(type='bar',
-                         x=element.dimension_values(x_dim),
-                         y=element.dimension_values(vdim))]
+            grouping = None
+        elif self.stacked or self.stack_index:
+            grouping = 'stacked'
+            stack_dim = element.get_dimension(1)
         else:
-            group_dim = cat_dim if cat_dim else stack_dim
+            grouping = 'grouped'
+            group_dim = element.get_dimension(1)
+
+        layout = self.init_layout(key, element, ranges)
+        if element.ndims == 1:
+            bars = [dict(
+                type='bar',
+                x=[xdim.pprint_value(v) for v in element.dimension_values(xdim)],
+                y=element.dimension_values(vdim))]
+        else:
+            group_dim = group_dim or stack_dim
             els = element.groupby(group_dim)
             bars = []
             for k, el in els.items():
-                bars.append(dict(type='bar',
-                                 x=el.dimension_values(x_dim),
-                                 y=el.dimension_values(vdim), name=k))
-        layout = self.init_layout(key, element, ranges, x_dim, vdim)
-        self.handles['layout'] = layout
-        layout['barmode'] = 'group' if cat_dim else 'stacked'
+                bars.append(dict(
+                    type='bar',
+                    x=[xdim.pprint_value(v) for v in el.dimension_values(xdim)],
+                    y=el.dimension_values(vdim), name=k))
+            layout['barmode'] = 'stack' if stack_dim else 'group'
 
+        self.handles['layout'] = layout
         fig = dict(data=bars, layout=layout)
         self.handles['fig'] = fig
         return fig
