@@ -66,9 +66,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     xticks = param.Parameter(default=None, doc="""
         Ticks along x-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
+        tick locations, list of tuples containing the locations.""")
 
     yaxis = param.ObjectSelector(default='left',
                                       objects=['left', 'right', 'bare', 'left-bare',
@@ -79,9 +77,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     yticks = param.Parameter(default=None, doc="""
         Ticks along y-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
+        tick locations, list of tuples containing the locations.""")
 
     zlabel = param.String(default=None, doc="""
         An explicit override of the z-axis label, if set takes precedence
@@ -166,7 +162,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Initializes graph from a trace.
         """
         trace = dict(options)
-        for k, v in d.items():
+        for k, v in data.items():
             if k in trace and isinstance(trace[k], dict):
                 trace[k].update(v)
             else:
@@ -247,7 +243,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return new_style
 
 
-    def init_layout(self, key, element, ranges, xdim=None, ydim=None):
+    def init_layout(self, key, element, ranges):
         l, b, r, t = self.get_extents(element, ranges)
 
         options = {}
@@ -272,12 +268,14 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xaxis = dict(range=[l, r], title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
+            self._get_ticks(xaxis, self.xticks)
             options['xaxis'] = xaxis
 
         if ydim:
             yaxis = dict(range=[b, t], title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
+            self._get_ticks(yaxis, self.yticks)
             options['yaxis'] = yaxis
 
         l, b, r, t = self.margins
@@ -287,6 +285,18 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                     plot_bgcolor=self.bgcolor, margin=margin,
                     **options)
 
+    def _get_ticks(self, axis, ticker):
+        axis_props = {}
+        if isinstance(ticker, (tuple, list)):
+            if all(isinstance(t, tuple) for t in ticker):
+                ticks, labels = zip(*ticker)
+                labels = [l if isinstance(l, util.basestring) else str(l)
+                              for l in labels]
+                axis_props['tickvals'] = ticks
+                axis_props['ticktext'] = labels
+            else:
+                axis_props['tickvals'] = ticker
+            axis.update(axis_props)
 
     def update_frame(self, key, ranges=None):
         """

@@ -28,6 +28,10 @@ class Chart3DPlot(ElementPlot):
 
     height = param.Integer(default=500)
 
+    zticks = param.Parameter(default=None, doc="""
+        Ticks along z-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations.""")
+
     def init_layout(self, key, element, ranges):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
 
@@ -35,14 +39,17 @@ class Chart3DPlot(ElementPlot):
         xaxis = dict(range=[l, r], title=xd.pprint_label)
         if self.logx:
             xaxis['type'] = 'log'
+        self._get_ticks(xaxis, self.xticks)
 
         yaxis = dict(range=[b, t], title=yd.pprint_label)
         if self.logy:
             yaxis['type'] = 'log'
+        self._get_ticks(yaxis, self.yticks)
 
         zaxis = dict(range=[zmin, zmax], title=zd.pprint_label)
         if self.logz:
             zaxis['type'] = 'log'
+        self._get_ticks(zaxis, self.zticks)
 
         opts = {}
         if self.aspect == 'cube':
@@ -80,7 +87,6 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
                      z=element.dimension_values(2, flat=False))]
 
 
-
 class Scatter3dPlot(Chart3DPlot, ScatterPlot):
 
     trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
@@ -113,5 +119,6 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         style['show_colorbar'] = self.colorbar
         return style
 
-    def init_graph(self, trace):
+    def init_graph(self, data, options):
+        trace = super(TriSurfacePlot, self).init_graph(data, options)
         return trisurface(**trace)[0].to_plotly_json()

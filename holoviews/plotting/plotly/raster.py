@@ -39,10 +39,22 @@ class HeatMapPlot(RasterPlot):
     def get_extents(self, element, ranges, range_type='combined'):
         return (np.NaN,)*4
 
+    def init_layout(self, key, element, ranges):
+        layout = super(HeatMapPlot, self).init_layout(key, element, ranges)
+        gridded = element.gridded
+        xlabels, ylabels = (gridded.dimension_values(i, False) for i in range(2))
+        xvals = np.arange(len(xlabels))
+        yvals = np.arange(len(ylabels))
+        layout['xaxis']['tickvals'] = xvals
+        layout['xaxis']['ticktext'] = xlabels
+        layout['yaxis']['tickvals'] = xvals
+        layout['yaxis']['ticktext'] = xlabels
+        return layout
+
     def get_data(self, element, ranges, style):
         gridded = element.gridded
-        return [dict(x=gridded.dimension_values(0, False, False),
-                     y=gridded.dimension_values(1, False, False),
+        yn, xn = gridded.interface.shape(gridded, True)
+        return [dict(x=np.arange(xn), y=np.arange(yn),
                      z=gridded.dimension_values(2, flat=False))]
 
 
