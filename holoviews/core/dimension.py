@@ -1352,7 +1352,7 @@ class Dimensioned(LabelledData):
         Returns:
             Returns the object or a clone with the options applied
         """
-        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
+        apply_groups, options, new_kwargs = util.deprecated_opts_signature(args, kwargs)
 
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
@@ -1365,8 +1365,9 @@ class Dimensioned(LabelledData):
             param.main.warning(msg)
         if apply_groups:
             from ..util import opts
-            kwargs['options'] = options
-            return opts.apply_groups(self, **kwargs)
+            if options is not None:
+                kwargs['options'] = options
+            return opts.apply_groups(self, **dict(kwargs, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
         return self.options(*args, **kwargs)

@@ -231,22 +231,25 @@ def deprecated_opts_signature(args, kwargs):
     Returns whether opts.apply_groups should be used (as a bool) and the
     corresponding options.
     """
-    signature = ['plot','style', 'norm', 'clone', 'backend']
+    groups = ['plot','style', 'norm']
+    signature = groups + ['clone', 'backend']
     apply_groups = False
     options = None
+    new_kwargs = {}
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
-        options = args[0]
+        if set(args[0].keys()) <= set(groups):
+            new_kwargs = args[0]
+        else:
+            options = args[0]
     elif kwargs and set(kwargs.keys()).issubset(set(signature)):
         apply_groups = True
-        options = None
     elif kwargs.get('options', None) is not None:
         apply_groups = True
-        options = kwargs.pop('options')
     elif not args and not kwargs:
         apply_groups = True
-        options = None
-    return apply_groups, options
+
+    return apply_groups, options, new_kwargs
 
 
 class periodic(Thread):

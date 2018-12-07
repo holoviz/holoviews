@@ -137,8 +137,8 @@ class HoloMap(UniformNdMapping, Overlayable):
             Returns the object or a clone with the options applied
         """
         clone = kwargs.pop('clone', None)
-        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
-        data = OrderedDict([(k, v.opts(*args, **dict(kwargs, options=options)))
+        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
+        data = OrderedDict([(k, v.opts(*args, **kwargs))
                              for k, v in self.data.items()])
 
         # By default do not clone in .opts method
@@ -1172,7 +1172,7 @@ class DynamicMap(HoloMap):
         from ..util import Dynamic
 
         clone = kwargs.get('clone', None)
-        apply_groups, options = util.deprecated_opts_signature(args, kwargs)
+        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
         # By default do not clone in .opts method
         clone = (apply_groups if clone is None else clone)
 
