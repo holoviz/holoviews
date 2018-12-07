@@ -153,6 +153,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             styles = self._apply_transforms(element, ranges, style)
             opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
                                      for k, v in styles.items()}
+        else:
+            opts.update({STYLE_ALIASES.get(k, k): v
+                         for k, v in style.items() if k != 'cmap'})
 
         return opts
 
@@ -349,11 +352,17 @@ class ColorbarPlot(ElementPlot):
             opts['cmin'] = cmin
             opts['cmax'] = cmax
             opts['cauto'] = auto
-        return dict(style, **opts)
+        return opts
 
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
+    _propagate_options = [
+        'width', 'height', 'xaxis', 'yaxis', 'labelled', 'bgcolor',
+        'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
+        'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation',
+        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title_format',
+        'padding', 'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None):
         """
