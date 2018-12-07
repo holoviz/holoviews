@@ -240,7 +240,7 @@ def deprecated_opts_signature(args, kwargs):
     elif kwargs and set(kwargs.keys()).issubset(set(signature)):
         apply_groups = True
         options = None
-    elif 'options' in kwargs:
+    elif kwargs.get('options', None) is not None:
         apply_groups = True
         options = kwargs.pop('options')
     elif not args and not kwargs:
