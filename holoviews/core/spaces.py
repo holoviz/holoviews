@@ -138,7 +138,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         """
         clone = kwargs.pop('clone', None)
         apply_groups, options = util.deprecated_opts_signature(args, kwargs)
-        data = OrderedDict([(k, v.opts(*args, **dict(**kwargs, options=options)))
+        data = OrderedDict([(k, v.opts(*args, **dict(kwargs, options=options)))
                              for k, v in self.data.items()])
 
         # By default do not clone in .opts method
