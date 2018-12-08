@@ -2,6 +2,7 @@ import param
 
 from ..core import Dataset, Dimension, Element3D
 from .geom import Points
+from .path import Path
 from .raster import Image
 
 
@@ -98,9 +99,9 @@ class Scatter3D(Element3D, Points):
 
 
 
-class Line3D(Element3D, Dataset):
+class Path3D(Element3D, Path):
     """
-    Line3D is a 3D element representing a line through 3D space. The
+    Path3D is a 3D element representing a line through 3D space. The
     key dimensions represent the position of each coordinate along the
     x-, y- and z-axis while the value dimensions can optionally supply
     additional information.
@@ -111,9 +112,9 @@ class Line3D(Element3D, Dataset):
                                 Dimension('z')])
 
     vdims = param.List(default=[], doc="""
-        Line3D can have optional value dimensions.""")
+        Path3D can have optional value dimensions.""")
 
-    group = param.String(default='Line3D', constant=True)
+    group = param.String(default='Path3D', constant=True)
 
     def __getitem__(self, slc):
-        return Dataset.__getitem__(self, slc)
+        return Path.__getitem__(self, slc)

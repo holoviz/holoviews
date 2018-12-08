@@ -49,9 +49,9 @@ Store.register({Points: ScatterPlot,
                 QuadMesh: QuadMeshPlot,
 
                 # 3D Plot
-                Scatter3D: Scatter3dPlot,
+                Scatter3D: Scatter3DPlot,
                 Surface: SurfacePlot,
-                Line3D: Line3dPlot,
+                Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
                 Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 

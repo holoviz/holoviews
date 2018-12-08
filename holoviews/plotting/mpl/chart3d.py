@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 import matplotlib.cm as cm
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
@@ -10,6 +11,7 @@ from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
+from .path import PathPlot
 from .util import mpl_version
 
 
@@ -142,27 +144,36 @@ class Scatter3DPlot(Plot3D, PointPlot):
             artist.set_sizes(style['s'])
 
 
-class Line3DPlot(Plot3D):
+class Path3DPlot(Plot3D, PathPlot):
     """
-    Subclass of CurvePlot allowing plotting of lines
-    on a 3D axis.
+    Allows plotting paths on a 3D axis.
     """
-    style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker', 'ms']
 
-    _nonvectorized_styles = style_opts
-
-    _plot_methods = dict(single='plot')
+    style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
     def get_data(self, element, ranges, style):
-        xs, ys, zs = (element.dimension_values(i) for i in range(3))
-        return (xs, ys, zs), style, {}
+        paths = element.split(datatype='array', dimensions=element.kdims)
+        if self.invert_axes:
+            paths = [p[:, ::-1] for p in paths]
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        if 'c' in style:
+            style['array'] = style.pop('c')
+        if isinstance(style.get('color'), np.ndarray):
+            style[color_prop] = style.pop('color')
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
+        return (paths,), style, {}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        line_segments = Line3DCollection(*plot_args, **plot_kwargs)
+        ax.add_collection(line_segments)
+        return {'artist': line_segments}
 
     def update_handles(self, key, axis, element, ranges, style):
-        artist = self.handles['artist']
-        (xs, ys, zs), _, _ = self.get_data(element, ranges, style)
-        artist.set_xdata(xs)
-        artist.set_ydata(ys)
-        artist.set_3d_properties(zs)
+        PathPlot.update_handles(self, key, axis, element, ranges, style)
+
 
 
 class SurfacePlot(Plot3D):

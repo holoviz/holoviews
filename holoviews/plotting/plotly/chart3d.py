@@ -88,14 +88,28 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
                      z=element.dimension_values(2, flat=False))]
 
 
-class Scatter3dPlot(Chart3DPlot, ScatterPlot):
+class Scatter3DPlot(Chart3DPlot, ScatterPlot):
 
     trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
 
 
-class Line3dPlot(Chart3DPlot, CurvePlot):
+class Path3DPlot(Chart3DPlot, CurvePlot):
 
     trace_kwargs = {'type': 'scatter3d', 'mode': 'lines'}
+
+    _per_trace = True
+
+    _nonvectorized_styles = []
+
+    def graph_options(self, element, ranges, style):
+        opts = super(Path3DPlot, self).graph_options(element, ranges, style)
+        opts['line'].pop('showscale', None)
+        return opts
+
+    def get_data(self, element, ranges, style):
+        return [dict(x=el.dimension_values(0), y=el.dimension_values(1),
+                     z=el.dimension_values(2))
+                for el in element.split()]
 
 
 class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
