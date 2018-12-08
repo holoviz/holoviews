@@ -43,7 +43,7 @@ class Path(Geometry):
     Both scalar values and values continuously varying along the
     geometries coordinates a Path may be used vary visual properties
     of the paths such as the color. Since not all formats allow
-    storing scalar values as actual scalars arrays which are the same
+    storing scalar values as actual scalars, arrays that are the same
     length as the coordinates but have only one unique value are also
     considered scalar.
 
@@ -162,7 +162,7 @@ class Path(Geometry):
 class Contours(Path):
     """
     The Contours element is a subtype of a Path which is characterized
-    by the fact that each path geometries may only be associated with
+    by the fact that each path geometry may only be associated with
     scalar values. It supports all the same data formats as a `Path`
     but does not allow continuously varying values along the path
     geometry's coordinates. Conceptually Contours therefore represent
