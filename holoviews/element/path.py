@@ -17,7 +17,7 @@ from .geom import Geometry
 
 class Path(Geometry):
     """
-    The Path element represents a collection of path geometries with
+    The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
     sub-geometries on NaN-values and may be associated with scalar
     values or array values varying along its length. In analogy to
@@ -35,11 +35,17 @@ class Path(Geometry):
 
         [{'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}, ...]
 
+    Alternatively Path also supports a single columnar data-structure
+    to specify an individual path:
+
+        {'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}
+
     Both scalar values and values continuously varying along the
-    geometries coordinates a Path may be used to color the geometry
-    by. Since not all formats allow storing scalar values as actual
-    scalars arrays which are the same length as the coordinates but
-    have only one unique value are also considered scalar.
+    geometries coordinates a Path may be used vary visual properties
+    of the paths such as the color. Since not all formats allow
+    storing scalar values as actual scalars arrays which are the same
+    length as the coordinates but have only one unique value are also
+    considered scalar.
 
     The easiest way of accessing the individual geometries is using
     the `Path.split` method, which returns each path geometry as a
@@ -156,7 +162,7 @@ class Path(Geometry):
 class Contours(Path):
     """
     The Contours element is a subtype of a Path which is characterized
-    by the fact that each path geometry may only be associated with
+    by the fact that each path geometries may only be associated with
     scalar values. It supports all the same data formats as a `Path`
     but does not allow continuously varying values along the path
     geometry's coordinates. Conceptually Contours therefore represent
@@ -167,6 +173,11 @@ class Contours(Path):
     x- and y-coordinates along with any other (scalar) values:
 
         [{'x': 1d-array, 'y': 1d-array, 'value': scalar}, ...]
+
+    Alternatively Contours also supports a single columnar
+    data-structure to specify an individual contour:
+
+        {'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}
 
     Since not all formats allow storing scalar values as actual
     scalars arrays which are the same length as the coordinates but
@@ -222,7 +233,7 @@ class Contours(Path):
 
 class Polygons(Contours):
     """
-    The Polygons element represents a collection of polygon geometries
+    The Polygons element represents one or more polygon geometries
     with associated scalar values. Each polygon geometry may be split
     into sub-geometries on NaN-values and may be associated with
     scalar values. In analogy to GEOS geometry types a Polygons
@@ -242,6 +253,11 @@ class Polygons(Contours):
     holes, along with any other values:
 
         [{'x': 1d-array, 'y': 1d-array, 'holes': list-of-lists-of-arrays, 'value': scalar}, ...]
+
+    Alternatively Polygons also supports a single columnar
+    data-structure to specify an individual polygon:
+
+        {'x': 1d-array, 'y': 1d-array, 'holes': list-of-lists-of-arrays, 'value': scalar}
 
     The list-of-lists format of the holes corresponds to the potential
     for each coordinate array to be split into a multi-geometry
