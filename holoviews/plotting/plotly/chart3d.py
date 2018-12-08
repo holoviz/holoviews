@@ -74,11 +74,12 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'surface'}
 
-    style_opts = ['opacity', 'lighting', 'lightposition', 'cmap']
+    style_opts = ['alpha', 'lighting', 'lightposition', 'cmap']
 
     def graph_options(self, element, ranges, style):
         opts = super(SurfacePlot, self).graph_options(element, ranges, style)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
+        copts['colorscale'] = style.get('cmap', 'Viridis')
         return dict(opts, **copts)
 
     def get_data(self, element, ranges, style):
@@ -110,20 +111,17 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
-        return [dict(x=x, y=y, z=z, simplices=simplices, edges_color='black',
-                     scale=None)]
+        return [dict(x=x, y=y, z=z, simplices=simplices, edges_color='black')]
 
     def graph_options(self, element, ranges, style):
-        if 'cmap' in style:
-            cmap = style.pop('cmap')
-            if cmap in colors.PLOTLY_SCALES:
-                style['colormap'] = colors.PLOTLY_SCALES[cmap]
-            else:
-                cmap = get_cmap(cmap)
-                style['colormap'] = [cmap(i) for i in np.linspace(0, 1)]
-        style['show_colorbar'] = self.colorbar
-        return style
+        opts = super(TriSurfacePlot, self).graph_options(element, ranges, style)
+        copts = self.get_color_opts(element.dimensions()[2], element, ranges, style)
+        opts['colormap'] = [tuple(v/255. for v in colors.hex_to_rgb(c))
+                            for _, c in copts['colorscale']]
+        opts['scale'] = [l for l, _ in copts['colorscale']]
+        opts['show_colorbar'] = self.colorbar
+        return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
 
-    def init_graph(self, data, options):
-        trace = super(TriSurfacePlot, self).init_graph(data, options)
+    def init_graph(self, data, options, index=0):
+        trace = super(TriSurfacePlot, self).init_graph(data, options, index)
         return trisurface(**trace)[0].to_plotly_json()

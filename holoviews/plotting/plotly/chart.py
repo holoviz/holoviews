@@ -44,7 +44,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
         return opts
 
 
-class CurvePlot(ChartPlot):
+class CurvePlot(ChartPlot, ColorbarPlot):
 
     interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],

@@ -7,8 +7,8 @@ from ...core import util
 from ...util.transform import dim
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key, fire_colors
-from .util import STYLE_ALIASES, merge_figure
+from ..util import dim_range_key
+from .util import STYLE_ALIASES, get_colorscale, merge_figure
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -87,6 +87,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     _style_key = None
 
+    # Whether vectorized styles are applied per trace
+    _per_trace = False
+
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = []
 
@@ -122,9 +125,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         data = self.get_data(element, ranges, style)
         opts = self.graph_options(element, ranges, style)
         graphs = []
-        for d in data:
+        for i, d in enumerate(data):
             # Initialize graph
-            graph = self.init_graph(d, opts)
+            graph = self.init_graph(d, opts, index=i)
             graphs.append(graph)
         self.handles['graphs'] = graphs
 
@@ -160,16 +163,20 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return opts
 
 
-    def init_graph(self, data, options):
-        """
-        Initializes graph from a trace.
-        """
+    def init_graph(self, data, options, index=0):
         trace = dict(options)
         for k, v in data.items():
             if k in trace and isinstance(trace[k], dict):
                 trace[k].update(v)
             else:
                 trace[k] = v
+
+        if self._style_key and self._per_trace:
+            vectorized = {k: v for k, v in options[self._style_key].items()
+                          if isinstance(v, np.ndarray)}
+            trace[self._style_key] = dict(trace[self._style_key])
+            for s, val in vectorized.items():
+                trace[self._style_key][s] = val[index]
         return trace
 
 
@@ -319,33 +326,31 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
+    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+        Number of discrete colors to use when colormapping or a set of color
+        intervals defining the range of values to map each color to.""")
+
     colorbar_opts = param.Dict(default={}, doc="""
         Allows setting including borderwidth, showexponent, nticks,
         outlinecolor, thickness, bgcolor, outlinewidth, bordercolor,
         ticklen, xpad, ypad, tickangle...""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     def get_color_opts(self, eldim, element, ranges, style):
         opts = {}
         dim_name = dim_range_key(eldim)
         if self.colorbar:
-            opts['colorbar'] = dict(title=dim.pprint_label,
-                                    **self.colorbar_opts)
+            if isinstance(eldim, dim):
+                title = str(eldim) if eldim.ops else str(eldim)[1:-1]
+            else:
+                title = eldim.pprint_label
+            opts['colorbar'] = dict(title=title, **self.colorbar_opts)
         else:
             opts['showscale'] = False
 
-        cmap = style.pop('cmap', 'viridis')
-        if cmap == 'fire':
-            values = np.linspace(0, 1, len(fire_colors))
-            cmap = [(v, 'rgb(%d, %d, %d)' % tuple(c))
-                    for v, c in zip(values, np.array(fire_colors)*255)]
-        elif isinstance(cmap, util.basestring):
-            if cmap[0] == cmap[0].lower():
-                cmap = cmap[0].upper() + cmap[1:]
-            if cmap.endswith('_r'):
-                cmap = cmap[:-2]
-                opts['reversescale'] = True
-        opts['colorscale'] = cmap
-        if dim:
+        if eldim:
             auto = False
             if dim_name in ranges:
                 cmin, cmax = ranges[dim_name]['combined']
@@ -354,9 +359,21 @@ class ColorbarPlot(ElementPlot):
                 auto = True
             else:
                 cmin, cmax = element.range(dim_name)
+            if self.symmetric:
+                cabs = np.abs([cmin, cmax])
+                cmin, cmax = -cabs.max(), cabs.max()
+        else:
+            auto = True
+            cmin, cmax = None, None
+
+        cmap = style.pop('cmap', 'viridis')
+        colorscale = get_colorscale(cmap, self.color_levels, cmin, cmax)
+        if cmin is not None:
             opts['cmin'] = cmin
+        if cmax is not None:
             opts['cmax'] = cmax
-            opts['cauto'] = auto
+        opts['cauto'] = auto
+        opts['colorscale'] = colorscale
         return opts
 
 
