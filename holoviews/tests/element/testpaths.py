@@ -2,11 +2,81 @@
 Unit tests of Path types.
 """
 import numpy as np
-from holoviews import Ellipse, Box, Polygons
+from holoviews import Dataset, Ellipse, Box, Polygons, Path
 from holoviews.core.data.interface import DataError
 from holoviews.element.comparison import ComparisonTestCase
 
 
+class PathTests(ComparisonTestCase):
+
+    def test_multi_path_list_constructor(self):
+        path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
+        self.assertTrue(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, np.nan, 2, 3]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, np.nan, 3, 4]))
+
+    def test_multi_path_tuple(self):
+        path = Path(([0, 1], [[1, 3], [2, 4]]))
+        self.assertTrue(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, np.nan, 0, 1]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, np.nan, 3, 4]))
+
+    def test_multi_path_unpack_single_paths(self):
+        path = Path([Path([(0, 1), (1, 2)]), Path([(2, 3), (3, 4)])])
+        self.assertTrue(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, np.nan, 2, 3]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, np.nan, 3, 4]))
+
+    def test_multi_path_unpack_multi_paths(self):
+        path = Path([Path([[(0, 1), (1, 2)]]),
+                     Path([[(2, 3), (3, 4)], [(4, 5), (5, 6)]])])
+        self.assertTrue(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, np.nan, 2, 3, np.nan, 4, 5]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, np.nan, 3, 4, np.nan, 5, 6]))
+
+    def test_single_path_list_constructor(self):
+        path = Path([(0, 1), (1, 2), (2, 3), (3, 4)])
+        self.assertFalse(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, 2, 3]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, 3, 4]))
+
+    def test_single_path_tuple_constructor(self):
+        path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))
+        self.assertFalse(path.interface.multi)
+        self.assertEqual(path.dimension_values(0), np.array([
+            0, 1, 2, 3]))
+        self.assertEqual(path.dimension_values(1), np.array([
+            1, 2, 3, 4]))
+
+    def test_multi_path_list_split(self):
+        path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
+        subpaths = path.split()
+        self.assertEqual(len(subpaths), 2)
+        self.assertEqual(subpaths[0], Path([(0, 1), (1, 2)]))
+        self.assertEqual(subpaths[1], Path([(2, 3), (3, 4)]))
+
+    def test_single_path_split(self):
+        path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))
+        self.assertEqual(path, path.split()[0])
+
+    def test_dataset_groupby_path(self):
+        ds = Dataset([(0, 0, 1), (0, 1, 2), (1, 2, 3), (1, 3, 4)], ['group', 'x', 'y'])
+        subpaths = ds.groupby('group', group_type=Path)
+        self.assertEqual(len(subpaths), 2)
+        self.assertEqual(subpaths[0], Path([(0, 1), (1, 2)]))
+        self.assertEqual(subpaths[1], Path([(2, 3), (3, 4)]))
+
+                         
 class PolygonsTests(ComparisonTestCase):
 
     def setUp(self):

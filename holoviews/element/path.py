@@ -11,13 +11,13 @@ import param
 from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import config, disable_constant
+from ..core.util import config, disable_constant, isscalar
 from .geom import Geometry
 
 
 class Path(Geometry):
     """
-    The Path element represents a collection of path geometries with
+    The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
     sub-geometries on NaN-values and may be associated with scalar
     values or array values varying along its length. In analogy to
@@ -35,11 +35,17 @@ class Path(Geometry):
 
         [{'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}, ...]
 
+    Alternatively Path also supports a single columnar data-structure
+    to specify an individual path:
+
+        {'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}
+
     Both scalar values and values continuously varying along the
-    geometries coordinates a Path may be used to color the geometry
-    by. Since not all formats allow storing scalar values as actual
-    scalars arrays which are the same length as the coordinates but
-    have only one unique value are also considered scalar.
+    geometries coordinates a Path may be used vary visual properties
+    of the paths such as the color. Since not all formats allow
+    storing scalar values as actual scalars, arrays that are the same
+    length as the coordinates but have only one unique value are also
+    considered scalar.
 
     The easiest way of accessing the individual geometries is using
     the `Path.split` method, which returns each path geometry as a
@@ -49,19 +55,38 @@ class Path(Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multitabular'])
+    datatype = param.ObjectSelector(default=[
+        'multitabular', 'dataframe', 'dictionary', 'dask', 'array'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
+            # Add support for (x, ys) where ys defines multiple paths
             x, y = map(np.asarray, data)
-            if y.ndim == 1:
-                y = np.atleast_2d(y).T
-            if len(x) != y.shape[0]:
-                raise ValueError("Path x and y values must be the same length.")
-            data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
+            if y.ndim > 1:
+                if len(x) != y.shape[0]:
+                    raise ValueError("Path x and y values must be the same length.")
+                data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
-            data = [p for path in data for p in path.data]
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+            # Allow unpacking of a list of Path elements
+            paths = []
+            for path in data:
+                if path.interface.multi and isinstance(path.data, list):
+                    paths += path.data
+                else:
+                    paths.append(path.data)
+            data = paths
+
+        datatype = params.pop('datatype', self.datatype)
+
+        # Ensure that a list of tuples of scalars and any other non-list
+        # type is interpreted as a single path
+        if (not isinstance(data, list) or
+            (isinstance(data, list) and not len(data) == 0 and all(
+                isinstance(d, tuple) and all(isscalar(v) for v in d)
+                for d in data))):
+            datatype = [dt for dt in datatype if dt != 'multitabular']
+        super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
+                                   datatype=datatype, **params)
 
 
     def __getitem__(self, key):
@@ -149,6 +174,11 @@ class Contours(Path):
 
         [{'x': 1d-array, 'y': 1d-array, 'value': scalar}, ...]
 
+    Alternatively Contours also supports a single columnar
+    data-structure to specify an individual contour:
+
+        {'x': 1d-array, 'y': 1d-array, 'value': scalar, 'continuous': 1d-array}
+
     Since not all formats allow storing scalar values as actual
     scalars arrays which are the same length as the coordinates but
     have only one unique value are also considered scalar. This is
@@ -203,7 +233,7 @@ class Contours(Path):
 
 class Polygons(Contours):
     """
-    The Polygons element represents a collection of polygon geometries
+    The Polygons element represents one or more polygon geometries
     with associated scalar values. Each polygon geometry may be split
     into sub-geometries on NaN-values and may be associated with
     scalar values. In analogy to GEOS geometry types a Polygons
@@ -223,6 +253,11 @@ class Polygons(Contours):
     holes, along with any other values:
 
         [{'x': 1d-array, 'y': 1d-array, 'holes': list-of-lists-of-arrays, 'value': scalar}, ...]
+
+    Alternatively Polygons also supports a single columnar
+    data-structure to specify an individual polygon:
+
+        {'x': 1d-array, 'y': 1d-array, 'holes': list-of-lists-of-arrays, 'value': scalar}
 
     The list-of-lists format of the holes corresponds to the potential
     for each coordinate array to be split into a multi-geometry
