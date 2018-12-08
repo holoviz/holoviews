@@ -79,9 +79,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self._execute_hooks(element)
         self.drawn = True
 
-        for cb in self.callbacks:
-            cb.initialize()
-
         title = self._get_title_div(self.keys[-1], '10pt')
         if title:
             plot = Column(title, table)
@@ -89,6 +86,9 @@ class TablePlot(BokehPlot, GenericElementPlot):
         else:
             plot = table
         self.handles['plot'] = plot
+
+        for cb in self.callbacks:
+            cb.initialize()
         return plot
 
     def _get_columns(self, element, data):

@@ -342,6 +342,16 @@ class TestServerCallbacks(CallbackTestCase):
         resolved = callback.resolve_attr_spec(spec, selected, model=selected)
         self.assertEqual(resolved, {'id': selected.ref['id'], 'value': [0, 2]})
 
+    def test_selection1d_resolves_table(self):
+        table = Table([1, 2, 3], 'x')
+        Selection1D(source=table)
+        plot = bokeh_server_renderer.get_plot(table)
+        selected = Selection(indices=[0, 2])
+        callback = plot.callbacks[0]
+        spec = callback.attributes['index']
+        resolved = callback.resolve_attr_spec(spec, selected, model=selected)
+        self.assertEqual(resolved, {'id': selected.ref['id'], 'value': [0, 2]})
+
     def test_rangexy_resolves(self):
         points = Points([1, 2, 3])
         RangeXY(source=points)
@@ -427,3 +437,15 @@ class TestBokehCustomJSCallbacks(CallbackTestCase):
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
         self.assertIn(selection, plot.callbacks[0].streams)
+
+
+    def test_callback_on_table_is_attached(self):
+        table = Table([1, 2, 3], 'x')
+        selection = Selection1D(source=table)
+        plot = bokeh_renderer.get_plot(table)
+        self.assertEqual(len(plot.callbacks), 1)
+        self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
+        self.assertIn(selection, plot.callbacks[0].streams)
+        callbacks = plot.handles['selected'].js_property_callbacks
+        self.assertIn('change:indices', callbacks)
+        self.assertIn(plot.id, callbacks['change:indices'][0].code)
