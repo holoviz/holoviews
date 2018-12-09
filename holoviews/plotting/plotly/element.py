@@ -157,9 +157,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             showlegend=self.show_legend, legendgroup=element.group,
             name=legend, **self.trace_kwargs)
 
-        if self.projection is None:
-            opts['orientation'] = 'h' if self.invert_axes else 'v'
-
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
             opts[self._style_key] = {STYLE_ALIASES.get(k, k): v

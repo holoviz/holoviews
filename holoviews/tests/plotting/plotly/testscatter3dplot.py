@@ -16,3 +16,15 @@ class TestScatter3DPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['xaxis']['range'], [0, 1])
         self.assertEqual(state['layout']['scene']['yaxis']['range'], [2, 3])
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [4, 5])
+
+    def test_scatter3d_color_mapped(self):
+        scatter = Scatter3D(([0,1], [2,3], [4,5])).options(color='y')
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['data'][0]['marker']['color'], np.array([2, 3]))
+        self.assertEqual(state['data'][0]['marker']['cmin'], 2)
+        self.assertEqual(state['data'][0]['marker']['cmax'], 3)
+
+    def test_scatter3d_size(self):
+        scatter = Scatter3D(([0,1], [2,3], [4,5])).options(size='y')
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['data'][0]['marker']['size'], np.array([2, 3]))

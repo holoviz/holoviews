@@ -31,7 +31,11 @@ class RasterPlot(ColorbarPlot):
             array=array.T[::-1,...]
         ny, nx = array.shape
         dx, dy = float(r-l)/nx, float(t-b)/ny
-        return [dict(x0=l+dx/2., y0=b+dy/2., dx=dx, dy=dy, z=array)]
+        x0, y0 = l+dx/2., b+dy/2.
+        if self.invert_axes:
+            x0, y0, dx, dy = y0, x0, dy, dx
+            array = array.T
+        return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
 class HeatMapPlot(RasterPlot):
@@ -68,4 +72,8 @@ class QuadMeshPlot(RasterPlot):
         xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
                   element.interface.coords(element, y, edges=True, ordered=True))
         zdata = element.dimension_values(z, flat=False)
-        return [dict(x=xc, y=yc, z=zdata)]
+        x, y = ('x', 'y')
+        if self.invert_axes:
+            y, x = 'x', 'y'
+            zdata = zdata.T
+        return [{x: xc, y: yc, 'z': zdata}]
