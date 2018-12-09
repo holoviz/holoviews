@@ -151,6 +151,9 @@ class BarPlot(ElementPlot):
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     # Deprecated parameters
 
     group_index = param.Integer(default=1, doc="""
@@ -210,32 +213,6 @@ class BarPlot(ElementPlot):
         nx = len(element.dimension_values(0, False))
         return (-0.5, y0, nx-0.5, y1)
 
-    def _get_factors(self, element):
-        """
-        Get factors for categorical axes.
-        """
-        gdim = None
-        sdim = None
-        if element.ndims == 1:
-            pass
-        elif not (self.stacked or self.stack_index):
-            gdim = element.get_dimension(1)
-        else:
-            sdim = element.get_dimension(1)
-
-        xdim, ydim = element.dimensions()[:2]
-        xvals = element.dimension_values(0, False)
-        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
-                 for x in xvals]
-        if gdim and not sdim:
-            gvals = element.dimension_values(gdim, False)
-            xvals = sorted([(x, g) for x in xvals for g in gvals])
-            is_str = gvals.dtype.kind in 'SU'
-            xvals = [(x, g if is_str else gdim.pprint_value(g)) for (x, g) in xvals]
-        coords = xvals, []
-        if self.invert_axes: coords = coords[::-1]
-        return coords
-
     def _get_axis_dims(self, element):
         if element.ndims > 1 and not (self.stacked or self.stack_index):
             xdims = element.kdims
@@ -243,8 +220,7 @@ class BarPlot(ElementPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-
-    def generate_plot(self, key, ranges):
+    def get_data(self, element, ranges, style):
         if self.stack_index is not None:
             self.warning('Bars stack_index plot option is deprecated '
                          'and will be ignored, set stacked=True/False '
@@ -258,10 +234,6 @@ class BarPlot(ElementPlot):
                          'and will be ignored, set stacked=True/False '
                          'instead.')
 
-        element = self._get_frame(key)
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = util.match_spec(element, ranges)
-
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
@@ -273,24 +245,37 @@ class BarPlot(ElementPlot):
         else:
             group_dim = element.get_dimension(1)
 
-        layout = self.init_layout(key, element, ranges)
+        if self.invert_axes:
+            x, y = ('y', 'x')
+            orientation = 'h'
+        else:
+            x, y = ('x', 'y')
+            orientation = 'v'
+
         if element.ndims == 1:
-            bars = [dict(
-                type='bar',
-                x=[xdim.pprint_value(v) for v in element.dimension_values(xdim)],
-                y=element.dimension_values(vdim))]
+            bars = [{
+                'orientation': orientation, 'showlegend': False,
+                x: [xdim.pprint_value(v) for v in element.dimension_values(xdim)],
+                y: element.dimension_values(vdim)}]
         else:
             group_dim = group_dim or stack_dim
             els = element.groupby(group_dim)
             bars = []
             for k, el in els.items():
-                bars.append(dict(
-                    type='bar',
-                    x=[xdim.pprint_value(v) for v in el.dimension_values(xdim)],
-                    y=el.dimension_values(vdim), name=k))
-            layout['barmode'] = 'stack' if stack_dim else 'group'
+                bars.append({
+                    'orientation': orientation, 'name': k,
+                    x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
+                    y: el.dimension_values(vdim)})
+        return bars
 
-        self.handles['layout'] = layout
-        fig = dict(data=bars, layout=layout)
-        self.handles['fig'] = fig
-        return fig
+    def init_layout(self, key, element, ranges):
+        layout = super(BarPlot, self).init_layout(key, element, ranges)
+        group_dim, stack_dim = None, None
+        if element.ndims == 1:
+            pass
+        elif self.stacked or self.stack_index:
+            stack_dim = element.get_dimension(1)
+        else:
+            group_dim = element.get_dimension(1)
+        layout['barmode'] = 'stack' if stack_dim else 'group'
+        return layout
