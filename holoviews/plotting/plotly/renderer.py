@@ -24,9 +24,139 @@ $.each(data.data, function(i, obj) {{
   }});
 }});
 var plotly = window._Plotly || window.Plotly;
+
+// Restore axis range extents set by the user
+for (var key in data.layout) {{
+    if(key.slice(1, 5) === 'axis') {{
+        if (plot.layout[key] && plot.layout[key].range) {{
+            data.layout[key].range = plot.layout[key].range;
+        }}
+    }}
+}}
+
 plotly.relayout(plot, data.layout);
 plotly.redraw(plot);
 """
+
+
+def build_new_plot_js(plot_id,
+                      data,
+                      layout,
+                      config,
+                      comm_ids,
+                      timeout,
+                      debounce,
+                      callback_handlers):
+
+    # Based on JS_CALLBACK from pyviz_comms
+    return """
+var plotdiv = document.getElementById('{plot_id}');
+var plotly = window._Plotly || window.Plotly;
+plotly.newPlot(plotdiv, {data}, {layout}, {config}).then(function() {{
+    var elem = document.getElementById("{plot_id}.loading");
+    elem.parentNode.removeChild(elem);
+
+    function unique_events(events) {{
+        // Processes the event queue ignoring duplicate events
+        // of the same type
+        var unique = [];
+        var unique_events = [];
+        for (var i=0; i<events.length; i++) {{
+            var _tmpevent = events[i];
+            event = _tmpevent[0];
+            data = _tmpevent[1];
+            if (unique_events.indexOf(event)===-1) {{
+                unique.unshift(data);
+                unique_events.push(event);
+            }}
+        }}
+        return unique;
+    }}
+
+    function process_events(comm_status) {{
+        // Iterates over event queue and sends events via Comm
+        var events = unique_events(comm_status.event_buffer);
+        for (var i=0; i<events.length; i++) {{
+            var data = events[i];
+            var comm = window.PyViz.comms[data["comm_id"]];
+            comm.send(data);
+        }}
+        comm_status.event_buffer = [];
+    }}
+
+    function on_msg(msg) {{
+        // Receives acknowledgement from Python, processing event
+        // and unblocking Comm if event queue empty
+        msg = JSON.parse(msg.content.data);
+        var comm_id = msg["comm_id"]
+        var comm_status = window.PyViz.comm_status[comm_id];
+        if (comm_status.event_buffer.length) {{
+            process_events(comm_status);
+            comm_status.blocked = true;
+            comm_status.time = Date.now()+{debounce};
+        }} else {{
+            comm_status.blocked = false;
+        }}
+        comm_status.event_buffer = [];
+        if ((msg.msg_type == "Ready") && msg.content) {{
+            console.log("Python callback returned following output:", msg.content);
+        }} else if (msg.msg_type == "Error") {{
+            console.log("Python failed with the following traceback:", msg['traceback'])
+        }}
+    }}
+
+    function send_msg(data, comm_id, event_name) {{
+        // Initialize event queue and timeouts for Comm
+        var comm_status = window.PyViz.comm_status[comm_id];
+        if (comm_status === undefined) {{
+            comm_status = {{event_buffer: [], blocked: false, time: Date.now()}}
+            window.PyViz.comm_status[comm_id] = comm_status
+        }}
+
+        // Add current event to queue and process queue if not blocked
+        data['comm_id'] = comm_id;
+        timeout = comm_status.time + {timeout};
+        if ((comm_status.blocked && (Date.now() < timeout))) {{
+            comm_status.event_buffer.unshift([event_name, data]);
+        }} else {{
+            comm_status.event_buffer.unshift([event_name, data]);
+            setTimeout(function() {{ process_events(comm_status); }}, {debounce});
+            comm_status.blocked = true;
+            comm_status.time = Date.now()+{debounce};
+        }}
+
+    }}
+
+    // Initialize Comms
+    var comm_ids = {comm_ids};
+    for (var i=0; i<comm_ids.length; i++) {{
+        var comm_id = comm_ids[i];
+        if (window.PyViz.comm_manager == undefined) {{ return }}
+        window.PyViz.comm_manager.get_client_comm("{plot_id}", comm_id, on_msg);
+    }}
+
+    {callback_handlers}
+}})
+""".format(plot_id=plot_id,
+           data=data,
+           layout=layout,
+           config=config,
+           timeout=timeout,
+           debounce=debounce,
+           callback_handlers=callback_handlers,
+           comm_ids=comm_ids)
+
+
+def _to_figure_uid(fig_dict):
+    """
+    Convert plotly figure dict to a graph_objs.Figure object while
+    preserving the trace UIDs that we use to associate traces with comms
+    on the JavaScript side
+    """
+    fig = go.Figure(fig_dict)
+    for trace, state_trace in zip(fig.data, fig_dict.get('data', [])):
+        trace.uid = state_trace.get('uid', trace.uid)
+    return fig
 
 
 class PlotlyRenderer(Renderer):
@@ -68,7 +198,7 @@ class PlotlyRenderer(Renderer):
         """
         diff = plot.state
         if serialize:
-            return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
+            return json.dumps(_to_figure_uid(diff), cls=utils.PlotlyJSONEncoder)
         else:
             return diff
 
@@ -76,7 +206,7 @@ class PlotlyRenderer(Renderer):
     def _figure_data(self, plot, fmt=None, divuuid=None, comm=True, as_script=False, width=800, height=600):
         # Wrapping plot.state in go.Figure here performs validation
         # and applies any default theme.
-        figure = go.Figure(plot.state)
+        figure = _to_figure_uid(plot.state)
 
         if fmt in ('png', 'svg'):
             import plotly.io as pio
@@ -107,14 +237,32 @@ class PlotlyRenderer(Renderer):
                       'window.PLOTLYENV=window.PLOTLYENV || {};'
                       '</script>')
 
-        script = '\n'.join([
-            'var plotly = window._Plotly || window.Plotly;'
-            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
-            '}})']).format(id=divuuid,
-                           data=jdata,
-                           layout=jlayout,
-                           config=jconfig)
+        # Add handlers for each callback type
+        callbacks = [cb for cbs in plot.traverse(
+            lambda x: getattr(x, 'callbacks', [])) for cb in cbs]
+
+        comm_ids = [cb.comm.id for cb in callbacks]
+        jcomm_ids = json.dumps(comm_ids)
+
+        callback_handlers = ''
+        callback_classes = set([type(cb) for cb in callbacks])
+        for callback_class in callback_classes:
+            callbacks_of_class = [cb for cb in callbacks
+                                  if isinstance(cb, callback_class)]
+            if callbacks_of_class:
+                callback_handlers += callback_class.build_callback_js(callbacks_of_class)
+
+        timeout = 20000
+        debounce = 20
+        script = build_new_plot_js(
+            plot_id=divuuid,
+            data=jdata,
+            layout=jlayout,
+            config=jconfig,
+            comm_ids=jcomm_ids,
+            timeout=timeout,
+            debounce=debounce,
+            callback_handlers=callback_handlers)
 
         html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
                 'Drawing...</div>'

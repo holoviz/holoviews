@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
+from itertools import groupby
+
 import numpy as np
 import param
 
-from ...core import util
+from ...core import util, Stream
 from ...core.element import Element
 from ...core.spaces import DynamicMap
 from ...util.transform import dim
@@ -99,6 +101,55 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = []
 
+    def __init__(self, element, plot=None, **params):
+        super(ElementPlot, self).__init__(element, **params)
+        self.callbacks = self._construct_callbacks()
+        self.trace_uid = None
+
+    def _construct_callbacks(self):
+        """
+        Initializes any callbacks for streams which have defined
+        the plotted object as a source.
+        """
+        cb_classes = set()
+        registry = list(Stream.registry.items())
+        callbacks = Stream._callbacks['plotly']
+        for source in self.link_sources:
+            streams = [
+                s for src, streams in registry for s in streams
+                if src is source or (src._plot_id is not None and
+                                     src._plot_id == source._plot_id)]
+            cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
+                           if type(stream) in callbacks and stream.linked
+                           and stream.source is not None}
+        cbs = []
+        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
+        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
+            cb_streams = [s for _, s in group]
+            cbs.append(cb(self, cb_streams, source))
+        return cbs
+
+    @property
+    def link_sources(self):
+        "Returns potential Link or Stream sources."
+        if isinstance(self, GenericOverlayPlot):
+            zorders = []
+        elif self.batched:
+            zorders = list(
+                range(self.zorder, self.zorder + len(self.hmap.last)))
+        else:
+            zorders = [self.zorder]
+
+        if isinstance(self, GenericOverlayPlot) and not self.batched:
+            sources = []
+        elif isinstance(self.hmap, DynamicMap):
+            sources = [o for i, inputs in self.stream_sources.items()
+                       for o in inputs if i in zorders]
+        else:
+            sources = [self.hmap.last]
+        return sources
+
+
     def initialize_plot(self, ranges=None):
         """
         Initializes a new plot object with the last available frame.
@@ -136,6 +187,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         for i, d in enumerate(data):
             # Initialize graph
             graph = self.init_graph(d, opts, index=i)
+
+            if i == 0:
+                # Associate element with trace.uid property of the first
+                # plotly trace that is used to render the element. This is
+                # used to associate the element with the trace on the
+                # JavaScript side.
+                self.trace_uid = str(id(element))
+                graph['uid'] = self.trace_uid
+
             graphs.append(graph)
         self.handles['graphs'] = graphs
 
