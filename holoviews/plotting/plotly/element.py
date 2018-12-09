@@ -431,6 +431,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)
 
+        # Compute subplot objects
+        self.subplots = self._create_subplots(ranges)
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
         for okey, subplot in self.subplots.items():
