@@ -153,10 +153,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             legend = element.label
 
-        orientation = 'h' if self.invert_axes else 'v'
         opts = dict(
             showlegend=self.show_legend, legendgroup=element.group,
-            name=legend, orientation=orientation, **self.trace_kwargs)
+            name=legend, **self.trace_kwargs)
+
+        if self.projection != '3d':
+            opts['orientation'] = 'h' if self.invert_axes else 'v'
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
@@ -290,13 +292,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             zlabel = ''
 
         if xdim:
-            xaxis = dict(range=[l, r], title=xlabel)
+            xrange = [r, l] if self.invert_xaxis else [l, r]
+            xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
             self._get_ticks(xaxis, self.xticks)
 
         if ydim:
-            yaxis = dict(range=[b, t], title=ylabel)
+            yrange = [t, b] if self.invert_yaxis else [b, t]
+            yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
             self._get_ticks(yaxis, self.yticks)
@@ -304,7 +308,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)
             if zdim:
-                zaxis = dict(range=[z0, z1], title=zlabel)
+                zrange = [z1, z0] if self.invert_zaxis else [z0, z1]
+                zaxis = dict(range=zrange, title=zlabel)
                 if self.logz:
                     zaxis['type'] = 'log'
                 self._get_ticks(zaxis, self.zticks)

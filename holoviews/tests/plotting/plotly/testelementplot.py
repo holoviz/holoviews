@@ -54,6 +54,11 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['xaxis']['range'], [0, 1010])
 
+    def test_element_plot_invert_xaxis(self):
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(invert_xaxis=True)
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['xaxis']['range'], [3, 1])
+
     def test_element_plot_yrange(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)])
         state = self._get_plot_state(curve)
@@ -64,6 +69,11 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(curve)
         self.assertEqual(state['layout']['yaxis']['range'], [0, 8])
 
+    def test_element_plot_invert_yaxis(self):
+        curve = Curve([(1, 1), (2, 10), (3, 100)]).options(invert_yaxis=True)
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['yaxis']['range'], [100, 1])
+
     def test_element_plot_zrange(self):
         scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)])
         state = self._get_plot_state(scatter)
@@ -73,6 +83,11 @@ class TestElementPlot(TestPlotlyPlot):
         scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlim=(1, 6))
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [1, 6])
+
+    def test_element_plot_invert_yaxis(self):
+        scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(invert_zaxis=True)
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['layout']['scene']['zaxis']['range'], [5, 2])
 
     def test_element_plot_xpadding(self):
         curve = Curve([(0, 1), (1, 2), (2, 3)]).options(padding=(0.1, 0))
