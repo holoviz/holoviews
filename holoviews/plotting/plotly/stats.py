@@ -99,7 +99,6 @@ class BoxWhiskerPlot(MultiDistributionPlot):
 
     def graph_options(self, element, ranges, style):
         options = super(BoxWhiskerPlot, self).graph_options(element, ranges, style)
-        options['orientation'] = 'h' if self.invert_axes else 'v'
         options['boxmean'] = self.mean
         options['jitter'] = self.jitter
         return options
@@ -125,7 +124,6 @@ class ViolinPlot(MultiDistributionPlot):
 
     def graph_options(self, element, ranges, style):
         options = super(ViolinPlot, self).graph_options(element, ranges, style)
-        options['orientation'] = 'h' if self.invert_axes else 'v'
         options['meanline'] = {'visible': self.meanline}
         options['box'] = {'visible': self.box}
         return options

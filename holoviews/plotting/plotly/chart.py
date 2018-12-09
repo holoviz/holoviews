@@ -16,8 +16,9 @@ class ChartPlot(ElementPlot):
     trace_kwargs = {'type': 'scatter'}
 
     def get_data(self, element, ranges, style):
-        return [dict(x=element.dimension_values(0),
-                     y=element.dimension_values(1))]
+        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+        return [{x: element.dimension_values(0),
+                 y: element.dimension_values(1)}]
 
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
@@ -28,7 +29,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
 
     style_opts = ['symbol', 'color', 'cmap', 'alpha', 'size', 'sizemin']
 
-    _nonvectorized_styles = ['cmap', 'opacity', 'sizemin']
+    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
 
@@ -64,8 +65,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return [dict(x=element.dimension_values(0),
-                     y=element.dimension_values(1))]
+        return super(CurvePlot, self).get_data(element, ranges, style)
 
 
 class AreaPlot(ChartPlot):
@@ -92,15 +92,16 @@ class AreaPlot(ChartPlot):
         return super(AreaPlot, self).get_extents(element, ranges, range_type)
 
     def get_data(self, element, ranges, style):
+        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
             kwargs = super(AreaPlot, self).get_data(element, ranges, style)[0]
-            kwargs['fill'] = 'tozeroy'
+            kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         bottom = element.dimension_values(2)
-        return [dict(x=xs, y=bottom, fill=None),
-                dict(x=xs, y=ys, fill='tonexty')]
+        return [{x: xs, y: bottom, 'fill': None},
+                {x: xs, y: ys, 'fill': 'tonext'+y}]
 
 
 class SpreadPlot(ChartPlot):
@@ -112,6 +113,7 @@ class SpreadPlot(ChartPlot):
     _style_key = 'line'
 
     def get_data(self, element, ranges, style):
+        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
@@ -119,8 +121,8 @@ class SpreadPlot(ChartPlot):
         pos_error = element.dimension_values(pos_idx)
         lower = mean - neg_error
         upper = mean + pos_error
-        return [dict(x=xs, y=lower, fill=None),
-                dict(x=xs, y=upper, fill='tonexty')]
+        return [{x: xs, y: lower, 'fill': None},
+                {x: xs, y: upper, 'fill': 'tonext'+y}]
     
 
 class ErrorBarsPlot(ChartPlot, ColorbarPlot):
@@ -134,14 +136,14 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
     _style_key = 'error_y'
 
     def get_data(self, element, ranges, style):
+        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
         error_y = dict(type='data', array=pos_error, arrayminus=neg_error)
-        return [dict(x=element.dimension_values(0),
-                     y=element.dimension_values(1),
-                     error_y=error_y)]
-
+        return [{x: element.dimension_values(0),
+                 y: element.dimension_values(1),
+                 'error_'+y: error_y}]
 
 
 class BarPlot(ElementPlot):

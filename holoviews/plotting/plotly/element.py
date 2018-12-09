@@ -153,9 +153,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             legend = element.label
 
+        orientation = 'h' if self.invert_axes else 'v'
         opts = dict(
             showlegend=self.show_legend, legendgroup=element.group,
-            name=legend, **self.trace_kwargs)
+            name=legend, orientation=orientation, **self.trace_kwargs)
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
@@ -271,7 +272,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         dims = self._get_axis_dims(el)
         if len(dims) > 2:
-            print(len(dims))
             xdim, ydim, zdim = dims
         else:
             xdim, ydim = dims
@@ -288,8 +288,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             ylabel = ''
         if 'z' not in self.labelled:
             zlabel = ''
-
-        print(self.projection, type(self), zdim)
 
         if xdim:
             xaxis = dict(range=[l, r], title=xlabel)
