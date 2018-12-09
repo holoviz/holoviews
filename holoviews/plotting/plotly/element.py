@@ -157,7 +157,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             showlegend=self.show_legend, legendgroup=element.group,
             name=legend, **self.trace_kwargs)
 
-        if self.projection != '3d':
+        if self.projection is None:
             opts['orientation'] = 'h' if self.invert_axes else 'v'
 
         if self._style_key is not None:

@@ -22,6 +22,7 @@ class LabelPlot(ScatterPlot):
     _style_key = 'textfont'
 
     def get_data(self, element, ranges, style):
+        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         text_dim = element.vdims[0]
         xs = element.dimension_values(0)
         if self.xoffset:
@@ -30,4 +31,4 @@ class LabelPlot(ScatterPlot):
         if self.yoffset:
             ys = ys + self.yoffset
         text = [text_dim.pprint_value(v) for v in element.dimension_values(2)]
-        return [dict(x=xs, y=ys, text=text)]
+        return [{x: xs, y: ys, 'text': text}]

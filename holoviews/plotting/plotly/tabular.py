@@ -9,6 +9,8 @@ class TablePlot(ElementPlot):
 
     height = param.Number(default=400)
 
+    projection = param.String(default='table')
+
     width = param.Number(default=400)
 
     trace_kwargs = {'type': 'table'}
