@@ -279,6 +279,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
+            ydim, xdim = xdim, ydim
             l, b, r, t = b, l, t, r
 
         if 'x' not in self.labelled:
@@ -294,6 +295,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.logx:
                 xaxis['type'] = 'log'
             self._get_ticks(xaxis, self.xticks)
+        else:
+            xaxis = {}
 
         if ydim:
             yrange = [t, b] if self.invert_yaxis else [b, t]
@@ -301,6 +304,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.logy:
                 yaxis['type'] = 'log'
             self._get_ticks(yaxis, self.yticks)
+        else:
+            yaxis = {}
 
         if self.projection == '3d':
             scene = dict(xaxis=xaxis, yaxis=yaxis)

@@ -51,8 +51,10 @@ class MultiDistributionPlot(ElementPlot):
         return element.kdims, element.vdims[0]
 
     def get_data(self, element, ranges, style):
-        groups = element.groupby(element.kdims)
-        groups = groups.data.items() if element.kdims else [(element.label, element)]
+        if element.kdims:
+            groups = element.groupby(element.kdims).items()
+        else:
+            groups = [(element.label, element)]
         plots = []
         axis = 'x' if self.invert_axes else 'y'
         for key, group in groups:
