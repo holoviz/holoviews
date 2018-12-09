@@ -161,7 +161,7 @@ class Path3DPlot(Plot3D, PathPlot):
         if 'c' in style:
             style['array'] = style.pop('c')
         if isinstance(style.get('color'), np.ndarray):
-            style[color_prop] = style.pop('color')
+            style['colors'] = style.pop('color')
         if 'vmin' in style:
             style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
         return (paths,), style, {}
