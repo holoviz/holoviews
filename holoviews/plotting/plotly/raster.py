@@ -47,8 +47,8 @@ class HeatMapPlot(RasterPlot):
         yvals = np.arange(len(ylabels))
         layout['xaxis']['tickvals'] = xvals
         layout['xaxis']['ticktext'] = xlabels
-        layout['yaxis']['tickvals'] = xvals
-        layout['yaxis']['ticktext'] = xlabels
+        layout['yaxis']['tickvals'] = yvals
+        layout['yaxis']['ticktext'] = ylabels
         return layout
 
     def get_data(self, element, ranges, style):

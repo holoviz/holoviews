@@ -4,7 +4,7 @@ import re
 import numpy as np
 from plotly import colors
 
-from ..util import dim_range_key, color_intervals, process_cmap
+from ..util import color_intervals, process_cmap
 
 # Constants
 # ---------

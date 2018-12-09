@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 import numpy as np
 
-from matplotlib.cm import get_cmap
 from plotly import colors
 from plotly.figure_factory._trisurf import trisurf as trisurface
 

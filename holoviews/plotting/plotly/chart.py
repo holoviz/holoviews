@@ -180,7 +180,6 @@ class BarPlot(ElementPlot):
             for kd in overlay.kdims:
                 ranges[kd.name]['combined'] = overlay.range(kd)
 
-        extents = super(BarPlot, self).get_extents(element, ranges, range_type)
         xdim = element.kdims[0]
         ydim = element.vdims[0]
 
@@ -235,7 +234,6 @@ class BarPlot(ElementPlot):
         if self.invert_axes: coords = coords[::-1]
         return coords
 
-
     def _get_axis_dims(self, element):
         if element.ndims > 1 and not (self.stacked or self.stack_index):
             xdims = element.kdims
@@ -267,12 +265,10 @@ class BarPlot(ElementPlot):
         vdim = element.vdims[0]
         group_dim, stack_dim = None, None
         if element.ndims == 1:
-            grouping = None
+            pass
         elif self.stacked or self.stack_index:
-            grouping = 'stacked'
             stack_dim = element.get_dimension(1)
         else:
-            grouping = 'grouped'
             group_dim = element.get_dimension(1)
 
         layout = self.init_layout(key, element, ranges)
