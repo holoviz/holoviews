@@ -31,38 +31,6 @@ class Chart3DPlot(ElementPlot):
         Ticks along z-axis specified as an integer, explicit list of
         tick locations, list of tuples containing the locations.""")
 
-    def init_layout(self, key, element, ranges):
-        l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
-
-        xd, yd, zd = (element.get_dimension(i) for i in range(3))
-        xaxis = dict(range=[l, r], title=xd.pprint_label)
-        if self.logx:
-            xaxis['type'] = 'log'
-        self._get_ticks(xaxis, self.xticks)
-
-        yaxis = dict(range=[b, t], title=yd.pprint_label)
-        if self.logy:
-            yaxis['type'] = 'log'
-        self._get_ticks(yaxis, self.yticks)
-
-        zaxis = dict(range=[zmin, zmax], title=zd.pprint_label)
-        if self.logz:
-            zaxis['type'] = 'log'
-        self._get_ticks(zaxis, self.zticks)
-
-        opts = {}
-        if self.aspect == 'cube':
-            opts['aspectmode'] = 'cube'
-        else:
-            opts['aspectmode'] = 'manual'
-            opts['aspectratio'] = self.aspect
-        scene = dict(xaxis=xaxis, yaxis=yaxis,
-                     zaxis=zaxis, **opts)
-
-        return dict(width=self.width, height=self.height,
-                    title=self._format_title(key, separator=' '),
-                    plot_bgcolor=self.bgcolor, scene=scene)
-
     def get_data(self, element, ranges, style):
         return [dict(x=element.dimension_values(0),
                      y=element.dimension_values(1),

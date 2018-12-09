@@ -4,10 +4,11 @@ import numpy as np
 import param
 
 from ...core import util
+from ...core.element import Element
 from ...util.transform import dim
-from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key
+from .plot import PlotlyPlot
 from .util import STYLE_ALIASES, get_colorscale, merge_figure
 
 
@@ -38,8 +39,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     invert_zaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot z-axis.""")
 
-    labelled = param.List(default=['x', 'y'], doc="""
-        Whether to plot the 'x' and 'y' labels.""")
+    labelled = param.List(default=['x', 'y', 'z'], doc="""
+        Whether to label the 'x' and 'y' axes.""")
 
     logx = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the x-axis of the Chart.""")
@@ -82,6 +83,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     zlabel = param.String(default=None, doc="""
         An explicit override of the z-axis label, if set takes precedence
         over the dimension label.""")
+
+    zticks = param.Parameter(default=None, doc="""
+        Ticks along z-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations.""")
 
     trace_kwargs = {}
 
@@ -198,11 +203,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         dimensions, which will be formatted to label the axis
         and to link axes.
         """
-        dims = element.dimensions()[:2]
-        if len(dims) == 1:
-            return dims + [None, None]
-        else:
-            return dims + [None]
+        dims = element.dimensions()[:3]
+        pad = [None]*max(3-len(dims), 0)
+        return dims + pad
 
 
     def _apply_transforms(self, element, ranges, style):
@@ -254,6 +257,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def init_layout(self, key, element, ranges):
+        el = element.traverse(lambda x: x, [Element])
+        el = el[0] if el else element
+
         extent = self.get_extents(element, ranges)
 
         if len(extent) == 4:
@@ -263,11 +269,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         options = {}
 
-        dims = self._get_axis_dims(element)
+        dims = self._get_axis_dims(el)
         if len(dims) > 2:
-            xdim, ydim, _ = dims
+            print(len(dims))
+            xdim, ydim, zdim = dims
         else:
             xdim, ydim = dims
+            zdim = None
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
 
         if self.invert_axes:
@@ -278,27 +286,46 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xlabel = ''
         if 'y' not in self.labelled:
             ylabel = ''
+        if 'z' not in self.labelled:
+            zlabel = ''
+
+        print(self.projection, type(self), zdim)
 
         if xdim:
             xaxis = dict(range=[l, r], title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
             self._get_ticks(xaxis, self.xticks)
-            options['xaxis'] = xaxis
 
         if ydim:
             yaxis = dict(range=[b, t], title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
             self._get_ticks(yaxis, self.yticks)
-            options['yaxis'] = yaxis
 
-        l, b, r, t = self.margins
-        margin = dict(l=l, r=r, b=b, t=t, pad=4)
+        if self.projection == '3d':
+            scene = dict(xaxis=xaxis, yaxis=yaxis)
+            if zdim:
+                zaxis = dict(range=[z0, z1], title=zlabel)
+                if self.logz:
+                    zaxis['type'] = 'log'
+                self._get_ticks(zaxis, self.zticks)
+                scene['zaxis'] = zaxis
+            if self.aspect == 'cube':
+                scene['aspectmode'] = 'cube'
+            else:
+                scene['aspectmode'] = 'manual'
+                scene['aspectratio'] = self.aspect
+            options['scene'] = scene
+        else:
+            l, b, r, t = self.margins
+            options['xaxis'] = xaxis
+            options['yaxis'] = yaxis
+            options['margin'] = dict(l=l, r=r, b=b, t=t, pad=4)
+
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),
-                    plot_bgcolor=self.bgcolor, margin=margin,
-                    **options)
+                    plot_bgcolor=self.bgcolor, **options)
 
     def _get_ticks(self, axis, ticker):
         axis_props = {}
@@ -384,7 +411,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
         'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation',
         'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title_format',
-        'padding', 'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim']
+        'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None):
         """
