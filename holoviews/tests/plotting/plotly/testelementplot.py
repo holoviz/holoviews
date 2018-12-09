@@ -136,6 +136,43 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['type'], 'log')
 
+    ### Axis ticks ###
+
+    def test_element_plot_xticks_values(self):
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(xticks=[1, 5, 10])
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['xaxis']['tickvals'], [1, 5, 10])
+
+    def test_element_plot_yticks_values(self):
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(yticks=[1, 1.5, 2.5, 3])
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['yaxis']['tickvals'], [1, 1.5, 2.5, 3])
+
+    def test_element_plot_zticks_values(self):
+        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(zticks=[0, 500, 1000])
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
+
+    def test_element_plot_xticks_items(self):
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(xticks=[(1, 'A'), (5, 'B'), (10, 'C')])
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['xaxis']['tickvals'], (1, 5, 10))
+        self.assertEqual(state['layout']['xaxis']['ticktext'], ['A', 'B', 'C'])
+
+    def test_element_plot_yticks_items(self):
+        curve = Curve([(1, 1), (5, 2), (10, 3)]).options(
+            yticks=[(1, 'A'), (1.5, 'B'), (2.5, 'C'), (3, 'D')])
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['layout']['yaxis']['tickvals'], (1, 1.5, 2.5, 3))
+        self.assertEqual(state['layout']['yaxis']['ticktext'], ['A', 'B', 'C', 'D'])
+
+    def test_element_plot_zticks_items(self):
+        scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(
+            zticks=[(0, 'A'), (500, 'B'), (1000, 'C')])
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], (0, 500, 1000))
+        self.assertEqual(state['layout']['scene']['zaxis']['ticktext'], ['A', 'B', 'C'])
+
 
 class TestOverlayPlot(TestPlotlyPlot):
     
