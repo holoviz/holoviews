@@ -1,5 +1,3 @@
-import numpy as np
-
 from holoviews.element import Distribution
 
 from .testplot import TestPlotlyPlot

@@ -41,7 +41,7 @@ class TestCurvePlot(TestPlotlyPlot):
     def test_curve_color_mapping_error(self):
         curve = Curve([1, 2, 3]).options(color='x')
         with self.assertRaises(ValueError):
-            state = self._get_plot_state(curve)
+            self._get_plot_state(curve)
 
     def test_curve_dash(self):
         curve = Curve([1, 2, 3]).options(dash='dash')

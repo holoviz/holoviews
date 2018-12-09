@@ -270,12 +270,8 @@ class BarPlot(ElementPlot):
 
     def init_layout(self, key, element, ranges):
         layout = super(BarPlot, self).init_layout(key, element, ranges)
-        group_dim, stack_dim = None, None
-        if element.ndims == 1:
-            pass
-        elif self.stacked or self.stack_index:
+        stack_dim = None
+        if element.ndims > 1 and (self.stacked or self.stack_index):
             stack_dim = element.get_dimension(1)
-        else:
-            group_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
         return layout

@@ -84,7 +84,7 @@ class TestElementPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [1, 6])
 
-    def test_element_plot_invert_yaxis(self):
+    def test_element_plot_invert_zaxis(self):
         scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(invert_zaxis=True)
         state = self._get_plot_state(scatter)
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [5, 2])
