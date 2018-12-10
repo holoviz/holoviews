@@ -48,7 +48,7 @@ class SankeyPlot(GraphPlot):
 
     _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
 
-    _draw_order = ['patches', 'quad', 'scatter', 'text']
+    _draw_order = ['graph', 'quad_1', 'text_1']
 
     style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
                                          'label_text_font_size']
@@ -56,7 +56,7 @@ class SankeyPlot(GraphPlot):
     filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
-        ret = super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
+        super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
         plot.renderers = [renderer] + plot.renderers
         arc_renderer = self.handles['quad_1_glyph_renderer']
@@ -66,7 +66,6 @@ class SankeyPlot(GraphPlot):
         self.handles['quad_1_source'] = scatter_renderer.data_source
         self._sync_nodes()
 
-        return ret
 
     def get_data(self, element, ranges, style):
         data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)

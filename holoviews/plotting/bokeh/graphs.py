@@ -51,7 +51,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
     # Map each glyph to a style group
-    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge', 'bezier': 'edge'}
+    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge',
+                     'bezier': 'edge'}
 
     style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
@@ -250,26 +251,37 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         else:
             source.graph_layout = data
 
-
-    def _init_glyphs(self, plot, element, ranges, source):
-        # Get data and initialize data source
-        style = self.style[self.cyclic_index]
-        data, mapping, style = self.get_data(element, ranges, style)
-        edge_mapping = {k: v for k, v in mapping[self.edge_glyph].items()
-                        if 'color' not in k}
-        self.handles['previous_id'] = element._plot_id
-
-        properties = {}
-        mappings = {}
-        for key in list(mapping):
-            if not any(glyph in key for glyph in ('scatter_1', self.edge_glyph)):
+    def _init_filled_edges(self, renderer, properties, edge_mapping):
+        "Replace edge renderer with filled renderer"
+        glyph_model = Patches if self.filled else Bezier
+        allowed_properties = glyph_model.properties()
+        for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
+            glyph = getattr(renderer.edge_renderer, glyph_type+'glyph', None)
+            if glyph is None:
                 continue
+            group_properties = dict(properties)
+            props = self._process_properties(self.edge_glyph, group_properties, {})
+            filtered = self._filter_properties(props, glyph_type, allowed_properties)
+            new_glyph = glyph_model(**dict(filtered, **edge_mapping))
+            setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
+
+
+    def _get_graph_properties(self, plot, element, data, mapping, ranges, style):
+        "Computes the args and kwargs for the GraphRenderer"
+        sources = []
+        properties, mappings = {}, {}
+        for key in ('scatter_1', self.edge_glyph):
+            # Get source
             source = self._init_datasource(data.pop(key, {}))
             self.handles[key+'_source'] = source
+            sources.append(source)
+
+            # Get style
             group_style = dict(style)
             style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
             others = [sg for sg in self._style_groups.values() if sg != style_group]
-            glyph_props = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
+            glyph_props = self._glyph_properties(
+                plot, element, source, ranges, group_style, style_group)
             for k, p in glyph_props.items():
                 if any(k.startswith(o) for o in others):
                     continue
@@ -278,15 +290,22 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}
         properties.update(mappings)
 
+        # Initialize graph layout
         layout = data.pop('layout', {})
-
-        # Define static layout
         layout = StaticLayoutProvider(graph_layout=layout)
-        node_source = self.handles['scatter_1_source']
-        edge_source = self.handles[self.edge_glyph+'_source']
-        renderer = plot.graph(node_source, edge_source, layout, **properties)
+        self.handles['layout_source'] = layout
 
-        # Initialize GraphRenderer
+        return tuple(sources+[layout]), properties
+
+    def _reorder_renderers(self, plot, renderer, mapping):
+        "Reorders renderers based on the defined draw order"
+        renderers = dict({r: self.handles[r+'_glyph_renderer']
+                          for r in mapping}, graph=renderer)
+        other = [r for r in plot.renderers if r not in renderers.values()]
+        graph_renderers = [renderers[k] for k in self._draw_order if k in renderers]
+        plot.renderers = other + graph_renderers
+
+    def _set_interaction_policies(self, renderer):
         if self.selection_policy == 'nodes':
             renderer.selection_policy = NodesAndLinkedEdges()
         elif self.selection_policy == 'edges':
@@ -301,28 +320,35 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         else:
             renderer.inspection_policy = None
 
-        self.handles['layout_source'] = layout
+    def _init_glyphs(self, plot, element, ranges, source):
+        # Get data and initialize data source
+        style = self.style[self.cyclic_index]
+        data, mapping, style = self.get_data(element, ranges, style)
+        self.handles['previous_id'] = element._plot_id
+
+        # Initialize GraphRenderer
+        edge_mapping = {k: v for k, v in mapping[self.edge_glyph].items()
+                        if 'color' not in k}
+        graph_args, properties = self._get_graph_properties(
+            plot, element, data, mapping, ranges, style)
+        renderer = plot.graph(*graph_args, **properties)
+        if self.filled or self.bezier:
+            self._init_filled_edges(renderer, properties, edge_mapping)
+        self._set_interaction_policies(renderer)
+
+        # Initialize other renderers
+        if data and mapping:
+            CompositeElementPlot._init_glyphs(
+                self, plot, element, ranges, source, data, mapping, style)
+
+        # Reorder renderers
+        if self._draw_order:
+            self._reorder_renderers(plot, renderer, mapping)
+
         self.handles['glyph_renderer'] = renderer
         self.handles['scatter_1_glyph_renderer'] = renderer.node_renderer
         self.handles[self.edge_glyph+'_glyph_renderer'] = renderer.edge_renderer
         self.handles['scatter_1_glyph'] = renderer.node_renderer.glyph
-        if self.filled or self.bezier:
-            glyph_model = Patches if self.filled else Bezier
-            allowed_properties = glyph_model.properties()
-            for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
-                glyph = getattr(renderer.edge_renderer, glyph_type+'glyph', None)
-                if glyph is None:
-                    continue
-                group_properties = dict(properties)
-                props = self._process_properties(self.edge_glyph, group_properties, mappings)
-                filtered = self._filter_properties(props, glyph_type, allowed_properties)
-                new_glyph = glyph_model(**dict(filtered, **edge_mapping))
-                setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
-
-        if data and mapping:
-            CompositeElementPlot._init_glyphs(self, plot, element, ranges, source,
-                                              data, mapping, style)
-
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             if self.handles['hover'].renderers == 'auto':
@@ -346,12 +372,11 @@ class ChordPlot(GraphPlot):
       Index of the dimension from which the node labels will be drawn""")
 
     # Map each glyph to a style group
-    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label',
-                     'arc': 'arc'}
+    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label'}
 
     style_opts = (GraphPlot.style_opts + ['label_'+p for p in text_properties])
 
-    _draw_order = ['scatter', 'multi_line', 'layout']
+    _draw_order = ['multi_line_2', 'graph', 'text_1']
 
     def get_extents(self, element, ranges, range_type='combined'):
         """
