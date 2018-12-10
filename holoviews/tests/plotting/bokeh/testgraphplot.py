@@ -500,6 +500,21 @@ class TestBokehChordPlot(TestBokehPlot):
         self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
         self.chord = Chord((self.edges, self.nodes))
 
+    def test_chord_draw_order(self):
+        plot = bokeh_renderer.get_plot(self.chord)
+        renderers = plot.state.renderers
+        graph_renderer = plot.handles['glyph_renderer']
+        arc_renderer = plot.handles['multi_line_2_glyph_renderer']
+        self.assertTrue(renderers.index(arc_renderer)<renderers.index(graph_renderer))
+
+    def test_chord_label_draw_order(self):
+        g = self.chord.options(labels='Label')
+        plot = bokeh_renderer.get_plot(g)
+        renderers = plot.state.renderers
+        graph_renderer = plot.handles['glyph_renderer']
+        label_renderer = plot.handles['text_1_glyph_renderer']
+        self.assertTrue(renderers.index(graph_renderer)<renderers.index(label_renderer))
+
     def test_chord_nodes_label_text(self):
         g = self.chord.opts(plot=dict(label_index='Label'))
         plot = bokeh_renderer.get_plot(g)

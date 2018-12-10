@@ -43,6 +43,13 @@ class TestSankeyPlot(TestBokehPlot):
 
         self.assertEqual(patch_source.data['Value'], np.array([5, 7, 6, 2, 9, 4]))
 
+        renderers = plot.state.renderers
+        quad_renderer = plot.handles['quad_1_glyph_renderer']
+        text_renderer = plot.handles['text_1_glyph_renderer']
+        graph_renderer = plot.handles['glyph_renderer']
+        self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
+        self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
+
 
     def test_sankey_label_index(self):
         sankey = Sankey(([
@@ -71,4 +78,11 @@ class TestSankeyPlot(TestBokehPlot):
                       'Value': np.array([5, 7, 6, 2, 9, 4])}
         for k in patch_data:
             self.assertEqual(patch_source.data[k], patch_data[k])
+
+        renderers = plot.state.renderers
+        quad_renderer = plot.handles['quad_1_glyph_renderer']
+        text_renderer = plot.handles['text_1_glyph_renderer']
+        graph_renderer = plot.handles['glyph_renderer']
+        self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
+        self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
 
