@@ -212,7 +212,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         new_style = dict(style)
         for k, v in dict(style).items():
             if isinstance(v, util.basestring):
-                if v in element:
+                if k == 'marker' and v in 'xsdo':
+                    continue
+                elif v in element:
                     v = dim(v)
                 elif any(d==v for d in self.overlay_dims):
                     v = dim([d for d in self.overlay_dims if d==v][0])

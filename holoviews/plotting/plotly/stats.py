@@ -92,8 +92,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'symbol',
-                  'size']
+    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'box'}
     
@@ -117,8 +116,7 @@ class ViolinPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'symbol',
-                  'size']
+    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'violin'}
     
