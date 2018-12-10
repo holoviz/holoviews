@@ -121,10 +121,14 @@ class LabelsPlot(ColorbarPlot):
         if self.yoffset is not None:
             ys += self.yoffset
 
+        cs = None
         cdim = element.get_dimension(self.color_index)
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
-        cs = element.dimension_values(cdim) if cdim else None
+            cs = element.dimension_values(cdim)
+        if 'c' in style:
+            cs = style.pop('c')
+
         if 'size' in style: style['fontsize'] = style.pop('size')
         if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
         if 'verticalalignment' not in style: style['verticalalignment'] = 'center'
