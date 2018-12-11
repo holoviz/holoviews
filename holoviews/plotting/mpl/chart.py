@@ -833,6 +833,23 @@ class VectorFieldPlot(ColorbarPlot):
 
 class BarPlot(LegendPlot):
 
+    padding = param.Number(default=0.2, doc="""
+       Defines the padding between groups.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
+    stacked = param.Boolean(default=False, doc="""
+       Whether the bars should be stacked or grouped.""")
+
+    xticks = param.Integer(0, precedence=-1)
+
+    # Deprecated parameters
+
+    color_by = param.List(default=['category'], doc="""
+       Defines how the Bar elements colored. Valid options include
+       any permutation of 'group', 'category' and 'stack'.""")
+
     group_index = param.Integer(default=0, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
@@ -844,18 +861,6 @@ class BarPlot(LegendPlot):
     stack_index = param.Integer(default=2, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
-
-    padding = param.Number(default=0.2, doc="""
-       Defines the padding between groups.""")
-
-    color_by = param.List(default=['category'], doc="""
-       Defines how the Bar elements colored. Valid options include
-       any permutation of 'group', 'category' and 'stack'.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
-
-    xticks = param.Integer(0, precedence=-1)
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
@@ -877,12 +882,11 @@ class BarPlot(LegendPlot):
         super(BarPlot, self).__init__(element, **params)
         self.values, self.bar_dimensions = self._get_values()
 
-
     def _get_values(self):
         """
         Get unique index value for each bar
         """
-        gi, ci, si =self.group_index, self.category_index, self.stack_index
+        (gi, _), (ci, _), (si, _) = self._get_dims(self.hmap.last)
         ndims = self.hmap.last.ndims
         dims = self.hmap.last.kdims
         dimensions = []
@@ -918,14 +922,14 @@ class BarPlot(LegendPlot):
         wrapped_style = self.lookup_options(element, 'style').max_cycles(len(style_product))
         color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
                         for n,k in enumerate(style_product)}
-        
+
         return style, color_groups, sopts
 
 
     def get_extents(self, element, ranges, range_type='combined'):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
-        if self.stack_index in range(element.ndims):
+        if self.stacked:
             return 0, 0, ngroups, np.NaN
         else:
             vrange = ranges[vdim]['combined']
@@ -961,14 +965,44 @@ class BarPlot(LegendPlot):
                 t.set_y(y)
 
 
+    def _get_dims(self, element):
+        ndims = len(element.dimensions())
+        if element.ndims < 2:
+            gdim, cdim, sdim = element.kdims[0], None, None
+            gi, ci, si = 0, ndims+1, ndims+1
+        elif self.stacked:
+            gdim, cdim, sdim = element.kdims[0], None, element.kdims[1]
+            gi, ci, si = 0, ndims+1, 1
+        else:
+            gdim, cdim, sdim = element.kdims[0], element.kdims[1], None
+            gi, ci, si = 0, 1, ndims+1
+        return (gi, gdim), (ci, cdim), (si, sdim)
+
+
     def _create_bars(self, axis, element):
         # Get style and dimension information
         values = self.values
-        gi, ci, si = self.group_index, self.category_index, self.stack_index
-        gdim, cdim, sdim = [element.kdims[i] if i < element.ndims else None
-                            for i in (gi, ci, si) ]
+        if self.group_index != 0:
+            self.warning('Bars group_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.category_index != 1:
+            self.warning('Bars category_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.stack_index != 2:
+            self.warning('Bars stack_index plot option is deprecated '
+                         'and will be ignored, set stacked=True/False '
+                         'instead.')
+        if self.color_by != ['category']:
+            self.warning('Bars color_by plot option is deprecated '
+                         'and will be ignored, in future it will '
+                         'support color style mapping by dimension.')
+
+        (gi, gdim), (ci, cdim), (si, sdim) = self._get_dims(element)
         indices = dict(zip(self._dimensions, (gi, ci, si)))
-        style_groups = [sg for sg in self.color_by if indices[sg] < element.ndims]
+        color_by = ['category'] if cdim else ['stack']
+        style_groups = [sg for sg in color_by if indices[sg] < element.ndims]
         style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
@@ -1034,9 +1068,9 @@ class BarPlot(LegendPlot):
                     prev += val if isfinite(val) else 0
                     labels.append(label)
         title = [element.kdims[indices[cg]].pprint_label
-                 for cg in self.color_by if indices[cg] < ndims]
+                 for cg in color_by if indices[cg] < ndims]
 
-        if self.show_legend and any(len(l) for l in labels):
+        if self.show_legend and any(len(l) for l in labels) and color_by != ['category']:
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             axis.legend(title=', '.join(title), **leg_spec)
@@ -1046,7 +1080,7 @@ class BarPlot(LegendPlot):
     def update_handles(self, key, axis, element, ranges, style):
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
-        ci, gi, si = self.category_index, self.group_index, self.stack_index
+        (gi, _), (ci, _), (si, _) = self._get_dims(element)
         val_key = [None] * ndims
         for g in self.values['group']:
             if g is not None: val_key[gi] = g
