@@ -1026,7 +1026,7 @@ class BarPlot(LegendPlot):
                                  **dict(zip(sopts, color_groups[tuple(style_key)])))
                     with abbreviated_exception():
                         style = self._apply_transforms(element, {}, style)
-                    bar = axis.bar([xpos], [val], width=width, bottom=prev,
+                    bar = axis.bar([xpos+width/2.], [val], width=width, bottom=prev,
                                    **style)
 
                     # Update variables
