@@ -19,11 +19,12 @@ Compositor.register(Compositor("Distribution", univariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,
                                output_type=Area,
-                               backends=['bokeh', 'matplotlib']))
+                               backends=['bokeh', 'matplotlib', 'plotly']))
 Compositor.register(Compositor("Bivariate", bivariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,
-                               output_type=Polygons))
+                               output_type=Polygons,
+                               backends=['bokeh', 'matplotlib']))
 Compositor.register(Compositor("Sankey", _layout_sankey, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,

@@ -156,44 +156,44 @@ class StatisticalCompositorTest(ComparisonTestCase):
 
     def test_bivariate_composite(self):
         dist = Bivariate(np.random.rand(10, 2))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Contours)
         self.assertEqual(contours.vdims, [Dimension('Density')])
 
     def test_bivariate_composite_transfer_opts(self):
         dist = Bivariate(np.random.rand(10, 2)).opts(style=dict(cmap='Blues'))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', contours, 'style').kwargs
         self.assertEqual(opts.get('cmap', None), 'Blues')
 
     def test_bivariate_composite_transfer_opts_with_group(self):
         dist = Bivariate(np.random.rand(10, 2), group='Test').opts(style=dict(cmap='Blues'))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', contours, 'style').kwargs
         self.assertEqual(opts.get('cmap', None), 'Blues')
 
     def test_bivariate_composite_custom_vdim(self):
         dist = Bivariate(np.random.rand(10, 2), vdims=['Test'])
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Contours)
         self.assertEqual(contours.vdims, [Dimension('Test')])
 
     def test_bivariate_composite_filled(self):
         dist = Bivariate(np.random.rand(10, 2)).opts(plot=dict(filled=True))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Polygons)
         self.assertEqual(contours.vdims[0].name, 'Density')
 
     def test_bivariate_composite_empty_filled(self):
         dist = Bivariate([]).opts(plot=dict(filled=True))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Polygons)
         self.assertEqual(contours.vdims, [Dimension('Density')])
         self.assertEqual(len(contours), 0)
 
     def test_bivariate_composite_empty_not_filled(self):
         dist = Bivariate([]).opts(plot=dict(filled=True))
-        contours = Compositor.collapse_element(dist)
+        contours = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(contours, Contours)
         self.assertEqual(contours.vdims, [Dimension('Density')])
         self.assertEqual(len(contours), 0)

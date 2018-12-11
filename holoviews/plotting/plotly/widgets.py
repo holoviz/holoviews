@@ -1,4 +1,7 @@
+from __future__ import absolute_import, division, unicode_literals
+
 import json
+
 import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
@@ -36,6 +39,7 @@ class PlotlySelectionWidget(PlotlyWidget, SelectionWidget):
             key = tuple(w['value'] for w in widgets)
             self.plot.update(tuple(key))
         return super(PlotlySelectionWidget, self)._get_data()
+
 
 class PlotlyScrubberWidget(PlotlyWidget, ScrubberWidget):
     pass

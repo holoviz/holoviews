@@ -3,12 +3,15 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 import matplotlib.cm as cm
+from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
+from ...core.options import abbreviated_exception
 from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
+from .path import PathPlot
 from .util import mpl_version
 
 
@@ -125,13 +128,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
-        # Temporary fix until color handling is deterministic in mpl+py3
-        if not element.get_dimension(self.color_index) and 'c' in style:
-            color = style.pop('c')
-            if mpl_version >= '1.5':
-                style['color'] = color
-            else:
-                style['facecolors'] = color
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
         return (xs, ys, zs), style, {}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -144,6 +142,37 @@ class Scatter3DPlot(Plot3D, PointPlot):
             artist._facecolor3d = map_colors(style['c'], clim, cmap, hex=False)
         if element.get_dimension(self.size_index):
             artist.set_sizes(style['s'])
+
+
+class Path3DPlot(Plot3D, PathPlot):
+    """
+    Allows plotting paths on a 3D axis.
+    """
+
+    style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
+
+    def get_data(self, element, ranges, style):
+        paths = element.split(datatype='array', dimensions=element.kdims)
+        if self.invert_axes:
+            paths = [p[:, ::-1] for p in paths]
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        if 'c' in style:
+            style['array'] = style.pop('c')
+        if isinstance(style.get('color'), np.ndarray):
+            style['colors'] = style.pop('color')
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
+        return (paths,), style, {}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        line_segments = Line3DCollection(*plot_args, **plot_kwargs)
+        ax.add_collection(line_segments)
+        return {'artist': line_segments}
+
+    def update_handles(self, key, axis, element, ranges, style):
+        PathPlot.update_handles(self, key, axis, element, ranges, style)
 
 
 

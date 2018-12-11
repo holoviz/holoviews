@@ -142,6 +142,7 @@ Store.register({Curve: CurvePlot,
                 TriSurface: TriSurfacePlot,
                 Trisurface: TriSurfacePlot, # Alias, remove in 2.0
                 Scatter3D: Scatter3DPlot,
+                Path3D: Path3DPlot,
 
                 # Tabular plots
                 ItemTable: TablePlot,
@@ -232,6 +233,7 @@ options.Histogram = Options('style', edgecolor='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
+options.Path3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Surface = Options('style', cmap='fire')
 options.Spikes = Options('style', color='black', cmap='fire')

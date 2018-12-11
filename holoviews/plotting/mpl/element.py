@@ -15,7 +15,7 @@ from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
-from ...element import Graph, Path, Contours
+from ...element import Graph, Path
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
@@ -539,7 +539,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if len(v.ops) == 0 and v.dimension in self.overlay_dims:
                 val = self.overlay_dims[v.dimension]
-            elif isinstance(element, Path) and not isinstance(element, Contours):
+            elif type(element) is Path:
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
                                       for el in element.split()])
             else:
