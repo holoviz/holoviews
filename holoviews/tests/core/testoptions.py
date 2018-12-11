@@ -624,6 +624,30 @@ class TestOptsMethod(ComparisonTestCase):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestOptsMethod, self).tearDown()
 
+    def test_old_opts_clone_disabled(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(style=dict(interpolation='nearest', cmap='jet'), clone=False)
+
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
+
+        assert styled_im is im
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest'})
+
+    def test_old_opts_clone_enabled(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(style=dict(interpolation='nearest', cmap='jet'), clone=True)
+
+        self.assertEqual(self.lookup_options(im, 'plot').options, {})
+        self.assertEqual(self.lookup_options(styled_im, 'plot').options, {})
+
+        assert styled_im is not im
+        im_lookup = self.lookup_options(im, 'style').options
+        self.assertEqual(im_lookup['cmap'] == 'jet', False)
+        styled_im_lookup =  self.lookup_options(styled_im, 'style').options
+        self.assertEqual(styled_im_lookup['cmap'] == 'jet', True)
+
     def test_simple_clone_disabled(self):
         im = Image(np.random.rand(10,10))
         styled_im = im.opts(interpolation='nearest', cmap='jet', clone=False)

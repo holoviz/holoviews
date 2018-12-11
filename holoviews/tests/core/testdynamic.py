@@ -9,7 +9,7 @@ from holoviews.core.options import Store
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
-from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX, Buffer
+from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -312,6 +312,21 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
 
+    def test_dynamic_opts_link_inputs(self):
+        stream = LinkedStream()
+        inputs = [DynamicMap(lambda: None, streams=[stream])]
+        dmap = DynamicMap(Callable(lambda X: TestObj(None), inputs=inputs),
+                          kdims=['X']).redim.range(X=(0,10))
+        styled_dmap = dmap.options(plot_opt1='red', clone=False)
+        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        self.assertEqual(opts.options, {'plot_opt1': 'red'})
+        self.assertIs(styled_dmap, dmap)
+        self.assertTrue(dmap.callback.link_inputs)
+        unstyled_dmap = dmap.callback.inputs[0].callback.inputs[0]
+        opts = Store.lookup_options('backend_1', unstyled_dmap[0], 'plot')
+        self.assertEqual(opts.options, {})
+        original_dmap = unstyled_dmap.callback.inputs[0]
+        self.assertIs(stream, original_dmap.streams[0])
 
 
 class DynamicMapUnboundedProperty(ComparisonTestCase):
@@ -345,6 +360,7 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
     def test_mixed_kdim_streams_bounded_redim(self):
         dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
         self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
+
 
 class DynamicTransferStreams(ComparisonTestCase):
 

@@ -1181,9 +1181,8 @@ class DynamicMap(HoloMap):
                        streams=self.streams, link_inputs=True)
         if not clone:
             with util.disable_constant(self):
+                obj.callback = self.callback
                 self.callback = dmap.callback
-            self.callback.inputs[:] = [obj]
-            obj.callback.inputs[:] = []
             dmap = self
             dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
                                      for k, v in self.data.items()])
@@ -1225,21 +1224,9 @@ class DynamicMap(HoloMap):
         Returns:
             Returns the cloned object with the options applied
         """
-        from ..util import Dynamic
-        clone = kwargs.get('clone', True)
-
-        obj = self if clone else self.clone()
-        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.options(*args, **kwargs),
-                       streams=self.streams, link_inputs=True)
-        if not clone:
-            with util.disable_constant(self):
-                self.callback = dmap.callback
-            self.callback.inputs[:] = [obj]
-            obj.callback.inputs[:] = []
-            dmap = self
-        dmap.data = OrderedDict([(k, v.options(*args, **kwargs))
-                                 for k, v in self.data.items()])
-        return dmap
+        if 'clone' not in kwargs:
+            kwargs['clone'] = True
+        return self.opts(*args, **kwargs)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
