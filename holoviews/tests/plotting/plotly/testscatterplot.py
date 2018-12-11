@@ -48,7 +48,7 @@ class TestScatterPlot(TestPlotlyPlot):
     def test_scatter_markers(self):
         scatter = Scatter([
             (0, 1, 'square'), (1, 2, 'circle'), (2, 3, 'triangle-up')
-        ], vdims=['y', 'marker']).options(symbol='marker')
+        ], vdims=['y', 'marker']).options(marker='marker')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['data'][0]['marker']['symbol'],
                          np.array(['square', 'circle', 'triangle-up']))
