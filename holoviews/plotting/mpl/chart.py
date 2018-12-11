@@ -929,7 +929,7 @@ class BarPlot(LegendPlot):
     def get_extents(self, element, ranges, range_type='combined'):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
-        if self.stacked:
+        if self.stacked or self.stack_index == 1:
             return 0, 0, ngroups, np.NaN
         else:
             vrange = ranges[vdim]['combined']
@@ -970,7 +970,10 @@ class BarPlot(LegendPlot):
         if element.ndims < 2:
             gdim, cdim, sdim = element.kdims[0], None, None
             gi, ci, si = 0, ndims+1, ndims+1
-        elif self.stacked:
+        elif element.ndims == 3:
+            gdim, cdim, sdim = element.kdims
+            gi, ci, si = 0, 1, 2
+        elif self.stacked or self.stack_index == 1:
             gdim, cdim, sdim = element.kdims[0], None, element.kdims[1]
             gi, ci, si = 0, ndims+1, 1
         else:
@@ -981,7 +984,7 @@ class BarPlot(LegendPlot):
 
     def _create_bars(self, axis, element):
         # Get style and dimension information
-        values = self.values
+        values = self.values    
         if self.group_index != 0:
             self.warning('Bars group_index plot option is deprecated '
                          'and will be ignored, set stacked=True/False '
@@ -990,7 +993,7 @@ class BarPlot(LegendPlot):
             self.warning('Bars category_index plot option is deprecated '
                          'and will be ignored, set stacked=True/False '
                          'instead.')
-        if self.stack_index != 2:
+        if self.stack_index != 2 and not (self.stack_index == 1 and not self.stacked):
             self.warning('Bars stack_index plot option is deprecated '
                          'and will be ignored, set stacked=True/False '
                          'instead.')
