@@ -2,12 +2,14 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
+from holoviews.plotting.util import attach_streams
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
+from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
+    GenericElementPlot
 from .util import figure_grid
 
 
@@ -46,6 +48,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
+
+        if self.top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
+                          [GenericElementPlot])
 
     def _get_size(self):
         rows, cols = self.layout.shape
