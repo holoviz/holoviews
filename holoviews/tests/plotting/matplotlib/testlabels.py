@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
+from holoviews.plotting.util import rgb2hex
 
 from .testplot import TestMPLPlot, mpl_renderer
 
@@ -92,14 +93,18 @@ class TestLabelsPlot(TestMPLPlot):
     def test_label_linear_color_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(color='color')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(labels)
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([rgb2hex(a.get_color()) for a in artist],
+                         ['#440154', '#20908c', '#fde724'])
 
     def test_label_categorical_color_op(self):
         labels = Labels([(0, 0, 'A'), (0, 1, 'B'), (0, 2, 'A')],
-                        vdims='color').options(color='color')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(labels)
+                        vdims='color').options(color='color', cmap='tab10')
+        plot = mpl_renderer.get_plot(labels)
+        artist = plot.handles['artist']
+        self.assertEqual([rgb2hex(a.get_color()) for a in artist],
+                         ['#1f77b4', '#ff7f0e', '#1f77b4'])
 
     def test_label_size_op(self):
         labels = Labels([(0, 0, 8), (0, 1, 12), (0, 2, 6)],
