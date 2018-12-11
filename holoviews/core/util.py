@@ -232,7 +232,7 @@ def deprecated_opts_signature(args, kwargs):
     corresponding options.
     """
     groups = ['plot','style', 'norm']
-    signature = groups + ['clone', 'backend']
+    opts = {kw for kw in kwargs if kw not in ('backend', 'clone')}
     apply_groups = False
     options = None
     new_kwargs = {}
@@ -242,7 +242,7 @@ def deprecated_opts_signature(args, kwargs):
             new_kwargs = args[0]
         else:
             options = args[0]
-    elif kwargs and set(kwargs.keys()).issubset(set(signature)):
+    elif opts and opts.issubset(set(groups)):
         apply_groups = True
     elif kwargs.get('options', None) is not None:
         apply_groups = True
