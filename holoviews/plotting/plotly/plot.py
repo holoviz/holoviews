@@ -229,6 +229,10 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         self.handles['fig'] = fig
         return self.handles['fig']
 
+    def refresh(self, **kwargs):
+        # Initialize layout plot before executing standard refresh logic
+        self.initialize_plot()
+        super(LayoutPlot, self).refresh(**kwargs)
 
 
 class AdjointLayoutPlot(PlotlyPlot):
