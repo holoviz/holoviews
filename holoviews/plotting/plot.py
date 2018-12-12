@@ -207,9 +207,7 @@ class DimensionedPlot(Plot):
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
-    title_format = param.String(default="{label} {group}\n{dimensions}", doc="""
-        The formatting string for the title of this plot, allows defining
-        a label group separator and dimension labels. Aliased to title.""")
+    title_format = param.String(default=None, doc="Alias for title.")
 
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
@@ -246,16 +244,6 @@ class DimensionedPlot(Plot):
         self.comm = comm
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
-
-        # Setting up alias
-        if 'title' in params and 'title_format' in params:
-            if params['title'] != params['title_format']:
-                self.warning('The title and title_format parameters do not match. Using title.')
-        elif 'title_format' in params:
-            params['title'] = params['title_format']
-        elif 'title' in params:
-            params['title_format'] = params['title']
-
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -1086,7 +1074,13 @@ class GenericElementPlot(DimensionedPlot):
                 dim_title = self._frame_title(key, separator=separator)
             else:
                 dim_title = ''
-            title_format = util.bytes_to_unicode(self.title)
+
+            custom_title = (self.title != self.param.params('title').default)
+            if custom_title and self.title_format:
+                self.warning('Both title and title_format set. Using title_format parameter')
+
+            title = self.title_format if self.title_format else self.title
+            title_format = util.bytes_to_unicode(title)
             title = title_format.format(label=util.bytes_to_unicode(label),
                                         group=util.bytes_to_unicode(group),
                                         type=type_name,
@@ -1486,10 +1480,17 @@ class GenericCompositePlot(DimensionedPlot):
         type_name = type(self.layout).__name__
         group = util.bytes_to_unicode(layout.group if layout.group != type_name else '')
         label = util.bytes_to_unicode(layout.label)
-        title = util.bytes_to_unicode(self.title).format(label=label,
-                                                                group=group,
-                                                                type=type_name,
-                                                                dimensions=dim_title)
+
+
+        custom_title = (self.title != self.param.params('title').default)
+        if custom_title and self.title_format:
+            self.warning('Both title and title_format set. Using title parameter')
+        title_str = self.title_format if self.title_format else self.title
+
+        title = util.bytes_to_unicode(title_str).format(label=label,
+                                                        group=group,
+                                                        type=type_name,
+                                                        dimensions=dim_title)
         return title.strip(' \n')
 
 

@@ -77,9 +77,7 @@ class BokehPlot(DimensionedPlot):
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
-    title_format = param.String(default="{label} {group} {dimensions}", doc="""
-        The formatting string for the title of this plot, allows defining
-        a label group separator and dimension labels. Aliased to title.""")
+    title_format = param.String(default=None, doc="Alias for title.")
 
     toolbar = param.ObjectSelector(default='above',
                                    objects=["above", "below",
