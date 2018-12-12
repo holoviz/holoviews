@@ -69,6 +69,11 @@ class opts(param.ParameterizedFunction):
 
     __original_docstring__ = None
 
+    # Keywords not to be tab-completed (helps with deprecation)
+    _no_completion = ['title_format', 'color_index', 'size_index', 'finalize_hooks',
+                      'scaling_factor', 'scaling_method', 'size_fn', 'normalize_lengths',
+                      'group_index', 'category_index', 'stack_index', 'color_by']
+
     strict = param.Boolean(default=False, doc="""
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
@@ -377,7 +382,8 @@ class opts(param.ParameterizedFunction):
 
             return Options(spec, **kws)
 
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(allowed))
+        filtered_keywords = [k for k in allowed if k not in cls._no_completion]
+        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
         fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
         return classmethod(fn)
 
@@ -417,7 +423,8 @@ class opts(param.ParameterizedFunction):
                 setattr(cls, element,
                         cls._build_completer(element, keywords))
 
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(all_keywords))
+        filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
+        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
         old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
         cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
 

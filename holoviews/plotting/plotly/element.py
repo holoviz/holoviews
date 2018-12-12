@@ -417,7 +417,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         'width', 'height', 'xaxis', 'yaxis', 'labelled', 'bgcolor',
         'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
         'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation',
-        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title_format',
+        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title', 'title_format',
         'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None):

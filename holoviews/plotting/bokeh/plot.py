@@ -73,9 +73,11 @@ class BokehPlot(DimensionedPlot):
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
 
-    title_format = param.String(default="{label} {group} {dimensions}", doc="""
+    title = param.String(default="{label} {group} {dimensions}", doc="""
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
+
+    title_format = param.String(default=None, doc="Alias for title.")
 
     toolbar = param.ObjectSelector(default='above',
                                    objects=["above", "below",

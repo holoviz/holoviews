@@ -1596,7 +1596,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
-                          'title_format', 'legend_position', 'legend_offset',
+                          'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
                           'xformatter', 'yformatter', 'active_tools']

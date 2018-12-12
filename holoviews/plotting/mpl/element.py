@@ -915,7 +915,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
-                          'invert_zaxis', 'title_format', 'padding',
+                          'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
                           'xformatter', 'yformatter']
 
