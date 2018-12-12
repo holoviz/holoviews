@@ -1485,7 +1485,7 @@ class GenericCompositePlot(DimensionedPlot):
         custom_title = (self.title != self.param.params('title').default)
         if custom_title and self.title_format:
             self.warning('Both title and title_format set. Using title parameter')
-        title_str = self.title_format if self.title_format else self.title
+        title_str = self.title if custom_title or self.title_format is None else self.title_format
 
         title = util.bytes_to_unicode(title_str).format(label=label,
                                                         group=group,
