@@ -53,7 +53,7 @@ for running unit tests, you can use::
 Between releases, development snapshots are made available on conda and
 can be installed using::
 
-  conda install -c ioam/label/dev holoviews
+  conda install -c pyviz/label/dev holoviews
 
 To get the very latest development version using ``pip``, you can use::
 
