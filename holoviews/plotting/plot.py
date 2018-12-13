@@ -1457,8 +1457,16 @@ class GenericCompositePlot(DimensionedPlot):
 
         key_map = dict(zip([d.name for d in self.dimensions], key))
         for path, item in self.layout.items():
-            frame = item.map(lambda x: get_plot_frame(x, key_map, cached=cached),
-                             ['DynamicMap', 'HoloMap'])
+            clone = item.map(lambda x: x)
+
+            # Ensure that DynamicMaps in the cloned frame have
+            # identical callback inputs to allow memoization to work
+            for it1, it2 in zip(item.traverse(lambda x: x), clone.traverse(lambda x: x)):
+                if isinstance(it1, DynamicMap):
+                    with util.disable_constant(it2.callback):
+                        it2.callback.inputs = it1.callback.inputs
+            frame = clone.map(lambda x: get_plot_frame(x, key_map, cached=cached),
+                              [DynamicMap, HoloMap], clone=False)
             if frame is not None:
                 layout_frame[path] = frame
         traverse_setter(self, '_force', False)
