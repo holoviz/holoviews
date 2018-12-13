@@ -3,7 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 
-from ...core import util
+from ...core import util, DynamicMap
 from ...core.element import Element
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
