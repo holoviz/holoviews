@@ -225,12 +225,15 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
-    def defaults(cls, *options, backend=backend):
+    def defaults(cls, *options, **kwargs):
         """
         Set default options for a session, whether in a Python script or
         a Jupyter notebook.
         """
-        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=backend)
+        if kwargs and len(kwargs) != 1 and list(kwargs.keys())[0] != 'backend':
+            raise Exception('opts.defaults only accepts "backend" keyword argument')
+
+        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend', None))
 
 
     @classmethod
