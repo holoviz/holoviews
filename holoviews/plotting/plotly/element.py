@@ -479,5 +479,5 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                     _, el = items.pop(idx)
 
         if isinstance(self.hmap, DynamicMap) and items:
-            self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+            self._create_dynamic_subplots(key, items, ranges)
         self.generate_plot(key, ranges, element)
