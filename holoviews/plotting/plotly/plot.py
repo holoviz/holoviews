@@ -7,9 +7,10 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
 from ...core.options import Store
-from ...core.util import wrap_tuple
+from ...core.util import stream_parameters, wrap_tuple, wrap_tuple_streams
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
     GenericElementPlot
+from ..util import traverse_setter
 from .util import figure_grid
 
 
@@ -28,6 +29,31 @@ class PlotlyPlot(DimensionedPlot):
         used by the renderer to generate output.
         """
         return self.handles['fig']
+
+
+    def refresh(self, **kwargs):
+        """
+        Refreshes the plot by rerendering it and then pushing
+        the updated data if the plot has an associated Comm.
+        """
+        traverse_setter(self, '_force', True)
+        key = self.current_key if self.current_key else self.keys[0]
+        dim_streams = [stream for stream in self.streams
+                       if any(c in self.dimensions for c in stream.contents)]
+        stream_params = stream_parameters(dim_streams)
+        key = tuple(None if d in stream_params else k
+                    for d, k in zip(self.dimensions, key))
+        stream_key = wrap_tuple_streams(key, self.dimensions, self.streams)
+
+        # Update if not top-level, batched or an ElementPlot
+        if self.top_level:
+            self.update(stream_key)
+        else:
+            self.current_key = None
+            self.current_frame = None
+
+        if self.comm is not None and self.top_level:
+            self.push()
 
 
     def initialize_plot(self, ranges=None):
@@ -226,13 +252,10 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
+        self.drawn = True
         self.handles['fig'] = fig
         return self.handles['fig']
 
-    def refresh(self, **kwargs):
-        # Initialize layout plot before executing standard refresh logic
-        self.initialize_plot()
-        super(LayoutPlot, self).refresh(**kwargs)
 
 
 class AdjointLayoutPlot(PlotlyPlot):
@@ -296,6 +319,13 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
+        if self.top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
+                          [GenericElementPlot])
+
+
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -358,6 +388,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         fig['layout'].update(width=w, height=h,
                              title=self._format_title(key))
 
+        self.drawn = True
         self.handles['fig'] = fig
         return self.handles['fig']
 
