@@ -7,7 +7,7 @@ from ...core import util
 from ...core.element import Element
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key
+from ..util import dim_range_key, dynamic_update
 from .plot import PlotlyPlot
 from .util import STYLE_ALIASES, get_colorscale, merge_figure
 
@@ -108,8 +108,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return fig
 
 
-    def generate_plot(self, key, ranges):
-        element = self._get_frame(key)
+    def generate_plot(self, key, ranges, element=None):
+        if element is None:
+            element = self._get_frame(key)
+
         if element is None:
             return self.handles['fig']
 
@@ -141,6 +143,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         self.handles['layout'] = layout
 
         # Create figure and return it
+        self.drawn = True
         fig = dict(data=graphs, layout=layout)
         self.handles['fig'] = fig
         return fig
@@ -347,12 +350,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 axis_props['tickvals'] = ticker
             axis.update(axis_props)
 
-    def update_frame(self, key, ranges=None):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
-        self.generate_plot(key, ranges)
+        self.generate_plot(key, ranges, element)
 
 
 class ColorbarPlot(ElementPlot):
@@ -417,7 +420,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         'width', 'height', 'xaxis', 'yaxis', 'labelled', 'bgcolor',
         'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
         'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation',
-        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title_format',
+        'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title', 'title_format',
         'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 
     def initialize_plot(self, ranges=None):
@@ -428,16 +431,24 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.generate_plot(list(self.hmap.data.keys())[0], ranges)
 
 
-    def generate_plot(self, key, ranges):
-        element = self._get_frame(key)
-
-        # Compute subplot objects
-        self.subplots = self._create_subplots(ranges)
+    def generate_plot(self, key, ranges, element=None):
+        if element is None:
+            element = self._get_frame(key)
+        items = [] if element is None else list(element.data.items())
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
         for okey, subplot in self.subplots.items():
-            fig = subplot.generate_plot(key, ranges)
+            if element is not None:
+                idx, spec, exact = dynamic_update(self, subplot, okey, element, items)
+                if idx is not None:
+                    _, el = items.pop(idx)
+                else:
+                    el = None
+            else:
+                el = None
+
+            fig = subplot.generate_plot(key, ranges, el)
             if figure is None:
                 figure = fig
             else:
@@ -445,5 +456,28 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         layout = self.init_layout(key, element, ranges)
         figure['layout'].update(layout)
+        self.drawn = True
         self.handles['fig'] = figure
         return figure
+
+    def update_frame(self, key, ranges=None, element=None):
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
+        elif element is not None:
+            self.current_frame = element
+            self.current_key = key
+        items = [] if element is None else list(element.data.items())
+
+        for k, subplot in self.subplots.items():
+            # If in Dynamic mode propagate elements to subplots
+            if not (isinstance(self.hmap, DynamicMap) and element):
+                continue
+            if element is not None:
+                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                if idx is not None:
+                    _, el = items.pop(idx)
+
+        if isinstance(self.hmap, DynamicMap) and items:
+            self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+        self.generate_plot(key, ranges, element)
