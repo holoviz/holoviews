@@ -68,7 +68,7 @@ def update(pattern, counter, x, y):
 title = 'Game of Life - Tap to place pattern, Doubletap to clear'
 opts =  {
     'style': {'cmap': 'gray', 'toolbar': False, },
-    'plot' : {'height': 400, 'width': 800, 'title_format': '{label}',
+    'plot' : {'height': 400, 'width': 800, 'title': '{label}',
               'xaxis': None, 'yaxis': None}
 }
 img = hv.Image(np.zeros((100, 200), dtype=np.uint8))

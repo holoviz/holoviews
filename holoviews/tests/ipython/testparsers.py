@@ -21,32 +21,32 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
     """
 
     def test_plot_opts_simple(self):
-        line = "Layout [fig_inches=(3,3) title_format='foo bar']"
+        line = "Layout [fig_inches=(3,3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
-                    Options(title_format='foo bar', fig_inches=(3, 3))}}
+                    Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_with_space(self):
         "Space in the tuple, see issue #77"
-        line = "Layout [fig_inches=(3, 3) title_format='foo bar']"
+        line = "Layout [fig_inches=(3, 3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
-                    Options(title_format='foo bar', fig_inches=(3, 3))}}
+                    Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_simple_explicit(self):
-        line = "Layout plot[fig_inches=(3,3) title_format='foo bar']"
+        line = "Layout plot[fig_inches=(3,3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
-                    Options(title_format='foo bar', fig_inches=(3, 3))}}
+                    Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_with_space_explicit(self):
-        line = "Layout plot[fig_inches=(3, 3) title_format='foo bar']"
+        line = "Layout plot[fig_inches=(3, 3) title='foo bar']"
         expected= {'Layout':
                    {'plot':
-                    Options(title_format='foo bar', fig_inches=(3, 3))}}
+                    Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_dict_with_space(self):
@@ -60,34 +60,34 @@ class OptsSpecPlotOptionsTests(ComparisonTestCase):
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_nested_brackets(self):
-        line = "Curve [title_format=', '.join(('A', 'B'))]"
-        expected = {'Curve': {'plot': Options(title_format='A, B')}}
+        line = "Curve [title=', '.join(('A', 'B'))]"
+        expected = {'Curve': {'plot': Options(title='A, B')}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_multiple_paths(self):
-        line = "Image Curve [fig_inches=(3, 3) title_format='foo bar']"
+        line = "Image Curve [fig_inches=(3, 3) title='foo bar']"
         expected = {'Image':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))},
+                     Options(title='foo bar', fig_inches=(3, 3))},
                     'Curve':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))}}
+                     Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_plot_opts_multiple_paths_2(self):
-        line = "Image Curve Layout Overlay[fig_inches=(3, 3) title_format='foo bar']"
+        line = "Image Curve Layout Overlay[fig_inches=(3, 3) title='foo bar']"
         expected = {'Image':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))},
+                     Options(title='foo bar', fig_inches=(3, 3))},
                     'Curve':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))},
+                     Options(title='foo bar', fig_inches=(3, 3))},
                     'Layout':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))},
+                     Options(title='foo bar', fig_inches=(3, 3))},
                     'Overlay':
                     {'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3))}}
+                     Options(title='foo bar', fig_inches=(3, 3))}}
         self.assertEqual(OptsSpec.parse(line), expected)
 
 
@@ -245,19 +245,19 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths(self):
-        line = "Image Curve {+framewise} [fig_inches=(3, 3) title_format='foo bar'] (c='b') Layout [string='foo'] Overlay"
+        line = "Image Curve {+framewise} [fig_inches=(3, 3) title='foo bar'] (c='b') Layout [string='foo'] Overlay"
         expected = {'Image':
                     {'norm':
                      Options(framewise=True, axiswise=False),
                      'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3)),
+                     Options(title='foo bar', fig_inches=(3, 3)),
                      'style':
                      Options(c='b')},
                     'Curve':
                     {'norm':
                      Options(framewise=True, axiswise=False),
                      'plot':
-                     Options(title_format='foo bar', fig_inches=(3, 3)),
+                     Options(title='foo bar', fig_inches=(3, 3)),
                      'style':
                      Options(c='b')},
                     'Layout':

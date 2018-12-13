@@ -42,7 +42,7 @@ text = gapminder_ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
 
 # Define options
 opts = {'plot': dict(width=1000, height=600,tools=['hover'], size_index='Population',
-                     color_index='Group', size_fn=np.sqrt, title_format="{label}"),
+                     color_index='Group', size_fn=np.sqrt, title="{label}"),
        'style': dict(cmap='Set1', size=0.3, line_color='black', alpha=0.6)}
 text_opts = {'style': dict(text_font_size='52pt', text_color='lightgray')}
 
