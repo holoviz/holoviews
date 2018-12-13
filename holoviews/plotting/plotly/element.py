@@ -3,8 +3,9 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 
-from ...core import util, DynamicMap
+from ...core import util
 from ...core.element import Element
+from ...core.spaces import DynamicMap
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, dynamic_update
@@ -436,6 +437,14 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             element = self._get_frame(key)
         items = [] if element is None else list(element.data.items())
 
+        # Update plot options
+        plot_opts = self.lookup_options(element, 'plot').options
+        inherited = self._traverse_options(element, 'plot',
+                                           self._propagate_options,
+                                           defaults=False)
+        plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
+        self.set_param(**plot_opts)
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
         for okey, subplot in self.subplots.items():
@@ -469,15 +478,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self.current_key = key
         items = [] if element is None else list(element.data.items())
 
+        # Instantiate dynamically added subplots
         for k, subplot in self.subplots.items():
             # If in Dynamic mode propagate elements to subplots
-            if not (isinstance(self.hmap, DynamicMap) and element):
+            if not (isinstance(self.hmap, DynamicMap) and element is not None):
                 continue
-            if element is not None:
-                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
-                if idx is not None:
-                    _, el = items.pop(idx)
-
+            idx, _, _ = dynamic_update(self, subplot, k, element, items)
+            if idx is not None:
+                items.pop(idx)
         if isinstance(self.hmap, DynamicMap) and items:
             self._create_dynamic_subplots(key, items, ranges)
+
         self.generate_plot(key, ranges, element)
