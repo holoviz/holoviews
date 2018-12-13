@@ -104,14 +104,17 @@ class ContourPlot(PathPlot):
             if self.invert_axes:
                 paths = [p[:, ::-1] for p in paths]
 
+        # Process style transform
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
+
         if 'c' in style:
             style['array'] = style.pop('c')
             style['clim'] = style.pop('vmin'), style.pop('vmax')
-
-        if isinstance(style.get('color'), np.ndarray):
+        elif isinstance(style.get('color'), np.ndarray):
             style[color_prop] = style.pop('color')
+
+        # Process deprecated color_index
         if None not in [element.level, self.color_index]:
             cdim = element.vdims[0]
         elif 'array' not in style:

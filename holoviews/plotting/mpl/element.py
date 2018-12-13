@@ -588,11 +588,23 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             groups = [sg for sg in style_groups if k.startswith(sg)]
             group = groups[0] if groups else None
             prefix = '' if group is None else group+'_'
+
+            # Check if element supports fill and line style
+            supports_fill = (
+                (prefix != 'edge' or getattr(self, 'filled', True))
+                and any(o.startswith(prefix+'face') for o in self.style_opts))
+
             if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray):
                 fill_style = new_style.get(prefix+'facecolor')
                 if fill_style and validate('color', fill_style):
                     new_style.pop('facecolor')
+
                 line_style = new_style.get(prefix+'edgecolor')
+
+                # If glyph has fill and line style is set overriding line color
+                if supports_fill and line_style is not None:
+                    continue
+
                 if line_style and validate('color', line_style):
                     new_style.pop('edgecolor')
             elif k == 'facecolors' and not isinstance(new_style.get('color', new_style.get('c')), np.ndarray):
@@ -755,6 +767,7 @@ class ColorbarPlot(ElementPlot):
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
 
+        # Store dimension being colormapped for colorbars
         if prefix+'color_dim' not in self.handles:
             self.handles[prefix+'color_dim'] = vdim
 
