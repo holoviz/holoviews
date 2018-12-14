@@ -314,8 +314,10 @@ class PrettyPrinter(object):
         """
         Given a node, return relevant information.
         """
+        opts = None
         if hasattr(node, 'children'):
             (lvl, lines) = (level, [(level, cls.component_type(node))])
+            opts = cls.option_info(node)
         elif hasattr(node, 'main'):
             (lvl, lines) = cls.adjointlayout_info(node, siblings, level, value_dims)
         elif getattr(node, '_deep_indexable', False):
@@ -324,14 +326,20 @@ class PrettyPrinter(object):
             (lvl, lines) = level, [(level, repr(node))]
         else:
             (lvl, lines) = cls.element_info(node, siblings, level, value_dims)
+            opts = cls.option_info(node)
 
         # The attribute indexing path acts as a prefix (if applicable)
         if attrpath is not None:
             padding = cls.padding(attrpaths)
             (fst_lvl, fst_line) = lines[0]
-            lines[0] = (fst_lvl, '.'+attrpath.ljust(padding) +' ' + fst_line)
-        return (lvl, lines)
+            line = '.'+attrpath.ljust(padding) +' ' + fst_line
+            lines[0] = (fst_lvl, line)
+        else:
+            fst_lvl = level
 
+        if opts:
+            lines.append((fst_lvl, ' * ' + str(opts)))
+        return (lvl, lines)
 
     @classmethod
     def element_info(cls, node, siblings, level, value_dims):
@@ -340,15 +348,23 @@ class PrettyPrinter(object):
         of the dotted name followed by an value dimension names.
         """
         info =  cls.component_type(node)
-        if siblings:
-            padding = cls.padding([cls.component_type(el) for el in siblings])
-            info.ljust(padding)
         if len(node.kdims) >= 1:
             info += cls.tab + '[%s]' % ','.join(d.name for d in node.kdims)
         if value_dims and len(node.vdims) >= 1:
             info += cls.tab + '(%s)' % ','.join(d.name for d in node.vdims)
         return level, [(level, info)]
 
+    @classmethod
+    def option_info(cls, node):
+        from .options import Store, Options
+        options = {}
+        for g in ['plot', 'style', 'norm']:
+            gopts = Store.lookup_options(Store.current_backend, node, g,
+                                         defaults=False)
+            if gopts:
+                options.update(gopts.kwargs)
+        opts = Options(**options)
+        return opts
 
     @classmethod
     def adjointlayout_info(cls, node, siblings, level, value_dims):
@@ -363,23 +379,17 @@ class PrettyPrinter(object):
 
     @classmethod
     def ndmapping_info(cls, node, siblings, level, value_dims):
-
         key_dim_info = '[%s]' % ','.join(d.name for d in node.kdims)
         first_line = cls.component_type(node) + cls.tab + key_dim_info
         lines = [(level, first_line)]
+        opts = cls.option_info(node)
 
         additional_lines = []
         if len(node.data) == 0:
             return level, lines
         # .last has different semantics for GridSpace
         last = list(node.data.values())[-1]
-        if hasattr(last, 'children'):
-            additional_lines = cls.recurse(last, level=level)
-        # NdOverlays, GridSpace, Ndlayouts
-        elif last is not None and getattr(last, '_deep_indexable'):
-            level, additional_lines = cls.ndmapping_info(last, [], level, value_dims)
-        else:
-            _, additional_lines = cls.element_info(last, siblings, level, value_dims)
+        additional_lines = cls.recurse(last, level=level, value_dims=value_dims)
         lines += cls.shift(additional_lines, 1)
         return level, lines
 
