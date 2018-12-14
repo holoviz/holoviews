@@ -244,7 +244,7 @@ class Cycle(param.Parameterized):
     attribute.
     """
 
-    key = param.String(default='default_colors', doc="""
+    key = param.String(default='default_colors', allow_None=True, doc="""
        The key in the default_cycles dictionary used to specify the
        color cycle if values is not supplied. """)
 
@@ -259,6 +259,7 @@ class Cycle(param.Parameterized):
                 params['key'] = cycle
             else:
                 params['values'] = cycle
+                params['key'] = None
         super(Cycle, self).__init__(**params)
         self.values = self._get_values()
 
@@ -285,8 +286,13 @@ class Cycle(param.Parameterized):
 
 
     def __repr__(self):
-        return "%s(values=%s)" % (type(self).__name__,
-                                  [str(el) for el in self.values])
+        if self.key == self.param.params('key').default:
+            vrepr = ''
+        elif self.key:
+            vrepr = repr(self.key)
+        else:
+            vrepr = [str(el) for el in self.values]
+        return "%s(%s)" % (type(self).__name__, vrepr)
 
 
 
@@ -680,7 +686,7 @@ class OptionTree(AttrTree):
         return item if mode == 'node' else item.path
 
 
-    def closest(self, obj, group):
+    def closest(self, obj, group, defaults=True):
         """
         This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
@@ -693,11 +699,12 @@ class OptionTree(AttrTree):
                       group_sanitizer(obj.group),
                       label_sanitizer(obj.label))
         target = '.'.join([c for c in components if c])
-        return self.find(components).options(group, target=target)
+        return self.find(components).options(group, target=target,
+                                             defaults=defaults)
 
 
 
-    def options(self, group, target=None):
+    def options(self, group, target=None, defaults=True):
         """
         Using inheritance up to the root, get the complete Options
         object for the given node and the specified group.
@@ -706,7 +713,7 @@ class OptionTree(AttrTree):
             target = self.path
         if self.groups.get(group, None) is None:
             return None
-        if self.parent is None and target and (self is not Store.options()):
+        if self.parent is None and target and (self is not Store.options()) and defaults:
             root_name = self.__class__.__name__
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
             option_key = target.replace(replacement,'')
@@ -718,8 +725,8 @@ class OptionTree(AttrTree):
         elif self.parent is None:
             return self.groups[group]
 
-        return Options(**dict(self.parent.options(group,target=target).kwargs,
-                              **self.groups[group].kwargs))
+        parent_opts = self.parent.options(group,target, defaults)
+        return Options(**dict(parent_opts.kwargs, **self.groups[group].kwargs))
 
     def __repr__(self):
         """
@@ -1175,12 +1182,14 @@ class Store(object):
 
 
     @classmethod
-    def lookup_options(cls, backend, obj, group):
+    def lookup_options(cls, backend, obj, group, defaults=True):
         # Current custom_options dict may not have entry for obj.id
         if obj.id in cls._custom_options[backend]:
-            return cls._custom_options[backend][obj.id].closest(obj, group)
+            return cls._custom_options[backend][obj.id].closest(obj, group, defaults)
+        elif defaults:
+            return cls._options[backend].closest(obj, group, defaults)
         else:
-            return cls._options[backend].closest(obj, group)
+            return OptionTree(groups=cls._options[backend].groups)
 
     @classmethod
     def lookup(cls, backend, obj):

@@ -1,8 +1,8 @@
-from holoviews.core.element import ViewableElement
+from holoviews.core.element import Element
 from holoviews.core.options import Store, Keywords, Options, OptionTree
 from ..utils import LoggingComparisonTestCase
 
-class TestObj(ViewableElement):
+class TestObj(Element):
     pass
 
 
