@@ -17,7 +17,7 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store
+from .options import Store, Opts
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -968,6 +968,8 @@ class Dimensioned(LabelledData):
         self._settings = None
         self.redim = redim(self)
 
+        self.opts = Opts(self)
+
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
@@ -1310,67 +1312,6 @@ class Dimensioned(LabelledData):
                          'the recommended .options method instead.')
 
         return self.opts(options, **kwargs)
-
-
-    def opts(self, *args, **kwargs):
-        """Applies nested options definition.
-
-        Applies options on an object or nested group of objects in a
-        flat format. Unlike the .options method, .opts modifies the
-        options inplace by default. If the options are to be set
-        directly on the object a simple format may be used, e.g.:
-
-            obj.opts(cmap='viridis', show_title=False)
-
-        If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
-
-            obj.opts('Image', cmap='viridis', show_title=False)
-
-        or using:
-
-            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
-
-        Args:
-            *args: Sets of options to apply to object
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
-            **kwargs: Keywords of options
-                Set of options to apply to the object
-
-        For backwards compatibility, this method also supports the
-        option group semantics now offered by the hv.opts.apply_groups
-        utility. This usage will be deprecated and for more
-        information see the apply_options_type docstring.
-
-        Returns:
-            Returns the object or a clone with the options applied
-        """
-        apply_groups, options, new_kwargs = util.deprecated_opts_signature(args, kwargs)
-
-        # By default do not clone in .opts method
-        clone = kwargs.get('clone', None)
-
-        if apply_groups and util.config.future_deprecations:
-            msg = ("Calling the .opts method with options broken down by options "
-                   "group (i.e. separate plot, style and norm groups) is deprecated. "
-                   "Use the .options method converting to the simplified format "
-                   "instead or use hv.opts.apply_groups for backward compatibility.")
-            param.main.warning(msg)
-        if apply_groups:
-            from ..util import opts
-            if options is not None:
-                kwargs['options'] = options
-            return opts.apply_groups(self, **dict(kwargs, **new_kwargs))
-
-        kwargs['clone'] = False if clone is None else clone
-        return self.options(*args, **kwargs)
 
 
     def options(self, *args, **kwargs):

@@ -14,7 +14,7 @@ from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
 from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
-
+from .options import Opts
 
 class item_check(object):
     """
@@ -812,6 +812,7 @@ class UniformNdMapping(NdMapping):
         self._label_check, self.label = None, label
         super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
 
+        self.opts = Opts(self, mode='holomap')
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
