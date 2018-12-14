@@ -13,6 +13,7 @@ import param
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store, NdOverlay)
 from ..core.options import Cycle
+from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
                          unique_iterator, closest_match, is_number, isfinite,
@@ -299,8 +300,9 @@ def get_nested_plot_frame(obj, key_map, cached=False):
         if isinstance(it1, DynamicMap):
             with disable_constant(it2.callback):
                 it2.callback.inputs = it1.callback.inputs
-    return clone.map(lambda x: get_plot_frame(x, key_map, cached=cached),
-                     [DynamicMap, HoloMap], clone=False)
+    with item_check(False):
+        return clone.map(lambda x: get_plot_frame(x, key_map, cached=cached),
+                         [DynamicMap, HoloMap], clone=False)
 
 
 def undisplayable_info(obj, html=False):
