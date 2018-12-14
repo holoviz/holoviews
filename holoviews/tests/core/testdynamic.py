@@ -1,7 +1,8 @@
 import uuid
-from collections import deque
 import time
+from collections import deque
 
+import param
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
@@ -397,6 +398,19 @@ class DynamicTransferStreams(ComparisonTestCase):
     def test_dynamic_util_inherits_dim_streams(self):
         hist = Dynamic(self.dmap)
         self.assertEqual(hist.streams, self.dmap.streams[1:])
+
+    def test_dynamic_util_parameterized_method(self):
+        class Test(param.Parameterized):
+            label = param.String(default='test')
+
+            @param.depends('label')
+            def apply_label(self, obj):
+                return obj.relabel(self.label)
+
+        test = Test()
+        dmap = Dynamic(self.dmap, operation=test.apply_label)
+        test.label = 'custom label'
+        self.assertEqual(dmap[(0, 3)].label, 'custom label')
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
         exception = ("The supplied stream objects PointerX\(x=None\) and "
