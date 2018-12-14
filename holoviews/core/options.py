@@ -680,7 +680,7 @@ class OptionTree(AttrTree):
         return item if mode == 'node' else item.path
 
 
-    def closest(self, obj, group):
+    def closest(self, obj, group, defaults=True):
         """
         This method is designed to be called from the root of the
         tree. Given any LabelledData object, this method will return
@@ -693,11 +693,12 @@ class OptionTree(AttrTree):
                       group_sanitizer(obj.group),
                       label_sanitizer(obj.label))
         target = '.'.join([c for c in components if c])
-        return self.find(components).options(group, target=target)
+        return self.find(components).options(group, target=target,
+                                             defaults=defaults)
 
 
 
-    def options(self, group, target=None):
+    def options(self, group, target=None, defaults=True):
         """
         Using inheritance up to the root, get the complete Options
         object for the given node and the specified group.
@@ -706,7 +707,8 @@ class OptionTree(AttrTree):
             target = self.path
         if self.groups.get(group, None) is None:
             return None
-        if self.parent is None and target and (self is not Store.options()):
+        if self.parent is None and target and (self is not Store.options()) and defaults:
+            print(group)
             root_name = self.__class__.__name__
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
             option_key = target.replace(replacement,'')
@@ -718,8 +720,8 @@ class OptionTree(AttrTree):
         elif self.parent is None:
             return self.groups[group]
 
-        return Options(**dict(self.parent.options(group,target=target).kwargs,
-                              **self.groups[group].kwargs))
+        parent_opts = self.parent.options(group,target, defaults)
+        return Options(**dict(parent_opts.kwargs, **self.groups[group].kwargs))
 
     def __repr__(self):
         """
@@ -1175,12 +1177,12 @@ class Store(object):
 
 
     @classmethod
-    def lookup_options(cls, backend, obj, group):
+    def lookup_options(cls, backend, obj, group, defaults=True):
         # Current custom_options dict may not have entry for obj.id
         if obj.id in cls._custom_options[backend]:
-            return cls._custom_options[backend][obj.id].closest(obj, group)
+            return cls._custom_options[backend][obj.id].closest(obj, group, defaults)
         else:
-            return cls._options[backend].closest(obj, group)
+            return cls._options[backend].closest(obj, group, defaults)
 
     @classmethod
     def lookup(cls, backend, obj):
