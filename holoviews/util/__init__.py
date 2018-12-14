@@ -10,7 +10,7 @@ from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API 
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
-from ..streams import Stream, ParamMethod
+from ..streams import Stream
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -762,12 +762,6 @@ class Dynamic(param.ParameterizedFunction):
         added to the list.
         """
         streams = []
-
-        # If callback is a parameterized method and watch is disabled add as stream
-        param_watch_support = util.param_version >= '1.8.0'
-        if util.is_param_method(self.p.operation) and param_watch_support:
-            streams.append(ParamMethod(self.p.operation))
-
         for stream in self.p.streams:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
