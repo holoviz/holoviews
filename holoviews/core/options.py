@@ -708,7 +708,6 @@ class OptionTree(AttrTree):
         if self.groups.get(group, None) is None:
             return None
         if self.parent is None and target and (self is not Store.options()) and defaults:
-            print(group)
             root_name = self.__class__.__name__
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
             option_key = target.replace(replacement,'')
