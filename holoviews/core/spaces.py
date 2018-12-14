@@ -35,6 +35,11 @@ class HoloMap(UniformNdMapping, Overlayable):
 
     data_type = (ViewableElement, NdMapping, Layout)
 
+    def __init__(self, initial_items=None, kdims=None, group=None, label=None, **params):
+        super(HoloMap, self).__init__(initial_items, kdims, group, label, **params)
+        self.opts = Opts(self, mode='holomap')
+
+
     def overlay(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and overlay each group
 

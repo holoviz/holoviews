@@ -812,8 +812,6 @@ class UniformNdMapping(NdMapping):
         self._label_check, self.label = None, label
         super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
 
-        self.opts = Opts(self, mode='holomap')
-
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         """Clones the object, overriding data and parameters.
