@@ -244,7 +244,7 @@ class Cycle(param.Parameterized):
     attribute.
     """
 
-    key = param.String(default='default_colors', doc="""
+    key = param.String(default='default_colors', allow_None=True, doc="""
        The key in the default_cycles dictionary used to specify the
        color cycle if values is not supplied. """)
 
@@ -259,6 +259,7 @@ class Cycle(param.Parameterized):
                 params['key'] = cycle
             else:
                 params['values'] = cycle
+                params['key'] = None
         super(Cycle, self).__init__(**params)
         self.values = self._get_values()
 
@@ -285,8 +286,13 @@ class Cycle(param.Parameterized):
 
 
     def __repr__(self):
-        return "%s(values=%s)" % (type(self).__name__,
-                                  [str(el) for el in self.values])
+        if self.key == self.param.params('key').default:
+            vrepr = ''
+        elif self.key:
+            vrepr = repr(self.key)
+        else:
+            vrepr = [str(el) for el in self.values]
+        return "%s(%s)" % (type(self).__name__, vrepr)
 
 
 
