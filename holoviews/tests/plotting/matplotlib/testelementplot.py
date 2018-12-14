@@ -152,3 +152,9 @@ class TestColorbarPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'c')
+
+    def test_colorbar_label_style_mapping(self):
+        scatter = Scatter(np.random.rand(100, 3), vdims=["y", "color"]).options(color='color', colorbar=True)
+        plot = mpl_renderer.get_plot(scatter)
+        cbar_ax = plot.handles['cax']
+        self.assertEqual(cbar_ax.get_ylabel(), 'color')

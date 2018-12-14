@@ -27,10 +27,6 @@ class PathPlot(ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
-    def _finalize_artist(self, element):
-        if self.colorbar:
-            self._draw_colorbar(element.get_dimension(self.color_index))
-
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -89,12 +85,6 @@ class ContourPlot(PathPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    def _finalize_artist(self, element):
-        if self.colorbar:
-            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-            self._draw_colorbar(cdim)
-
     def init_artists(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
@@ -114,17 +104,24 @@ class ContourPlot(PathPlot):
             if self.invert_axes:
                 paths = [p[:, ::-1] for p in paths]
 
+        # Process style transform
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
+
         if 'c' in style:
             style['array'] = style.pop('c')
-        if isinstance(style.get('color'), np.ndarray):
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
+        elif isinstance(style.get('color'), np.ndarray):
             style[color_prop] = style.pop('color')
+
+        # Process deprecated color_index
         if None not in [element.level, self.color_index]:
             cdim = element.vdims[0]
-        else:
+        elif 'array' not in style:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
+        else:
+            cdim = None
 
         if cdim is None:
             return (paths,), style, {}
