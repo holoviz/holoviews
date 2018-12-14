@@ -337,7 +337,7 @@ class PrettyPrinter(object):
         else:
             fst_lvl = level
 
-        if opts:
+        if opts and opts.kwargs:
             lines.append((fst_lvl, ' * ' + str(opts)))
         return (lvl, lines)
 
@@ -347,7 +347,7 @@ class PrettyPrinter(object):
         Return the information summary for an Element. This consists
         of the dotted name followed by an value dimension names.
         """
-        info =  cls.component_type(node)
+        info = cls.component_type(node)
         if len(node.kdims) >= 1:
             info += cls.tab + '[%s]' % ','.join(d.name for d in node.kdims)
         if value_dims and len(node.vdims) >= 1:

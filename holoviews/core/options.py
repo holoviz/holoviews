@@ -1181,8 +1181,10 @@ class Store(object):
         # Current custom_options dict may not have entry for obj.id
         if obj.id in cls._custom_options[backend]:
             return cls._custom_options[backend][obj.id].closest(obj, group, defaults)
-        else:
+        elif defaults:
             return cls._options[backend].closest(obj, group, defaults)
+        else:
+            return OptionTree(groups=cls._options[backend].groups)
 
     @classmethod
     def lookup(cls, backend, obj):
