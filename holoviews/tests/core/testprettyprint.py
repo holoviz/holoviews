@@ -32,12 +32,6 @@ class PrettyPrintTest(ComparisonTestCase):
         r = PrettyPrinter.pprint(Curve([1,2,3]))
         self.assertEqual(repr(r), expected)
 
-    def test_curve_pprint_repr(self):
-        # Ensure it isn't a bytes object with the 'b' prefix
-        expected = "':Curve   [x]   (y)'"
-        r = PrettyPrinter.pprint(Curve([1,2,3]))
-        self.assertEqual(repr(r), expected)
-
 
 class PrettyPrintOptionsTest(CustomBackendTestCase):
 
