@@ -7,10 +7,9 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
 from ...core.options import Store
-from ...core.util import stream_parameters, wrap_tuple, wrap_tuple_streams
+from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
     GenericElementPlot
-from ..util import traverse_setter
 from .util import figure_grid
 
 

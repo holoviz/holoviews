@@ -611,8 +611,7 @@ class DimensionedPlot(Plot):
                     for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
-        self._trigger_refresh(key)
-
+        self._trigger_refresh(stream_key)
         if self.comm is not None and self.top_level:
             self.push()
 
