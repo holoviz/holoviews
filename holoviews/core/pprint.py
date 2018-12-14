@@ -396,7 +396,10 @@ class PrettyPrinter(param.Parameterized):
             return level, lines
         # .last has different semantics for GridSpace
         last = list(node.data.values())[-1]
-        additional_lines = cls_or_slf.recurse(last, level=level, value_dims=value_dims)
+        if last is not None and getattr(last, '_deep_indexable'):
+            level, additional_lines = cls.ndmapping_info(last, [], level, value_dims)
+        else:
+            additional_lines = cls_or_slf.recurse(last, level=level, value_dims=value_dims)
         lines += cls_or_slf.shift(additional_lines, 1)
         return level, lines
 
