@@ -226,14 +226,19 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def defaults(cls, *options, **kwargs):
-        """
-        Set default options for a session, whether in a Python script or
+        """Set default options for a session.
+
+        Set default options for a session. whether in a Python script or
         a Jupyter notebook.
+
+        Args:
+           *options: Option objects used to specify the defaults.
+           backend:  The plotting extension the options apply to
         """
         if kwargs and len(kwargs) != 1 and list(kwargs.keys())[0] != 'backend':
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
-        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend', None))
+        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
 
 
     @classmethod
