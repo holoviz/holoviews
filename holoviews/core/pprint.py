@@ -365,6 +365,8 @@ class PrettyPrinter(param.Parameterized):
 
     @bothmethod
     def option_info(cls_or_slf, node):
+        if not cls_or_slf.show_options:
+            return None
         from .options import Store, Options
         options = {}
         for g in ['plot', 'style', 'norm']:
