@@ -189,18 +189,18 @@ class opts(param.ParameterizedFunction):
         return obj_handle
 
     @classmethod
-    def _process_magic(cls, options, strict):
+    def _process_magic(cls, options, strict, backends=None):
         if isinstance(options, basestring):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
-        errmsg = StoreOptions.validation_error_message(options)
+        errmsg = StoreOptions.validation_error_message(options, backends=backends)
         if errmsg:
             sys.stderr.write(errmsg)
             if strict:
-                sys.stderr.write(' Options specification will not be applied.')
+                sys.stderr.write('Options specification will not be applied.')
                 return options, True
         return options, False
 
@@ -215,21 +215,30 @@ class opts(param.ParameterizedFunction):
             return StoreOptions.set_options(obj, options)
 
     @classmethod
-    def _linemagic(cls, options, strict=False):
+    def _linemagic(cls, options, strict=False, backend=None):
         "Deprecated, not expected to be used by any current code"
-        options, failure = cls._process_magic(options, strict)
+        backends = None if backend is None else [backend]
+        options, failure = cls._process_magic(options, strict, backends=backends)
         if failure: return
         with options_policy(skip_invalid=True, warn_on_skip=False):
-            StoreOptions.apply_customizations(options, Store.options())
+            StoreOptions.apply_customizations(options, Store.options(backend=backend))
 
 
     @classmethod
-    def defaults(cls, *options):
-        """
-        Set default options for a session, whether in a Python script or
+    def defaults(cls, *options, **kwargs):
+        """Set default options for a session.
+
+        Set default options for a session. whether in a Python script or
         a Jupyter notebook.
+
+        Args:
+           *options: Option objects used to specify the defaults.
+           backend:  The plotting extension the options apply to
         """
-        cls._linemagic(cls._expand_options(merge_options_to_dict(options)))
+        if kwargs and len(kwargs) != 1 and list(kwargs.keys())[0] != 'backend':
+            raise Exception('opts.defaults only accepts "backend" keyword argument')
+
+        cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
 
 
     @classmethod
