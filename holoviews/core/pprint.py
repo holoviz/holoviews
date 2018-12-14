@@ -390,7 +390,10 @@ class PrettyPrinter(param.Parameterized):
         key_dim_info = '[%s]' % ','.join(d.name for d in node.kdims)
         first_line = cls_or_slf.component_type(node) + cls_or_slf.tab + key_dim_info
         lines = [(level, first_line)]
+
         opts = cls_or_slf.option_info(node)
+        if cls_or_slf.show_options and opts and opts.kwargs:
+            lines.append((fst_lvl, ' ' + str(opts)))
 
         additional_lines = []
         if len(node.data) == 0:
