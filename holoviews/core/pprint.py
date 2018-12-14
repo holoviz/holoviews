@@ -405,12 +405,11 @@ class PrettyPrinter(param.Parameterized):
         if cls_or_slf.show_options and opts and opts.kwargs:
             lines += [(level, l) for l in cls_or_slf.format_options(opts)]
 
-        additional_lines = []
         if len(node.data) == 0:
             return level, lines
         # .last has different semantics for GridSpace
         last = list(node.data.values())[-1]
-        if last is not None and getattr(last, '_deep_indexable'):
+        if last is not None and getattr(last, '_deep_indexable') and not hasattr(last, 'children'):
             level, additional_lines = cls_or_slf.ndmapping_info(last, [], level, value_dims)
         else:
             additional_lines = cls_or_slf.recurse(last, level=level, value_dims=value_dims)
