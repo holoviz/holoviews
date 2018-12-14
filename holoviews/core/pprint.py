@@ -263,7 +263,8 @@ class PrettyPrinter(param.Parameterized):
     """
 
     show_defaults = param.Boolean(default=False, doc="""
-        Whether to show default options as part of the repr.""")
+        Whether to show default options as part of the repr.
+        If show_options=False this has no effect.""")
 
     show_options = param.Boolean(default=False, doc="""
         Whether to show options as part of the repr.""")
