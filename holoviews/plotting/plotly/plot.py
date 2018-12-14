@@ -31,29 +31,13 @@ class PlotlyPlot(DimensionedPlot):
         return self.handles['fig']
 
 
-    def refresh(self, **kwargs):
-        """
-        Refreshes the plot by rerendering it and then pushing
-        the updated data if the plot has an associated Comm.
-        """
-        traverse_setter(self, '_force', True)
-        key = self.current_key if self.current_key else self.keys[0]
-        dim_streams = [stream for stream in self.streams
-                       if any(c in self.dimensions for c in stream.contents)]
-        stream_params = stream_parameters(dim_streams)
-        key = tuple(None if d in stream_params else k
-                    for d, k in zip(self.dimensions, key))
-        stream_key = wrap_tuple_streams(key, self.dimensions, self.streams)
-
-        # Update if not top-level, batched or an ElementPlot
+    def _trigger_refresh(self, key):
+        "Triggers update to a plot on a refresh event"
         if self.top_level:
-            self.update(stream_key)
+            self.update(key)
         else:
             self.current_key = None
             self.current_frame = None
-
-        if self.comm is not None and self.top_level:
-            self.push()
 
 
     def initialize_plot(self, ranges=None):

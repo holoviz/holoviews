@@ -611,12 +611,17 @@ class DimensionedPlot(Plot):
                     for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
-        # Update if not top-level, batched or an ElementPlot
-        if not self.top_level or isinstance(self, GenericElementPlot):
-            self.update(stream_key)
+        self._trigger_refresh(key)
 
         if self.comm is not None and self.top_level:
             self.push()
+
+
+    def _trigger_refresh(self, key):
+        "Triggers update to a plot on a refresh event"
+        # Update if not top-level, batched or an ElementPlot
+        if not self.top_level or isinstance(self, GenericElementPlot):
+            self.update(key)
 
 
     def push(self):
