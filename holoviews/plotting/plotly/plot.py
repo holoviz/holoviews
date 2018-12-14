@@ -2,12 +2,14 @@ from __future__ import absolute_import, division, unicode_literals
 
 import param
 
+from holoviews.plotting.util import attach_streams
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
+from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
+    GenericElementPlot
 from .util import figure_grid
 
 
@@ -28,6 +30,15 @@ class PlotlyPlot(DimensionedPlot):
         return self.handles['fig']
 
 
+    def _trigger_refresh(self, key):
+        "Triggers update to a plot on a refresh event"
+        if self.top_level:
+            self.update(key)
+        else:
+            self.current_key = None
+            self.current_frame = None
+
+
     def initialize_plot(self, ranges=None):
         return self.generate_plot(self.keys[-1], ranges)
 
@@ -46,6 +57,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
+
+        if self.top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
+                          [GenericElementPlot])
 
     def _get_size(self):
         rows, cols = self.layout.shape
@@ -218,6 +235,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
+        self.drawn = True
         self.handles['fig'] = fig
         return self.handles['fig']
 
@@ -284,6 +302,13 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
+        if self.top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
+                          [GenericElementPlot])
+
+
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
@@ -346,6 +371,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         fig['layout'].update(width=w, height=h,
                              title=self._format_title(key))
 
+        self.drawn = True
         self.handles['fig'] = fig
         return self.handles['fig']
 

@@ -24,9 +24,9 @@ from ..element import Table, Graph
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders, get_plot_frame,
+                   compute_overlayable_zorders, get_nested_plot_frame,
                    split_dmap_overlay, get_axis_padding, get_range,
-                   get_minimum_span)
+                   get_minimum_span, get_plot_frame)
 
 
 class Plot(param.Parameterized):
@@ -612,12 +612,16 @@ class DimensionedPlot(Plot):
                     for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
-        # Update if not top-level, batched or an ElementPlot
-        if not self.top_level or isinstance(self, GenericElementPlot):
-            self.update(stream_key)
-
+        self._trigger_refresh(stream_key)
         if self.comm is not None and self.top_level:
             self.push()
+
+
+    def _trigger_refresh(self, key):
+        "Triggers update to a plot on a refresh event"
+        # Update if not top-level, batched or an ElementPlot
+        if not self.top_level or isinstance(self, GenericElementPlot):
+            self.update(key)
 
 
     def push(self):
@@ -1464,8 +1468,7 @@ class GenericCompositePlot(DimensionedPlot):
 
         key_map = dict(zip([d.name for d in self.dimensions], key))
         for path, item in self.layout.items():
-            frame = item.map(lambda x: get_plot_frame(x, key_map, cached=cached),
-                             ['DynamicMap', 'HoloMap'])
+            frame = get_nested_plot_frame(item, key_map, cached)
             if frame is not None:
                 layout_frame[path] = frame
         traverse_setter(self, '_force', False)

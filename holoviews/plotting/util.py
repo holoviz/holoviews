@@ -16,7 +16,7 @@ from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
                          unique_iterator, closest_match, is_number, isfinite,
-                         python2sort)
+                         python2sort, disable_constant)
 from ..streams import LinkedStream
 from ..util.transform import dim
 
@@ -249,9 +249,15 @@ def initialize_dynamic(obj):
 
 
 def get_plot_frame(map_obj, key_map, cached=False):
-    """
-    Returns an item in a HoloMap or DynamicMap given a mapping key
-    dimensions and their values.
+    """Returns the current frame in a mapping given a key mapping.
+
+    Args:
+        obj: Nested Dimensioned object
+        key_map: Dictionary mapping between dimensions and key value
+        cached: Whether to allow looking up key in cache
+
+    Returns:
+        The item in the mapping corresponding to the supplied key.
     """
     if map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame':
         # Special handling for static plots
@@ -269,6 +275,32 @@ def get_plot_frame(map_obj, key_map, cached=False):
         except Exception:
             print(traceback.format_exc())
             return None
+
+
+def get_nested_plot_frame(obj, key_map, cached=False):
+    """Extracts a single frame from a nested object.
+
+    Replaces any HoloMap or DynamicMap in the nested data structure,
+    with the item corresponding to the supplied key.
+
+    Args:
+        obj: Nested Dimensioned object
+        key_map: Dictionary mapping between dimensions and key value
+        cached: Whether to allow looking up key in cache
+
+    Returns:
+        Nested datastructure where maps are replaced with single frames
+    """
+    clone = obj.map(lambda x: x)
+
+    # Ensure that DynamicMaps in the cloned frame have
+    # identical callback inputs to allow memoization to work
+    for it1, it2 in zip(obj.traverse(lambda x: x), clone.traverse(lambda x: x)):
+        if isinstance(it1, DynamicMap):
+            with disable_constant(it2.callback):
+                it2.callback.inputs = it1.callback.inputs
+    return clone.map(lambda x: get_plot_frame(x, key_map, cached=cached),
+                     [DynamicMap, HoloMap], clone=False)
 
 
 def undisplayable_info(obj, html=False):
