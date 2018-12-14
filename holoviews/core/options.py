@@ -45,7 +45,7 @@ import param
 from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring
 from .util import deprecated_opts_signature, disable_constant, config
-from .pprint import InfoPrinter
+from .pprint import InfoPrinter, PrettyPrinter
 
 
 class SkipRendering(Exception):
@@ -112,6 +112,12 @@ class Opts(object):
             return self._holomap_opts(*args, **kwargs)
         elif self.mode == 'dynamicmap':
             return self._dynamicmap_opts(*args, **kwargs)
+
+    def clear(self, clone=False):
+        return self.obj.opts(clone=clone)
+
+    def show(self):
+        print(PrettyPrinter.pprint(self.obj))
 
     def _holomap_opts(self, *args, **kwargs):
         clone = kwargs.pop('clone', None)
