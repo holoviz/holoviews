@@ -24,9 +24,9 @@ from ..element import Table, Graph
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders, get_plot_frame,
+                   compute_overlayable_zorders, get_nested_plot_frame,
                    split_dmap_overlay, get_axis_padding, get_range,
-                   get_minimum_span)
+                   get_minimum_span, get_plot_frame)
 
 
 class Plot(param.Parameterized):
@@ -1457,16 +1457,7 @@ class GenericCompositePlot(DimensionedPlot):
 
         key_map = dict(zip([d.name for d in self.dimensions], key))
         for path, item in self.layout.items():
-            clone = item.map(lambda x: x)
-
-            # Ensure that DynamicMaps in the cloned frame have
-            # identical callback inputs to allow memoization to work
-            for it1, it2 in zip(item.traverse(lambda x: x), clone.traverse(lambda x: x)):
-                if isinstance(it1, DynamicMap):
-                    with util.disable_constant(it2.callback):
-                        it2.callback.inputs = it1.callback.inputs
-            frame = clone.map(lambda x: get_plot_frame(x, key_map, cached=cached),
-                              [DynamicMap, HoloMap], clone=False)
+            frame = get_nested_plot_frame(item, key_map, cached)
             if frame is not None:
                 layout_frame[path] = frame
         traverse_setter(self, '_force', False)
