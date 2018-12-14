@@ -117,7 +117,8 @@ class Opts(object):
         return self.obj.opts(clone=clone)
 
     def show(self):
-        print(PrettyPrinter.pprint(self.obj))
+        pprinter = PrettyPrinter(show_options=True)
+        print(pprinter.pprint(self.obj))
 
     def _holomap_opts(self, *args, **kwargs):
         clone = kwargs.pop('clone', None)
