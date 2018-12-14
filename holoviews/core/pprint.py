@@ -338,7 +338,7 @@ class PrettyPrinter(object):
             fst_lvl = level
 
         if opts and opts.kwargs:
-            lines.append((fst_lvl, ' * ' + str(opts)))
+            lines.append((fst_lvl, ' ' + str(opts)))
         return (lvl, lines)
 
     @classmethod
