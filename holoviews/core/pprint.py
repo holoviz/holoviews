@@ -14,6 +14,7 @@ In addition, there are several different ways of
 """
 
 import sys, re
+import textwrap
 import param
 # IPython not required to import ParamPager
 from param.ipython import ParamPager
@@ -346,7 +347,7 @@ class PrettyPrinter(param.Parameterized):
             fst_lvl = level
 
         if cls_or_slf.show_options and opts and opts.kwargs:
-            lines.append((fst_lvl, ' ' + str(opts)))
+            lines += [(fst_lvl, l) for l in cls_or_slf.format_options(opts)]
         return (lvl, lines)
 
     @bothmethod
@@ -375,6 +376,14 @@ class PrettyPrinter(param.Parameterized):
         return opts
 
     @bothmethod
+    def format_options(cls_or_slf, opts, wrap_count=80):
+        opt_repr = str(opts)
+        cls_name = type(opts).__name__
+        indent = ' '*(len(cls_name)+1)
+        wrapper = textwrap.TextWrapper(width=wrap_count, subsequent_indent=indent)
+        return [' '+l for l in wrapper.wrap(opt_repr)]
+
+    @bothmethod
     def adjointlayout_info(cls_or_slf, node, siblings, level, value_dims):
         first_line = cls_or_slf.component_type(node)
         lines = [(level, first_line)]
@@ -384,7 +393,6 @@ class PrettyPrinter(param.Parameterized):
         lines += cls_or_slf.shift(additional_lines, 1)
         return level, lines
 
-
     @bothmethod
     def ndmapping_info(cls_or_slf, node, siblings, level, value_dims):
         key_dim_info = '[%s]' % ','.join(d.name for d in node.kdims)
@@ -393,7 +401,7 @@ class PrettyPrinter(param.Parameterized):
 
         opts = cls_or_slf.option_info(node)
         if cls_or_slf.show_options and opts and opts.kwargs:
-            lines.append((fst_lvl, ' ' + str(opts)))
+            lines += [(level, l) for l in cls_or_slf.format_options(opts)]
 
         additional_lines = []
         if len(node.data) == 0:
