@@ -871,7 +871,7 @@ class GenericElementPlot(DimensionedPlot):
         elif key == self.current_key and not self._force:
             return self.current_frame
 
-        cached = self.current_key is None
+        cached = self.current_key is None and not any(s._triggering for s in self.streams)
         key_map = dict(zip([d.name for d in self.dimensions], key))
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
