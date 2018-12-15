@@ -8,9 +8,9 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
                           EdgesAndLinkedNodes, Patches, Bezier, ColumnDataSource)
 
 from ...core.data import Dataset
+from ...core.options import Cycle, abbreviated_exception
 from ...core.util import (basestring, dimension_sanitizer, unique_array,
                           max_range)
-from ...core.options import Cycle
 from ...util.transform import dim
 from ..util import process_cmap, get_directed_graph_paths
 from .chart import ColorbarPlot, PointPlot
@@ -271,14 +271,19 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         sources = []
         properties, mappings = {}, {}
         for key in ('scatter_1', self.edge_glyph):
+            gdata = data.pop(key, {})
+            group_style = dict(style)
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+
+            with abbreviated_exception():
+                group_style = self._apply_transforms(element, gdata, ranges, group_style, style_group)
+
             # Get source
-            source = self._init_datasource(data.pop(key, {}))
+            source = self._init_datasource(gdata)
             self.handles[key+'_source'] = source
             sources.append(source)
 
             # Get style
-            group_style = dict(style)
-            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
             others = [sg for sg in self._style_groups.values() if sg != style_group]
             glyph_props = self._glyph_properties(
                 plot, element, source, ranges, group_style, style_group)
