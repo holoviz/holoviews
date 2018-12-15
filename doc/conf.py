@@ -3,7 +3,7 @@
 import sys, os
 sys.path.insert(0, os.getcwd())
 
-from builder.shared_conf import * # noqa (API import)
+from nbsite.shared_conf import *
 
 paths = ['../param/', '.', '..']
 add_paths(paths)
@@ -14,7 +14,7 @@ from ..setup import setup_args
 project = u'HoloViews'
 authors = u'PyViz developers'
 copyright = u'2018 ' + authors
-ioam_module = 'holoviews'
+pyviz_module = 'holoviews'
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -32,13 +32,14 @@ rst_epilog = """
 .. _tutorial notebooks: {url}/notebooks-{version}.zip
 """.format(url=ASSETS_URL, version=version)
 
-# Override IOAM theme
-html_theme = 'holoviews_theme'
+# Override PYVIZ theme
 html_theme_path = ['.']
+html_theme = 'holoviews_theme'
+
 MAIN_SITE = '//holoviews.org'
 
 html_context = {
-    'SITEMAP_BASE_URL': 'http://holoviews.org/', # Trailing slash is needed
+    'SITEMAP_BASE_URL': 'https://holoviews.org/', # Trailing slash is needed
     'SITE_URL': '/',
     'DESCRIPTION': 'HoloViews library, documentation site.',
     'AUTHOR': 'HoloViews contributors',
@@ -110,20 +111,20 @@ html_title = project
 html_static_path = ['_static', 'builder/_shared_static']
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = ioam_module+'doc'
+htmlhelp_basename = pyviz_module+'doc'
 
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', ioam_module+'.tex', project+u' Documentation', authors, 'manual'),
+  ('index', pyviz_module+'.tex', project+u' Documentation', authors, 'manual'),
 ]
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', ioam_module, project+u' Documentation', [authors], 1)
+    ('index', pyviz_module, project+u' Documentation', [authors], 1)
 ]
 # If true, show URL addresses after external links.
 #man_show_urls = False
@@ -144,7 +145,6 @@ intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ioam.github.io/param/': None}
 
 from builder.paramdoc import param_formatter
-from nbpublisher import nbbuild
 
 
 def setup(app):
