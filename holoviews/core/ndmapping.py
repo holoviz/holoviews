@@ -885,7 +885,7 @@ class UniformNdMapping(NdMapping):
         for key, element in self.data.items():
             df = element.dframe(inner_dimensions, multi_index)
             names = [d.name for d in outer_dimensions]
-            key_dims = [(d, key[i]) for d, i in inds]
+            key_dims = [(d.name, key[i]) for d, i in inds]
             if multi_index:
                 length = len(df)
                 indexes = [[v]*length for _, v in key_dims]
