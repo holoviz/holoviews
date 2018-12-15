@@ -1070,9 +1070,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             data, mapping, style = self.get_data(element, ranges, style)
 
+        with abbreviated_exception():
+            style = self._apply_transforms(element, data, ranges, style)
+
         if glyph:
-            with abbreviated_exception():
-                style = self._apply_transforms(element, data, ranges, style)
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
             with abbreviated_exception():

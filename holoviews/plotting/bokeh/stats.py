@@ -94,16 +94,17 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return element.kdims, element.vdims[0]
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        if element.ndims > 0:
-            element = element.aggregate(function=np.mean)
-        else:
-            element = element.clone([(element.aggregate(function=np.mean),)])
-        with abbreviated_exception():
-            new_style = self._apply_transforms(element, source, ranges, style, group)
         properties = dict(new_style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label
         return properties
+
+    def _apply_transforms(self, element, data, ranges, style, group=None):
+        if element.ndims > 0:
+            element = element.aggregate(function=np.mean)
+        else:
+            element = element.clone([(element.aggregate(function=np.mean),)])
+        return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element):
         """
