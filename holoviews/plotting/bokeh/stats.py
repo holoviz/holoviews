@@ -94,7 +94,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
-        if self.show_legend and not element.kdims:
+        if self.show_legend and not element.kdims and self.overlaid:
             properties['legend'] = element.label
         return properties
 
