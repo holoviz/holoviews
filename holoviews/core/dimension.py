@@ -1423,11 +1423,11 @@ class Dimensioned(LabelledData):
                 raise ValueError('Please specify a list of option objects, or kwargs, but not both')
             options = args[0]
         elif args and kwargs:
-            raise ValueError("Options must be defined in one of two formats."
+            raise ValueError("Options must be defined in one of two formats. "
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "
-                             "or explicitly define the type, e.g."
-                             "obj.options({'Image': {'cmap': 'viridis'}})."
+                             "or explicitly define the type, e.g. "
+                             "obj.options({'Image': {'cmap': 'viridis'}}). "
                              "Supplying both formats is not supported.")
         elif args:
             options = list(args)

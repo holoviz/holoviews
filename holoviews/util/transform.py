@@ -250,8 +250,10 @@ class dim(object):
         return dim(self, categorize, categories=categories, default=default)
 
     def norm(self, limits=None):
-        """
-        min-max normalizes to scale data into 0-1 range.
+        """min-max normalization to scale data into 0-1 range.
+
+        Args:
+            limits: tuple of (min, max) defining the normalization range
         """
         kwargs = {}
         if limits is not None:
@@ -259,9 +261,7 @@ class dim(object):
         return dim(self, norm, **kwargs)
 
     def str(self):
-        """
-        Casts values to strings
-        """
+        "Casts values to strings."
         return self.astype(str)
 
     # Other methods
@@ -355,7 +355,7 @@ class dim(object):
                 fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
-                    format_string = {fn}+prev
+                    format_string = '{fn}'+prev
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+'.{fn}('
