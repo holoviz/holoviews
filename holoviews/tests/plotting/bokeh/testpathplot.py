@@ -369,6 +369,7 @@ class TestContoursPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         cmapper = plot.handles['color_color_mapper']
+        plot.update((0,))
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(cds.data['color'], np.array([7, 3]))
         self.assertEqual(cmapper.low, 3)

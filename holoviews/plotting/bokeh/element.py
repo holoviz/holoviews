@@ -742,7 +742,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _apply_transforms(self, element, source, ranges, style, group=None):
+    def _apply_transforms(self, element, data, ranges, style, group=None):
         new_style = dict(style)
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
@@ -785,7 +785,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      'to overlay your data along the dimension.'.format(
                                          style=k, dim=v.dimension, element=element,
                                          backend=self.renderer.backend))
-                elif source.data and len(val) != len(list(source.data.values())[0]):
+                elif data and len(val) != len(list(data.values())[0]):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
                     else:
@@ -802,7 +802,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = val
             else:
                 key = {'field': k}
-                source.data[k] = val
+                data[k] = val
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
@@ -827,7 +827,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Process color/alpha styles and expand to fill/line style
         for style, val in list(new_style.items()):
             for s in ('alpha', 'color'):
-                if prefix+s != style or style not in source.data or validate(s, val, True):
+                if prefix+s != style or style not in data or validate(s, val, True):
                     continue
                 supports_fill = any(
                     o.startswith(prefix+'fill') and (prefix != 'edge_' or getattr(self, 'filled', True))
@@ -858,14 +858,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if ((line_style is not None and (validate(s, line_style) and not hover)) or
                         (line_style is None and not supports_fill)):
                         new_style[line_key] = val
-
         return new_style
 
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        with abbreviated_exception():
-            new_style = self._apply_transforms(element, source, ranges, style, group)
-        properties = dict(new_style, source=source)
+        properties = dict(style, source=source)
         if self.show_legend:
             if self.overlay_dims:
                 legend = ', '.join([d.pprint_value(v) for d, v in
@@ -985,6 +982,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             style = self.style[self.cyclic_index]
             data, mapping, style = self.get_data(element, ranges, style)
             current_id = element._plot_id
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, data, ranges, style)
+
         if source is None:
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
@@ -1068,6 +1069,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             data, mapping, style = self.get_batched_data(element, ranges)
         else:
             data, mapping, style = self.get_data(element, ranges, style)
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, data, ranges, style)
 
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
@@ -1181,15 +1185,17 @@ class CompositeElementPlot(ElementPlot):
         current_id = element._plot_id
         self.handles['previous_id'] = current_id
         for key in keys:
+            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+            group_style = dict(style)
             ds_data = data.get(key, {})
+            with abbreviated_exception():
+                group_style = self._apply_transforms(element, ds_data, ranges, group_style, style_group)
             if id(ds_data) in source_cache:
                 source = source_cache[id(ds_data)]
             else:
                 source = self._init_datasource(ds_data)
                 source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
-            group_style = dict(style)
-            style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
             properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
             properties = self._process_properties(key, properties, mapping.get(key, {}))
 
@@ -1245,6 +1251,8 @@ class CompositeElementPlot(ElementPlot):
             if glyph:
                 group_style = dict(style)
                 style_group = self._style_groups.get('_'.join(key.split('_')[:-1]))
+                with abbreviated_exception():
+                    group_style = self._apply_transforms(element, gdata, ranges, group_style, style_group)
                 properties = self._glyph_properties(plot, element, source, ranges, group_style, style_group)
                 properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
