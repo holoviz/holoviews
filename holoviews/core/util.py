@@ -231,14 +231,18 @@ def deprecated_opts_signature(args, kwargs):
     Returns whether opts.apply_groups should be used (as a bool) and the
     corresponding options.
     """
-    groups = ['plot','style', 'norm']
+    groups = {'plot','style', 'norm'}
     opts = {kw for kw in kwargs if kw not in ('backend', 'clone')}
     apply_groups = False
     options = None
     new_kwargs = {}
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
-        if set(args[0].keys()) <= set(groups):
+        if (not set(args[0]).issubset(groups) and
+            all(isinstance(v, dict) and not set(v).issubset(groups)
+                for v in args[0].values())):
+            apply_groups = False
+        elif set(args[0].keys()) <= groups:
             new_kwargs = args[0]
         else:
             options = args[0]
