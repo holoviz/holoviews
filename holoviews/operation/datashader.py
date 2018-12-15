@@ -323,12 +323,14 @@ class aggregate(AggregationOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
-        if any(df[d.name].dtype.kind == 'M' or isinstance(df[d.name].values[0], cftime_types)
-               for d in (x, y)):
+        is_dask = isinstance(df, dd.DataFrame)
+        if any((not is_dask and isinstance(df[d.name].values[0], cftime_types)) or
+               df[d.name].dtype.kind == 'M' for d in (x, y)):
             df = df.copy()
+
         for d in (x, y):
             vals = df[d.name].values
-            if len(vals) and isinstance(vals[0], cftime_types):
+            if not is_dask and len(vals) and isinstance(vals[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
             elif df[d.name].dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
