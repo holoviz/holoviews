@@ -869,7 +869,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                     self.overlay_dims.items()])
             else:
                 legend = element.label
-            if legend:
+            if legend and self.overlaid:
                 properties['legend'] = value(legend)
         return properties
 
