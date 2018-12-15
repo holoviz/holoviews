@@ -10,7 +10,6 @@ from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from ...core.dimension import Dimension
 from ...core.ndmapping import sorted_context
-from ...core.options import abbreviated_exception
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
                           unique_iterator, isfinite)
 from ...operation.stats import univariate_kde
@@ -94,7 +93,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         return element.kdims, element.vdims[0]
 
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
-        properties = dict(new_style, source=source)
+        properties = dict(style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label
         return properties
