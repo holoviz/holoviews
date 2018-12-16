@@ -324,7 +324,7 @@ class aggregate(AggregationOperation):
             df[category] = df[category].astype('category')
 
         is_dask = isinstance(df, dd.DataFrame)
-        if any((not is_dask and isinstance(df[d.name].values[0], cftime_types)) or
+        if any((not is_dask and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
                df[d.name].dtype.kind == 'M' for d in (x, y)):
             df = df.copy()
 

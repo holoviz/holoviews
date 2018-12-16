@@ -448,7 +448,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
         for okey, subplot in self.subplots.items():
-            if element is not None:
+            if element is not None and subplot.drawn:
                 idx, spec, exact = dynamic_update(self, subplot, okey, element, items)
                 if idx is not None:
                     _, el = items.pop(idx)
