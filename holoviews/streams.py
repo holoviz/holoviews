@@ -928,8 +928,8 @@ class PointDraw(CDSStream):
         if isinstance(source, UniformNdMapping):
             source = source.last
         if not self.data:
-            return source.clone([])
-        return source.clone(self.data)
+            return source.clone([], id=None)
+        return source.clone(self.data, id=None)
 
     @property
     def dynamic(self):
@@ -977,13 +977,13 @@ class PolyDraw(CDSStream):
             source = source.last
         data = self.data
         if not data:
-            return source.clone([])
+            return source.clone([], id=None)
         cols = list(self.data)
         x, y = source.kdims
         lookup = {'xs': x.name, 'ys': y.name}
         data = [{lookup.get(c, c): data[c][i] for c in self.data}
                 for i in range(len(data[cols[0]]))]
-        return source.clone(data)
+        return source.clone(data, id=None)
 
     @property
     def dynamic(self):
@@ -1015,13 +1015,13 @@ class FreehandDraw(CDSStream):
             source = source.last
         data = self.data
         if not data:
-            return source.clone([])
+            return source.clone([], id=None)
         cols = list(self.data)
         x, y = source.kdims
         lookup = {'xs': x.name, 'ys': y.name}
         data = [{lookup.get(c, c): data[c][i] for c in self.data}
                 for i in range(len(data[cols[0]]))]
-        return source.clone(data)
+        return source.clone(data, id=None)
 
     @property
     def dynamic(self):

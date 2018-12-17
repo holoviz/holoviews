@@ -428,9 +428,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 matching = [t for t in plot.toolbar.tools
                             if isinstance(t, tool_type)]
                 if not matching:
-                    raise ValueError('Tool of type %r could not be found '
-                                     'and could not be activated by default.'
-                                     % tool)
+                    self.param.warning('Tool of type %r could not be found '
+                                       'and could not be activated by default.'
+                                       % tool)
+                    continue
                 tool = matching[0]
             if isinstance(tool, tools.Drag):
                 plot.toolbar.active_drag = tool
