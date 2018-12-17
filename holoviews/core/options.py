@@ -94,7 +94,7 @@ class Opts(object):
             backend (optional): Backend to apply options to
                 Defaults to current selected backend
             clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
+                Options can be applied in place with clone=False
             **kwargs: Keywords of options
                 Set of options to apply to the object
 
