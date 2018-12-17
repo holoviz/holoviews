@@ -161,7 +161,7 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
         fig = plot.state
-        self.assertEqual(len(fig.legend[0].items), 0)
+        self.assertEqual(len(fig.legend), 0)
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))

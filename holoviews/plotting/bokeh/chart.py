@@ -948,10 +948,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Get colors
         cdim = color_dim or group_dim
-        style_mapping = any(isinstance(v, dim) or v in element
-                            for k, v in style.items() if 'color' in k)
-        if style_mapping:
+        style_mapping = [v for k, v in style.items() if 'color' in k and
+                         (isinstance(v, dim) or v in element)]
+        if style_mapping and not no_cidx and self.color_index is not None:
+            self.warning("Cannot declare style mapping for '%s' option "
+                         "and declare a color_index; ignoring the color_index."
+                         % style_mapping[0])
             cdim = None
+
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
             if cvals.dtype.kind in 'uif' and no_cidx:
