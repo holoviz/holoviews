@@ -101,13 +101,18 @@ class RGBPlot(ElementPlot):
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
         if img.ndim == 3:
-            if img.shape[2] == 3: # alpha channel not included
-                alpha = np.ones(img.shape[:2])
-                if img.dtype.name == 'uint8':
-                    alpha = (alpha*255).astype('uint8')
-                img = np.dstack([img, alpha])
+            if img.dtype.kind == 'f':
+                img = img*255
+            if img.max() > 255:
+                self.param.warning('Clipping input data to the valid '
+                                   'range for RGB data ([0..1] for '
+                                   'floats or [0..255] for integers).')
+                img[img>255] = 255
             if img.dtype.name != 'uint8':
-                img = (img*255).astype(np.uint8)
+                img = img.astype(np.uint8)
+            if img.shape[2] == 3: # alpha channel not included
+                alpha = np.full(img.shape[:2], 255, dtype='uint8')
+                img = np.dstack([img, alpha])
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
