@@ -855,13 +855,12 @@ class BarPlot(ColorbarPlot, LegendPlot):
         return bottoms, tops
 
 
-    def _glyph_properties(self, *args):
-        props = super(BarPlot, self)._glyph_properties(*args)
+    def _glyph_properties(self, *args, **kwargs):
+        props = super(BarPlot, self)._glyph_properties(*args, **kwargs)
         return {k: v for k, v in props.items() if k not in ['width', 'bar_width']}
 
 
     def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
-        # Get colormapper
         cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
                                                factors=factors, colors=colors)
         if 'color' not in cmapping:
@@ -949,6 +948,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Get colors
         cdim = color_dim or group_dim
+        style_mapping = [v for k, v in style.items() if 'color' in k and
+                         (isinstance(v, dim) or v in element)]
+        if style_mapping and not no_cidx and self.color_index is not None:
+            self.warning("Cannot declare style mapping for '%s' option "
+                         "and declare a color_index; ignoring the color_index."
+                         % style_mapping[0])
+            cdim = None
+
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
             if cvals.dtype.kind in 'uif' and no_cidx:
@@ -985,8 +992,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
                     data[xdim.name].append(xs)
                     data[stack_dim.name].append(slc_ds.dimension_values(stack_dim))
                     if hover: data[ydim.name].append(ys)
-                    self._add_color_data(slc_ds, ranges, style, cdim, data,
-                                         mapping, factors, colors)
+                    if not style_mapping:
+                        self._add_color_data(slc_ds, ranges, style, cdim, data,
+                                             mapping, factors, colors)
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
@@ -1006,7 +1014,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 for vd in ds.vdims[1:]:
                     data[vd.name].append(ds.dimension_values(vd))
 
-            if not grouping == 'stacked':
+            if grouping != 'stacked' and not style_mapping:
                 self._add_color_data(ds, ranges, style, cdim, data,
                                      mapping, factors, colors)
 
