@@ -241,3 +241,11 @@ class HoloMapTest(ComparisonTestCase):
                         for i in range(10)}, kdims=['z'])
         mapped = hmap.map(lambda x: x if x.range(1)[1] > 0 else None, Dataset)
         self.assertEqual(hmap[1:10], mapped)
+
+    def test_holomap_hist_two_dims(self):
+        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+                                   kdims=['x'], vdims=['y'])
+                        for i in range(10)}, kdims=['z'])
+        hists = hmap.hist(dimension=['x', 'y'])
+        self.assertEqual(hists['right'].last.kdims, ['y'])
+        self.assertEqual(hists['top'].last.kdims, ['x'])

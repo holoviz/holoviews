@@ -585,21 +585,25 @@ class HoloMap(UniformNdMapping, Overlayable):
             AdjointLayout of HoloMap and histograms or just the
             histograms
         """
-        histmaps = [self.clone(shared_data=False) for _ in
-                    kwargs.get('dimension', range(1))]
+        if dimension is not None and not isinstance(dimension, list):
+            dimension = [dimension]
+        histmaps = [self.clone(shared_data=False) for _ in (dimension or [None])]
 
         if individually:
             map_range = None
         else:
-            if 'dimension' not in kwargs:
+            if dimension is None:
                 raise Exception("Please supply the dimension to compute a histogram for.")
             map_range = self.range(kwargs['dimension'])
+
         bin_range = map_range if bin_range is None else bin_range
         style_prefix = 'Custom[<' + self.name + '>]_'
         if issubclass(self.type, (NdOverlay, Overlay)) and 'index' not in kwargs:
             kwargs['index'] = 0
+
         for k, v in self.data.items():
-            hists = v.hist(adjoin=False, bin_range=bin_range, num_bins=num_bins,
+            hists = v.hist(adjoin=False, dimension=dimension,
+                           bin_range=bin_range, num_bins=num_bins,
                            style_prefix=style_prefix, **kwargs)
             if isinstance(hists, Layout):
                 for i, hist in enumerate(hists):
