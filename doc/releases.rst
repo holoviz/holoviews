@@ -13,9 +13,11 @@ Announcements
 Release notes
 *************
 
+Version 1.10
+~~~~~~~~~~~~
 
 Version 1.10.8
-==============
+--------------
 
 This a likely the last hotfix release in the 1.10.x series containing
 fixes for compatibility with bokeh 1.0 and matplotlib 3.0. It also
@@ -26,7 +28,7 @@ Julia Signell (@jsignell), and Zachary Barry (@zbarry).
 
 Enhancements:
 
-- Add support for labels, choord, hextiles and area in `.to` interface
+- Add support for labels, choord, hextiles and area in .to interface
   (`#2924 <https://github.com/ioam/holoviews/pull/2923`_)
 - Allow defining default bokeh themes as strings on Renderer
   (`#2972 <https://github.com/ioam/holoviews/pull/2972`_)
@@ -88,7 +90,7 @@ Documentation:
 
 
 Version 1.10.7
-==============
+--------------
 
 This a very minor hotfix release mostly containing fixes for datashader
 aggregation of empty datasets:
@@ -107,7 +109,7 @@ Fixes:
 
 
 Version 1.10.6
-==============
+--------------
 
 This another minor bug fix release in the 1.10 series and likely the
 last one before the upcoming 1.11 release. In addition to some important
@@ -138,7 +140,7 @@ Fixes:
   `#2842 <https://github.com/ioam/holoviews/pull/2842>`_)
 
 Version 1.10.5
-==============
+--------------
 
 This is a minor bug fix release containing a mixture of small
 enhancements, a number of important fixes and improved compatibility
@@ -415,7 +417,7 @@ Changes affecting backwards compatibility:
 
 
 Version 1.9
-~~~~~~~~~~~~
+~~~~~~~~~~~
 
 
 Version 1.9.5
