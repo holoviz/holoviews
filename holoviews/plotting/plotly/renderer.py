@@ -56,7 +56,7 @@ class PlotlyRenderer(Renderer):
         if isinstance(plot, tuple(self.widgets.values())):
             return plot(), mime_types
         elif fmt in ('html', 'png', 'svg'):
-            return self._figure_data(plot, divuuid=divuuid), mime_types
+            return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
         elif fmt == 'json':
             return self.diff(plot), mime_types
 
