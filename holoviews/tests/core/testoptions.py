@@ -689,6 +689,36 @@ class TestOptsMethod(ComparisonTestCase):
         self.assertEqual(self.lookup_options(retval[0], 'plot').options,
                          {'width':700})
 
+    def test_opts_clear(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(style=dict(cmap='jet', interpolation='nearest',
+                                       option1='A', option2='B'), clone=False)
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest',
+                          'option1':'A', 'option2':'B'})
+        assert styled_im is im
+        cleared = im.opts.clear()
+        assert cleared is im
+        cleared_options = self.lookup_options(cleared, 'style').options
+        self.assertEqual(not any(k in ['option1', 'option2']
+                                 for k in cleared_options.keys()), True)
+
+    def test_opts_clear_clone(self):
+        im = Image(np.random.rand(10,10))
+        styled_im = im.opts(style=dict(cmap='jet', interpolation='nearest',
+                                       option1='A', option2='B'), clone=False)
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest',
+                          'option1':'A', 'option2':'B'})
+        assert styled_im is im
+        cleared = im.opts.clear(clone=True)
+        assert cleared is not im
+        self.assertEqual(self.lookup_options(im, 'style').options,
+                         {'cmap': 'jet', 'interpolation': 'nearest',
+                          'option1':'A', 'option2':'B'})
+        cleared_options = self.lookup_options(cleared, 'style').options
+        self.assertEqual(not any(k in ['option1', 'option2']
+                                 for k in cleared_options.keys()), True)
 
 @attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):
