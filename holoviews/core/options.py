@@ -71,7 +71,7 @@ class Opts(object):
 
         Applies options on an object or nested group of objects in a
         flat format. Unlike the .options method, .opts modifies the
-        options inplace by default. If the options are to be set
+        options in place by default. If the options are to be set
         directly on the object a simple format may be used, e.g.:
 
             obj.opts(cmap='viridis', show_title=False)
