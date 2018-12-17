@@ -16,7 +16,7 @@ from .dimension import OrderedDict, Dimension, ViewableElement, redim
 from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
-from .options import Store, StoreOptions
+from .options import Store, StoreOptions, Opts
 from ..streams import Stream
 
 
@@ -34,6 +34,11 @@ class HoloMap(UniformNdMapping, Overlayable):
     """
 
     data_type = (ViewableElement, NdMapping, Layout)
+
+    def __init__(self, initial_items=None, kdims=None, group=None, label=None, **params):
+        super(HoloMap, self).__init__(initial_items, kdims, group, label, **params)
+        self.opts = Opts(self, mode='holomap')
+
 
     def overlay(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and overlay each group
@@ -93,60 +98,6 @@ class HoloMap(UniformNdMapping, Overlayable):
             with item_check(False):
                 return NdLayout(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
-
-
-    def opts(self, *args, **kwargs):
-        """Applies simplified option definition
-
-        Applies options defined in a flat format to the objects in the
-        HoloMap. Unlike the .options method .opts, modifies the
-        options inplace by default. If the options are to be set
-        directly on the objects in the HoloMap a simple format may be
-        used, e.g.:
-
-            obj.opts(cmap='viridis', show_title=False)
-
-        If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
-
-            obj.opts('Image', cmap='viridis', show_title=False)
-
-        or using:
-
-            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
-
-        Args:
-            *args: Sets of options to apply to object
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
-            **kwargs: Keywords of options
-                Set of options to apply to the object
-
-        For backwards compatibility, this method also supports the
-        option group semantics now offered by the hv.opts.apply_groups
-        utility. This usage will be deprecated and for more
-        information see the apply_options_type docstring.
-
-        Returns:
-            Returns the object or a clone with the options applied
-        """
-        clone = kwargs.pop('clone', None)
-        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        data = OrderedDict([(k, v.opts(*args, **kwargs))
-                             for k, v in self.data.items()])
-
-        # By default do not clone in .opts method
-        if (apply_groups if clone is None else clone):
-            return self.clone(data)
-        else:
-            self.data = data
-            return self
 
 
     def options(self, *args, **kwargs):
@@ -974,6 +925,8 @@ class DynamicMap(HoloMap):
 
         super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
 
+        self.opts = Opts(self, mode='dynamicmap')
+
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
@@ -1130,67 +1083,6 @@ class DynamicMap(HoloMap):
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)
         return self._style(retval)
-
-
-    def opts(self, *args, **kwargs):
-        """Applies simplified options definition.
-
-        Applies options defined in a flat format to the objects
-        returned by the DynamicMap. Unlike the .options method, .opts
-        modifies the options inplace by default. If the options are to
-        be set directly on the objects returned by the DynamicMap a
-        simple format may be used, e.g.:
-
-            obj.opts(cmap='viridis', show_title=False)
-
-        If the object is nested the options must be qualified using
-        a type[.group][.label] specification, e.g.:
-
-            obj.opts('Image', cmap='viridis', show_title=False)
-
-        or using:
-
-            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
-
-        Args:
-            *args: Sets of options to apply to object
-                Supports a number of formats including lists of Options
-                objects, a type[.group][.label] followed by a set of
-                keyword options to apply and a dictionary indexed by
-                type[.group][.label] specs.
-            backend (optional): Backend to apply options to
-                Defaults to current selected backend
-            clone (bool, optional): Whether to clone object
-                Options can be applied inplace with clone=False
-            **kwargs: Keywords of options
-                Set of options to apply to the object
-
-        For backwards compatibility, this method also supports the
-        option group semantics now offered by the hv.opts.apply_groups
-        utility. This usage will be deprecated and for more
-        information see the apply_options_type docstring.
-
-        Returns:
-            Returns the object or a clone with the options applied
-        """
-        from ..util import Dynamic
-
-        clone = kwargs.get('clone', None)
-        apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-        # By default do not clone in .opts method
-        clone = (apply_groups if clone is None else clone)
-
-        obj = self if clone else self.clone()
-        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
-                       streams=self.streams, link_inputs=True)
-        if not clone:
-            with util.disable_constant(self):
-                obj.callback = self.callback
-                self.callback = dmap.callback
-            dmap = self
-            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
-                                     for k, v in self.data.items()])
-        return dmap
 
 
     def options(self, *args, **kwargs):

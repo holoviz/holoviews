@@ -44,7 +44,8 @@ import numpy as np
 import param
 from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring
-from .pprint import InfoPrinter
+from .util import deprecated_opts_signature, disable_constant, config
+from .pprint import InfoPrinter, PrettyPrinter
 
 
 class SkipRendering(Exception):
@@ -56,6 +57,123 @@ class SkipRendering(Exception):
     def __init__(self, message="", warn=True):
         self.warn = warn
         super(SkipRendering, self).__init__(message)
+
+
+class Opts(object):
+
+    def __init__(self, obj, mode=None):
+        self.mode = mode
+        self.obj = obj
+
+
+    def __call__(self, *args, **kwargs):
+        """Applies nested options definition.
+
+        Applies options on an object or nested group of objects in a
+        flat format. Unlike the .options method, .opts modifies the
+        options in place by default. If the options are to be set
+        directly on the object a simple format may be used, e.g.:
+
+            obj.opts(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.opts({'Image': dict(cmap='viridis', show_title=False)})
+
+        Args:
+            *args: Sets of options to apply to object
+                Supports a number of formats including lists of Options
+                objects, a type[.group][.label] followed by a set of
+                keyword options to apply and a dictionary indexed by
+                type[.group][.label] specs.
+            backend (optional): Backend to apply options to
+                Defaults to current selected backend
+            clone (bool, optional): Whether to clone object
+                Options can be applied in place with clone=False
+            **kwargs: Keywords of options
+                Set of options to apply to the object
+
+        For backwards compatibility, this method also supports the
+        option group semantics now offered by the hv.opts.apply_groups
+        utility. This usage will be deprecated and for more
+        information see the apply_options_type docstring.
+
+        Returns:
+            Returns the object or a clone with the options applied
+        """
+        if self.mode is None:
+            return self._base_opts(*args, **kwargs)
+        elif self.mode == 'holomap':
+            return self._holomap_opts(*args, **kwargs)
+        elif self.mode == 'dynamicmap':
+            return self._dynamicmap_opts(*args, **kwargs)
+
+    def clear(self, clone=False):
+        return self.obj.opts(clone=clone)
+
+    def show(self):
+        pprinter = PrettyPrinter(show_options=True)
+        print(pprinter.pprint(self.obj))
+
+    def _holomap_opts(self, *args, **kwargs):
+        clone = kwargs.pop('clone', None)
+        apply_groups, _, _ = deprecated_opts_signature(args, kwargs)
+        data = OrderedDict([(k, v.opts(*args, **kwargs))
+                             for k, v in self.obj.data.items()])
+
+        # By default do not clone in .opts method
+        if (apply_groups if clone is None else clone):
+            return self.obj.clone(data)
+        else:
+            self.obj.data = data
+            return self.obj
+
+    def _dynamicmap_opts(self, *args, **kwargs):
+        from ..util import Dynamic
+
+        clone = kwargs.get('clone', None)
+        apply_groups, _, _ = deprecated_opts_signature(args, kwargs)
+        # By default do not clone in .opts method
+        clone = (apply_groups if clone is None else clone)
+
+        obj = self.obj if clone else self.obj.clone()
+        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
+                       streams=self.obj.streams, link_inputs=True)
+        if not clone:
+            with disable_constant(self.obj):
+                obj.callback = self.obj.callback
+                self.obj.callback = dmap.callback
+            dmap = self.obj
+            dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
+                                     for k, v in self.obj.data.items()])
+        return dmap
+
+
+    def _base_opts(self, *args, **kwargs):
+        apply_groups, options, new_kwargs = deprecated_opts_signature(args, kwargs)
+
+        # By default do not clone in .opts method
+        clone = kwargs.get('clone', None)
+
+        if apply_groups and config.future_deprecations:
+            msg = ("Calling the .opts method with options broken down by options "
+                   "group (i.e. separate plot, style and norm groups) is deprecated. "
+                   "Use the .options method converting to the simplified format "
+                   "instead or use hv.opts.apply_groups for backward compatibility.")
+            param.main.warning(msg)
+        if apply_groups:
+            from ..util import opts
+            if options is not None:
+                kwargs['options'] = options
+            return opts.apply_groups(self.obj, **dict(kwargs, **new_kwargs))
+
+        kwargs['clone'] = False if clone is None else clone
+        return self.obj.options(*args, **kwargs)
 
 
 class OptionError(Exception):

@@ -15,7 +15,6 @@ from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asd
 from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
-
 class item_check(object):
     """
     Context manager to allow creating NdMapping types without
@@ -811,7 +810,6 @@ class UniformNdMapping(NdMapping):
         self._group_check, self.group = None, group
         self._label_check, self.label = None, label
         super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
-
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
