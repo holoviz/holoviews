@@ -103,7 +103,7 @@ class RGBPlot(ElementPlot):
         if img.ndim == 3:
             if img.dtype.kind == 'f':
                 img = img*255
-            if img.size and img.min() < 0 or img.max() > 255:
+            if img.size and (img.min() < 0 or img.max() > 255):
                 self.param.warning('Clipping input data to the valid '
                                    'range for RGB data ([0..1] for '
                                    'floats or [0..255] for integers).')
