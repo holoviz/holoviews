@@ -166,10 +166,13 @@ class ContourPlot(LegendPlot, PathPlot):
         if 'hover' not in self.handles or self.static_source:
             return
 
+        npath = len([vs for vs in data.values()][0])
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
-                if element.interface.isscalar(element, d):
+                if element.level is not None:
+                    data[dim] = np.full(npath, element.level)
+                elif element.interface.isscalar(element, d):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
@@ -197,14 +200,18 @@ class ContourPlot(LegendPlot, PathPlot):
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-        color = style.get('color')
-        if (isinstance(color, dim) and color.applies(element)) or color in element:
+        self._get_hover_data(data, element)
+
+        color, fill_color = style.get('color'), style.get('fill_color')
+        if (((isinstance(color, dim) and color.applies(element)) or color in element) or
+            (isinstance(fill_color, dim) and fill_color.applies(element)) or fill_color in element):
             cdim = None
         elif None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
+
         if cdim is None:
             return data, mapping, style
 
@@ -221,7 +228,6 @@ class ContourPlot(LegendPlot, PathPlot):
             factors = util.unique_array(values) if values.dtype.kind in 'SUO' else None
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
-        self._get_hover_data(data, element)
         if self.show_legend:
             mapping['legend'] = dim_name
         return data, mapping, style

@@ -251,6 +251,19 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
                                                np.array([4.5, 5, 3.5])], [np.array([7, 5, 2])]]])
 
+    def test_polygons_hover_color_op(self):
+        polygons = Polygons([
+            {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
+            {('x', 'y'): [(1, 0), (1, 1), (0, 1)], 'color': 'red'}
+        ], vdims='color').options(fill_color='color', tools=['hover'])
+        plot = bokeh_renderer.get_plot(polygons)
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_color, 'black')
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
+        self.assertEqual(cds.data['color'], np.array(['green', 'red']))
+        self.assertEqual(cds.data['fill_color'], np.array(['green', 'red']))
+
     def test_polygons_color_op(self):
         polygons = Polygons([
             {('x', 'y'): [(0, 0), (0, 1), (1, 0)], 'color': 'green'},
