@@ -1847,10 +1847,22 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
+        backend = Store.current_backend if backend is None else backend
         options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
+
+        # Propagate option ids for non-selected backends
+        for b in Store.loaded_backends():
+            if b == backend:
+                continue
+            backend_trees = Store.custom_options(backend=b)
+            btrees = {v: backend_trees[k] for k, v in id_mapping
+                      if k in backend_trees}
+            cls.update_backends(id_mapping, btrees, backend=b)
+
+        # Propagate ids to the objects
         for (match_id, new_id) in id_mapping:
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()), backend=backend)
         return obj
