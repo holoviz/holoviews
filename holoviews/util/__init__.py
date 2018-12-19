@@ -505,10 +505,7 @@ class output(param.ParameterizedFunction):
                     from IPython.display import display
                 except:
                     return
-
-                # Small hack to avoid printing in IPython terminal
-                if get_ipython().__class__.__name__ != 'TerminalInteractiveShell': # noqa
-                    display(obj)
+                display(obj)
 
             Store.output_settings.output(line=line, cell=obj, cell_runner=display_fn,
                                          help_prompt=help_prompt, **options)
