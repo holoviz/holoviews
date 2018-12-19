@@ -383,7 +383,7 @@ class PrettyPrinter(param.Parameterized):
         cls_name = type(opts).__name__
         indent = ' '*(len(cls_name)+1)
         wrapper = textwrap.TextWrapper(width=wrap_count, subsequent_indent=indent)
-        return [' '+l for l in wrapper.wrap(opt_repr)]
+        return [' | '+l for l in wrapper.wrap(opt_repr)]
 
     @bothmethod
     def adjointlayout_info(cls_or_slf, node, siblings, level, value_dims):
