@@ -378,7 +378,7 @@ class PrettyPrinter(param.Parameterized):
         return opts
 
     @bothmethod
-    def format_options(cls_or_slf, opts, wrap_count=80):
+    def format_options(cls_or_slf, opts, wrap_count=100):
         opt_repr = str(opts)
         cls_name = type(opts).__name__
         indent = ' '*(len(cls_name)+1)
