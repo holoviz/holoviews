@@ -509,6 +509,8 @@ class output(param.ParameterizedFunction):
 
             Store.output_settings.output(line=line, cell=obj, cell_runner=display_fn,
                                          help_prompt=help_prompt, **options)
+        elif obj is not None:
+            return obj
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 

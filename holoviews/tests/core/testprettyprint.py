@@ -52,7 +52,7 @@ class PrettyPrintOptionsTest(CustomBackendTestCase):
     def test_element_options_wrapping(self):
         element = TestObj(None).opts(plot_opt1='A'*40, style_opt1='B'*40, backend='backend_1')
         r = self.pprinter.pprint(element)
-        self.assertEqual(r, ":TestObj\n | Options(plot_opt1='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',\n         style_opt1='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')")
+        self.assertEqual(r, ":TestObj\n | Options(plot_opt1='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',\n |         style_opt1='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')")
 
     def test_overlay_options(self):
         overlay = (TestObj(None) * TestObj(None)).opts(plot_opt1='A')
