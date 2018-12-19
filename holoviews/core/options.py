@@ -539,7 +539,7 @@ class Options(param.Parameterized):
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
 
-        self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
+        self.kwargs = OrderedDict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
         self._options = []
         self._max_cycles = max_cycles
 
