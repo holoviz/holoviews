@@ -477,13 +477,7 @@ class output(param.ParameterizedFunction):
     are ignored.
     """
 
-    filename_warning = param.Boolean(default=True, doc="""
-       Whether to warn if the output utility is called on an object and
-       a filename is not given (in which case the utility has no
-       effect)""" )
-
     def __call__(self, *args, **options):
-        warn = options.pop('filename_warning', self.filename_warning)
         help_prompt = 'For help with hv.util.output call help(hv.util.output)'
         line, obj = None,None
         if len(args) > 2:
@@ -513,7 +507,7 @@ class output(param.ParameterizedFunction):
                     return
 
                 # Small hack to avoid printing in IPython terminal
-                if get_ipython().__class__.__name__ != 'TerminalInteractiveShell':
+                if get_ipython().__class__.__name__ != 'TerminalInteractiveShell': # noqa
                     display(obj)
 
             Store.output_settings.output(line=line, cell=obj, cell_runner=display_fn,
