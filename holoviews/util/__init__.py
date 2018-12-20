@@ -367,7 +367,7 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _create_builder(cls, element, completions):
-        def fn(cls, spec=None, **kws):
+        def builder(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
             prefix = 'In opts.{element}(...), '.format(element=element)
             backend = kws.pop('backend', None)
@@ -411,8 +411,8 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
-        return classmethod(fn)
+        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        return classmethod(builder)
 
 
     @classmethod
