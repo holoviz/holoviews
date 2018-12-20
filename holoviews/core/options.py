@@ -114,10 +114,23 @@ class Opts(object):
             return self._dynamicmap_opts(*args, **kwargs)
 
     def clear(self, clone=False):
+        """Clears any options applied to the object.
+
+        Args:
+            clone: Whether to return a cleared clone or clear inplace
+
+        Returns:
+            The object cleared of any options applied to it
+        """
         return self.obj.opts(clone=clone)
 
-    def info(self):
-        pprinter = PrettyPrinter(show_options=True)
+    def info(self, show_defaults=False):
+         """Prints a repr of the object including any applied options.
+
+        Args:
+            show_defaults: Whether to include default options
+        """
+        pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
         print(pprinter.pprint(self.obj))
 
     def _holomap_opts(self, *args, **kwargs):
