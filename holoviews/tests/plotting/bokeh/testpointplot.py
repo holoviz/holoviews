@@ -363,6 +363,20 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
 
+    def test_point_explicit_cmap_color_op(self):
+        points = Points([(0, 0), (0, 1), (0, 2)]).options(
+            color='y', cmap={0: 'red', 1: 'green', 2: 'blue'})
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['0', '1', '2'])
+        self.assertEqual(cmapper.palette, ['red', 'green', 'blue'])
+        self.assertEqual(cds.data['color_str__'], ['0', '1', '2'])
+        self.assertEqual(glyph.fill_color, {'field': 'color_str__', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, {'field': 'color_str__', 'transform': cmapper})
+
     def test_point_line_color_op(self):
         points = Points([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                         vdims='color').options(line_color='color')

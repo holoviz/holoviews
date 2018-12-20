@@ -822,7 +822,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
-                key = {'field': k, 'transform': cmapper}
+                if isinstance(cmapper, CategoricalColorMapper) and val.dtype.kind in 'ifMu':
+                    if v.dimension in element:
+                        formatter = element.get_dimension(v.dimension).pprint_value
+                    else:
+                        formatter = str
+                    field = k + '_str__'
+                    data[k+'_str__'] = [formatter(d) for d in val]
+                else:
+                    field = k
+                key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
         # Process color/alpha styles and expand to fill/line style
