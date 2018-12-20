@@ -37,13 +37,13 @@ import traceback
 import difflib
 import inspect
 from contextlib import contextmanager
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 
 import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict
 from .util import deprecated_opts_signature, disable_constant, config
 from .pprint import InfoPrinter, PrettyPrinter
 
@@ -539,7 +539,7 @@ class Options(param.Parameterized):
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
 
-        self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
+        self.kwargs = OrderedDict([(k,kwargs[k]) for k in sorted(kwargs.keys()) if k not in invalid_kws])
         self._options = []
         self._max_cycles = max_cycles
 

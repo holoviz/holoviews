@@ -477,18 +477,12 @@ class output(param.ParameterizedFunction):
     are ignored.
     """
 
-    filename_warning = param.Boolean(default=True, doc="""
-       Whether to warn if the output utility is called on an object and
-       a filename is not given (in which case the utility has no
-       effect)""" )
-
     def __call__(self, *args, **options):
-        warn = options.pop('filename_warning', self.filename_warning)
         help_prompt = 'For help with hv.util.output call help(hv.util.output)'
         line, obj = None,None
         if len(args) > 2:
             raise TypeError('The opts utility accepts one or two positional arguments.')
-        if len(args) == 1 and options:
+        if len(args) == 1 and not isinstance(args[0], basestring):
             obj = args[0]
         elif len(args) == 1:
             line = args[0]
@@ -502,13 +496,19 @@ class output(param.ParameterizedFunction):
                 if k not in Store.output_settings.allowed:
                     raise KeyError('Invalid keyword: %s' % k)
             if 'filename' in options:
-                def save_fn(obj, renderer): renderer.save(obj, options['filename'])
-                Store.output_settings.output(line=line, cell=obj, cell_runner=save_fn,
-                                             help_prompt=help_prompt, **options)
-            elif warn:
-                self.warning("hv.output not supplied a filename to export the "
-                             "given object. This call will have no effect." )
-            return obj
+                if util.config.future_deprecations:
+                    self.warning('The filename argument of output is deprecated. '
+                                 'Use hv.save instead.')
+
+            def display_fn(obj, renderer):
+                try:
+                    from IPython.display import display
+                except:
+                    return
+                display(obj)
+
+            Store.output_settings.output(line=line, cell=obj, cell_runner=display_fn,
+                                         help_prompt=help_prompt, **options)
         elif obj is not None:
             return obj
         else:

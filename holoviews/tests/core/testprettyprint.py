@@ -47,29 +47,29 @@ class PrettyPrintOptionsTest(CustomBackendTestCase):
     def test_element_options(self):
         element = TestObj(None).opts(style_opt1='A', backend='backend_1')
         r = self.pprinter.pprint(element)
-        self.assertEqual(r, ":TestObj\n Options(style_opt1='A')")
+        self.assertEqual(r, ":TestObj\n | Options(style_opt1='A')")
 
     def test_element_options_wrapping(self):
         element = TestObj(None).opts(plot_opt1='A'*40, style_opt1='B'*40, backend='backend_1')
         r = self.pprinter.pprint(element)
-        self.assertEqual(r, ":TestObj\n Options(plot_opt1='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',\n         style_opt1='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')")
+        self.assertEqual(r, ":TestObj\n | Options(plot_opt1='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',\n |         style_opt1='BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB')")
 
     def test_overlay_options(self):
         overlay = (TestObj(None) * TestObj(None)).opts(plot_opt1='A')
         r = self.pprinter.pprint(overlay)
-        self.assertEqual(r, ":Overlay\n Options(plot_opt1='A')\n   .Element.I  :TestObj\n   .Element.II :TestObj")
+        self.assertEqual(r, ":Overlay\n | Options(plot_opt1='A')\n   .Element.I  :TestObj\n   .Element.II :TestObj")
 
     def test_overlay_nested_options(self):
         overlay = (TestObj(None) * TestObj(None)).opts('TestObj', plot_opt1='A', style_opt1='A')
         r = self.pprinter.pprint(overlay)
-        self.assertEqual(r, ":Overlay\n   .Element.I  :TestObj\n    Options(plot_opt1='A', style_opt1='A')\n   .Element.II :TestObj\n    Options(plot_opt1='A', style_opt1='A')")
+        self.assertEqual(r, ":Overlay\n   .Element.I  :TestObj\n    | Options(plot_opt1='A', style_opt1='A')\n   .Element.II :TestObj\n    | Options(plot_opt1='A', style_opt1='A')")
 
     def test_layout_options(self):
         overlay = (TestObj(None) + TestObj(None)).opts(plot_opt1='A')
         r = self.pprinter.pprint(overlay)
-        self.assertEqual(r, ":Layout\n Options(plot_opt1='A')\n   .Element.I  :TestObj\n   .Element.II :TestObj")
+        self.assertEqual(r, ":Layout\n | Options(plot_opt1='A')\n   .Element.I  :TestObj\n   .Element.II :TestObj")
 
     def test_layout_nested_options(self):
         overlay = (TestObj(None) + TestObj(None)).opts('TestObj', plot_opt1='A', style_opt1='A')
         r = self.pprinter.pprint(overlay)
-        self.assertEqual(r, ":Layout\n   .Element.I  :TestObj\n    Options(plot_opt1='A', style_opt1='A')\n   .Element.II :TestObj\n    Options(plot_opt1='A', style_opt1='A')")
+        self.assertEqual(r, ":Layout\n   .Element.I  :TestObj\n    | Options(plot_opt1='A', style_opt1='A')\n   .Element.II :TestObj\n    | Options(plot_opt1='A', style_opt1='A')")
