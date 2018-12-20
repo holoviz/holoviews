@@ -891,6 +891,32 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.assertEqual('color' in dockeys, True)
         self.assertEqual('linewidth' in dockeys, True)
 
+    def test_builder_cross_backend_validation(self):
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+        opts.Curve(line_dash='dotted') # Bokeh keyword
+        opts.Curve(linewidth=10)       # MPL keyword
+        err = ("In opts.Curve\(...\),  keywords supplied are mixed across backends. "
+               "Keyword\(s\) 'line_dash' are invalid for matplotlib, 'linewidth' are "
+               "invalid for bokeh")
+        with self.assertRaisesRegexp(ValueError, err):
+            opts.Curve(linewidth=10, line_dash='dotted') # Bokeh and MPL
+
+        # Non-existent keyword across backends (bokeh active)
+        err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve type "
+        "across all extensions. Similar options for current "
+               "extension \('bokeh'\) are: \['toolbar'\].")
+        with self.assertRaisesRegexp(ValueError, err):
+            opts.Curve(foobar=3)
+
+        # Non-existent keyword across backends (matplotlib active)
+        Store.set_current_backend('matplotlib')
+
+        err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve "
+               "type across all extensions. No similar options found.")
+        with self.assertRaisesRegexp(ValueError, err):
+            opts.Curve(foobar=3)
 
 class TestCrossBackendOptionPickling(TestCrossBackendOptions):
 
