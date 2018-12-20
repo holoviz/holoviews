@@ -337,9 +337,9 @@ class opts(param.ParameterizedFunction):
         """
         Given a list of Option objects (such as those returned from
         OptsSpec.parse_options) or an %opts or %%opts magic string,
-        return a list of corresponding completer reprs. The namespace is
-        typically given as 'hv' if fully qualified namespaces are
-        desired.
+        return a list of corresponding option builder reprs. The
+        namespace is typically given as 'hv' if fully qualified
+        namespaces are desired.
         """
         if isinstance(options, basestring):
             from .parser import OptsSpec
@@ -366,7 +366,7 @@ class opts(param.ParameterizedFunction):
         return reprs
 
     @classmethod
-    def _build_completer(cls, element, allowed):
+    def _create_builder(cls, element, allowed):
         def fn(cls, spec=None, **kws):
             backend = kws.pop('backend', None)
             if backend:
@@ -430,7 +430,7 @@ class opts(param.ParameterizedFunction):
             with param.logging_level('CRITICAL'):
                 all_keywords |= set(keywords)
                 setattr(cls, element,
-                        cls._build_completer(element, keywords))
+                        cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
