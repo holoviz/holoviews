@@ -333,13 +333,13 @@ class opts(param.ParameterizedFunction):
                              'found.' % (opt, objtype))
 
     @classmethod
-    def _completer_reprs(cls, options, namespace=None, ns=None):
+    def _builder_reprs(cls, options, namespace=None, ns=None):
         """
         Given a list of Option objects (such as those returned from
         OptsSpec.parse_options) or an %opts or %%opts magic string,
-        return a list of corresponding completer reprs. The namespace is
-        typically given as 'hv' if fully qualified namespaces are
-        desired.
+        return a list of corresponding option builder reprs. The
+        namespace is typically given as 'hv' if fully qualified
+        namespaces are desired.
         """
         if isinstance(options, basestring):
             from .parser import OptsSpec
@@ -366,35 +366,53 @@ class opts(param.ParameterizedFunction):
         return reprs
 
     @classmethod
-    def _build_completer(cls, element, allowed):
-        def fn(cls, spec=None, **kws):
+    def _create_builder(cls, element, completions):
+        def builder(cls, spec=None, **kws):
+            spec = element if spec is None else '%s.%s' % (element, spec)
+            prefix = 'In opts.{element}(...), '.format(element=element)
             backend = kws.pop('backend', None)
+            keys = set(kws.keys())
             if backend:
                 allowed_kws = cls._element_keywords(backend,
                                                     elements=[element])[element]
-                invalid = set(kws.keys()) - set(allowed_kws)
+                invalid = keys - set(allowed_kws)
             else:
-                allowed_kws = allowed
-                invalid = set(kws.keys()) - set(allowed)
+                mismatched = {}
+                all_valid_kws =  set()
+                for loaded_backend in Store.loaded_backends():
+                    valid = set(cls._element_keywords(loaded_backend)[element])
+                    all_valid_kws |= set(valid)
+                    if keys <= valid: # Found a backend for which all keys are valid
+                        return Options(spec, **kws)
+                    mismatched[loaded_backend] = list(keys - valid)
 
-            spec = element if spec is None else '%s.%s' % (element, spec)
+                invalid =  keys - all_valid_kws # Keys not found for any backend
+                if mismatched and not invalid:  # Keys found across multiple backends
+                    msg = ('{prefix} keywords supplied are mixed across backends. '
+                           'Keyword(s) {info}')
+                    info = ', '.join('%s are invalid for %s'
+                                     % (', '.join(repr(el) for el in v), k)
+                                     for k,v in mismatched.items())
+                    raise ValueError(msg.format(info=info, prefix=prefix))
+                allowed_kws = completions
 
-            prefix = None
+            reraise = False
             if invalid:
                 try:
                     cls._options_error(list(invalid)[0], element, backend, allowed_kws)
                 except ValueError as e:
-                    prefix = 'In opts.{element}(...), '.format(element=element)
                     msg = str(e)[0].lower() + str(e)[1:]
-                if prefix:
+                    reraise = True
+
+                if reraise:
                     raise ValueError(prefix + msg)
 
             return Options(spec, **kws)
 
-        filtered_keywords = [k for k in allowed if k not in cls._no_completion]
+        filtered_keywords = [k for k in completions if k not in cls._no_completion]
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        fn.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
-        return classmethod(fn)
+        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        return classmethod(builder)
 
 
     @classmethod
@@ -430,7 +448,7 @@ class opts(param.ParameterizedFunction):
             with param.logging_level('CRITICAL'):
                 all_keywords |= set(keywords)
                 setattr(cls, element,
-                        cls._build_completer(element, keywords))
+                        cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))

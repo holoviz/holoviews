@@ -1215,7 +1215,7 @@ class Store(object):
         Returns a list of the backends that have been loaded, based on
         the available OptionTrees.
         """
-        return list(cls._options.keys())
+        return sorted(cls._options.keys())
 
     @classmethod
     def custom_options(cls, val=None, backend=None):
