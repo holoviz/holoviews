@@ -469,7 +469,7 @@ class output(param.ParameterizedFunction):
     output(options)
 
     Where options may be an options specification string (as accepted by
-    the %opts magic) or an options specifications dictionary.
+    the IPython opts magic) or an options specifications dictionary.
 
     For instance:
 
@@ -489,11 +489,25 @@ class output(param.ParameterizedFunction):
     curve = hv.Curve([1,2,3])
     output("filename='curve.png'", curve)
 
-    These two modes are equivalent to the %output line magic and the
-    %%output cell magic respectively. Note that only the filename
-    argument is supported when supplying an object and all other options
-    are ignored.
+    These two modes are equivalent to the IPython output line magic and
+    the cell magic respectively.
     """
+
+    @classmethod
+    def show(cls):
+        deprecate = ['filename', 'info', 'mode']
+        options = Store.output_settings.options
+        defaults = Store.output_settings.defaults
+        keys = [k for k,v in options.items() if k not in deprecate and v != defaults[k]]
+        pairs = {k:options[k] for k in sorted(keys)}
+        if 'backend' not in keys:
+            pairs['backend'] = Store.current_backend
+        if ':' in pairs['backend']:
+            pairs['backend'] = pairs['backend'].split(':')[0]
+
+        keywords = ', '.join('%s=%r' % (k,pairs[k]) for k in sorted(pairs.keys()))
+        print('output({kws})'.format(kws=keywords))
+
 
     def __call__(self, *args, **options):
         help_prompt = 'For help with hv.util.output call help(hv.util.output)'
