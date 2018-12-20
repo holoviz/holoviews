@@ -875,7 +875,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.assertEqual(bokeh_opts, {'cmap':'Purple'})
         return img
 
-    def test_completer_backend_switch(self):
+    def test_builder_backend_switch(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.set_current_backend('bokeh')

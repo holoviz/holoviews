@@ -333,7 +333,7 @@ class opts(param.ParameterizedFunction):
                              'found.' % (opt, objtype))
 
     @classmethod
-    def _completer_reprs(cls, options, namespace=None, ns=None):
+    def _builder_reprs(cls, options, namespace=None, ns=None):
         """
         Given a list of Option objects (such as those returned from
         OptsSpec.parse_options) or an %opts or %%opts magic string,

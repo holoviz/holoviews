@@ -128,31 +128,31 @@ class TestOptsUtil(ComparisonTestCase):
             Store.lookup_options('matplotlib',
                                  mat1, 'norm').options.get('axiswise',True), True)
 
-    def test_opts_completer_repr(self):
+    def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
-        reprs = opts._completer_reprs(magic)
+        reprs = opts._builder_reprs(magic)
         self.assertEqual(reprs, expected)
 
-    def test_opts_completer_repr_line_magic(self):
+    def test_opts_builder_repr_line_magic(self):
         magic= "%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
-        reprs = opts._completer_reprs(magic)
+        reprs = opts._builder_reprs(magic)
         self.assertEqual(reprs, expected)
 
-    def test_opts_completer_repr_cell_magic(self):
+    def test_opts_builder_repr_cell_magic(self):
         magic= "%%opts Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",
                    "opts.Points(logx=True, size=2)"]
-        reprs = opts._completer_reprs(magic)
+        reprs = opts._builder_reprs(magic)
         self.assertEqual(reprs, expected)
 
-    def test_opts_completer_repr_options_dotted(self):
+    def test_opts_builder_repr_options_dotted(self):
         options = [Options('Bivariate.Test.Example', bandwidth=0.5, cmap='Blues'),
                    Options('Points', size=2, logx=True)]
         expected= ["opts.Bivariate('Test.Example', bandwidth=0.5, cmap='Blues')",
                    "opts.Points(logx=True, size=2)"]
-        reprs = opts._completer_reprs(options)
+        reprs = opts._builder_reprs(options)
         self.assertEqual(reprs, expected)
