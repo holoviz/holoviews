@@ -47,13 +47,12 @@ class OutputMagic(Magics):
     @classmethod
     def pprint(cls):
         """
-        Pretty print the current element options with a maximum width of
-        cls.pprint_width.
+        Pretty print the current element options
         """
         current, count = '', 0
         for k,v in Store.output_settings.options.items():
             keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > Store.output_settings.options['charwidth']:
+            if len(current) + len(keyword) > 80:
                 print(('%output' if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
