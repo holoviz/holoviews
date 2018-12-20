@@ -116,7 +116,7 @@ class Opts(object):
     def clear(self, clone=False):
         return self.obj.opts(clone=clone)
 
-    def show(self):
+    def info(self):
         pprinter = PrettyPrinter(show_options=True)
         print(pprinter.pprint(self.obj))
 

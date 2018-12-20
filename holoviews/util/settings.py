@@ -10,8 +10,8 @@ class KeywordSettings(object):
     keyword options.
     """
     # Dictionary from keywords to allowed bounds/values
-    allowed = {'charwidth'   : (0, float('inf'))}
-    defaults = OrderedDict([('charwidth'   , 80)])  # Default keyword values.
+    allowed = {}
+    defaults = OrderedDict([])  # Default keyword values.
     options =  OrderedDict(defaults.items()) # Current options
 
     # Callables accepting (value, keyword, allowed) for custom exceptions
@@ -149,7 +149,6 @@ class OutputSettings(KeywordSettings):
                'max_branches': {None},            # Deprecated
                'size'        : (0, float('inf')),
                'dpi'         : (1, float('inf')),
-               'charwidth'   : (0, float('inf')),
                'filename'    : {None},
                'info'        : [True, False],
                'css'         : {k: basestring
@@ -165,14 +164,13 @@ class OutputSettings(KeywordSettings):
                             ('max_frames'  , 500),
                             ('size'        , None),
                             ('dpi'         , None),
-                            ('charwidth'   , 80),
                             ('filename'    , None),
                             ('info'        , False),
                             ('css'         , None)])
 
     # Defines the options the OutputSettings remembers. All other options
     # are held by the backend specific Renderer.
-    remembered = ['max_frames', 'charwidth', 'info', 'filename']
+    remembered = ['max_frames', 'info', 'filename']
 
     # Remaining backend specific options renderer options
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css', 'widget_mode', 'mode']
@@ -218,8 +216,6 @@ class OutputSettings(KeywordSettings):
                       % cls.defaults['max_frames'])
         size =   "size         : The percentage size of displayed output"
         dpi =    "dpi          : The rendered dpi of the figure"
-        charwidth =  ("charwidth    : The max character width for displaying helper (default %r)"
-                  % cls.defaults['charwidth'])
         filename =  ("filename    : The filename of the saved output, if any (default %r)"
                      % cls.defaults['filename'])
         info = ("info    : The information to page about the displayed objects (default %r)"
@@ -227,9 +223,9 @@ class OutputSettings(KeywordSettings):
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
 
         descriptions = [backend, fig, holomap, widgets, fps, max_frames, size,
-                        dpi, charwidth, filename, info, css]
+                        dpi, filename, info, css]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
-                    'size', 'dpi', 'charwidth', 'filename', 'info', 'css']
+                    'size', 'dpi', 'filename', 'info', 'css']
         signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
         return '\n'.join([signature] + intro + descriptions)
 
