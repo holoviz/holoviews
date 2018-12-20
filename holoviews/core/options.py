@@ -1793,14 +1793,19 @@ class StoreOptions(object):
         supplied trees and update the keys in the remaining backends to
         stay linked with the current object.
         """
+        backend = Store.current_backend if backend is None else backend
         # Update the custom option entries for the current backend
         Store.custom_options(backend=backend).update(custom_trees)
-        # Update the entries in other backends so the ids match correctly
-        for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
+
+        # Propagate option ids for non-selected backends
+        for b in Store.loaded_backends():
+            if b == backend:
+                continue
+            backend_trees = Store._custom_options[b]
             for (old_id, new_id) in id_mapping:
-                tree = Store._custom_options[backend].pop(old_id, None)
+                tree = backend_trees.get(old_id, None)
                 if tree is not None:
-                    Store._custom_options[backend][new_id] = tree
+                    backend_trees[new_id] = tree
 
 
     @classmethod
@@ -1847,20 +1852,10 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        backend = Store.current_backend if backend is None else backend
         options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
-
-        # Propagate option ids for non-selected backends
-        for b in Store.loaded_backends():
-            if b == backend:
-                continue
-            backend_trees = Store.custom_options(backend=b)
-            btrees = {v: backend_trees[k] for k, v in id_mapping
-                      if k in backend_trees}
-            cls.update_backends(id_mapping, btrees, backend=b)
 
         # Propagate ids to the objects
         for (match_id, new_id) in id_mapping:
