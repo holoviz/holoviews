@@ -494,7 +494,7 @@ class output(param.ParameterizedFunction):
     """
 
     @classmethod
-    def show(cls):
+    def info(cls):
         deprecate = ['filename', 'info', 'mode']
         options = Store.output_settings.options
         defaults = Store.output_settings.defaults
