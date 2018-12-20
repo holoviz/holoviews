@@ -369,6 +369,7 @@ class opts(param.ParameterizedFunction):
     def _create_builder(cls, element, completions):
         def fn(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
+            prefix = 'In opts.{element}(...), '.format(element=element)
             backend = kws.pop('backend', None)
             keys = set(kws.keys())
             if backend:
@@ -387,21 +388,23 @@ class opts(param.ParameterizedFunction):
 
                 invalid =  keys - all_valid_kws # Keys not found for any backend
                 if mismatched and not invalid:  # Keys found across multiple backends
-                    msg = 'Keywords supplied are mixed across backends. Keywords {info}'
-                    info = ', '.join('%s invalid for %s' % (v,k)
+                    msg = ('{prefix} keywords supplied are mixed across backends. '
+                           'Keyword(s) {info}')
+                    info = ', '.join('%s are invalid for %s'
+                                     % (', '.join(repr(el) for el in v), k)
                                      for k,v in mismatched.items())
-                    raise ValueError(msg.format(info=info))
+                    raise ValueError(msg.format(info=info, prefix=prefix))
                 allowed_kws = completions
 
-
-            prefix = None
+            reraise = False
             if invalid:
                 try:
                     cls._options_error(list(invalid)[0], element, backend, allowed_kws)
                 except ValueError as e:
-                    prefix = 'In opts.{element}(...), '.format(element=element)
                     msg = str(e)[0].lower() + str(e)[1:]
-                if prefix:
+                    reraise = True
+
+                if reraise:
                     raise ValueError(prefix + msg)
 
             return Options(spec, **kws)
