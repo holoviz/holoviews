@@ -15,7 +15,9 @@ function_types = (
 
 
 def norm(values, min=None, max=None):
-    """min-max normalization to scale data into 0-1 range.
+    """Unity-based normalization to scale data into 0-1 range.
+
+        (values - min) / (max - min)
 
     Args:
         values: Array of values to be normalized
@@ -250,7 +252,9 @@ class dim(object):
         return dim(self, categorize, categories=categories, default=default)
 
     def norm(self, limits=None):
-        """min-max normalization to scale data into 0-1 range.
+        """Unity-based normalization to scale data into 0-1 range.
+
+            (values - min) / (max - min)
 
         Args:
             limits: tuple of (min, max) defining the normalization range
