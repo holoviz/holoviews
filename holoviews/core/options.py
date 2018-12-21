@@ -125,7 +125,7 @@ class Opts(object):
         return self.obj.opts(clone=clone)
 
     def info(self, show_defaults=False):
-         """Prints a repr of the object including any applied options.
+        """Prints a repr of the object including any applied options.
 
         Args:
             show_defaults: Whether to include default options
