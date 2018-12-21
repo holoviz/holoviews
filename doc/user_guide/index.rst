@@ -21,8 +21,11 @@ concepts in HoloViews:
 * `Composing Elements <Composing_Elements.html>`_
    Composing your data into layouts and overlays with the ``+`` and ``*`` operators.
 
-* `Customizing Plots <Customizing_Plots.html>`_
-   Controlling the look and feel of the visual representation.
+* `Applying Customizations <Applying_Customizations.html>`_
+   Using the options system to declare customizations.
+
+* `Style Mapping <Style_Mapping.html>`_
+   Mapping your data to the visual attributes of your plot.
 
 * `Dimensioned Containers <Dimensioned_Containers.html>`_
    Multi-dimensional containers for animating and faceting your data flexibly.
@@ -78,8 +81,8 @@ These guides provide detail about specific additional features in HoloViews:
 * `Installing and Configuring HoloViews <Installing_and_Configuring.html>`_
    Additional information about installation and configuration options.
 
-* `Styling Plots <Styling_Plots.html>`_
-   How to control common styling options including color/style cycles and colormapping.
+* `Customizing Plots <Customizing_Plots.html>`_
+   How to customize plots including their titles, axis labels, ranges, ticks and more.
 
 * `Colormaps <Colormaps.html>`_
    Overview of colormaps available, including when and how to use each type.
@@ -116,7 +119,8 @@ These guides provide detail about specific additional features in HoloViews:
 
     Annotating your Data <Annotating_Data>
     Composing Elements <Composing_Elements>
-    Customizing Plots <Customizing_Plots>
+    Applying Customizations <Applying_Customizations>
+    Style Mapping <Style_Mapping>
     Dimensioned Containers <Dimensioned_Containers>
     Building Composite Objects <Building_Composite_Objects>
     Live Data <Live_Data>
@@ -132,7 +136,7 @@ These guides provide detail about specific additional features in HoloViews:
     Working with large data <Large_Data>
     Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
-    Styling Plots <Styling_Plots>
+    Customizing Plots <Customizing_Plots>
     Colormaps <Colormaps>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
