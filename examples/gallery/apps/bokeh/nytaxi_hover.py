@@ -2,12 +2,13 @@
 Bokeh app example using datashader for rasterizing a large dataset and
 geoviews for reprojecting coordinate systems.
 
-This example requires the 1.7GB nyc_taxi.csv dataset which you can
-obtain by following the instructions for 'nyc_taxi' at:
+This example requires the 1.7GB nyc_taxi_wide.parquet dataset which
+you can obtain by downloading the file from AWS:
 
-  https://github.com/bokeh/datashader/blob/master/examples/README.md
+  https://s3.amazonaws.com/datashader-data/nyc_taxi_wide.parq
 
-Once this CSV is placed in a data/ subfolder, you can run this app with:
+Once this parquet is placed in a data/ subfolder, you can run this app
+with:
 
   bokeh serve --show nytaxi_hover.py
 
@@ -16,18 +17,23 @@ import numpy as np
 import holoviews as hv
 import dask.dataframe as dd
 
+from holoviews import opts
 from holoviews.operation.datashader import aggregate
 
-hv.extension('bokeh')
+renderer = hv.renderer('bokeh')
 
 # Set plot and style options
-hv.util.opts('Image [width=800 height=400 shared_axes=False logz=True xaxis=None yaxis=None] {+axiswise} ')
-hv.util.opts("HLine VLine (color='white' line_width=1) Layout [shared_axes=False] ")
-hv.util.opts("Curve [xaxis=None yaxis=None show_grid=False, show_frame=False] (color='orangered') {+framewise}")
+opts.defaults(
+    opts.Curve(xaxis=None, yaxis=None, show_grid=False, show_frame=False,
+               color='orangered', framewise=True, width=100),
+    opts.Image(width=800, height=400, shared_axes=False, logz=True,
+               xaxis=None, yaxis=None, axiswise=True),
+    opts.HLine(color='white', line_width=1),
+    opts.Layout(shared_axes=False),
+    opts.VLine(color='white', line_width=1))
 
-# Read the CSV file
-df = dd.read_parquet('/Users/philippjfr/development/pyviz/data/nyc_taxi_50k.parq')
-df = df.persist()
+# Read the parquet file
+df = dd.read_parquet('./data/nyc_taxi_wide.parq').persist()
 
 # Declare points
 points = hv.Points(df, kdims=['pickup_x', 'pickup_y'], vdims=[])
@@ -42,8 +48,8 @@ hline = hv.DynamicMap(lambda y: hv.HLine(y), streams=[pointery])
 sampled = hv.util.Dynamic(agg, operation=lambda obj, x: obj.sample(pickup_x=x),
                           streams=[pointerx], link_inputs=False)
 
-hvobj = ((agg * hline * vline) << sampled.opts(plot={'Curve': dict(width=100)}))
+hvobj = ((agg * hline * vline) << sampled)
 
 # Obtain Bokeh document and set the title
-doc = hv.renderer('bokeh').server_doc(hvobj)
+doc = renderer.server_doc(hvobj)
 doc.title = 'NYC Taxi Crosshair'

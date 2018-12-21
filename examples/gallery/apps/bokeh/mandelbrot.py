@@ -7,10 +7,11 @@ interactive exploration of the mandelbrot set.
 import numpy as np
 import holoviews as hv
 
-from holoviews import Options
-from holoviews.plotting.bokeh import BokehRenderer
+from holoviews import opts
 from holoviews.streams import RangeXY
 from numba import jit
+
+renderer = hv.renderer('bokeh')
 
 @jit
 def mandel(x, y, max_iters):
@@ -59,17 +60,11 @@ range_stream = RangeXY(x_range=(-1., 1.), y_range=(-1., 1.))
 dmap = hv.DynamicMap(get_fractal, label='Manderbrot Explorer',
                      streams=[range_stream]).hist(log=True)
 
-# Define styling options
-options = hv.Store.options('bokeh')
-options.Image = {
-    'style': Options(cmap='fire'),
-    'plot' : Options(logz=True, height=600, width=600,
-                     xaxis=None, yaxis=None)
-}
-options.Histogram = {
-    'norm': Options(framewise=True),
-    'plot': Options(logy=True, width=200)
-}
+# Apply options
+dmap.opts(
+    opts.Histogram(framewise=True, logy=True, width=200),
+    opts.Image(cmap='fire', logz=True, height=600, width=600,
+               xaxis=None, yaxis=None))
 
-doc = BokehRenderer.server_doc(dmap)
+doc = renderer.server_doc(dmap)
 doc.title = 'Mandelbrot Explorer'

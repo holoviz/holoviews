@@ -11,7 +11,9 @@ from bokeh.io import curdoc
 from bokeh.layouts import layout
 from bokeh.models import Slider, Button
 from bokeh.sampledata import gapminder
-from holoviews.plotting.bokeh import BokehRenderer
+from holoviews import dim, opts
+
+renderer = hv.renderer('bokeh')
 
 # Declare dataset
 panel = pd.Panel({'Fertility': gapminder.fertility,
@@ -41,13 +43,13 @@ text = gapminder_ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
                            for yr in gapminder_ds.keys()})
 
 # Define options
-opts = {'plot': dict(width=1000, height=600,tools=['hover'], size_index='Population',
-                     color_index='Group', size_fn=np.sqrt, title="{label}"),
-       'style': dict(cmap='Set1', size=0.3, line_color='black', alpha=0.6)}
-text_opts = {'style': dict(text_font_size='52pt', text_color='lightgray')}
-
 # Combine Points and Text
-hvgapminder = (gapminder_ds({'Points': opts}) * text({'Text': text_opts})).relabel('Gapminder Demo')
+hvgapminder = (gapminder_ds * text).opts(
+    opts.Points(alpha=0.6, color='Group', cmap='Set1', line_color='black', 
+                size=np.sqrt(dim('Population'))*0.005, width=1000, height=600,
+                tools=['hover'], title='Gapminder Demo'),
+    opts.Text(text_font_size='52pt', text_color='lightgray'))
+
 
 # Define custom widgets
 def animate_update():
@@ -80,7 +82,8 @@ button.on_click(animate)
 
 # Get HoloViews plot and attach document
 doc = curdoc()
-hvplot = BokehRenderer.get_plot(hvgapminder, doc)
+hvplot = renderer.get_plot(hvgapminder, doc)
+hvplot.update((1964,))
 
 # Make a bokeh layout and add it as the Document root
 plot = layout([[hvplot.state], [slider, button]], sizing_mode='fixed')
