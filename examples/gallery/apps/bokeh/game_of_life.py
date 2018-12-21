@@ -1,6 +1,7 @@
 import numpy as np
 import holoviews as hv
 
+from holoviews import opts
 from holoviews.streams import Tap, Counter
 from scipy.signal import convolve2d
 
@@ -56,26 +57,23 @@ def step(X):
     return (nbrs_count == 3) | (X & (nbrs_count == 2))
 
 def update(pattern, counter, x, y):
-    if counter:
-        img.data = step(img.data)
     if x and y:
         pattern = np.array(shapes[pattern])
         r, c = pattern.shape
         y, x = img.sheet2matrixidx(x,y)
         img.data[y:y+r,x:x+c] = pattern[::-1]
+    else:
+        img.data = step(img.data)
     return hv.Image(img)
 
 title = 'Game of Life - Tap to place pattern, Doubletap to clear'
-opts =  {
-    'style': {'cmap': 'gray', 'toolbar': False, },
-    'plot' : {'height': 400, 'width': 800, 'title': '{label}',
-              'xaxis': None, 'yaxis': None}
-}
+img_opts = opts.Image(cmap='gray', toolbar=None, height=400, width=800,
+                      title=title, xaxis=None, yaxis=None)
 img = hv.Image(np.zeros((100, 200), dtype=np.uint8))
 counter, tap = Counter(transient=True), Tap(transient=True)
 pattern_dim = hv.Dimension('Pattern', values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 
-doc = renderer.server_doc(dmap.redim.range(z=(0, 1)).opts(**opts))
+doc = renderer.server_doc(dmap.redim.range(z=(0, 1)).opts(img_opts))
 dmap.periodic(0.05, None)
 doc.title = 'Game of Life'
