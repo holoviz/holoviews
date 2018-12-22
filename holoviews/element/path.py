@@ -80,7 +80,7 @@ class Path(Geometry):
 
         # Ensure that a list of tuples of scalars and any other non-list
         # type is interpreted as a single path
-        if (not isinstance(data, list) or
+        if (not isinstance(data, (list, Dataset)) or
             (isinstance(data, list) and not len(data) == 0 and all(
                 isinstance(d, tuple) and all(isscalar(v) for v in d)
                 for d in data))):
