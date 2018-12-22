@@ -380,7 +380,7 @@ class opts(param.ParameterizedFunction):
                 mismatched = {}
                 all_valid_kws =  set()
                 for loaded_backend in Store.loaded_backends():
-                    valid = set(cls._element_keywords(loaded_backend)[element])
+                    valid = set(cls._element_keywords(loaded_backend).get(element, []))
                     all_valid_kws |= set(valid)
                     if keys <= valid: # Found a backend for which all keys are valid
                         return Options(spec, **kws)
