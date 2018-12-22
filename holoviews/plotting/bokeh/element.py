@@ -387,7 +387,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.toolbar != 'disable':
             tools = self._init_tools(element)
             properties['tools'] = tools
-        properties['toolbar_location'] = self.toolbar
+            properties['toolbar_location'] = self.toolbar
+        else:
+            properties['tools'] = []
+            properties['toolbar_location'] = None
 
         if self.renderer.webgl:
             properties['output_backend'] = 'webgl'
