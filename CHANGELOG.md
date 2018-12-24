@@ -9,6 +9,13 @@ To enable deprecation warnings for these deprecations set:
 
     hv.config.future_deprecations = True
 
+The largest updates to the API relate to the options system which is now
+more consistent, has better validation and better supports notebook
+users without requiring IPython magics. The new `dim` transform
+generalizes the mapping from data dimensions to visual dimensions,
+greatly increasing the expressive power of the options system. Please
+consult the updated user guides for more information.
+	
 Special thanks for the contributions by Andrew Huang (@ahuang11),
 Julia Signell (@jsignell), Jon Mease (@jonmmease), and Zachary Barry
 (@zbarry).
