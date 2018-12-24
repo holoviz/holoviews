@@ -1,5 +1,5 @@
 Applying Customizations
 _______________________
 
-.. notebook:: holoviews ../../examples/user_guide/03-Customizing_Plots.ipynb
+.. notebook:: holoviews ../../examples/user_guide/03-Applying_Customization.ipynb
     :offset: 1
