@@ -1,6 +1,7 @@
 import os, sys, inspect, shutil
 
 import param
+from pyviz_comms import extension as _pyviz_extension
 
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
@@ -563,7 +564,7 @@ def renderer(name):
         raise ImportError(msg.format(name=name, available=available))
 
 
-class extension(param.ParameterizedFunction):
+class extension(_pyviz_extension):
     """
     Helper utility used to load holoviews extensions. These can be
     plotting extensions, element extensions or anything else that can be

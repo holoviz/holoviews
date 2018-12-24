@@ -1,4 +1,3 @@
-import json
 from nose.plugins.attrib import attr
 from holoviews.element.comparison import ComparisonTestCase
 from pyviz_comms import Comm, JupyterComm
@@ -18,28 +17,26 @@ class TestComm(ComparisonTestCase):
         self.assertEqual(Comm.decode(msg), msg)
 
     def test_handle_message_error_reply(self):
-        def raise_error(msg):
+        def raise_error(msg=None, metadata=None):
             raise Exception('Test')
-        def assert_error(msg):
-            decoded = json.loads(msg)
-            self.assertEqual(decoded['msg_type'], "Error")
-            self.assertTrue(decoded['traceback'].endswith('Exception: Test'))
+        def assert_error(msg=None, metadata=None):
+            self.assertEqual(metadata['msg_type'], "Error")
+            self.assertTrue(metadata['traceback'].endswith('Exception: Test'))
         comm = Comm(id='Test', on_msg=raise_error)
         comm.send = assert_error
         comm._handle_msg({})
 
     def test_handle_message_ready_reply(self):
-        def assert_ready(msg):
-            self.assertEqual(json.loads(msg), {'msg_type': "Ready", 'content': ''})
+        def assert_ready(msg=None, metadata=None):
+            self.assertEqual(metadata, {'msg_type': "Ready", 'content': ''})
         comm = Comm(id='Test')
         comm.send = assert_ready
         comm._handle_msg({})
 
     def test_handle_message_ready_reply_with_comm_id(self):
-        def assert_ready(msg):
-            decoded = json.loads(msg)
-            self.assertEqual(decoded, {'msg_type': "Ready", 'content': '',
-                                       'comm_id': 'Testing id'})
+        def assert_ready(msg=None, metadata=None):
+            self.assertEqual(metadata, {'msg_type': "Ready", 'content': '',
+                                        'comm_id': 'Testing id'})
         comm = Comm(id='Test')
         comm.send = assert_ready
         comm._handle_msg({'comm_id': 'Testing id'})

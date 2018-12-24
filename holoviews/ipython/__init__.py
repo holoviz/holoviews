@@ -264,15 +264,6 @@ class notebook_extension(extension):
                 mimebundle = {'text/html': mimebundle_to_html(mimebundle)}
             publish_display_data(data=mimebundle)
 
-    @classmethod
-    def _process_comm_msg(cls, msg):
-        """
-        Processes comm messages to handle global actions such as
-        cleaning up plots.
-        """
-        if msg['event_type'] == 'delete':
-            Renderer._delete_plot(msg['id'])
-
 
     @param.parameterized.bothmethod
     def tab_completion_docstring(self_or_cls):
@@ -289,6 +280,8 @@ class notebook_extension(extension):
 
 
 notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
+notebook_extension.add_delete_action(Renderer._delete_plot)
+
 
 def load_ipython_extension(ip):
     notebook_extension(ip=ip)
