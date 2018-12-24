@@ -55,7 +55,7 @@ concepts in HoloViews:
    Allow your visualizations to respond to Python events using the 'streams' system.
 
 * `Custom Interactivity <Custom_Interactivity.html>`_
-   Use `Bokeh <bokeh.pydata.org>`_ and 'linked streams' to directly interact with your visualizations.
+   Use `Bokeh <https://bokeh.pydata.org>`_ and 'linked streams' to directly interact with your visualizations.
 
 * `Data Processing Pipelines <Data_Pipelines.html>`_
    Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
