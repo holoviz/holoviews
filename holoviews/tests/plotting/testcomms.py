@@ -1,4 +1,3 @@
-import json
 from nose.plugins.attrib import attr
 from holoviews.element.comparison import ComparisonTestCase
 from pyviz_comms import Comm, JupyterComm
