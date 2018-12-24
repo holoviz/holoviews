@@ -3,7 +3,11 @@ Version 1.11.0
 
 This is a major release containing a large number of features and API
 improvements. Specifically this release was devoted to improving the
-general usability and accessibility of the HoloViews API.
+general usability and accessibility of the HoloViews API and
+deprecating parts of the API in anticipation for the 2.0 release.
+To enable deprecation warnings for these deprecations set:
+
+    hv.config.future_deprecations = True
 
 Special thanks for the contributions by Andrew Huang (@ahuang11),
 Julia Signell (@jsignell), Jon Mease (@jonmmease), and Zachary Barry
