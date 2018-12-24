@@ -17,9 +17,9 @@ description = 'Stop plotting your data - annotate your data and let it visualize
 # built documents.
 #
 # The short X.Y version.
-version = setup_args['version']
+version = 'v1.11.0' #setup_args['version']
 # The full version, including alpha/beta/rc tags.
-release = setup_args['version']
+release = 'v1.11.0' #setup_args['version']
 
 ASSETS_URL = 'https://assets.holoviews.org'
 
@@ -144,9 +144,4 @@ from builder.paramdoc import param_formatter
 
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
-    try:
-        import runipy # noqa (Warning import)
-        nbbuild.setup(app)
-    except:
-        print('RunIPy could not be imported; pages including the '
-              'Notebook directive will not build correctly')
+    nbbuild.setup(app)
