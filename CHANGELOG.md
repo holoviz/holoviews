@@ -6,7 +6,8 @@ improvements. Specifically this release was devoted to improving the
 general usability and accessibility of the HoloViews API.
 
 Special thanks for the contributions by Andrew Huang (@ahuang11),
-Julia Signell (@jsignell), and Zachary Barry (@zbarry).
+Julia Signell (@jsignell), Jon Mease (@jonmmease), and Zachary Barry
+(@zbarry).
 
 Features:
 
