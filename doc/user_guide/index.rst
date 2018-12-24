@@ -111,6 +111,8 @@ These guides provide detail about specific additional features in HoloViews:
 * `Continuous Coordinates <Continuous_Coordinates.html>`_
    How continuous coordinates are handled, specifically focusing on ``Image`` and ``Raster`` types.
 
+* `Notebook Magics <Notebook_Magics.html>`_
+   IPython magics supported in Jupyter Notebooks.
 
 .. toctree::
     :titlesonly:
@@ -145,3 +147,4 @@ These guides provide detail about specific additional features in HoloViews:
     Working with Plot and Renderers <Plots_and_Renderers>
     Exporting and Archiving <Exporting_and_Archiving>
     Continuous Coordinates <Continuous_Coordinates>
+    Notebook Magics <Notebook_Magics>
