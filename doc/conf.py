@@ -5,11 +5,6 @@ sys.path.insert(0, os.getcwd())
 
 from nbsite.shared_conf import *
 
-paths = ['../param/', '.', '..']
-add_paths(paths)
-
-from ..setup import setup_args
-
 # Declare information specific to this project.
 project = u'HoloViews'
 authors = u'PyViz developers'
@@ -142,7 +137,7 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ipython.org/ipython-doc/2/': None,
-                       'http://ioam.github.io/param/': None}
+                       'http://param.pyviz.org/': None}
 
 from builder.paramdoc import param_formatter
 
