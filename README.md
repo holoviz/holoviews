@@ -64,7 +64,7 @@ The recommended way to install HoloViews is using the
 [Anaconda](http://docs.continuum.io/anaconda/install) or
 [Miniconda](http://conda.pydata.org/miniconda.html):
 
-    conda install -c ioam holoviews bokeh
+    conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
