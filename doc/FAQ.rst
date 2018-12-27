@@ -15,7 +15,7 @@ potential pitfalls we hope to help users avoid:
 which for a Pandas dataframe will default to the name of that column.
 If you want to define your own specific label to display for a
 dimension, you can provide a tuple containing the column name and your
-preferred label for it.  For instance, if the column is named `x_col`,
+preferred label for it. For instance, if the column is named `x_col`,
 you can make the label 'X Label' using:
 
 .. code:: python
@@ -25,7 +25,7 @@ you can make the label 'X Label' using:
 This is the recommended way to specify labels in a declarative way,
 which will persist when applying operations to your data. You can also
 change the labels later, even after the object has been defined, by
-passing arguments (or an unpacked dictionary) to .redim.label():
+passing arguments (or an unpacked dictionary) to ``redim.label``:
 
 .. code:: python
 
@@ -43,10 +43,9 @@ To override a label for plotting it is also possible to use the
 **Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
 
 **A:** Pass an unpacked dictionary containing the kdims/vdims' names
-as keys and a tuple of the bounds as values into
-obj.redim.range().
+as keys and a tuple of the bounds as values into ``redim.range``.
 
-This constrains the bounds of x_col to (0, max(x_col)).
+This constrains the bounds of x_col to `(0, max(x_col))`.
 
 .. code:: python
 
@@ -56,15 +55,15 @@ This constrains the bounds of x_col to (0, max(x_col)).
 As in the discussion of labels above, this approach allows you to declaratively associate ranges
 with the dimensions of your data in a way that will persist even if
 you apply operations to the object. This same method is applicable to
-adjust the limits of the colormapping range (i.e. the `clim`).
+adjust the limits of the colormapping range (i.e. ``clim``).
 
 To override the range specifically for plotting it is also possible to
-set the `xlim` and `ylim` plot options:
+set the ``xlim`` and ``ylim`` plot options:
 
 .. code:: python
 
   hv.Curve(df, 'x_col', 'y_col').options(xlim=(0, None), ylim=(0, 10))
-  
+
 This approach allows you to customize objects easily as a final step, but note that the values won't be applied to the underlying data, and thus won't be inherited if this object is subsequently used in an operation or data selection command.
 
 
@@ -91,18 +90,18 @@ normalized independently by changing ``framewise`` to True:
     your_holomap.options(framewise=True)
 
 
-**Q: Why doesn't my DynamicMap respect the framewise=False option for
+**Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for
 axis normalization across frames?**
 
 **A:** Unfortunately, HoloViews has no way of knowing the axis ranges
 of objects that might be returned by future calls to a DynamicMap's
 callback function, and so there is no way for it to fully implement
 ``framewise=False`` normalization (even though such normalization
-is the default in HoloViews). Thus as a special case, a DynamicMap
+is the default in HoloViews). Thus, as a special case, a DynamicMap
 (whether created specifically or as the return value of various
 operations that accept a ``dynamic=True`` argument) will by default
 compute its ranges *using the first frame's data only*. If that is not
- the behavior you want, you can either set ``framewise=True`` on it to enable
+the behavior you want, you can either set ``framewise=True`` on it to enable
 normalization on every frame independently, or you can manually
 determine the appropriate axis range yourself and set that, e.g. with
 ``.redim.range()`` as described above.
@@ -134,9 +133,9 @@ shows an example of an ``NdOverlay`` in action.
 
 **Q: How do I export a figure?**
 
-**A:** The easiest way to save a figure is the `hv.save` utility,
- which allows saving plots in different formats depending on what is
- supported by the selected backend:
+**A:** The easiest way to save a figure is the ``hv.save`` utility,
+which allows saving plots in different formats depending on what is
+supported by the selected backend:
 
 .. code:: python
 
@@ -152,10 +151,10 @@ activated backend (i.e. ``hv.Store.current_backend``).
 
 **Q: Can I export and customize a bokeh or matplotlib figure directly?**
 
-**A:**: Sometimes it is useful to customize a plot further using the
- underlying plotting API used to render it. The `hv.render` method
- returns the rendered representation of a holoviews object as bokeh or
- matplotlib figure:
+**A:** Sometimes it is useful to customize a plot further using the
+underlying plotting API used to render it. The ``hv.render`` method
+returns the rendered representation of a holoviews object as bokeh or
+matplotlib figure:
 
 .. code:: python
 
@@ -169,8 +168,7 @@ Note that the backend is optional and will default to the currently
 activated backend (i.e. ``hv.Store.current_backend``).
 
 If the main reason you want access to the object is to somehow customize it before it is
-plotted, instead consider that it
-is possible to write so called ``hooks``:
+plotted, instead consider that it is possible to write so called ``hooks``:
 
 .. code:: python
 
@@ -186,7 +184,53 @@ is possible to write so called ``hooks``:
 
 These hooks can modify the backend specific representation, e.g. the
 matplotlib figure, before it is displayed, allowing arbitrary customizations to be
-applied which are not implemented or exposed by holoviews itself.
+applied which are not implemented or exposed by HoloViews itself.
+
+
+**Q**: What if I need to do more complex customization supported by the
+backend but not exposed in HoloViews?**
+
+**A:** If you need to, you can easily access the underlying Bokeh or
+Matplotlib figure and then use Bokeh or Matplotlib's API directly on
+that object. For instance, if you want to force Bokeh to use a
+fixed list of tick labels for a HoloViews object ``h``, you can
+grab the corresponding Bokeh figure ``b``, edit it to your heart's
+content as a Bokeh figure, and then show it as for any other Bokeh
+figure:
+
+.. code:: python
+  import holoviews as hv
+  hv.extension('bokeh')
+  h = hv.Curve([1,2,7], 'x_col', 'y_col')
+
+  from bokeh.io import show
+  from bokeh.models.tickers import FixedTicker
+
+  b = hv.render(h)
+  b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
+  show(b)
+
+Once you debug a modification like this manually as above, you'll probably
+want to set it up to apply automatically whenever a Bokeh plot is generated
+for that HoloViews object:
+
+.. code:: python
+
+  import holoviews as hv
+  from bokeh.models.tickers import FixedTicker
+  hv.extension('bokeh')
+
+  def update_axis(plot, element):
+      b = plot.state
+      b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
+
+  h = hv.Curve([1,2,7], 'x_col', 'y_col')
+  h = h.options(hooks=[update_axis])
+  h
+
+Here, you've wrapped your Bokeh-API calls into a function, then
+supplied that to HoloViews so that it can be run automatically
+whenever object ``h`` is viewed.
 
 
 **Q: Can I avoid generating extremely large HTML files when exporting
@@ -212,9 +256,9 @@ include:
 
 It is also possible to generate web pages that do not actually include
 all of the data shown, by specifying a `DynamicMap`` as described in
-`Live Data <user_guide/Live_Data.html>`_ rather than a HoloMap.  The
+`Live Data <user_guide/Live_Data.html>`_ rather than a HoloMap. The
 DynamicMap will request data only as needed, and so requires a Python
-server to be running alongside the viewable web page.  Such pages are
+server to be running alongside the viewable web page. Such pages are
 more difficult to share by email or on web sites, but much more feasible
 for large datasets.
 
@@ -227,7 +271,7 @@ that you can override. If you want to use a lot of special characters
 in your titles, you can pick simple ``group`` and ``label`` strings
 that let you refer to the object easily in the code, and then you can
 set the plot title directly, using the plot option
-``title_format="my new title"``.
+``title="my new title"``.
 
 You can also use 2-tuples when specifying ``group`` and ``label`` where
 the first item is the short name used for attribute access and the
@@ -236,7 +280,7 @@ second name is the long descriptive name used in the title.
 
 **Q: Help! I don't know how to index into my object!**
 
-**A:**  In any Python session, you can look at ``print(obj)`` to see
+**A:** In any Python session, you can look at ``print(obj)`` to see
 the structure of ``obj``. For
 an explanation of how this information helps you index into your
 object, see our `Composing Elements <user_guide/Composing_Elements.html>`_
@@ -297,7 +341,7 @@ to work with a variety of differently customized versions of
 any given object. You can pass clone=False to .options()
 if you wish to modify the object in place, or you can just
 reassign the new object to the old name (as in
-``e=e.relabel("New Label")``).
+``e = e.relabel("New Label")``).
 
 
 **Q: Why isn't my %%opts cell magic being applied to my HoloViews object?**
@@ -335,7 +379,7 @@ Example code below:
 corresponding plotting code implemented in different plotting-library
 backends, and each library will have differences in behavior.
 Moreover, the same library can give different results depending on its
-own internal options and versions.  For instance, Matplotlib supports
+own internal options and versions. For instance, Matplotlib supports
 a variety of internal plotting backends, and these can have
 inconsistent output. HoloViews will not switch Matplotlib backends for
 you, but when using Matplotlib we strongly recommend selecting the
@@ -352,18 +396,18 @@ to use each backend's defaults where possible.
 
 
 **Q: Why do my HoloViews and GeoViews objects work fine separately but
-are mismatched when overlaid?
+are mismatched when overlaid?**
 
 **A:** GeoViews works precisely the same as HoloViews, except that
-GeoViews is aware of geographic projections.  If you take an
-``hv.Points()`` object in lon,lat coordinates and overlay it on a
+GeoViews is aware of geographic projections. If you take an
+``hv.Points`` object in lon,lat coordinates and overlay it on a
 GeoViews map in Web Mercator, the HoloViews object will be in
 entirely the wrong coordinate system, with the HoloViews object all
-appearing at one tiny spot on the globe.  If you declare the same
+appearing at one tiny spot on the globe. If you declare the same
 object as ``gv.Points``, then GeoViews will (a) assume it is in
 lon,lat coordinates (which HoloViews cannot assume, as it knows
 nothing of geography), and (b) convert it into the coordinates
-needed for display (e.g. Web Mercator).  So, just make sure that
+needed for display (e.g. Web Mercator). So, just make sure that
 anything with geographic coordinates is defined as a GeoViews object,
 and make sure to declare the coordinates (``crs=...``) if the data is
 in anything other than lon,lat.
@@ -413,59 +457,13 @@ Now you can freely use ``'filternorm'`` in ``.options()`` and in the
 ``%opts`` line/cell magic, including tab-completion!
 
 
-**Q: What if I need to do more complex customization supported by the
-backend but not exposed in HoloViews?
-
-**A:** If you need to, you can easily access the underlying Bokeh or
-Matplotlib figure and then use Bokeh or Matplotlib's API directly on
-that object.  For instance, if you want to force Bokeh to use a
-fixed list of tick labels for a HoloViews object ``h``, you can
-grab the corresponding Bokeh figure ``b``, edit it to your heart's
-content as a Bokeh figure, and then show it as for any other Bokeh
-figure:
-
-.. code:: python
-  import holoviews as hv
-  hv.extension('bokeh')
-  h = hv.Curve([1,2,7], 'x_col', 'y_col')
-
-  from bokeh.io import show
-  from bokeh.models.tickers import FixedTicker
-
-  b=hv.renderer('bokeh').get_plot(h).state
-  b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
-  show(b)
-
-Once you debug a modification like this manually as above, you'll probably
-want to set it up to apply automatically whenever a Bokeh plot is generated
-for that HoloViews object:
-
-.. code:: python
-
-  import holoviews as hv
-  from bokeh.models.tickers import FixedTicker
-  hv.extension('bokeh')
-
-  def update_axis(plot, element):
-      b = plot.state
-      b.axis[0].ticker = FixedTicker(ticks=list(range(0, 10)))
-
-  h = hv.Curve([1,2,7], 'x_col', 'y_col')
-  h = h.options(hooks=[update_axis])
-  h
-
-Here, you've wrapped your Bokeh-API calls into a function, then
-supplied that to HoloViews so that it can be run automatically
-whenever object ``h`` is viewed.
-
-
 **Q: What I want to change is about how HoloViews works, not about the
-underlying backend.  Is that possible?**
+underlying backend. Is that possible?**
 
 **A:** Sure, if you need more customization and configurability than is
 possible with either HoloViews options or with extra backend-specific
 code as above, then you can always subclass the plotting class used
-for a HoloViews element and modify any of its behavior.  You can also
+for a HoloViews element and modify any of its behavior. You can also
 add your own Element types, which need corresponding plotting classes
 before they will be viewable in a given backend. The resulting objects
 will still interact normally with other HoloViews objects (e.g. in
