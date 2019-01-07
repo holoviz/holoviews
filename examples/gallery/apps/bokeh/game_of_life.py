@@ -64,16 +64,16 @@ def update(pattern, counter, x, y):
         img.data[y:y+r,x:x+c] = pattern[::-1]
     else:
         img.data = step(img.data)
-    return hv.Image(img)
+    return img
 
 title = 'Game of Life - Tap to place pattern, Doubletap to clear'
-img_opts = opts.Image(cmap='gray', toolbar=None, height=400, width=800,
-                      title=title, xaxis=None, yaxis=None)
-img = hv.Image(np.zeros((100, 200), dtype=np.uint8))
+plotting_opts = dict(height=400, width=800, toolbar=None, xaxis=None, yaxis=None)
+style_opts = dict(cmap='gray')
+img = hv.Image(np.zeros((100, 200), dtype=np.uint8), label=title).opts(plot=plotting_opts, style=style_opts)
 counter, tap = Counter(transient=True), Tap(transient=True)
 pattern_dim = hv.Dimension('Pattern', values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 
-doc = renderer.server_doc(dmap.redim.range(z=(0, 1)).opts(img_opts))
+doc = renderer.server_doc(dmap.redim.range(z=(0, 1)))
 dmap.periodic(0.05, None)
 doc.title = 'Game of Life'
