@@ -43,6 +43,8 @@ class RasterPlot(ColorbarPlot):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         val_dim = element.vdims[0]
         style['color_mapper'] = self._get_colormapper(val_dim, element, ranges, style)
+        if 'alpha' in style:
+            style['global_alpha'] = style['alpha']
 
         if self.static_source:
             return {}, mapping, style
@@ -95,6 +97,9 @@ class RGBPlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        if 'alpha' in style:
+            style['global_alpha'] = style['alpha']
+
         if self.static_source:
             return {}, mapping, style
 
