@@ -514,7 +514,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
             cidx = opts.options.get('color_index', None)
             if cidx is None:
                 opts = self.lookup_options(range_item, 'style')
-                cidx = opts.options.get('color', None)
+                cidx = opts.kwargs.get('color', None)
                 if cidx not in range_item:
                     cidx = None
             cdim = None if cidx is None else range_item.get_dimension(cidx)
