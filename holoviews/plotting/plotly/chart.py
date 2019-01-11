@@ -222,17 +222,17 @@ class BarPlot(ElementPlot):
 
     def get_data(self, element, ranges, style):
         if self.stack_index is not None:
-            self.warning('Bars stack_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
+            self.param.warning(
+                'Bars stack_index plot option is deprecated and will '
+                'be ignored, set stacked=True/False instead.')
         if self.category_index is not None:
-            self.warning('Bars category_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
+            self.param.warning(
+                'Bars category_index plot option is deprecated and '
+                'will be ignored, set stacked=True/False instead.')
         if self.group_index not in (None, 1):
-            self.warning('Bars group_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
+            self.param.warning(
+                'Bars group_index plot option is deprecated and will '
+                'be ignored, set stacked=True/False instead.')
 
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]

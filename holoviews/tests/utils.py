@@ -20,8 +20,11 @@ class MockLoggingHandler(logging.Handler):
     def __init__(self, *args, **kwargs):
         self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
                          'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
-        self.param_methods = {'WARNING':'param.warning()', 'INFO':'param.message()',
-                              'VERBOSE':'param.verbose()', 'DEBUG':'param.debug()'}
+        self.param_methods = {
+            'WARNING':'param.param.warning()',
+            'INFO':'param.param.message()',
+            'VERBOSE':'param.param.verbose()',
+            'DEBUG':'param.param.debug()'}
         super(MockLoggingHandler, self).__init__(*args, **kwargs)
 
     def emit(self, record):

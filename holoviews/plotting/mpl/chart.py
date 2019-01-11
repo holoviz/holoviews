@@ -628,8 +628,9 @@ class PointPlot(ChartPlot, ColorbarPlot):
         cmap = style.get('cmap', None)
 
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index; ignoring the color_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'color' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
@@ -646,8 +647,9 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
         if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
-            self.warning("Cannot declare style mapping for 's' option "
-                         "and declare a size_index; ignoring the size_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 's' option and "
+                "declare a size_index; ignoring the size_index.")
             sdim = None
         if sdim:
             sizes = element.dimension_values(self.size_index)
@@ -655,8 +657,9 @@ class PointPlot(ChartPlot, ColorbarPlot):
                                   self.scaling_method, ms)
             if sizes is None:
                 eltype = type(element).__name__
-                self.warning('%s dimension is not numeric, cannot '
-                             'use to scale %s size.' % (sdim.pprint_label, eltype))
+                self.param.warning(
+                    '%s dimension is not numeric, cannot use to '
+                    'scale %s size.' % (sdim.pprint_label, eltype))
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
@@ -750,8 +753,9 @@ class VectorFieldPlot(ColorbarPlot):
         size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
         if size_dim and mag_dim:
-            self.warning("Cannot declare style mapping for 'magnitude' option "
-                         "and declare a size_index; ignoring the size_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'magnitude' option "
+                "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
         elif isinstance(mag_dim, basestring):
@@ -790,8 +794,9 @@ class VectorFieldPlot(ColorbarPlot):
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index; ignoring the color_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'color' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim:
             colors = element.dimension_values(self.color_index)
@@ -1191,8 +1196,9 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
         if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.warning("Cannot declare style mapping for 'color' option "
-                         "and declare a color_index; ignoring the color_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'color' option and "
+                "declare a color_index; ignoring the color_index.")
             cdim = None
         if cdim:
             style['array'] = element.dimension_values(cdim)

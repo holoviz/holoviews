@@ -143,8 +143,8 @@ class HoloMap(UniformNdMapping, Overlayable):
     def split_overlays(self):
         "Deprecated method to split overlays inside the HoloMap."
         if util.config.future_deprecations:
-            self.warning("split_overlays is deprecated and is now "
-                         "a private method.")
+            self.param.warning("split_overlays is deprecated and is now "
+                               "a private method.")
         return self._split_overlays()
 
 
@@ -709,12 +709,13 @@ class Callable(param.Parameterized):
             pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
             ignored = range(len(self.argspec.args),len(args))
             if len(ignored):
-                self.warning('Ignoring extra positional argument %s'
-                             % ', '.join('%s' % i for i in ignored))
+                self.param.warning('Ignoring extra positional argument %s'
+                                   % ', '.join('%s' % i for i in ignored))
             clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
             if clashes:
-                self.warning('Positional arguments %r overriden by keywords'
-                             % list(clashes))
+                self.param.warning(
+                    'Positional arguments %r overriden by keywords'
+                    % list(clashes))
             args, kwargs = (), dict(pos_kwargs, **kwargs)
 
         try:
@@ -729,7 +730,7 @@ class Callable(param.Parameterized):
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
             message = ("Callable raised \"{e}\".\n"
                        "Invoked as {name}({argstr})")
-            self.warning(message.format(name=self.name, argstr=argstr, e=repr(e)))
+            self.param.warning(message.format(name=self.name, argstr=argstr, e=repr(e)))
             raise
 
         if hashed_key is not None:
@@ -759,7 +760,7 @@ class Generator(Callable):
             raise
         except Exception:
             msg = 'Generator {name} raised the following exception:'
-            self.warning(msg.format(name=self.name))
+            self.param.warning(msg.format(name=self.name))
             raise
 
 
@@ -913,8 +914,8 @@ class DynamicMap(HoloMap):
             callback = Callable(callback)
 
         if 'sampled' in params:
-            self.warning('DynamicMap sampled parameter is deprecated '
-                         'and no longer needs to be specified.')
+            self.param.warning('DynamicMap sampled parameter is deprecated '
+                               'and no longer needs to be specified.')
             del params['sampled']
 
         valid, invalid = Stream._process_streams(streams)
@@ -1027,11 +1028,13 @@ class DynamicMap(HoloMap):
             **kwargs: Events to update streams with
         """
         if self.callback.noargs and self.streams == []:
-            self.warning('No streams declared. To update a DynamicMaps using '
-                         'generators (or callables without arguments) use streams=[Next()]')
+            self.param.warning(
+                'No streams declared. To update a DynamicMaps using '
+                'generators (or callables without arguments) use streams=[Next()]')
             return
         if self.streams == []:
-            self.warning('No streams on DynamicMap, calling event will have no effect')
+            self.param.warning('No streams on DynamicMap, calling event '
+                               'will have no effect')
             return
 
         stream_params = set(util.stream_parameters(self.streams))
@@ -1143,9 +1146,9 @@ class DynamicMap(HoloMap):
             Cloned object
         """
         if 'link_inputs' in overrides and util.config.future_deprecations:
-            self.warning('link_inputs argument to the clone method is '
-                         'deprecated, use the more general link '
-                         'argument instead.')
+            self.param.warning(
+                'link_inputs argument to the clone method is deprecated, '
+                'use the more general link argument instead.')
         link = link and overrides.pop('link_inputs', True)
         callback = overrides.pop('callback', self.callback)
         if data is None and shared_data:
@@ -1450,8 +1453,8 @@ class DynamicMap(HoloMap):
     def split_overlays(self):
         "Deprecated method to split overlays inside the DynamicMap."
         if util.config.future_deprecations:
-            self.warning("split_overlays is deprecated and is now "
-                         "a private method.")
+            self.param.warning("split_overlays is deprecated and is now "
+                               "a private method.")
         return self._split_overlays()
 
 

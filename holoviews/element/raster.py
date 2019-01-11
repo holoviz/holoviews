@@ -102,9 +102,10 @@ class Raster(Element2D):
     @classmethod
     def collapse_data(cls, data_list, function, kdims=None, **kwargs):
         if util.config.future_deprecations:
-            param.main.warning('Raster.collapse_data is deprecated, collapsing '
-                               'may now be performed through concatenation '
-                               'and aggregation.')
+            param.main.param.warning(
+                'Raster.collapse_data is deprecated, collapsing '
+                'may now be performed through concatenation '
+                'and aggregation.')
         if isinstance(function, np.ufunc):
             return function.reduce(data_list)
         else:
@@ -343,7 +344,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         elif not yvalid:
             dims = ' %s is' % ydim
         if dims:
-            self.warning(msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
+            self.param.warning(
+                msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
 
         if not supplied_bounds:
             return
@@ -581,9 +583,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         'dictionary'.
         """
         if config.future_deprecations:
-            self.warning("The table method is deprecated and should no "
-                         "longer be used. Instead cast the %s to a "
-                         "a Table directly." % type(self).__name__)
+            self.param.warning(
+                "The table method is deprecated and should no longer "
+                "be used. Instead cast the %s to a a Table directly."
+                % type(self).__name__)
         if datatype and not isinstance(datatype, list):
             datatype = [datatype]
         from ..element import Table

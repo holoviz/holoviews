@@ -182,8 +182,9 @@ class SplinePlot(ElementPlot, AnnotationPlot):
                 data[xl].append(x)
                 data[yl].append(y)
         if skipped:
-            self.warning('Bokeh SplitPlot only support cubic splines, '
-                         'unsupported splines were skipped during plotting.')
+            self.param.warning(
+                'Bokeh SplitPlot only support cubic splines, unsupported '
+                'splines were skipped during plotting.')
         data = {da: data[da] for da in data_attrs}
         return (data, dict(zip(data_attrs, data_attrs)), style)
 

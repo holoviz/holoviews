@@ -61,8 +61,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
         sdim = element.get_dimension(self.size_index)
         ms = style.get('size', np.sqrt(6))
         if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
-            self.warning("Cannot declare style mapping for 'size' option "
-                         "and declare a size_index; ignoring the size_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'size' option and "
+                "declare a size_index; ignoring the size_index.")
             sdim = None
         if not sdim or self.static_source:
             return data, mapping
@@ -75,8 +76,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
                               self.scaling_method, ms)
         if sizes is None:
             eltype = type(element).__name__
-            self.warning('%s dimension is not numeric, cannot '
-                         'use to scale %s size.' % (sdim.pprint_label, eltype))
+            self.param.warning(
+                '%s dimension is not numeric, cannot use to scale %s size.'
+                % (sdim.pprint_label, eltype))
         else:
             data[map_key] = np.sqrt(sizes)
             mapping['size'] = map_key
@@ -120,7 +122,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
         for (key, el), zorder in zip(element.data.items(), zorders):
-            self.set_param(**self.lookup_options(el, 'plot').options)
+            self.param.set_param(**self.lookup_options(el, 'plot').options)
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -199,8 +201,9 @@ class VectorFieldPlot(ColorbarPlot):
         size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
         if size_dim and mag_dim:
-            self.warning("Cannot declare style mapping for 'magnitude' option "
-                         "and declare a size_index; ignoring the size_index.")
+            self.param.warning(
+                "Cannot declare style mapping for 'magnitude' option "
+                "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
         elif isinstance(mag_dim, basestring):
@@ -336,7 +339,7 @@ class CurvePlot(ElementPlot):
 
         zorders = self._updated_zorders(overlay)
         for (key, el), zorder in zip(overlay.data.items(), zorders):
-            self.set_param(**self.lookup_options(el, 'plot').options)
+            self.param.set_param(**self.lookup_options(el, 'plot').options)
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -889,13 +892,13 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         if self.stack_index is not None:
-            self.warning('Bars stack_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
+            self.param.warning(
+                'Bars stack_index plot option is deprecated and will '
+                'be ignored, set stacked=True/False instead.')
         if self.group_index not in (None, 1):
-            self.warning('Bars group_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
+            self.param.warning(
+                'Bars group_index plot option is deprecated and will '
+                'be ignored, set stacked=True/False instead.')
 
         # Get x, y, group, stack and color dimensions
         group_dim, stack_dim = None, None
@@ -919,7 +922,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Define style information
         width = style.get('bar_width', style.get('width', 1))
         if 'width' in style:
-            self.warning("BarPlot width option is deprecated use 'bar_width' instead.")
+            self.param.warning("BarPlot width option is deprecated "
+                               "use 'bar_width' instead.")
         cmap = style.get('cmap')
         hover = 'hover' in self.handles
 

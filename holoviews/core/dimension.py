@@ -407,8 +407,9 @@ class Dimension(param.Parameterized):
             all_params['label'] = label
             if 'label' in params and (label != params['label']):
                 if params['label'] != label:
-                    self.warning('Using label as supplied by keyword ({!r}), ignoring '
-                                 'tuple value {!r}'.format(params['label'], label))
+                    self.param.warning(
+                        'Using label as supplied by keyword ({!r}), ignoring '
+                        'tuple value {!r}'.format(params['label'], label))
                 all_params['label'] = params['label']
         elif isinstance(spec, basestring):
             all_params['name'] = spec
@@ -421,7 +422,8 @@ class Dimension(param.Parameterized):
 
         values = params.get('values', [])
         if isinstance(values, basestring) and values == 'initial':
-            self.warning("The 'initial' string for dimension values is no longer supported.")
+            self.param.warning("The 'initial' string for dimension values "
+                               "is no longer supported.")
             values = []
 
         all_params['values'] = list(util.unique_array(values))
@@ -449,8 +451,8 @@ class Dimension(param.Parameterized):
 
     def __call__(self, spec=None, **overrides):
         if util.config.future_deprecations:
-            self.warning('Dimension.__call__ method has been deprecated, '
-                         'use the clone method instead.')
+            self.param.warning('Dimension.__call__ method has been deprecated, '
+                               'use the clone method instead.')
         return self.clone(spec=spec, **overrides)
 
 
@@ -475,8 +477,9 @@ class Dimension(param.Parameterized):
             spec = (spec, overrides['label'])
         elif 'label' in overrides and isinstance(spec, tuple) :
             if overrides['label'] != spec[1]:
-                self.warning('Using label as supplied by keyword ({!r}), ignoring '
-                             'tuple value {!r}'.format(overrides['label'], spec[1]))
+                self.param.warning(
+                    'Using label as supplied by keyword ({!r}), ignoring '
+                    'tuple value {!r}'.format(overrides['label'], spec[1]))
             spec = (spec[0],  overrides['label'])
 
         return self.__class__(spec, **{k:v for k,v in settings.items()
@@ -839,7 +842,7 @@ class LabelledData(param.Parameterized):
             else:
                 obj_dict['id'] = None
         except:
-            self.warning("Could not pickle custom style information.")
+            self.param.warning("Could not pickle custom style information.")
         return obj_dict
 
 
@@ -869,7 +872,7 @@ class LabelledData(param.Parameterized):
                 else:
                     d['id'] = None
         except:
-            self.warning("Could not unpickle custom style information.")
+            self.param.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)
 
 
@@ -1307,9 +1310,10 @@ class Dimensioned(LabelledData):
 
     def __call__(self, options=None, **kwargs):
         if util.config.warn_options_call:
-            self.warning('Use of __call__ to set options will be deprecated '
-                         'in future. Use the equivalent opts method or use '
-                         'the recommended .options method instead.')
+            self.param.warning(
+                'Use of __call__ to set options will be deprecated '
+                'in future. Use the equivalent opts method or use '
+                'the recommended .options method instead.')
 
         return self.opts(options, **kwargs)
 
@@ -1435,8 +1439,8 @@ class ViewableTree(AttrTree, Dimensioned):
     def from_values(cls, vals):
         "Deprecated method to construct tree from list of objects"
         if util.config.future_deprecations:
-            param.main.warning("%s.from_values is deprecated, the %s "
-                               "constructor may now be used directly.")
+            param.main.param.warning("%s.from_values is deprecated, the %s "
+                                     "constructor may now be used directly.")
         return cls(items=cls._process_items(vals))
 
 
@@ -1537,9 +1541,9 @@ class ViewableTree(AttrTree, Dimensioned):
             ViewableTree(tree.relabel(group='Group').values())
         """
         if util.config.future_deprecations:
-            self.warning('%s.regroup is deprecated, use relabel '
-                         'method with a group argument instead.'
-                         % type(self).__name__)
+            self.param.warning('%s.regroup is deprecated, use relabel '
+                               'method with a group argument instead.'
+                               % type(self).__name__)
         new_items = [el.relabel(group=group) for el in self.data.values()]
         return reduce(lambda x,y: x+y, new_items)
 

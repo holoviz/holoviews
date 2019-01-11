@@ -72,8 +72,9 @@ class SankeyPlot(GraphPlot):
         labels = self.labels
         if label_dim and labels:
             if self.label_index not in [2, None]:
-                self.warning("Cannot declare style mapping for 'labels' option "
-                             "and declare a label_index; ignoring the label_index.")
+                self.param.warning(
+                    "Cannot declare style mapping for 'labels' option "
+                    "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
         if isinstance(labels, basestring):

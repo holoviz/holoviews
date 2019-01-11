@@ -89,7 +89,7 @@ class opts(param.ParameterizedFunction):
                    "use opts.defaults instead.\nFor instance, instead of "
                    "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
             if util.config.future_deprecations:
-                self.warning(msg)
+                self.param.warning(msg)
             self._linemagic(args[0])
         elif len(args) == 2:
             msg = ("Double positional argument signature of opts is deprecated, "
@@ -97,7 +97,7 @@ class opts(param.ParameterizedFunction):
                    "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
 
             if util.config.future_deprecations:
-                self.warning(msg)
+                self.param.warning(msg)
 
             self._cellmagic(args[0], args[1])
 
@@ -317,10 +317,10 @@ class opts(param.ParameterizedFunction):
                 if opt in group_opts.allowed_keywords:
                     found.append(lb)
         if found:
-            param.main.warning('Option %r for %s type not valid '
-                               'for selected backend (%r). Option '
-                               'only applies to following backends: %r' %
-                               (opt, objtype, current_backend, found))
+            param.main.param.warning(
+                'Option %r for %s type not valid for selected '
+                'backend (%r). Option only applies to following '
+                'backends: %r' % (opt, objtype, current_backend, found))
             return
 
         if matches:
@@ -530,8 +530,8 @@ class output(param.ParameterizedFunction):
                     raise KeyError('Invalid keyword: %s' % k)
             if 'filename' in options:
                 if util.config.future_deprecations:
-                    self.warning('The filename argument of output is deprecated. '
-                                 'Use hv.save instead.')
+                    self.param.warning('The filename argument of output is deprecated. '
+                                       'Use hv.save instead.')
 
             def display_fn(obj, renderer):
                 try:
@@ -579,7 +579,7 @@ class extension(_pyviz_extension):
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
-        util.config.set_param(**config)
+        util.config.param.set_param(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
         for p, val in sorted(params.items()):
@@ -595,21 +595,23 @@ class extension(_pyviz_extension):
             try:
                 __import__(backend)
             except:
-                self.warning("%s could not be imported, ensure %s is installed."
+                self.param.warning("%s could not be imported, ensure %s is installed."
                              % (backend, backend))
             try:
                 __import__('holoviews.plotting.%s' % imp)
                 if selected_backend is None:
                     selected_backend = backend
             except util.VersionError as e:
-                self.warning("HoloViews %s extension could not be loaded. "
-                             "The installed %s version %s is less than "
-                             "the required version %s." %
-                             (backend, backend, e.version, e.min_version))
+                self.param.warning(
+                    "HoloViews %s extension could not be loaded. "
+                    "The installed %s version %s is less than "
+                    "the required version %s." %
+                    (backend, backend, e.version, e.min_version))
             except Exception as e:
-                self.warning("Holoviews %s extension could not be imported, "
-                             "it raised the following exception: %s('%s')" %
-                             (backend, type(e).__name__, e))
+                self.param.warning(
+                    "Holoviews %s extension could not be imported, "
+                    "it raised the following exception: %s('%s')" %
+                    (backend, type(e).__name__, e))
             finally:
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)

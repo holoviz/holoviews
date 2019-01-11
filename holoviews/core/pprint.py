@@ -54,7 +54,7 @@ class ParamFilter(param.ParameterizedFunction):
             filtered = {k:v for k,v in instance_params
                         if (k in obj_proxy.params())
                             and not obj_proxy.params(k).constant}
-            obj_proxy.set_param(**filtered)
+            obj_proxy.param.set_param(**filtered)
             return obj_proxy
 
     @param.parameterized.bothmethod

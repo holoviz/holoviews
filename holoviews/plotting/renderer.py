@@ -270,8 +270,8 @@ class Renderer(Exporter):
             try:
                 data = hook(data, obj)
             except Exception as e:
-                self.warning("The post_render_hook %r could not be applied:\n\n %s"
-                             % (hook, e))
+                self.param.warning("The post_render_hook %r could not "
+                                   "be applied:\n\n %s" % (hook, e))
         return data
 
 

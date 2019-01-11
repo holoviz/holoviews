@@ -68,8 +68,9 @@ class ItemTable(Element):
     @classmethod
     def collapse_data(cls, data, function, **kwargs):
         if config.future_deprecations:
-            param.main.warning('ItemTable.collapse_data is deprecated and '
-                               'should no longer be used.')
+            param.main.param.warning(
+                'ItemTable.collapse_data is deprecated and '
+                'should no longer be used.')
         groups = np.vstack([np.array(odict.values()) for odict in data]).T
         return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
@@ -134,7 +135,7 @@ class ItemTable(Element):
         """
         Deprecated method to access the ItemTable value dimension values.
         """
-        self.warning('ItemTable values method is deprecated.')
+        self.param.warning('ItemTable values method is deprecated.')
         return tuple(self.data.get(d.name, np.NaN)
                      for d in self.vdims)
 

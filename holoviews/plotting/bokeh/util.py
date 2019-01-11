@@ -348,16 +348,16 @@ def py2js_tickformatter(formatter, msg=''):
     try:
         from flexx.pyscript import py2js
     except ImportError:
-        param.main.warning(msg+'Ensure Flexx is installed '
-                           '("conda install -c bokeh flexx" or '
-                           '"pip install flexx")')
+        param.main.param.warning(
+            msg+'Ensure Flexx is installed ("conda install -c bokeh flexx" '
+            'or "pip install flexx")')
         return
     try:
         jscode = py2js(formatter, 'formatter')
     except Exception as e:
         error = 'Pyscript raised an error: {0}'.format(e)
         error = error.replace('%', '%%')
-        param.main.warning(msg+error)
+        param.main.param.warning(msg+error)
         return
 
     args = _getargspec(formatter).args

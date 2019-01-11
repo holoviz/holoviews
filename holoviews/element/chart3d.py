@@ -72,7 +72,7 @@ class Trisurface(TriSurface):
     group = param.String(default='Trisurface', constant=True)
 
     def __init__(self, *args, **kwargs):
-        self.warning('Please use TriSurface element instead')
+        self.param.warning('Please use TriSurface element instead')
         super(TriSurface, self).__init__(*args, **kwargs)
 
 

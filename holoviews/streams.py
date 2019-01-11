@@ -140,7 +140,7 @@ class Stream(param.Parameterized):
         klist = [k for k, _ in union]
         clashes = set([k for k in klist if klist.count(k) > 1])
         if clashes:
-            param.main.warning('Parameter name clashes for keys: %r' % clashes)
+            param.main.param.warning('Parameter name clashes for keys: %r' % clashes)
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
@@ -362,7 +362,7 @@ class Stream(param.Parameterized):
         constant.
         """
         with util.disable_constant(self):
-            self.set_param(**kwargs)
+            self.param.set_param(**kwargs)
 
     def event(self, **kwargs):
         """
@@ -680,7 +680,7 @@ class ParamMethod(Params):
 
 # Backward compatibility
 def ParamValues(*args, **kwargs):
-    param.main.warning('ParamValues stream is deprecated, use Params stream instead.')
+    param.main.param.warning('ParamValues stream is deprecated, use Params stream instead.')
     kwargs['watch'] = False
     return Params(*args, **kwargs)
 

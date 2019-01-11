@@ -186,9 +186,10 @@ class Histogram(Chart):
 
     def __init__(self, data, edges=None, **params):
         if edges is not None:
-            self.warning("Histogram edges should be supplied as a tuple "
-                         "along with the values, passing the edges will "
-                         "be deprecated in holoviews 2.0.")
+            self.param.warning(
+                "Histogram edges should be supplied as a tuple "
+                "along with the values, passing the edges will "
+                "be deprecated in holoviews 2.0.")
             data = (edges, data)
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
@@ -212,8 +213,8 @@ class Histogram(Chart):
     def values(self):
         "Property to access the Histogram values provided for backward compatibility"
         if util.config.future_deprecations:
-            self.warning('Histogram.values is deprecated in favor of '
-                         'common dimension_values method.')
+            self.param.warning('Histogram.values is deprecated in favor of '
+                               'common dimension_values method.')
         return self.dimension_values(1)
 
 
@@ -221,8 +222,8 @@ class Histogram(Chart):
     def edges(self):
         "Property to access the Histogram edges provided for backward compatibility"
         if util.config.future_deprecations:
-            self.warning('Histogram.edges is deprecated in favor of '
-                         'common dimension_values method.')
+            self.param.warning('Histogram.edges is deprecated in favor of '
+                               'common dimension_values method.')
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 
