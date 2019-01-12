@@ -5,7 +5,7 @@ dependencies:
   - notebook
   - matplotlib=2.1.2
   - pillow=5.2.0
-  - pandas
+  - pandas=0.23.4
   - scipy
   - xarray=0.10.9
   - networkx
