@@ -110,9 +110,12 @@ class PointPlot(LegendPlot, ColorbarPlot):
             style['angle'] = np.deg2rad(style['angle'])
 
         if self.jitter:
-            axrange = 'y_range' if self.invert_axes else 'x_range'
-            mapping['x'] = jitter(dims[xidx], self.jitter,
-                                  range=self.handles[axrange])
+            if self.invert_axes:
+                mapping['y'] = jitter(dims[yidx], self.jitter,
+                                      range=self.handles['y_range'])
+            else:
+                mapping['x'] = jitter(dims[xidx], self.jitter,
+                                      range=self.handles['x_range'])
 
         self._get_hover_data(data, element)
         return data, mapping, style
@@ -306,7 +309,7 @@ class CurvePlot(ElementPlot):
 
     style_opts = line_properties
     _nonvectorized_styles = line_properties
-    
+
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
 
