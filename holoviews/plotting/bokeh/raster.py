@@ -65,6 +65,7 @@ class RasterPlot(ColorbarPlot):
         dh, dw = t-b, r-l
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
+        clim_undefined = sum((np.isnan(v) for v in self.clim))
         for i, vdim in enumerate(element.vdims, 2):
             if i > 2 and 'hover' not in self.handles:
                 break
@@ -82,6 +83,22 @@ class RasterPlot(ColorbarPlot):
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             data[key] = [img]
+
+            # check if there's an actual value (not np.nan)
+            nanmin = np.nanmin(img)
+            nanmax = np.nanmax(img)
+            if nanmin == nanmax and clim_undefined and self.colorbar:
+                self.param.warning('Only one unique value was found in array! '
+                                   'Colorbar set to False to display the image. '
+                                   'Manually set colorbar limits (clim) in '
+                                   'opts to re-enable colorbar!')
+                self.colorbar = False
+            if nanmin == nanmax:
+                self.param.warning('Only one unique value was found in array! '
+                                   'Image may be all white due to the default '
+                                   'colormap (cmap) being set to "fire". '
+                                   'Manually set the cmap to something that '
+                                   'does not use white for the highest value!')
 
         return (data, mapping, style)
 
