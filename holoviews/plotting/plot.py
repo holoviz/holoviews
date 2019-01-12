@@ -137,6 +137,7 @@ class PlotSelector(object):
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
+
         if not allow_mismatch and not all(pset == param_sets[0] for pset in param_sets):
             raise Exception("All selectable plot classes must have identical plot options.")
         styles= [plot.style_opts for plot in plots]

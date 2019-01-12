@@ -1324,6 +1324,10 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
+    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -1405,7 +1409,10 @@ class ColorbarPlot(ElementPlot):
 
         ncolors = None if factors is None else len(factors)
         if eldim:
-            if dim_name in ranges:
+            # check if there's an actual value (not np.nan)
+            if sum((~np.isnan(v) for v in self.clim)):
+                low, high = self.clim
+            elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
