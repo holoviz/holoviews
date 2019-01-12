@@ -240,7 +240,7 @@ class Spikes(Chart):
 
     group = param.String(default='Spikes', constant=True)
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
+    kdims = param.List(default=[Dimension('x')], bounds=(1, 3))
 
     vdims = param.List(default=[])
 
