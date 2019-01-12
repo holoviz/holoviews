@@ -596,7 +596,7 @@ def date_to_integer(date):
             date = date.to_datetime()
 
     if isinstance(date, np.datetime64):
-        return time.astype('datetime64[ms]').astype(float)
+        return date.astype('datetime64[ms]').astype(float)
     elif isinstance(date, cftime_types):
         return cftime_to_timestamp(date, 'ms')
 
