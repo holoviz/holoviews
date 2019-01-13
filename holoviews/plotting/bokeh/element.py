@@ -1410,10 +1410,13 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         if eldim:
             # check if there's an actual value (not np.nan)
-            if sum((~np.isnan(v) for v in self.clim)):
+            if util.isfinite(self.clim).all():
                 low, high = self.clim
             elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
+                if low == high:
+                    low -= low / 10
+                    high += high / 10
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
             else:
@@ -1510,6 +1513,7 @@ class ColorbarPlot(ElementPlot):
         if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
         mapping[name] = {'field': field, 'transform': mapper}
+
         return data, mapping
 
 

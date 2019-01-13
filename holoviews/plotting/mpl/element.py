@@ -780,7 +780,7 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop(prefix+'clims', None)
 
         # check if there's an actual value (not np.nan)
-        if clim is None and sum((~np.isnan(v) for v in self.clim)):
+        if clim is None and util.isfinite(self.clim).all():
             clim = self.clim
 
         if clim is None:
