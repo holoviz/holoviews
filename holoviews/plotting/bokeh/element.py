@@ -373,8 +373,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xlabel, ylabel, _ = labels
         x_axis_type, y_axis_type = axis_types
         properties = dict(plot_ranges)
-        properties['x_axis_label'] = xlabel if 'x' in self.labelled else ' '
-        properties['y_axis_label'] = ylabel if 'y' in self.labelled else ' '
+        properties['x_axis_label'] = xlabel if 'x' in self.labelled or self.xlabel else ' '
+        properties['y_axis_label'] = ylabel if 'y' in self.labelled or self.ylabel else ' '
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -587,8 +587,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
-        props['x']['axis_label'] = xlabel if 'x' in self.labelled else ''
-        props['y']['axis_label'] = ylabel if 'y' in self.labelled else ''
+        props['x']['axis_label'] = xlabel if 'x' in self.labelled or self.xlabel else ''
+        props['y']['axis_label'] = ylabel if 'y' in self.labelled or self.ylabel else ''
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
