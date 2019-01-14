@@ -610,6 +610,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                      for k, v in dict(both, **xgrid).items()}
             yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
                      for k, v in dict(both, **ygrid).items()}
+            if plot.xaxis:
+                xopts['ticker'] = plot.xaxis[0].ticker
+            if plot.yaxis:
+                yopts['ticker'] = plot.yaxis[0].ticker
             plot.xgrid[0].update(**xopts)
             plot.ygrid[0].update(**yopts)
 
