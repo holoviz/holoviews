@@ -1315,6 +1315,9 @@ class Dimensioned(LabelledData):
                 'in future. Use the equivalent opts method or use '
                 'the recommended .options method instead.')
 
+        if not kwargs and options is None:
+            return self.opts.clear()
+
         return self.opts(options, **kwargs)
 
 
