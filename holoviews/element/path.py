@@ -85,6 +85,9 @@ class Path(Geometry):
                 isinstance(d, tuple) and all(isscalar(v) for v in d)
                 for d in data))):
             datatype = [dt for dt in datatype if dt != 'multitabular']
+        elif isinstance(data, list) and 'multitabular' not in datatype:
+            datatype = datatype + ['multitabular']
+
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
                                    datatype=datatype, **params)
 
