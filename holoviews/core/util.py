@@ -714,7 +714,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         name = bytes_to_unicode(name)
         version = self.version if version is None else version
         if not self.allowable(name):
-            raise AttributeError("String %r is in the disallowed list of attribute names: %r" % self.disallowed)
+            raise AttributeError("String %r is in the disallowed list of attribute names: %r" % (name, self.disallowed))
 
         if version == 2:
             name = self.remove_diacritics(name)
