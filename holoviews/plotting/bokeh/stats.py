@@ -8,7 +8,7 @@ import numpy as np
 
 from bokeh.models import FactorRange, Circle, VBar, HBar
 
-from ...core.dimension import Dimension
+from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
                           unique_iterator, isfinite)
@@ -102,7 +102,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if element.ndims > 0:
             element = element.aggregate(function=np.mean)
         else:
-            element = element.clone([(element.aggregate(function=np.mean),)])
+            agg = element.aggregate(function=np.mean)
+            if isinstance(agg, Dimensioned):
+                element = agg
+            else:
+                element = element.clone([(element,)])
         return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element):
