@@ -1,7 +1,7 @@
 name: holoviews
 
 dependencies:
-  - numpy
+  - numpy<1.16.0
   - notebook
   - matplotlib=2.1.2
   - pillow=5.2.0
