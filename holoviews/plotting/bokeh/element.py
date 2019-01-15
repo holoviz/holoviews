@@ -601,7 +601,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
         else:
-            replace = ['bounds', 'bands', 'visible']
+            replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
             style_items = list(self.gridstyle.items())
             both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
             xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
@@ -610,9 +610,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                      for k, v in dict(both, **xgrid).items()}
             yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
                      for k, v in dict(both, **ygrid).items()}
-            if plot.xaxis:
+            if plot.xaxis and 'ticker' not in xopts:
                 xopts['ticker'] = plot.xaxis[0].ticker
-            if plot.yaxis:
+            if plot.yaxis and 'ticker' not in yopts:
                 yopts['ticker'] = plot.yaxis[0].ticker
             plot.xgrid[0].update(**xopts)
             plot.ygrid[0].update(**yopts)
