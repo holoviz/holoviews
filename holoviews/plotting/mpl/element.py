@@ -632,6 +632,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 class ColorbarPlot(ElementPlot):
 
+    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
@@ -775,6 +779,11 @@ class ColorbarPlot(ElementPlot):
             self.handles[prefix+'color_dim'] = vdim
 
         clim = opts.pop(prefix+'clims', None)
+
+        # check if there's an actual value (not np.nan)
+        if clim is None and util.isfinite(self.clim).all():
+            clim = self.clim
+
         if clim is None:
             if not len(values):
                 clim = (0, 0)

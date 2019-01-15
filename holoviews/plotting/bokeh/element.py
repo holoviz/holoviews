@@ -1324,6 +1324,10 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
+    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -1405,7 +1409,10 @@ class ColorbarPlot(ElementPlot):
 
         ncolors = None if factors is None else len(factors)
         if eldim:
-            if dim_name in ranges:
+            # check if there's an actual value (not np.nan)
+            if util.isfinite(self.clim).all():
+                low, high = self.clim
+            elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
@@ -1503,6 +1510,7 @@ class ColorbarPlot(ElementPlot):
         if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
         mapping[name] = {'field': field, 'transform': mapper}
+
         return data, mapping
 
 
@@ -1511,6 +1519,11 @@ class ColorbarPlot(ElementPlot):
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
+            # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
+            if low == high:
+                offset = self.default_span / 2
+                low -= offset
+                high += offset
             opts = {}
             if util.isfinite(low):
                 opts['low'] = low

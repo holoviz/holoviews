@@ -361,6 +361,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 class ColorbarPlot(ElementPlot):
 
+    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+       If specified, takes precedence over data and dimension ranges.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -390,7 +394,9 @@ class ColorbarPlot(ElementPlot):
 
         if eldim:
             auto = False
-            if dim_name in ranges:
+            if util.isfinite(self.clim).all():
+                cmin, cmax = self.clim
+            elif dim_name in ranges:
                 cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 cmin, cmax = np.nan, np.nan
