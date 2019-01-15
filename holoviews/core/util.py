@@ -338,6 +338,19 @@ def deephash(obj):
         return None
 
 
+def tree_attribute(identifier):
+    """
+    Predicate that returns True for custom attributes added to AttrTrees
+    that are not methods, properties or internal attributes.
+
+    These custom attributes start with a capitalized character when
+    applicable (not applicable to underscore or certain unicode characters)
+    """
+    if identifier[0].upper().isupper() is False and identifier[0] != '_':
+        return True
+    else:
+        return identifier[0].isupper()
+
 def argspec(callable_obj):
     """
     Returns an ArgSpec object for functions, staticmethods, instance
