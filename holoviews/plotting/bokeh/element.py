@@ -1414,11 +1414,6 @@ class ColorbarPlot(ElementPlot):
                 low, high = self.clim
             elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
-                # Pad zero-range to avoid breaking colorbar
-                if low == high:
-                    offset = self.default_span / 2
-                    low -= offset
-                    high += offset
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
             else:
@@ -1524,6 +1519,11 @@ class ColorbarPlot(ElementPlot):
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
+            # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
+            if low == high:
+                offset = self.default_span / 2
+                low -= offset
+                high += offset
             opts = {}
             if util.isfinite(low):
                 opts['low'] = low
