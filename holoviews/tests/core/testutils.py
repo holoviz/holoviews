@@ -19,7 +19,7 @@ from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
     date_range, dt_to_int, compute_edges, isfinite, cross_index, closest_match,
-    dimension_range
+    dimension_range, tree_attribute
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -189,6 +189,23 @@ class TestAllowablePrefix(ComparisonTestCase):
         if py_version != 3: raise SkipTest
         prefixed = sanitize_identifier.prefixed('۵some_string', version=3)
         self.assertEqual(prefixed, True)
+
+
+class TestTreeAttribute(ComparisonTestCase):
+
+    def test_simple_lowercase_string(self):
+        self.assertEqual(tree_attribute('lowercase'), False)
+
+    def test_simple_uppercase_string(self):
+        self.assertEqual(tree_attribute('UPPERCASE'), True)
+
+    def test_unicode_string(self):
+        if py_version != 2: raise SkipTest
+        self.assertEqual(tree_attribute('𝜗unicode'), True)
+
+    def test_underscore_string(self):
+        if py_version != 2: raise SkipTest
+        self.assertEqual(tree_attribute('_underscore'), True)
 
 
 class TestSanitizationPy2(ComparisonTestCase):
