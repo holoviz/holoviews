@@ -1414,6 +1414,7 @@ class ColorbarPlot(ElementPlot):
                 low, high = self.clim
             elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
+                # Pad zero-range to avoid breaking colorbar
                 if low == high:
                     low -= low / 10
                     high += high / 10
