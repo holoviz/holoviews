@@ -253,6 +253,16 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
 
+    def test_element_grid_custom_xticker(self):
+        curve = Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertIs(plot.state.xgrid[0].ticker, plot.state.xaxis[0].ticker)
+
+    def test_element_grid_custom_yticker(self):
+        curve = Curve([1, 2, 3]).opts(yticks=[0.5, 2.5], show_grid=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertIs(plot.state.ygrid[0].ticker, plot.state.yaxis[0].ticker)
+
     def test_element_grid_options(self):
         grid_style = {'grid_line_color': 'blue', 'grid_line_width': 1.5, 'ygrid_bounds': (0.3, 0.7),
                       'minor_xgrid_line_color': 'lightgray', 'xgrid_line_dash': [4, 4]}
