@@ -1416,8 +1416,9 @@ class ColorbarPlot(ElementPlot):
                 low, high = ranges[dim_name]['combined']
                 # Pad zero-range to avoid breaking colorbar
                 if low == high:
-                    low -= low / 10
-                    high += high / 10
+                    offset = self.default_span / 2
+                    low -= offset
+                    high += offset
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
             else:
