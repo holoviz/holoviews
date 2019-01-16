@@ -1,7 +1,13 @@
-from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
-from holoviews.element import HLine
-from holoviews.element.comparison import ComparisonTestCase
+# -*- coding: utf-8 -*-
+"""
+Tests of Layout and related classes
+"""
 
+import sys
+from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
+from holoviews.element import HLine, Curve
+from holoviews.element.comparison import ComparisonTestCase
+from unittest import SkipTest
 
 class CompositeTest(ComparisonTestCase):
     "For testing of basic composite element types"
@@ -18,6 +24,13 @@ class CompositeTest(ComparisonTestCase):
 
     def test_add_operator(self):
         self.assertEqual(type(self.view1 + self.view2), Layout)
+
+    def test_add_unicode_py3(self):
+        "Test to avoid regression of #3403 where unicode characters don't capitalize"
+        if sys.version_info.major == 2: raise SkipTest
+        layout = Curve([-1,-2,-3]) + Curve([1,2,3]) .relabel('𝜗_1 vs th_2')
+        elements = list(layout)
+        self.assertEqual(len(elements), 2)
 
 
 class AdjointLayoutTest(CompositeTest):

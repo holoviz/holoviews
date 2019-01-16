@@ -218,12 +218,13 @@ class AttrTree(object):
     def __setattr__(self, identifier, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
-        if identifier[0].isupper() and self.fixed and shallow:
+
+        if util.tree_attribute(identifier) and self.fixed and shallow:
             raise AttributeError(self._fixed_error % identifier)
 
         super(AttrTree, self).__setattr__(identifier, val)
 
-        if identifier[0].isupper():
+        if util.tree_attribute(identifier):
             if not identifier in self.children:
                 self.children.append(identifier)
             self._propagate((identifier,), val)
@@ -254,7 +255,8 @@ class AttrTree(object):
         if sanitized in self.children:
             return self.__dict__[sanitized]
 
-        if not sanitized.startswith('_') and identifier[0].isupper():
+
+        if not sanitized.startswith('_') and util.tree_attribute(identifier):
             self.children.append(sanitized)
             dir_mode = self.__dict__['_dir_mode']
             child_tree = self.__class__(identifier=sanitized,
