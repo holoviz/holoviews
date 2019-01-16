@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+Tests of Layout and related classes
+"""
+
 import sys
 from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
 from holoviews.element import HLine, Curve
