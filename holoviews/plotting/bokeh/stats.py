@@ -359,7 +359,10 @@ class ViolinPlot(BoxWhiskerPlot):
                 segments['y1'].append(sy)
         elif self.inner == 'stick':
             for value in values:
-                sidx = np.argmin(np.abs(xs-value))
+                if len(xs):
+                    sidx = np.argmin(np.abs(xs-value))
+                else:
+                    continue
                 sx, sy = xs[sidx], ys[sidx]
                 segments['x'].append(sx)
                 segments['y0'].append(key+(-sy[-1],))
