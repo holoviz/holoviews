@@ -204,8 +204,7 @@ class TestTreeAttribute(ComparisonTestCase):
         self.assertEqual(tree_attribute('𝜗unicode'), True)
 
     def test_underscore_string(self):
-        if py_version != 2: raise SkipTest
-        self.assertEqual(tree_attribute('_underscore'), True)
+        self.assertEqual(tree_attribute('_underscore'), False)
 
 
 class TestSanitizationPy2(ComparisonTestCase):
