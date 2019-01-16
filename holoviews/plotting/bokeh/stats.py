@@ -347,26 +347,22 @@ class ViolinPlot(BoxWhiskerPlot):
         if not len(values):
             pass
         elif self.inner == 'quartiles':
-            for stat_fn in self._stat_fns:
-                stat = stat_fn(values)
-                if len(xs):
+            if len(xs):
+                for stat_fn in self._stat_fns:
+                    stat = stat_fn(values)
                     sidx = np.argmin(np.abs(xs-stat))
                     sx, sy = xs[sidx], ys[sidx]
-                else:
-                    continue
-                segments['x'].append(sx)
-                segments['y0'].append(key+(-sy[-1],))
-                segments['y1'].append(sy)
+                    segments['x'].append(sx)
+                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y1'].append(sy)
         elif self.inner == 'stick':
-            for value in values:
-                if len(xs):
+            if len(xs):
+                for value in values:
                     sidx = np.argmin(np.abs(xs-value))
-                else:
-                    continue
-                sx, sy = xs[sidx], ys[sidx]
-                segments['x'].append(sx)
-                segments['y0'].append(key+(-sy[-1],))
-                segments['y1'].append(sy)
+                    sx, sy = xs[sidx], ys[sidx]
+                    segments['x'].append(sx)
+                    segments['y0'].append(key+(-sy[-1],))
+                    segments['y1'].append(sy)
         elif self.inner == 'box':
             xpos = key+(0,)
             q1, q2, q3 = (np.percentile(values, q=q)
