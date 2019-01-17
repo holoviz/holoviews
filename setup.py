@@ -14,10 +14,10 @@ install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.0']
 extras_require = {}
 
 # Notebook dependencies of IPython 3
-extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
+extras_require['notebook-dependencies'] = ['ipython<=7.1.1', 'pyzmq', 'jinja2', 'tornado',
                                            'jsonschema', 'notebook', 'pygments']
 # IPython Notebook + matplotlib
-extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib>=2.1', 'bokeh>=1.0.0']
+extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib>=2.1', 'bokeh>=1.0.4']
 # Additional, useful third-party packages
 extras_require['extras'] = (['pandas', 'seaborn']
                             + extras_require['recommended'])

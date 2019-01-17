@@ -25,10 +25,10 @@ requirements:
     - pyviz_comms >=0.7.0
     - numpy
     - matplotlib>=2.1
-    - bokeh >=1.0.0,<1.1.0
+    - bokeh >=1.0.4,<1.1.0
     - jupyter
     - notebook
-    - ipython >=5.4.0
+    - ipython <=7.1.1
 
 test:
   imports:
