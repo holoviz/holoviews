@@ -66,13 +66,16 @@ class XArrayInterface(GridInterface):
         vdim_param = element_params['vdims']
 
         def retrieve_unit_and_label(dim):
-            if isinstance(dim, util.basestring):
-                dim = Dimension(dim)
-            dim.unit = data[dim.name].attrs.get('units')
-            label = data[dim.name].attrs.get('long_name')
-            if label is not None:
-                dim.label = label
-            return dim
+            if isinstance(dim, Dimension):
+                return dim
+            dim = asdim(dim)
+            coord = data[dim.name]
+            unit = coord.attrs.get('units') if dim.unit is None else dim.unit
+            if 'long_name' in coord.attrs:
+                spec = (dim.name, coord.attrs['long_name'])
+            else:
+                spec = (dim.name, dim.label)
+            return dim.clone(spec, unit=unit)
 
         if isinstance(data, xr.DataArray):
             if vdims:
@@ -142,8 +145,7 @@ class XArrayInterface(GridInterface):
             if not data.coords:
                 data = data.assign_coords(**{k: range(v) for k, v in data.dims.items()})
             if vdims is None:
-                vdims = list(data.data_vars.keys())
-                vdims = [retrieve_unit_and_label(vd) for vd in vdims]
+                vdims = list(data.data_vars)
             if kdims is None:
                 xrdims = list(data.dims)
                 xrcoords = list(data.coords)
@@ -155,9 +157,8 @@ class XArrayInterface(GridInterface):
                     for c in data.coords:
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
-                kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [asdim(vd) for vd in vdims]
-            kdims = [asdim(kd) for kd in kdims]
+            kdims = [retrieve_unit_and_label(kd) for kd in kdims]
+            vdims = [retrieve_unit_and_label(vd) for vd in vdims]
 
         not_found = []
         for d in kdims:
