@@ -185,6 +185,30 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(dimensions, ['X'])
         self.assertEqual(init_dim_vals, [0.0])
 
+    def test_holomap_cftime_slider(self):
+        try:
+            import cftime
+        except:
+            raise SkipTest('Test requires cftime library')
+        dates = [cftime.DatetimeGregorian(2000, 2, 28),
+                           cftime.DatetimeGregorian(2000, 3, 1),
+                           cftime.DatetimeGregorian(2000, 3, 2)]
+        hmap = HoloMap({d: Curve([1, 2, i]) for i, d in enumerate(dates)}, 'Date')
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'Date')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], repr([str(d) for d in dates]))
+        self.assertEqual(slider['labels'], repr([str(d) for d in dates]))
+        self.assertEqual(slider['step'], 1)
+        self.assertEqual(slider['default'], 0)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['Date'])
+        self.assertEqual(init_dim_vals, ['2000-02-28 00:00:00'])
+        
     def test_holomap_slider_unsorted(self):
         data = {(i, j): Curve([1, 2, 3]) for i in range(3) for j in range(3)}
         del data[2, 2]
