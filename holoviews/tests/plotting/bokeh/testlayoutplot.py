@@ -272,6 +272,16 @@ class TestLayoutPlot(TestBokehPlot):
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])
 
+    def test_dimensioned_streams_with_dynamic_map_overlay_clone(self):
+        time = Stream.define('Time', time=-3.0)()
+        def crosshair(time):
+            return VLine(time) * HLine(time)
+        crosshair = DynamicMap(crosshair, kdims='time', streams=[time])
+        path = Path([])
+        t = crosshair * path
+        html, _ = bokeh_renderer(t)
+        self.assertIn('Bokeh Application', html)
+
     def test_dimensioned_streams_with_dynamic_callback_returns_layout(self):
         stream = Stream.define('aname', aname='a')()
         def cb(aname):
@@ -287,3 +297,14 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertIn('aname: ' + T, p.handles['title'].text, p.handles['title'].text)
         p.cleanup()
         self.assertEqual(stream._subscribers, [])
+
+    def test_layout_shared_axes_disabled(self):
+        from holoviews.plotting.bokeh import CurvePlot
+        layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
+        plot = bokeh_renderer.get_plot(layout)
+        cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
+        self.assertFalse(cp1.handles['y_range'] is cp2.handles['y_range'])
+        self.assertEqual(cp1.handles['y_range'].start, 1)
+        self.assertEqual(cp1.handles['y_range'].end, 3)
+        self.assertEqual(cp2.handles['y_range'].start, 10)
+        self.assertEqual(cp2.handles['y_range'].end, 30)
