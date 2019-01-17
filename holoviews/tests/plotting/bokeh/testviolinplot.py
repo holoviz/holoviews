@@ -91,6 +91,13 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertEqual(patch_source.data['xs'], [[]])
         self.assertEqual(patch_source.data['ys'], [np.array([])])
 
+    def test_violin_single_point(self):
+        data = {'x': [1], 'y': [1]}
+        violin = Violin(data=data, kdims='x', vdims='y').opts(plot=dict(inner='box'))
+
+        plot = bokeh_renderer.get_plot(violin)
+        self.assertEqual(plot.handles['x_range'].factors, ['1'])
+
     ###########################
     #    Styling mapping      #
     ###########################
