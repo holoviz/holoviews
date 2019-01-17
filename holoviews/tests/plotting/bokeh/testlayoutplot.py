@@ -272,16 +272,6 @@ class TestLayoutPlot(TestBokehPlot):
         p1, p2 = (sp.subplots['main'] for sp in plot.subplots.values())
         self.assertIsNot(p1.handles['y_range'], p2.handles['y_range'])
 
-    def test_dimensioned_streams_with_dynamic_map_overlay_clone(self):
-        time = Stream.define('Time', time=-3.0)()
-        def crosshair(time):
-            return VLine(time) * HLine(time)
-        crosshair = DynamicMap(crosshair, kdims='time', streams=[time])
-        path = Path([])
-        t = crosshair * path
-        html, _ = bokeh_renderer(t)
-        self.assertIn('Bokeh Application', html)
-
     def test_dimensioned_streams_with_dynamic_callback_returns_layout(self):
         stream = Stream.define('aname', aname='a')()
         def cb(aname):
