@@ -8,6 +8,7 @@ import numpy as np
 from ...core import util
 from ...element import Polygons
 from ...util.transform import dim
+from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, validate)
@@ -151,6 +152,10 @@ class ContourPlot(LegendPlot, PathPlot):
 
     _color_style = 'line_color'
 
+    def __init__(self, *args, **params):
+        super(ContourPlot, self).__init__(*args, **params)
+        self._has_holes = None
+
     def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
@@ -185,14 +190,20 @@ class ContourPlot(LegendPlot, PathPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
     def get_data(self, element, ranges, style):
-        has_holes = isinstance(element, Polygons) and element.has_holes
+        if self._has_holes is None:
+            draw_callbacks = any(isinstance(cb, (PolyDrawCallback, PolyEditCallback))
+                                 for cb in self.callbacks)
+            has_holes = (isinstance(element, Polygons) and not draw_callbacks)
+            self._has_holes = has_holes
+        else:
+            has_holes = self._has_holes
+
         if self.static_source:
             data = dict()
             xs = self.handles['cds'].data['xs']
         else:
             if has_holes and bokeh_version >= '1.0':
                 xs, ys = multi_polygons_data(element)
-                style['has_holes'] = has_holes
             else:
                 paths = element.split(datatype='array', dimensions=element.kdims)
                 xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
@@ -236,11 +247,10 @@ class ContourPlot(LegendPlot, PathPlot):
         """
         Returns a Bokeh glyph object.
         """
-        has_holes = properties.pop('has_holes', False)
         plot_method = properties.pop('plot_method', None)
         properties = mpl_to_bokeh(properties)
         data = dict(properties, **mapping)
-        if has_holes:
+        if self._has_holes:
             plot_method = 'multi_polygons'
         elif plot_method is None:
             plot_method = self._plot_methods.get('single')

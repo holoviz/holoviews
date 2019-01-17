@@ -284,7 +284,7 @@ class Dataset(Element):
             return (None, None)
         elif all(util.isfinite(v) for v in dim.range) and dimension_range:
             return dim.range
-        elif dim in self.dimensions() and data_range and len(self):
+        elif dim in self.dimensions() and data_range and bool(self):
             lower, upper = self.interface.range(self, dim)
         else:
             lower, upper = (np.NaN, np.NaN)

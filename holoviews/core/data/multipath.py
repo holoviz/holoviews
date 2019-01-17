@@ -129,6 +129,8 @@ class MultiInterface(Interface):
     @classmethod
     def holes(cls, dataset):
         holes = []
+        if not dataset.data:
+            return holes
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d

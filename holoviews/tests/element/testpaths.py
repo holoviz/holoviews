@@ -126,6 +126,11 @@ class PolygonsTests(ComparisonTestCase):
         self.assertEqual(len(holes[0][0]), 2)
         self.assertEqual(len(holes[0][1]), 0)
 
+    def test_multi_poly_empty_holes(self):
+        poly = Polygons([])
+        self.assertFalse(poly.interface.has_holes(poly))
+        self.assertEqual(poly.interface.holes(poly), [])
+
     def test_multi_poly_no_holes_match(self):
         self.assertFalse(self.multi_poly_no_hole.interface.has_holes(self.multi_poly_no_hole))
         paths = self.multi_poly_no_hole.split(datatype='array')
