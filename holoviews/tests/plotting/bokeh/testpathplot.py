@@ -6,6 +6,7 @@ from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
 from holoviews.plotting.bokeh.util import bokeh_version
+from holoviews.streams import PolyDraw
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -329,6 +330,41 @@ class TestPolygonPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_width, {'field': 'line_width'})
         self.assertEqual(cds.data['line_width'], np.array([7, 3]))
+
+    def test_polygons_holes_initialize(self):
+        if bokeh_version < '1.0':
+            raise SkipTest('Plotting Polygons with holes requires bokeh >= 1.0')
+        from bokeh.models import MultiPolygons
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = HoloMap({0: Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
+                        1: Polygons([{'x': xs, 'y': ys}])})
+        plot = bokeh_renderer.get_plot(poly)
+        glyph = plot.handles['glyph']
+        self.assertTrue(plot._has_holes)
+        self.assertIsInstance(glyph, MultiPolygons)
+
+    def test_polygons_no_holes_with_draw_tool(self):
+        if bokeh_version < '1.0':
+            raise SkipTest('Plotting Polygons with holes requires bokeh >= 1.0')
+        from bokeh.models import Patches
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = HoloMap({0: Polygons([{'x': xs, 'y': ys, 'holes': holes}]),
+                        1: Polygons([{'x': xs, 'y': ys}])})
+        PolyDraw(source=poly)
+        plot = bokeh_renderer.get_plot(poly)
+        glyph = plot.handles['glyph']
+        self.assertFalse(plot._has_holes)
+        self.assertIsInstance(glyph, Patches)
 
 
 
