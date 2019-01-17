@@ -8,6 +8,7 @@ import numpy as np
 from ...core import util
 from ...element import Polygons
 from ...util.transform import dim
+from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, validate)
@@ -190,7 +191,9 @@ class ContourPlot(LegendPlot, PathPlot):
 
     def get_data(self, element, ranges, style):
         if self._has_holes is None:
-            has_holes = (isinstance(element, Polygons) and element.has_holes)
+            draw_callbacks = any(isinstance(cb, (PolyDrawCallback, PolyEditCallback))
+                                 for cb in self.callbacks)
+            has_holes = (isinstance(element, Polygons) and not draw_callbacks)
             self._has_holes = has_holes
         else:
             has_holes = self._has_holes
