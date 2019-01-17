@@ -9,7 +9,7 @@ dependencies:
   - scipy
   - xarray=0.10.9
   - networkx
-  - ipython=5.4.1
+  - ipython=7.1.1
   - jsonschema=2.6.0
   - cyordereddict
   - nbconvert=5.3.1
