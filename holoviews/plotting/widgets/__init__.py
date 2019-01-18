@@ -10,7 +10,7 @@ from ...core.options import Store
 from ...core.ndmapping import item_check
 from ...core.util import (
     dimension_sanitizer, bytes_to_unicode, unique_iterator, unicode,
-    isnumeric, cross_index, wrap_tuple_streams, drop_streams
+    isnumeric, cross_index, wrap_tuple_streams, drop_streams, datetime_types
 )
 from ...core.traversal import hierarchical
 
@@ -362,9 +362,11 @@ class SelectionWidget(NdWidget):
         else:
             next_vals = {}
 
-        if isinstance(values[0], np.datetime64):
+        if isinstance(values[0], datetime_types):
             values = sorted(values)
-            dim_vals = [str(v.astype('datetime64[ns]')) for v in values]
+            dim_vals = [str(v.astype('datetime64[ns]'))
+                        if isinstance(v, np.datetime64) else str(v)
+                        for v in values]
             widget_type = 'slider'
         elif isnumeric(values[0]):
             values = sorted(values)
@@ -405,7 +407,7 @@ class SelectionWidget(NdWidget):
     def _get_dynamic_widget(cls, idx, dim):
         step = 1
         if dim.values:
-            if all(isnumeric(v) for v in dim.values):
+            if all(isnumeric(v) or isinstance(v, datetime_types) for v in dim.values):
                 # Widgets currently detect dynamic mode by type
                 # this value representation is now redundant
                 # and should be removed in a refactor
