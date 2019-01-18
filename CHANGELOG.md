@@ -1,3 +1,45 @@
+Version 1.11.1
+==============
+
+This is a minor bug fix release with a number of important bug fixes,
+enhancements and updates to the documentation. Special thanks to
+@ahuang11, @garibarba and @Safrone for their contributions.
+
+Bug fixes:
+
+- Fixed bug plotting adjoined histograms in matplotlib
+  ([#3377](https://github.com/ioam/holoviews/pull/3377))
+- Fixed bug updating bokeh RGB alpha value
+  ([#3371](https://github.com/ioam/holoviews/pull/3371))
+- Handled issue when colorbar limits were equal in bokeh
+  ([#3382](https://github.com/ioam/holoviews/pull/3382))
+- Fixed bugs plotting empty Violin and BoxWhisker elements
+  ([#3397](https://github.com/ioam/holoviews/pull/3397),
+  [#3405](https://github.com/ioam/holoviews/pull/3405))
+- Fixed handling of characters that have no uppercase on Layout and
+  Overlay objects
+  (([#3403](https://github.com/ioam/holoviews/pull/3403))
+- Fixed bug updating Polygon plots in bokeh
+  ([#3409](https://github.com/ioam/holoviews/pull/3409))
+
+Enhancements:
+
+- Provide control over gridlines ticker and mirrored axis ticker by
+  default ([#3398](https://github.com/ioam/holoviews/pull/3377))
+- Enabled colorbars on CompositePlot classes such as Graphs, Chords
+  etc. ([#3397](https://github.com/ioam/holoviews/pull/3396))
+- Ensure that xarray backend retains dimension metadata when casting
+  element ([#3401](https://github.com/ioam/holoviews/pull/3401))
+- Consistently support clim options
+  ([#3382](https://github.com/ioam/holoviews/pull/3382))
+  
+Documentation:
+
+- Completed updates from .options to .opts API in the documentation
+  ([#3364]((https://github.com/ioam/holoviews/pull/3364),
+  [#3367]((https://github.com/ioam/holoviews/pull/3367))
+
+
 Version 1.11.0
 ==============
 
