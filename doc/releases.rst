@@ -1,9 +1,6 @@
 Releases
 ========
 
-  .. Converted from RST using: pandoc -s -t rst ../CHANGELOG.md -o CHANGELOG.rst
-     Take care with backticks in links!
-
 Announcements
 *************
 
@@ -15,6 +12,50 @@ Release notes
 
 Version 1.11
 ~~~~~~~~~~~~
+
+Version 1.11.1
+==============
+
+This is a minor bug fix release with a number of important bug fixes,
+enhancements and updates to the documentation. Special thanks to
+Andrew Huang (@ahuang11), @garibarba and @Safrone for their
+contributions.
+
+Bug fixes:
+
+* Fixed bug plotting adjoined histograms in matplotlib
+  (`#3377 <https://github.com/ioam/holoviews/pull/3377>`_)
+* Fixed bug updating bokeh RGB alpha value
+  (`#3371 <https://github.com/ioam/holoviews/pull/3371>`_)
+* Handled issue when colorbar limits were equal in bokeh
+  (`#3382 <https://github.com/ioam/holoviews/pull/3382>`_)
+* Fixed bugs plotting empty Violin and BoxWhisker elements
+  (`#3397 <https://github.com/ioam/holoviews/pull/3397>`_,
+  `#3405 <https://github.com/ioam/holoviews/pull/3405>`_)
+* Fixed handling of characters that have no uppercase on Layout and
+  Overlay objects
+  ((`#3403 <https://github.com/ioam/holoviews/pull/3403>`_)
+* Fixed bug updating Polygon plots in bokeh
+  (`#3409 <https://github.com/ioam/holoviews/pull/3409>`_)
+
+Enhancements:
+
+* Provide control over gridlines ticker and mirrored axis ticker by
+  default (`#3398 <https://github.com/ioam/holoviews/pull/3377>`_)
+* Enabled colorbars on CompositePlot classes such as Graphs, Chords
+  etc. (`#3397 <https://github.com/ioam/holoviews/pull/3396>`_)
+* Ensure that xarray backend retains dimension metadata when casting
+  element (`#3401 <https://github.com/ioam/holoviews/pull/3401>`_)
+* Consistently support clim options
+  (`#3382 <https://github.com/ioam/holoviews/pull/3382>`_)
+
+Documentation:
+
+* Completed updates from .options to .opts API in the documentation
+  (`#3364 <(https://github.com/ioam/holoviews/pull/3364>`_,
+  `#3367 <(https://github.com/ioam/holoviews/pull/3367>`_)
+
+
 
 Version 1.11.0
 --------------
@@ -44,84 +85,81 @@ Julia Signell (@jsignell), Jon Mease (@jonmmease), and Zachary Barry
 Features:
 
 * Generalized support for style mapping using ``dim`` transforms
-  (\ `2152 <https://github.com/ioam/holoviews/pull/2152>`_\ )
+  (`2152 <https://github.com/ioam/holoviews/pull/2152>`_)
 * Added alternative to opts magic with tab-completion
-  (\ `#3173 <https://github.com/ioam/holoviews/pull/3173>`_\ )
+  (`#3173 <https://github.com/ioam/holoviews/pull/3173>`_)
 * Added support for Polygons with holes and improved contours
-  operation (\ `#3092 <https://github.com/ioam/holoviews/pull/3092>`_\ )
+  operation (`#3092 <https://github.com/ioam/holoviews/pull/3092>`_)
 * Added support for Links to express complex interactivity in JS
-  (\ `#2832 <https://github.com/ioam/holoviews/pull/2832>`_\ )
+  (`#2832 <https://github.com/ioam/holoviews/pull/2832>`_)
 * Plotly improvements including support for plotly 3.0
-  (\ `#3194 <https://github.com/ioam/holoviews/pull/3194>`_\ ), improved
+  (`#3194 <https://github.com/ioam/holoviews/pull/3194>`_), improved
   support for containers
-  (\ `#3255 <https://github.com/ioam/holoviews/pull/3255>`_\ ) and support
+  (`#3255 <https://github.com/ioam/holoviews/pull/3255>`_) and support
   for more elements
-  (\ `#3256 <https://github.com/ioam/holoviews/pull/3256>`_\ )
+  (`#3256 <https://github.com/ioam/holoviews/pull/3256>`_)
 * Support for automatically padding plots using new ``padding`` option
-  (\ `#2293 <https://github.com/ioam/holoviews/pull/2293>`_\ )
+  (`#2293 <https://github.com/ioam/holoviews/pull/2293>`_)
 * Added ``xlim``\ /\ ``ylim`` plot options to simplify setting axis ranges
-  (\ `#2293 <https://github.com/ioam/holoviews/pull/2293>`_\ )
+  (`#2293 <https://github.com/ioam/holoviews/pull/2293>`_)
 * Added ``xlabel``\ /\ ``ylabel`` plot options to simplify overriding axis
-  labels (\ `#2833 <https://github.com/ioam/holoviews/issues/2833>`_\ )
+  labels (`#2833 <https://github.com/ioam/holoviews/issues/2833>`_)
 * Added ``xformatter``\ /\ ``yformatter`` plot options to easily override tick
-  formatter (\ `#3042 <https://github.com/ioam/holoviews/pull/3042>`_\ )
+  formatter (`#3042 <https://github.com/ioam/holoviews/pull/3042>`_)
 * Added ``active_tools`` options to allow defining tools to activate on
   bokeh plot initialization
-  (\ `#3251 <https://github.com/ioam/holoviews/pull/3251>`_\ )
+  (`#3251 <https://github.com/ioam/holoviews/pull/3251>`_)
 * Added ``FreehandDraw`` stream to allow freehand drawing on bokeh plots
-  (\ `#2937 <https://github.com/ioam/holoviews/pull/2937>`_\ )
+  (`#2937 <https://github.com/ioam/holoviews/pull/2937>`_)
 * Added support for ``cftime`` types for dates which are not supported
   by standard datetimes and calendars
-  (\ `#2728 <https://github.com/ioam/holoviews/pull/2728>`_\ )
+  (`#2728 <https://github.com/ioam/holoviews/pull/2728>`_)
 * Added top-level ``save`` and ``render`` functions to simplify exporting
-  plots (\ `#3134 <https://github.com/ioam/holoviews/pull/3134>`_\ )
+  plots (`#3134 <https://github.com/ioam/holoviews/pull/3134>`_)
 * Added support for updating Bokeh bokeh legends
-  (\ `#3139 <https://github.com/ioam/holoviews/pull/3139>`_\ )
+  (`#3139 <https://github.com/ioam/holoviews/pull/3139>`_)
 * Added support for indicating directed graphs with arrows
-  (\ `#2521 <https://github.com/ioam/holoviews/issues/2521>`_\ )
+  (`#2521 <https://github.com/ioam/holoviews/issues/2521>`_)
 
 Enhancements:
 
-
 * Improved import times
-  (\ `#3055 <https://github.com/ioam/holoviews/pull/3055>`_\ )
+  (`#3055 <https://github.com/ioam/holoviews/pull/3055>`_)
 * Adopted Google style docstring and documented most core methods and
-  classes (\ `#3128 <https://github.com/ioam/holoviews/pull/3128>`_
+  classes (`#3128 <https://github.com/ioam/holoviews/pull/3128>`_
 
 Bug fixes:
 
-
 * GIF rendering fixed under Windows
-  (\ `#3151 <https://github.com/ioam/holoviews/issues/3151>`_\ )
+  (`#3151 <https://github.com/ioam/holoviews/issues/3151>`_)
 * Fixes for hover on Path elements in bokeh
-  (\ `#2472 <https://github.com/ioam/holoviews/issues/2427>`_\ ,
-  `#2872 <https://github.com/ioam/holoviews/issues/2872>`_\ )
+  (`#2472 <https://github.com/ioam/holoviews/issues/2427>`_,
+  `#2872 <https://github.com/ioam/holoviews/issues/2872>`_)
 * Fixes for handling TriMesh value dimensions on rasterization
-  (\ `#3050 <https://github.com/ioam/holoviews/pull/3050>`_\ )
+  (`#3050 <https://github.com/ioam/holoviews/pull/3050>`_)
 
 Deprecations:
 
-
 * ``finalize_hooks`` renamed to ``hooks``
-  (\ `#3134 <https://github.com/ioam/holoviews/pull/3134>`_\ )
+  (`#3134 <https://github.com/ioam/holoviews/pull/3134>`_)
 * All ``*_index`` and related options are now deprecated including
-  ``color_index``\ , ``size_index``\ , ``scaling_method``\ , ``scaling_factor``\ ,
-  ``size_fn`` (\ `#2152 <https://github.com/ioam/holoviews/pull/2152>`_\ )
-* Bars ``group_index``\ , ``category_index`` and ``stack_index`` are deprecated in
+  ``color_index``, ``size_index``, ``scaling_method``, ``scaling_factor``,
+  ``size_fn`` (`#2152 <https://github.com/ioam/holoviews/pull/2152>`_)
+* Bars ``group_index``, ``category_index`` and ``stack_index`` are deprecated in
   favor of stacked option
-  (\ `#2828 <https://github.com/ioam/holoviews/issues/2828>`_\ )
+  (`#2828 <https://github.com/ioam/holoviews/issues/2828>`_)
 * iris interface was moved to GeoViews
-  (\ `#3054 <https://github.com/ioam/holoviews/pull/3054>`_\ )
+  (`#3054 <https://github.com/ioam/holoviews/pull/3054>`_)
 * Top-level namespace was cleaned up
-  (\ `#2224 <https://github.com/ioam/holoviews/pull/2224>`_\ )
-* ``ElementOpration``\ , ``Layout.display`` and ``mdims`` argument to ``.to``
+  (`#2224 <https://github.com/ioam/holoviews/pull/2224>`_)
+* ``ElementOpration``, ``Layout.display`` and ``mdims`` argument to ``.to``
   now fully removed
-  (\ `#3128 <https://github.com/ioam/holoviews/pull/3128>`_\ )
-* ``Element.mapping``\ , ``ItemTable.values``\ , ``Element.table``\ ,
-  ``HoloMap.split_overlays``\ , ``ViewableTree.from_values``\ ,
+  (`#3128 <https://github.com/ioam/holoviews/pull/3128>`_)
+* ``Element.mapping``, ``ItemTable.values``, ``Element.table``,
+  ``HoloMap.split_overlays``, ``ViewableTree.from_values``,
   ``ViewableTree.regroup`` and ``Element.collapse_data`` methods now
   marked for deprecation
-  (\ `#3128 <https://github.com/ioam/holoviews/pull/3128>`_\ )
+  (`#3128 <https://github.com/ioam/holoviews/pull/3128>`_)
 
 
 Version 1.10
