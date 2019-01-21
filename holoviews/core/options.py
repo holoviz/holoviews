@@ -51,24 +51,31 @@ from .pprint import InfoPrinter, PrettyPrinter
 def cleanup_custom_options(id, weakref=None):
     """
     Cleans up unused custom trees if all objects referencing the
-    custom id have been garbage collected.
+    custom id have been garbage collected or tree is otherwise
+    unreferenced.
     """
-    weakrefs = Store._weakrefs.get(id, [])
-    if weakref is not None and weakref in weakrefs:
-        weakrefs.remove(weakref)
-    refs = []
-    for wr in weakrefs:
-        r = wr()
-        if r is None or r.id != id:
-            weakrefs.remove(wr)
-        else:
-            refs.append(r)
-    if not refs:
-        for bk in Store.loaded_backends():
-            if id in Store._custom_options[bk]:
-                Store._custom_options[bk].pop(id)
-    if not weakrefs:
-        Store._weakrefs.pop(id, None)
+    try:
+        weakrefs = Store._weakrefs.get(id, [])
+        if weakref in weakrefs:
+            weakrefs.remove(weakref)
+        refs = []
+        for wr in list(weakrefs):
+            r = wr()
+            if r is None or r.id != id:
+                weakrefs.remove(wr)
+            else:
+                refs.append(r)
+        if not refs:
+            for bk in Store.loaded_backends():
+                if id in Store._custom_options[bk]:
+                    Store._custom_options[bk].pop(id)
+        if not weakrefs:
+            Store._weakrefs.pop(id, None)
+    except Exception as e:
+        raise Exception('Cleanup of custom options tree with id %s '
+                        'failed with the following exception: %s, '
+                        'an unreferenced orphan tree may persist in '
+                        'memory' % (e, id))
 
 
 class SkipRendering(Exception):
@@ -1571,16 +1578,15 @@ class StoreOptions(object):
         matching the applied_keys. This method can only be called if
         there is a tree with a matching id in Store.custom_options
         """
-        applied = False
+        applied = []
         if not new_id in Store.custom_options(backend=backend):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
         def propagate(o):
-            global applied
             if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
                 setattr(o, 'id', new_id)
-                applied = True
+                applied.append(o)
         obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
         # Clean up the custom tree if it was not applied

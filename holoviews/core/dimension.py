@@ -659,15 +659,16 @@ class LabelledData(param.Parameterized):
 
     @id.setter
     def id(self, id):
+        """Handles tracking and cleanup of custom ids."""
         old_id = self._id
         self._id = id
         if old_id is not None:
             cleanup_custom_options(old_id)
-        if id is None:
-            return
-        if id not in Store._weakrefs:
-            Store._weakrefs[id] = []
-        Store._weakrefs[id].append(weakref.ref(self, partial(cleanup_custom_options, id)))
+        if id is not None:
+            if id not in Store._weakrefs:
+                Store._weakrefs[id] = []
+            ref = weakref.ref(self, partial(cleanup_custom_options, id))
+            Store._weakrefs[id].append(ref)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
@@ -896,6 +897,7 @@ class LabelledData(param.Parameterized):
         except:
             self.param.warning("Could not unpickle custom style information.")
         obj_id = d.pop(id_key, None)
+        d['_id'] = None
         self.__dict__.update(d)
         self.id = obj_id
 
