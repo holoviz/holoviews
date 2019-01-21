@@ -852,14 +852,14 @@ class LabelledData(param.Parameterized):
         "Ensures pickles save options applied to this objects."
         obj_dict = self.__dict__.copy()
         try:
-            if Store.save_option_state and (obj_dict.get('id', None) is not None):
-                custom_key = '_custom_option_%d' % obj_dict['id']
+            if Store.save_option_state and (obj_dict.get('_id', None) is not None):
+                custom_key = '_custom_option_%d' % obj_dict['_id']
                 if custom_key not in obj_dict:
-                    obj_dict[custom_key] = {backend:s[obj_dict['id']]
+                    obj_dict[custom_key] = {backend:s[obj_dict['_id']]
                                             for backend,s in Store._custom_options.items()
-                                            if obj_dict['id'] in s}
+                                            if obj_dict['_id'] in s}
             else:
-                obj_dict['id'] = None
+                obj_dict['_id'] = None
         except:
             self.param.warning("Could not pickle custom style information.")
         return obj_dict
@@ -868,6 +868,9 @@ class LabelledData(param.Parameterized):
     def __setstate__(self, d):
         "Restores options applied to this object."
         d = param_aliases(d)
+
+        # Backwards compatibility for objects before id was made a property
+        id_key = '_id' if '_id' in d else 'id'
         try:
             load_options = Store.load_counter_offset is not None
             if load_options:
@@ -886,13 +889,15 @@ class LabelledData(param.Parameterized):
 
                     d.pop(match)
 
-                if d['id'] is not None:
-                    d['id'] += Store.load_counter_offset
+                if d[id_key] is not None:
+                    d[id_key] += Store.load_counter_offset
                 else:
-                    d['id'] = None
+                    d[id_key] = None
         except:
             self.param.warning("Could not unpickle custom style information.")
         self.__dict__.update(d)
+        if d.get(id_key) is not None:
+            self.id = d[id_key]
 
 
 
