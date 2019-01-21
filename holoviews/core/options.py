@@ -48,6 +48,28 @@ from .util import deprecated_opts_signature, disable_constant, config
 from .pprint import InfoPrinter, PrettyPrinter
 
 
+def cleanup_custom_options(id, weakref=None):
+    """
+    Cleans up unused custom trees if no object matching the custom
+    options id exists anymore.
+    """
+    weakrefs = Store._weakrefs[id]
+    refs = []
+    for wr in weakrefs:
+        r = wr()
+        if r is None:
+            continue
+        elif r.id != id:
+            weakrefs.remove(wr)
+        else:
+            refs.append(r)
+    if not refs:
+        for bk in Store.loaded_backends():
+            Store._custom_options[bk].pop(id)
+    if weakref is not None:
+        weakrefs.remove(weakref)
+
+
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display
@@ -1194,6 +1216,9 @@ class Store(object):
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
     _options = {}
+
+    # Weakrefs to record objects per id
+    _weakrefs = {}
 
     # A list of hooks to call after registering the plot and style options
     option_setters = []

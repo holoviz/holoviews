@@ -7,17 +7,18 @@ from __future__ import unicode_literals
 
 import re
 import datetime as dt
+import weakref
 
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce
+from functools import reduce, partial
 
 import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts
+from .options import Store, Opts, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -631,7 +632,7 @@ class LabelledData(param.Parameterized):
         may be set to associate some custom options with the object.
         """
         self.data = data
-        self.id = id
+        self._id = id
         self._plot_id = plot_id or util.builtins.id(self)
         if isinstance(params.get('label',None), tuple):
             (alias, long_name) = params['label']
@@ -650,6 +651,20 @@ class LabelledData(param.Parameterized):
         elif not util.label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, id):
+        old_id = self._id
+        self._id = id
+        if id not in Store._weakrefs:
+            Store._weakrefs[id] = []
+        Store._weakrefs[id].append(weakref.ref(self, partial(cleanup_custom_options, id)))
+        if old_id is not None:
+            cleanup_custom_options(old_id)
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
