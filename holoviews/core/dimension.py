@@ -895,9 +895,9 @@ class LabelledData(param.Parameterized):
                     d[id_key] = None
         except:
             self.param.warning("Could not unpickle custom style information.")
+        obj_id = d.pop(id_key, None)
         self.__dict__.update(d)
-        if d.get(id_key) is not None:
-            self.id = d[id_key]
+        self.id = obj_id
 
 
 
