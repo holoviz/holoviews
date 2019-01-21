@@ -1577,6 +1577,7 @@ class StoreOptions(object):
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
         def propagate(o):
+            global applied
             if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
                 setattr(o, 'id', new_id)
                 applied = True
