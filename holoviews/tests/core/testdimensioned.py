@@ -1,3 +1,6 @@
+import gc
+
+from holoviews.core.spaces import HoloMap
 from holoviews.core.element import Element
 from holoviews.core.options import Store, Keywords, Options, OptionTree
 from ..utils import LoggingComparisonTestCase
@@ -15,12 +18,15 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         self.current_backend = Store.current_backend
         self.register_custom(TestObj, 'backend_1', ['plot_custom1'])
         self.register_custom(TestObj, 'backend_2', ['plot_custom2'])
-        Store.current_backend = 'backend_1'
+        Store.set_current_backend('backend_1')
 
     def tearDown(self):
+        Store._weakrefs = {}
         Store._options.pop('backend_1')
         Store._options.pop('backend_2')
-        Store.current_backend = self.current_backend
+        Store._custom_options.pop('backend_1')
+        Store._custom_options.pop('backend_2')
+        Store.set_current_backend(self.current_backend)
 
     @classmethod
     def register_custom(cls, objtype, backend, custom_plot=[], custom_style=[]):
@@ -184,3 +190,51 @@ class TestDimensioned_options(CustomBackendTestCase):
         assert plot_opts.options == {'plot_opt1': 'D'}
         style_opts = Store.lookup_options('backend_2', obj, 'style')
         assert style_opts.options == {'style_opt1': 'C'}
+
+
+
+class TestOptionsCleanup(CustomBackendTestCase):
+
+    def test_opts_resassignment_cleans_unused_tree(self):
+        obj = TestObj([]).opts(style_opt1='A').opts(plot_opt1='B')
+        custom_options = Store._custom_options['backend_1']
+        self.assertIn(obj.id, custom_options)
+        self.assertEqual(len(custom_options), 1)
+
+    def test_opts_multiple_resassignment_cleans_unused_tree(self):
+        obj = HoloMap({0: TestObj([]), 1: TestObj([])}).opts(style_opt1='A').opts(plot_opt1='B')
+        custom_options = Store._custom_options['backend_1']
+        self.assertIn(obj.last.id, custom_options)
+        self.assertEqual(len(custom_options), 1)
+
+    def test_opts_resassignment_cleans_unused_tree_cross_backend(self):
+        obj = TestObj([]).opts(style_opt1='A').opts(plot_opt1='B', backend='backend_2')
+        custom_options = Store._custom_options['backend_1']
+        self.assertIn(obj.id, custom_options)
+        self.assertEqual(len(custom_options), 1)
+        custom_options = Store._custom_options['backend_2']
+        self.assertIn(obj.id, custom_options)
+        self.assertEqual(len(custom_options), 1)
+
+    def test_garbage_collect_cleans_unused_tree(self):
+        obj = TestObj([]).opts(style_opt1='A')
+        del obj
+        gc.collect()
+        custom_options = Store._custom_options['backend_1']
+        self.assertEqual(len(custom_options), 0)
+
+    def test_partial_garbage_collect_does_not_clear_tree(self):
+        obj = HoloMap({0: TestObj([]), 1: TestObj([])}).opts(style_opt1='A')
+        obj.pop(0)
+        gc.collect()
+        custom_options = Store._custom_options['backend_1']
+        self.assertIn(obj.last.id, custom_options)
+        self.assertEqual(len(custom_options), 1)
+        obj.pop(1)
+        gc.collect()
+        self.assertEqual(len(custom_options), 0)
+
+    def test_opts_clear_cleans_unused_tree(self):
+        obj = TestObj([]).opts(style_opt1='A').opts.clear()
+        custom_options = Store._custom_options['backend_1']
+        self.assertEqual(len(custom_options), 0)
