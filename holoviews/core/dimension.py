@@ -658,17 +658,17 @@ class LabelledData(param.Parameterized):
         return self._id
 
     @id.setter
-    def id(self, id):
+    def id(self, opts_id):
         """Handles tracking and cleanup of custom ids."""
         old_id = self._id
-        self._id = id
+        self._id = opts_id
         if old_id is not None:
             cleanup_custom_options(old_id)
-        if id is not None:
-            if id not in Store._weakrefs:
-                Store._weakrefs[id] = []
-            ref = weakref.ref(self, partial(cleanup_custom_options, id))
-            Store._weakrefs[id].append(ref)
+        if opts_id is not None and opts_id != old_id:
+            if opts_id not in Store._weakrefs:
+                Store._weakrefs[opts_id] = []
+            ref = weakref.ref(self, partial(cleanup_custom_options, opts_id))
+            Store._weakrefs[opts_id].append(ref)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
