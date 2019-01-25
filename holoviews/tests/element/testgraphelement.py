@@ -2,7 +2,6 @@
 Unit tests of Graph Element.
 """
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews.core.data import Dataset
@@ -133,7 +132,7 @@ class FromNetworkXTests(ComparisonTestCase):
 
     def setUp(self):
         try:
-            import networkx as nx
+            import networkx as nx # noqa
         except:
             raise SkipTest('Test requires networkx to be installed')
 
