@@ -384,20 +384,34 @@ class Graph(Dataset, Element2D):
 
 
     @classmethod
-    def from_networkx(cls, G, layout_function, nodes=None, **kwargs):
+    def from_networkx(cls, G, positions, nodes=None, **kwargs):
         """
         Generate a HoloViews Graph from a networkx.Graph object and
-        networkx layout function. Any keyword arguments will be passed
-        to the layout function. By default it will extract all node
-        and edge attributes from the networkx.Graph but explicit node
-        information may also be supplied.
+        networkx layout function or dictionary of node positions.
+        Any keyword arguments will be passed to the layout
+        function. By default it will extract all node and edge
+        attributes from the networkx.Graph but explicit node
+        information may also be supplied. Any non-scalar attributes,
+        such as lists or dictionaries will be ignored.
+
+        Args:
+            G (networkx.Graph): Graph to convert to Graph element
+            positions (dict or callable): Node positions
+                Node positions defined as a dictionary mapping from
+                node id to (x, y) tuple or networkx layout function
+                which computes a positions dictionary
+            kwargs (dict): Keyword arguments for layout function
+
+        Returns:
+            Graph element
         """
-        positions = layout_function(G, **kwargs)
+        if isinstance(positions, dict):
+            positions = positions(G, **kwargs)
         edges = defaultdict(list)
         for start, end in G.edges():
             for attr, value in sorted(G.adj[start][end].items()):
                 if isinstance(value, (list, dict)):
-                    continue # Cannot handle lists
+                    continue # Cannot handle list or dict attrs
                 edges[attr].append(value)
 
             # Handle tuple node indexes (used in 2D grid Graphs)
