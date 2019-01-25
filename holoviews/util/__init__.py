@@ -1,5 +1,7 @@
 import os, sys, inspect, shutil
 
+from collections import defaultdict
+
 import param
 from pyviz_comms import extension as _pyviz_extension
 
@@ -576,6 +578,9 @@ class extension(_pyviz_extension):
                  'bokeh': 'bokeh',
                  'plotly': 'plotly'}
 
+    # Hooks run when a backend is loaded
+    _backend_hooks = defaultdict(list)
+
     def __call__(self, *args, **params):
         # Get requested backends
         config = params.pop('config', {})
@@ -616,10 +621,22 @@ class extension(_pyviz_extension):
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)
                 Store.output_settings.allowed['holomap'] = list_formats('holomap', backend)
+            for hook in self._backend_hooks[backend]:
+                try:
+                    hook()
+                except Exception as e:
+                    self.param.warning('%s backend hook %s failed with '
+                                       'following exception: %s' %
+                                       (backend, hook, e))
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
         Store.set_current_backend(selected_backend)
+
+    @classmethod
+    def register_backend_callback(cls, backend, callback):
+        """Registers a hook which is run when a backend is loaded"""
+        cls._backend_hooks[backend].append(callback)
 
 
 def save(obj, filename, fmt='auto', backend=None, **kwargs):
