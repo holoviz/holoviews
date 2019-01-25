@@ -1,4 +1,5 @@
 from types import FunctionType
+from collections import defaultdict
 
 import param
 import numpy as np
@@ -392,28 +393,52 @@ class Graph(Dataset, Element2D):
         information may also be supplied.
         """
         positions = layout_function(G, **kwargs)
-        edges = []
+        edges = defaultdict(list)
         for start, end in G.edges():
-            attrs = sorted(G.adj[start][end].items())
-            edges.append((start, end)+tuple(v for k, v in attrs))
-        edge_vdims = [k for k, v in attrs] if edges else []
+            for attr, value in sorted(G.adj[start][end].items()):
+                if isinstance(value, (list, dict)):
+                    continue # Cannot handle lists
+                edges[attr].append(value)
 
+            # Handle tuple node indexes (used in 2D grid Graphs)
+            if isinstance(start, tuple):
+                start = str(start)
+            if isinstance(end, tuple):
+                end = str(end)
+            edges['start'].append(start)
+            edges['end'].append(end)
+        edge_cols = sorted([k for k in edges if k not in ('start', 'end')
+                            and len(edges[k]) == len(edges['start'])])
+        edge_vdims = [str(col) if isinstance(col, int) else col for col in edge_cols]
+        edge_data = tuple(edges[col] for col in ['start', 'end']+edge_cols)
+
+        xdim, ydim, idim = cls.node_type.kdims[:3]
         if nodes:
-            idx_dim = nodes.kdims[-1].name
             xs, ys = zip(*[v for k, v in sorted(positions.items())])
-            indices = list(nodes.dimension_values(idx_dim))
+            indices = list(nodes.dimension_values(idim))
             edges = [edge for edge in edges if edge[0] in indices and edge[1] in indices]
-            nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
-            nodes = nodes.add_dimension('x', 0, xs)
-            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=cls.node_type)
+            nodes = nodes.select(**{idim.name: [eid for e in edges for eid in e]}).sort()
+            nodes = nodes.add_dimension(xdim, 0, xs)
+            nodes = nodes.add_dimension(ydim, 1, ys).clone(new_type=cls.node_type)
         else:
-            nodes = []
+            nodes = defaultdict(list)
             for idx, pos in sorted(positions.items()):
-                attrs = sorted(G.nodes[idx].items())
-                nodes.append(tuple(pos)+(idx,)+tuple(v for k, v in attrs))
-            vdims = [k for k, v in attrs] if nodes else []
-            nodes = cls.node_type(nodes, vdims=vdims)
-        return cls((edges, nodes), vdims=edge_vdims)
+                x, y = pos
+                nodes[xdim.name].append(x)
+                nodes[ydim.name].append(y)
+                for attr, value in G.nodes[idx].items():
+                    if isinstance(value, (list, dict)):
+                        continue
+                    nodes[attr].append(value)
+                if isinstance(idx, tuple):
+                    idx = str(idx) # Tuple node indexes handled as strings
+                nodes[idim.name].append(idx)
+            node_cols = sorted([k for k in edges if k not in cls.node_type.kdims
+                                and len(nodes[k]) == len(nodes[xdim.name])])
+            vdims = [str(col) if isinstance(col, int) else col for col in node_cols]
+            node_data = tuple(nodes[col] for col in [xdim.name, ydim.name, idim.name]+node_cols)
+            nodes = cls.node_type(node_data, vdims=vdims)
+        return cls((edge_data, nodes), vdims=edge_vdims)
 
 
 
