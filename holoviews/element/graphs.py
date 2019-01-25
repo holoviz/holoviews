@@ -407,6 +407,8 @@ class Graph(Dataset, Element2D):
         """
         if not isinstance(positions, dict):
             positions = positions(G, **kwargs)
+
+        # Unpack edges
         edges = defaultdict(list)
         for start, end in G.edges():
             for attr, value in sorted(G.adj[start][end].items()):
@@ -426,6 +428,7 @@ class Graph(Dataset, Element2D):
         edge_vdims = [str(col) if isinstance(col, int) else col for col in edge_cols]
         edge_data = tuple(edges[col] for col in ['start', 'end']+edge_cols)
 
+        # Unpack user node info
         xdim, ydim, idim = cls.node_type.kdims[:3]
         if nodes:
             node_columns = nodes.columns()
@@ -436,6 +439,8 @@ class Graph(Dataset, Element2D):
             info_cols = []
             node_info = None
         node_columns = defaultdict(list)
+
+        # Unpack node positions
         for idx, pos in sorted(positions.items()):
             x, y = pos
             node_columns[xdim.name].append(x)
@@ -451,6 +456,10 @@ class Graph(Dataset, Element2D):
             node_columns[idim.name].append(idx)
         node_cols = sorted([k for k in node_columns if k not in cls.node_type.kdims
                             and len(node_columns[k]) == len(node_columns[xdim.name])])
+        columns = [xdim.name, ydim.name, idim.name]+node_cols+list(info_cols)
+        node_data = tuple(node_columns[col] for col in columns)
+
+        # Construct nodes
         vdims = []
         for col in node_cols:
             if isinstance(col, int):
@@ -460,9 +469,9 @@ class Graph(Dataset, Element2D):
             else:
                 dim = col
             vdims.append(dim)
-        columns = [xdim.name, ydim.name, idim.name]+node_cols+list(info_cols)
-        node_data = tuple(node_columns[col] for col in columns)
         nodes = cls.node_type(node_data, vdims=vdims)
+
+        # Construct graph
         return cls((edge_data, nodes), vdims=edge_vdims)
 
 
