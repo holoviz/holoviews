@@ -13,6 +13,7 @@ dependencies:
   - jsonschema=2.6.0
   - cyordereddict
   - nbconvert=5.3.1
+  - selenium
   - pyviz::param=1.8.0
   - pyviz::pyviz_comms=0.7.0
   - pyviz::datashader
@@ -21,7 +22,6 @@ dependencies:
   - conda-forge::flexx=0.4.1
   - conda-forge::plotly=3.4
   - bokeh::bokeh=1.0.0
-  - bokeh::selenium
   # Testing requirements
   - flake8
   - nose
