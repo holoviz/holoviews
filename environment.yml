@@ -7,11 +7,11 @@ dependencies:
   - defaults::numpy
   - defaults::scipy
   - defaults::matplotlib
+  - defaults::ffmpeg
   - notebook
   - pillow
   - networkx
   - selenium
-  - ffmpeg
   - cyordereddict
   - phantomjs
   - pandas=0.24.0
