@@ -442,10 +442,13 @@ class Graph(Dataset, Element2D):
 
         # Unpack node positions
         for idx, pos in sorted(positions.items()):
+            node = G.nodes.get(idx)
+            if node is None:
+                continue
             x, y = pos
             node_columns[xdim.name].append(x)
             node_columns[ydim.name].append(y)
-            for attr, value in G.nodes[idx].items():
+            for attr, value in node.items():
                 if isinstance(value, (list, dict)):
                     continue
                 node_columns[attr].append(value)
