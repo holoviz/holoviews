@@ -3,7 +3,7 @@ name: holoviews
 dependencies:
   - numpy<1.16.0
   - notebook
-  - matplotlib=2.2.3
+  - matplotlib
   - pandas=0.24.0
   - scipy
   - xarray=0.11.0
