@@ -9,8 +9,6 @@ python:
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
-  flowdock:
-    secure: d32tzqLnUIJge2QyAMtseJWf0yRb3LenW77xzEGVUD+abzlTtoCBbQBIRaWjJn3V78wd3ogLinplnMnu46tsQi7Q2XWiKaxrWq2ZPVfVCbV88whFiYMmmwnj6DNJjl3CxfGQXgui/VyPg9fyaDp5TyZfNZa/gEdedkn1J5kIF3g=
 
 
 install:
@@ -28,7 +26,7 @@ install:
   # Useful for debugging any issues with conda
   - conda info -a
   - conda create -q -n holoviews python=$TRAVIS_PYTHON_VERSION
-  - travis_wait conda env update -n holoviews -q -f environment.yml
+  - conda env update -n holoviews -q -f environment.yml
   - source activate holoviews
   - python setup.py develop
   - conda env export
