@@ -75,7 +75,10 @@ arraylike_types = (np.ndarray,)
 try:
     import pandas as pd
     pandas_version = LooseVersion(pd.__version__)
-    if pandas_version > '0.20.0':
+    if pandas_version >= '0.24.0':
+        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
+        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+    elif pandas_version > '0.20.0':
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
         from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
     else:
