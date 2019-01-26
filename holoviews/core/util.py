@@ -74,26 +74,32 @@ arraylike_types = (np.ndarray,)
 
 try:
     import pandas as pd
-    pandas_version = LooseVersion(pd.__version__)
-    if pandas_version >= '0.24.0':
-        from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-    elif pandas_version > '0.20.0':
-        from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
-        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
-    else:
-        from pandas.types.dtypes import DatetimeTZDtypeType
-        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
-    pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
-    pandas_timedelta_types = (pd.Timedelta,)
-    datetime_types = datetime_types + pandas_datetime_types
-    timedelta_types = timedelta_types + pandas_timedelta_types
-    arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
-    if pandas_version > '0.23.0':
-        from pandas.core.dtypes.generic import ABCExtensionArray
-        arraylike_types = arraylike_types + (ABCExtensionArray,)
 except ImportError:
     pd = None
+
+if pd:
+    try:
+        pandas_version = LooseVersion(pd.__version__)
+        if pandas_version >= '0.24.0':
+            from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
+            from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        elif pandas_version > '0.20.0':
+            from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
+            from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
+        else:
+            from pandas.types.dtypes import DatetimeTZDtypeType
+            from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
+        pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
+        pandas_timedelta_types = (pd.Timedelta,)
+        datetime_types = datetime_types + pandas_datetime_types
+        timedelta_types = timedelta_types + pandas_timedelta_types
+        arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
+        if pandas_version > '0.23.0':
+            from pandas.core.dtypes.generic import ABCExtensionArray
+            arraylike_types = arraylike_types + (ABCExtensionArray,)
+    except Exception as e:
+        param.main.warning('pandas could not register all extension types '
+                           'imports failed with the following error: %s' % e) 
 
 try:
     import cftime
