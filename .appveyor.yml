@@ -1,13 +1,17 @@
+platform:
+  - x64
+
 environment:
   matrix:
-    - PY: "2.7"
-      CONDA: "C:\\Miniconda-x64"
-    - PY: "3.6"
-      CONDA: "C:\\Miniconda36-x64"
+    - MINICONDA: C:\Miniconda36-x64
 
 build: off
 skip_branch_with_pr: true  # only do one run per commit
 clone_depth: 5
+
+init:
+  - cmd: set PATH=%MINICONDA%;%MINICONDA%\Scripts;%MINICONDA%\Library\bin;%PATH%
+  - cmd: echo %path%
 
 install:
   - cmd: conda config --set always_yes yes --set changeps1 no
