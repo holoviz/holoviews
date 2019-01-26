@@ -22,6 +22,7 @@ install:
   - hash -r
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
+  
   # Useful for debugging any issues with conda
   - conda info -a
   - conda create -n holoviews python=$TRAVIS_PYTHON_VERSION
@@ -52,10 +53,8 @@ install:
     fi
   - cd ../..
 
-before-script:
-  - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
-
 script:
+  - export MPLBACKEND="Agg"
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
   - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
   - flake8 --ignore=E,W,F999,F405 holoviews
