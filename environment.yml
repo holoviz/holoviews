@@ -13,6 +13,7 @@ dependencies:
   - selenium
   - ffmpeg
   - cyordereddict
+  - phantomjs
   - pandas=0.24.0
   - xarray=0.11.0
   - ipython=5.4.1
