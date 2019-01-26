@@ -10,7 +10,6 @@ notifications:
   email:
     on_failure: change # [always|never|change] default: always
 
-
 install:
   - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
@@ -25,8 +24,8 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n holoviews python=$TRAVIS_PYTHON_VERSION
-  - conda env update -n holoviews -q -f environment.yml
+  - conda create -n holoviews python=$TRAVIS_PYTHON_VERSION
+  - travis_wait conda env update -n holoviews -q -f environment.yml
   - source activate holoviews
   - python setup.py develop
   - conda env export
