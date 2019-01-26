@@ -73,7 +73,7 @@ class TestHistogramPlot(TestMPLPlot):
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.19999999999999996)
         self.assertEqual(x_range[1], 3.8)
-        self.assertEqual(y_range[0], 1)
+        self.assertEqual(y_range[0], 0.03348369522101712)
         self.assertEqual(y_range[1], 3.3483695221017129)
 
     def test_histogram_padding_datetime_square(self):

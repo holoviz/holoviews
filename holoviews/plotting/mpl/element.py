@@ -308,54 +308,60 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Compute extents for current view and apply as axis limits
         """
         # Extents
-        scalex, scaley = True, True
         extents = self.get_extents(view, ranges)
-        if extents and not self.overlaid:
-            coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
-            coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
-                      for c in coords]
-            valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-            if self.projection == '3d' or len(extents) == 6:
-                l, b, zmin, r, t, zmax = coords
-                if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
-                    zmin, zmax = zmax, zmin
-                if zmin != zmax:
-                    if valid_lim(zmin):
-                        axis.set_zlim(bottom=zmin)
-                    if valid_lim(zmax):
-                        axis.set_zlim(top=zmax)
-            else:
-                l, b, r, t = coords
+        if not extents or self.overlaid:
+            axis.autoscale_view(scalex=True, scaley=True)
+            return
 
-            if self.invert_axes:
-                l, b, r, t = b, l, t, r
+        coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+        coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
+                  for c in coords]
+        if self.projection == '3d' or len(extents) == 6:
+            l, b, zmin, r, t, zmax = coords
+            if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
+                zmin, zmax = zmax, zmin
+            if zmin != zmax:
+                if valid_lim(zmin):
+                    axis.set_zlim(bottom=zmin)
+                if valid_lim(zmax):
+                    axis.set_zlim(top=zmax)
+        else:
+            l, b, r, t = coords
 
-            if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
-                r, l = l, r
+        if self.invert_axes:
+            l, b, r, t = b, l, t, r
 
-            if isinstance(l, util.cftime_types) or l != r:
-                lims = {}
-                if valid_lim(l):
-                    lims['left'] = l
-                    scalex = False
-                if valid_lim(r):
-                    lims['right'] = r
-                    scalex = False
-                if lims:
-                    axis.set_xlim(**lims)
-            if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
-                t, b = b, t
-            if isinstance(b, util.cftime_types) or b != t:
-                lims = {}
-                if valid_lim(b):
-                    lims['bottom'] = b
-                    scaley = False
-                if valid_lim(t):
-                    lims['top'] = t
-                    scaley = False
-                if lims:
-                    axis.set_ylim(**lims)
+        invertx = self.invert_xaxis or any(p.invert_xaxis for p in subplots)
+        xlim, scalex = self._compute_limits(l, r, self.logx, invertx, 'left', 'right')
+        inverty = self.invert_yaxis or any(p.invert_yaxis for p in subplots)
+        ylim, scaley =  self._compute_limits(b, t, self.logy, inverty, 'bottom', 'top')
+        if xlim:
+            axis.set_xlim(**xlim)
+        if ylim:
+            axis.set_ylim(**ylim)
         axis.autoscale_view(scalex=scalex, scaley=scaley)
+
+
+    def _compute_limits(self, low, high, log, invert, low_key, high_key):
+        scale = True
+        lims = {}
+        valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
+        if not isinstance(low, util.datetime_types) and log and (low is None or low <= 0):
+            low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
+            self.param.warning(
+                "Logarithmic axis range encountered value less "
+                "than or equal to zero, please supply explicit "
+                "lower-bound to override default of %.3f." % low)
+        if invert:
+            high, low = low, high
+        if isinstance(low, util.cftime_types) or low != high:
+            if valid_lim(low):
+                lims[low_key] = low
+                scale = False
+            if valid_lim(high):
+                lims[high_key] = high
+                scale = False
+        return lims, scale
 
 
     def _set_axis_position(self, axes, axis, option):
