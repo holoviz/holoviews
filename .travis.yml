@@ -28,7 +28,7 @@ install:
   - travis_wait conda env update -n holoviews -f environment.yml
   - source activate holoviews
   - python setup.py develop
-  - conda env export
+  - conda info; conda list; conda env export
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
