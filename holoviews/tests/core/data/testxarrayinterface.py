@@ -188,7 +188,8 @@ class XArrayInterfaceTests(GridInterfaceTests):
         array = np.random.rand(10, 10)
         ds = QuadMesh((xs, ys, array))
         self.assertEqual(ds.interface.datatype, 'xarray')
-        expected = (dt.datetime(2017, 12, 31, 12, 0), dt.datetime(2018, 1, 10, 12, 0))
+        expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
+                    np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
         self.assertEqual(ds.range('x'), expected)
 
     def test_datetime64_bins_range(self):

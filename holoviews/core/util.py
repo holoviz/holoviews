@@ -99,7 +99,7 @@ if pd:
             arraylike_types = arraylike_types + (ABCExtensionArray,)
     except Exception as e:
         param.main.warning('pandas could not register all extension types '
-                           'imports failed with the following error: %s' % e) 
+                           'imports failed with the following error: %s' % e)
 
 try:
     import cftime
