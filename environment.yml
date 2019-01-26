@@ -4,7 +4,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - numpy<1.16.0
+  - numpy
   - notebook
   - matplotlib
   - pandas=0.24.0
