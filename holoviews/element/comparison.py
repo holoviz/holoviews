@@ -109,8 +109,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[list] =         cls.compare_lists
         cls.equality_type_funcs[tuple] =        cls.compare_tuples
 
-
-        #Dictionary comparisons
+        # Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
         cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
@@ -261,11 +260,6 @@ class Comparison(ComparisonInterface):
                 cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
                 raise cls.failureException(msg + str(e)[11:])
-
-    @classmethod
-    def compare_dataframe(cls, df1, df2, msg='DataFrames'):
-        if not df1.equals(df2):
-            raise cls.failureException('%s are not equal' % msg)
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
@@ -672,12 +666,9 @@ class Comparison(ComparisonInterface):
     #========#
 
     @classmethod
-    def compare_dframe(cls, el1, el2, msg='DFrame'):
-        cls.compare_dimensioned(el1, el2)
+    def compare_dataframe(cls, df1, df2, msg='DFrame'):
         from pandas.util.testing import assert_frame_equal
         try:
-            df1 = el1.data.reset_index(drop=True)
-            df2 = el2.data.reset_index(drop=True)
             assert_frame_equal(df1, df2)
         except AssertionError as e:
             raise cls.failureException(msg+': '+str(e))
