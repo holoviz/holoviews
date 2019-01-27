@@ -7,6 +7,7 @@ dependencies:
   - defaults::numpy
   - defaults::scipy
   - defaults::matplotlib
+  - defaults::ffmpeg
   - notebook
   - networkx
   - selenium
@@ -22,7 +23,6 @@ dependencies:
   - flexx=0.4.1
   - plotly=3.4
   - bokeh=1.0.4
-  - ffmpeg=3.4.1
   - pyviz::param=1.8.1
   - pyviz::pyviz_comms=0.7.0
   - pyviz::datashader
