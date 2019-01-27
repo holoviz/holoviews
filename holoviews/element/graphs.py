@@ -1,4 +1,5 @@
 from types import FunctionType
+from collections import defaultdict
 
 import param
 import numpy as np
@@ -383,37 +384,98 @@ class Graph(Dataset, Element2D):
 
 
     @classmethod
-    def from_networkx(cls, G, layout_function, nodes=None, **kwargs):
+    def from_networkx(cls, G, positions, nodes=None, **kwargs):
         """
         Generate a HoloViews Graph from a networkx.Graph object and
-        networkx layout function. Any keyword arguments will be passed
-        to the layout function. By default it will extract all node
-        and edge attributes from the networkx.Graph but explicit node
-        information may also be supplied.
-        """
-        positions = layout_function(G, **kwargs)
-        edges = []
-        for start, end in G.edges():
-            attrs = sorted(G.adj[start][end].items())
-            edges.append((start, end)+tuple(v for k, v in attrs))
-        edge_vdims = [k for k, v in attrs] if edges else []
+        networkx layout function or dictionary of node positions.
+        Any keyword arguments will be passed to the layout
+        function. By default it will extract all node and edge
+        attributes from the networkx.Graph but explicit node
+        information may also be supplied. Any non-scalar attributes,
+        such as lists or dictionaries will be ignored.
 
+        Args:
+            G (networkx.Graph): Graph to convert to Graph element
+            positions (dict or callable): Node positions
+                Node positions defined as a dictionary mapping from
+                node id to (x, y) tuple or networkx layout function
+                which computes a positions dictionary
+            kwargs (dict): Keyword arguments for layout function
+
+        Returns:
+            Graph element
+        """
+        if not isinstance(positions, dict):
+            positions = positions(G, **kwargs)
+
+        # Unpack edges
+        edges = defaultdict(list)
+        for start, end in G.edges():
+            for attr, value in sorted(G.adj[start][end].items()):
+                if isinstance(value, (list, dict)):
+                    continue # Cannot handle list or dict attrs
+                edges[attr].append(value)
+
+            # Handle tuple node indexes (used in 2D grid Graphs)
+            if isinstance(start, tuple):
+                start = str(start)
+            if isinstance(end, tuple):
+                end = str(end)
+            edges['start'].append(start)
+            edges['end'].append(end)
+        edge_cols = sorted([k for k in edges if k not in ('start', 'end')
+                            and len(edges[k]) == len(edges['start'])])
+        edge_vdims = [str(col) if isinstance(col, int) else col for col in edge_cols]
+        edge_data = tuple(edges[col] for col in ['start', 'end']+edge_cols)
+
+        # Unpack user node info
+        xdim, ydim, idim = cls.node_type.kdims[:3]
         if nodes:
-            idx_dim = nodes.kdims[-1].name
-            xs, ys = zip(*[v for k, v in sorted(positions.items())])
-            indices = list(nodes.dimension_values(idx_dim))
-            edges = [edge for edge in edges if edge[0] in indices and edge[1] in indices]
-            nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
-            nodes = nodes.add_dimension('x', 0, xs)
-            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=cls.node_type)
+            node_columns = nodes.columns()
+            idx_dim = nodes.kdims[0].name
+            info_cols, values = zip(*((k, v) for k, v in node_columns.items() if k != idx_dim))
+            node_info = {i: vals for i, vals in zip(node_columns[idx_dim], zip(*values))}
         else:
-            nodes = []
-            for idx, pos in sorted(positions.items()):
-                attrs = sorted(G.nodes[idx].items())
-                nodes.append(tuple(pos)+(idx,)+tuple(v for k, v in attrs))
-            vdims = [k for k, v in attrs] if nodes else []
-            nodes = cls.node_type(nodes, vdims=vdims)
-        return cls((edges, nodes), vdims=edge_vdims)
+            info_cols = []
+            node_info = None
+        node_columns = defaultdict(list)
+
+        # Unpack node positions
+        for idx, pos in sorted(positions.items()):
+            node = G.nodes.get(idx)
+            if node is None:
+                continue
+            x, y = pos
+            node_columns[xdim.name].append(x)
+            node_columns[ydim.name].append(y)
+            for attr, value in node.items():
+                if isinstance(value, (list, dict)):
+                    continue
+                node_columns[attr].append(value)
+            for i, col in enumerate(info_cols):
+                node_columns[col].append(node_info[idx][i])
+            if isinstance(idx, tuple):
+                idx = str(idx) # Tuple node indexes handled as strings
+            node_columns[idim.name].append(idx)
+        node_cols = sorted([k for k in node_columns if k not in cls.node_type.kdims
+                            and len(node_columns[k]) == len(node_columns[xdim.name])])
+        columns = [xdim.name, ydim.name, idim.name]+node_cols+list(info_cols)
+        node_data = tuple(node_columns[col] for col in columns)
+
+        # Construct nodes
+        vdims = []
+        for col in node_cols:
+            if isinstance(col, int):
+                dim = str(col)
+            elif nodes is not None and col in nodes.vdims:
+                dim = nodes.get_dimension(col)
+            else:
+                dim = col
+            vdims.append(dim)
+        nodes = cls.node_type(node_data, vdims=vdims)
+
+        # Construct graph
+        return cls((edge_data, nodes), vdims=edge_vdims)
 
 
 
