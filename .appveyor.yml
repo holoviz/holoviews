@@ -1,31 +1,26 @@
-platform:
-  - x64
-
 environment:
   matrix:
     - MINICONDA: C:\Miniconda36-x64
-
-build: off
-skip_branch_with_pr: true  # only do one run per commit
-clone_depth: 5
 
 init:
   - cmd: set PATH=%MINICONDA%;%MINICONDA%\Scripts;%MINICONDA%\Library\bin;%PATH%
   - cmd: echo %path%
 
 install:
-  - cmd: conda config --set always_yes yes --set changeps1 no
-  - cmd: conda update -q conda
-  - cmd: conda info -a
-  - cmd: conda env create -n holoviews -q python=3.6
-  - cmd: conda env update -n holoviews -q -f environment.yml
-  - cmd: conda activate holoviews
-  - cmd: python setup.py develop
+  - "conda config --set always_yes yes --set changeps1 no"
+  - "conda update -q conda"
+  - "conda info -a"
+  - "conda env create -n holoviews -q python=3.6"
+  - "conda env update -n holoviews -q -f environment.yml"
+  - "activate holoviews"
+  - "python setup.py develop"
+
+build: false
 
 before_test:
   - cmd: for /f %%i in ('python -c "import matplotlib; print(matplotlib.matplotlib_fname())"') do set matplotlibrc=%%i
   - cmd: 'echo backend : Agg > %matplotlibrc%'
 
 test_script:
-  - flake8 --ignore=E,W,F999,F405 holoviews
-  - nosetests --with-doctest --with-coverage --cover-package=holoviews
+  - "flake8 --ignore=E,W,F999,F405 holoviews"
+  - "nosetests --with-doctest --with-coverage --cover-package=holoviews"
