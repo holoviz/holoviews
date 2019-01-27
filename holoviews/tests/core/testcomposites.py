@@ -342,6 +342,12 @@ class OverlayTestCase(ElementTestCase):
         composite = overlay * HoloMap({0: Element(None, group='HoloMap')})
         self.assertEqual(composite.last.keys(), [('Custom', 'LabelA'), ('HoloMap', 'I')])
 
+    def test_overlay_id_inheritance(self):
+        overlay = Overlay([], id=1)
+        self.assertEqual(overlay.clone().id, 1)
+        self.assertEqual(overlay.clone()._plot_id, overlay._plot_id)
+        self.assertNotEqual(overlay.clone([])._plot_id, overlay._plot_id)
+
 
 class CompositeTestCase(ElementTestCase):
     """

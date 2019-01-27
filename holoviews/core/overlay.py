@@ -137,15 +137,10 @@ class Overlay(ViewableTree, CompositeOverlay):
     """
 
     def __init__(self, items=None, group=None, label=None, **params):
-        view_params = ViewableElement.params().keys()
         self.__dict__['_fixed'] = False
         self.__dict__['_group'] = group
         self.__dict__['_label'] = label
-        ViewableTree.__init__(self, items,
-                              **{k:v for k,v in params.items() if k not in view_params})
-        ViewableElement.__init__(self, self.data,
-                                 **{k:v for k,v in params.items() if k in view_params})
-
+        super(Overlay, self).__init__(items, **params)
 
     def __getitem__(self, key):
         """
