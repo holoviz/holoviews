@@ -432,6 +432,11 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
+    def test_dataset_get_dframe(self):
+        df = self.dataset_hm.dframe()
+        self.assertEqual(df.x.values, self.xs)
+        self.assertEqual(df.y.values, self.y_ints.compute())
+
 
 
 class Image_GridInterfaceTests(Image_ImageInterfaceTests):

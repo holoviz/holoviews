@@ -92,5 +92,5 @@ class TestAreaPlot(TestMPLPlot):
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
         self.assertEqual(x_range[0], 0.8)
         self.assertEqual(x_range[1], 3.2)
-        self.assertEqual(y_range[0], 1)
+        self.assertEqual(y_range[0], 0.03348369522101712)
         self.assertEqual(y_range[1], 3.3483695221017129)
