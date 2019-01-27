@@ -17,8 +17,9 @@ install:
   - cmd: conda config --set always_yes yes --set changeps1 no
   - cmd: conda update -q conda
   - cmd: conda info -a
-  - cmd: conda env create -q -f environment.yml
-  - cmd: activate holoviews
+  - cmd: conda env create -n holoviews -q python=3.6
+  - cmd: conda env update -n holoviews -q -f environment.yml
+  - cmd: conda activate holoviews
   - cmd: python setup.py develop
 
 before_test:
