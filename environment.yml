@@ -7,12 +7,12 @@ dependencies:
   - defaults::numpy
   - defaults::scipy
   - defaults::matplotlib
-  - defaults::ffmpeg
   - notebook
   - networkx
   - selenium
   - cyordereddict
   - phantomjs
+  - ffmpeg
   - pillow=5.3.0
   - pandas=0.24.0
   - xarray=0.11.0
