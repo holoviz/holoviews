@@ -871,13 +871,13 @@ class LabelledData(param.Parameterized):
         d = param_aliases(d)
 
         # Backwards compatibility for objects before id was made a property
-        id_key = '_id' if '_id' in d else 'id'
+        opts_id = d['_id'] if '_id' in d else d.pop('id', None)
         try:
             load_options = Store.load_counter_offset is not None
             if load_options:
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
-                    custom_id = int(match.split('_')[-1])
+                    custom_id = int(match.split('_')[-1])+Store.load_counter_offset
                     if not isinstance(d[match], dict):
                         # Backward compatibility before multiple backends
                         backend_info = {'matplotlib':d[match]}
@@ -886,20 +886,19 @@ class LabelledData(param.Parameterized):
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
+                        Store._custom_options[backend][custom_id] = info
+                    if backend_info:
+                        if custom_id not in Store._weakrefs:
+                            Store._weakrefs[custom_id] = []
+                        ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
+                        Store._weakrefs[opts_id].append(ref)
                     d.pop(match)
 
-                if d[id_key] is not None:
-                    d[id_key] += Store.load_counter_offset
-                    if backend_info:
-                        if opts_id not in Store._weakrefs:
-                            Store._weakrefs[opts_id] = []
-                        ref = weakref.ref(self, partial(cleanup_custom_options, d[id_key]))
-                        Store._weakrefs[d[id_key]].append(ref)
-                else:
-                    d[id_key] = None
+                if opts_id is not None:
+                    opts_id += Store.load_counter_offset
         except:
             self.param.warning("Could not unpickle custom style information.")
+        d['_id'] = opts_id
         self.__dict__.update(d)
 
 
