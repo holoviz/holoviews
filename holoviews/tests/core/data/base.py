@@ -386,7 +386,8 @@ class HomogeneousColumnTests(object):
 
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
-        self.assertEqual(df, pd.DataFrame({'x': self.xs, 'y': self.y_ints}, dtype=df.dtypes[0]))
+        self.assertEqual(df.x.values, self.xs)
+        self.assertEqual(df.y.values, self.y_ints)
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
