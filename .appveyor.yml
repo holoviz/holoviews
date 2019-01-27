@@ -19,6 +19,7 @@ install:
   - "conda update -q conda"
   - "conda info -a"
   - "conda create -n holoviews python=%PY%"
+  - "conda clean --all"
   - "conda env update -n holoviews -f environment.yml"
   - "activate holoviews"
   - "python setup.py develop"
