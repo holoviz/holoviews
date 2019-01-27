@@ -887,20 +887,20 @@ class LabelledData(param.Parameterized):
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
                         Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
-
                     d.pop(match)
 
                 if d[id_key] is not None:
                     d[id_key] += Store.load_counter_offset
+                    if backend_info:
+                        if opts_id not in Store._weakrefs:
+                            Store._weakrefs[opts_id] = []
+                        ref = weakref.ref(self, partial(cleanup_custom_options, d[id_key]))
+                        Store._weakrefs[d[id_key]].append(ref)
                 else:
                     d[id_key] = None
         except:
             self.param.warning("Could not unpickle custom style information.")
-        obj_id = d.pop(id_key, None)
-        d['_id'] = None
         self.__dict__.update(d)
-        self.id = obj_id
-
 
 
 class Dimensioned(LabelledData):
