@@ -18,7 +18,7 @@ install:
   - "conda config --set always_yes yes"
   - "conda update -q conda"
   - "conda info -a"
-  - "conda env create -n holoviews --python=%PY%"
+  - "conda create -n holoviews python=%PY%"
   - "conda env update -n holoviews -f environment.yml"
   - "activate holoviews"
   - "python setup.py develop"
