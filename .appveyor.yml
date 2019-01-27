@@ -1,15 +1,25 @@
 environment:
   matrix:
-    - MINICONDA: C:\Miniconda36-x64
+    - PY: "2.7"
+      CONDA: "C:\\Miniconda-x64"
+    - PY: "3.6"
+      CONDA: "C:\\Miniconda36-x64"
+
+matrix:
+  allow_failures:
+    - PY: "2.7"
+    - PY: "3.6"
 
 init:
-  - cmd: set PATH=%MINICONDA%;%MINICONDA%\Scripts;%MINICONDA%\Library\bin;%PATH%
+  - cmd: set PATH=%CONDA%;%CONDA%\Scripts;%CONDA%\Library\bin;%PATH%
   - cmd: echo %path%
 
 install:
   - "conda config --set always_yes yes"
+  - "conda update -q conda"
   - "conda info -a"
-  - "conda env create -f environment.yml"
+  - "conda env create -n holoviews --python=%PY%"
+  - "conda env update -n holoviews -f environment.yml"
   - "activate holoviews"
   - "python setup.py develop"
 
