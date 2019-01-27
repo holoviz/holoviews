@@ -90,8 +90,8 @@ class StatisticalElementTest(ComparisonTestCase):
 
     def test_bivariate_array_kdim_type(self):
         dist = Bivariate(np.array([[0, 1], [1, 2], [2, 3]]))
-        self.assertEqual(np.issubdtype(dist.get_dimension_type(0), np.int_))
-        self.assertEqual(np.issubdtype(dist.get_dimension_type(1), np.int_))
+        self.assertTrue(np.issubdtype(dist.get_dimension_type(0), np.int_))
+        self.assertTrue(np.issubdtype(dist.get_dimension_type(1), np.int_))
 
     def test_distribution_array_vdim_type(self):
         dist = Distribution(np.array([0, 1, 2]))
