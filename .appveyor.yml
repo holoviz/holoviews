@@ -10,8 +10,7 @@ install:
   - "conda config --set always_yes yes --set changeps1 no"
   - "conda update -q conda"
   - "conda info -a"
-  - "conda env create -n holoviews -q python=3.6"
-  - "conda env update -n holoviews -q -f environment.yml"
+  - "conda env create -f environment.yml"
   - "activate holoviews"
   - "python setup.py develop"
 
