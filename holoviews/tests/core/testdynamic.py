@@ -775,14 +775,13 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
 
-        dmap.periodic(0.0001, 1000, param_fn=lambda i: {'x':i}, block=False)
-        self.assertNotEqual(xval.x, 1000)
-        for i in range(1000):
-            time.sleep(0.01)
-            if dmap.periodic.instance.completed:
-                break
+        self.assertNotEqual(xval.x, 100)
+        dmap.periodic(0.0001, 100, param_fn=lambda i: {'x': i}, block=False)
+        time.sleep(2)
+        if not dmap.periodic.instance.completed:
+            raise RuntimeError('Periodic callback timed out.')
         dmap.periodic.stop()
-        self.assertEqual(xval.x, 1000)
+        self.assertEqual(xval.x, 100)
 
     def test_periodic_param_fn_blocking_period(self):
         def callback(x):
