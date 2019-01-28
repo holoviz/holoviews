@@ -6,14 +6,14 @@ bug fixes. Special thanks to @darynwhite for his contributions.
 
 Bug fixes:
 
+- Compatibility with pandas 0.24.0 release
+  ([#3433](https://github.com/ioam/holoviews/pull/3433))	
+- Fixed timestamp selections on streams
+  ([#3427](https://github.com/ioam/holoviews/pull/3427))
 - Fixed persisting options during clone on Overlay
   ([#3435](https://github.com/ioam/holoviews/pull/3435))
 - Ensure cftime datetimes are displayed as a slider
   ([#3413](https://github.com/ioam/holoviews/pull/3413))
-- Fixed timestamp selections on streams
-  ([#3427](https://github.com/ioam/holoviews/pull/3427))
-- Compatibility with pandas 0.24.0 release
-  ([#3433](https://github.com/ioam/holoviews/pull/3433))
   
 Enhancements:
 
