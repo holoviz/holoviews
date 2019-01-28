@@ -1,7 +1,7 @@
 Version 1.11.2
 ==============
 
-This is a minor bug fix release with a number of minor but important
+This is a minor bug fix release with a number of small but important
 bug fixes. Special thanks to @darynwhite for his contributions.
 
 Bug fixes:
