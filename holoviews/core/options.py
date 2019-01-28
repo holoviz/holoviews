@@ -62,8 +62,8 @@ class SkipRendering(Exception):
 class Opts(object):
 
     def __init__(self, obj, mode=None):
-        self.mode = mode
         self.obj = obj
+        self._mode = mode
 
 
     def __call__(self, *args, **kwargs):
@@ -106,11 +106,11 @@ class Opts(object):
         Returns:
             Returns the object or a clone with the options applied
         """
-        if self.mode is None:
+        if self._mode is None:
             return self._base_opts(*args, **kwargs)
-        elif self.mode == 'holomap':
+        elif self._mode == 'holomap':
             return self._holomap_opts(*args, **kwargs)
-        elif self.mode == 'dynamicmap':
+        elif self._mode == 'dynamicmap':
             return self._dynamicmap_opts(*args, **kwargs)
 
     def clear(self, clone=False):
