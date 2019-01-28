@@ -1579,10 +1579,6 @@ class StoreOptions(object):
         there is a tree with a matching id in Store.custom_options
         """
         applied = []
-        if not new_id in Store.custom_options(backend=backend):
-            raise AssertionError("The set_ids method requires "
-                                 "Store.custom_options to contain"
-                                 " a tree with id %d" % new_id)
         def propagate(o):
             if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
                 setattr(o, 'id', new_id)
@@ -1592,6 +1588,10 @@ class StoreOptions(object):
         # Clean up the custom tree if it was not applied
         if not applied:
             cleanup_custom_options(new_id)
+        elif not new_id in Store.custom_options(backend=backend):
+            raise AssertionError("New option id %d does not match any "
+                                 "option trees in Store.custom_options."
+                                 % new_id)
 
     @classmethod
     def capture_ids(cls, obj):
