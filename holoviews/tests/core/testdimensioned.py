@@ -235,6 +235,6 @@ class TestOptionsCleanup(CustomBackendTestCase):
         self.assertEqual(len(custom_options), 0)
 
     def test_opts_clear_cleans_unused_tree(self):
-        obj = TestObj([]).opts(style_opt1='A').opts.clear()
+        TestObj([]).opts(style_opt1='A').opts.clear()
         custom_options = Store._custom_options['backend_1']
         self.assertEqual(len(custom_options), 0)
