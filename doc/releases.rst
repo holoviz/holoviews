@@ -13,6 +13,31 @@ Release notes
 Version 1.11
 ~~~~~~~~~~~~
 
+Version 1.11.2
+==============
+
+This is a minor bug fix release with a number of minor but important
+bug fixes. Special thanks to @darynwhite for his contributions.
+
+Bug fixes:
+
+* Fixed persisting options during clone on Overlay
+  (`#3435 <https://github.com/ioam/holoviews/pull/3435>`_)
+* Ensure cftime datetimes are displayed as a slider
+  (`#3413 <https://github.com/ioam/holoviews/pull/3413>`_)
+* Fixed timestamp selections on streams
+  (`#3427 <https://github.com/ioam/holoviews/pull/3427>`_)
+* Compatibility with pandas 0.24.0 release
+  (`#3433 <https://github.com/ioam/holoviews/pull/3433>`_)
+
+Enhancements:
+
+* Allow defining hook on backend load
+  (`#3429 <https://github.com/ioam/holoviews/pull/3429>`_)
+* Improvements for handling graph attributes in `Graph.from_networkx`
+  (``#3432 <https://github.com/ioam/holoviews/pull/3432>`_)
+
+
 Version 1.11.1
 ==============
 
