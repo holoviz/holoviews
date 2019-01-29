@@ -466,6 +466,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
+        max_cycles = self.style._max_cycles
+        style = self.lookup_options(element, 'style')
+        self.style = style.max_cycles(max_cycles) if max_cycles else style
+
         label = element.label if self.show_legend else ''
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
         axis_kwargs = self.update_handles(key, axis, element, ranges, style)
