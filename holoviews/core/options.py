@@ -55,6 +55,8 @@ def cleanup_custom_options(id, weakref=None):
     unreferenced.
     """
     try:
+        if Store._options_context:
+            return
         weakrefs = Store._weakrefs.get(id, [])
         if weakref in weakrefs:
             weakrefs.remove(weakref)
@@ -1227,6 +1229,7 @@ class Store(object):
 
     # Weakrefs to record objects per id
     _weakrefs = {}
+    _options_context = False
 
     # A list of hooks to call after registering the plot and style options
     option_setters = []
@@ -1812,12 +1815,14 @@ class StoreOptions(object):
         """
         if (options is None) and kwargs == {}: yield
         else:
+            Store._options_context = True
             optstate = cls.state(obj)
             groups = Store.options().groups.keys()
             options = cls.merge_options(groups, options, **kwargs)
             cls.set_options(obj, options)
             yield
         if options is not None:
+            Store._options_context = True
             cls.state(obj, state=optstate)
 
 
