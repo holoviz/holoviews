@@ -62,8 +62,8 @@ class SkipRendering(Exception):
 class Opts(object):
 
     def __init__(self, obj, mode=None):
-        self.mode = mode
-        self.obj = obj
+        self._mode = mode
+        self._obj = obj
 
 
     def __call__(self, *args, **kwargs):
@@ -106,11 +106,11 @@ class Opts(object):
         Returns:
             Returns the object or a clone with the options applied
         """
-        if self.mode is None:
+        if self._mode is None:
             return self._base_opts(*args, **kwargs)
-        elif self.mode == 'holomap':
+        elif self._mode == 'holomap':
             return self._holomap_opts(*args, **kwargs)
-        elif self.mode == 'dynamicmap':
+        elif self._mode == 'dynamicmap':
             return self._dynamicmap_opts(*args, **kwargs)
 
     def clear(self, clone=False):
@@ -122,7 +122,7 @@ class Opts(object):
         Returns:
             The object cleared of any options applied to it
         """
-        return self.obj.opts(clone=clone)
+        return self._obj.opts(clone=clone)
 
     def info(self, show_defaults=False):
         """Prints a repr of the object including any applied options.
@@ -131,20 +131,20 @@ class Opts(object):
             show_defaults: Whether to include default options
         """
         pprinter = PrettyPrinter(show_options=True, show_defaults=show_defaults)
-        print(pprinter.pprint(self.obj))
+        print(pprinter.pprint(self._obj))
 
     def _holomap_opts(self, *args, **kwargs):
         clone = kwargs.pop('clone', None)
         apply_groups, _, _ = deprecated_opts_signature(args, kwargs)
         data = OrderedDict([(k, v.opts(*args, **kwargs))
-                             for k, v in self.obj.data.items()])
+                             for k, v in self._obj.data.items()])
 
         # By default do not clone in .opts method
         if (apply_groups if clone is None else clone):
-            return self.obj.clone(data)
+            return self._obj.clone(data)
         else:
-            self.obj.data = data
-            return self.obj
+            self._obj.data = data
+            return self._obj
 
     def _dynamicmap_opts(self, *args, **kwargs):
         from ..util import Dynamic
@@ -154,16 +154,16 @@ class Opts(object):
         # By default do not clone in .opts method
         clone = (apply_groups if clone is None else clone)
 
-        obj = self.obj if clone else self.obj.clone()
+        obj = self._obj if clone else self._obj.clone()
         dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.opts(*args, **kwargs),
-                       streams=self.obj.streams, link_inputs=True)
+                       streams=self._obj.streams, link_inputs=True)
         if not clone:
-            with disable_constant(self.obj):
-                obj.callback = self.obj.callback
-                self.obj.callback = dmap.callback
-            dmap = self.obj
+            with disable_constant(self._obj):
+                obj.callback = self._obj.callback
+                self._obj.callback = dmap.callback
+            dmap = self._obj
             dmap.data = OrderedDict([(k, v.opts(*args, **kwargs))
-                                     for k, v in self.obj.data.items()])
+                                     for k, v in self._obj.data.items()])
         return dmap
 
 
@@ -183,10 +183,10 @@ class Opts(object):
             from ..util import opts
             if options is not None:
                 kwargs['options'] = options
-            return opts.apply_groups(self.obj, **dict(kwargs, **new_kwargs))
+            return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
-        return self.obj.options(*args, **kwargs)
+        return self._obj.options(*args, **kwargs)
 
 
 class OptionError(Exception):
