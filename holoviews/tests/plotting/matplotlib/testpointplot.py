@@ -153,6 +153,15 @@ class TestPointPlot(TestMPLPlot):
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)
 
+    def test_points_sizes_scalar_update(self):
+        hmap = HoloMap({i: Points([1, 2, 3]).opts(s=i*10) for i in range(1, 3)})
+        plot = mpl_renderer.get_plot(hmap)
+        artist = plot.handles['artist']
+        plot.update((1,))
+        self.assertEqual(artist.get_sizes(), np.array([10]))
+        plot.update((2,))
+        self.assertEqual(artist.get_sizes(), np.array([20]))
+
     ###########################
     #    Styling mapping      #
     ###########################

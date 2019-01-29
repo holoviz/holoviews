@@ -15,7 +15,7 @@ from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, max_range,
     isfinite, datetime_types, dt_to_int, dt64_to_dt, search_indices,
-    unique_array
+    unique_array, isscalar
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -670,7 +670,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
         (xs, ys), style, _ = self.get_data(element, ranges, style)
         paths.set_offsets(np.column_stack([xs, ys]))
         if 's' in style:
-            paths.set_sizes(style['s'])
+            sizes = style['s']
+            if isscalar(sizes):
+                sizes = [sizes]
+            paths.set_sizes(sizes)
         if 'vmin' in style:
             paths.set_clim((style['vmin'], style['vmax']))
         if 'c' in style:
