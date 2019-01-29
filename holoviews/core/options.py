@@ -1586,12 +1586,11 @@ class StoreOptions(object):
         obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
         # Clean up the custom tree if it was not applied
-        if not applied:
-            cleanup_custom_options(new_id)
-        elif not new_id in Store.custom_options(backend=backend):
+        if not new_id in Store.custom_options(backend=backend):
             raise AssertionError("New option id %d does not match any "
                                  "option trees in Store.custom_options."
                                  % new_id)
+        return applied
 
     @classmethod
     def capture_ids(cls, obj):
@@ -1908,8 +1907,16 @@ class StoreOptions(object):
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
-
+        
         # Propagate ids to the objects
+        not_used = []
         for (match_id, new_id) in id_mapping:
-            cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()), backend=backend)
+            applied = cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()), backend=backend)
+            if not applied:
+                not_used.append(new_id)
+
+        # Clean up unused custom option trees
+        for new_id in set(not_used):
+            cleanup_custom_options(new_id)
+
         return obj
