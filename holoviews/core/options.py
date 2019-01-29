@@ -66,6 +66,19 @@ class Opts(object):
         self._obj = obj
 
 
+    def get(self, group=None):
+        """
+        Returns an Options object, flattening across option groups if
+        group is None.
+        """
+        keywords = {}
+        groups = Options._option_groups if group is None else [group]
+        for group in groups:
+            optsobj = Store.lookup_options(Store.current_backend, self._obj, group)
+            keywords = dict(keywords, **optsobj.kwargs)
+        return Options(**keywords)
+
+
     def __call__(self, *args, **kwargs):
         """Applies nested options definition.
 
