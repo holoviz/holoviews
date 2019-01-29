@@ -7,17 +7,18 @@ from __future__ import unicode_literals
 
 import re
 import datetime as dt
+import weakref
 
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce
+from functools import reduce, partial
 
 import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts
+from .options import Store, Opts, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -631,6 +632,7 @@ class LabelledData(param.Parameterized):
         may be set to associate some custom options with the object.
         """
         self.data = data
+        self._id = None
         self.id = id
         self._plot_id = plot_id or util.builtins.id(self)
         if isinstance(params.get('label',None), tuple):
@@ -650,6 +652,24 @@ class LabelledData(param.Parameterized):
         elif not util.label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
+
+    @property
+    def id(self):
+        return self._id
+
+    @id.setter
+    def id(self, opts_id):
+        """Handles tracking and cleanup of custom ids."""
+        old_id = self._id
+        self._id = opts_id
+        if old_id is not None:
+            cleanup_custom_options(old_id)
+        if opts_id is not None and opts_id != old_id:
+            if opts_id not in Store._weakrefs:
+                Store._weakrefs[opts_id] = []
+            ref = weakref.ref(self, partial(cleanup_custom_options, opts_id))
+            Store._weakrefs[opts_id].append(ref)
+
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
@@ -833,14 +853,14 @@ class LabelledData(param.Parameterized):
         "Ensures pickles save options applied to this objects."
         obj_dict = self.__dict__.copy()
         try:
-            if Store.save_option_state and (obj_dict.get('id', None) is not None):
-                custom_key = '_custom_option_%d' % obj_dict['id']
+            if Store.save_option_state and (obj_dict.get('_id', None) is not None):
+                custom_key = '_custom_option_%d' % obj_dict['_id']
                 if custom_key not in obj_dict:
-                    obj_dict[custom_key] = {backend:s[obj_dict['id']]
+                    obj_dict[custom_key] = {backend:s[obj_dict['_id']]
                                             for backend,s in Store._custom_options.items()
-                                            if obj_dict['id'] in s}
+                                            if obj_dict['_id'] in s}
             else:
-                obj_dict['id'] = None
+                obj_dict['_id'] = None
         except:
             self.param.warning("Could not pickle custom style information.")
         return obj_dict
@@ -849,12 +869,15 @@ class LabelledData(param.Parameterized):
     def __setstate__(self, d):
         "Restores options applied to this object."
         d = param_aliases(d)
+
+        # Backwards compatibility for objects before id was made a property
+        opts_id = d['_id'] if '_id' in d else d.pop('id', None)
         try:
             load_options = Store.load_counter_offset is not None
             if load_options:
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
-                    custom_id = int(match.split('_')[-1])
+                    custom_id = int(match.split('_')[-1])+Store.load_counter_offset
                     if not isinstance(d[match], dict):
                         # Backward compatibility before multiple backends
                         backend_info = {'matplotlib':d[match]}
@@ -863,18 +886,20 @@ class LabelledData(param.Parameterized):
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
-
+                        Store._custom_options[backend][custom_id] = info
+                    if backend_info:
+                        if custom_id not in Store._weakrefs:
+                            Store._weakrefs[custom_id] = []
+                        ref = weakref.ref(self, partial(cleanup_custom_options, custom_id))
+                        Store._weakrefs[opts_id].append(ref)
                     d.pop(match)
 
-                if d['id'] is not None:
-                    d['id'] += Store.load_counter_offset
-                else:
-                    d['id'] = None
+                if opts_id is not None:
+                    opts_id += Store.load_counter_offset
         except:
             self.param.warning("Could not unpickle custom style information.")
+        d['_id'] = opts_id
         self.__dict__.update(d)
-
 
 
 class Dimensioned(LabelledData):
