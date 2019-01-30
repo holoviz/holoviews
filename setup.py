@@ -24,7 +24,7 @@ extras_require['recommended'] = extras_require['notebook'] + [
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'flexx==0.4.1',
-    'plotly>=3.4', 'datashader', 'selenium', 'phantomjs']
+    'plotly>=3.4', 'datashader', 'selenium', 'phantomjs', 'ffmpeg']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+['cyordereddict']
