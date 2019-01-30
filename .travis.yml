@@ -27,6 +27,9 @@ env:
     - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev"
     - CHANS="-c pyviz"
+    - QT_QPA_PLATFORM='offscreen'
+    - BOKEH_DEV=True
+    - MPLBACKEND="Agg"
 
 stages:
   - test
@@ -45,7 +48,7 @@ jobs:
 
     - &default
       stage: test
-      env: DESC="dev test_all_recommended" QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True
+      env: DESC="dev test_all_recommended"
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -80,15 +83,16 @@ jobs:
             echo "Using the master branch reference data";
           fi
         - cd ../..
-        - export MPLBACKEND="Agg" HOLOVIEWSRC=`pwd`'/holoviews.rc'
+        - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
         - doit test_all_recommended
         - cd doc/nbpublisher; chmod +x test_notebooks.py;  ./test_notebooks.py
+
+      after_script:
         - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
         - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
         - coverage combine --append
-      after_script:
         - shopt -s expand_aliases
         - alias decode="tr '[N-ZA-Mn-za-m]' '[A-Za-z]'"
         - export AWS_SECRET_ACCESS_KEY=`echo udgGztmYyyKZ5iP2PVe+ROGZo/TI0M2QcoafOJGD | decode`
@@ -109,8 +113,6 @@ jobs:
 
     - <<: *default
       env: DESC="py2 tests" PYENV_VERSION=2.7
-      script:
-        - doit test_all_recommended
 
     ########## END-USER PACKAGES ##########
 
