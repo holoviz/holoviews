@@ -27,8 +27,6 @@ env:
     - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
-    - QT_QPA_PLATFORM='offscreen'
-    - BOKEH_DEV=True
     - MPLBACKEND="Agg"
 
 stages:
@@ -87,7 +85,7 @@ jobs:
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
         - doit test_all_recommended
-        - cd doc/nbpublisher; chmod +x test_notebooks.py;  ./test_notebooks.py
+        - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
 
       after_script:
         - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
