@@ -11,22 +11,29 @@ except ImportError:
 
 setup_args = {}
 install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.0']
+
 extras_require = {}
 
-# Notebook dependencies of IPython 3
-extras_require['notebook-dependencies'] = ['ipython<=7.1.1,>=5.4.0',
-                                           'pyzmq', 'jinja2', 'tornado',
-                                           'jsonschema', 'notebook', 'pygments']
-# IPython Notebook + matplotlib
-extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib>=2.1', 'bokeh>=1.0.0']
-# Additional, useful third-party packages
-extras_require['extras'] = (['pandas', 'seaborn']
-                            + extras_require['recommended'])
-# Everything including cyordereddict (optimization) and nosetests
-extras_require['all'] = (extras_require['recommended']
-                         + extras_require['extras']
-                         + ['cyordereddict', 'nose'])
+# Notebook dependencies
+extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
 
+# IPython Notebook + pandas + matplotlib + bokeh
+extras_require['recommended'] = extras_require['notebook'] + [
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy']
+
+# Requirements to run all examples
+extras_require['examples'] = extras_require['recommended'] + [
+    'networkx', 'pillow>=5.3.0', 'xarray>0.10.4', 'flexx=0.4.1',
+    'plotly>=3.4', 'datashader', 'selenium', 'phantomjs']
+
+# Extra third-party libraries
+extras_require['extras'] = extras_require['examples']+['cyordereddict']
+
+# Test requirements
+extra_require['tests'] = ['nose', 'flake8', 'awscli', 'coveralls', 'deepdiff', 'path.py']
+
+# Everything including cyordereddict (optimization) and nosetests
+extras_require['all'] = (extras_require['extras']+extras_require['tests'])
 
 
 def embed_version(basepath, ref='v0.2.2'):
