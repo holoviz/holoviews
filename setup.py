@@ -30,7 +30,7 @@ extras_require['examples'] = extras_require['recommended'] + [
 extras_require['extras'] = extras_require['examples']+['cyordereddict']
 
 # Test requirements
-extra_require['tests'] = ['nose', 'flake8', 'awscli', 'coveralls', 'deepdiff', 'path.py']
+extras_require['tests'] = ['nose', 'flake8', 'awscli', 'coveralls', 'deepdiff', 'path.py']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = (extras_require['extras']+extras_require['tests'])
