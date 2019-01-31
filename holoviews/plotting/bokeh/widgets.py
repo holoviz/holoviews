@@ -22,7 +22,7 @@ class BokehServerWidgets(param.Parameterized):
     """
     BokehServerWidgets create bokeh widgets corresponding to all the
     key dimensions found on a BokehPlot instance. It currently supports
-    to types of widgets sliders (which may be discrete or continuous)
+    two types of widgets sliders (which may be discrete or continuous)
     and dropdown widgets letting you select non-numeric values.
     """
 
