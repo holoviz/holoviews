@@ -17,7 +17,7 @@ from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
+from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -136,7 +136,9 @@ def compute_plot_size(plot):
     Computes the size of bokeh models that make up a layout such as
     figures, rows, columns, widgetboxes and Plot.
     """
-    if isinstance(plot, (Div, ToolbarBox)):
+    if isinstance(plot, GridBox):
+        return 0, 0 # Temporary hack, should be handled properly
+    elif isinstance(plot, (Div, ToolbarBox)):
         # Cannot compute size for Div or ToolbarBox
         return 0, 0
     elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
@@ -160,15 +162,7 @@ def empty_plot(width, height):
     """
     Creates an empty and invisible plot of the specified size.
     """
-    x_range = Range1d(start=0, end=1)
-    y_range = Range1d(start=0, end=1)
-    p = Figure(plot_width=width, plot_height=height,
-               x_range=x_range, y_range=y_range)
-    p.xaxis.visible = False
-    p.yaxis.visible = False
-    p.outline_line_alpha = 0
-    p.grid.grid_line_alpha = 0
-    return p
+    return Spacer(width=width, height=height)
 
 
 def font_size_to_pixels(size):
