@@ -96,9 +96,11 @@ jobs:
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
-        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True doit test_regression
+        - pushd ./doc/nbpublisher
+        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True python ./test_notebooks.py
+        - popd
       after_script:
-        - python ./concat_html.py ./doc/test_data ./doc/test_html
+        - python ./concat_html.py ./doc/test_data ../test_html
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
             zip -r test_data.zip *;
