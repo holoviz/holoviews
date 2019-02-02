@@ -23,19 +23,22 @@ extras_require['recommended'] = extras_require['notebook'] + [
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
-    'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'flexx==0.4.1',
-    'plotly>=3.4', 'datashader', 'selenium', 'phantomjs', 'ffmpeg']
+    'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'plotly>=3.4',
+    'datashader', 'selenium', 'phantomjs', 'ffmpeg']
 
 # Extra third-party libraries
-extras_require['extras'] = extras_require['examples']+['cyordereddict']
+extras_require['extras'] = extras_require['examples']+[
+    'cyordereddict', 'flexx==0.4.1']
 
 # Test requirements
-extras_require['tests'] = extras_require['extras']+[
-    'nose', 'flake8==3.6.0', 'awscli', 'coveralls', 'deepdiff',
-    'path.py', 'nbconvert==5.3.1', 'jsonschema==2.6.0']
+extras_require['tests'] = extras_require['examples']+[
+    'nose', 'flake8==3.6.0', 'coveralls', 'path.py']
+
+extras_require['nbtests'] = extras_require['recommended'] + [
+    'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0']
 
 # Everything including cyordereddict (optimization) and nosetests
-extras_require['all'] = extras_require['tests']
+extras_require['all'] = list(set(extras_require['tests']) | set(extras_require['nbtests']))
 
 
 def embed_version(basepath, ref='v0.2.2'):
