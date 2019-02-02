@@ -35,7 +35,8 @@ extras_require['tests'] = extras_require['examples']+[
     'nose', 'flake8==3.6.0', 'coveralls', 'path.py']
 
 extras_require['nbtests'] = extras_require['recommended'] + [
-    'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0']
+    'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
+    'cyordereddict']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['tests']) | set(extras_require['nbtests']))
