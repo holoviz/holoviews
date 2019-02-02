@@ -32,6 +32,8 @@ requirements:
     - ipython >=5.4.0,<=7.1.1  # <=7.1.1 due to tab completion regression
 
 test:
+  requires:
+    - nose
   imports:
     - holoviews
 
