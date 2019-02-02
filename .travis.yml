@@ -133,7 +133,7 @@ jobs:
       stage: conda_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
+        - doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
 
