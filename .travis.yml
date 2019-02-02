@@ -64,7 +64,7 @@ jobs:
       after_failure: sleep 10
 
     - <<: *default
-      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7
+      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="tests"
 
     - &regression_test
       <<: *default
@@ -116,7 +116,7 @@ jobs:
       after_success: echo "Success"
 
     - <<: *regression_test
-      env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7
+      env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
 
     ########## END-USER PACKAGES ##########
 
