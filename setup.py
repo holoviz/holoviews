@@ -71,6 +71,9 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, '.version')
     try:
         from param import version
+
+        # Ensure that param.version has Version object
+        assert hasattr(version, 'Version')
     except:
         version = embed_version(basepath)
     if version is not None:
