@@ -120,7 +120,8 @@ jobs:
 
     ### CONDA ####
 
-    - <<: *default
+    - &conda_pkg
+      <<: *default
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
@@ -128,7 +129,7 @@ jobs:
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
 
-    - <<: *default
+    - <<: *conda_pkg
       stage: conda_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
@@ -138,7 +139,8 @@ jobs:
 
     ### PyPI ###
 
-    - <<: *default
+    - &pip_pkg
+      <<: *default
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
@@ -147,7 +149,7 @@ jobs:
         - doit ecosystem=pip package_build --test-python=py36 --test-group=unit
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
-    - <<: *default
+    - <<: *pip_pkg
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
