@@ -125,7 +125,7 @@ jobs:
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit
+        - doit package_build $CHANS_DEV --no-pkg-test
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
 
@@ -133,7 +133,7 @@ jobs:
       stage: conda_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit
+        - doit package_build $CHANS_DEV --no-pkg-test
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
 
@@ -144,7 +144,7 @@ jobs:
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y hvplot
+        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build --test-python=py36 --test-group=unit
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
@@ -153,7 +153,7 @@ jobs:
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y hvplot
+        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build --test-python=py36 --test-group=unit
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
