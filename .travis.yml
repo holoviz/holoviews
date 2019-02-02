@@ -46,7 +46,7 @@ jobs:
 
     - &default
       stage: test
-      env: DESC="dev test_all_recommended"
+      env: DESC="Python 3 tests"
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -58,6 +58,33 @@ jobs:
         - doit develop_install $CHANS_DEV -o all
         - doit env_capture
         - bokeh sampledata
+      script:
+        - doit test_all_recommended
+      after_script:
+        - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
+        - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
+        - coverage combine --append
+        - if [ "$TRAVIS_BRANCH" == 'master' ]; then
+            cd doc/test_data;
+            zip -r test_data.zip *;
+            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${TRAVIS_PYTHON_VERSION:0:1}.zip";
+            cd -;
+          fi
+        - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
+        - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
+        - echo insecure >> ~/.curlrc
+        - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
+            curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
+          fi
+      after_success: coveralls
+      after_failure: sleep 10
+
+    - <<: *default
+      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7
+
+    - &regression_test
+      <<: *default
+      env: DESC="Python 3.6 regression tests"
       before_script:
         - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
             echo "Attempting to find any associated pull request";
@@ -84,27 +111,10 @@ jobs:
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
-        - doit test_all_recommended
-      after_script:
-        - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
-        - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
-        - coverage combine --append
-        - if [ "$TRAVIS_BRANCH" == 'master' ]; then
-            cd doc/test_data;
-            zip -r test_data.zip *;
-            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${TRAVIS_PYTHON_VERSION:0:1}.zip";
-            cd -;
-          fi
-        - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
-        - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
-        - echo insecure >> ~/.curlrc
-        - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
-            curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
-          fi
-      after_success: coveralls
+        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True doit test_examples
 
-    - <<: *default
-      env: DESC="py2 tests" PYENV_VERSION=2.7
+    - <<: *regression_test
+      env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7
 
     ########## END-USER PACKAGES ##########
 
