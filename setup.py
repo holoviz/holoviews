@@ -30,11 +30,12 @@ extras_require['examples'] = extras_require['recommended'] + [
 extras_require['extras'] = extras_require['examples']+['cyordereddict']
 
 # Test requirements
-extras_require['tests'] = ['nose', 'flake8==3.6.0', 'awscli', 'coveralls', 'deepdiff',
-                           'path.py', 'nbconvert==5.3.1', 'jsonschema==2.6.0']
+extras_require['tests'] = extras_require['extras']+[
+    'nose', 'flake8==3.6.0', 'awscli', 'coveralls', 'deepdiff',
+    'path.py', 'nbconvert==5.3.1', 'jsonschema==2.6.0']
 
 # Everything including cyordereddict (optimization) and nosetests
-extras_require['all'] = (extras_require['extras']+extras_require['tests'])
+extras_require['all'] = extras_require['tests']
 
 
 def embed_version(basepath, ref='v0.2.2'):
@@ -92,11 +93,11 @@ setup_args.update(dict(
     long_description_content_type="text/markdown",
     author="Jean-Luc Stevens and Philipp Rudiger",
     author_email="holoviews@gmail.com",
-    maintainer="IOAM",
-    maintainer_email="holoviews@gmail.com",
+    maintainer="PyViz Developers",
+    maintainer_email="developers@pyviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
-    url='http://www.holoviews.org',
+    url='https://www.holoviews.org',
     entry_points={
         'console_scripts': [
             'holoviews = holoviews.util.command:main'
