@@ -57,7 +57,6 @@ jobs:
         - source activate test-environment
         - doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
         - doit env_capture
-        - bokeh sampledata
       script:
         - doit test_all_recommended
       after_success: coveralls
