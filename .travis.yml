@@ -73,20 +73,21 @@ jobs:
           fi
         - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/reference_data}
         - git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
-        - cd ./doc/reference_data
+        - pushd ./doc/reference_data
         - echo "Attempting to checkout $REF_DATA_BRANCH branch"
         - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
             git checkout origin/$REF_DATA_BRANCH;
           else
             echo "Using the master branch reference data";
           fi
-        - cd ../..
+        - popd
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
         - doit test_all_recommended
-        - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
-
+        - cd doc/nbpublisher
+        - chmod +x test_notebooks.py
+        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
       after_script:
         - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
         - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
