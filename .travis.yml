@@ -28,7 +28,7 @@ env:
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
-	- HV_REQUIREMENTS="tests"
+    - HV_REQUIREMENTS="tests"
 
 stages:
   - test
@@ -96,7 +96,7 @@ jobs:
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
-        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True doit test_examples
+        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True doit test_regression
       after_script:
         - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
