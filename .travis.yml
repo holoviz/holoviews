@@ -90,20 +90,19 @@ jobs:
           else
             echo "Using the master branch reference data";
           fi
-        - ls -a
         - popd
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
-      script:
         - pushd ./doc/nbpublisher
+      script:
         - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True python ./test_notebooks.py
-        - popd
       after_script:
-        - python ./concat_html.py ./doc/test_data ../test_html
+        - popd
+        - python ./concat_html.py ./doc/test_data ./doc/test_html
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
             zip -r test_data.zip *;
-            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${TRAVIS_PYTHON_VERSION:0:1}.zip";
+            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYENV_VERSION}.zip";
             cd -;
           fi
         - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
