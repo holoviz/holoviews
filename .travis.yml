@@ -28,7 +28,6 @@ env:
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
-    - HV_REQUIREMENTS="tests"
 
 stages:
   - test
@@ -47,7 +46,7 @@ jobs:
 
     - &default
       stage: test
-      env: DESC="Python 3 tests"
+      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="tests"
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -92,13 +91,16 @@ jobs:
           else
             echo "Using the master branch reference data";
           fi
+        - ls -a
         - popd
         - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
         - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
       script:
+        - pushd doc/nbpublisher
         - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True doit test_regression
       after_script:
-        - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
+        - python ./concat_html.py ../test_data ../test_html
+        - popd
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
             zip -r test_data.zip *;
