@@ -98,7 +98,7 @@ jobs:
         - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True python ./test_notebooks.py
       after_script:
         - popd
-        - python ./concat_html.py ./doc/test_data ./doc/test_html
+        - python ./doc/nbpublisher/concat_html.py ./doc/test_data ./doc/test_html
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
             zip -r test_data.zip *;
