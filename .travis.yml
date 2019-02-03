@@ -100,6 +100,7 @@ jobs:
         - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True python ./test_notebooks.py
       after_script:
         - popd
+        - mv doc/Tutorials/.coverage ./.coverage
         - python ./doc/nbpublisher/concat_html.py ./doc/test_data ./doc/test_html
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
@@ -113,7 +114,6 @@ jobs:
         - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
             curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
           fi
-      after_success: echo "Success"
 
     - <<: *regression_test
       env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
