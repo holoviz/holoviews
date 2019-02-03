@@ -27,7 +27,6 @@ requirements:
     - numpy
     - matplotlib>=2.1
     - bokeh >=1.0.0,<1.1.0
-    - jupyter
     - notebook
     - ipython >=5.4.0,<=7.1.1  # <=7.1.1 due to tab completion regression
 
