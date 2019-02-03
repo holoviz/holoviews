@@ -154,7 +154,7 @@ jobs:
       install:
         - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
         - doit pip_on_conda
-        - doit ecosystem=pip package_build
+        - doit ecosystem=pip package_build --no-pkg-tests
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
     - <<: *pip_pkg
@@ -163,5 +163,5 @@ jobs:
       install:
         - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
         - doit pip_on_conda
-        - doit ecosystem=pip package_build
+        - doit ecosystem=pip package_build --no-pkg-tests
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
