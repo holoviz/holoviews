@@ -31,15 +31,19 @@ extras_require['extras'] = extras_require['examples']+[
     'cyordereddict', 'flexx==0.4.1']
 
 # Test requirements
-extras_require['tests'] = extras_require['examples']+[
-    'nose', 'flake8==3.6.0', 'coveralls', 'path.py']
+extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py']
+
+extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
+
+extras_require['basic_tests'] = extras_require['tests']+[
+    'matplotlib>=2.1', 'bokeh>=1.0.0']+extras_require['notebook']
 
 extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
 
 # Everything including cyordereddict (optimization) and nosetests
-extras_require['all'] = list(set(extras_require['tests']) | set(extras_require['nbtests']))
+extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
 
 
 def embed_version(basepath, ref='v0.2.2'):

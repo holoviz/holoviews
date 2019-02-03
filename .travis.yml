@@ -31,6 +31,8 @@ env:
 
 stages:
   - test
+  - name: extra_tests
+    if: type = cron
   - name: conda_dev_package
     if: tag =~ ^v(\d+|\.)*[a-z]\d*$
   - name: pip_dev_package
@@ -46,7 +48,7 @@ jobs:
 
     - &default
       stage: test
-      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="tests"
+      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests"
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -63,7 +65,7 @@ jobs:
       after_failure: sleep 10
 
     - <<: *default
-      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="tests"
+      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
 
     - &regression_test
       <<: *default
@@ -115,6 +117,12 @@ jobs:
 
     - <<: *regression_test
       env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
+
+    - &basic_deps
+      <<: *default
+      stage: extra_tests
+      env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
+      after_success: echo "Success"
 
     ########## END-USER PACKAGES ##########
 
