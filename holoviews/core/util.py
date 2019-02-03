@@ -965,7 +965,12 @@ def range_pad(lower, upper, padding=None, log=False):
             center = (log_min+log_max) / 2.0
             start, end = np.power(10, center-lspan/2.), np.power(10, center+uspan/2.)
         else:
-            span = (upper-lower)
+            if isinstance(lower, datetime_types) and not isinstance(lower, cftime_types):
+                # Ensure timedelta can be safely divided
+                lower, upper = np.datetime64(lower), np.datetime64(upper)
+                span = (upper-lower).astype('>m8[ns]')
+            else:
+                span = (upper-lower)
             lpad = span*(padding[0])
             upad = span*(padding[1])
             start, end = lower-lpad, upper+upad
@@ -1873,6 +1878,9 @@ def dt_to_int(value, time_unit='us'):
                 value = np.datetime64(value.to_pydatetime())
     elif isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
+
+    if isinstance(value, dt.date):
+        value = dt.datetime(*value.timetuple()[:6])
 
     # Handle datetime64 separately
     if isinstance(value, np.datetime64):

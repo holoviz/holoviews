@@ -653,6 +653,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
                     offset = np.timedelta64(500, 'ms')
+                    low, high = np.datetime64(low), np.datetime64(high)
                     low -= offset
                     high += offset
                 else:
