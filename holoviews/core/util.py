@@ -812,7 +812,7 @@ def isscalar(val):
     """
     Value is scalar or None
     """
-    return val is None or np.isscalar(val)
+    return val is None or np.isscalar(val) or isinstance(val, datetime_types)
 
 
 def isnumeric(val):
