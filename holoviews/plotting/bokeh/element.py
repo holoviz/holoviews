@@ -217,8 +217,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
-            if isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
-                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
+            values = data[dim]
+            if (values.dtype.kind == 'M' or (
+                    len(values) and isinstance(values[0], util.datetime_types))):
+                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
