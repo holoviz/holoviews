@@ -1391,7 +1391,7 @@ def is_dataframe(data):
     Checks whether the supplied data is of DataFrame type.
     """
     dd = None
-    if 'dask' in sys.modules:
+    if 'dask' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
