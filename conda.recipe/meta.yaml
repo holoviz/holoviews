@@ -36,7 +36,7 @@ test:
   imports:
     - holoviews
   commands:
-    - nosetests holoviews/tests --with-doctest
+    - nosetests holoviews --with-doctest
 
 about:
   home: www.holoviews.org
