@@ -736,7 +736,7 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
                    # cmap_info stores only non-reversed info, so construct
                    # suitable values for reversed version if appropriate
                    r=r._replace(name=aname)
-                   if aname.endswith('_r') and (r.category is not 'Diverging'):
+                   if aname.endswith('_r') and (r.category != 'Diverging'):
                        if r.bg=='light':
                            r=r._replace(bg='dark')
                        elif r.bg=='dark':
