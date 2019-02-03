@@ -1,5 +1,4 @@
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
@@ -15,14 +14,6 @@ except:
 
 from .. import option_intersections
 
-
-class TestPlotDefinitions(ComparisonTestCase):
-
-    known_clashes = []
-
-    def test_plotly_option_definitions(self):
-        # Check option definitions do not introduce new clashes
-        self.assertEqual(option_intersections('plotly'), self.known_clashes)
 
 
 class TestPlotlyPlot(ComparisonTestCase):
@@ -49,8 +40,16 @@ class TestPlotlyPlot(ComparisonTestCase):
         return plot.state
 
 
-@attr(optional=1)
-class TestPlotlyFigureGrid(ComparisonTestCase):
+class TestPlotDefinitions(TestPlotlyPlot):
+
+    known_clashes = []
+
+    def test_plotly_option_definitions(self):
+        # Check option definitions do not introduce new clashes
+        self.assertEqual(option_intersections('plotly'), self.known_clashes)
+
+
+class TestPlotlyFigureGrid(TestPlotlyPlot):
 
     def test_figure_grid_solo_traces(self):
 

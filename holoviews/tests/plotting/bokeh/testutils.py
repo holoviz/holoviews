@@ -1,5 +1,4 @@
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -10,7 +9,6 @@ try:
 except:
     bokeh_renderer = None
 
-@attr(optional=1)
 class TestBokehUtilsInstantiation(ComparisonTestCase):
 
     def setUp(self):

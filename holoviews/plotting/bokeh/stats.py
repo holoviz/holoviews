@@ -106,7 +106,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if isinstance(agg, Dimensioned):
                 element = agg
             else:
-                element = element.clone([(element,)])
+                element = element.clone([(agg,)])
         return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element):

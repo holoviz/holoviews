@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+from unittest import SkipTest
+
 import numpy as np
 
 from holoviews.element import Violin
@@ -14,6 +16,13 @@ except:
 
 
 class TestBokehViolinPlot(TestBokehPlot):
+
+    def setUp(self):
+        try:
+            import scipy # noqa
+        except:
+            raise SkipTest('Violin plot requires SciPy to compute kde')
+        super(TestBokehViolinPlot, self).setUp()
 
     def test_violin_simple(self):
         values = np.random.rand(100)
@@ -47,7 +56,7 @@ class TestBokehViolinPlot(TestBokehPlot):
         self.assertEqual(patch_source.data['xs'], [kde['y']])
         self.assertEqual(patch_source.data['ys'], [kde['x']])
 
-    def test_box_whisker_multi_level(self):
+    def test_violin_multi_level(self):
         box= Violin((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
                     ['Group', 'Category'], 'Value')
         plot = bokeh_renderer.get_plot(box)

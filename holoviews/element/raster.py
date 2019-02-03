@@ -518,7 +518,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                              (coords, type(self).__name__, self.bounds.lbrt()))
 
         data = self.interface.ndloc(self, (yidx, xidx))
-        return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
+        return self.clone(data, new_type=Table, datatype=['dataframe', 'dictionary'])
 
 
     def closest(self, coords=[], **kwargs):

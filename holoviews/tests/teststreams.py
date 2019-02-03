@@ -611,9 +611,7 @@ class TestPipeStream(ComparisonTestCase):
 
 
 
-class TestBufferStream(ComparisonTestCase):
-
-    # Arrays
+class TestBufferArrayStream(ComparisonTestCase):
 
     def test_init_buffer_array(self):
         arr = np.array([[0, 1]])
@@ -658,7 +656,8 @@ class TestBufferStream(ComparisonTestCase):
         with self.assertRaisesRegexp(TypeError, error):
             buff.send([1])
 
-    # Dictionaries
+
+class TestBufferDictionaryStream(ComparisonTestCase):
 
     def test_init_buffer_dict(self):
         data = {'x': np.array([1]), 'y': np.array([2])}
@@ -699,7 +698,13 @@ class TestBufferStream(ComparisonTestCase):
         with self.assertRaisesRegexp(ValueError, error):
             buff.send({'x': np.array([2]), 'y': np.array([3, 4])})
 
-    # DataFrames
+
+class TestBufferDataFrameStream(ComparisonTestCase):
+
+    def setUp(self):
+        if pd is None:
+            raise SkipTest('Pandas not available')
+        super(TestBufferDataFrameStream, self).setUp()
 
     def test_init_buffer_dframe(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})

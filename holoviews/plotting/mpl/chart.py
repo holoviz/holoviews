@@ -82,7 +82,7 @@ class CurvePlot(ChartPlot):
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
-        if xs.dtype.kind == 'M':
+        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
             dimtype = element.get_dimension_type(0)
             dt_format = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
             dims[0] = dims[0](value_format=DateFormatter(dt_format))
@@ -91,7 +91,7 @@ class CurvePlot(ChartPlot):
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
-        if xs.dtype.kind == 'M':
+        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
             artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
         else:
             artist = ax.plot(xs, ys, **plot_kwargs)[0]
@@ -1189,7 +1189,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
-                if vs.dtype.kind == 'M' and i < len(dims):
+                if (vs.dtype.kind == 'M' or (len(vs) and isinstance(vs[0], datetime_types))) and i < len(dims):
                     dt_format = Dimension.type_formatters[np.datetime64]
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))
                     vs = np.array([dt_to_int(v, 'D') for v in vs])

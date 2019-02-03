@@ -2,13 +2,19 @@
 Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
+
+from unittest import SkipTest
+
 import numpy as np
+
+try:
+    from holoviews.plotting import mpl # noqa Register backend
+except:
+    raise SkipTest('Matplotlib backend not available.')
+
 from holoviews import Overlay, Curve, Image, HoloMap
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import plotting              # noqa Register backends
-from holoviews.plotting import mpl          # noqa Register backends
-from nose.plugins.attrib import attr
 
 
 class TestStoreOptionsMerge(ComparisonTestCase):
@@ -37,7 +43,6 @@ class TestStoreOptionsMerge(ComparisonTestCase):
         self.assertEqual(out, self.expected)
 
 
-@attr(optional=1) # Requires matplotlib
 class TestStoreOptsMethod(ComparisonTestCase):
     """
     The .opts method makes use of most of the functionality in

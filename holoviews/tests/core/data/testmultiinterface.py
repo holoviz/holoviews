@@ -129,7 +129,7 @@ class MultiInterfaceTest(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular']).redim(x='x2')
         for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x2', 'y'], datatype=['dask']))
+            self.assertEqual(ds, Path(arrays[i], kdims=['x2', 'y']))
 
     def test_multi_mixed_interface_raises(self):
         arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}

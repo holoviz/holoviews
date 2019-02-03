@@ -1,5 +1,4 @@
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
@@ -14,10 +13,9 @@ try:
         shade, rasterize
     )
 except:
-    ds_version = None
+    raise SkipTest('Datashader not available')
 
 
-@attr(optional=1)
 class DatashaderAggregateTests(ComparisonTestCase):
     """
     Tests for datashader aggregation
@@ -177,7 +175,6 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(img, expected)
 
 
-@attr(optional=1)
 class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_categorical_images_xarray(self):
@@ -212,14 +209,13 @@ class DatashaderShadeTests(ComparisonTestCase):
 
 
 
-@attr(optional=1)
 class DatashaderRegridTests(ComparisonTestCase):
     """
     Tests for datashader aggregation
     """
 
     def setUp(self):
-        if ds_version is None or ds_version <= '0.5.0':
+        if ds_version <= '0.5.0':
             raise SkipTest('Regridding operations require datashader>=0.6.0')
 
     def test_regrid_mean(self):
@@ -293,14 +289,13 @@ class DatashaderRegridTests(ComparisonTestCase):
 
 
 
-@attr(optional=1)
 class DatashaderRasterizeTests(ComparisonTestCase):
     """
     Tests for datashader aggregation
     """
 
     def setUp(self):
-        if ds_version is None or ds_version <= '0.6.4':
+        if ds_version <= '0.6.4':
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
     def test_rasterize_trimesh_no_vdims(self):
@@ -445,7 +440,6 @@ class DatashaderRasterizeTests(ComparisonTestCase):
 
 
 
-@attr(optional=1)
 class DatashaderStackTests(ComparisonTestCase):
 
     def setUp(self):
@@ -482,11 +476,10 @@ class DatashaderStackTests(ComparisonTestCase):
         self.assertEqual(combined, self.rgb2)
 
 
-@attr(optional=1)
 class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
-        if ds_version is None or ds_version <= '0.7.0':
+        if ds_version <= '0.7.0':
             raise SkipTest('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)

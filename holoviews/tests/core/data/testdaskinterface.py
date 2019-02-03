@@ -1,4 +1,3 @@
-from nose.plugins.attrib import attr
 from unittest import SkipTest
 
 import numpy as np
@@ -14,7 +13,6 @@ from holoviews.core.data import Dataset
 from .testpandasinterface import PandasInterfaceTests
 
 
-@attr(optional=1)
 class DaskDatasetTest(PandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.

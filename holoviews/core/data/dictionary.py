@@ -60,7 +60,10 @@ class DictInterface(Interface):
         elif isinstance(data, list) and data == []:
             data = OrderedDict([(d, []) for d in dimensions])
         elif isinstance(data, list) and isscalar(data[0]):
-            data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
+            if eltype._auto_indexable_1d:
+                data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
+            else:
+                data = {dimensions[0]: data}
         elif (isinstance(data, list) and isinstance(data[0], tuple) and len(data[0]) == 2
               and any(isinstance(v, tuple) for v in data[0])):
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))

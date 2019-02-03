@@ -1,9 +1,10 @@
 """
 Unit tests of Graph Element.
 """
-from unittest import SkipTest
+from unittest import SkipTest, skipIf
 
 import numpy as np
+
 from holoviews.core.data import Dataset
 from holoviews.core import util
 from holoviews.element.chart import Points
@@ -12,6 +13,7 @@ from holoviews.element.graphs import (
     connect_edges_pd)
 from holoviews.element.comparison import ComparisonTestCase
 
+pd_skip = skipIf(util.pd is None, 'Pandas not available')
 
 
 class GraphTests(ComparisonTestCase):
@@ -59,12 +61,14 @@ class GraphTests(ComparisonTestCase):
         self.assertEqual(graph.nodes.dimension_values(3),
                          node_info.dimension_values(1))
 
+    @pd_skip
     def test_graph_node_info_merge_on_index_partial(self):
         node_info = Dataset((np.arange(5), np.arange(1,6)), 'index', 'label')
         graph = Graph(((self.source, self.target), node_info))
         expected = np.array([1., 2., 3., 4., 5., np.NaN, np.NaN, np.NaN])
         self.assertEqual(graph.nodes.dimension_values(3), expected)
 
+    @pd_skip
     def test_graph_edge_segments_pd(self):
         segments = connect_edges_pd(self.graph)
         paths = []
@@ -264,9 +268,8 @@ class TriMeshTests(ComparisonTestCase):
         self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes).T)
         self.assertEqual(trimesh.nodes.dimension_values(2), np.arange(4))
 
+    @pd_skip
     def test_trimesh_constructor_df_nodes(self):
-        if util.pd is None:
-            raise SkipTest('Test requires pandas')
         nodes_df = util.pd.DataFrame(self.nodes, columns=['x', 'y', 'z'])
         trimesh = TriMesh((self.simplices, nodes_df))
         nodes = Nodes([(0, 0, 0, 0), (0.5, 1, 1, 1),
