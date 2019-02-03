@@ -1189,7 +1189,6 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
-                print(vs)
                 if (vs.dtype.kind == 'M' or (len(vs) and isinstance(vs[0], datetime_types))) and i < len(dims):
                     dt_format = Dimension.type_formatters[np.datetime64]
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))

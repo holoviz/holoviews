@@ -322,7 +322,6 @@ class TestCurvePlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        print(curve.data)
         self.assertEqual(x_range.start, np.datetime64('2016-03-31T19:12:00.000000000'))
         self.assertEqual(x_range.end, np.datetime64('2016-04-03T04:48:00.000000000'))
         self.assertEqual(y_range.start, 0.8)
