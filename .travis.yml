@@ -152,16 +152,16 @@ jobs:
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
+        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
-        - doit ecosystem=pip package_build --no-pkg-tests
+        - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
     - <<: *pip_pkg
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o tests && pip uninstall -y holoviews
+        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
-        - doit ecosystem=pip package_build --no-pkg-tests
+        - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
