@@ -1,9 +1,15 @@
-from unittest import SkipTest
-from nose.plugins.attrib import attr
+from unittest import SkipTest, skipIf
+
 try:
     import pandas as pd
 except:
     raise SkipTest('Pandas not available')
+
+try:
+    import scipy # noqa
+except:
+    scipy = None
+scipy_skip = skipIf(scipy is None, "SciPy is not available.")
 
 import numpy as np
 
@@ -37,13 +43,13 @@ class TimeseriesOperationTests(ComparisonTestCase):
         rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve(rolled_vals))
 
-    @attr(optional=1) # Requires scipy
+    @scipy_skip
     def test_roll_date_with_window_type(self):
         rolled = rolling(self.date_curve, rolling_window=3, window_type='triang')
         rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
 
-    @attr(optional=1) # Requires scipy
+    @scipy_skip
     def test_roll_ints_with_window_type(self):
         rolled = rolling(self.int_curve, rolling_window=3, window_type='triang')
         rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]

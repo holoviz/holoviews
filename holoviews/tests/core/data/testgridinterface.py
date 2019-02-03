@@ -2,7 +2,7 @@ import datetime as dt
 
 from collections import OrderedDict
 from itertools import product
-from unittest import SkipTest
+from unittest import SkipTest, skipIf
 
 import numpy as np
 from holoviews.core.data import Dataset
@@ -13,6 +13,9 @@ try:
     import dask.array as da
 except ImportError:
     da = None
+
+pd_skip = skipIf(pd is None, "pandas is not available")
+
 
 from .base import (
     GriddedInterfaceTests, InterfaceTests, HomogeneousColumnTests, DatatypeContext
@@ -28,20 +31,18 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
     data_type = (OrderedDict, dict)
     element = Dataset
 
+    @pd_skip
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
-        if pd is None:
-            raise SkipTest("Pandas not available")
         exception = "None of the available storage backends "\
          "were able to support the supplied data format."
         with self.assertRaisesRegexp(Exception, exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
+    @pd_skip
     def test_dataset_dataframe_init_hm_alias(self):
         "Tests support for homogeneous DataFrames"
-        if pd is None:
-            raise SkipTest("Pandas not available")
         exception = "None of the available storage backends "\
          "were able to support the supplied data format."
         with self.assertRaisesRegexp(Exception, exception):
@@ -432,6 +433,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten().compute())
 
+    @pd_skip
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
         self.assertEqual(df.x.values, self.xs)

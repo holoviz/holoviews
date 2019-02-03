@@ -1,5 +1,7 @@
 import os
 import pickle
+from unittest import SkipTest
+
 import numpy as np
 from holoviews import Store, Histogram, Image, Curve, DynamicMap, opts
 from holoviews.core.options import (
@@ -7,8 +9,6 @@ from holoviews.core.options import (
 )
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
-from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 Options.skip_invalid = False
 
@@ -195,6 +195,8 @@ class TestCycle(ComparisonTestCase):
 class TestOptionTree(ComparisonTestCase):
 
     def setUp(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest('Matplotlib backend not available.')
         Options._option_groups = ['group1', 'group2']
         super(TestOptionTree, self).setUp()
 
@@ -272,13 +274,14 @@ class TestOptionTree(ComparisonTestCase):
                          {'kw2':'value2', 'kw4':'value4'})
 
 
-@attr(optional=1) # Requires matplotlib
 class TestStoreInheritanceDynamic(ComparisonTestCase):
     """
     Tests to prevent regression after fix in PR #646
     """
 
     def setUp(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
@@ -466,7 +469,6 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
 
 
-@attr(optional=1) # Requires matplotlib
 class TestStoreInheritance(ComparisonTestCase):
     """
     Tests to prevent regression after fix in 71c1f3a that resolves
@@ -474,6 +476,8 @@ class TestStoreInheritance(ComparisonTestCase):
     """
 
     def setUp(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
@@ -559,6 +563,8 @@ class TestStoreInheritance(ComparisonTestCase):
 class TestOptionsMethod(ComparisonTestCase):
 
     def setUp(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
@@ -610,6 +616,8 @@ class TestOptionsMethod(ComparisonTestCase):
 class TestOptsMethod(ComparisonTestCase):
 
     def setUp(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
         self.backend = 'matplotlib'
@@ -720,7 +728,7 @@ class TestOptsMethod(ComparisonTestCase):
         self.assertEqual(not any(k in ['option1', 'option2']
                                  for k in cleared_options.keys()), True)
 
-@attr(optional=1) # Needs matplotlib
+
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):

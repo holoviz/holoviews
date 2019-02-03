@@ -5,7 +5,6 @@ Test cases for rendering exporters
 from __future__ import unicode_literals
 
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import numpy as np
 
@@ -18,7 +17,6 @@ except:
     pass
 
 
-@attr(optional=1)
 class MPLRendererTest(ComparisonTestCase):
     """
     Note if not possible to compare the hashes of SVG and WebM formats

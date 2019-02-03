@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 from io import BytesIO
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import numpy as np
 
@@ -18,7 +17,6 @@ except:
     pass
 
 
-@attr(optional=1)
 class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):

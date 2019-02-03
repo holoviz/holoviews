@@ -317,7 +317,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points([(0, 1, dt.datetime(2017, 1, 1))], vdims='date').options(tools=['hover'])
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['date'], np.array([1483228800000000000]))
+        self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
         self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])

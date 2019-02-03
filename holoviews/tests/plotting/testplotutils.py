@@ -1,7 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import numpy as np
 
@@ -590,7 +589,7 @@ class TestPlotUtils(ComparisonTestCase):
                   np.arange(0, 2., .2, dtype='float32'))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(Points((X.flatten(), Y.flatten())))
-        self.assertEqual(round(dist, 5), 0.2)
+        self.assertEqual(float(round(dist, 5)), 0.2)
 
     def test_get_min_distance_int32_type(self):
         xs, ys = (np.arange(0, 10, dtype='int32'),
@@ -647,7 +646,6 @@ class TestRangeUtilities(ComparisonTestCase):
 
 
 
-@attr(optional=1)  # Flexx is optional
 class TestBokehUtils(ComparisonTestCase):
 
     def setUp(self):

@@ -1,4 +1,3 @@
-from nose.plugins.attrib import attr
 from unittest import SkipTest
 
 import numpy as np
@@ -18,7 +17,6 @@ from holoviews.element import Scatter, Points, Distribution
 from .base import HeterogeneousColumnTests, InterfaceTests
 
 
-@attr(optional=1)
 class PandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     """
     Test for the PandasInterface.

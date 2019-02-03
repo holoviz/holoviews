@@ -1,6 +1,5 @@
 import datetime as dt
 from collections import OrderedDict
-from nose.plugins.attrib import attr
 from unittest import SkipTest
 
 import numpy as np
@@ -21,7 +20,6 @@ from .testimageinterface import (
 from .testgridinterface import GridInterfaceTests
 
 
-@attr(optional=1)
 class XArrayInterfaceTests(GridInterfaceTests):
     """
     Tests for xarray interface
@@ -233,7 +231,6 @@ class XArrayInterfaceTests(GridInterfaceTests):
 
 
 
-@attr(optional=1)
 class DaskXArrayInterfaceTest(XArrayInterfaceTests):
     """
     Tests for XArray interface wrapping dask arrays
@@ -290,7 +287,6 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
 
 
 
-@attr(optional=1)
 class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
 
     datatype = 'xarray'
@@ -358,7 +354,6 @@ class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
             Image(xrarr, kdims=['x', 'y'])
 
 
-@attr(optional=1)
 class RGB_XArrayInterfaceTests(RGB_ImageInterfaceTests):
 
     datatype = 'xarray'
@@ -369,7 +364,6 @@ class RGB_XArrayInterfaceTests(RGB_ImageInterfaceTests):
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
-@attr(optional=1)
 class HSV_XArrayInterfaceTest(HSV_ImageInterfaceTests):
 
     datatype = 'xarray'

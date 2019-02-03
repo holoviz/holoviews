@@ -1,6 +1,5 @@
 import json
 import datetime as dt
-from nose.plugins.attrib import attr
 
 import numpy as np
 
@@ -12,7 +11,6 @@ from .testplot import TestMPLPlot, mpl_renderer
 
 class TestSelectionWidget(TestMPLPlot):
 
-    @attr(optional=1) # Requires jinja2
     def test_dynamic_nonoverlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', range=(0.01, 1)),
@@ -22,7 +20,6 @@ class TestSelectionWidget(TestMPLPlot):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
-    @attr(optional=1) # Requires jinja2
     def test_dynamic_values_partial_overlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', values=['x', 'y', 'z']),
@@ -32,7 +29,6 @@ class TestSelectionWidget(TestMPLPlot):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
-    @attr(optional=1) # Requires jinja2
     def test_holomap_datetime_widgets(self):
         hmap = HoloMap({np.datetime64(dt.datetime(2017, 1, i)): Curve([i]) for i in range(1, 3)})
         widgets = mpl_renderer.get_widget(hmap, 'widgets')

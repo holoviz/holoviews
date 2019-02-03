@@ -3,8 +3,7 @@ Tests for the Dataset Element types.
 """
 
 import datetime
-from nose.plugins.attrib import attr
-from unittest import SkipTest
+from unittest import SkipTest, skipIf
 
 import numpy as np
 
@@ -20,6 +19,8 @@ try:
     import pandas as pd
 except:
     pd = None
+
+pd_skip = skipIf(pd is None, "pandas is not available")
 
 
 
@@ -384,11 +385,13 @@ class HomogeneousColumnTests(object):
         arr = self.dataset_hm.array(['x'])
         self.assertEqual(arr, self.xs[:, np.newaxis])
 
+    @pd_skip
     def test_dataset_get_dframe(self):
         df = self.dataset_hm.dframe()
         self.assertEqual(df.x.values, self.xs)
         self.assertEqual(df.y.values, self.y_ints)
 
+    @pd_skip
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
         self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes[0]))
@@ -424,17 +427,15 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     # Test the constructor to be supported by all interfaces supporting
     # heterogeneous column types.
 
+    @pd_skip
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
-        if pd is None:
-            raise SkipTest("Pandas not available")
         dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
+    @pd_skip
     def test_dataset_dataframe_init_ht_alias(self):
         "Tests support for heterogeneous DataFrames"
-        if pd is None:
-            raise SkipTest("Pandas not available")
         dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}),
                           kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_type))
@@ -496,7 +497,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         
     # Operations
 
-    @attr(optional=1) # Uses pandas
+    @pd_skip
     def test_dataset_redim_with_alias_dframe(self):
         test_df = pd.DataFrame({'x': range(10), 'y': range(0,20,2)})
         dataset = Dataset(test_df, kdims=[('x', 'X-label')], vdims=['y'])

@@ -117,7 +117,7 @@ class TestSpikesPlot(TestBokehPlot):
         points = Spikes([(0, 1, dt.datetime(2017, 1, 1))], vdims=['value', 'date']).options(tools=['hover'])
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['date'], np.array([1483228800000000000]))
+        self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
         self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}'), ('value', '@{value}'), ('date', '@{date_dt_strings}')])
@@ -126,7 +126,7 @@ class TestSpikesPlot(TestBokehPlot):
         points = Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').options(tools=['hover'])
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['x'], np.array([1483228800000000000]))
+        self.assertEqual(cds.data['x'].astype('datetime64'), np.array([1483228800000000000]))
         self.assertEqual(cds.data['x_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x_dt_strings}'), ('y', '@{y}')])

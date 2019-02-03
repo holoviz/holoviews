@@ -1,4 +1,3 @@
-from nose.plugins.attrib import attr
 from holoviews.element.comparison import ComparisonTestCase
 from pyviz_comms import Comm, JupyterComm
 
@@ -42,7 +41,6 @@ class TestComm(ComparisonTestCase):
         comm._handle_msg({'comm_id': 'Testing id'})
 
 
-@attr(optional=1)
 class TestJupyterComm(ComparisonTestCase):
 
     def test_init_comm(self):

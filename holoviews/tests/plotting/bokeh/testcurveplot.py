@@ -1,5 +1,5 @@
 import datetime as dt
-from unittest import SkipTest
+from unittest import skipIf
 
 import numpy as np
 
@@ -17,6 +17,8 @@ try:
     from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
 except:
     pass
+
+pd_skip = skipIf(pd is None, 'Pandas not available')
 
 
 class TestCurvePlot(TestBokehPlot):
@@ -90,7 +92,7 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['source'].data['color'], color)
 
     def test_curve_overlay_datetime_hover(self):
-        obj = NdOverlay({i: Curve((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
+        obj = NdOverlay({i: Curve([(dt.datetime(2016, 1, j+1), j) for j in range(31)]) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj(plot=opts)
@@ -132,9 +134,8 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
 
+    @pd_skip
     def test_curve_pandas_timestamps(self):
-        if not pd:
-            raise SkipTest("Pandas not available")
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve)
@@ -157,9 +158,8 @@ class TestCurvePlot(TestBokehPlot):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 11)))
 
+    @pd_skip
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
-        if not pd:
-            raise SkipTest("Pandas not available")
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
@@ -322,6 +322,7 @@ class TestCurvePlot(TestBokehPlot):
         )
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        print(curve.data)
         self.assertEqual(x_range.start, np.datetime64('2016-03-31T19:12:00.000000000'))
         self.assertEqual(x_range.end, np.datetime64('2016-04-03T04:48:00.000000000'))
         self.assertEqual(y_range.start, 0.8)
