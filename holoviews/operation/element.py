@@ -772,7 +772,7 @@ class interpolate_curve(Operation):
         dtype = x.dtype
         is_datetime = dtype.kind == 'M' or isinstance(x[0], datetime_types)
         if is_datetime:
-            dt_type = dtype if dtype.kind == 'M' else 'datetime64[ns]'
+            dt_type = 'datetime64[ns]'
             x = x.astype(dt_type).astype('int64')
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[1:])
         xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), dvals)
