@@ -81,7 +81,10 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_to_png(self):
         curve = Curve([])
         renderer = BokehRenderer.instance(fig='png')
-        png, info = renderer(curve)
+        try:
+            png, info = renderer(curve)
+        except RuntimeError:
+            raise SkipTest("Test requires selenium")
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 

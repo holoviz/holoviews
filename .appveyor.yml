@@ -1,34 +1,32 @@
 environment:
+  global:
+    CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
   matrix:
     - PY: "2.7"
       CONDA: "C:\\Miniconda-x64"
     - PY: "3.6"
       CONDA: "C:\\Miniconda36-x64"
 
-matrix:
-  allow_failures:
-    - PY: "2.7"
-    - PY: "3.6"
-
 init:
   - cmd: set PATH=%CONDA%;%CONDA%\Scripts;%CONDA%\Library\bin;%PATH%
   - cmd: echo %path%
 
 install:
-  - "conda config --set always_yes yes"
-  - "conda update -q conda"
-  - "conda info -a"
-  - "conda create -n holoviews python=%PY%"
-  - "conda env update -n holoviews -f environment.yml"
-  - "activate holoviews"
-  - "python setup.py develop"
+  - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
+  - "conda install -y conda<4.6"
+  - "doit env_create %CHANS_DEV% --name=test --python=%PY%"
+  - "activate test"
+  - "doit develop_install %CHANS_DEV% -o unit_tests"
+  - "doit env_capture"
 
 build: false
+skip_branch_with_pr: true  # only do one run per commit
+clone_depth: 5
+skip_tags: true
 
 before_test:
   - cmd: for /f %%i in ('python -c "import matplotlib; print(matplotlib.matplotlib_fname())"') do set matplotlibrc=%%i
   - cmd: 'echo backend : Agg > %matplotlibrc%'
 
 test_script:
-  - "flake8 --ignore=E,W,F999,F405 holoviews"
-  - "nosetests --with-doctest --with-coverage --cover-package=holoviews"
+  - "doit test_all_recommended"

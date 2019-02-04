@@ -263,7 +263,7 @@ class BarPlot(ElementPlot):
             bars = []
             for k, el in els.items():
                 bars.append({
-                    'orientation': orientation, 'name': k,
+                    'orientation': orientation, 'name': group_dim.pprint_value(k),
                     x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
                     y: el.dimension_values(vdim)})
         return bars

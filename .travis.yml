@@ -1,84 +1,169 @@
-language: python
-
+# We deliberately don't use travis's language=python option because
+# we install miniconda and use conda to get python. Additionally,
+# Travis's auto-install of python doesn't work on osx images (see
+# https://github.com/travis-ci/travis-ci/issues/4729).
+language: generic
 sudo: false
+os:
+  - linux
 
-python:
-  - "2.7"
-  - "3.6"
+cache:
+  timeout: 300
+  directories:
+    - $HOME/miniconda
+
+before_cache:
+  - rm -rf $HOME/miniconda/pkgs
+  - rm -rf $HOME/miniconda/conda-bld
+  - rm -rf $HOME/miniconda/envs/*/conda-bld
 
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
 
-install:
-  - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-      wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
-    else
-      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    fi
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  
-  # Useful for debugging any issues with conda
-  - conda create -n holoviews -q python=$TRAVIS_PYTHON_VERSION
-  - travis_wait conda env update -n holoviews -q -f environment.yml
-  - source activate holoviews
-  - python setup.py develop
-  - conda info -a; conda list; conda env export
-  - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
-      echo "Attempting to find any associated pull request";
-      CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
-      NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
-      MSG1=$(echo $CURRENT_BUILD | jq '.[].message' );
-      MSG2=$(echo $NEXT_BUILD | jq '.[].message' );
-      if [ "$MSG1" == "$MSG2" ] ; then
-        BUILD_ID=$(echo $NEXT_BUILD | jq .[].id);
-        TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
-        echo "Associated pull request found - PR $TRAVIS_PULL_REQUEST";
-      fi
-    fi
-  - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/reference_data}
-  - git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
-  - cd ./doc/reference_data
-  - echo "Attempting to checkout $REF_DATA_BRANCH branch"
-  - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
-      git checkout origin/$REF_DATA_BRANCH;
-    else
-      echo "Using the master branch reference data";
-    fi
-  - cd ../..
+env:
+  global:
+    - PYENV_VERSION=3.6
+    - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
+    - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
+    - CHANS="-c pyviz"
+    - MPLBACKEND="Agg"
 
-script:
-  - export MPLBACKEND="Agg"
-  - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
-  - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
-  - flake8 --ignore=E,W,F999,F405 holoviews
-  - nosetests --with-doctest --with-coverage --cover-package=holoviews
-  - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
-  - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
-  - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
-  - coverage combine --append
+stages:
+  - test
+  - name: extra_tests
+    if: type = cron
+  - name: conda_dev_package
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: pip_dev_package
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: conda_package
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: pip_package
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
 
-after_script:
-  - shopt -s expand_aliases
-  - alias decode="tr '[N-ZA-Mn-za-m]' '[A-Za-z]'"
-  - export AWS_SECRET_ACCESS_KEY=`echo udgGztmYyyKZ5iP2PVe+ROGZo/TI0M2QcoafOJGD | decode`
-  - export AWS_ACCESS_KEY_ID=`echo NXVNVUCXF3UPHSKNG7ND | decode`
-  - if [ "$TRAVIS_BRANCH" == 'master' ]; then
-      cd doc/test_data;
-      zip -r test_data.zip *;
-      aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${TRAVIS_PYTHON_VERSION:0:1}.zip";
-      cd -;
-    fi
-  - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
-  - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
-  - echo insecure >> ~/.curlrc
-  - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
-      curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
-    fi
+jobs:
+  include:
+    ########## Test Stage ##########
 
-after_success: coveralls
+    - &default
+      stage: test
+      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests"
+      before_install:
+        - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
+        - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
+        - conda config --set always_yes True
+        - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
+      install:
+        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - source activate test-environment
+        - doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - doit env_capture
+      script:
+        - doit test_all_recommended
+      after_success: coveralls
+      after_failure: sleep 10
+
+    - <<: *default
+      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
+
+    - &regression_test
+      <<: *default
+      env: DESC="Python 3.6 regression tests" HV_REQUIREMENTS="nbtests"
+      before_script:
+        - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
+            echo "Attempting to find any associated pull request";
+            CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
+            NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
+            MSG1=$(echo $CURRENT_BUILD | jq '.[].message' );
+            MSG2=$(echo $NEXT_BUILD | jq '.[].message' );
+            if [ "$MSG1" == "$MSG2" ] ; then
+              BUILD_ID=$(echo $NEXT_BUILD | jq .[].id);
+              TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
+              echo "Associated pull request found - PR $TRAVIS_PULL_REQUEST";
+            fi
+          fi
+        - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/reference_data}
+        - git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
+        - pushd ./doc/reference_data
+        - echo "Attempting to checkout $REF_DATA_BRANCH branch"
+        - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
+            git checkout origin/$REF_DATA_BRANCH;
+          else
+            echo "Using the master branch reference data";
+          fi
+        - popd
+        - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
+        - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
+        - pushd ./doc/nbpublisher
+      script:
+        - QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True python ./test_notebooks.py
+      after_script:
+        - python ./doc/nbpublisher/concat_html.py ./doc/test_data ./doc/test_html
+        - if [ "$TRAVIS_BRANCH" == 'master' ]; then
+            cd doc/test_data;
+            zip -r test_data.zip *;
+            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYENV_VERSION}.zip";
+            cd -;
+          fi
+        - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
+        - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
+        - echo insecure >> ~/.curlrc
+        - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
+            curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
+          fi
+      after_success:
+        - popd
+        - mv doc/Tutorials/.coverage ./.coverage
+        - coveralls
+
+    - <<: *regression_test
+      env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
+
+    - &basic_deps
+      <<: *default
+      stage: extra_tests
+      env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
+      after_success: echo "Success"
+
+    ########## END-USER PACKAGES ##########
+
+    ### CONDA ####
+
+    - &conda_pkg
+      <<: *default
+      stage: conda_dev_package
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      install:
+        - doit package_build $CHANS_DEV --no-pkg-tests
+      script:
+        - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
+
+    - <<: *conda_pkg
+      stage: conda_package
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      install:
+        - doit package_build $CHANS_DEV --no-pkg-tests
+      script:
+        - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
+
+    ### PyPI ###
+
+    - &pip_pkg
+      <<: *default
+      stage: pip_dev_package
+      env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      install:
+        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
+        - doit pip_on_conda
+        - doit ecosystem=pip package_build
+      script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
+
+    - <<: *pip_pkg
+      stage: pip_package
+      env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      install:
+        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
+        - doit pip_on_conda
+        - doit ecosystem=pip package_build
+      script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}

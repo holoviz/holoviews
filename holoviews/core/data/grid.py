@@ -655,7 +655,7 @@ class GridInterface(DictInterface):
 
         if scalar:
             da = dask_array_module()
-            if new_data and isinstance(new_data[0], da.Array):
+            if new_data and (da and isinstance(new_data[0], da.Array)):
                 return new_data[0].compute()[0]
             return new_data[0][0]
         return tuple(new_data)

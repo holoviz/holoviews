@@ -11,22 +11,39 @@ except ImportError:
 
 setup_args = {}
 install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.0']
+
 extras_require = {}
 
-# Notebook dependencies of IPython 3
-extras_require['notebook-dependencies'] = ['ipython<=7.1.1,>=5.4.0',
-                                           'pyzmq', 'jinja2', 'tornado',
-                                           'jsonschema', 'notebook', 'pygments']
-# IPython Notebook + matplotlib
-extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib>=2.1', 'bokeh>=1.0.0']
-# Additional, useful third-party packages
-extras_require['extras'] = (['pandas', 'seaborn']
-                            + extras_require['recommended'])
-# Everything including cyordereddict (optimization) and nosetests
-extras_require['all'] = (extras_require['recommended']
-                         + extras_require['extras']
-                         + ['cyordereddict', 'nose'])
+# Notebook dependencies
+extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
 
+# IPython Notebook + pandas + matplotlib + bokeh
+extras_require['recommended'] = extras_require['notebook'] + [
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy']
+
+# Requirements to run all examples
+extras_require['examples'] = extras_require['recommended'] + [
+    'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'plotly>=3.4',
+    'datashader', 'selenium', 'phantomjs', 'ffmpeg']
+
+# Extra third-party libraries
+extras_require['extras'] = extras_require['examples']+[
+    'cyordereddict', 'flexx==0.4.1']
+
+# Test requirements
+extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py']
+
+extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
+
+extras_require['basic_tests'] = extras_require['tests']+[
+    'matplotlib>=2.1', 'bokeh>=1.0.0']+extras_require['notebook']
+
+extras_require['nbtests'] = extras_require['recommended'] + [
+    'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
+    'cyordereddict', 'ipython==5.4.1']
+
+# Everything including cyordereddict (optimization) and nosetests
+extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
 
 
 def embed_version(basepath, ref='v0.2.2'):
@@ -63,6 +80,9 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, '.version')
     try:
         from param import version
+
+        # Ensure that param.version has Version object
+        assert hasattr(version, 'Version')
     except:
         version = embed_version(basepath)
     if version is not None:
@@ -81,11 +101,11 @@ setup_args.update(dict(
     long_description_content_type="text/markdown",
     author="Jean-Luc Stevens and Philipp Rudiger",
     author_email="holoviews@gmail.com",
-    maintainer="IOAM",
-    maintainer_email="holoviews@gmail.com",
+    maintainer="PyViz Developers",
+    maintainer_email="developers@pyviz.org",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
-    url='http://www.holoviews.org',
+    url='https://www.holoviews.org',
     entry_points={
         'console_scripts': [
             'holoviews = holoviews.util.command:main'
@@ -107,18 +127,20 @@ setup_args.update(dict(
               "holoviews.tests.core.data",
               "holoviews.tests.element",
               "holoviews.tests.ipython",
+              "holoviews.tests.ipython.notebooks",
               "holoviews.tests.operation",
               "holoviews.tests.plotting",
               "holoviews.tests.plotting.bokeh",
               "holoviews.tests.plotting.matplotlib",
-              "holoviews.tests.plotting.plotly",              
+              "holoviews.tests.plotting.plotly",
               "holoviews.tests.util"],
     package_data={'holoviews': ['.version'],
                   'holoviews.ipython': ['*.html'],
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js', '*.css'],
                   'holoviews.plotting.plotly': ['*.js'],
-                  'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css']},
+                  'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css'],
+                  'holoviews.tests.ipython.notebooks': ['*.ipynb']},
     classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
