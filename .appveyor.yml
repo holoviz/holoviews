@@ -7,11 +7,6 @@ environment:
     - PY: "3.6"
       CONDA: "C:\\Miniconda36-x64"
 
-matrix:
-  allow_failures:
-    - PY: "2.7"
-    - PY: "3.6"
-
 init:
   - cmd: set PATH=%CONDA%;%CONDA%\Scripts;%CONDA%\Library\bin;%PATH%
   - cmd: echo %path%
