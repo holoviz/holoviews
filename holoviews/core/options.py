@@ -67,9 +67,15 @@ class Opts(object):
 
 
     def get(self, group=None, backend=None):
-        """
-        Returns an Options object, flattening across option groups if
-        group is None. Uses the current backend if backend is None.
+        """Returns the corresponding Options object.
+
+        Args:
+            group: The options group. Flattens across groups if None.
+            backend: Current backend if None otherwise chosen backend.
+
+        Returns:
+            Options object associated with the object containing the
+            applied option keywords.
         """
         keywords = {}
         groups = Options._option_groups if group is None else [group]
