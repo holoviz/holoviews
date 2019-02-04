@@ -4,10 +4,11 @@ import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.core.util import pd
 
 try:
     import datashader as ds
+    import dask.dataframe as dd
+    from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, rasterize
@@ -91,6 +92,22 @@ class DatashaderAggregateTests(ComparisonTestCase):
                  np.datetime64('2016-01-02T12:00:00.000000000')]
         expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
                          datatype=['xarray'], bounds=bounds, vdims='Count')
+        self.assertEqual(img, expected)
+
+    def test_aggregate_curve_datetimes_dask(self):
+        df = pd.DataFrame(
+            data=np.arange(1000), columns=['a'],
+            index=pd.date_range('2019-01-01', freq='1T', periods=1000),
+        )
+        ddf = dd.from_pandas(df, npartitions=4)
+        curve = Curve(ddf, kdims=['index'], vdims=['a'])
+        img = aggregate(curve, width=2, height=3, dynamic=False)
+        bounds = (np.datetime64('2019-01-01T00:00:00.000000'), 0.0,
+                  np.datetime64('2019-01-01T16:39:00.000000'), 999.0)
+        dates = [np.datetime64('2019-01-01T04:09:45.000000000'),
+                 np.datetime64('2019-01-01T12:29:15.000000000')]
+        expected = Image((dates, [166.5, 499.5, 832.5], [[333, 0], [167, 166], [0, 334]]),
+                         ['index', 'a'], 'Count', datatype=['xarray'], bounds=bounds)
         self.assertEqual(img, expected)
 
     def test_aggregate_curve_datetimes_microsecond_timebase(self):

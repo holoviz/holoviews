@@ -329,8 +329,8 @@ class aggregate(AggregationOperation):
             df = df.copy()
 
         for d in (x, y):
-            vals = df[d.name].values
-            if not is_dask and len(vals) and isinstance(vals[0], cftime_types):
+            vals = df[d.name]
+            if not is_dask and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
             elif df[d.name].dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
