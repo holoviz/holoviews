@@ -66,15 +66,16 @@ class Opts(object):
         self._obj = obj
 
 
-    def get(self, group=None):
+    def get(self, group=None, backend=None):
         """
         Returns an Options object, flattening across option groups if
-        group is None.
+        group is None. Uses the current backend if backend is None.
         """
         keywords = {}
         groups = Options._option_groups if group is None else [group]
+        backend = backend if backend else Store.current_backend
         for group in groups:
-            optsobj = Store.lookup_options(Store.current_backend, self._obj, group)
+            optsobj = Store.lookup_options(backend, self._obj, group)
             keywords = dict(keywords, **optsobj.kwargs)
         return Options(**keywords)
 
