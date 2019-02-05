@@ -15,6 +15,7 @@ except:
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
+from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine
@@ -103,9 +104,9 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
         mapping = dict(x=xdim, y=ydim, text=tdim)
         data = {d: element.dimension_values(d) for d in (xdim, ydim)}
         if self.xoffset is not None:
-            data[xdim] = data[xdim] + self.xoffset
+            mapping['x'] = dodge(xdim, self.xoffset)
         if self.yoffset is not None:
-            data[ydim] = data[ydim] + self.yoffset
+            mapping['y'] = dodge(ydim, self.yoffset)
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
