@@ -1932,7 +1932,7 @@ class StoreOptions(object):
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
-        
+
         # Propagate ids to the objects
         not_used = []
         for (match_id, new_id) in id_mapping:
