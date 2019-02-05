@@ -1416,7 +1416,7 @@ class Dimensioned(LabelledData):
             expanded_backends = [(backend, opts._expand_options(options, backend))]
 
         obj = self
-        for backend, expanded  in expanded_backends:
+        for backend, expanded in expanded_backends:
             obj = obj.opts(expanded, backend=backend, clone=clone)
         return obj
 
