@@ -31,9 +31,10 @@ from .annotation import (TextPlot, LineAnnotationPlot, SplinePlot,
 from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
-from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
+from .chart import (CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
-                    AreaPlot, VectorFieldPlot)
+                    AreaPlot, ScatterPlot)
+from .geom import PointPlot, VectorFieldPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
@@ -64,7 +65,7 @@ associations = {Overlay: OverlayPlot,
                 Curve: CurvePlot,
                 Bars: BarPlot,
                 Points: PointPlot,
-                Scatter: PointPlot,
+                Scatter: ScatterPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
                 Spikes: SpikesPlot,

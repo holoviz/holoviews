@@ -63,8 +63,8 @@ class HeatMapPlot(ColorbarPlot):
         return ((any(o in opts for o in ('start_angle', 'radius_inner', 'radius_outer'))
                  and not (opts.get('radial') == False)) or opts.get('radial', False))
 
-    def _get_factors(self, element):
-        return super(HeatMapPlot, self)._get_factors(element.gridded)
+    def _get_factors(self, element, ranges):
+        return super(HeatMapPlot, self)._get_factors(element.gridded, ranges)
 
     def get_data(self, element, ranges, style):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
