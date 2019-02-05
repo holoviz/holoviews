@@ -412,7 +412,7 @@ class opts(param.ParameterizedFunction):
                 if reraise:
                     raise ValueError(prefix + msg)
 
-            return Options(spec, **kws)
+            return Options(spec, backend=backend, **kws)
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
         kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
