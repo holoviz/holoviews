@@ -1409,10 +1409,16 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         if options is None:
-            expanded = {}
+            expanded_backends = [({}, backend)]
+        elif isinstance(options, list): # List of Options objects
+            expanded_backends = opts._expand_by_backend(options, backend)
         else:
-            expanded = opts._expand_options(options, backend)
-        return self.opts(expanded, backend=backend, clone=clone)
+            expanded_backends = [(opts._expand_options(options, backend), backend)]
+
+        obj = self
+        for backend, expanded  in expanded_backends:
+            obj = obj.opts(expanded, backend=backend, clone=clone)
+        return obj
 
 
     def _repr_mimebundle_(self, include=None, exclude=None):
