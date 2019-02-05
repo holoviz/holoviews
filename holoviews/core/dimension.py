@@ -1409,11 +1409,11 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         if options is None:
-            expanded_backends = [({}, backend)]
+            expanded_backends = [(backend, {})]
         elif isinstance(options, list): # List of Options objects
             expanded_backends = opts._expand_by_backend(options, backend)
         else:
-            expanded_backends = [(opts._expand_options(options, backend), backend)]
+            expanded_backends = [(backend, opts._expand_options(options, backend))]
 
         obj = self
         for backend, expanded  in expanded_backends:
