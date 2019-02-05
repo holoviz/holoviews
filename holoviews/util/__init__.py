@@ -117,13 +117,13 @@ class opts(param.ParameterizedFunction):
         simple format may be used, e.g.:
 
             opts.apply_groups(obj, style={'cmap': 'viridis'},
-                                         plot={'show_title': False})
+                                   plot={'show_title': False})
 
         If the object is nested the options must be qualified using
         a type[.group][.label] specification, e.g.:
 
             opts.apply_groups(obj, {'Image': {'plot':  {'show_title': False},
-                                                    'style': {'cmap': 'viridis}}})
+                                              'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
 
