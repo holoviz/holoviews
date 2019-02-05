@@ -247,6 +247,28 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
+    def _expand_by_backend(cls, options, backend):
+        "Given a list of Option objects, return a list of grouped backend"
+        groups = defaultdict(list)
+        used_fallback = False
+        for obj in options:
+            if obj.backend:
+                opts_backend = obj.backend
+            elif backend is None:
+                opts_backend = Store.current_backend
+                obj.backend= opts_backend
+            else:
+                opts_backend = backend
+                obj.backend = opts_backend
+                used_fallback = True
+            groups[opts_backend].append(obj)
+
+        if backend and not used_fallback:
+            self.param.warning('Fallback backend specified but not used.')
+
+        return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
+
+    @classmethod
     def _expand_options(cls, options, backend=None):
         """
         Validates and expands a dictionaries of options indexed by
