@@ -83,7 +83,9 @@ class opts(param.ParameterizedFunction):
        strict, invalid keywords prevent the options being applied.""")
 
     def __call__(self, *args, **params):
-        if params and not args:
+        if not params and not args:
+            return Options()
+        elif params and not args:
             return Options(**params)
 
         if len(args) == 1:
