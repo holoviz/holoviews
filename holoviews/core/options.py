@@ -583,7 +583,8 @@ class Options(param.Parameterized):
 
     _option_groups = ['style', 'plot', 'norm']
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True,
+                 max_cycles=None, backend=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -612,6 +613,7 @@ class Options(param.Parameterized):
                             else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
+        self.backend = backend
 
     def keywords_target(self, target):
         """
