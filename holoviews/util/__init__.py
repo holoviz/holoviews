@@ -264,7 +264,7 @@ class opts(param.ParameterizedFunction):
             groups[opts_backend].append(obj)
 
         if backend and not used_fallback:
-            self.param.warning('Fallback backend specified but not used.')
+            cls.param.warning('Fallback backend specified but not used.')
 
         return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
 
