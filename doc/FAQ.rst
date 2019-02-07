@@ -67,8 +67,7 @@ set the ``xlim`` and ``ylim`` plot options:
 This approach allows you to customize objects easily as a final step, but note that the values won't be applied to the underlying data, and thus won't be inherited if this object is subsequently used in an operation or data selection command.
 
 
-**Q: How do I control the auto-ranging/normalization of axis limits
-across frames in a HoloMap or objects in a Layout?**
+**Q: How do I control the auto-ranging/normalization of axis limits across frames in a HoloMap or objects in a Layout?**
 
 **A:** Where feasible, HoloViews defaults to normalizing axis ranges
 across all objects that are presented together, so that they can be
@@ -90,8 +89,7 @@ normalized independently by changing ``framewise`` to True:
     your_holomap.options(framewise=True)
 
 
-**Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for
-axis normalization across frames?**
+**Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for axis normalization across frames?**
 
 **A:** Unfortunately, HoloViews has no way of knowing the axis ranges
 of objects that might be returned by future calls to a DynamicMap's
@@ -100,7 +98,7 @@ callback function, and so there is no way for it to fully implement
 is the default in HoloViews). Thus, as a special case, a DynamicMap
 (whether created specifically or as the return value of various
 operations that accept a ``dynamic=True`` argument) will by default
-compute its ranges *using the first frame's data only*. If that is not
+compute its ranges *using data from the first frame only*. If that is not
 the behavior you want, you can either set ``framewise=True`` on it to enable
 normalization on every frame independently, or you can manually
 determine the appropriate axis range yourself and set that, e.g. with
@@ -187,8 +185,7 @@ matplotlib figure, before it is displayed, allowing arbitrary customizations to 
 applied which are not implemented or exposed by HoloViews itself.
 
 
-**Q**: What if I need to do more complex customization supported by the
-backend but not exposed in HoloViews?**
+**Q: What if I need to do more complex customization supported by the backend but not exposed in HoloViews?**
 
 **A:** If you need to, you can easily access the underlying Bokeh or
 Matplotlib figure and then use Bokeh or Matplotlib's API directly on
@@ -234,8 +231,7 @@ supplied that to HoloViews so that it can be run automatically
 whenever object ``h`` is viewed.
 
 
-**Q: Can I avoid generating extremely large HTML files when exporting
-my notebook?**
+**Q: Can I avoid generating extremely large HTML files when exporting my notebook?**
 
 **A:** It is very easy to visualize large volumes of data with
 HoloMaps, and all available display data is embedded in the HTML
@@ -256,7 +252,7 @@ include:
   by `datashade() <user_guide/Large_Data.html>`_.
 
 It is also possible to generate web pages that do not actually include
-all of the data shown, by specifying a `DynamicMap`` as described in
+all of the data shown, by specifying a ``DynamicMap`` as described
 `Live Data <user_guide/Live_Data.html>`_ rather than a HoloMap. The
 DynamicMap will request data only as needed, and so requires a Python
 server to be running alongside the viewable web page. Such pages are
@@ -264,8 +260,7 @@ more difficult to share by email or on web sites, but much more feasible
 for large datasets.
 
 
-**Q: I wish to use special characters in my title, but then attribute
-access becomes confusing.**
+**Q: I wish to use special characters in my title, but then attribute access becomes confusing.**
 
 **A:** The title format ``"{label} {group} {dimensions}"`` is simply a default
 that you can override. If you want to use a lot of special characters
@@ -307,18 +302,17 @@ using curly braces and unpack it.
   curve = curve.redim.range(**bounds)
 
 
-**Q: How do I plot data without storing it first as a pandas/xarray objects?**
+**Q: How do I plot data without storing it first as a pandas/xarray object?**
 
- **A:** HoloViews typically uses pandas and xarray objects in its examples,
- but it can accept standard Python data structures as well.
- Whatever data type is used, it needs to be provided to the first
- argument of the Element as *a single object*, so if you are using a
- pair of lists, be sure to pass them as a tuple, not as two separate
- arguments.
+**A:** HoloViews typically uses pandas and xarray objects in its examples,
+but it can accept standard Python data structures as well.
+Whatever data type is used, it needs to be provided to the first
+argument of the Element as *a single object*, so if you are using a
+pair of lists, be sure to pass them as a tuple, not as two separate
+arguments.
 
 
-**Q: Help! How do I find out the options for customizing the
-appearance of my object?**
+**Q: Help! How do I find out the options for customizing the appearance of my object?**
 
 **A:** If you are in the IPython/Jupyter Notebook you can use the cell magic
 ``%%output info=True`` at the top of your code cell. This will
@@ -330,19 +324,18 @@ of an object, see our `Customizing Plots <user_guide/Customizing_Plots.html>`_
 user guide.
 
 
-**Q: Why are my .options(), .relabel(), .redim(), and similar settings
-not having any effect?**
+**Q: Why are my .options(), .relabel(), .redim(), and similar settings not having any effect?**
 
 **A:** By default, HoloViews object methods like .options and
-.redim return a _copy_ of your object,
+.redim return a *copy* of your object,
 rather than modifying your original object. In HoloViews,
 making a copy of the object is cheap, because only the metadata
 is copied, not the data, and returning a copy makes it simple
-to work with a variety of differently customized versions of
-any given object. You can pass clone=False to .options()
-if you wish to modify the object in place, or you can just
-reassign the new object to the old name (as in
-``e = e.relabel("New Label")``).
+to work with a variety of differently customized versions of any given
+object. You can use ``.opts()`` or pass ``clone=False`` to
+``.options()`` if you wish to modify the object in place, or you can
+just reassign the new object to the old name (as in ``e =
+e.relabel("New Label")``).
 
 
 **Q: Why isn't my %%opts cell magic being applied to my HoloViews object?**
@@ -354,7 +347,7 @@ to the return value of that cell, if it's a HoloViews object. So, if you
 want a given object to get customized, you need to make sure it is
 returned from the cell, or the options won't ever be applied, and you
 should only access it after it has been returned, or the options won't
-_yet_ have been applied. For instance, if you use `renderer.save()`
+*yet* have been applied. For instance, if you use `renderer.save()`
 to export an object and only then return that object as the output of
 a cell, the exported object won't have the options applied, because
 they don't get applied until the object is returned
@@ -396,8 +389,7 @@ consistent across HoloViews backends, but in general HoloViews tries
 to use each backend's defaults where possible.
 
 
-**Q: Why do my HoloViews and GeoViews objects work fine separately but
-are mismatched when overlaid?**
+**Q: Why do my HoloViews and GeoViews objects work fine separately but are mismatched when overlaid?**
 
 **A:** GeoViews works precisely the same as HoloViews, except that
 GeoViews is aware of geographic projections. If you take an
@@ -425,10 +417,9 @@ customization. You can import ``Store`` from the main namespace with
 ``from holoviews import Store``.
 
 
-**Q: Why are the sizing options so different between the Matplotlib
-and Bokeh backends?"**
+**Q: Why are the sizing options so different between the Matplotlib and Bokeh backends?**
 
-**"A:** The way plot sizes are computed is handled in radically
+**A:** The way plot sizes are computed is handled in radically
 different ways by these backends, with Matplotlib building plots 'inside
 out' (from plot components with their own sizes) and Bokeh building
 them 'outside in' (fitting plot components into a given overall size).
@@ -436,8 +427,7 @@ Thus there is not currently any way to specify sizes in a way that is
 comparable between the two backends.
 
 
-**Q: Why don't you let me pass** *matplotlib_option* **as a style
-through to matplotlib?**
+**Q: Why don't you let me pass** *matplotlib_option* **as a style through to matplotlib?**
 
 **A:** We have selected a subset of default allowable style options
 that are most commonly useful in order to hide the more arcane
@@ -459,8 +449,7 @@ Now you can freely use ``'filternorm'`` in ``.options()`` and in the
 ``%opts`` line/cell magic, including tab-completion!
 
 
-**Q: What I want to change is about how HoloViews works, not about the
-underlying backend. Is that possible?**
+**Q: What I want to change is about how HoloViews works, not about the underlying backend. Is that possible?**
 
 **A:** Sure, if you need more customization and configurability than is
 possible with either HoloViews options or with extra backend-specific
