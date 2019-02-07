@@ -817,40 +817,68 @@ class LabelledData(param.Parameterized):
         return accumulator
 
 
-    def map(self, map_fn, specs=None, clone=True):
-        """Map a function to all objects matching the specs
+    def map(self, function, specs=None, clone=True, streams=[],
+            link_inputs=True, **kwargs):
+        """Applies a function to objects matching the specs.
 
-        Recursively replaces elements using a map function when the
-        specs apply, by default applies to all objects, e.g. to apply
-        the function to all contained Curve objects:
-
-            dmap.map(fn, hv.Curve)
+        Mapping allows applying a function to any objects matching the
+        specs. By default map will apply to any (Nd)Overlay or Element
+        objects but it can be mapped to any object given a list of specs.
+        If supplied, streams can provide parameters to add to the object.
 
         Args:
-            map_fn: Function to apply to each object
-            specs: List of specs to match
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values as additional keywords
+            specs (list, optional): List of specs to match
                 List of types, functions or type[.group][.label] specs
                 to select objects to return, by default applies to all
                 objects.
-            clone: Whether to clone the object or transform inplace
+            clone (boolean, optiona): Whether to clone container objects
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link_inputs (bool, optional): Whether to link the inputs
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            kwargs: Additional static keywords passed to the function
 
         Returns:
-            Returns the object after the map_fn has been applied
+            A new object which has applied the function to any objects
+            matching the defined specs.
         """
-        if specs is not None and not isinstance(specs, (list, set, tuple)):
+        _in_dynamic = kwargs.pop('_in_dynamic', False)
+        inner_kwargs = dict(kwargs, _in_dynamic=_in_dynamic)
+        if specs is None:
+           specs = [ViewableElement]
+        elif not isinstance(specs, (list, set, tuple)):
             specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
-        if self._deep_indexable:
-            deep_mapped = self.clone(shared_data=False) if clone else self
+        from .spaces import DynamicMap
+        param_watch_support = util.param_version >= '1.8.0'
+        depends = (util.is_param_method(function) and param_watch_support)
+        if (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
+            from ..util import Dynamic
+            streams = streams + [function]
+            def apply_map(obj, **dynkwargs):
+                inner_kwargs['_in_dynamic'] = True
+                return obj.map(function, specs, clone, streams, link_inputs,
+                               **inner_kwargs)
+            return Dynamic(self, operation=apply_map, streams=streams,
+                           link_inputs=link_inputs, kwargs=kwargs)
+        elif self._deep_indexable:
+            deep_mapped = self.clone(shared_data=False, link=link_inputs) if clone else self
             for k, v in self.items():
-                new_val = v.map(map_fn, specs, clone)
+                new_val = v.map(function, specs, clone, streams, link_inputs, **inner_kwargs)
                 if new_val is not None:
                     deep_mapped[k] = new_val
-            if applies: deep_mapped = map_fn(deep_mapped)
+            if applies:
+                deep_mapped = function(deep_mapped, **kwargs)
             return deep_mapped
         else:
-            return map_fn(self) if applies else self
+            return function(self, **kwargs) if applies else self
 
 
     def __getstate__(self):

@@ -834,6 +834,9 @@ class Dynamic(param.ParameterizedFunction):
         if isinstance(map_obj, DynamicMap):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
+            if self.p.shared_data:
+                dmap.data = OrderedDict([(k, callback.callable(*key))
+                                          for k, v in dmap.data])
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
         return dmap
@@ -851,7 +854,7 @@ class Dynamic(param.ParameterizedFunction):
         for stream in self.p.streams:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
-            elif not isinstance(stream, Stream):
+            elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
                 raise ValueError('Streams must be Stream classes or instances')
             if isinstance(self.p.operation, Operation):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()

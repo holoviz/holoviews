@@ -1389,38 +1389,6 @@ class DynamicMap(HoloMap):
         self[key] = val
 
 
-    def map(self, map_fn, specs=None, clone=True, link_inputs=True):
-        """Map a function to all objects matching the specs
-
-        Recursively replaces elements using a map function when the
-        specs apply, by default applies to all objects, e.g. to apply
-        the function to all contained Curve objects:
-
-            dmap.map(fn, hv.Curve)
-
-        Args:
-            map_fn: Function to apply to each object
-            specs: List of specs to match
-                List of types, functions or type[.group][.label] specs
-                to select objects to return, by default applies to all
-                objects.
-            clone: Whether to clone the object or transform inplace
-
-        Returns:
-            Returns the object after the map_fn has been applied
-        """
-        deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
-        if isinstance(deep_mapped, type(self)):
-            from ..util import Dynamic
-            def apply_map(obj, **dynkwargs):
-                return obj.map(map_fn, specs, clone)
-            dmap = Dynamic(self, operation=apply_map, streams=self.streams,
-                           link_inputs=link_inputs)
-            dmap.data = deep_mapped.data
-            return dmap
-        return deep_mapped
-
-
     def relabel(self, label=None, group=None, depth=1):
         """Clone object and apply new group and/or label.
 
