@@ -1,10 +1,10 @@
 [![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
-[![Conda](https://anaconda.org/ioam/holoviews/badges/installer/conda.svg)](https://anaconda.org/ioam/holoviews)
-[![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/ioam/holoviews)
-[![BuildStatus](https://travis-ci.org/ioam/holoviews.svg?branch=master)](https://travis-ci.org/ioam/holoviews)
-[![Coveralls](https://img.shields.io/coveralls/ioam/holoviews.svg)](https://coveralls.io/r/ioam/holoviews)
-[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/ioam/holoviews/master?filepath=examples)
+[![Conda](https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg)](https://anaconda.org/pyviz/holoviews)
+[![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/pyviz/holoviews)
+[![BuildStatus](https://travis-ci.org/ioam/holoviews.svg?branch=master)](https://travis-ci.org/pyviz/holoviews)
+[![Coveralls](https://img.shields.io/coveralls/ioam/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/pyviz/pyviz?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pyviz/holoviews/master?filepath=examples)
 
 # <img src="https://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="40px" align="left" /> HoloViews
 
@@ -103,7 +103,7 @@ Once you have installed JupyterLab and the extension launch it with::
 
 For more details on setup and configuration see [our website](http://holoviews.org/user_guide/Installing_and_Configuring.html).
 
-For general discussion, we have a [gitter channel](https://gitter.im/ioam/holoviews).
+For general discussion, we have a [gitter channel](https://gitter.im/pyviz/pyviz).
 If you find any bugs or have any feature suggestions please file a GitHub 
-[issue](https://github.com/ioam/holoviews/issues)
+[issue](https://github.com/pyviz/holoviews/issues)
 or submit a [pull request](https://help.github.com/articles/about-pull-requests).

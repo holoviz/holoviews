@@ -73,13 +73,13 @@ jobs:
       before_script:
         - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
             echo "Attempting to find any associated pull request";
-            CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
-            NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
+            CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/pyviz/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
+            NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/pyviz/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
             MSG1=$(echo $CURRENT_BUILD | jq '.[].message' );
             MSG2=$(echo $NEXT_BUILD | jq '.[].message' );
             if [ "$MSG1" == "$MSG2" ] ; then
               BUILD_ID=$(echo $NEXT_BUILD | jq .[].id);
-              TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
+              TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/pyviz/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
               echo "Associated pull request found - PR $TRAVIS_PULL_REQUEST";
             fi
           fi
