@@ -1318,7 +1318,7 @@ class DynamicMap(HoloMap):
         return val
 
 
-    def apply(self, function, streams=None, link=False, **kwargs):
+    def apply(self, function, streams=None, link=True, **kwargs):
         """Applies a function to the objects returned by the DynamicMap.
 
         Apply allows applying a function to the return values of
