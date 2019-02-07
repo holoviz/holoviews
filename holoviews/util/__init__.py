@@ -8,7 +8,7 @@ from pyviz_comms import extension as _pyviz_extension
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_options_to_dict, OrderedDict  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -835,7 +835,7 @@ class Dynamic(param.ParameterizedFunction):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
             if self.p.shared_data:
-                dmap.data = OrderedDict([(k, callback.callable(*key))
+                dmap.data = OrderedDict([(k, callback.callable(*k))
                                           for k, v in dmap.data])
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
