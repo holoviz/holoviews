@@ -15,7 +15,7 @@ The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews
 
 The `API <Reference_Manual>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
 
-If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
+If you have any `issues <https://github.com/pyviz/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
 
 .. raw:: html
   :file: latest_news.html
@@ -60,7 +60,7 @@ ____________
 |CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
 
-HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/pyviz/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
@@ -110,14 +110,14 @@ guide <user_guide/Installing_and_Configuring.html>`_.
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |CondaPkg| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
-.. _CondaPkg: https://anaconda.org/ioam/holoviews
+.. |CondaPkg| image:: https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg
+.. _CondaPkg: https://anaconda.org/pyviz/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
-.. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
+.. _License: https://github.com/pyviz/holoviews/blob/master/LICENSE.txt
 
-.. |Coveralls| image:: https://img.shields.io/coveralls/ioam/holoviews.svg
-.. _Coveralls: https://coveralls.io/r/ioam/holoviews
+.. |Coveralls| image:: https://img.shields.io/coveralls/pyviz/holoviews.svg
+.. _Coveralls: https://coveralls.io/r/pyviz/holoviews
 
 .. toctree::
    :titlesonly:
@@ -132,5 +132,5 @@ guide <user_guide/Installing_and_Configuring.html>`_.
    Releases <releases>
    API <Reference_Manual/index>
    FAQ
-   Github source <http://github.com/ioam/holoviews>
+   Github source <http://github.com/pyviz/holoviews>
    About <about>

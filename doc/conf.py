@@ -48,7 +48,7 @@ html_context = {
         ('About', MAIN_SITE + '/about.html'),
         ('Gallery', '/gallery/index.html'),
         ('Docs', '//holoviews.org/'),
-        ('Github', '//github.com/ioam/holoviews'),
+        ('Github', '//github.com/pyviz/holoviews'),
     ),
     # Links
     'LINKS': (
@@ -68,7 +68,7 @@ html_context = {
     'SOCIAL': (
         ('Gitter', '//gitter.im/pyviz/pyviz'),
         ('Twitter', '//twitter.com/holoviews'),
-        ('Github', '//github.com/ioam/holoviews'),
+        ('Github', '//github.com/pyviz/holoviews'),
     ),
     # Links for the docs sub navigation
     'NAV_DOCS': (

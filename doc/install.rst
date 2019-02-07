@@ -29,7 +29,7 @@ HoloViews objects without visualization::
   pip install holoviews
 
 This minimal install includes only the two required libraries `Param
-<http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_,
+<http://param.pyviz.org/>`_ and `Numpy <http://numpy.org>`_,
 neither of which has any required dependencies, which makes it very
 easy to integrate HoloViews into your workflow or as part of another
 project.
@@ -57,16 +57,16 @@ can be installed using::
 
 To get the very latest development version using ``pip``, you can use::
 
-  pip install git+https://github.com/ioam/holoviews.git
+  pip install git+https://github.com/pyviz/holoviews.git
 
 The alternative approach using git archive (e.g ``pip install
-https://github.com/ioam/holoviews/archive/master.zip``) is *not*
+https://github.com/pyviz/holoviews/archive/master.zip``) is *not*
 recommended as you will have incomplete version strings.
 
 Anyone interested in following development can get the very latest
 version by cloning the git repository::
 
-  git clone https://github.com/ioam/holoviews.git
+  git clone https://github.com/pyviz/holoviews.git
 
 To make this code available for import you then need to run::
 
