@@ -829,7 +829,10 @@ class Dynamic(param.ParameterizedFunction):
             argspec = util.argspec(op)
             kwargs = {k: v for k, v in self.p.kwargs.items()
                       if k in argspec.args}
-            kwargs = {'kwargs': kwargs} if is_apply else kwargs
+            if is_apply:
+                kwargs = {'function': self.p.operation.p.function,
+                          'kwargs': kwargs}
+                return self.p.operation.process_element(element, key, **kwargs)
             return self.p.operation(element, **kwargs)
 
 

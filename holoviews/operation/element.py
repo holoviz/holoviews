@@ -147,14 +147,16 @@ class apply(Operation):
             function = self.p.function if has_p else self.function
         if function is None:
             raise ValueError('apply operation must define a function.')
+        params['function'] = function
 
         # Toggle dynamic=True if streams or decorated method are supplied
         streams = params.get('streams', self.p.streams if has_p else [])
         dynamic = params.get('dynamic', self.p.dynamic if has_p else True)
-        watch = params.pop('watch', True)
+        watch = params.get('watch', True)
         param_watch_support = param_version >= '1.8.0' and watch
         if dynamic and not (streams or (is_param_method(function) and param_watch_support)):
             dynamic = False
+        params['dynamic'] = dynamic
         return super(apply, self).__call__(element, **params)
 
     def _process(self, element, key=None):
