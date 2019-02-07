@@ -112,7 +112,6 @@ class chain(Operation):
     group = param.String(default='Chain', doc="""
         The group assigned to the result after having applied the chain.""")
 
-
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
        that are applied on the input from left to right..""")
@@ -124,6 +123,32 @@ class chain(Operation):
                                                   input_ranges=self.p.input_ranges)
 
         return processed.clone(group=self.p.group)
+
+
+class apply(Operation):
+    """
+    A generic Operation to apply a function to all elements held by an
+    object. This allows applying generic functions to an element while
+    supporting the same features for chaining dynamic operations
+    supported by actual Operation instances.
+    """
+
+    function = param.Callable(default=None, allow_None=False, doc="""
+       The function to be applied to the elements.""")
+
+    kwargs = param.Dict(default={}, doc="""
+       Keyword arguments supplied to the function, will be overridden
+       by Stream values matching the function keywords.""")
+
+    def __call__(self, element, function=None, **params):
+        if function is None:
+            function = self.p.function if hasattr(self, 'p') else self.function
+        if function is None:
+            raise ValueError('apply operation must define a function.')
+        return super(apply, self).__call__(element, **params)
+
+    def _process(self, element, key=None):
+        return self.p.function(element, **self.p.kwargs)
 
 
 class transform(Operation):

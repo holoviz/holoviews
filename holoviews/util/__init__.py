@@ -12,6 +12,7 @@ from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API 
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
+from ..operation import apply
 from ..streams import Stream
 from .settings import OutputSettings, list_formats, list_backends
 
@@ -799,8 +800,11 @@ class Dynamic(param.ParameterizedFunction):
 
         # If callback is a parameterized method and watch is disabled add as stream
         param_watch_support = util.param_version >= '1.8.0' and watch
-        if util.is_param_method(self.p.operation) and param_watch_support:
-            streams.append(self.p.operation)
+        op = self.p.operation
+        if isinstance(op, apply):
+            op = op.p.function
+        if util.is_param_method(op) and param_watch_support:
+            streams.append(op)
         valid, invalid = Stream._process_streams(streams)
         if invalid:
             msg = ('The supplied streams list contains objects that '
@@ -810,12 +814,23 @@ class Dynamic(param.ParameterizedFunction):
 
 
     def _process(self, element, key=None):
-        if isinstance(self.p.operation, Operation):
+        is_apply = isinstance(self.p.operation, apply)
+        if isinstance(self.p.operation, Operation) and not is_apply:
             kwargs = {k: v for k, v in self.p.kwargs.items()
                       if k in self.p.operation.params()}
             return self.p.operation.process_element(element, key, **kwargs)
         else:
-            return self.p.operation(element, **self.p.kwargs)
+            if is_apply:
+                op = self.p.operation.p.function
+            else:
+                op = self.p.operation
+            if hasattr(op, '__wrapped__'):
+                op = op.__wrapped__
+            argspec = util.argspec(op)
+            kwargs = {k: v for k, v in self.p.kwargs.items()
+                      if k in argspec.args}
+            kwargs = {'kwargs': kwargs} if is_apply else kwargs
+            return self.p.operation(element, **kwargs)
 
 
     def _dynamic_operation(self, map_obj):
