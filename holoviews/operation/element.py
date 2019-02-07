@@ -13,7 +13,8 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int)
+                         basestring, datetime_types, isfinite, dt_to_int,
+                         param_version, is_param_method)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -141,10 +142,19 @@ class apply(Operation):
        by Stream values matching the function keywords.""")
 
     def __call__(self, element, function=None, **params):
+        has_p = hasattr(self, 'p')
         if function is None:
-            function = self.p.function if hasattr(self, 'p') else self.function
+            function = self.p.function if has_p else self.function
         if function is None:
             raise ValueError('apply operation must define a function.')
+
+        # Toggle dynamic=True if streams or decorated method are supplied
+        streams = params.get('streams', self.p.streams if has_p else [])
+        dynamic = params.get('dynamic', self.p.dynamic if has_p else True)
+        watch = params.pop('watch', True)
+        param_watch_support = param_version >= '1.8.0' and watch
+        if dynamic and not (streams or (is_param_method(function) and param_watch_support)):
+            dynamic = False
         return super(apply, self).__call__(element, **params)
 
     def _process(self, element, key=None):
