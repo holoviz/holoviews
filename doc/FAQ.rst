@@ -199,6 +199,7 @@ content as a Bokeh figure, and then show it as for any other Bokeh
 figure:
 
 .. code:: python
+
   import holoviews as hv
   hv.extension('bokeh')
   h = hv.Curve([1,2,7], 'x_col', 'y_col')
@@ -447,6 +448,7 @@ to matplotlib's ``imshow`` command when displaying an ``Image``
 element:
 
 .. code:: python
+
   import holoviews as hv
   from holoviews import Store
 
