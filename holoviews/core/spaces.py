@@ -1318,6 +1318,38 @@ class DynamicMap(HoloMap):
         return val
 
 
+    def apply(self, function, streams=None, link=False, **kwargs):
+        """Applies a function to the objects returned by the DynamicMap.
+
+        Apply allows applying a function to the return values of
+        DynamicMap, with additional arguments that can be supplied by
+        a stream or a static keyword argument. This is very useful for
+        chaining operations on existing data, while caching
+        intermediate results.
+
+        Args:
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values as additional keywords
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link (bool, optional): Whether clone should be linked
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            kwargs: Additional static keywords passed to the function
+
+        Returns:
+            A new DynamicMap which has applied the function to the
+            return values of the current DynamicMap.
+        """
+        from ..util import Dynamic
+        streams = streams or []
+        return Dynamic(self, operation=function, streams=streams,
+                       link_inputs=link, kwargs=kwargs)
+
+
     def select(self, selection_specs=None, **kwargs):
         """Applies selection by dimension name
 
