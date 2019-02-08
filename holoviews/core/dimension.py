@@ -857,15 +857,18 @@ class LabelledData(param.Parameterized):
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
         from .spaces import DynamicMap
-        param_watch_support = util.param_version >= '1.8.0'
-        depends = (util.is_param_method(function) and param_watch_support)
-        if (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
+        depends = util.is_param_method(function, has_deps=True)
+        if not applies and (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
             from ..util import Dynamic
-            streams = streams + [function]
+            streams = list(streams)
+            if depends:
+                streams.append(function)
             def apply_map(obj, **dynkwargs):
                 inner_kwargs['_in_dynamic'] = True
                 return obj.map(function, specs, clone, streams, link_inputs,
                                **inner_kwargs)
+            if not streams and isinstance(self, DynamicMap):
+                streams = self.streams
             return Dynamic(self, operation=apply_map, streams=streams,
                            link_inputs=link_inputs, kwargs=kwargs)
         elif self._deep_indexable:

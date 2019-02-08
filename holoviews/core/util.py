@@ -1423,11 +1423,25 @@ def get_param_values(data):
     return params
 
 
-def is_param_method(obj):
+def is_param_method(obj, has_deps=False):
+    """Whether the object is a method on a parameterized object.
+
+    Args:
+       obj: Object to check
+       has_deps (boolean, optional): Check for dependencies
+          Whether to also check whether the method has been annotated
+          with param.depends
+
+    Returns:
+       A boolean value indicating whether the object is a method
+       on a Parameterized object and if enabled whether it has any
+       dependencies
     """
-    Whether the object is a method on a parameterized object.
-    """
-    return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    parameterized = (inspect.ismethod(obj) and
+                     isinstance(get_method_owner(obj), param.Parameterized))
+    if parameterized and has_deps:
+        return getattr(obj, "_dinfo", {}).get('dependencies')
+    return parameterized
 
 
 @contextmanager

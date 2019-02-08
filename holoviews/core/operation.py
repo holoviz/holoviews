@@ -8,6 +8,7 @@ from .element import Element, HoloMap, GridSpace, NdLayout
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .spaces import DynamicMap, Callable
+from . import util
 
 
 class Operation(param.ParameterizedFunction):
@@ -143,22 +144,31 @@ class Operation(param.ParameterizedFunction):
         return self._apply(element, key)
 
 
-    def __call__(self, element, **params):
+    def __call__(self, element, **kwargs):
+        # Evaluate any keyword arguments which are actually parameterized
+        # methods annotated with param.depends. These will be dynamically
+        # evaluated by the Dynamic utility when the dependencies change.
+        params = {}
+        for k, v in kwargs.items():
+            if util.is_param_method(v, has_deps=True):
+                v = v()
+            params[k] = v
         self.p = param.ParamOverrides(self, params)
+
         dynamic = ((self.p.dynamic == 'default' and
                     isinstance(element, DynamicMap))
                    or self.p.dynamic is True)
 
         if isinstance(element, (GridSpace, NdLayout)):
             # Initialize an empty axis layout
-            grid_data = ((pos, self(cell, **params))
+            grid_data = ((pos, self(cell, **kwargs))
                          for pos, cell in element.items())
             processed = element.clone(grid_data)
         elif dynamic:
             from ..util import Dynamic
             processed = Dynamic(element, streams=self.p.streams,
                                 link_inputs=self.p.link_inputs,
-                                operation=self, kwargs=params)
+                                operation=self, kwargs=kwargs)
         elif isinstance(element, ViewableElement):
             processed = self._apply(element)
         elif isinstance(element, DynamicMap):
