@@ -76,4 +76,10 @@ class TestImage(LoggingComparisonTestCase):
         img = Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
         self.assertEqual(img.clone().rtol, 10e-3)
 
-
+    def test_image_curvilinear_coords_error(self):
+        x = np.arange(-1, 1, 0.1)
+        y = np.arange(-1, 1, 0.1)
+        X, Y = np.meshgrid(x, y)
+        Z = np.sqrt(X**2 + Y**2) * np.cos(X)
+        with self.assertRaises(ValueError):
+            Image((X, Y, Z))
