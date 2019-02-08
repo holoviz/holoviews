@@ -190,6 +190,75 @@ class DynamicMapMethods(ComparisonTestCase):
         curve = fn(10)
         self.assertEqual(mapped[10], curve.clone(curve.data*2))
 
+    def test_deep_map_apply_element_function_with_kwarg(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(lambda x, label: x.relabel(label), label='New label')
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.relabel('New label'))
+
+    def test_deep_map_apply_element_function_with_stream_kwarg(self):
+        stream = Stream.define('Test', label='New label')()
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(lambda x, label: x.relabel(label), streams=[stream])
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.relabel('New label'))
+
+    def test_deep_map_apply_parameterized_method_with_stream_kwarg(self):
+        class Test(param.Parameterized):
+
+            label = param.String(default='label')
+
+            @param.depends('label')
+            def value(self):
+                return self.label.title()
+
+        test = Test()
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(lambda x, label: x.relabel(label), label=test.value)
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.relabel('Label'))
+        test.label = 'new label'
+        self.assertEqual(mapped[10], curve.relabel('New Label'))
+
+    def test_deep_map_apply_parameterized_method_with_dependency(self):
+        class Test(param.Parameterized):
+
+            label = param.String(default='label')
+
+            @param.depends('label')
+            def relabel(self, obj):
+                return obj.relabel(self.label.title())
+
+        test = Test()
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(test.relabel)
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.relabel('Label'))
+        test.label = 'new label'
+        self.assertEqual(mapped[10], curve.relabel('New Label'))
+
+    def test_deep_map_apply_parameterized_method_with_dependency_and_static_kwarg(self):
+        class Test(param.Parameterized):
+
+            label = param.String(default='label')
+
+            @param.depends('label')
+            def relabel(self, obj, group):
+                return obj.relabel(self.label.title(), group)
+
+        test = Test()
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(test.relabel, group='Group')
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.relabel('Label', 'Group'))
+        test.label = 'new label'
+        self.assertEqual(mapped[10], curve.relabel('New Label', 'Group'))
+
     def test_deep_map_transform_element_type(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
