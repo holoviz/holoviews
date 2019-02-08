@@ -1533,12 +1533,21 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
-    param_groups = [s.contents.keys() for s in streams]
+    param_groups = []
+    for s in streams:
+        if not s.contents and isinstance(s.hashkey, dict):
+            param_groups.append(list(s.hashkey))
+        else:
+            param_groups.append(list(s.contents))
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
         clashes = sorted(set([n for n in names if names.count(n) > 1]))
-        clash_streams = [s for s in streams for c in clashes if c in s.contents]
+        clash_streams = []
+        for s in streams:
+            for c in clashes:
+                if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
+                    clash_streams.append(s)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
