@@ -209,7 +209,6 @@ class redim(object):
             if self.mode != 'dynamic' and not matches:
                 return redimmed
 
-
         kdims = self.replace_dimensions(parent.kdims, dimensions)
         vdims = self.replace_dimensions(parent.vdims, dimensions)
         zipped_dims = zip(parent.kdims+parent.vdims, kdims+vdims)
@@ -219,7 +218,12 @@ class redim(object):
             data = parent.data
             if renames:
                 data = parent.interface.redim(parent, renames)
-            return parent.clone(data, kdims=kdims, vdims=vdims)
+            clone = parent.clone(data, kdims=kdims, vdims=vdims)
+            if self.parent.dimensions(label='name') == clone.dimensions(label='name'):
+                # Ensure that plot_id is inherited as long as dimension
+                # name does not change
+                clone._plot_id = self.parent._plot_id
+            return clone
 
         if self.mode != 'dynamic':
             return redimmed.clone(kdims=kdims, vdims=vdims)
