@@ -338,7 +338,13 @@ def polygons_to_path_patches(element):
         for j, array in enumerate(arrays):
             if j != (len(arrays)-1):
                 array = array[:-1]
-            interiors = holes[i][j] if has_holes else []
+
+            if (array[0] != array[-1]).any():
+                array = np.append(array, array[:1], axis=0)
+            interiors = []
+            for interior in (holes[i][j] if has_holes else []):
+                if (interior[0] != interior[-1]).any():
+                    interiors.append(np.append(interior, interior[:1], axis=0))
             vertices = np.concatenate([array]+interiors)
             codes = np.concatenate([ring_coding(array)]+
                                    [ring_coding(h) for h in interiors])
