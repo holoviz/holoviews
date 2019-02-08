@@ -329,8 +329,24 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled
+        clsname = type(self).__name__
         xdim, ydim = self.kdims
-        xvals, yvals = (self.dimension_values(d, expanded=False) for d in self.kdims)
+        xvals, yvals = (self.dimension_values(d, expanded=False, flat=False)
+                        for d in self.kdims)
+        invalid = []
+        if xvals.ndim > 1:
+            invalid.append(xdim)
+        if yvals.ndim > 1:
+            invalid.append(ydim)
+        if invalid:
+            dims = '%s and %s' % tuple(invalid) if len(invalid) > 1 else '%s' % invalid[0]
+            raise ValueError('{clsname} coordinates must be 1D arrays, '
+                             '{dims} dimension(s) were found to have '
+                             'multiple dimensions. Either supply 1D '
+                             'arrays or use the QuadMesh element for '
+                             'curvilinear coordinates.'.format(
+                                 clsname=clsname, dims=dims))
+
         xvalid = util.validate_regular_sampling(xvals, self.rtol)
         yvalid = util.validate_regular_sampling(yvals, self.rtol)
         msg = ("{clsname} dimension{dims} not evenly sampled to relative "
@@ -345,7 +361,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             dims = ' %s is' % ydim
         if dims:
             self.param.warning(
-                msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
+                msg.format(clsname=clsname, dims=dims, rtol=self.rtol))
 
         if not supplied_bounds:
             return
