@@ -817,7 +817,7 @@ class LabelledData(param.Parameterized):
         return accumulator
 
 
-    def map(self, function, specs='default', clone=True, streams=[],
+    def map(self, function, specs=None, clone=True, streams=[],
             link_inputs=True, **kwargs):
         """Applies a function to any matching objects.
 
@@ -861,7 +861,7 @@ class LabelledData(param.Parameterized):
         inner_kwargs = dict(kwargs, _in_dynamic=_in_dynamic)
 
         # Determine a match from the specs
-        if specs == 'default':
+        if specs is None:
             applies = isinstance(self, ViewableElement)
         else:
             if not isinstance(specs, (list, set, tuple)):
@@ -884,7 +884,7 @@ class LabelledData(param.Parameterized):
             return Dynamic(self, operation=apply_map, streams=streams,
                            link_inputs=link_inputs, kwargs=kwargs)
         elif self._deep_indexable:
-            if applies and specs == 'default':
+            if applies and specs is None:
                 return function(self, **kwargs)
 
             mapped = self.clone(shared_data=False, link=link_inputs) if clone else self
