@@ -1,7 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-from unittest import SkipTest
-
 import numpy as np
 
 from holoviews.element import Polygons
