@@ -878,7 +878,7 @@ class LabelledData(param.Parameterized):
             def apply_map(obj, **dynkwargs):
                 inner_kwargs['_in_dynamic'] = True
                 return obj.map(function, specs, clone, streams, link_inputs,
-                               **inner_kwargs)
+                               **dict(inner_kwargs, **dynkwargs))
             if not streams and isinstance(self, DynamicMap):
                 streams = self.streams
             return Dynamic(self, operation=apply_map, streams=streams,
