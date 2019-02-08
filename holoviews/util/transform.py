@@ -208,7 +208,7 @@ class dim(object):
     def clip(self, min=None, max=None):
         if min is None and max is None:
             raise ValueError('One of max or min must be given.')
-        return dim(self, np.clip, min=min, max=max)
+        return dim(self, np.clip, a_min=min, a_max=max)
 
     def any(self, **kwargs):     return dim(self, np.any, **kwargs)
     def all(self, **kwargs):     return dim(self, np.all, **kwargs)
