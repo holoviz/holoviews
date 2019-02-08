@@ -817,44 +817,56 @@ class LabelledData(param.Parameterized):
         return accumulator
 
 
-    def map(self, function, specs=None, clone=True, streams=[],
+    def map(self, function, specs='default', clone=True, streams=[],
             link_inputs=True, **kwargs):
-        """Applies a function to objects matching the specs.
+        """Applies a function to any matching objects.
 
         Mapping allows applying a function to any objects matching the
         specs. By default map will apply to any (Nd)Overlay or Element
-        objects but it can be mapped to any object given a list of specs.
-        If supplied, streams can provide parameters to add to the object.
+        objects but it can be mapped to any object given a list of
+        specs. If supplied, keyword arguments and stream values can
+        provide keywords which will be passed to the function when
+        evaluated.
 
         Args:
             function: A callable function
                 The function will be passed the return value of the
                 DynamicMap as the first argument and any supplied
-                stream values as additional keywords
+                stream values or keywords as additional keyword
+                arguments.
             specs (list, optional): List of specs to match
                 List of types, functions or type[.group][.label] specs
-                to select objects to return, by default applies to all
-                objects.
-            clone (boolean, optiona): Whether to clone container objects
+                to select objects to return. By default applies to
+                first Element and (Nd)Overlay object encountered on
+                each branch of the original object, matching the
+                behavior of an operation.
+            clone (boolean, optional): Whether to clone container objects
             streams (list, optional): A list of Stream objects
                 The Stream objects can dynamically supply values which
                 will be passed to the function as keywords.
             link_inputs (bool, optional): Whether to link the inputs
                 Determines whether Streams and Links attached to
                 original object will be inherited.
-            kwargs: Additional static keywords passed to the function
+            kwargs (dict, optional): Additional keyword arguments
+                Keyword arguments which will be supplied to the
+                function
 
         Returns:
             A new object which has applied the function to any objects
             matching the defined specs.
         """
+
+        # Ensure that dynamically mapped function is not applied recursively
         _in_dynamic = kwargs.pop('_in_dynamic', False)
         inner_kwargs = dict(kwargs, _in_dynamic=_in_dynamic)
-        if specs is None:
-           specs = [ViewableElement]
-        elif not isinstance(specs, (list, set, tuple)):
-            specs = [specs]
-        applies = specs is None or any(self.matches(spec) for spec in specs)
+
+        # Determine a match from the specs
+        if specs == 'default':
+            applies = isinstance(self, ViewableElement)
+        else:
+            if not isinstance(specs, (list, set, tuple)):
+                specs = [specs]
+            applies = specs is None or any(self.matches(spec) for spec in specs)
 
         from .spaces import DynamicMap
         depends = util.is_param_method(function, has_deps=True)
@@ -872,14 +884,17 @@ class LabelledData(param.Parameterized):
             return Dynamic(self, operation=apply_map, streams=streams,
                            link_inputs=link_inputs, kwargs=kwargs)
         elif self._deep_indexable:
-            deep_mapped = self.clone(shared_data=False, link=link_inputs) if clone else self
+            if applies and specs == 'default':
+                return function(self, **kwargs)
+
+            mapped = self.clone(shared_data=False, link=link_inputs) if clone else self
             for k, v in self.items():
                 new_val = v.map(function, specs, clone, streams, link_inputs, **inner_kwargs)
                 if new_val is not None:
-                    deep_mapped[k] = new_val
+                    mapped[k] = new_val
             if applies:
-                deep_mapped = function(deep_mapped, **kwargs)
-            return deep_mapped
+                mapped = function(mapped, **kwargs)
+            return mapped
         else:
             return function(self, **kwargs) if applies else self
 
