@@ -985,18 +985,15 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 passed_plots.append(subplots[0])
 
         # Wrap in appropriate layout model
-        kwargs = dict(sizing_mode=self.sizing_mode)
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
             panels = [Panel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels)
         else:
-            plot_grid = layout_padding(plot_grid, self.renderer)
             plot_grid = filter_toolboxes(plot_grid)
-            plot_grid = pad_plots(plot_grid)
             layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
-                                   merge_tools=self.merge_tools, **kwargs)
+                                   merge_tools=self.merge_tools)
 
         title = self._get_title_div(self.keys[-1])
         if title:
