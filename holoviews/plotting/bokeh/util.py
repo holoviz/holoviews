@@ -32,6 +32,7 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
+from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
@@ -137,7 +138,12 @@ def compute_plot_size(plot):
     figures, rows, columns, widgetboxes and Plot.
     """
     if isinstance(plot, GridBox):
-        return 0, 0 # Temporary hack, should be handled properly
+        ndmapping = NdMapping({(x, y): fig for fig, x, y in plot.children}, kdims=['x', 'y'])
+        cols = ndmapping.groupby('x')
+        rows = ndmapping.groupby('y')
+        width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
+        height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
+        return width, height
     elif isinstance(plot, (Div, ToolbarBox)):
         # Cannot compute size for Div or ToolbarBox
         return 0, 0
@@ -150,12 +156,13 @@ def compute_plot_size(plot):
         else:
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
-        width, height = w_agg(widths), h_agg(heights)
+        return w_agg(widths), h_agg(heights)
     elif isinstance(plot, (Figure, Chart)):
-        width, height = plot.plot_width, plot.plot_height
+        return plot.plot_width, plot.plot_height
     elif isinstance(plot, (Plot, DataTable, Spacer)):
-        width, height = plot.width, plot.height
-    return width, height
+        return plot.width, plot.height
+    else:
+        return 0, 0
 
 
 def empty_plot(width, height):

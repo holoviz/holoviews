@@ -704,8 +704,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 r1, r2 = r2, r1
             if self.shared_yaxis:
                 r1, r2 = r1[::-1], r2[::-1]
-            models = layout_padding([r1, r2], self.renderer)
-            plot = gridplot(models, **kwargs)
+            plot = gridplot([r1, r2], **kwargs)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
