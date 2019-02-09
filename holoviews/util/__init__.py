@@ -8,7 +8,7 @@ from pyviz_comms import extension as _pyviz_extension
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_options_to_dict, OrderedDict  # noqa (API import)
+from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
