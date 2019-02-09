@@ -22,11 +22,15 @@ class TestUtils(TestMPLPlot):
         polys = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         paths = polygons_to_path_patches(polys)
 
+
         self.assertEqual(len(paths), 1)
         self.assertEqual(len(paths[0]), 3)
-        self.assertEqual(paths[0][0].get_verts(), np.array([(1, 2), (2, 0), (3, 7), (1, 2)]))
-        self.assertEqual(paths[0][0].get_path().codes, np.array([1, 2, 2, 2, 1, 2, 2, 2, 1, 2, 2, 2], dtype='uint8'))
-        self.assertEqual(paths[0][1].get_verts(), np.array([(6, 7), (7, 5), (3, 2), (6, 7)]))
-        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 2], dtype='uint8'))
-        self.assertEqual(paths[0][2].get_verts(), np.array([(0, 0), (0, 1), (0, 0)]))
-        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 2], dtype='uint8'))
+        self.assertEqual(paths[0][0].get_path().vertices, np.array([
+            (1, 2), (2, 0), (3, 7), (1, 2),
+            (1.5, 2), (2, 3), (1.6, 1.6), (1.5, 2),
+            (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)]))
+        self.assertEqual(paths[0][0].get_path().codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79], dtype='uint8'))
+        self.assertEqual(paths[0][1].get_path().vertices, np.array([(6, 7), (7, 5), (3, 2), (6, 7)]))
+        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))
+        self.assertEqual(paths[0][2].get_path().vertices, np.array([(0, 0), (0, 1), (0, 0)]))
+        self.assertEqual(paths[0][1].get_path().codes, np.array([1, 2, 2, 79], dtype='uint8'))
