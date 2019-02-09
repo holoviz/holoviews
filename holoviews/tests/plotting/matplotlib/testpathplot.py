@@ -78,10 +78,10 @@ class TestPolygonPlot(TestMPLPlot):
         self.assertEqual(len(paths), 1)
         path = paths[0]
         self.assertEqual(path.vertices, np.array([
-            (1, 2), (2, 0), (3, 7), (1.5, 2), (2, 3), (1.6, 1.6),
-            (2.1, 4.5), (2.5, 5), (2.3, 3.5)])
+            (1, 2), (2, 0), (3, 7), (1, 2), (1.5, 2), (2, 3), (1.6, 1.6),
+            (1.5, 2), (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)])
         )
-        self.assertEqual(path.codes, np.array([1, 2, 2, 1, 2, 2, 1, 2, 2]))
+        self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
 
     def test_multi_polygon_hole_plot(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
@@ -98,13 +98,13 @@ class TestPolygonPlot(TestMPLPlot):
         self.assertEqual(len(paths), 2)
         path = paths[0]
         self.assertEqual(path.vertices, np.array([
-            (1, 2), (2, 0), (3, 7), (1.5, 2), (2, 3), (1.6, 1.6),
-            (2.1, 4.5), (2.5, 5), (2.3, 3.5)])
+            (1, 2), (2, 0), (3, 7), (1, 2), (1.5, 2), (2, 3), (1.6, 1.6),
+            (1.5, 2), (2.1, 4.5), (2.5, 5), (2.3, 3.5), (2.1, 4.5)])
         )
-        self.assertEqual(path.codes, np.array([1, 2, 2, 1, 2, 2, 1, 2, 2]))
+        self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
         path2 = paths[1]
-        self.assertEqual(path2.vertices, np.array([(6, 7), (7, 5), (3, 2)]))
-        self.assertEqual(path2.codes, np.array([1, 2, 2]))
+        self.assertEqual(path2.vertices, np.array([(6, 7), (7, 5), (3, 2), (6, 7)]))
+        self.assertEqual(path2.codes, np.array([1, 2, 2, 79]))
 
     def test_polygons_color_op(self):
         polygons = Polygons([

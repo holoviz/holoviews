@@ -318,6 +318,7 @@ def ring_coding(array):
     n = len(array)
     codes = np.ones(n, dtype=Path.code_type) * Path.LINETO
     codes[0] = Path.MOVETO
+    codes[-1] = Path.CLOSEPOLY
     return codes
 
 
@@ -338,13 +339,13 @@ def polygons_to_path_patches(element):
         for j, array in enumerate(arrays):
             if j != (len(arrays)-1):
                 array = array[:-1]
-
             if (array[0] != array[-1]).any():
                 array = np.append(array, array[:1], axis=0)
             interiors = []
             for interior in (holes[i][j] if has_holes else []):
                 if (interior[0] != interior[-1]).any():
-                    interiors.append(np.append(interior, interior[:1], axis=0))
+                    interior = np.append(interior, interior[:1], axis=0)
+                interiors.append(interior)
             vertices = np.concatenate([array]+interiors)
             codes = np.concatenate([ring_coding(array)]+
                                    [ring_coding(h) for h in interiors])
