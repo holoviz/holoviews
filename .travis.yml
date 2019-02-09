@@ -116,6 +116,9 @@ jobs:
         - popd
         - mv doc/Tutorials/.coverage ./.coverage
         - coveralls
+      after_failure:
+        - popd
+        - sleep 10		
 
     - <<: *regression_test
       env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
