@@ -57,6 +57,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         both 'pan' and 'box_zoom' are drag tools, so if both are
         listed only the last one will be active.""")
 
+    aspect = param.Parameter(default='square', doc="""
+        The aspect ratio mode of the plot. By default, a plot may
+        select its own appropriate aspect ratio but sometimes it may
+        be necessary to force a square aspect ratio (e.g. to display
+        the plot as an element of a grid). The modes 'auto' and
+        'equal' correspond to the axis modes of the same name in
+        matplotlib, a numeric value may also be passed.""")
+
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
@@ -402,6 +410,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.renderer.webgl:
             properties['output_backend'] = 'webgl'
 
+        properties.update(**self._plot_properties(key, element))
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
@@ -411,7 +421,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                          **properties)
 
 
-    def _plot_properties(self, key, plot, element):
+    def _plot_properties(self, key, element):
         """
         Returns a dictionary of plot properties.
         """
@@ -419,6 +429,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_props = dict(plot_height=int(self.height*size_multiplier),
                           plot_width=int(self.width*size_multiplier),
                           sizing_mode=self.sizing_mode)
+
+        if self.aspect == 'square':
+            plot_props['aspect_ratio'] = 1
+        elif util.isnumeric(self.aspect):
+            plot_props['aspect_ratio'] = self.aspect
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
@@ -591,11 +606,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Updates plot parameters on every frame
         """
+        plot.update(**self._plot_properties(key, element))
+        self._update_labels(key, plot, element)
+        self._update_title(key, plot, element)
+        self._update_grid(plot)
+
+
+    def _update_labels(self, key, plot, element):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
         dimensions = self._get_axis_dims(el)
-        plot.update(**self._plot_properties(key, plot, element))
-
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
@@ -606,30 +626,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
+
+    def _update_title(self, key, plot, element):
         if plot.title:
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
 
+
+    def _update_grid(self, plot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
-        else:
-            replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
-            style_items = list(self.gridstyle.items())
-            both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
-            xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
-            ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
-            xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
-                     for k, v in dict(both, **xgrid).items()}
-            yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
-                     for k, v in dict(both, **ygrid).items()}
-            if plot.xaxis and 'ticker' not in xopts:
-                xopts['ticker'] = plot.xaxis[0].ticker
-            if plot.yaxis and 'ticker' not in yopts:
-                yopts['ticker'] = plot.yaxis[0].ticker
-            plot.xgrid[0].update(**xopts)
-            plot.ygrid[0].update(**yopts)
+            return
+        replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
+        style_items = list(self.gridstyle.items())
+        both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+        xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
+        ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
+        xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                 for k, v in dict(both, **xgrid).items()}
+        yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                 for k, v in dict(both, **ygrid).items()}
+        if plot.xaxis and 'ticker' not in xopts:
+            xopts['ticker'] = plot.xaxis[0].ticker
+        if plot.yaxis and 'ticker' not in yopts:
+            yopts['ticker'] = plot.yaxis[0].ticker
+        plot.xgrid[0].update(**xopts)
+        plot.ygrid[0].update(**yopts)
 
 
     def _update_ranges(self, element, ranges):
@@ -658,6 +682,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
+
+        if self.aspect == 'equal':
+            self._update_aspect((l, r), (b, t))
+
+
+    def _update_aspect(self, x_range, y_range):
+        l, r = x_range
+        b, t = y_range
+        self.handles['plot'].aspect_ratio = (r-l) / (t-b)
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
