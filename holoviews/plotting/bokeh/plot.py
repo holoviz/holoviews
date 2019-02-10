@@ -48,8 +48,12 @@ class BokehPlot(DimensionedPlot):
 
     sizing_mode = param.ObjectSelector(default='fixed',
         objects=['fixed', 'stretch_both', 'scale_width', 'scale_height',
-                 'scale_both'], doc="""
+                 'scale_both', 'auto'], doc="""
         How the item being displayed should size itself.
+
+        "auto" mode will use 'fixed' sizing when no aspect is defined
+        otherwise it will use 'scale_width' or 'scale_height' depending
+        on whether the aspect exceeds.
 
         "stretch_both" plots will resize to occupy all available
         space, even if this changes the aspect ratio of the element.
@@ -677,7 +681,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def _make_axes(self, plot):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
-        kwargs = dict(sizing_mode=self.sizing_mode)
         keys = self.layout.keys(full_grid=True)
         if self.xaxis:
             flip = self.shared_xaxis
@@ -704,15 +707,15 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 r1, r2 = r2, r1
             if self.shared_yaxis:
                 r1, r2 = r1[::-1], r2[::-1]
-            plot = gridplot([r1, r2], **kwargs)
+            plot = gridplot([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
-            plot = Row(*models, **kwargs)
+            plot = Row(*models)
         elif x_axis:
             models = [plot, x_axis]
             if self.shared_xaxis: models = models[::-1]
-            plot = Column(*models, **kwargs)
+            plot = Column(*models)
         return plot
 
 
@@ -998,7 +1001,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         title = self._get_title_div(self.keys[-1])
         if title:
             self.handles['title'] = title
-            layout_plot = Column(title, layout_plot, **kwargs)
+            layout_plot = Column(title, layout_plot)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
