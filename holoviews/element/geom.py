@@ -36,6 +36,22 @@ class Points(Geometry):
 
     _auto_indexable_1d = True
 
+class Sticks(Geometry):
+    """
+    A VectorField represents a set of vectors in 2D space with an
+    associated angle, as well as an optional magnitude and any number
+    of other value dimensions. The angles are assumed to be defined in
+    radians and by default the magnitude is assumed to be normalized
+    to be between 0 and 1.
+
+    In contrast to VectorField, x and y dimensions need not be commensurate.
+    """
+
+    group = param.String(default='Stickplot', constant=True)
+
+    vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
+                                Dimension('Magnitude')], bounds=(1, None))
+
 
 class VectorField(Geometry):
     """

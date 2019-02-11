@@ -5,7 +5,7 @@ import param
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from .geom import Points, VectorField # noqa: backward compatible import
+from .geom import Points, VectorField, Sticks # noqa: backward compatible import
 from .stats import BoxWhisker         # noqa: backward compatible import
 
 
@@ -69,7 +69,7 @@ class Scatter(Chart):
     location along the x-axis while the first value dimension
     represents the location of the point along the y-axis.
     """
-    
+
     group = param.String(default='Scatter', constant=True)
 
 
