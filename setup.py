@@ -24,7 +24,7 @@ extras_require['recommended'] = extras_require['notebook'] + [
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'plotly>=3.4',
-    'datashader', 'selenium', 'phantomjs', 'ffmpeg']
+    'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
@@ -41,6 +41,8 @@ extras_require['basic_tests'] = extras_require['tests']+[
 extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
+
+extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
