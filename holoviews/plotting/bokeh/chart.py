@@ -245,7 +245,7 @@ class VectorFieldPlot(ColorbarPlot):
         rads = element.dimension_values(2)
         if self.invert_axes:
             xidx, yidx = (1, 0)
-            rads = rads+1.5*np.pi
+            rads = np.pi/2 - rads
         else:
             xidx, yidx = (0, 1)
         lens = self._get_lengths(element, ranges)/input_scale
