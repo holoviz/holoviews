@@ -8,7 +8,7 @@ from nbsite.shared_conf import *
 # Declare information specific to this project.
 project = u'HoloViews'
 authors = u'PyViz developers'
-copyright = u'2018 ' + authors
+copyright = u'2019 ' + authors
 pyviz_module = 'holoviews'
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
@@ -26,6 +26,33 @@ ASSETS_URL = 'https://assets.holoviews.org'
 rst_epilog = """
 .. _tutorial notebooks: {url}/notebooks-{version}.zip
 """.format(url=ASSETS_URL, version=version)
+
+extensions += ['nbsite.gallery']
+
+nbsite_gallery_conf = {
+    'backends': ['bokeh', 'matplotlib', 'plotly'],
+    'galleries': {
+        'gallery': {
+            'title': 'Gallery',
+            'sections': [
+                {'path': 'apps', 'title': 'Applications', 'skip': True},
+                'demos'
+            ]
+        }
+        'reference': {
+            'path': 'reference',
+            'sections': [
+                'elements',
+                'containers',
+                'streams',
+                'apps'
+            ]
+            'title': 'Reference Gallery',
+        }
+    },
+    'github_org': 'pyviz',
+    'github_project': 'holoviews'
+}
 
 # Override PYVIZ theme
 html_theme_path = ['.']
@@ -82,9 +109,6 @@ html_context = {
 
 # (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
 # Path should be relative to the ``_static`` files directory.
-html_logo = "my_logo.png"
-
-
 html_logo = '_static/holoviews_logo.png'
 html_favicon = '_static/favicon.ico'
 
@@ -121,9 +145,6 @@ latex_documents = [
 man_pages = [
     ('index', pyviz_module, project+u' Documentation', [authors], 1)
 ]
-# If true, show URL addresses after external links.
-#man_show_urls = False
-
 
 # Grouping the document tree into Texinfo files. List of tuples
 # (source start file, target name, title, author,
@@ -138,10 +159,3 @@ texinfo_documents = [
 intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ipython.org/ipython-doc/2/': None,
                        'http://param.pyviz.org/': None}
-
-from builder.paramdoc import param_formatter
-
-
-def setup(app):
-    app.connect('autodoc-process-docstring', param_formatter)
-    nbbuild.setup(app)
