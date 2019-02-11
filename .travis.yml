@@ -103,7 +103,7 @@ jobs:
         - if [ "$TRAVIS_BRANCH" == 'master' ]; then
             cd doc/test_data;
             zip -r test_data.zip *;
-            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYENV_VERSION}.zip";
+            aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYENV_VERSION:0:1}.zip";
             cd -;
           fi
         - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
