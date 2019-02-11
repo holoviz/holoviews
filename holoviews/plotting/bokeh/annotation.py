@@ -235,6 +235,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         return ({'label': label_data},
                 {'arrow': arrow_opts, 'label': label_mapping}, style)
 
+
     def _init_glyph(self, plot, mapping, properties, key):
         """
         Returns a Bokeh glyph object.
@@ -246,14 +247,15 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
             arrow_start = mapping.pop('arrow_start')
             start = arrow_start(**properties) if arrow_start else None
             end = arrow_end(**properties) if arrow_end else None
-            glyph = Arrow(start=start, end=end, **dict(**mapping))
+            renderer = Arrow(start=start, end=end, **dict(**mapping))
+            glyph = renderer
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
-            glyph, _ = super(ArrowPlot, self)._init_glyph(
+            renderer, glyph = super(ArrowPlot, self)._init_glyph(
                 plot, mapping, properties, 'text_1')
-        plot.renderers.append(glyph)
-        return None, glyph
+        plot.renderers.append(renderer)
+        return renderer, glyph
 
     def get_extents(self, element, ranges=None, range_type='combined'):
         return None, None, None, None

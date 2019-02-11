@@ -1234,7 +1234,7 @@ class CompositeElementPlot(ElementPlot):
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping.get(key, {}), glyph,
                                    source, source.data)
-        if self.colorbar:
+        if getattr(self, 'colorbar', False):
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
                     continue
