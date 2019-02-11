@@ -38,7 +38,7 @@ nbsite_gallery_conf = {
                 {'path': 'apps', 'title': 'Applications', 'skip': True},
                 'demos'
             ]
-        }
+        },
         'reference': {
             'path': 'reference',
             'sections': [
@@ -46,7 +46,7 @@ nbsite_gallery_conf = {
                 'containers',
                 'streams',
                 'apps'
-            ]
+            ],
             'title': 'Reference Gallery',
         }
     },
@@ -106,6 +106,8 @@ html_context = {
     'css_server': os.environ.get('HOLOVIEWS_DOCS_CSS_SERVER', 'assets.holoviews.org'),
     'js_includes': ['custom.js', 'require.js']
 }
+
+nbbuild_cell_timeout = 360
 
 # (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
 # Path should be relative to the ``_static`` files directory.
