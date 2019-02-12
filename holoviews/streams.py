@@ -4,7 +4,6 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import uuid
 import weakref
 from numbers import Number
 from collections import defaultdict
@@ -641,7 +640,7 @@ class Params(Stream):
             self._events = []
 
     def _on_trigger(self):
-        if any(e.type == 'triggered' for e in events):
+        if any(e.type == 'triggered' for e in self._events):
             self._memoize_counter += 1
 
     @property
