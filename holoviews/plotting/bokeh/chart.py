@@ -4,8 +4,14 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
+from bokeh.models import (Arrow, CategoricalColorMapper, CustomJS, Whisker,
+                          Range1d)
+from bokeh.models.arrow_heads import TeeHead, NormalHead, OpenHead
+arrow_head_styles = {'->': OpenHead, '-[': TeeHead, '-|>': NormalHead,
+                     '-': None}
+
 from bokeh.models.tools import BoxSelectTool
+
 from bokeh.transform import jitter
 
 from ...core.data import Dataset
@@ -171,8 +177,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
 class VectorFieldPlot(ColorbarPlot):
 
-    arrow_heads = param.Boolean(default=True, doc="""
-        Whether or not to draw arrow heads.""")
+    arrow_head = param.String(default='-|>', doc="""
+        Arrow head style, choose one from: '->' (NormalHead), '-[' (TeeHead),
+        '-|>' (NormalHead), '-' (None).""")
 
     magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
@@ -209,11 +216,11 @@ class VectorFieldPlot(ColorbarPlot):
         transforms using the magnitude option, e.g.
         `dim('Magnitude').norm()`.""")
 
-    style_opts = line_properties + ['scale', 'cmap']
+    style_opts = line_properties + fill_properties + ['scale', 'cmap']
 
     _nonvectorized_styles = ['scale', 'cmap']
 
-    _plot_methods = dict(single='segment')
+    # _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
         size_dim = element.get_dimension(self.size_index)
@@ -227,7 +234,6 @@ class VectorFieldPlot(ColorbarPlot):
         elif isinstance(mag_dim, basestring):
             mag_dim = element.get_dimension(mag_dim)
 
-        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if mag_dim:
             if isinstance(mag_dim, dim):
                 magnitudes = mag_dim.apply(element, flat=True)
@@ -288,30 +294,43 @@ class VectorFieldPlot(ColorbarPlot):
         y0s, y1s = (ys + nyoff, ys - pyoff)
 
         color = None
-        if self.arrow_heads:
-            arrow_len = (lens/4.)
-            xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
-            ya1s = y0s - np.sin(rads+np.pi/4)*arrow_len
-            xa2s = x0s - np.cos(rads-np.pi/4)*arrow_len
-            ya2s = y0s - np.sin(rads-np.pi/4)*arrow_len
-            x0s = np.tile(x0s, 3)
-            x1s = np.concatenate([x1s, xa1s, xa2s])
-            y0s = np.tile(y0s, 3)
-            y1s = np.concatenate([y1s, ya1s, ya2s])
-            if cdim and cdim.name in cdata:
-                color = np.tile(cdata[cdim.name], 3)
-        elif cdim:
+        if cdim:
             color = cdata.get(cdim.name)
 
-        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
-        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+        data = {'x_start': x0s, 'x_end': x1s, 'y_start': y0s, 'y_end': y1s}
+        mapping = dict(x_start='x_start', x_end='x_end',
+                       y_start='y_start', y_end='y_end')
         if cdim and color is not None:
             data[cdim.name] = color
             mapping.update(cmapping)
 
         return (data, mapping, style)
 
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties.pop('legend', None)
+        source = properties.pop('source', None)
 
+        if hasattr(properties, 'color'):
+            properties['line_color'] = properties['color']
+            properties['fill_color'] = properties['color']
+        properties.pop('color', None)
+        properties.pop('muted_alpha', None)
+        # fill_properties = {
+        #     k: v
+        #     for k, v in properties.items() if k in fill_properties
+        # }
+
+        arrow_head_style = arrow_head_styles.get(self.arrow_head, NormalHead)
+        # in bokeh, an Arrow apparently starts where it points...
+        start = arrow_head_style(**properties
+            ) if arrow_head_style else None
+        glyph = Arrow(source=source, start=start, end=None, **properties)
+
+        plot.renderers.append(glyph)
+        return None, glyph
 
 class CurvePlot(ElementPlot):
 
