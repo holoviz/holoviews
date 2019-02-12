@@ -257,7 +257,7 @@ class TestParamsStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'action', stream._memoize_key})
+                             {'action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -272,7 +272,7 @@ class TestParamsStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'action', 'x', stream._memoize_key})
+                             {'action', 'x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -408,7 +408,7 @@ class TestParamMethodStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'action', stream._memoize_key})
+                             {'action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
@@ -427,7 +427,7 @@ class TestParamMethodStream(ComparisonTestCase):
         def subscriber(**kwargs):
             values.append(kwargs)
             self.assertEqual(set(stream.hashkey),
-                             {'action', 'x', stream._memoize_key})
+                             {'action', 'x', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         stream.add_subscriber(lambda **kwargs: dmap[()])

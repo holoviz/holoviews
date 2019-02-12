@@ -427,7 +427,6 @@ class Pipe(Stream):
 
     def __init__(self, data=None, memoize=False, **params):
         super(Pipe, self).__init__(data=data, **params)
-        self._memoize_key = '_memoize_counter_' + uuid.uuid4().hex
         self._memoize_counter = 0
 
     def send(self, data):
@@ -442,7 +441,7 @@ class Pipe(Stream):
 
     @property
     def hashkey(self):
-        return {self._memoize_key: self._memoize_counter}
+        return {'_memoize_key': self._memoize_counter}
 
 
 class Buffer(Pipe):
@@ -618,7 +617,6 @@ class Params(Stream):
         if parameters is None:
             parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
-        self._memoize_key = '_memoize_counter_' + uuid.uuid4().hex
         self._memoize_counter = 0
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
@@ -644,7 +642,7 @@ class Params(Stream):
                    if k in self.parameters}
         hashkey = {self._rename.get(k, k): v for (k, v) in hashkey.items()
                    if self._rename.get(k, True) is not None}
-        hashkey[self._memoize_key] = self._memoize_counter
+        hashkey['_memoize_key'] = self._memoize_counter
         return hashkey
 
     def reset(self):
