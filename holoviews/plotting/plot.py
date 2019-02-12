@@ -750,11 +750,11 @@ class GenericElementPlot(DimensionedPlot):
        User-specified x-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
-    ylim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified x-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
-    zlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified z-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
