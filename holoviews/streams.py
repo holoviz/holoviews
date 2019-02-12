@@ -4,7 +4,6 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
-import uuid
 import weakref
 from numbers import Number
 from collections import defaultdict
@@ -157,9 +156,13 @@ class Stream(param.Parameterized):
                 subscriber(**dict(union))
 
         for stream in streams:
+            stream._on_trigger()
             with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
+
+    def _on_trigger(self):
+        """Called when a stream has been triggered"""
 
     @classmethod
     def _process_streams(cls, streams):
@@ -423,7 +426,7 @@ class Pipe(Stream):
 
     def __init__(self, data=None, memoize=False, **params):
         super(Pipe, self).__init__(data=data, **params)
-        self._memoize = memoize
+        self._memoize_counter = 0
 
     def send(self, data):
         """
@@ -432,11 +435,12 @@ class Pipe(Stream):
         """
         self.event(data=data)
 
+    def _on_trigger(self):
+        self._memoize_counter += 1
+
     @property
     def hashkey(self):
-        if self._memoize:
-            return self.contents
-        return {'hash': uuid.uuid4().hex}
+        return {'_memoize_key': self._memoize_counter}
 
 
 class Buffer(Pipe):
@@ -612,7 +616,8 @@ class Params(Stream):
         if parameters is None:
             parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
-        self._memoize = True
+        self._memoize_counter = 0
+        self._events = []
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
 
@@ -626,17 +631,26 @@ class Params(Stream):
         return mapping
 
     def _watcher(self, *events):
-        self._memoize = not any(e.type == 'triggered' for e in events)
-        self.trigger([self])
-        self._memoize = True
+        try:
+            self._events = list(events)
+            self.trigger([self])
+        except:
+            raise
+        finally:
+            self._events = []
+
+    def _on_trigger(self):
+        if any(e.type == 'triggered' for e in self._events):
+            self._memoize_counter += 1
 
     @property
     def hashkey(self):
-        if self._memoize:
-            return {p: v for p, v in self.parameterized.get_param_values()
-                    if p in self.parameters}
-        else:
-            return {'hash': uuid.uuid4().hex}
+        hashkey = {k: v for k, v in self.parameterized.get_param_values()
+                   if k in self.parameters}
+        hashkey = {self._rename.get(k, k): v for (k, v) in hashkey.items()
+                   if self._rename.get(k, True) is not None}
+        hashkey['_memoize_key'] = self._memoize_counter
+        return hashkey
 
     def reset(self):
         pass

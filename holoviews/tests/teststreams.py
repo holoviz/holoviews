@@ -256,11 +256,28 @@ class TestParamsStream(ComparisonTestCase):
         values = []
         def subscriber(**kwargs):
             values.append(kwargs)
-            self.assertEqual(list(stream.hashkey), ['hash'])
+            self.assertEqual(set(stream.hashkey),
+                             {'action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
         self.assertEqual(values, [{'action': inner.action}])
+
+    def test_param_stream_memoization(self):
+        inner = self.inner_action()
+        stream = Params(inner, ['action', 'x'])
+        self.assertEqual(set(stream.parameters), {'action', 'x'})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(set(stream.hashkey),
+                             {'action', 'x', '_memoize_key'})
+
+        stream.add_subscriber(subscriber)
+        inner.action(inner)
+        inner.x = 0
+        self.assertEqual(values, [{'action': inner.action, 'x': 0}])
 
         
 
@@ -285,6 +302,11 @@ class TestParamMethodStream(ComparisonTestCase):
             @param.depends('action')
             def action_method(self):
                 pass
+
+            @param.depends('action', 'x')
+            def action_number_method(self):
+                self.count += 1
+                return Points([])
 
             @param.depends('y')
             def op_method(self, obj):
@@ -385,12 +407,37 @@ class TestParamMethodStream(ComparisonTestCase):
         values = []
         def subscriber(**kwargs):
             values.append(kwargs)
-            self.assertEqual(list(stream.hashkey), ['hash'])
+            self.assertEqual(set(stream.hashkey),
+                             {'action', '_memoize_key'})
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
         self.assertEqual(values, [{}])
-    
+
+    def test_dynamicmap_param_action_number_method_memoizes(self):
+        inner = self.inner()
+        dmap = DynamicMap(inner.action_number_method)
+        self.assertEqual(len(dmap.streams), 1)
+        stream = dmap.streams[0]
+        self.assertEqual(set(stream.parameters), {'action', 'x'})
+        self.assertIsInstance(stream, ParamMethod)
+        self.assertEqual(stream.contents, {})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+            self.assertEqual(set(stream.hashkey),
+                             {'action', 'x', '_memoize_key'})
+
+        stream.add_subscriber(subscriber)
+        stream.add_subscriber(lambda **kwargs: dmap[()])
+        inner.action(inner)
+        self.assertEqual(values, [{}])
+        self.assertEqual(inner.count, 1)
+        inner.x = 0
+        self.assertEqual(values, [{}])
+        self.assertEqual(inner.count, 1)
+
     def test_dynamicmap_param_method_dynamic_operation(self):
         inner = self.inner()
         dmap = DynamicMap(inner.method)
