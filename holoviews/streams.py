@@ -633,8 +633,10 @@ class Params(Stream):
         return mapping
 
     def _watcher(self, *events):
-        self._memoize_counter += 1
         self.trigger([self])
+
+    def _trigger(self):
+        self._memoize_counter += 1
 
     @property
     def hashkey(self):
