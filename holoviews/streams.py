@@ -618,6 +618,7 @@ class Params(Stream):
             parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
+        self._events = []
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
 
@@ -631,10 +632,17 @@ class Params(Stream):
         return mapping
 
     def _watcher(self, *events):
-        self.trigger([self])
+        try:
+            self._events = list(events)
+            self.trigger([self])
+        except:
+            raise
+        finally:
+            self._events = []
 
     def _on_trigger(self):
-        self._memoize_counter += 1
+        if any(e.type == 'triggered' for e in events):
+            self._memoize_counter += 1
 
     @property
     def hashkey(self):
