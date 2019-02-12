@@ -157,9 +157,13 @@ class Stream(param.Parameterized):
                 subscriber(**dict(union))
 
         for stream in streams:
+            stream._trigger()
             with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
+
+    def _trigger(self):
+        """Called when a stream has been triggered"""
 
     @classmethod
     def _process_streams(cls, streams):
@@ -423,7 +427,7 @@ class Pipe(Stream):
 
     def __init__(self, data=None, memoize=False, **params):
         super(Pipe, self).__init__(data=data, **params)
-        self._memoize = memoize
+        self._memoize_counter = 0
 
     def send(self, data):
         """
@@ -432,11 +436,14 @@ class Pipe(Stream):
         """
         self.event(data=data)
 
+    def _trigger(self):
+        self._memoize_counter += 1
+
     @property
     def hashkey(self):
-        if self._memoize:
-            return self.contents
-        return {'hash': uuid.uuid4().hex}
+        haskey = self.contents
+        haskey['_memoize_counter'] = self._memoize_counter
+        return hashkey
 
 
 class Buffer(Pipe):
