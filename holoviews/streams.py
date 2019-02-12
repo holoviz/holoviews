@@ -613,6 +613,7 @@ class Params(Stream):
             parameters = [p for p in parameterized.params() if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize = True
+        self._memoize_counter = 0
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
 
@@ -626,17 +627,15 @@ class Params(Stream):
         return mapping
 
     def _watcher(self, *events):
-        self._memoize = not any(e.type == 'triggered' for e in events)
+        self._memoize_counter += 1
         self.trigger([self])
-        self._memoize = True
 
     @property
     def hashkey(self):
-        if self._memoize:
-            return {p: v for p, v in self.parameterized.get_param_values()
-                    if p in self.parameters}
-        else:
-            return {'hash': uuid.uuid4().hex}
+        hashkey = {p: v for p, v in self.parameterized.get_param_values()
+                   if p in self.parameters}
+        hashkey['_memoize_counter'] = self._memoize_counter
+        return hashkey
 
     def reset(self):
         pass
