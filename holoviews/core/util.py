@@ -240,7 +240,8 @@ def deprecated_opts_signature(args, kwargs):
     Returns whether opts.apply_groups should be used (as a bool) and the
     corresponding options.
     """
-    groups = {'plot','style', 'norm'}
+    from .options import Options
+    groups = Options._option_groups
     opts = {kw for kw in kwargs if kw not in ('backend', 'clone')}
     apply_groups = False
     options = None

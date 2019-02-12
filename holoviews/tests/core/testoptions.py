@@ -460,7 +460,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         obj_lookup = Store.lookup_options('matplotlib', obj, 'style')
         self.assertEqual(obj_lookup.kwargs, expected_obj)
 
-        custom_tree = {0: OptionTree(groups=['plot', 'style', 'norm'],
+        custom_tree = {0: OptionTree(groups=Options._option_groups,
                                      style={'Image' : dict(clims=(0, 0.5))})}
         Store._custom_options['matplotlib'] = custom_tree
         obj.id = 0 # Manually set the id to point to the tree above
@@ -481,7 +481,7 @@ class TestStoreInheritance(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
         Store.options(val=OptionTree(groups=['plot', 'style']))
@@ -568,7 +568,7 @@ class TestOptionsMethod(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         super(TestOptionsMethod, self).setUp()
@@ -621,7 +621,7 @@ class TestOptsMethod(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         super(TestOptsMethod, self).setUp()
@@ -815,9 +815,9 @@ class TestCrossBackendOptions(ComparisonTestCase):
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
-                                    groups=['style', 'plot', 'norm'])
+                                    groups=Options._option_groups)
         self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
-                                    groups=['style', 'plot', 'norm'])
+                                    groups=Options._option_groups)
         self.clear_options()
         super(TestCrossBackendOptions, self).setUp()
 

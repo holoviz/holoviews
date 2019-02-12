@@ -1,6 +1,6 @@
 from itertools import combinations
 
-from holoviews.core.options import Store
+from holoviews.core.options import Store, Options
 
 
 def option_intersections(backend):
@@ -10,7 +10,7 @@ def option_intersections(backend):
         if len(k) > 1: continue
         valid_options = {k: set(o.allowed_keywords)
                          for k, o in opts.groups.items()}
-        for g1, g2 in combinations(['plot', 'style', 'norm'], 2):
+        for g1, g2 in combinations(Options._option_groups, 2):
             intersection = valid_options[g1] & valid_options[g2]
             if intersection:
                 intersections.append((k, intersection))
