@@ -27,11 +27,12 @@ except:
 class TestOptions(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
         super(TestOptions, self).setUp()
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestOptions, self).tearDown()
 
     def test_options_init(self):
@@ -123,11 +124,12 @@ class TestOptions(ComparisonTestCase):
 class TestCycle(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
         super(TestCycle, self).setUp()
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestCycle, self).tearDown()
 
     def test_cycle_init(self):
@@ -197,11 +199,11 @@ class TestOptionTree(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        Options._option_groups = ['group1', 'group2']
+        self.original_option_groups = Options._option_groups
         super(TestOptionTree, self).setUp()
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestOptionTree, self).tearDown()
 
     def test_optiontree_init_1(self):
@@ -283,7 +285,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
         super(TestStoreInheritanceDynamic, self).setUp()
@@ -732,6 +734,7 @@ class TestOptsMethod(ComparisonTestCase):
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group']
         options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
@@ -754,7 +757,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         Store.options(val=self.original_options)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 

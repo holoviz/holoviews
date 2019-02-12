@@ -1405,7 +1405,7 @@ class Store(object):
         group = type_name if obj.group == type(obj).__name__ else obj.group
         spec = '.'.join([s for s in (type_name, group, obj.label) if s])
         options = []
-        for group in ['plot', 'style', 'norm']:
+        for group in Options._option_groups:
             opts = cls.lookup_options(backend, obj, group)
             if opts and opts.kwargs: options.append(Options(group, **opts.kwargs))
         if options:
@@ -1449,7 +1449,7 @@ class Store(object):
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)
 
-        groups = ['style', 'plot', 'norm']
+        groups = Options._option_groups
         if backend not in cls._options:
             cls._options[backend] = OptionTree([], groups=groups)
         if backend not in cls._custom_options:
