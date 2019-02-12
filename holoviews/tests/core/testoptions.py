@@ -199,8 +199,9 @@ class TestOptionTree(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        self.original_option_groups = Options._option_groups
         super(TestOptionTree, self).setUp()
+        self.original_option_groups = Options._option_groups[:]
+        Options._option_groups = ['group1', 'group2']
 
     def tearDown(self):
         Options._option_groups = self.original_option_groups
