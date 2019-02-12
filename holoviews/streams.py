@@ -157,12 +157,12 @@ class Stream(param.Parameterized):
                 subscriber(**dict(union))
 
         for stream in streams:
-            stream._trigger()
+            stream._on_trigger()
             with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
 
-    def _trigger(self):
+    def _on_trigger(self):
         """Called when a stream has been triggered"""
 
     @classmethod
@@ -437,7 +437,7 @@ class Pipe(Stream):
         """
         self.event(data=data)
 
-    def _trigger(self):
+    def _on_trigger(self):
         self._memoize_counter += 1
 
     @property
@@ -635,7 +635,7 @@ class Params(Stream):
     def _watcher(self, *events):
         self.trigger([self])
 
-    def _trigger(self):
+    def _on_trigger(self):
         self._memoize_counter += 1
 
     @property
