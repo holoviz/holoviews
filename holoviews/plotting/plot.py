@@ -746,15 +746,15 @@ class GenericElementPlot(DimensionedPlot):
         An explicit override of the y-axis label, if set takes precedence
         over the dimension label.""")
 
-    xlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    xlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified x-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
-    ylim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    ylim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified x-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
-    zlim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    zlim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified z-axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
