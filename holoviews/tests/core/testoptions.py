@@ -27,11 +27,12 @@ except:
 class TestOptions(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
         super(TestOptions, self).setUp()
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestOptions, self).tearDown()
 
     def test_options_init(self):
@@ -123,11 +124,12 @@ class TestOptions(ComparisonTestCase):
 class TestCycle(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
         super(TestCycle, self).setUp()
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestCycle, self).tearDown()
 
     def test_cycle_init(self):
@@ -197,11 +199,12 @@ class TestOptionTree(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        Options._option_groups = ['group1', 'group2']
         super(TestOptionTree, self).setUp()
+        self.original_option_groups = Options._option_groups[:]
+        Options._option_groups = ['group1', 'group2']
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         super(TestOptionTree, self).tearDown()
 
     def test_optiontree_init_1(self):
@@ -283,7 +286,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
         super(TestStoreInheritanceDynamic, self).setUp()
@@ -458,7 +461,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         obj_lookup = Store.lookup_options('matplotlib', obj, 'style')
         self.assertEqual(obj_lookup.kwargs, expected_obj)
 
-        custom_tree = {0: OptionTree(groups=['plot', 'style', 'norm'],
+        custom_tree = {0: OptionTree(groups=Options._option_groups,
                                      style={'Image' : dict(clims=(0, 0.5))})}
         Store._custom_options['matplotlib'] = custom_tree
         obj.id = 0 # Manually set the id to point to the tree above
@@ -479,7 +482,7 @@ class TestStoreInheritance(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
         Store.options(val=OptionTree(groups=['plot', 'style']))
@@ -566,7 +569,7 @@ class TestOptionsMethod(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         super(TestOptionsMethod, self).setUp()
@@ -619,7 +622,7 @@ class TestOptsMethod(ComparisonTestCase):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
         super(TestOptsMethod, self).setUp()
@@ -732,6 +735,7 @@ class TestOptsMethod(ComparisonTestCase):
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):
+        self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group']
         options = OptionTree(groups=['group'])
         self.opts1 = Options('group', kw1='value1')
@@ -754,7 +758,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
 
     def tearDown(self):
-        Options._option_groups = ['style', 'plot', 'norm']
+        Options._option_groups = self.original_option_groups
         Store.options(val=self.original_options)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
@@ -812,9 +816,9 @@ class TestCrossBackendOptions(ComparisonTestCase):
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
-                                    groups=['style', 'plot', 'norm'])
+                                    groups=Options._option_groups)
         self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
-                                    groups=['style', 'plot', 'norm'])
+                                    groups=Options._option_groups)
         self.clear_options()
         super(TestCrossBackendOptions, self).setUp()
 

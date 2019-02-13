@@ -85,7 +85,7 @@ class TestOptsUtil(ComparisonTestCase):
         self.backend = Store.current_backend
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=['style', 'plot', 'norm'])
+                                     groups=Options._option_groups)
         super(TestOptsUtil, self).setUp()
 
     def tearDown(self):

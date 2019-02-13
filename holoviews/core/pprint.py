@@ -369,7 +369,7 @@ class PrettyPrinter(param.Parameterized):
             return None
         from .options import Store, Options
         options = {}
-        for g in ['plot', 'style', 'norm']:
+        for g in Options._option_groups:
             gopts = Store.lookup_options(Store.current_backend, node, g,
                                          defaults=cls_or_slf.show_defaults)
             if gopts:
