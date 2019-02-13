@@ -245,6 +245,32 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
+    def _expand_by_backend(cls, options, backend):
+        """
+        Given a list of flat Option objects which may or may not have
+        'backend' in their kwargs, return a list of grouped backend
+        """
+        groups = defaultdict(list)
+        used_fallback = False
+        for obj in options:
+            if 'backend' in obj.kwargs:
+                opts_backend = obj.kwargs['backend']
+            elif backend is None:
+                opts_backend = Store.current_backend
+                obj.kwargs['backend']= opts_backend
+            else:
+                opts_backend = backend
+                obj.kwargs['backend'] = opts_backend
+                used_fallback = True
+            groups[opts_backend].append(obj)
+
+        if backend and not used_fallback:
+            cls.param.warning("All supplied Options objects already define a backend, "
+                              "backend override backend=%r will be ignored." % backend)
+
+        return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
+
+    @classmethod
     def _expand_options(cls, options, backend=None):
         """
         Validates and expands a dictionaries of options indexed by
@@ -373,7 +399,7 @@ class opts(param.ParameterizedFunction):
         def builder(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
             prefix = 'In opts.{element}(...), '.format(element=element)
-            backend = kws.pop('backend', None)
+            backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
                 allowed_kws = cls._element_keywords(backend,

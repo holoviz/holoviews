@@ -242,7 +242,7 @@ def deprecated_opts_signature(args, kwargs):
     """
     from .options import Options
     groups = set(Options._option_groups)
-    opts = {kw for kw in kwargs if kw not in ('backend', 'clone')}
+    opts = {kw for kw in kwargs if kw !='clone'}
     apply_groups = False
     options = None
     new_kwargs = {}

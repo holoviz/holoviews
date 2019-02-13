@@ -1388,7 +1388,7 @@ class Dimensioned(LabelledData):
         Returns:
             Returns the cloned object with the options applied
         """
-        backend = kwargs.pop('backend', None)
+        backend = kwargs.get('backend', None)
         clone = kwargs.pop('clone', True)
 
         if len(args) == 0 and len(kwargs)==0:
@@ -1413,11 +1413,16 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         if options is None:
-            expanded = {}
+            expanded_backends = [(backend, {})]
+        elif isinstance(options, list): # assuming a flat list of Options objects
+            expanded_backends = opts._expand_by_backend(options, backend)
         else:
-            expanded = opts._expand_options(options, backend)
-        return self.opts(expanded, backend=backend, clone=clone)
+            expanded_backends = [(backend, opts._expand_options(options, backend))]
 
+        obj = self
+        for backend, expanded in expanded_backends:
+            obj = obj.opts(expanded, backend=backend, clone=clone)
+        return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         """

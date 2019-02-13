@@ -235,7 +235,8 @@ class Opts(object):
             from ..util import opts
             if options is not None:
                 kwargs['options'] = options
-            return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
+            # Should not have to do clone=False and output group missing
+            return opts.apply_groups(self._obj, **dict(kwargs, clone=False, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*args, **kwargs)
@@ -1471,6 +1472,7 @@ class Store(object):
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
+                                    'output':Options(allowed_keywords=['backend']),
                                     'norm':  Options(framewise=False, axiswise=False,
                                                      allowed_keywords=['framewise',
                                                                        'axiswise'])})
