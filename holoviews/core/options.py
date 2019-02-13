@@ -581,7 +581,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    _option_groups = ['style', 'plot', 'norm']
+    _option_groups = ['style', 'plot', 'norm', 'output']
 
     def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
