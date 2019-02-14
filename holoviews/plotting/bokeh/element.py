@@ -57,16 +57,112 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         both 'pan' and 'box_zoom' are drag tools, so if both are
         listed only the last one will be active.""")
 
+    border = param.Number(default=10, doc="""
+        Minimum border around plot.""")
+
     aspect = param.Parameter(default='square', doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
         be necessary to force a square aspect ratio (e.g. to display
         the plot as an element of a grid). The modes 'auto' and
         'equal' correspond to the axis modes of the same name in
-        matplotlib, a numeric value may also be passed.""")
+        matplotlib, a numeric value specifying the ratio between plot
+        width and height may also be passed. To control the aspect
+        ratio between the axis scales use the data_aspect option
+        instead.""")
 
-    border = param.Number(default=10, doc="""
-        Minimum border around plot.""")
+    data_aspect = param.Number(default=None, doc="""
+        Defines the aspect of the axis scaling, i.e. the ratio of
+        y-unit to x-unit.""")
+
+    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
+
+    frame_width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    frame_height = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
+
+    min_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
+    min_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
+
+    max_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
+    max_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
+
+    margin = param.Parameter(default=None, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    width_policy = param.ObjectSelector(
+        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+
+        Describes how the component should maintain its width.
+
+        * "auto"  : Use component's preferred sizing policy.
+        * "fixed" : Use exactly ``width`` pixels. Component will
+                    overflow if it can't fit in the available
+                    horizontal space.
+        * "fit"   : Use component's preferred width (if set) and allow
+                    it to fit into the available horizontal space
+                    within the minimum and maximum width bounds (if
+                    set). Component's width neither will be
+                    aggressively minimized nor maximized.
+        * "min"   : Use as little horizontal space as possible, not
+                    less than the minimum width (if set). The
+                    starting point is the preferred width (if
+                    set). The width of the component may shrink or
+                    grow depending on the parent layout, aspect
+                    management and other factors.
+        * "max"   : Use as much horizontal space as possible, not more
+                    than the maximum width (if set). The starting
+                    point is the preferred width (if set). The width
+                    of the component may shrink or grow depending on
+                    the parent layout, aspect management and other
+                    factors.
+    """)
+
+    height_policy = param.ObjectSelector(
+        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
+
+        Describes how the component should maintain its height.
+
+        * "auto"  : Use component's preferred sizing policy.
+        * "fixed" : Use exactly ``height`` pixels. Component will
+                    overflow if it can't fit in the available
+                    vertical space.
+        * "fit"   : Use component's preferred height (if set) and allow
+                    it to fit into the available vertical space
+                    within the minimum and maximum height bounds (if
+                    set). Component's height neither will be
+                    aggressively minimized nor maximized.
+        * "min"   : Use as little vertical space as possible, not
+                    less than the minimum height (if set). The
+                    starting point is the preferred height (if
+                    set). The height of the component may shrink or
+                    grow depending on the parent layout, aspect
+                    management and other factors.
+        * "max"   : Use as much vertical space as possible, not more
+                    than the maximum height (if set). The starting
+                    point is the preferred height (if set). The height
+                    of the component may shrink or grow depending on
+                    the parent layout, aspect management and other
+                    factors.
+    """)
 
     finalize_hooks = param.HookList(default=[], doc="""
         Deprecated; use hooks options instead.""")
@@ -98,12 +194,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         accommodate large (but not huge) amounts of data. The available
         options are:
 
-          * factor    - Decimation factor to use when applying
+          * factor    : Decimation factor to use when applying
                         decimation.
-          * interval  - Interval (in ms) downsampling will be enabled
+          * interval  : Interval (in ms) downsampling will be enabled
                         after an interactive event.
-          * threshold - Number of samples before downsampling is enabled.
-          * timeout   - Timeout (in ms) for checking whether interactive
+          * threshold : Number of samples before downsampling is enabled.
+          * timeout   : Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
     show_frame = param.Boolean(default=True, doc="""
@@ -426,14 +522,42 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of plot properties.
         """
         size_multiplier = self.renderer.size/100.
-        plot_props = dict(plot_height=int(self.height*size_multiplier),
-                          plot_width=int(self.width*size_multiplier),
-                          sizing_mode=self.sizing_mode)
-
-        if self.aspect == 'square':
-            plot_props['aspect_ratio'] = 1
+        if self.height is None:
+            height = None
+        else:
+            height = int(self.height*size_multiplier)
+        if self.width is None:
+            width = None
+        else:
+            width = int(self.width*size_multiplier)
+        plot_props = {
+            'css_classes':   self.css_classes,
+            'margin':        self.margin,
+            'max_width':     self.max_width,
+            'max_height':    self.max_height,
+            'min_width':     self.min_width,
+            'min_height':    self.min_height,
+            'frame_width':   self.frame_width,
+            'frame_height':  self.frame_height,
+            'plot_height':   height,
+            'plot_width':    width,
+            'sizing_mode':   self.sizing_mode,
+            'width_policy':  self.width_policy,
+            'height_policy': self.height_policy
+        }
+        if self.data_aspect:
+            pass
+        elif self.aspect == 'square':
+            plot_props['frame_width'] = plot_props['plot_width']
+            plot_props['frame_height'] = plot_props['plot_width']
         elif util.isnumeric(self.aspect):
-            plot_props['aspect_ratio'] = self.aspect
+            if self.aspect < 1:
+                plot_props['frame_width'] = int(height*self.aspect)
+                plot_props['frame_height'] = int(height)
+            else:
+                plot_props['frame_width'] = int(width)
+                plot_props['frame_height'] = int(width/self.aspect)
+
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
@@ -683,14 +807,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
 
-        if self.aspect == 'equal':
-            self._update_aspect((l, r), (b, t))
-
-
-    def _update_aspect(self, x_range, y_range):
-        l, r = x_range
-        b, t = y_range
-        self.handles['plot'].aspect_ratio = (r-l) / (t-b)
+        if self.aspect == 'equal' or self.data_aspect:
+            xspan = r-l if util.is_number(l) and util.is_number(r) else None
+            yspan = t-b if util.is_number(b) and util.is_number(t) else None
+            aspect = self.get_aspect(xspan, yspan)
+            if aspect < 1:
+                height = self.handles['plot'].plot_height
+                self.handles['plot'].frame_width = int(height*aspect)
+                self.handles['plot'].frame_height = int(height)
+            else:
+                width = self.handles['plot'].plot_width
+                self.handles['plot'].frame_width = int(width)
+                self.handles['plot'].frame_height = int(width/aspect)
+            box_zoom = self.handles['plot'].select(type=BoxZoomTool)
+            scroll_zoom = self.handles['plot'].select(type=WheelZoomTool)
+            if box_zoom:
+                box_zoom.match_aspect = True
+            if scroll_zoom:
+                scroll_zoom.zoom_on_axis = False
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
@@ -761,7 +895,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Computes the aspect ratio of the plot
         """
-        return self.width/self.height
+        if self.data_aspect:
+            return (yspan/xspan)*self.data_aspect
+        elif self.aspect == 'equal':
+            return xspan/yspan
+        elif self.aspect == 'square':
+            return 1
+        elif self.aspect is not None:
+            return self.aspect
+        elif self.width is not None and self.height is not None:
+            return self.width/self.height
+        else:
+            return 1
 
 
     def _get_factors(self, element):
@@ -1693,7 +1838,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'active_tools']
+                          'xformatter', 'yformatter', 'active_tools',
+                          'min_height', 'max_height', 'min_width', 'min_height',
+                          'width_policy', 'height_policy', 'margin', 'aspect',
+                          'data_aspect']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
