@@ -235,8 +235,19 @@ class Opts(object):
             from ..util import opts
             if options is not None:
                 kwargs['options'] = options
-            # Should not have to do clone=False and output group missing
-            return opts.apply_groups(self._obj, **dict(kwargs, clone=False, **new_kwargs))
+
+                if 'backend' in kwargs: # Backend kwarg overriding the spec
+                    for spec in options.values():
+                        if 'output' in spec:
+                            spec['output']['backend'] = kwargs['backend'] # Override
+                else:
+                    for spec in options.values():
+                        if 'output' in spec:
+                            # Set the kwarg from the output group
+                            kwargs['backend']= spec['output']['backend']
+
+            # Should not have to do clone=False
+            return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*args, **kwargs)
