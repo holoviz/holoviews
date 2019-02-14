@@ -374,7 +374,7 @@ class PrettyPrinter(param.Parameterized):
                                          defaults=cls_or_slf.show_defaults)
             if gopts:
                 options.update(gopts.kwargs)
-        opts = Options(**options)
+        opts = Options(**{k:v for k,v in options.items() if k != 'backend'})
         return opts
 
     @bothmethod
