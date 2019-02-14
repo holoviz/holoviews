@@ -703,10 +703,15 @@ class trimesh_rasterize(aggregate):
                 'vertices': verts}
 
     def _precompute_wireframe(self, element, agg):
-        simplexes = element.array([0, 1, 2, 0]).astype('int')
-        verts = element.nodes.array([0, 1])
-        return {'segments': pd.DataFrame(verts[simplexes].reshape(len(simplexes), -1),
-                                         columns=['x0', 'y0', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3'])}
+        if hasattr(element, '_wireframe'):
+            segments = element._wireframe.data
+        else:
+            simplexes = element.array([0, 1, 2, 0]).astype('int')
+            verts = element.nodes.array([0, 1])
+            segments = pd.DataFrame(verts[simplexes].reshape(len(simplexes), -1),
+                                    columns=['x0', 'y0', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3'])
+            element._wireframe = Dataset(segments, datatype=['dataframe', 'dask'])
+        return {'segments': segments}
 
     def _process(self, element, key=None):
         if isinstance(element, TriMesh):
@@ -716,14 +721,16 @@ class trimesh_rasterize(aggregate):
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
 
-        agg = self._get_aggregator(element)
+        agg = self.p.aggregator
         interp = self.p.interpolation or None
+        precompute = self.p.precompute
         if interp == 'linear': interp = 'bilinear'
         wireframe = False
         if (not interp and (isinstance(agg, (ds.any, ds.count)) or
-            not (element.vdims or element.nodes.vdims))):
+            agg in ['any', 'count'] or not (element.vdims or element.nodes.vdims))):
             wireframe = True
-            agg = agg if isinstance(agg, (ds.any, ds.count)) else ds.any()
+            precompute = False # TriMesh itself caches wireframe
+            agg = self._get_aggregator(element) if isinstance(agg, (ds.any, ds.count)) else ds.any()
             vdim = 'Count' if isinstance(agg, ds.count) else 'Any'
         elif getattr(agg, 'column', None):
             if agg.column in element.vdims:
@@ -738,6 +745,7 @@ class trimesh_rasterize(aggregate):
                 vdim = element.nodes.vdims[0]
             else:
                 vdim = element.vdims[0]
+            agg = self._get_aggregator(element)
             
         if element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
@@ -761,13 +769,14 @@ class trimesh_rasterize(aggregate):
             simplices = precomputed['simplices']
             pts = precomputed['vertices']
             mesh = precomputed['mesh']
-        if self.p.precompute:
+        if precompute:
             self._precomputed = {element._plot_id: precomputed}
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         if wireframe:
-            agg = cvs.line(segments, x=['x0', 'x1', 'x2'], y=['y0', 'y1', 'y2'], axis=1,
+            agg = cvs.line(segments, x=['x0', 'x1', 'x2', 'x3'],
+                           y=['y0', 'y1', 'y2', 'y3'], axis=1,
                            agg=agg)
         else:
             interpolate = bool(self.p.interpolation)
