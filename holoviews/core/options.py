@@ -224,13 +224,6 @@ class Opts(object):
 
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
-
-        if apply_groups and config.future_deprecations:
-            msg = ("Calling the .opts method with options broken down by options "
-                   "group (i.e. separate plot, style and norm groups) is deprecated. "
-                   "Use the .options method converting to the simplified format "
-                   "instead or use hv.opts.apply_groups for backward compatibility.")
-            param.main.warning(msg)
         if apply_groups:
             from ..util import opts
             if options is not None:
