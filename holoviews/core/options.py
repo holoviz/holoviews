@@ -1461,10 +1461,10 @@ class Store(object):
             plot_opts =  Keywords(plot_opts,  target=view_class.__name__)
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
-            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
+            opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
+                          'output': Options(allowed_keywords=['backend'])}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
-                                    'output':Options(allowed_keywords=['backend']),
                                     'norm':  Options(framewise=False, axiswise=False,
                                                      allowed_keywords=['framewise',
                                                                        'axiswise'])})
