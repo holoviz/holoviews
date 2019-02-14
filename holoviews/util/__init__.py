@@ -144,6 +144,17 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
+
+        if options is not None:
+            for spec in options.values():
+                if backend is not None: # Backend kwarg overriding the spec
+                    spec['output']['backend'] = backend # Override
+                elif 'output' in spec:
+                    # Set the kwarg from the output group
+                    backend= spec['output']['backend']
+                    # Should not have to do this!
+                    clone = False
+
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
             from ..util.parser import OptsSpec
