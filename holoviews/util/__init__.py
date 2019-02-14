@@ -123,7 +123,7 @@ class opts(param.ParameterizedFunction):
         a type[.group][.label] specification, e.g.:
 
             opts.apply_groups(obj, {'Image': {'plot':  {'show_title': False},
-                                                    'style': {'cmap': 'viridis}}})
+                                              'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
 
@@ -285,8 +285,8 @@ class opts(param.ParameterizedFunction):
     def _expand_options(cls, options, backend=None):
         """
         Validates and expands a dictionaries of options indexed by
-        type[.group][.label] keys into separate style, plot and norm
-        options.
+        type[.group][.label] keys into separate style, plot, norm and
+        output options.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
