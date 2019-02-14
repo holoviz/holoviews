@@ -105,8 +105,9 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
-    def _group_kwargs_to_options(cls, obj, kwargs, groups, backend_options):
-        "Format option group kwargs into canonical options format" 
+    def _group_kwargs_to_options(cls, obj, kwargs):
+        "Format option group kwargs into canonical options format"
+        groups = Options._option_groups
         if set(kwargs.keys()) - set(groups):
             raise Exception("Keyword options %s must be one of  %s" % (groups,
                             ','.join(repr(g) for g in groups)))
@@ -115,8 +116,8 @@ class opts(param.ParameterizedFunction):
                             ','.join(repr(k) for k in kwargs.keys()))
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
-        entries = backend_options.children
-        targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
+        targets = [(len(grp)==1 and isinstance(list(grp.values())[0], dict))
+                   for grp in kwargs.values()]
         if any(targets) and not all(targets):
             raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
         elif not any(targets):
@@ -188,11 +189,8 @@ class opts(param.ParameterizedFunction):
                 options = OptsSpec.parse(
                     '{clsname} {options}'.format(clsname=obj.__class__.__name__,
                                                  options=options))
-
-        backend_options = Store.options(backend=backend)
-        groups = set(backend_options.groups.keys())
-        if kwargs and set(kwargs) <= groups:
-            options = cls._group_kwargs_to_options(obj, kwargs, groups, backend_options)
+        if kwargs:
+            options = cls._group_kwargs_to_options(obj, kwargs)
 
         obj_handle = obj
         if options is None and kwargs == {}:
