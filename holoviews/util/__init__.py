@@ -148,10 +148,11 @@ class opts(param.ParameterizedFunction):
         if options is not None:
             for spec in options.values():
                 if backend is not None: # Backend kwarg overriding the spec
-                    spec['output']['backend'] = backend # Override
+                    if 'output' in spec:
+                        spec['output']['backend'] = backend # Override
                 elif 'output' in spec:
                     # Set the kwarg from the output group
-                    backend= spec['output']['backend']
+                    backend = spec['output']['backend']
                     # Should not have to do this!
                     clone = False
 
