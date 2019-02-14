@@ -179,7 +179,6 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-        backend = backend or Store.current_backend
         if isinstance(options, basestring):
             from ..util.parser import OptsSpec
             try:
@@ -191,6 +190,13 @@ class opts(param.ParameterizedFunction):
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
+
+        backend = backend or Store.current_backend
+        return cls._apply_groups_to_backend(obj, options, backend, clone)
+
+    @classmethod
+    def _apply_groups_to_backend(cls, obj, options, backend, clone):
+        "Apply the groups to a single specified backend"
         obj_handle = obj
         if options is None and kwargs == {}:
             if clone:
