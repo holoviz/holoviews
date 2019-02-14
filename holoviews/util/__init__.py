@@ -154,7 +154,7 @@ class opts(param.ParameterizedFunction):
                     # Set the kwarg from the output group
                     backend = spec['output'].get('backend', None)
                     # Should not have to do this!
-                    clone = False
+                    # clone = False
 
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
