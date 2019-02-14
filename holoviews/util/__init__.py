@@ -152,7 +152,7 @@ class opts(param.ParameterizedFunction):
                         spec['output']['backend'] = backend # Override
                 elif 'output' in spec:
                     # Set the kwarg from the output group
-                    backend = spec['output']['backend']
+                    backend = spec['output'].get('backend', None)
                     # Should not have to do this!
                     clone = False
 
