@@ -34,7 +34,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         be necessary to force a square aspect ratio (e.g. to display
         the plot as an element of a grid). The modes 'auto' and
         'equal' correspond to the axis modes of the same name in
-        matplotlib, a numeric value may also be passed.""")
+        matplotlib, a numeric value specifying the ratio between plot
+        width and height may also be passed. To control the aspect
+        ratio between the axis scales use the data_aspect option
+        instead.""")
+
+    data_aspect = param.Number(default=None, doc="""
+        Defines the aspect of the axis scaling, i.e. the ratio of
+        y-unit to x-unit.""")
 
     invert_zaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot z-axis.""")
@@ -288,19 +295,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if isinstance(aspect, util.basestring) and aspect != 'square':
-            axes.set_aspect(aspect)
-            return
-
-        (x0, x1), (y0, y1) = axes.get_xlim(), axes.get_ylim()
-        xsize = np.log(x1) - np.log(x0) if self.logx else x1-x0
-        ysize = np.log(y1) - np.log(y0) if self.logy else y1-y0
-        xsize = max(abs(xsize), 1e-30)
-        ysize = max(abs(ysize), 1e-30)
-        data_ratio = 1./(ysize/xsize)
-        if aspect != 'square':
-            data_ratio = data_ratio/aspect
-        axes.set_aspect(float(data_ratio))
+        if ((isinstance(aspect, util.basestring) and aspect != 'square') or
+            self.data_aspect):
+            data_ratio = self.data_aspect or aspect
+        else:
+            (x0, x1), (y0, y1) = axes.get_xlim(), axes.get_ylim()
+            xsize = np.log(x1) - np.log(x0) if self.logx else x1-x0
+            ysize = np.log(y1) - np.log(y0) if self.logy else y1-y0
+            xsize = max(abs(xsize), 1e-30)
+            ysize = max(abs(ysize), 1e-30)
+            data_ratio = 1./(ysize/xsize)
+            if aspect != 'square':
+                data_ratio = data_ratio/aspect
+        axes.set_aspect(data_ratio)
 
 
     def _set_axis_limits(self, axis, view, subplots, ranges):
@@ -959,7 +966,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter']
+                          'xformatter', 'yformatter', 'data_aspect']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

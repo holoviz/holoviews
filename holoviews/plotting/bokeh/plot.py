@@ -40,37 +40,53 @@ class BokehPlot(DimensionedPlot):
     plotting interface for Bokeh based plots.
     """
 
-    width = param.Integer(default=300, doc="""
-        Width of the plot in pixels""")
+    css_classes = param.List(default=[], doc="""
+        CSS classes to apply to the layout.""")
 
-    height = param.Integer(default=300, doc="""
-        Height of the plot in pixels""")
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
 
-    sizing_mode = param.ObjectSelector(default='fixed',
-        objects=['fixed', 'stretch_both', 'scale_width', 'scale_height',
-                 'scale_both', 'auto'], doc="""
-        How the item being displayed should size itself.
+        How the component should size itself.
 
-        "auto" mode will use 'fixed' sizing when no aspect is defined
-        otherwise it will use 'scale_width' or 'scale_height' depending
-        on whether the aspect exceeds.
+        This is a high-level setting for maintaining width and height
+        of the component. To gain more fine grained control over
+        sizing, use ``width_policy``, ``height_policy`` and
+        ``aspect_ratio`` instead (those take precedence over
+        ``sizing_mode``).
 
-        "stretch_both" plots will resize to occupy all available
-        space, even if this changes the aspect ratio of the element.
-
-        "fixed" plots are not responsive and will retain their
-        original width and height regardless of any subsequent browser
-        window resize events.
-
-        "scale_width" elements will responsively resize to fit to the
-        width available, while maintaining the original aspect ratio.
-
-        "scale_height" elements will responsively resize to fit to the
-        height available, while maintaining the original aspect ratio.
-
-        "scale_both" elements will responsively resize to for both the
-        width and height available, while maintaining the original
-        aspect ratio.""")
+        * "fixed" : 
+          Component is not responsive. It will retain its original
+          width and height regardless of any subsequent browser window
+          resize events.
+        * "stretch_width"
+          Component will responsively resize to stretch to the
+          available width, without maintaining any aspect ratio. The
+          height of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_height"
+          Component will responsively resize to stretch to the
+          available height, without maintaining any aspect ratio. The
+          width of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_both"
+          Component is completely responsive, independently in width
+          and height, and will occupy all the available horizontal and
+          vertical space, even if this changes the aspect ratio of the
+          component.
+        * "scale_width"
+          Component will responsively resize to stretch to the
+          available width, while maintaining the original or provided
+          aspect ratio.
+        * "scale_height"
+          Component will responsively resize to stretch to the
+          available height, while maintaining the original or provided
+          aspect ratio.
+        * "scale_both"
+          Component will responsively resize to both the available
+          width and height, while maintaining the original or provided
+          aspect ratio.
+    """)
 
     shared_datasource = param.Boolean(default=True, doc="""
         Whether Elements drawing the data from the same object should
@@ -89,6 +105,14 @@ class BokehPlot(DimensionedPlot):
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
+
+    width = param.Integer(default=None, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=None, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
 
     _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
                      'poly_select', 'ypan', 'xpan']
@@ -136,6 +160,7 @@ class BokehPlot(DimensionedPlot):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
+
 
     def _session_destroy(self, session_context):
         self.cleanup()
@@ -654,8 +679,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
-        plot = gridplot(plots[::-1], toolbar_location=self.toolbar,
-                        merge_tools=self.merge_tools)
+        plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
+                        sizing_mode=self.sizing_mode,
+                        toolbar_location=self.toolbar)
         plot = self._make_axes(plot)
 
         title = self._get_title_div(self.keys[-1])
@@ -968,11 +994,13 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                         grid = subplots[0]
                     elif nsubplots == 2:
                         grid = gridplot([subplots], merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar)
+                                        toolbar_location=self.toolbar,
+                                        sizing_mode=self.sizing_mode)
                     else:
                         grid = [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children=grid, merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar)
+                                        toolbar_location=self.toolbar,
+                                        sizing_mode=self.sizing_mode)
                     tab_plots.append((title, grid))
                     continue
 
@@ -996,7 +1024,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             plot_grid = filter_toolboxes(plot_grid)
             layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
-                                   merge_tools=self.merge_tools)
+                                   merge_tools=self.merge_tools,
+                                   sizing_mode=self.sizing_mode)
 
         title = self._get_title_div(self.keys[-1])
         if title:
