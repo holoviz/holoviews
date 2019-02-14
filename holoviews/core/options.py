@@ -44,7 +44,7 @@ import numpy as np
 import param
 from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict
-from .util import deprecated_opts_signature, disable_constant, config
+from .util import deprecated_opts_signature, disable_constant
 from .pprint import InfoPrinter, PrettyPrinter
 
 
