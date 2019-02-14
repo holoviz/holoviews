@@ -60,7 +60,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
-    aspect = param.Parameter(default='square', doc="""
+    aspect = param.Parameter(default=None, doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
         be necessary to force a square aspect ratio (e.g. to display
@@ -530,6 +530,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             width = None
         else:
             width = int(self.width*size_multiplier)
+
         plot_props = {
             'css_classes':   self.css_classes,
             'margin':        self.margin,
