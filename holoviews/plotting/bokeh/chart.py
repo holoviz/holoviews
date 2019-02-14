@@ -154,19 +154,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
 class StickPlot(ColorbarPlot):
 
-    # magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
-    #     Dimension or dimension value transform that declares the magnitude
-    #     of each vector. Magnitude is expected to be scaled between 0-1,
-    #     by default the magnitudes are rescaled relative to the minimum
-    #     distance between vectors, this can be disabled with the
-    #     rescale_lengths option.""")
-    #
-    # # pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
-    # #                              doc="""
-    # #     The point around which the arrows should pivot valid options
-    # #     include 'mid', 'tip' and 'tail'.""")
-    #
-
     rescale_lengths = param.Boolean(default=True, doc="""
         Whether the lengths will be rescaled to take into account the
         smallest non-zero distance between two vectors.""")
@@ -197,13 +184,12 @@ class StickPlot(ColorbarPlot):
         return properties
 
     def _get_lengths(self, element, style, x_is_datetime):
+        input_scale = style.pop('scale', 1)
         if x_is_datetime:
-            # This value seems to work well with bokeh such that
-            # ray lengths are of the order of data point distances
-            input_scale_default = 86400*10.
-        else:
-            input_scale_default = 1.
-        input_scale = style.pop('scale', input_scale_default)
+            # when x is datetime and y is float, then holoviews scales distance
+            # in nanoseconds, but bokeh works in milliseconds...
+            # needs a more fundamental fix than this
+            input_scale /= 1e6
 
         magnitudes = element.dimension_values(3).copy()
         if self.rescale_lengths:
@@ -225,10 +211,9 @@ class StickPlot(ColorbarPlot):
         ys = element.dimension_values(yidx)
 
         # is abscissa datetime axis?
-        # for length of Ray, bokeh considers abscissa only
+        # (for length of Ray, bokeh considers abscissa only)
         x_is_datetime = np.issubdtype(xs.dtype, np.datetime64)
         lens = self._get_lengths(element, style, x_is_datetime)
-        self.param.warning(lens.__repr__())
 
         cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
