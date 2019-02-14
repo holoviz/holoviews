@@ -105,6 +105,41 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
+    def _group_kwargs_to_options(cls, obj, kwargs, groups, backend_options):
+        "Format option group kwargs into canonical options format" 
+        if set(kwargs.keys()) - set(groups):
+            raise Exception("Keyword options %s must be one of  %s" % (groups,
+                            ','.join(repr(g) for g in groups)))
+        elif not all(isinstance(v, dict) for v in kwargs.values()):
+            raise Exception("The %s options must be specified using dictionary groups" %
+                            ','.join(repr(k) for k in kwargs.keys()))
+
+        # Check whether the user is specifying targets (such as 'Image.Foo')
+        entries = backend_options.children
+        targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
+        if any(targets) and not all(targets):
+            raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
+        elif not any(targets):
+            # Not targets specified - add current object as target
+            sanitized_group = util.group_sanitizer(obj.group)
+            if obj.label:
+                identifier = ('%s.%s.%s' % (
+                    obj.__class__.__name__, sanitized_group,
+                    util.label_sanitizer(obj.label)))
+            elif  sanitized_group != obj.__class__.__name__:
+                identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+            else:
+                identifier = obj.__class__.__name__
+
+            options = {identifier:{grp:kws for (grp,kws) in kwargs.items()}}
+        else:
+            dfltdict = defaultdict(dict)
+            for grp, entries in kwargs.items():
+                for identifier, kws in entries.items():
+                    dfltdict[identifier][grp] = kws
+            options = dict(dfltdict)
+        return options
+    @classmethod
     def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
         """Applies nested options definition grouped by type.
 
@@ -144,18 +179,6 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-
-        if options is not None:
-            for spec in options.values():
-                if backend is not None: # Backend kwarg overriding the spec
-                    if 'output' in spec:
-                        spec['output']['backend'] = backend # Override
-                elif 'output' in spec:
-                    # Set the kwarg from the output group
-                    backend = spec['output'].get('backend', None)
-                    # Should not have to do this!
-                    # clone = False
-
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
             from ..util.parser import OptsSpec
@@ -169,28 +192,7 @@ class opts(param.ParameterizedFunction):
         backend_options = Store.options(backend=backend)
         groups = set(backend_options.groups.keys())
         if kwargs and set(kwargs) <= groups:
-            if not all(isinstance(v, dict) for v in kwargs.values()):
-                raise Exception("The %s options must be specified using dictionary groups" %
-                                ','.join(repr(k) for k in kwargs.keys()))
-
-            # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = backend_options.children
-            targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
-            if any(targets) and not all(targets):
-                raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
-            elif not any(targets):
-                # Not targets specified - add current object as target
-                sanitized_group = util.group_sanitizer(obj.group)
-                if obj.label:
-                    identifier = ('%s.%s.%s' % (
-                        obj.__class__.__name__, sanitized_group,
-                        util.label_sanitizer(obj.label)))
-                elif  sanitized_group != obj.__class__.__name__:
-                    identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
-                else:
-                    identifier = obj.__class__.__name__
-
-                kwargs = {k:{identifier:v} for k,v in kwargs.items()}
+            options = cls._group_kwargs_to_options(obj, kwargs, groups, backend_options)
 
         obj_handle = obj
         if options is None and kwargs == {}:
@@ -200,7 +202,8 @@ class opts(param.ParameterizedFunction):
                 obj.map(lambda x: setattr(x, 'id', None))
         elif clone:
             obj_handle = obj.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(obj_handle, options, backend=backend, **kwargs)
+
+        StoreOptions.set_options(obj_handle, options, backend=backend)
         return obj_handle
 
     @classmethod
