@@ -192,10 +192,10 @@ class opts(param.ParameterizedFunction):
 
 
         backend = backend or Store.current_backend
-        return cls._apply_groups_to_backend(obj, options, backend, clone)
+        return cls._apply_groups_to_backend(obj, options, backend, clone, kwargs)
 
     @classmethod
-    def _apply_groups_to_backend(cls, obj, options, backend, clone):
+    def _apply_groups_to_backend(cls, obj, options, backend, clone, kwargs):
         "Apply the groups to a single specified backend"
         obj_handle = obj
         if options is None and kwargs == {}:
