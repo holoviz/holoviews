@@ -152,8 +152,7 @@ class opts(param.ParameterizedFunction):
         elif clone:
             obj_handle = obj.map(lambda x: x.clone(id=x.id))
 
-        StoreOptions.set_options(obj_handle, options, backend=backend)
-        return obj_handle
+        return StoreOptions.set_options(obj_handle, options, backend=backend)
 
 
     @classmethod
