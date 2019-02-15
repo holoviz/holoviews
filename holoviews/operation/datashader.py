@@ -726,8 +726,13 @@ class trimesh_rasterize(aggregate):
         precompute = self.p.precompute
         if interp == 'linear': interp = 'bilinear'
         wireframe = False
-        if (not interp and (isinstance(agg, (ds.any, ds.count)) or
-            agg in ['any', 'count'] or not (element.vdims or element.nodes.vdims))):
+        print(interp, agg)
+        if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and ds_version <= '0.6.9':
+            self.p.aggregator = ds.any() if isinstance(agg, ds.any) or agg == 'any' else ds.count()
+            return aggregate._process(self, element, key)
+        elif ((not interp and (isinstance(agg, (ds.any, ds.count)) or
+                               agg in ['any', 'count']))
+               or not (element.vdims or element.nodes.vdims)):
             wireframe = True
             precompute = False # TriMesh itself caches wireframe
             agg = self._get_aggregator(element) if isinstance(agg, (ds.any, ds.count)) else ds.any()
@@ -843,7 +848,8 @@ class rasterize(AggregationOperation):
     def _process(self, element, key=None):
         for predicate, transform in self._transforms:
             op_params = dict({k: v for k, v in self.p.items()
-                              if k in transform.params() and v is not None},
+                              if k in transform.params()
+                              and not (v is None and k == 'aggregator')},
                              dynamic=False)
             op = transform.instance(**op_params)
             op._precomputed = self._precomputed
