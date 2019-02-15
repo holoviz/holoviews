@@ -164,12 +164,12 @@ class opts(param.ParameterizedFunction):
         dfltdict = defaultdict(dict)
         for spec, groups in options.items():
             if 'output' not in groups.keys() or len(groups['output'])==0:
-                dfltdict[backend or Store.current_backend][spec] = groups
+                dfltdict[backend or Store.current_backend][spec.strip()] = groups
             elif set(groups['output'].keys()) - set(['backend']):
-                dfltdict[groups['output']['backend']][spec] = groups
+                dfltdict[groups['output']['backend']][spec.strip()] = groups
             elif ['backend'] == list(groups['output'].keys()):
                 filtered = {k:v for k,v in groups.items() if k != 'output'}
-                dfltdict[groups['output']['backend']][spec] = filtered
+                dfltdict[groups['output']['backend']][spec.strip()] = filtered
             else:
                 raise Exception('The output options group must have the backend keyword')
 
