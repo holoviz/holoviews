@@ -141,10 +141,10 @@ class opts(param.ParameterizedFunction):
         return options
 
     @classmethod
-    def _apply_groups_to_backend(cls, obj, options, backend, clone, kwargs):
+    def _apply_groups_to_backend(cls, obj, options, backend, clone):
         "Apply the groups to a single specified backend"
         obj_handle = obj
-        if options is None and kwargs == {}:
+        if options is None:
             if clone:
                 obj_handle = obj.map(lambda x: x.clone(id=None))
             else:
@@ -208,7 +208,7 @@ class opts(param.ParameterizedFunction):
 
 
         backend = backend or Store.current_backend
-        return cls._apply_groups_to_backend(obj, options, backend, clone, kwargs)
+        return cls._apply_groups_to_backend(obj, options, backend, clone)
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
