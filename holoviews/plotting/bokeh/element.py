@@ -108,61 +108,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    width_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
-
-        Describes how the component should maintain its width.
-
-        * "auto"  : Use component's preferred sizing policy.
-        * "fixed" : Use exactly ``width`` pixels. Component will
-                    overflow if it can't fit in the available
-                    horizontal space.
-        * "fit"   : Use component's preferred width (if set) and allow
-                    it to fit into the available horizontal space
-                    within the minimum and maximum width bounds (if
-                    set). Component's width neither will be
-                    aggressively minimized nor maximized.
-        * "min"   : Use as little horizontal space as possible, not
-                    less than the minimum width (if set). The
-                    starting point is the preferred width (if
-                    set). The width of the component may shrink or
-                    grow depending on the parent layout, aspect
-                    management and other factors.
-        * "max"   : Use as much horizontal space as possible, not more
-                    than the maximum width (if set). The starting
-                    point is the preferred width (if set). The width
-                    of the component may shrink or grow depending on
-                    the parent layout, aspect management and other
-                    factors.
-    """)
-
-    height_policy = param.ObjectSelector(
-        default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
-
-        Describes how the component should maintain its height.
-
-        * "auto"  : Use component's preferred sizing policy.
-        * "fixed" : Use exactly ``height`` pixels. Component will
-                    overflow if it can't fit in the available
-                    vertical space.
-        * "fit"   : Use component's preferred height (if set) and allow
-                    it to fit into the available vertical space
-                    within the minimum and maximum height bounds (if
-                    set). Component's height neither will be
-                    aggressively minimized nor maximized.
-        * "min"   : Use as little vertical space as possible, not
-                    less than the minimum height (if set). The
-                    starting point is the preferred height (if
-                    set). The height of the component may shrink or
-                    grow depending on the parent layout, aspect
-                    management and other factors.
-        * "max"   : Use as much vertical space as possible, not more
-                    than the maximum height (if set). The starting
-                    point is the preferred height (if set). The height
-                    of the component may shrink or grow depending on
-                    the parent layout, aspect management and other
-                    factors.
-    """)
+    responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
     finalize_hooks = param.HookList(default=[], doc="""
         Deprecated; use hooks options instead.""")
@@ -522,14 +468,86 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of plot properties.
         """
         size_multiplier = self.renderer.size/100.
-        if self.height is None:
-            height = None
-        else:
-            height = int(self.height*size_multiplier)
-        if self.width is None:
-            width = None
-        else:
-            width = int(self.width*size_multiplier)
+        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
+        fixed_width = (options['width'] or self.frame_width)
+        fixed_height = (options['height'] or self.frame_height)
+        fixed_aspect = self.aspect or self.data_aspect
+
+        # Plot dimensions
+        height = None if self.height is None else int(self.height*size_multiplier)
+        width = None if self.width is None else int(self.width*size_multiplier)
+        frame_height = None if self.frame_height is None else int(self.frame_height*size_multiplier)
+        frame_width = None if self.frame_width is None else int(self.frame_width*size_multiplier)
+        actual_width = frame_width or width
+        actual_height = frame_height or height
+
+        # Determine sizing mode
+        init = 'plot' not in self.handles
+        sizing_mode = 'fixed'
+        if self.responsive:
+            if fixed_height and fixed_width and init:
+                self.param.warning("responsive mode could not be enabled "
+                                   "because fixed width and height were "
+                                   "specified.")
+            elif fixed_width:
+                sizing_mode = 'fixed' if fixed_aspect else 'stretch_height'
+            elif fixed_height:
+                sizing_mode = 'fixed' if fixed_aspect else 'stretch_width'
+            else:
+                if fixed_aspect:
+                    if self.responsive == 'width':
+                        sizing_mode = 'scale_width'
+                    elif self.responsive == 'height':
+                        sizing_mode = 'scale_height'
+                    else:
+                        sizing_mode = 'scale_both'
+                else:
+                    if self.responsive == 'width':
+                        sizing_mode = 'stretch_both'
+                    elif self.responsive == 'height':
+                        sizing_mode = 'stretch_height'
+                    else:
+                        sizing_mode = 'stretch_both'
+
+        if fixed_aspect:
+            aspect_type = 'data_aspect' if self.data_aspect else 'aspect'
+            if fixed_width and fixed_height and init:
+                self.param.warning(
+                    "%s value was ignored because absolute width and "
+                    "height values were provided. Either supply "
+                    "explicit frame_width and frame_height to achieve "
+                    "desired aspect OR supply a combination of width "
+                    "or height and an aspect value." % aspect_type)
+            elif fixed_width and self.responsive and init:
+                self.param.warning("responsive mode could not be enabled "
+                                   "because fixed width and aspect were "
+                                   "specified.")
+            elif fixed_height and self.responsive and init:
+                self.param.warning("responsive mode could not be enabled "
+                                   "because fixed height and aspect were "
+                                   "specified.")
+            elif self.responsive == 'height':
+                sizing_mode = 'scale_width'
+            elif self.responsive == 'height':
+                sizing_mode = 'scale_height'
+
+        if self.responsive == 'width' and fixed_width and init:
+            self.param.warning("responsive width mode could not be "
+                               "enabled because a fixed width was defined.")
+        if self.responsive == 'height' and fixed_height and init0:
+            self.param.warning("responsive height mode could not be "
+                               "enabled because a fixed height was defined.")
+
+        aspect = 1 if self.aspect == 'square' else self.aspect
+        if self.data_aspect:
+            pass
+        elif util.isnumeric(aspect):
+            if fixed_height:
+                frame_width = int(actual_height*aspect)
+                frame_height = actual_height
+            else:
+                frame_width = actual_width
+                frame_height = int(actual_width/aspect)
 
         plot_props = {
             'css_classes':   self.css_classes,
@@ -538,26 +556,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             'max_height':    self.max_height,
             'min_width':     self.min_width,
             'min_height':    self.min_height,
-            'frame_width':   self.frame_width,
-            'frame_height':  self.frame_height,
+            'frame_width':   frame_width,
+            'frame_height':  frame_height,
             'plot_height':   height,
             'plot_width':    width,
-            'sizing_mode':   self.sizing_mode,
-            'width_policy':  self.width_policy,
-            'height_policy': self.height_policy
+            'sizing_mode':   sizing_mode
         }
-        if self.data_aspect:
-            pass
-        elif self.aspect == 'square':
-            plot_props['frame_width'] = plot_props['plot_width']
-            plot_props['frame_height'] = plot_props['plot_width']
-        elif util.isnumeric(self.aspect):
-            if self.aspect < 1:
-                plot_props['frame_width'] = int(height*self.aspect)
-                plot_props['frame_height'] = int(height)
-            else:
-                plot_props['frame_width'] = int(width)
-                plot_props['frame_height'] = int(width/self.aspect)
 
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
@@ -808,20 +812,33 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
 
-        if self.aspect == 'equal' or self.data_aspect:
+        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
+        fixed_width = (options['width'] or self.frame_width)
+        fixed_height = (options['height'] or self.frame_height)
+        if (self.aspect == 'equal' or self.data_aspect):
+            plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
             aspect = self.get_aspect(xspan, yspan)
-            if aspect < 1:
-                height = self.handles['plot'].plot_height
-                self.handles['plot'].frame_width = int(height*aspect)
-                self.handles['plot'].frame_height = int(height)
+            width = plot.frame_width or plot.plot_width
+            height = plot.frame_height or plot.plot_height
+
+            if not (fixed_width or fixed_height) and not self.responsive:
+                fixed_width = True
+
+            plot.plot_width = None
+            plot.plot_height = None
+            if fixed_height:
+                plot.frame_height = height
+                plot.frame_width = int(height*aspect)
+            elif fixed_width:
+                plot.frame_width = width
+                plot.frame_height = int(width/aspect)
             else:
-                width = self.handles['plot'].plot_width
-                self.handles['plot'].frame_width = int(width)
-                self.handles['plot'].frame_height = int(width/aspect)
-            box_zoom = self.handles['plot'].select(type=BoxZoomTool)
-            scroll_zoom = self.handles['plot'].select(type=WheelZoomTool)
+                plot.aspect_ratio = aspect
+
+            box_zoom = plot.select(type=BoxZoomTool)
+            scroll_zoom = plot.select(type=WheelZoomTool)
             if box_zoom:
                 box_zoom.match_aspect = True
             if scroll_zoom:
