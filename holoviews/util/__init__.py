@@ -139,6 +139,22 @@ class opts(param.ParameterizedFunction):
                     dfltdict[identifier][grp] = kws
             options = dict(dfltdict)
         return options
+
+    @classmethod
+    def _apply_groups_to_backend(cls, obj, options, backend, clone, kwargs):
+        "Apply the groups to a single specified backend"
+        obj_handle = obj
+        if options is None and kwargs == {}:
+            if clone:
+                obj_handle = obj.map(lambda x: x.clone(id=None))
+            else:
+                obj.map(lambda x: setattr(x, 'id', None))
+        elif clone:
+            obj_handle = obj.map(lambda x: x.clone(id=x.id))
+
+        StoreOptions.set_options(obj_handle, options, backend=backend)
+        return obj_handle
+
     @classmethod
     def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
         """Applies nested options definition grouped by type.
@@ -193,21 +209,6 @@ class opts(param.ParameterizedFunction):
 
         backend = backend or Store.current_backend
         return cls._apply_groups_to_backend(obj, options, backend, clone, kwargs)
-
-    @classmethod
-    def _apply_groups_to_backend(cls, obj, options, backend, clone, kwargs):
-        "Apply the groups to a single specified backend"
-        obj_handle = obj
-        if options is None and kwargs == {}:
-            if clone:
-                obj_handle = obj.map(lambda x: x.clone(id=None))
-            else:
-                obj.map(lambda x: setattr(x, 'id', None))
-        elif clone:
-            obj_handle = obj.map(lambda x: x.clone(id=x.id))
-
-        StoreOptions.set_options(obj_handle, options, backend=backend)
-        return obj_handle
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
