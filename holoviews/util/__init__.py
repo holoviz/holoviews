@@ -159,8 +159,19 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _grouped_backends(cls, options, backend):
         "Group options by backend and filter out output group appropriately"
-        backend = backend or Store.current_backend
-        return [(backend, options)]
+        dfltdict = defaultdict(dict)
+        for spec, groups in options.items():
+            if 'output' not in groups.keys() or len(groups['output'])==0:
+                dfltdict[backend or Store.current_backend][spec] = groups
+            elif set(groups['output'].keys()) - set(['backend']):
+                dfltdict[groups['output']['backend']][spec] = groups
+            elif ['backend'] == list(groups['output'].keys()):
+                filtered = {k:v for k,v in groups.items() if k != 'output'}
+                dfltdict[groups['output']['backend']][spec] = filtered
+            else:
+                raise Exception('The output options group must have the backend keyword')
+
+        return [(bk, bk_opts) for (bk, bk_opts) in dfltdict.items()]
 
     @classmethod
     def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
