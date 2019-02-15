@@ -155,6 +155,13 @@ class opts(param.ParameterizedFunction):
         StoreOptions.set_options(obj_handle, options, backend=backend)
         return obj_handle
 
+
+    @classmethod
+    def _grouped_backends(cls, options, backend):
+        "Group options by backend and filter out output group appropriately"
+        backend = backend or Store.current_backend
+        return [(backend, options)]
+
     @classmethod
     def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
         """Applies nested options definition grouped by type.
@@ -206,9 +213,9 @@ class opts(param.ParameterizedFunction):
         if kwargs:
             options = cls._group_kwargs_to_options(obj, kwargs)
 
-
-        backend = backend or Store.current_backend
-        return cls._apply_groups_to_backend(obj, options, backend, clone)
+        for backend, backend_opts in cls._grouped_backends(options, backend):
+            obj = cls._apply_groups_to_backend(obj, backend_opts, backend, clone)
+        return obj
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
