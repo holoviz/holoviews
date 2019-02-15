@@ -1421,7 +1421,7 @@ class Dimensioned(LabelledData):
 
         obj = self
         for backend, expanded in expanded_backends:
-            obj = obj.opts(expanded, backend=backend, clone=clone)
+            obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
         return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):

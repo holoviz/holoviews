@@ -159,6 +159,18 @@ class Opts(object):
             Returns the object or a clone with the options applied
         """
         if self._mode is None:
+            apply_groups, _, _ = deprecated_opts_signature(args, kwargs)
+            if apply_groups and config.future_deprecations:
+                msg = ("Calling the .opts method with options broken down by options "
+                       "group (i.e. separate plot, style and norm groups) is deprecated. "
+                       "Use the .options method converting to the simplified format "
+                       "instead or use hv.opts.apply_groups for backward compatibility.")
+                param.main.warning(msg)
+
+        return self._dispatch_opts( *args, **kwargs)
+
+    def _dispatch_opts(self, *args, **kwargs):
+        if self._mode is None:
             return self._base_opts(*args, **kwargs)
         elif self._mode == 'holomap':
             return self._holomap_opts(*args, **kwargs)
