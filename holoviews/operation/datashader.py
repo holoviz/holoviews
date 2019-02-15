@@ -726,7 +726,6 @@ class trimesh_rasterize(aggregate):
         precompute = self.p.precompute
         if interp == 'linear': interp = 'bilinear'
         wireframe = False
-        print(interp, agg)
         if (not (element.vdims or (isinstance(element, TriMesh) and element.nodes.vdims))) and ds_version <= '0.6.9':
             self.p.aggregator = ds.any() if isinstance(agg, ds.any) or agg == 'any' else ds.count()
             return aggregate._process(self, element, key)
@@ -751,7 +750,7 @@ class trimesh_rasterize(aggregate):
             else:
                 vdim = element.vdims[0]
             agg = self._get_aggregator(element)
-            
+
         if element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
         elif wireframe:
@@ -831,7 +830,9 @@ class rasterize(AggregationOperation):
 
     interpolation = param.ObjectSelector(
         default='bilinear', objects=['linear', 'nearest', 'bilinear', None, False], doc="""
-        The interpolation method to apply during rasterization.""")
+        The interpolation method to apply during rasterization.
+        Defaults to linear interpolation and None and False are aliases
+        of each other.""")
 
     _transforms = [(Image, regrid),
                    (TriMesh, trimesh_rasterize),
