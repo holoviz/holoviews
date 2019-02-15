@@ -588,7 +588,10 @@ class Options(param.Parameterized):
 
     _option_groups = ['style', 'plot', 'norm', 'output']
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
+    _output_allowed_kws = ['backend']
+
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True,
+                 max_cycles=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -1474,7 +1477,7 @@ class Store(object):
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
             opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
-                          'output': Options(allowed_keywords=['backend'])}
+                          'output': Options(allowed_keywords=Options._output_allowed_kws)}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
                                     'norm':  Options(framewise=False, axiswise=False,
