@@ -159,6 +159,9 @@ class opts(param.ParameterizedFunction):
     @classmethod
     def _grouped_backends(cls, options, backend):
         "Group options by backend and filter out output group appropriately"
+
+        if options is None:
+            return [(backend or Store.current_backend, options)]
         dfltdict = defaultdict(dict)
         for spec, groups in options.items():
             if 'output' not in groups.keys() or len(groups['output'])==0:
