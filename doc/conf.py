@@ -3,6 +3,8 @@
 import sys, os
 sys.path.insert(0, os.getcwd())
 
+import holoviews
+
 from nbsite.shared_conf import *
 
 # Declare information specific to this project.
@@ -12,14 +14,7 @@ copyright = u'2019 ' + authors
 pyviz_module = 'holoviews'
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
-# The version info for the project you're documenting, acts as replacement for
-# |version| and |release|, also used in various other places throughout the
-# built documents.
-#
-# The short X.Y version.
-version = 'v1.11.0' #setup_args['version']
-# The full version, including alpha/beta/rc tags.
-release = 'v1.11.0' #setup_args['version']
+version = release = holoviews.__version__
 
 ASSETS_URL = 'https://assets.holoviews.org'
 
