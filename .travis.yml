@@ -147,7 +147,7 @@ jobs:
         local_dir: ./builtdocs
         access_key_id: $AWS_ACCESS_KEY_ID
         secret_access_key: $AWS_SECRET_ACCESS_KEY
-        bucket: "dev.holoviews.org"
+        bucket: "build.holoviews.org"
 
     ########## END-USER PACKAGES ##########
 
