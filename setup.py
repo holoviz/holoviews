@@ -24,7 +24,8 @@ extras_require['recommended'] = extras_require['notebook'] + [
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=3.4',
-    'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0']
+    'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
+    'cftime', 'netcdf4']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[

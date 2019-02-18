@@ -136,6 +136,7 @@ jobs:
       stage: docs
       env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
       script:
+        - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
         - nbsite build --what=html --output=builtdocs
       deploy:
