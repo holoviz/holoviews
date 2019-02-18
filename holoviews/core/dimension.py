@@ -306,8 +306,9 @@ class Dimension(param.Parameterized):
 
 
     def __call__(self, spec=None, **overrides):
-        self.param.warning('Dimension.__call__ method has been deprecated, '
-                           'use the clone method instead.')
+        if util.config.future_deprecations:
+            self.param.warning('Dimension.__call__ method has been deprecated, '
+                               'use the clone method instead.')
         return self.clone(spec=spec, **overrides)
 
 
@@ -1228,18 +1229,16 @@ class Dimensioned(LabelledData):
     def __unicode__(self):
         return unicode(PrettyPrinter.pprint(self))
 
-    def __call__(self, options=None, **kwargs):
-        if util.config.warn_options_call:
-            self.param.warning(
-                'Use of __call__ to set options will be deprecated '
-                'in future. Use the equivalent opts method or use '
-                'the recommended .options method instead.')
+    def __call__(self, options=None, **kwargs):	
+        self.param.warning(	
+            'Use of __call__ to set options will be deprecated '	
+            'in the next major release (1.14.0). Use the equivalent .opts '
+            'method instead.')	
 
-        if not kwargs and options is None:
+        if not kwargs and options is None:	
             return self.opts.clear()
 
         return self.opts(options, **kwargs)
-
 
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
