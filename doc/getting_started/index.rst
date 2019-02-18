@@ -1,5 +1,5 @@
 Welcome to HoloViews!
-_____________________
+=====================
 
 This 'Getting Started' guide aims to get you using HoloViews
 productively as quickly as possible. It is designed as an entry point for

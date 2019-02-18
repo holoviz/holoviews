@@ -1,5 +1,5 @@
 User Guide
-__________
+==========
 
 The User Guide is the primary resource documenting key concepts that
 will help you use HoloViews in your work. For newcomers, a gentle
