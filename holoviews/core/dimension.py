@@ -18,7 +18,7 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts, cleanup_custom_options
+from .options import Store, Opts, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -1406,6 +1406,8 @@ class Dimensioned(LabelledData):
                              "or explicitly define the type, e.g. "
                              "obj.options({'Image': {'cmap': 'viridis'}}). "
                              "Supplying both formats is not supported.")
+        elif args and isinstance(args[0], dict):
+            options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)
         elif kwargs:
