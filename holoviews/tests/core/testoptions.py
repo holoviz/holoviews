@@ -1014,6 +1014,31 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         self.assertEqual(bokeh_lookup['cmap'], 'Purple')
         self.assert_output_options_group_empty(img)
 
+    def test_mpl_bokeh_mpl_via_builders_opts_method_literal_implicit_backend(self):
+        img = Image(np.random.rand(10,10))
+        curve = Curve([1,2,3])
+        overlay = img * curve
+        Store.set_current_backend('matplotlib')
+
+        literal = {'Curve':
+                   {'style':dict(color='orange'), 'output':dict(backend='matplotlib')},
+                   'Image':
+                   {'style':dict(cmap='jet'), 'output':dict(backend='bokeh')}
+                   }
+        styled = overlay.opts(literal)
+        mpl_curve_lookup = Store.lookup_options('matplotlib', styled.Curve.I, 'style')
+        self.assertEqual(mpl_curve_lookup.kwargs['color'], 'orange')
+
+        mpl_img_lookup = Store.lookup_options('matplotlib', styled.Image.I, 'style')
+        self.assertNotEqual(mpl_img_lookup.kwargs['cmap'], 'jet')
+
+        bokeh_curve_lookup = Store.lookup_options('bokeh', styled.Curve.I, 'style')
+        self.assertNotEqual(bokeh_curve_lookup.kwargs['color'], 'orange')
+
+        bokeh_img_lookup = Store.lookup_options('bokeh', styled.Image.I, 'style')
+        self.assertEqual(bokeh_img_lookup.kwargs['cmap'], 'jet')
+
+
 
     def test_mpl_bokeh_output_options_group_expandable(self):
         original_allowed_kws = Options._output_allowed_kws[:]
