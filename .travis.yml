@@ -134,12 +134,8 @@ jobs:
 
     - <<: *default
       stage: docs
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false'
+      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
       script:
-        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
-        - source activate test-environment
-        - doit develop_install $CHANS_DEV -o doc
-        - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
         - nbsite build --what=html --output=builtdocs
       deploy:
