@@ -217,7 +217,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
-            values = data[dim]
+            values = np.asarray(data[dim])
             if (values.dtype.kind == 'M' or (
                     len(values) and isinstance(values[0], util.datetime_types))):
                 data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
