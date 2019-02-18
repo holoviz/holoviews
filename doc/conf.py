@@ -22,7 +22,8 @@ rst_epilog = """
 .. _tutorial notebooks: {url}/notebooks-{version}.zip
 """.format(url=ASSETS_URL, version=version)
 
-extensions += ['nbsite.gallery']
+if os.environ['HV_DOC_GALLERY'] not in ('False', 'false', '0'):
+    extensions += ['nbsite.gallery']
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],

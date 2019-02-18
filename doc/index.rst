@@ -1,11 +1,12 @@
 .. HoloViews documentation master file
 
-HoloViews
-____________
+.. raw:: html
+
+  <h1><img src="_static/logo_horizontal.png" style="width: 50%;"></h1>
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
 
-HoloViews is an `open-source <https://github.com/ioam/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+HoloViews is an `open-source <https://github.com/pyviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
 For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pictures, to appreciate how easy it is to create such plots yourself!
 
@@ -64,10 +65,10 @@ HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/pyviz/holov
 
 The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
-  conda install -c ioam holoviews bokeh
+  conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
-directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.github.com/param/>`_.
+directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://param.pyviz.org/>`_.
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 
