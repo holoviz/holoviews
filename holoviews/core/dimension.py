@@ -1399,7 +1399,7 @@ class Dimensioned(LabelledData):
             if kwargs:
                 raise ValueError('Please specify a list of option objects, or kwargs, but not both')
             options = args[0]
-        elif args and kwargs:
+        elif args and [k for k in kwargs.keys() if k != 'backend']:
             raise ValueError("Options must be defined in one of two formats. "
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "
