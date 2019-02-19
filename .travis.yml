@@ -41,7 +41,9 @@ stages:
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
-  - name: docs
+  - name: docs_dev
+  - name: docs_daily
+    if: type = cron
 
 jobs:
   include:
@@ -132,13 +134,25 @@ jobs:
 
     ########## DOCS ##########
 
-    - <<: *default
-      stage: docs
+    - &doc_build
+      <<: *default
+      stage: docs_dev
       env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
       script:
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
         - nbsite build --what=html --output=builtdocs
+      deploy:
+        provider: s3
+        local_dir: ./builtdocs
+        access_key_id: $AWS_ACCESS_KEY_ID
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        bucket: "build.holoviews.org"
+        on:
+          all_branches: true
+
+    - <<: *doc_build
+      stage: docs_daily
       deploy:
         provider: s3
         local_dir: ./builtdocs
