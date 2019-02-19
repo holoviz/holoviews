@@ -1452,7 +1452,6 @@ class Store(object):
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
         """
-        from .overlay import CompositeOverlay
         if backend not in cls.registry:
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)
