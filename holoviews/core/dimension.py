@@ -18,7 +18,7 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts, cleanup_custom_options
+from .options import Store, Opts, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -1388,7 +1388,7 @@ class Dimensioned(LabelledData):
         Returns:
             Returns the cloned object with the options applied
         """
-        backend = kwargs.pop('backend', None)
+        backend = kwargs.get('backend', None)
         clone = kwargs.pop('clone', True)
 
         if len(args) == 0 and len(kwargs)==0:
@@ -1399,13 +1399,19 @@ class Dimensioned(LabelledData):
             if kwargs:
                 raise ValueError('Please specify a list of option objects, or kwargs, but not both')
             options = args[0]
-        elif args and kwargs:
+        elif args and [k for k in kwargs.keys() if k != 'backend']:
             raise ValueError("Options must be defined in one of two formats. "
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "
                              "or explicitly define the type, e.g. "
                              "obj.options({'Image': {'cmap': 'viridis'}}). "
                              "Supplying both formats is not supported.")
+        elif args and all(isinstance(el, dict) for el in args):
+            if len(args) > 1:
+                self.warning('Only a single dictionary can be passed '
+                             'as a positional argument. Only processing '
+                             'the first dictionary')
+            options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)
         elif kwargs:
@@ -1413,11 +1419,16 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         if options is None:
-            expanded = {}
+            expanded_backends = [(backend, {})]
+        elif isinstance(options, list): # assuming a flat list of Options objects
+            expanded_backends = opts._expand_by_backend(options, backend)
         else:
-            expanded = opts._expand_options(options, backend)
-        return self.opts(expanded, backend=backend, clone=clone)
+            expanded_backends = [(backend, opts._expand_options(options, backend))]
 
+        obj = self
+        for backend, expanded in expanded_backends:
+            obj = obj.opts._dispatch_opts(expanded, backend=backend, clone=clone)
+        return obj
 
     def _repr_mimebundle_(self, include=None, exclude=None):
         """

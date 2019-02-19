@@ -83,7 +83,9 @@ class opts(param.ParameterizedFunction):
        strict, invalid keywords prevent the options being applied.""")
 
     def __call__(self, *args, **params):
-        if params and not args:
+        if not params and not args:
+            return Options()
+        elif params and not args:
             return Options(**params)
 
         if len(args) == 1:
@@ -105,6 +107,77 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
+    def _group_kwargs_to_options(cls, obj, kwargs):
+        "Format option group kwargs into canonical options format"
+        groups = Options._option_groups
+        if set(kwargs.keys()) - set(groups):
+            raise Exception("Keyword options %s must be one of  %s" % (groups,
+                            ','.join(repr(g) for g in groups)))
+        elif not all(isinstance(v, dict) for v in kwargs.values()):
+            raise Exception("The %s options must be specified using dictionary groups" %
+                            ','.join(repr(k) for k in kwargs.keys()))
+
+        # Check whether the user is specifying targets (such as 'Image.Foo')
+        targets = [all(k[0].isupper() for k in grp.keys()) for grp in kwargs.values()]
+        if any(targets) and not all(targets):
+            raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
+        elif not any(targets):
+            # Not targets specified - add current object as target
+            sanitized_group = util.group_sanitizer(obj.group)
+            if obj.label:
+                identifier = ('%s.%s.%s' % (
+                    obj.__class__.__name__, sanitized_group,
+                    util.label_sanitizer(obj.label)))
+            elif  sanitized_group != obj.__class__.__name__:
+                identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
+            else:
+                identifier = obj.__class__.__name__
+
+            options = {identifier:{grp:kws for (grp,kws) in kwargs.items()}}
+        else:
+            dfltdict = defaultdict(dict)
+            for grp, entries in kwargs.items():
+                for identifier, kws in entries.items():
+                    dfltdict[identifier][grp] = kws
+            options = dict(dfltdict)
+        return options
+
+    @classmethod
+    def _apply_groups_to_backend(cls, obj, options, backend, clone):
+        "Apply the groups to a single specified backend"
+        obj_handle = obj
+        if options is None:
+            if clone:
+                obj_handle = obj.map(lambda x: x.clone(id=None))
+            else:
+                obj.map(lambda x: setattr(x, 'id', None))
+        elif clone:
+            obj_handle = obj.map(lambda x: x.clone(id=x.id))
+
+        return StoreOptions.set_options(obj_handle, options, backend=backend)
+
+
+    @classmethod
+    def _grouped_backends(cls, options, backend):
+        "Group options by backend and filter out output group appropriately"
+
+        if options is None:
+            return [(backend or Store.current_backend, options)]
+        dfltdict = defaultdict(dict)
+        for spec, groups in options.items():
+            if 'output' not in groups.keys() or len(groups['output'])==0:
+                dfltdict[backend or Store.current_backend][spec.strip()] = groups
+            elif set(groups['output'].keys()) - set(['backend']):
+                dfltdict[groups['output']['backend']][spec.strip()] = groups
+            elif ['backend'] == list(groups['output'].keys()):
+                filtered = {k:v for k,v in groups.items() if k != 'output'}
+                dfltdict[groups['output']['backend']][spec.strip()] = filtered
+            else:
+                raise Exception('The output options group must have the backend keyword')
+
+        return [(bk, bk_opts) for (bk, bk_opts) in dfltdict.items()]
+
+    @classmethod
     def apply_groups(cls, obj, options=None, backend=None, clone=True, **kwargs):
         """Applies nested options definition grouped by type.
 
@@ -123,7 +196,7 @@ class opts(param.ParameterizedFunction):
         a type[.group][.label] specification, e.g.:
 
             opts.apply_groups(obj, {'Image': {'plot':  {'show_title': False},
-                                                    'style': {'cmap': 'viridis}}})
+                                              'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
 
@@ -144,7 +217,6 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-        backend = backend or Store.current_backend
         if isinstance(options, basestring):
             from ..util.parser import OptsSpec
             try:
@@ -153,43 +225,12 @@ class opts(param.ParameterizedFunction):
                 options = OptsSpec.parse(
                     '{clsname} {options}'.format(clsname=obj.__class__.__name__,
                                                  options=options))
+        if kwargs:
+            options = cls._group_kwargs_to_options(obj, kwargs)
 
-        backend_options = Store.options(backend=backend)
-        groups = set(backend_options.groups.keys())
-        if kwargs and set(kwargs) <= groups:
-            if not all(isinstance(v, dict) for v in kwargs.values()):
-                raise Exception("The %s options must be specified using dictionary groups" %
-                                ','.join(repr(k) for k in kwargs.keys()))
-
-            # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = backend_options.children
-            targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
-            if any(targets) and not all(targets):
-                raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
-            elif not any(targets):
-                # Not targets specified - add current object as target
-                sanitized_group = util.group_sanitizer(obj.group)
-                if obj.label:
-                    identifier = ('%s.%s.%s' % (
-                        obj.__class__.__name__, sanitized_group,
-                        util.label_sanitizer(obj.label)))
-                elif  sanitized_group != obj.__class__.__name__:
-                    identifier = '%s.%s' % (obj.__class__.__name__, sanitized_group)
-                else:
-                    identifier = obj.__class__.__name__
-
-                kwargs = {k:{identifier:v} for k,v in kwargs.items()}
-
-        obj_handle = obj
-        if options is None and kwargs == {}:
-            if clone:
-                obj_handle = obj.map(lambda x: x.clone(id=None))
-            else:
-                obj.map(lambda x: setattr(x, 'id', None))
-        elif clone:
-            obj_handle = obj.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(obj_handle, options, backend=backend, **kwargs)
-        return obj_handle
+        for backend, backend_opts in cls._grouped_backends(options, backend):
+            obj = cls._apply_groups_to_backend(obj, backend_opts, backend, clone)
+        return obj
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
@@ -245,11 +286,37 @@ class opts(param.ParameterizedFunction):
 
 
     @classmethod
+    def _expand_by_backend(cls, options, backend):
+        """
+        Given a list of flat Option objects which may or may not have
+        'backend' in their kwargs, return a list of grouped backend
+        """
+        groups = defaultdict(list)
+        used_fallback = False
+        for obj in options:
+            if 'backend' in obj.kwargs:
+                opts_backend = obj.kwargs['backend']
+            elif backend is None:
+                opts_backend = Store.current_backend
+                obj.kwargs['backend']= opts_backend
+            else:
+                opts_backend = backend
+                obj.kwargs['backend'] = opts_backend
+                used_fallback = True
+            groups[opts_backend].append(obj)
+
+        if backend and not used_fallback:
+            cls.param.warning("All supplied Options objects already define a backend, "
+                              "backend override %r will be ignored." % backend)
+
+        return [(bk, cls._expand_options(o, bk)) for (bk, o) in groups.items()]
+
+    @classmethod
     def _expand_options(cls, options, backend=None):
         """
         Validates and expands a dictionaries of options indexed by
-        type[.group][.label] keys into separate style, plot and norm
-        options.
+        type[.group][.label] keys into separate style, plot, norm and
+        output options.
 
             opts._expand_options({'Image': dict(cmap='viridis', show_title=False)})
 
@@ -373,7 +440,7 @@ class opts(param.ParameterizedFunction):
         def builder(cls, spec=None, **kws):
             spec = element if spec is None else '%s.%s' % (element, spec)
             prefix = 'In opts.{element}(...), '.format(element=element)
-            backend = kws.pop('backend', None)
+            backend = kws.get('backend', None)
             keys = set(kws.keys())
             if backend:
                 allowed_kws = cls._element_keywords(backend,

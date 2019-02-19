@@ -43,8 +43,8 @@ import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict
-from .util import deprecated_opts_signature, disable_constant, config
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict, config
+from .util import deprecated_opts_signature, disable_constant
 from .pprint import InfoPrinter, PrettyPrinter
 
 
@@ -159,6 +159,18 @@ class Opts(object):
             Returns the object or a clone with the options applied
         """
         if self._mode is None:
+            apply_groups, _, _ = deprecated_opts_signature(args, kwargs)
+            if apply_groups and config.future_deprecations:
+                msg = ("Calling the .opts method with options broken down by options "
+                       "group (i.e. separate plot, style and norm groups) is deprecated. "
+                       "Use the .options method converting to the simplified format "
+                       "instead or use hv.opts.apply_groups for backward compatibility.")
+                param.main.warning(msg)
+
+        return self._dispatch_opts( *args, **kwargs)
+
+    def _dispatch_opts(self, *args, **kwargs):
+        if self._mode is None:
             return self._base_opts(*args, **kwargs)
         elif self._mode == 'holomap':
             return self._holomap_opts(*args, **kwargs)
@@ -224,13 +236,6 @@ class Opts(object):
 
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
-
-        if apply_groups and config.future_deprecations:
-            msg = ("Calling the .opts method with options broken down by options "
-                   "group (i.e. separate plot, style and norm groups) is deprecated. "
-                   "Use the .options method converting to the simplified format "
-                   "instead or use hv.opts.apply_groups for backward compatibility.")
-            param.main.warning(msg)
         if apply_groups:
             from ..util import opts
             if options is not None:
@@ -581,9 +586,12 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    _option_groups = ['style', 'plot', 'norm']
+    _option_groups = ['style', 'plot', 'norm', 'output']
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
+    _output_allowed_kws = ['backend']
+
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True,
+                 max_cycles=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -1468,7 +1476,8 @@ class Store(object):
             plot_opts =  Keywords(plot_opts,  target=view_class.__name__)
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
-            opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
+            opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
+                          'output': Options(allowed_keywords=Options._output_allowed_kws)}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
                                     'norm':  Options(framewise=False, axiswise=False,
