@@ -39,7 +39,7 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         plot_opts = Keywords(['plot_opt1', 'plot_opt2']+custom_plot, name)
         opt_groups = {'plot': Options(allowed_keywords=plot_opts),
                       'style': Options(allowed_keywords=style_opts),
-                      'output':Options(allowed_keywords=['backend'])}
+                      'output': Options(allowed_keywords=['backend'])}
         Store._options[backend][name] = opt_groups
 
 
