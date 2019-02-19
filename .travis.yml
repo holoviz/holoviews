@@ -148,6 +148,7 @@ jobs:
         skip_cleanup: true
         access_key_id: $AWS_ACCESS_KEY_ID
         secret_access_key: $AWS_SECRET_ACCESS_KEY
+        region: eu-west-1
         bucket: "build.holoviews.org"
         on:
           all_branches: true
@@ -160,6 +161,7 @@ jobs:
         skip_cleanup: true
         access_key_id: $AWS_ACCESS_KEY_ID
         secret_access_key: $AWS_SECRET_ACCESS_KEY
+        region: eu-west-1
         bucket: "build.holoviews.org"
 
     ########## END-USER PACKAGES ##########
