@@ -154,7 +154,8 @@ jobs:
       stage: gallery_dev
       env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='true' HV_REQUIREMENTS="doc" BUCKET="dev"
       script:
-        - conda install -c conda-forge awscli
+        - bokeh sampledata
+        - pip install awscli
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - nbsite build --what=html --output=builtdocs
       deploy:
