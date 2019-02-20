@@ -90,6 +90,5 @@ html_context.update({
         ('API', 'Reference_Manual/index'),
         ('FAQ', 'FAQ')
     ),
-    'js_includes': html_context['js_includes'],
-
+    'js_includes': html_context['js_includes']+['holoviews.js']
 })
