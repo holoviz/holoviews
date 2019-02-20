@@ -8,8 +8,8 @@
 
 .. raw:: html
 
-  <div>
-    <div style="width: 65%">
+  <div style="display: flex">
+    <div style="width: 70%">
 
 HoloViews is an `open-source <https://github.com/pyviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
