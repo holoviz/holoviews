@@ -166,7 +166,7 @@ jobs:
         region: eu-west-1
         bucket: $BUCKET.holoviews.org
         on:
-          - all_branches: true
+          all_branches: true
       after_success:
         - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
