@@ -19,12 +19,13 @@ extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy', 'panel']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
-    'networkx', 'pillow>=5.3.0', 'xarray>=0.10.4', 'plotly>=3.4',
-    'datashader', 'selenium', 'phantomjs', 'ffmpeg']
+    'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=3.4',
+    'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
+    'cftime', 'netcdf4']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
@@ -41,6 +42,8 @@ extras_require['basic_tests'] = extras_require['tests']+[
 extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
+
+extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2', 'sphinx_ioam_theme']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))

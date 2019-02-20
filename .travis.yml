@@ -41,6 +41,10 @@ stages:
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: docs_dev
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: docs_daily
+    if: type = cron
 
 jobs:
   include:
@@ -118,7 +122,7 @@ jobs:
         - coveralls
       after_failure:
         - popd
-        - sleep 10		
+        - sleep 10
 
     - <<: *regression_test
       env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
@@ -128,6 +132,36 @@ jobs:
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
       after_success: echo "Success"
+
+    ########## DOCS ##########
+
+    - &doc_build
+      <<: *default
+      stage: docs_dev
+      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
+      script:
+        - bokeh sampledata
+        - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
+        - nbsite build --what=html --output=builtdocs
+      deploy:
+        provider: s3
+        local_dir: ./builtdocs
+        skip_cleanup: true
+        access_key_id: $AWS_ACCESS_KEY_ID
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        region: eu-west-1
+        bucket: "dev.holoviews.org"
+
+    - <<: *doc_build
+      stage: docs_daily
+      deploy:
+        provider: s3
+        local_dir: ./builtdocs
+        skip_cleanup: true
+        access_key_id: $AWS_ACCESS_KEY_ID
+        secret_access_key: $AWS_SECRET_ACCESS_KEY
+        region: eu-west-1
+        bucket: "build.holoviews.org"
 
     ########## END-USER PACKAGES ##########
 

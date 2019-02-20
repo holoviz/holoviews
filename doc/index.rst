@@ -1,11 +1,17 @@
 .. HoloViews documentation master file
 
-HoloViews
-____________
+.. raw:: html
+
+  <h1><img src="_static/logo_horizontal.png" style="width: 30%;"></h1>
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
 
-HoloViews is an `open-source <https://github.com/ioam/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+.. raw:: html
+
+  <div style="display: flex">
+    <div style="width: 70%">
+
+HoloViews is an `open-source <https://github.com/pyviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
 For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pictures, to appreciate how easy it is to create such plots yourself!
 
@@ -18,38 +24,46 @@ The `API <Reference_Manual>`_ is the definitive guide to each HoloViews object, 
 If you have any `issues <https://github.com/pyviz/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/pyviz/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/pyviz/pyviz>`_.
 
 .. raw:: html
+
+  </div>
+
+.. raw:: html
   :file: latest_news.html
 
+.. raw:: html
+
+  </div>
+  <hr width='100%'></hr>
 
 .. raw:: html
 
    <div>
    <div >
      <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
-       <img src="http://holoviews.org/_images/iris_splom_example.png" width='20%'>    </img> </a>
+       <img src="http://holoviews.org/_images/iris_splom_example.png" width='24%'>    </img> </a>
      <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
-       <img src="https://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
+       <img src="https://assets.holoviews.org/collage/cells.png" width='27%'> </img>  </a>
      <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-       <img src="http://holoviews.org/_images/scatter_economic.png" width='43%'> </img>    </a>
+       <img src="http://holoviews.org/_images/scatter_economic.png" width='47%'> </img>    </a>
    </div>
 
    <div >
      <a href="http://holoviews.org/gallery/demos/bokeh/square_limit.html">
-       <img src="http://holoviews.org/_images/square_limit.png" width='20%'> </a>
+       <img src="http://holoviews.org/_images/square_limit.png" width='24%'> </a>
      <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
-       <img src="http://holoviews.org/_images/bars_economic.png" width='20%'> </a>
+       <img src="http://holoviews.org/_images/bars_economic.png" width='24%'> </a>
      <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-       <img src="http://holoviews.org/_images/texas_choropleth_example.png"    width='20%'> </a>
+       <img src="http://holoviews.org/_images/texas_choropleth_example.png"    width='24%'> </a>
      <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
-       <img src="http://holoviews.org/_images/verhulst_mandelbrot.png" width='20%'>    </a>
+       <img src="http://holoviews.org/_images/verhulst_mandelbrot.png" width='24%'>    </a>
    </div>
    <div >
        <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
-         <img src="https://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+         <img src="https://assets.holoviews.org/collage/dropdown.gif" width='33%'> </a>
        <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
-         <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+         <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='30%'> </a>
        <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
-         <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+         <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='33%'> </a>
    </div>
    </div>
 
@@ -64,10 +78,10 @@ HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/pyviz/holov
 
 The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
-  conda install -c ioam holoviews bokeh
+  conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
-directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.github.com/param/>`_.
+directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://param.pyviz.org/>`_.
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 

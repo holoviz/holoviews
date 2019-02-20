@@ -5,7 +5,11 @@
   <!-- Basic Page Needs
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
   <meta charset="utf-8">
-  <title>{{ title }} &mdash; {{ shorttitle }}</title>
+  {% if title == "&lt;no title&gt;" %}
+  <title>{{ shorttitle|striptags|e }}</title>
+  {% else %}
+  <title>{{ title|striptags|e }} &mdash; {{ shorttitle|striptags|e }}</title>
+  {% endif %}
   <meta name="description" content="{{ DESCRIPTION }}">
   <meta name="author" content="{{ AUTHOR }}">
 
@@ -26,9 +30,14 @@
 
   <!-- CSS
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="stylesheet" href="//{{ css_server }}/theme/css/main.css">
-  <link rel="stylesheet" href="{{ pathto('_static/custom.css', 1) }}">
-  
+
+  <link rel="stylesheet" href="{{ pathto('_static/' + theme_css, 1) }}">
+  {% for link in css_includes %}
+    <link rel="stylesheet" href="{{ pathto('_static/' + link, 1) }}">
+  {% endfor %}
+  {% if theme_custom_css %}
+    <link rel="stylesheet" href="{{ pathto('_static/' + theme_custom_css, 1) }}">
+  {% endif %}
 
   <!-- Scripts
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -48,23 +57,27 @@
 
   <!-- Canonical
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
-  <link rel="canonical" href="http://holoviews.org/{{ pagename }}{{ file_suffix }}" />
+  <link rel="canonical" href="{{ WEBSITE_URL }}/{{ pagename }}{{ file_suffix }}" />
 
 </head>
 <body class="">
 
   <header class="navigation">
     <div class="wrapper">
-      <a href="{{ SITE_URL }}" class="logo">
-        <img src="{{ pathto('_static/images/logo.png', 1) }}" alt="Bokeh Logo">
+      <a href="{{ pathto('index') }}" class="logo">
+        <img src="{{ pathto('_static/' + theme_logo, 1) }}" alt="Logo">
       </a>
-      <a href="{{ SITE_URL }}" class="navigation-menu logo-text">HoloViews</a>
+      <a href="{{ pathto('index') }}" class="navigation-menu logo-text">{{ PROJECT }}</a>
       <a href="javascript:void(0)" class="navigation-menu-button" id="js-mobile-menu">Menu</a>
-      <nav>
+	  <nav>
         <ul id="js-navigation-menu" class="navigation-menu show">
-          {% for name, link in NAV %}
-              <li class="nav-link"><a href="{{ link }}">{{ name }}</a></li>
-          {% endfor %}
+          <li class="nav-link">
+            <div style="display:inline-block;vertical-align: middle;">
+              <div class="search-bar">
+                {% include 'includes/searchbox.html' %}
+              </div>
+            </div>
+          </li>
         </ul>
       </nav>
     </div>
@@ -72,22 +85,21 @@
   <div class="second-nav">
     <nav>
       <ul class="navigation-menu show">
-        {%- for name, link in NAV_DOCS  %}
-            <li class="nav-link doc-head"><a href="{{ pathto(link) }}">{{ name }}</a></li>
+        {%- for name, link in NAV  %}
+          <li class="nav-link doc-head"><a href="{{ pathto(link) }}">{{ name }}</a></li>
         {%- endfor %}
       </ul>
     </nav>
-    <div class="navigation-tools">
-      {% include 'includes/searchbox.html' %}
-    </div>
   </div>
 
 <!-- MAIN BODY OF DOCS –––––––––––––––––– -->
   <div class="docs section">
-    <div class="toc">
+    <div id="hacketyhackhack"> <!-- style="width:20%;margin-right: 100px;"> --> <!--style="display: none;"> style="display:none;"> -->
+    <div class="toc" style="width:15%; margin-right:20px;">
       {{ toctree(maxdepth=4, collapse=True, includehidden=True) }}
     </div>
-    <div class="content">
+    </div>
+    <div class="content"> <!-- style="max-width:80%;margin-left:auto;margin-right: auto;">-->
         {% block body %}{% endblock %}
     </div>
   </div>
@@ -99,7 +111,7 @@
     <ul>
       <li><span class="footer-title">Links</span></li>
       {% for name, link in LINKS %}
-          <li><a href="{{ link }}">{{ name }}</a></li>
+          <li><a href="{{ pathto(link) }}">{{ name }}</a></li>
       {% endfor %}
     </ul>
     <ul>
