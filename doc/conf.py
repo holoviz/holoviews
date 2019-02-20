@@ -31,7 +31,7 @@ nbsite_gallery_conf = {
     'github_project': 'holoviews'
 }
 
-if os.environ['HV_DOC_GALLERY'] not in ('False', 'false', '0'):
+if os.environ.get('HV_DOC_GALLERY') not in ('False', 'false', '0'):
     nbsite_gallery_conf['galleries']['gallery'] = {
         'title': 'Gallery',
         'sections': [
@@ -40,7 +40,7 @@ if os.environ['HV_DOC_GALLERY'] not in ('False', 'false', '0'):
         ]
     }
 
-if os.environ['HV_DOC_REF_GALLERY'] not in ('False', 'false', '0'):
+if os.environ.get('HV_DOC_REF_GALLERY') not in ('False', 'false', '0'):
     nbsite_gallery_conf['galleries']['reference'] = {
         'title': 'Reference Gallery',
         'path': 'reference',
