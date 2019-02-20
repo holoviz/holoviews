@@ -189,7 +189,7 @@ class StickPlot(ColorbarPlot):
             # when x is datetime and y is float, then holoviews scales distance
             # in nanoseconds, but bokeh works in milliseconds...
             # needs a more fundamental fix than this
-            input_scale /= 1e6
+            input_scale *= 1e6
 
         magnitudes = element.dimension_values(3).copy()
         if self.rescale_lengths:
