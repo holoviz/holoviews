@@ -43,7 +43,7 @@ extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
 
-extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2']
+extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2', 'plotly-orca']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
