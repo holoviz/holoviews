@@ -38,13 +38,14 @@ class Points(Geometry):
 
 class Sticks(Geometry):
     """
-    A VectorField represents a set of vectors in 2D space with an
+    A Stickplot represents a set of vectors in 2D space with an
     associated angle, as well as an optional magnitude and any number
     of other value dimensions. The angles are assumed to be defined in
     radians and by default the magnitude is assumed to be normalized
     to be between 0 and 1.
 
-    In contrast to VectorField, x and y dimensions need not be commensurate.
+    In contrast to VectorField, x and y dimensions need not be commensurate,
+    i.e. datetime axes are permitted.
     """
 
     group = param.String(default='Stickplot', constant=True)

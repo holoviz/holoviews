@@ -183,20 +183,6 @@ class StickPlot(ColorbarPlot):
         properties.pop('scale', None)
         return properties
 
-    def _get_lengths(self, element, style, x_is_datetime):
-        input_scale = style.pop('scale', 1)
-        if x_is_datetime:
-            # when x is datetime and y is float, then holoviews scales distance
-            # in nanoseconds, but bokeh works in milliseconds...
-            # needs a more fundamental fix than this
-            input_scale *= 1e6
-
-        magnitudes = element.dimension_values(3).copy()
-        if self.rescale_lengths:
-            base_dist = get_min_distance(element)
-            magnitudes = magnitudes * base_dist
-        return magnitudes/input_scale
-
     def get_data(self, element, ranges, style):
         # Get x, y, angle, magnitude and color data
         rads = element.dimension_values(2)
@@ -210,10 +196,26 @@ class StickPlot(ColorbarPlot):
         xs = element.dimension_values(xidx)
         ys = element.dimension_values(yidx)
 
+        magnitudes = element.dimension_values(3).copy()
+
+        base_dist = np.nanmean(np.diff(xs))
+        if base_dist==0:
+            # vectors may be lined up along ordinate
+            base_dist=1
+        elif np.issubdtype(base_dist, np.timedelta64):
+            base_dist /= np.timedelta64(1, 'ms')
+
+        input_scale = style.pop('scale', 1.0)
         # is abscissa datetime axis?
-        # (for length of Ray, bokeh considers abscissa only)
-        x_is_datetime = np.issubdtype(xs.dtype, np.datetime64)
-        lens = self._get_lengths(element, style, x_is_datetime)
+        # if yes, tweak scale a bit for better default values.
+        # needs more objective solution?
+        if np.issubdtype(xs.dtype, np.datetime64):
+            if self.invert_axes:
+                input_scale *= 10
+            else:
+                input_scale /= 10
+
+        magnitudes = magnitudes * base_dist / input_scale
 
         cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
@@ -223,7 +225,7 @@ class StickPlot(ColorbarPlot):
         if cdim:
             color = cdata.get(cdim.name)
 
-        data = {'x': xs, 'y': ys, 'length': lens, 'angle': rads}
+        data = {'x': xs, 'y': ys, 'length': magnitudes, 'angle': rads}
         mapping = dict(x='x', y='y', length='length', angle='angle')
         if cdim and color is not None:
             data[cdim.name] = color
