@@ -137,7 +137,9 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev -c plotly" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
+      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
+      services:
+        - xvfb
       script:
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
