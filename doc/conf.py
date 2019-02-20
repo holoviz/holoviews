@@ -20,35 +20,37 @@ html_theme_options = {
 }
 nbbuild_cell_timeout = 360
 
-if os.environ['HV_DOC_GALLERY'] not in ('False', 'false', '0'):
-    extensions += ['nbsite.gallery']
+extensions += ['nbsite.gallery']
 
 templates_path = ['_templates']
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
-    'galleries': {
-        'gallery': {
-            'title': 'Gallery',
-            'sections': [
-                {'path': 'apps', 'title': 'Applications', 'skip': True},
-                'demos'
-            ]
-        },
-        'reference': {
-            'path': 'reference',
-            'sections': [
-                'elements',
-                'containers',
-                'streams',
-                'apps'
-            ],
-            'title': 'Reference Gallery',
-        }
-    },
+    'galleries': {},
     'github_org': 'pyviz',
     'github_project': 'holoviews'
 }
+
+if os.environ['HV_DOC_GALLERY'] not in ('False', 'false', '0'):
+    nbsite_gallery_conf['galleries']['gallery'] = {
+        'title': 'Gallery',
+        'sections': [
+            {'path': 'apps', 'title': 'Applications', 'skip': True},
+            'demos'
+        ]
+    }
+
+if os.environ['HV_DOC_REF_GALLERY'] not in ('False', 'false', '0'):
+    nbsite_gallery_conf['galleries']['reference'] = {
+        'title': 'Reference Gallery',
+        'path': 'reference',
+        'sections': [
+            'elements',
+            'containers',
+            'streams',
+            'apps'
+        ]
+    }
 
 MAIN_SITE = '//holoviews.org'
 
