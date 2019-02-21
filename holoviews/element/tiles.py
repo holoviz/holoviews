@@ -21,7 +21,7 @@ class Tiles(Element2D):
         The key dimensions of a geometry represent the x- and y-
         coordinates in a 2D space.""")
 
-    group = param.String(default='Tiles')
+    group = param.String(default='Tiles', constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         try:
