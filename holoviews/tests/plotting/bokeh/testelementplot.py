@@ -320,7 +320,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve((gregorian_dates, [1, 2, 3]))
         plot = bokeh_renderer.get_plot(curve)
         xs = plot.handles['cds'].data['x']
-        self.assertEqual(xs.astype('int'),
+        self.assertEqual(xs.astype('int64'),
                          np.array([951696000000, 951868800000, 951955200000]))
 
     def test_cftime_transform_noleap_warn(self):
@@ -334,7 +334,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve((gregorian_dates, [1, 2, 3]))
         plot = bokeh_renderer.get_plot(curve)
         xs = plot.handles['cds'].data['x']
-        self.assertEqual(xs.astype('int'),
+        self.assertEqual(xs.astype('int64'),
                          np.array([951696000000, 951868800000, 951955200000]))
         substr = (
             "Converting cftime.datetime from a non-standard calendar "
