@@ -1,10 +1,12 @@
+import param
 import numpy as np
 
-from holoviews import (Dimension, Dataset, Curve, Path, Histogram,
-                       HeatMap, Contours, Scatter, Points, Polygons,
-                       VectorField, Spikes, Area, Bars, ErrorBars,
-                       BoxWhisker, Raster, Image, QuadMesh, RGB,
-                       Graph, TriMesh)
+from holoviews import (Dimension, Dataset, Element, Annotation, Curve,
+                       Path, Histogram, HeatMap, Contours, Scatter,
+                       Points, Polygons, VectorField, Spikes, Area,
+                       Bars, ErrorBars, BoxWhisker, Raster, Image,
+                       QuadMesh, RGB, Graph, TriMesh, Div)
+from holoviews.element.path import BaseShape
 from holoviews.element.comparison import ComparisonTestCase
 
 class ElementConstructorTest(ComparisonTestCase):
@@ -24,6 +26,28 @@ class ElementConstructorTest(ComparisonTestCase):
         self.path = Path([sine_data, cos_data])
         self.histogram = Histogram(self.sin, self.hxs)
         super(ElementConstructorTest, self).setUp()
+
+    def test_empty_element_constructor(self):
+        failed_elements = []
+        for name, el in param.concrete_descendents(Element).items():
+            if issubclass(el, (Annotation, BaseShape, Div)):
+                continue
+            try:
+                el([])
+            except:
+                failed_elements.append(name)
+        self.assertEqual(failed_elements, [])
+
+    def test_none_element_constructor(self):
+        failed_elements = []
+        for name, el in param.concrete_descendents(Element).items():
+            if issubclass(el, (Annotation, BaseShape)):
+                continue
+            try:
+                el(None)
+            except:
+                failed_elements.append(name)
+        self.assertEqual(failed_elements, [])
 
     def test_chart_zipconstruct(self):
         self.assertEqual(Curve(zip(self.xs, self.sin)), self.curve)

@@ -212,7 +212,7 @@ class _layout_sankey(Operation):
                 nsum = np.sum([node['value'] for node in nodes])
                 ky = (y1 - y0 - (len(nodes)-1) * py) / nsum
                 kys.append(ky)
-            ky = np.min(kys)
+            ky = np.min(kys) if len(kys) else np.nan
 
             for nodes in node_map.values():
                 for i, node in enumerate(nodes):
@@ -309,6 +309,8 @@ class Sankey(Graph):
     vdims = param.List(default=[Dimension('Value')])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
+        if data is None:
+            data = []
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
             edges, nodes, edgepaths = data

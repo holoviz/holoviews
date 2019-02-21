@@ -42,6 +42,8 @@ class Raster(Element2D):
         The dimension description of the data held in the matrix.""")
 
     def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
+        if data is None or isinstance(data, list) and data == []:
+            data = np.zeros((0, 0))
         if extents is None:
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
@@ -73,6 +75,8 @@ class Raster(Element2D):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
             dimension = self.get_dimension(dim)
+            if self.data.size == 0:
+                return np.nan, np.nan
             lower, upper = np.nanmin(self.data), np.nanmax(self.data)
             if not dimension_range:
                 return lower, upper
@@ -835,6 +839,8 @@ class QuadMesh(Dataset, Element2D):
     _binned = True
 
     def __init__(self, data, kdims=None, vdims=None, **params):
+        if data is None or isinstance(data, list) and data == []:
+            data = ([], [], np.zeros((0, 0)))
         super(QuadMesh, self).__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
             raise DataError("%s type expects gridded data, %s is columnar."

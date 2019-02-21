@@ -23,7 +23,7 @@ class ItemTable(Element):
        ItemTables hold an index Dimension for each value they contain, i.e.
        they are equivalent to the keys.""")
 
-    vdims = param.List(default=[Dimension('Default')], bounds=(1, None), doc="""
+    vdims = param.List(default=[Dimension('Default')], bounds=(00, None), doc="""
        ItemTables should have only index Dimensions.""")
 
     group = param.String(default="ItemTable", constant=True)
@@ -40,6 +40,8 @@ class ItemTable(Element):
 
 
     def __init__(self, data, **params):
+        if data is None:
+            data = []
         if type(data) == dict:
             raise ValueError("ItemTable cannot accept a standard Python  dictionary "
                              "as a well-defined item ordering is required.")
