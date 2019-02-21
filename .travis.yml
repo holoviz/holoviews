@@ -166,7 +166,7 @@ jobs:
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/
         - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
