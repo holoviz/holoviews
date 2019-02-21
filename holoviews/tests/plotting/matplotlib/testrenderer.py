@@ -75,10 +75,5 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
     def test_render_mp4(self):
-        try:
-            data, metadata = self.renderer.components(self.map1, 'mp4')
-        except ValueError:
-            # ignore linux issues temporarily
-            # ValueError: I/O operation on closed file
-            return
+        data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
