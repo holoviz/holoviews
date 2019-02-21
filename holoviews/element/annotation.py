@@ -150,6 +150,57 @@ class HLine(Annotation):
             return super(HLine, self).dimension_values(dimension)
 
 
+class Slope(Annotation):
+    """A line drawn with arbitrary slope and y-intercept"""
+
+    slope = param.Number(default=0)
+
+    y_intercept = param.Number(default=0)
+
+    def __init__(self, slope, y_intercept, kdims=None, vdims=None, **params):
+        super(Slope, self).__init__(
+            (slope, y_intercept), slope=slope, y_intercept=y_intercept,
+            kdims=kdims, vdims=vdims, **params)
+
+
+    @classmethod
+    def from_scatter(cls, element, **kwargs):
+        """Returns a Slope element given an element of x/y-coordinates
+
+        Computes the slope and y-intercept from an element containing
+        x- and y-coordinates.
+
+        Args:
+            element: Element to compute slope from
+            kwargs: Keyword arguments to pass to the Slope element
+
+        Returns:
+            Slope element
+        """
+        x, y = (element.dimension_values(i) for i in range(2))
+        par = np.polyfit(x, y, 1, full=True)
+        gradient=par[0][0]
+        y_intercept=par[0][1]
+        return cls(gradient, y_intercept, **kwargs)
+
+
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        """Clones the object, overriding data and parameters.
+
+        Args:
+            data: New data replacing the existing data
+            shared_data (bool, optional): Whether to use existing data
+            new_type (optional): Type to cast object to
+            *args: Additional arguments to pass to constructor
+            **overrides: New keyword arguments to pass to constructor
+
+        Returns:
+            Cloned Slope
+        """
+        return Element2D.clone(self, (self.slope, self.y_intercept), shared_data, new_type,
+                               *args, **overrides)
+
+
 
 class VSpan(Annotation):
     """Vertical span annotation at the given position."""
@@ -429,4 +480,3 @@ class Labels(Dataset, Element2D):
 
     vdims = param.List([Dimension('Label')], bounds=(1, None), doc="""
         Defines the value dimension corresponding to the label text.""")
-
