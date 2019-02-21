@@ -35,13 +35,13 @@ class Tiles(Element2D):
                             % (type(self).__name__, type(data).__name__) )
         super(Tiles, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
-    
+
     def range(self, dim, data_range=True, dimension_range=True):
         return np.nan, np.nan
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         return np.array([])
-    
+
 
 # Mapping between patterns to match specified as tuples and tuples containing attributions
 _ATTRIBUTIONS = {
