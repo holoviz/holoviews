@@ -1919,10 +1919,10 @@ def cftime_to_timestamp(date, time_unit='us'):
         date: cftime datetime object (or array)
 
     Returns:
-        Milliseconds since 1970-01-01 00:00:00
+        time_unit since 1970-01-01 00:00:00
     """
     import cftime
-    utime = cftime.utime('microseconds since 1970-01-01')
+    utime = cftime.utime('microseconds since 1970-01-01 00:00:00')
     if time_unit == 'us':
         tscale = 1
     else:
