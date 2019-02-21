@@ -165,7 +165,10 @@ class SankeyPlot(GraphPlot):
 
         ys = nodes.dimension_values(1)
         nodes = element._sankey['nodes']
-        offset = (nodes[0]['x1']-nodes[0]['x0'])/4.
+        if nodes:
+            offset = (nodes[0]['x1']-nodes[0]['x0'])/4.
+        else:
+            offset = 0
         if self.label_position == 'right':
             xs = np.array([node['x1'] for node in nodes])+offset
         else:

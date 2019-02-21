@@ -212,7 +212,7 @@ class _layout_sankey(Operation):
                 nsum = np.sum([node['value'] for node in nodes])
                 ky = (y1 - y0 - (len(nodes)-1) * py) / nsum
                 kys.append(ky)
-            ky = np.min(kys)
+            ky = np.min(kys) if len(kys) else np.nan
 
             for nodes in node_map.values():
                 for i, node in enumerate(nodes):

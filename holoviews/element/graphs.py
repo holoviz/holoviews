@@ -716,7 +716,13 @@ class layout_chords(Operation):
         else:
             kdims = Nodes.kdims
             values, vdims = (), []
-        nodes = Nodes((mxs, mys, nodes)+values, kdims=kdims, vdims=vdims)
+
+        if len(nodes):
+            node_data = (mxs, mys, nodes)+values
+        else:
+            node_data = tuple([] for _ in kdims+vdims)
+
+        nodes = Nodes(node_data, kdims=kdims, vdims=vdims)
         edges = EdgePaths(paths)
         chord = Chord((element.data, nodes, edges), compute=False)
         chord._angles = points
@@ -740,11 +746,15 @@ class Chord(Graph):
     group = param.String(default='Chord', constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, compute=True, **params):
+        if data is None or isinstance(data, list) and data == []:
+            data = (([], [], []),)
+
         if isinstance(data, tuple):
             data = data + (None,)* (3-len(data))
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
+
         if nodes is not None:
             if not isinstance(nodes, Dataset):
                 if nodes.ndims == 3:
