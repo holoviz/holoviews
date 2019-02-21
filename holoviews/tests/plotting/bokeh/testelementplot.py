@@ -319,7 +319,6 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
                            cftime.DatetimeGregorian(2000, 3, 2)]
         curve = Curve((gregorian_dates, [1, 2, 3]))
         plot = bokeh_renderer.get_plot(curve)
-        print(plot.handles['cds'].data)
         xs = plot.handles['cds'].data['x']
         self.assertEqual(xs.astype('int64'),
                          np.array([951696000000, 951868800000, 951955200000]))
