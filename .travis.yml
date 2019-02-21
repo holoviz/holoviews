@@ -41,9 +41,17 @@ stages:
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: docs
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
+  - name: gallery
+    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: docs_dev
     if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+  - name: gallery_dev
+    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
   - name: docs_daily
+    if: type = cron
+  - name: gallery_daily
     if: type = cron
 
 jobs:
@@ -141,27 +149,39 @@ jobs:
       env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='false' HV_REQUIREMENTS="doc"
       script:
         - bokeh sampledata
-        - nbsite generate-rst --org pyviz --project-name holoviews --offset 0 --skip ^reference
+        - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - nbsite build --what=html --output=builtdocs
-      deploy:
-        provider: s3
-        local_dir: ./builtdocs
-        skip_cleanup: true
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        region: eu-west-1
-        bucket: "dev.holoviews.org"
+      after_success:
+        - pip install awscli
+        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude ".git/*"
+
+    - &gallery_build
+      <<: *doc_build
+      stage: gallery_dev
+      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='true' HV_REQUIREMENTS="doc" BUCKET="dev."
+      script:
+        - bokeh sampledata
+        - pip install awscli
+        - conda install -c conda-forge mpl_sample_data --no-deps
+        - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
+        - nbsite build --what=html --output=builtdocs
+      after_success:
+        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/$TRAVIS_BUILD_NUMBER
+        - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
       stage: docs_daily
-      deploy:
-        provider: s3
-        local_dir: ./builtdocs
-        skip_cleanup: true
-        access_key_id: $AWS_ACCESS_KEY_ID
-        secret_access_key: $AWS_SECRET_ACCESS_KEY
-        region: eu-west-1
-        bucket: "build.holoviews.org"
+
+    - <<: *gallery_build
+      stage: gallery_daily
+      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='true' HV_REQUIREMENTS="doc" BUCKET="build."
+
+    - <<: *doc_build
+      stage: docs
+
+    - <<: *gallery_build
+      stage: gallery
+      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='true' HV_REQUIREMENTS="doc" BUCKET=""
 
     ########## END-USER PACKAGES ##########
 
