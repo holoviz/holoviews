@@ -118,7 +118,7 @@ class opts(param.ParameterizedFunction):
                             ','.join(repr(k) for k in kwargs.keys()))
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
-        targets = [all(k[0].isupper() for k in grp.keys()) for grp in kwargs.values()]
+        targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
         if any(targets) and not all(targets):
             raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
         elif not any(targets):
