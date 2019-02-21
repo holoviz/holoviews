@@ -65,20 +65,9 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertEqual((w, h), (288, 288))
 
     def test_render_gif(self):
-        try:
-            data, metadata = self.renderer.components(self.map1, 'gif')
-        except IndexError:
-            # ignore linux issues temporarily
-            #     self._frames[0].save(
-            # IndexError: list index out of range
-            return
+        data, metadata = self.renderer.components(self.map1, 'gif')
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
     def test_render_mp4(self):
-        try:
-            data, metadata = self.renderer.components(self.map1, 'mp4')
-        except ValueError:
-            # ignore linux issues temporarily
-            # ValueError: I/O operation on closed file
-            return
+        data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
