@@ -160,11 +160,11 @@ jobs:
       script:
         - bokeh sampledata
         - pip install awscli
-        - conda install mpl_sample_data --no-deps
+        - conda install -c conda-forge mpl_sample_data --no-deps
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./builtdocs s3://$BUCKETholoviews.org/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/$TRAVIS_BUILD_NUMBER
         - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
