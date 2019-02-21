@@ -185,6 +185,8 @@ class Histogram(Chart):
     _binned = True
 
     def __init__(self, data, edges=None, **params):
+        if data is None:
+            data = []
         if edges is not None:
             self.param.warning(
                 "Histogram edges should be supplied as a tuple "

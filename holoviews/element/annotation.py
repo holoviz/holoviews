@@ -330,6 +330,8 @@ class Div(Element):
     group = param.String(default='Div', constant=True)
 
     def __init__(self, data, **params):
+        if data is None:
+            data = ''
         if not isinstance(data, basestring):
             raise ValueError("Div element html data must be a string "
                              "type, found %s type." % type(data).__name__)

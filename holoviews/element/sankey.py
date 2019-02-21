@@ -309,6 +309,8 @@ class Sankey(Graph):
     vdims = param.List(default=[Dimension('Value')])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
+        if data is None:
+            data = []
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
             edges, nodes, edgepaths = data
