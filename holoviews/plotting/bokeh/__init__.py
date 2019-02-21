@@ -12,7 +12,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey)
+                        TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
+                        Tiles)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import LooseVersion, VersionError
 
@@ -44,6 +45,7 @@ from .renderer import BokehRenderer
 from .sankey import SankeyPlot
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
 from .tabular import TablePlot
+from .tiles import TilePlot
 from .util import bokeh_version # noqa (API import)
 
 
@@ -100,6 +102,7 @@ associations = {Overlay: OverlayPlot,
                 Spline: SplinePlot,
                 Arrow: ArrowPlot,
                 Div: DivPlot,
+                Tiles: TilePlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
