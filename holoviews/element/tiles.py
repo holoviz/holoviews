@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+from types import FunctionType
+
 import param
 import numpy as np
 
@@ -34,7 +36,6 @@ class Tiles(Element2D):
             raise TypeError('%s data should be a tile service URL not a %s type.'
                             % (type(self).__name__, type(data).__name__) )
         super(Tiles, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-
 
     def range(self, dim, data_range=True, dimension_range=True):
         return np.nan, np.nan
@@ -94,31 +95,29 @@ _ATTRIBUTIONS = {
 }
 
 # CartoDB basemaps
-CartoDark = Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
-CartoEco = Tiles('http://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
-CartoLight = Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
-CartoMidnight = Tiles('http://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
+CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
+CartoEco = lambda: Tiles('http://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
+CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
+CartoMidnight = lambda: Tiles('http://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
 
 # Stamen basemaps
-StamenTerrain = Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
-StamenTerrainRetina = Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
-StamenWatercolor = Tiles('http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
-StamenToner = Tiles('http://tile.stamen.com/toner/{Z}/{X}/{Y}.png', name="StamenToner")
-StamenTonerBackground = Tiles('http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
-StamenLabels = Tiles('http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenTerrain = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
+StamenTerrainRetina = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
+StamenWatercolor = lambda: Tiles('http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
+StamenToner = lambda: Tiles('http://tile.stamen.com/toner/{Z}/{X}/{Y}.png', name="StamenToner")
+StamenTonerBackground = lambda: Tiles('http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
+StamenLabels = lambda: Tiles('http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
 
 # Esri maps (see https://server.arcgisonline.com/arcgis/rest/services for the full list)
-EsriImagery = Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
-EsriNatGeo = Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{Z}/{Y}/{X}', name="EsriNatGeo")
-EsriUSATopo = Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{Z}/{Y}/{X}', name="EsriUSATopo")
-EsriTerrain = Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{Z}/{Y}/{X}', name="EsriTerrain")
-EsriReference = Tiles('http://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
+EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
+EsriNatGeo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{Z}/{Y}/{X}', name="EsriNatGeo")
+EsriUSATopo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{Z}/{Y}/{X}', name="EsriUSATopo")
+EsriTerrain = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{Z}/{Y}/{X}', name="EsriTerrain")
+EsriReference = lambda: Tiles('http://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
 ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
-
 # Miscellaneous
-OSM = Tiles('http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
-Wikipedia = Tiles('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png', name="Wikipedia")
+OSM = lambda: Tiles('http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
+Wikipedia = lambda: Tiles('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png', name="Wikipedia")
 
-
-tile_sources = {k: v for k, v in locals().items() if isinstance(v, Tiles) and k != 'ESRI'}
+tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k != 'ESRI'}
