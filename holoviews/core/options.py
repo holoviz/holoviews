@@ -1452,7 +1452,6 @@ class Store(object):
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
         """
-        from .overlay import CompositeOverlay
         if backend not in cls.registry:
             cls.registry[backend] = {}
         cls.registry[backend].update(associations)
@@ -1477,12 +1476,11 @@ class Store(object):
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
             opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
-                          'output': Options(allowed_keywords=Options._output_allowed_kws)}
-            if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
-                 opt_groups.update({'style': Options(allowed_keywords=style_opts),
-                                    'norm':  Options(framewise=False, axiswise=False,
-                                                     allowed_keywords=['framewise',
-                                                                       'axiswise'])})
+                          'output': Options(allowed_keywords=Options._output_allowed_kws),
+                          'style': Options(allowed_keywords=style_opts),
+                          'norm':  Options(framewise=False, axiswise=False,
+                                           allowed_keywords=['framewise',
+                                                             'axiswise'])}
 
             name = view_class.__name__
             cls._options[backend][name] = opt_groups
