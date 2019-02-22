@@ -13,8 +13,10 @@ from bokeh.document.events import ModelChangedEvent
 from bokeh.models import tools
 from bokeh.models import (
     Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter)
-from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter,
+    MercatorTickFormatter, BoxZoomTool)
+from bokeh.models.tickers import (
+    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker)
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
 from bokeh.models import CategoricalAxis
@@ -28,7 +30,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField, Path, Contours
+from ...element import Graph, VectorField, Path, Contours, Tiles
 from ...streams import Buffer
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -145,6 +147,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.callbacks = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
+        self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
+        if self.geographic and self.projection is None:
+            self.projection = 'mercator'
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
@@ -557,7 +562,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif axis == 'y':
             axis_obj = plot.yaxis[0]
 
-        if isinstance(axis_obj, CategoricalAxis):
+        if self.geographic and self.projection == 'mercator':
+            dimension = 'lon' if axis == 'x' else 'lat'
+            axis_props['ticker'] = MercatorTicker(dimension=dimension)
+            axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
+        elif isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
                     # set the group labels equal to major (actually minor)
