@@ -206,6 +206,10 @@ class BokehPlot(DimensionedPlot):
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
 
+        if self._root and 'embedded' in self._root.tags:
+            # Allows external libraries to prevent comm updates
+            return
+
         msg = self.renderer.diff(self, binary=True)
         if msg is None:
             return
