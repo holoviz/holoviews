@@ -643,6 +643,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
 class ColorbarPlot(ElementPlot):
 
+    clabel = param.String(default=None, doc="""
+        An explicit override of the color bar label, if set takes precedence
+        over the title key in colorbar_opts.""")
+
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
@@ -737,7 +741,9 @@ class ColorbarPlot(ElementPlot):
         if isinstance(dimension, dim):
             dimension = dimension.dimension
         dimension = element.get_dimension(dimension)
-        if dimension:
+        if self.clabel:
+            label = self.clabel
+        elif dimension:
             label = dimension.pprint_label
         elif element.vdims:
             label = element.vdims[0].pprint_label
