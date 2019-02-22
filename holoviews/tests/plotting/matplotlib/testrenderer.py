@@ -4,6 +4,10 @@ Test cases for rendering exporters
 """
 from __future__ import unicode_literals
 
+import os
+import sys
+import subprocess
+
 from unittest import SkipTest
 
 import numpy as np
@@ -69,5 +73,11 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
     def test_render_mp4(self):
+        if sys.version_info.major > 2:
+            devnull = subprocess.DEVNULL
+        else:
+            devnull = open(os.devnull, 'w')
+        if not subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull):
+            raise SkipTest('ffmpeg not available, skipping mp4 export test')
         data, metadata = self.renderer.components(self.map1, 'mp4')
         self.assertIn("<source src='data:video/mp4", data['text/html'])
