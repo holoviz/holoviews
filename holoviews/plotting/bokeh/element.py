@@ -566,6 +566,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dimension = 'lon' if axis == 'x' else 'lat'
             axis_props['ticker'] = MercatorTicker(dimension=dimension)
             axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
+            box_zoom = self.state.select(type=BoxZoomTool)
+            if box_zoom:
+                box_zoom[0].match_aspect = True
         elif isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
