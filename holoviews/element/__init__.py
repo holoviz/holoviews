@@ -9,6 +9,7 @@ from .raster import * # noqa (API import)
 from .sankey import * # noqa (API import)
 from .stats import * # noqa (API import)
 from .tabular import * # noqa (API import)
+from .tiles import * # noqa (API import)
 
 
 class ElementConversion(DataConversion):
