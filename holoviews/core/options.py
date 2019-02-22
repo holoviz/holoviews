@@ -1476,7 +1476,7 @@ class Store(object):
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
             opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
-                          'output': Options(allowed_keywords=Options._output_allowed_kws)
+                          'output': Options(allowed_keywords=Options._output_allowed_kws),
                           'style': Options(allowed_keywords=style_opts),
                           'norm':  Options(framewise=False, axiswise=False,
                                            allowed_keywords=['framewise',
