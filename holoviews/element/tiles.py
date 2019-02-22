@@ -12,10 +12,21 @@ from ..core.element import Element2D
 
 class Tiles(Element2D):
     """
-    The Tiles Element represents a Web Map Tile Service specified as a
-    URL containing {x}, {y}, and {z} templating variables, e.g.:
+    The Tiles element represents tile sources, specified as URL
+    containing different template variables. These variables
+    correspond to three different formats for specifying the spatial
+    location and zoom level of the requested tiles:
 
-    https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png
+      * Web mapping tiles sources containing {x}, {y}, and {z} variables
+
+      * Bounding box tile sources containing {XMIN}, {XMAX}, {YMIN}, {YMAX} variables
+
+      * Quadkey tile sources containin a {Q} variable
+
+    Tiles are defined in a pseudo-Mercator projection (EPSG:3857)
+    defined as eastings and northings. Any data overlaid on a tile
+    source therefore has to be defined in those coordinates or be
+    projected (e.g. using GeoViews).
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
