@@ -50,9 +50,9 @@ stages:
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)*[a-z]\d*$
   - name: docs_daily
-    if: type = cron
+    if: (type = cron OR commit_message =~ /\[doc-build\]/)
   - name: gallery_daily
-    if: type = cron
+    if: (type = cron OR commit_message =~ /\[doc-build\]/)
 
 jobs:
   include:
