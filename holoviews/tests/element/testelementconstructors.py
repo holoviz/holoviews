@@ -38,17 +38,6 @@ class ElementConstructorTest(ComparisonTestCase):
                 failed_elements.append(name)
         self.assertEqual(failed_elements, [])
 
-    def test_none_element_constructor(self):
-        failed_elements = []
-        for name, el in param.concrete_descendents(Element).items():
-            if issubclass(el, (Annotation, BaseShape, Tiles)):
-                continue
-            try:
-                el(None)
-            except:
-                failed_elements.append(name)
-        self.assertEqual(failed_elements, [])
-
     def test_chart_zipconstruct(self):
         self.assertEqual(Curve(zip(self.xs, self.sin)), self.curve)
 
