@@ -59,7 +59,7 @@ class TilePlot(ElementPlot):
         Returns a Bokeh glyph object.
         """
         tile_source = mapping['tile_source']
-        level = properties.pop('level', 'underlay')
+        level = properties.pop('level', 'glyph')
         renderer = plot.add_tile(tile_source, level=level)
         renderer.alpha = properties.get('alpha', 1)
 
