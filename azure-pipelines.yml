@@ -33,7 +33,7 @@ jobs:
   - script: |
       doit env_create  --python=$(python.version)
       conda activate test-environment
-      doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+      doit develop_install -c pyviz/label/dev -o unit_tests
       doit env_capture
     displayName: 'Install environment'
 
