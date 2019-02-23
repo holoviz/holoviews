@@ -19,10 +19,6 @@ jobs:
     maxParallel: 4
 
   steps:
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '$(python.version)'
-      architecture: 'x64'
 
   - script: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
     displayName: Add conda to PATH
