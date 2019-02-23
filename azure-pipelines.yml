@@ -3,7 +3,7 @@ trigger:
 
 jobs:
 
-- job: 'Unit Test'
+- job: 'unit_tests'
   pool:
     vmImage: 'Ubuntu-16.04'
   strategy:
