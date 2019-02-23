@@ -529,13 +529,13 @@ class PointerXYCallback(Callback):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
                 start = convert_timestamp(start)
-            if isinstance(start, np.datetime64):
-                start = dt64_to_dt(start)
             if isinstance(end, (int, float)):
                 end = convert_timestamp(end)
-            if isinstance(end, np.datetime64):
-                end = dt64_to_dt(end)
             s, e = start, end
+            if isinstance(s, np.datetime64):
+                s = dt64_to_dt(s)
+            if isinstance(e, np.datetime64):
+                e = dt64_to_dt(e)
         else:
             v, s, e = value, start, end
 
@@ -687,13 +687,13 @@ class TapCallback(PointerXYCallback):
             v = dt64_to_dt(value)
             if isinstance(start, (int, float)):
                 start = convert_timestamp(start)
-            if isinstance(start, np.datetime64):
-                start = dt64_to_dt(start)
             if isinstance(end, (int, float)):
                 end = convert_timestamp(end)
-            if isinstance(end, np.datetime64):
-                end = dt64_to_dt(end)
             s, e = start, end
+            if isinstance(s, np.datetime64):
+                s = dt64_to_dt(s)
+            if isinstance(e, np.datetime64):
+                e = dt64_to_dt(e)
         else:
             v, s, e = value, start, end
 
