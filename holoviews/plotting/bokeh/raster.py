@@ -39,7 +39,7 @@ class RasterPlot(ColorbarPlot):
     def _postprocess_hover(self, renderer, source):
         super(RasterPlot, self)._postprocess_hover(renderer, source)
         hover = self.handles.get('hover')
-        if not isinstance(hover.tooltips, list):
+        if not (hover and isinstance(hover.tooltips, list)):
             return
 
         element = self.current_frame
