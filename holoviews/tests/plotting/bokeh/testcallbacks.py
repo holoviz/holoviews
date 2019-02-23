@@ -1,3 +1,4 @@
+import datetime as dt
 from collections import deque, namedtuple
 
 import numpy as np
@@ -8,7 +9,7 @@ from holoviews.element import Points, Polygons, Box, Curve, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
                                PointerXY, PointerX, PlotReset, Selection1D,
-                               RangeXY, PlotSize, CDSStream)
+                               RangeXY, PlotSize, CDSStream, SingleTap)
 import pyviz_comms as comms
 
 try:
@@ -16,7 +17,7 @@ try:
     from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
     from holoviews.plotting.bokeh.callbacks import (
         Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback, Selection1DCallback
+        BoxEditCallback, Selection1DCallback, PointerXCallback, TapCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
     bokeh_server_renderer = BokehRenderer.instance(mode='server')
@@ -128,7 +129,34 @@ class TestResetCallback(CallbackTestCase):
         self.assertEqual(resets, [True])
         self.assertIs(stream.source, curve)
 
-        
+
+
+class TestPointerCallbacks(CallbackTestCase):
+
+    def test_pointer_x_datetime_out_of_bounds(self):
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        pointer = PointerX(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        callback = plot.callbacks[0]
+        self.assertIsInstance(callback, PointerXCallback)
+        msg = callback._process_msg({'x': 1000})
+        self.assertEqual(msg['x'], np.datetime64(dt.datetime(2017, 1, 1)))
+        msg = callback._process_msg({'x': 10000000000000})
+        self.assertEqual(msg['x'], np.datetime64(dt.datetime(2017, 1, 3)))
+
+    def test_tap_datetime_out_of_bounds(self):
+        points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
+        pointer = SingleTap(source=points)
+        plot = bokeh_server_renderer.get_plot(points)
+        callback = plot.callbacks[0]
+        self.assertIsInstance(callback, TapCallback)
+        msg = callback._process_msg({'x': 1000, 'y': 2})
+        self.assertEqual(msg, {})
+        msg = callback._process_msg({'x': 10000000000000, 'y': 1})
+        self.assertEqual(msg, {})
+
+
+
 class TestEditToolCallbacks(CallbackTestCase):
 
     def test_point_draw_callback(self):
