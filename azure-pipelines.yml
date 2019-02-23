@@ -23,7 +23,7 @@ jobs:
   - script: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
     displayName: Add conda to PATH
     
-  - script: sudo install -d -m 0777 /usr/local/miniconda/envs/
+  - script: sudo install -d -m 0777 /usr/share/miniconda/
     displayName: Fix Conda permissions
 
   - script: |
