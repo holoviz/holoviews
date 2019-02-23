@@ -22,6 +22,9 @@ jobs:
 
   - script: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
     displayName: Add conda to PATH
+    
+  - script: sudo install -d -m 0777 /usr/local/miniconda/envs/
+    displayName: Fix Conda permissions
 
   - script: |
       conda config --set always_yes True
@@ -30,7 +33,7 @@ jobs:
 
   - script: |
       doit env_create  --python=$(python.version)
-      conda activate test-environment
+      source activate test-environment
       doit develop_install -c pyviz/label/dev -o unit_tests
       doit env_capture
     displayName: 'Install environment'
