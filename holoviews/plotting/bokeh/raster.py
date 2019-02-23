@@ -3,6 +3,8 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 
+from bokeh.models import DatetimeAxis, CustomJSHover
+
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster, RGB, HSV
 from .element import ElementPlot, ColorbarPlot
@@ -33,6 +35,36 @@ class RasterPlot(ColorbarPlot):
                 vname = dimension_sanitizer(vdim.name)
                 tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
         return tooltips, {}
+
+    def _postprocess_hover(self, renderer, source):
+        super(RasterPlot, self)._postprocess_hover(renderer, source)
+        hover = self.handles.get('hover')
+        if not (hover and isinstance(hover.tooltips, list)):
+            return
+
+        element = self.current_frame
+        xdim, ydim = [dimension_sanitizer(kd.name) for kd in element.kdims]
+        xaxis = self.handles['xaxis']
+        yaxis = self.handles['yaxis']
+
+        code = """
+        var {ax} = special_vars.{ax};
+        var date = new Date({ax});
+        return date.toISOString().slice(0, 19).replace('T', ' ')
+        """
+        tooltips, formatters = [], dict(hover.formatters)
+        for (name, formatter) in hover.tooltips:
+            if isinstance(xaxis, DatetimeAxis) and formatter == '$x':
+                xhover = CustomJSHover(code=code.format(ax='x'))
+                formatters['$x'] = xhover
+                formatter += '{custom}'
+            if isinstance(yaxis, DatetimeAxis) and formatter == '$y':
+                yhover = CustomJSHover(code=code.format(ax='y'))
+                formatters['$y'] = yhover
+                formatter += '{custom}'
+            tooltips.append((name, formatter))
+        hover.tooltips = tooltips
+        hover.formatters = formatters
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
