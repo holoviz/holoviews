@@ -24,8 +24,10 @@ jobs:
       versionSpec: '$(python.version)'
       architecture: 'x64'
 
+  - script: echo "##vso[task.prependpath]/usr/share/miniconda/bin"
+    displayName: Add conda to PATH
+
   - script: |
-      python -m pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
       conda config --set always_yes True
       conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
     displayName: 'Set up conda'
