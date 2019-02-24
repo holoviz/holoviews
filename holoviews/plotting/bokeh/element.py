@@ -14,7 +14,7 @@ from bokeh.models import tools
 from bokeh.models import (
     Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
     FuncTickFormatter, TickFormatter, PrintfTickFormatter,
-    MercatorTickFormatter, BoxZoomTool)
+    MercatorTickFormatter, BoxZoomTool, WheelZoomTool)
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker)
 from bokeh.models.widgets import Panel, Tabs
@@ -481,6 +481,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         actual_width = frame_width or width
         actual_height = frame_height or height
 
+        if frame_width is not None:
+            width = None
+        if frame_height is not None:
+            height = None
+
         # Determine sizing mode
         init = 'plot' not in self.handles
         sizing_mode = 'fixed'
@@ -526,7 +531,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.param.warning("responsive mode could not be enabled "
                                    "because fixed height and aspect were "
                                    "specified.")
-            elif self.responsive == 'height':
+            elif self.responsive == 'width':
                 sizing_mode = 'scale_width'
             elif self.responsive == 'height':
                 sizing_mode = 'scale_height'
@@ -534,34 +539,54 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.responsive == 'width' and fixed_width and init:
             self.param.warning("responsive width mode could not be "
                                "enabled because a fixed width was defined.")
-        if self.responsive == 'height' and fixed_height and init0:
+        if self.responsive == 'height' and fixed_height and init:
             self.param.warning("responsive height mode could not be "
                                "enabled because a fixed height was defined.")
 
+        match_aspect = False
+        aspect_scale = 1
+        aspect_ratio = None
         aspect = 1 if self.aspect == 'square' else self.aspect
-        if self.data_aspect:
-            pass
+        if self.data_aspect or self.aspect == 'equal':
+            width, height = None, None
+            match_aspect = True
+            aspect_scale = 1 if self.aspect == 'equal' else self.data_aspect
         elif util.isnumeric(aspect):
-            if fixed_height:
-                frame_width = int(actual_height*aspect)
-                frame_height = actual_height
-            else:
+            if self.responsive:
+                aspect_ratio = aspect
+            elif fixed_width:
                 frame_width = actual_width
                 frame_height = int(actual_width/aspect)
+            else:
+                frame_width = int(actual_height*aspect)
+                frame_height = actual_height
+        elif aspect is not None:
+            self.param.warning('aspect value of type %s not recognized, '
+                               'provide a numeric value, \'equal\' or '
+                               '\'square\'.')
 
         plot_props = {
+            'aspect_ratio':  aspect_ratio,
+            'aspect_scale':  aspect_scale,
             'css_classes':   self.css_classes,
             'margin':        self.margin,
             'max_width':     self.max_width,
             'max_height':    self.max_height,
             'min_width':     self.min_width,
             'min_height':    self.min_height,
-            'frame_width':   frame_width,
-            'frame_height':  frame_height,
-            'plot_height':   height,
-            'plot_width':    width,
+            'match_aspect':  match_aspect,
             'sizing_mode':   sizing_mode
         }
+
+        if not self.drawn:
+            plot_props.update({
+                'frame_width':   frame_width,
+                'frame_height':  frame_height,
+                'plot_height':   height,
+                'plot_width':    width,
+            })
+
+        print(plot_props)
 
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
@@ -805,44 +830,62 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
 
+        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
+        fixed_width = (self.frame_width or options['width'])
+        fixed_height = (self.frame_height or options['height'])
+        if (self.aspect == 'equal' or self.data_aspect):
+            plot = self.handles['plot']
+            xspan = r-l if util.is_number(l) and util.is_number(r) else None
+            yspan = t-b if util.is_number(b) and util.is_number(t) else None
+            if self.drawn or self.aspect not in ['equal' or None]:
+                # After initial draw or if aspect is explicit
+                # adjust range to match initial aspect
+                ratio = self.data_aspect or 1
+                if self.aspect:
+                    frame_aspect = self.aspect
+                else:
+                    frame_aspect = plot.frame_width/plot.frame_height
+                desired_yspan = (xspan*(ratio/frame_aspect))
+                if desired_yspan >= yspan:
+                    ypad = (desired_yspan-yspan)/2.
+                    b, t = b-ypad, t+ypad
+                    yupdate = True
+                else:
+                    desired_xspan = yspan*1./(ratio/frame_aspect)
+                    xpad = (desired_xspan-xspan)/2.
+                    l, r = l-xpad, r+xpad
+                    xupdate = True
+            else:
+                # Set initial aspect
+                aspect = self.get_aspect(xspan, yspan)
+                width = plot.frame_width or plot.plot_width or 300
+                height = plot.frame_height or plot.plot_height or 300
+
+                if not (fixed_width or fixed_height) and not self.responsive:
+                    fixed_height = True
+
+                if fixed_height:
+                    plot.frame_height = height
+                    plot.frame_width = int(height*aspect)
+                elif fixed_width:
+                    plot.frame_width = width
+                    plot.frame_height = int(width/aspect)
+                else:
+                    plot.aspect_ratio = aspect
+
+                box_zoom = plot.select(type=BoxZoomTool)
+                scroll_zoom = plot.select(type=WheelZoomTool)
+                if box_zoom:
+                    box_zoom.match_aspect = True
+                if scroll_zoom:
+                    scroll_zoom.zoom_on_axis = False
+
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
         if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
-
-        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
-        fixed_width = (options['width'] or self.frame_width)
-        fixed_height = (options['height'] or self.frame_height)
-        if (self.aspect == 'equal' or self.data_aspect):
-            plot = self.handles['plot']
-            xspan = r-l if util.is_number(l) and util.is_number(r) else None
-            yspan = t-b if util.is_number(b) and util.is_number(t) else None
-            aspect = self.get_aspect(xspan, yspan)
-            width = plot.frame_width or plot.plot_width
-            height = plot.frame_height or plot.plot_height
-
-            if not (fixed_width or fixed_height) and not self.responsive:
-                fixed_width = True
-
-            plot.plot_width = None
-            plot.plot_height = None
-            if fixed_height:
-                plot.frame_height = height
-                plot.frame_width = int(height*aspect)
-            elif fixed_width:
-                plot.frame_width = width
-                plot.frame_height = int(width/aspect)
-            else:
-                plot.aspect_ratio = aspect
-
-            box_zoom = plot.select(type=BoxZoomTool)
-            scroll_zoom = plot.select(type=WheelZoomTool)
-            if box_zoom:
-                box_zoom.match_aspect = True
-            if scroll_zoom:
-                scroll_zoom.zoom_on_axis = False
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
