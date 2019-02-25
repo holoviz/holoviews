@@ -182,6 +182,8 @@ jobs:
     - <<: *gallery_build
       stage: gallery
       env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_HTML='true' HV_DOC_GALLERY='true' HV_REQUIREMENTS="doc" BUCKET=""
+      after_success:
+        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/
 
     ########## END-USER PACKAGES ##########
 
@@ -211,7 +213,7 @@ jobs:
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
+        - doit travis_wait 20 develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
@@ -220,7 +222,7 @@ jobs:
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
-        - doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
+        - doit travis_wait 20 develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
