@@ -105,6 +105,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             return
         elstyle = self.lookup_options(element, 'style')
         cycle = elstyle.kwargs.get('edge_color')
+        if not isinstance(cycle, Cycle):
+            cycle = None
 
         idx = element.get_dimension_index(cdim)
         field = dimension_sanitizer(cdim.name)
@@ -193,7 +195,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Handle node colors
         fixed_color = style.pop('node_color', None)
         cycle = self.lookup_options(element, 'style').kwargs.get('node_color')
-        if isinstance(cycle, Cycle):
+        if isinstance(cycle, Cycle) and 'cmap' not in style:
             colors = cycle
         else:
             colors = None
