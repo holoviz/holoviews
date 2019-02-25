@@ -7,6 +7,8 @@
   <meta charset="utf-8">
   {% if title == "&lt;no title&gt;" %}
   <title>{{ shorttitle|striptags|e }}</title>
+  {% elif pagename == "index" %}
+  <title>{{ PROJECT|striptags|e }} &mdash; {{ VERSION|striptags|e }}</title>
   {% else %}
   <title>{{ title|striptags|e }} &mdash; {{ shorttitle|striptags|e }}</title>
   {% endif %}
