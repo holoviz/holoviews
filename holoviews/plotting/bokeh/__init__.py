@@ -204,23 +204,22 @@ options.Labels = Options('style', text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options(
-    'style', node_size=15, node_fill_color=Cycle(),
-    node_line_color='black', node_nonselection_fill_color=Cycle(),
-    node_hover_line_color='black', node_hover_fill_color='limegreen',
-    node_nonselection_alpha=0.2, edge_nonselection_alpha=0.2,
-    node_nonselection_line_color='black', edge_line_color='black',
-    edge_line_width=2, edge_nonselection_line_color='black',
+    'style', node_size=15, node_color=Cycle(), node_line_color='black',
+    node_nonselection_fill_color=Cycle(), node_hover_line_color='black',
+    node_hover_fill_color='limegreen', node_nonselection_alpha=0.2,
+    edge_nonselection_alpha=0.2, node_nonselection_line_color='black',
+    edge_color='black', edge_line_width=2, edge_nonselection_line_color='black',
     edge_hover_line_color='limegreen'
 )
 options.TriMesh = Options(
-    'style', node_size=5, node_line_color='black',
-    node_fill_color='white', edge_line_color='black',
-    node_hover_fill_color='limegreen', edge_line_width=1,
-    edge_hover_line_color='limegreen', edge_nonselection_alpha=0.2,
-    edge_nonselection_line_color='black', node_nonselection_alpha=0.2,
+    'style', node_size=5, node_line_color='black', node_color='white',
+    edge_line_color='black', node_hover_fill_color='limegreen',
+    edge_line_width=1, edge_hover_line_color='limegreen',
+    edge_nonselection_alpha=0.2, edge_nonselection_line_color='black',
+    node_nonselection_alpha=0.2,
 )
 options.TriMesh = Options('plot', tools=[])
-options.Chord = Options('style', node_size=15, node_fill_color=Cycle(),
+options.Chord = Options('style', node_size=15, node_color=Cycle(),
                         node_line_color='black',
                         node_selection_fill_color='limegreen',
                         node_nonselection_fill_color=Cycle(),
