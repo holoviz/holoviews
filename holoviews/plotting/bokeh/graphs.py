@@ -105,6 +105,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             return
         elstyle = self.lookup_options(element, 'style')
         cycle = elstyle.kwargs.get('edge_color')
+        if not isinstance(cycle, Cycle):
+            cycle = None
 
         idx = element.get_dimension_index(cdim)
         field = dimension_sanitizer(cdim.name)
@@ -189,9 +191,11 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             layout = {str(k): (y, x) if self.invert_axes else (x, y)
                       for k, (x, y) in zip(index, node_positions)}
         point_data = {'index': index}
+
+        # Handle node colors
+        fixed_color = style.pop('node_color', None)
         cycle = self.lookup_options(element, 'style').kwargs.get('node_color')
-        if isinstance(cycle, Cycle):
-            style.pop('node_color', None)
+        if isinstance(cycle, Cycle) and 'cmap' not in style:
             colors = cycle
         else:
             colors = None
@@ -199,6 +203,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             element.nodes, ranges, style, name='node_fill_color',
             colors=colors, int_categories=True
         )
+        if fixed_color is not None and not cdata:
+            style['node_color'] = fixed_color
         point_data.update(cdata)
         point_mapping = cmapping
         if 'node_fill_color' in point_mapping:
@@ -206,6 +212,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                      ['node_fill_color', 'node_nonselection_fill_color']}
             point_mapping['node_nonselection_fill_color'] = point_mapping['node_fill_color']
 
+        # Handle edge colors
         edge_mapping = {}
         nan_node = index.max()+1 if len(index) else 0
         start, end = (element.dimension_values(i) for i in range(2))
@@ -270,6 +277,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         "Computes the args and kwargs for the GraphRenderer"
         sources = []
         properties, mappings = {}, {}
+
         for key in ('scatter_1', self.edge_glyph):
             gdata = data.pop(key, {})
             group_style = dict(style)
