@@ -13,6 +13,52 @@ Release notes
 Version 1.11
 ~~~~~~~~~~~~
 
+Version 1.11.3
+**************
+
+This is the last micro-release in the 1.11 series providing a number
+of important fixes. Many thanks to our users for reporting these
+issues and @poplarShift and @henriqueribeiro for contributing a number
+of crucial fixes.
+
+Bug fixes:
+
+* All unused Options objects are now garbage collected fixing the last
+  memory leak (`#3438 <https://github.com/pyviz/holoviews/pull/3438>`_)
+* Ensured updating of size on matplotlib charts does not error
+  (`#3442 <https://github.com/pyviz/holoviews/pull/3442>`_)
+* Fix casting of datetimes on dask dataframes
+  (`#3460 <https://github.com/pyviz/holoviews/pull/3460>`_)
+* Ensure that calling redim does not break streams and links
+  (`#3478 <https://github.com/pyviz/holoviews/pull/3478>`_)
+* Ensure that matplotlib polygon plots close the edge path
+  (`#3477 <https://github.com/pyviz/holoviews/pull/3477>`_)
+* Fixed bokeh ArrowPlot error handling colorbars
+  (`#3476 <https://github.com/pyviz/holoviews/pull/3476>`_)
+* Fixed bug in angle conversion on the VectorField if invert_axes
+  (`#3488 <https://github.com/pyviz/holoviews/pull/3488>`_)
+* Ensure that all non-Annotation elements support empty constructors
+  (`#3511 <https://github.com/pyviz/holoviews/pull/3511>`_)
+* Fixed bug handling out-of-bounds errors when using tap events on
+  datetime axis
+  (`#3519 <https://github.com/pyviz/holoviews/pull/3519>`_)
+
+Enhancements:
+
+
+* Apply Labels element offset using a bokeh transform allowing Labels
+  element to share data with original data
+  (`#3445 <https://github.com/pyviz/holoviews/pull/3445>`_)
+* Allow using datetimes in xlim/ylim/zlim
+  (`#3491 <https://github.com/pyviz/holoviews/pull/3491>`_)
+* Optimized rendering of TriMesh wireframes
+  (`#3495 <https://github.com/pyviz/holoviews/pull/3495>`_)
+* Add support for datetime formatting when hovering on Image/Raster
+  (`#3520 <https://github.com/pyviz/holoviews/pull/3520>`_)
+* Added Tiles element from GeoViews
+  (`#3515 <https://github.com/pyviz/holoviews/pull/3515>`_)
+
+
 Version 1.11.2
 **************
 
