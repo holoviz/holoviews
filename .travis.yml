@@ -153,7 +153,7 @@ jobs:
         - nbsite build --what=html --output=builtdocs
       after_success:
         - pip install awscli
-        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude ".git/*"
+        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude=doc/nbpublisher
 
     - &gallery_build
       <<: *doc_build
