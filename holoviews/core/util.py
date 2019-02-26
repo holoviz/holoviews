@@ -1097,11 +1097,11 @@ def unique_array(arr):
     if not len(arr):
         return arr
     elif pd:
-        datetime_casted = [
+        datetime_cast = [
             pd.Timestamp(i).to_datetime64() if isinstance(i, datetime_types)
             else i for i in arr
         ]
-        return datetime_casted
+        return pd.unique(datetime_cast)
     else:
         arr = np.asarray(arr)
         _, uniq_inds = np.unique(arr, return_index=True)
