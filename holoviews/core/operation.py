@@ -152,6 +152,8 @@ class Operation(param.ParameterizedFunction):
         for k, v in kwargs.items():
             if util.is_param_method(v, has_deps=True):
                 v = v()
+            elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+                v = getattr(v.owner, v._attrib_name)
             params[k] = v
         self.p = param.ParamOverrides(self, params)
 

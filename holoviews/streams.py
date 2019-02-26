@@ -8,6 +8,7 @@ import weakref
 from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
+from itertools import groupby
 
 import param
 import numpy as np
@@ -293,7 +294,7 @@ class Stream(param.Parameterized):
         for k, v in mapping.items():
             if k not in param_names:
                 raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
-            if v in param_names:
+            if k != v and v in param_names:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping
@@ -621,11 +622,31 @@ class Params(Stream):
         if watch:
             self.parameterized.param.watch(self._watcher, self.parameters)
 
+    @classmethod
+    def from_params(cls, params):
+        """Returns Params streams given a dictionary of parameters
+
+        Args:
+            params (dict): Dictionary of parameters
+
+        Returns:
+            List of Params streams
+        """
+        key_fn = lambda x: id(x[1].owner)
+        streams = []
+        for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
+            group = list(group)
+            inst = [p.owner for _, p in group][0]
+            names = [p._attrib_name for _, p in group]
+            rename = {p._attrib_name: n for n, p in group}
+            streams.append(cls(inst, names, rename=rename))
+        return streams
+
     def _validate_rename(self, mapping):
         for k, v in mapping.items():
             if k not in self.parameters:
                 raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
-            if v in self.parameters:
+            if k != v and v in self.parameters:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping

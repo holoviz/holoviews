@@ -855,10 +855,24 @@ class LabelledData(param.Parameterized):
             A new object which has applied the function to any objects
             matching the defined specs.
         """
+        from .spaces import DynamicMap
+        from ..streams import Params
+        from ..util import Dynamic
 
         # Ensure that dynamically mapped function is not applied recursively
         _in_dynamic = kwargs.pop('_in_dynamic', False)
+
+        # Filter keywords and param references
+        params = {p: val for p, val in kwargs.items() if isinstance(val, param.Parameter)
+                  and isinstance(val.owner, param.Parameterized)}
+        kwargs = {k: v for k, v in kwargs.items() if k not in params}
         inner_kwargs = dict(kwargs, _in_dynamic=_in_dynamic)
+
+        # Process streams from keywords and the function
+        streams = list(streams) + Params.from_params(params)
+        depends = util.is_param_method(function, has_deps=True)
+        if depends:
+            streams.append(function)
 
         # Determine a match from the specs
         if specs is None:
@@ -868,13 +882,11 @@ class LabelledData(param.Parameterized):
                 specs = [specs]
             applies = specs is None or any(self.matches(spec) for spec in specs)
 
-        from .spaces import DynamicMap
-        depends = util.is_param_method(function, has_deps=True)
-        if not applies and (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
-            from ..util import Dynamic
-            streams = list(streams)
-            if depends:
-                streams.append(function)
+        # Apply function depending on input type
+        if applies and (streams or depends) and not _in_dynamic:
+            return Dynamic(self, operation=function, streams=streams,
+                           kwargs=kwargs, link_inputs=link_inputs)
+        elif not applies and (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
             def apply_map(obj, **dynkwargs):
                 inner_kwargs['_in_dynamic'] = True
                 return obj.map(function, specs, clone, streams, link_inputs,

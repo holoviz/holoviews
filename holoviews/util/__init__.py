@@ -12,7 +12,7 @@ from ..core.util import Aliases, basestring, merge_options_to_dict, OrderedDict 
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
-from ..streams import Stream
+from ..streams import Stream, Params
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -865,12 +865,15 @@ class Dynamic(param.ParameterizedFunction):
                     stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
             streams.append(stream)
 
+        params = {k: v for k, v in self.p.kwargs.items() if isinstance(v, param.Parameter)
+                  and isinstance(v.owner, param.Parameterized)}
+        streams += Params.from_params(params)
+
         # Add any keyword arguments which are parameterized methods
         # with dependencies as streams
         for value in self.p.kwargs.values():
-            if not util.is_param_method(value, has_deps=True):
-                continue
-            streams.append(value)
+            if util.is_param_method(value, has_deps=True):
+                streams.append(value)
 
         # Inherit dimensioned streams
         if isinstance(map_obj, DynamicMap):
