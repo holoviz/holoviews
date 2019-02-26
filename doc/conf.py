@@ -10,8 +10,6 @@ description = 'Stop plotting your data - annotate your data and let it visualize
 
 import holoviews
 version = release = holoviews.__version__
-if 'dirty' in version and 'post' not in version:
-    version = version[:-15] # Drop the commit hash and dirty string
 
 html_theme = 'sphinx_ioam_theme'
 html_static_path += ['_static']
