@@ -164,6 +164,7 @@ jobs:
         - pip install awscli
         - conda install -c conda-forge mpl_sample_data --no-deps
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
+        - git reset --hard --recurse-submodule
         - git status
         - nbsite build --what=html --output=builtdocs
       after_success:
