@@ -933,8 +933,16 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and all(isinstance(v, pd.Timestamp) for r in values for v in r):
-                values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
+            if pd and any(isinstance(v, datetime_types)
+                          for r in values for v in r):
+                values = [
+                    (pd.Timestamp(i).to_datetime64(),
+                     pd.Timestamp(j).to_datetime64())
+                    if isinstance(i, datetime_types)
+                    and isinstance(j, datetime_types)
+                    else (i, j)
+                    for i, j in values
+                ]
             arr = np.array(values)
             if not len(arr):
                 return np.NaN, np.NaN
@@ -1085,12 +1093,21 @@ def unique_iterator(seq):
 
 def unique_array(arr):
     """
-    Returns an array of unique values in the input order
+    Returns an array of unique values in the input order.
     """
     if not len(arr):
         return arr
     elif pd:
-        return pd.unique(arr)
+        print(arr)
+        print('cast:')
+        datetime_casted = [
+            pd.Timestamp(i).to_datetime64() if isinstance(i, datetime_types)
+            else i
+            for i in arr
+        ]
+        print(datetime_casted)
+        print()
+        return datetime_casted
     else:
         arr = np.asarray(arr)
         _, uniq_inds = np.unique(arr, return_index=True)
