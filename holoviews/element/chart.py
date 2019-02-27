@@ -5,7 +5,7 @@ from ..streams import BoundsXY
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from .geom import Points, Geometry, VectorField # noqa: backward compatible import
+from .geom import Points, Geometry, Segments, VectorField # noqa: backward compatible import
 from .stats import BoxWhisker         # noqa: backward compatible import
 
 
@@ -368,14 +368,3 @@ class Area(Curve):
                                     new_type=Area)
             baseline = baseline + y
         return stacked
-
-class Segments(Geometry):
-    """
-    """
-    group = param.String(default='Segments', constant=True)
-
-    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
-                                Dimension('x1'), Dimension('y1')],
-                       bounds=(4, None), constant=True, doc="""
-        Segments represent lines in given by x- and y-
-        coordinates in a 2D space.""")

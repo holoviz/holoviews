@@ -10,6 +10,7 @@
 *.o
 *.out
 *.lock
+/build
 /doc/Tutorials/*.rst
 /doc/Tutorials/example*.svg
 /doc/Tutorials/example*.gif
