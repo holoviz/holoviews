@@ -138,7 +138,7 @@ def compute_plot_size(plot):
     figures, rows, columns, widgetboxes and Plot.
     """
     if isinstance(plot, GridBox):
-        ndmapping = NdMapping({(x, y): fig for fig, x, y in plot.children}, kdims=['x', 'y'])
+        ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
         cols = ndmapping.groupby('x')
         rows = ndmapping.groupby('y')
         width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
