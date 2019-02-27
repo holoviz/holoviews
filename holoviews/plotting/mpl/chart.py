@@ -1264,20 +1264,9 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
 
 class SegmentPlot(ColorbarPlot):
     """
-    Segments are lines in 2D space where each two each dimensions specify a
+    Segments are lines in 2D space where each two key dimensions specify a
     (x, y) node of the line.
     """
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
-
-
     style_opts = PathPlot.style_opts + ['cmap']
 
     _nonvectorized_styles = ['cmap']
@@ -1302,26 +1291,6 @@ class SegmentPlot(ColorbarPlot):
         dims = element.dimensions()
         data = [[(x0, y0), (x1, y1)] for x0, y0, x1, y1
                 in element.array([x0idx, y0idx, x1idx, y1idx])]
-        stacked_data = []
-        for segment in data:
-            xs, ys = zip(*segment)
-            cols = []
-            for vs in (xs, ys):
-                vs = np.array(vs)
-                cols.append(vs)
-            stacked_data.append(np.column_stack(cols))
-
-
-        cdim = element.get_dimension(self.color_index)
-        color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index.")
-            cdim = None
-        if cdim:
-            style['array'] = element.dimension_values(cdim)
-            self._norm_kwargs(element, ranges, style, cdim)
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
