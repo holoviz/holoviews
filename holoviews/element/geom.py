@@ -101,6 +101,6 @@ class Segments(Geometry):
 
     kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
                                 Dimension('x1'), Dimension('y1')],
-                       bounds=(4, None), constant=True, doc="""
+                       bounds=(4, 4), constant=True, doc="""
         Segments represent lines given by x- and y-
         coordinates in 2D space.""")
