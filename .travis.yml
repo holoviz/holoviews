@@ -25,7 +25,7 @@ env:
   global:
     - PYENV_VERSION=3.6
     - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
-    - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
 
