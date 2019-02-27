@@ -1259,3 +1259,79 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+
+
+class SegmentPlot(ColorbarPlot):
+    """
+    Segments are lines in 2D space where each two each dimensions specify a
+    (x, y) node of the line.
+    """
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
+
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
+
+
+    style_opts = PathPlot.style_opts + ['cmap']
+
+    _nonvectorized_styles = ['cmap']
+
+    _plot_methods = dict(single='segment')
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        if 'c' in plot_kwargs:
+            plot_kwargs['array'] = plot_kwargs.pop('c')
+        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
+            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        line_segments = LineCollection(*plot_args, **plot_kwargs)
+        ax.add_collection(line_segments)
+        return {'artist': line_segments}
+
+    def get_data(self, element, ranges, style):
+        # Get [x0, y0, x1, y1, ...]
+        x0idx, y0idx, x1idx, y1idx = (
+            (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        )
+        # Compute segments
+        dims = element.dimensions()
+        data = [[(x0, y0), (x1, y1)] for x0, y0, x1, y1
+                in element.array([x0idx, y0idx, x1idx, y1idx])]
+        stacked_data = []
+        for segment in data:
+            xs, ys = zip(*segment)
+            cols = []
+            for vs in (xs, ys):
+                vs = np.array(vs)
+                cols.append(vs)
+            stacked_data.append(np.column_stack(cols))
+
+
+        cdim = element.get_dimension(self.color_index)
+        color = style.get('color', None)
+        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+            self.param.warning(
+                "Cannot declare style mapping for 'color' option and "
+                "declare a color_index; ignoring the color_index.")
+            cdim = None
+        if cdim:
+            style['array'] = element.dimension_values(cdim)
+            self._norm_kwargs(element, ranges, style, cdim)
+
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
+        return (data,), style, {'dimensions': dims}
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        kdims = element.kdims
+        for kdim in [kdims[i].name for i in range(2)]:
+            new_range = {}
+            for r in ranges[kdim]:
+                new_range[r] = max_range([ranges[kd.name][r] for kd in kdims])
+            ranges[kdim] = new_range
+        return super(SegmentPlot, self).get_extents(element, ranges, range_type)

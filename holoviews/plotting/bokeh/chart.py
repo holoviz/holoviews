@@ -1095,3 +1095,54 @@ class BarPlot(ColorbarPlot, LegendPlot):
                             'right': mapping.pop('top'), 'height': mapping.pop('width')})
 
         return sanitized_data, mapping, style
+
+class SegmentPlot(ColorbarPlot):
+    """
+    Segments are lines in 2D space where each two each dimensions specify a
+    (x, y) node of the line.
+    """
+    # Deprecated parameters
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
+
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
+
+
+    style_opts = line_properties + ['cmap']
+
+    _nonvectorized_styles = ['cmap']
+
+    _plot_methods = dict(single='segment')
+
+    def get_data(self, element, ranges, style):
+        # Get [x0, y0, x1, y1, ...]
+        x0idx, y0idx, x1idx, y1idx = (
+            (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        )
+        cdim = element.get_dimension(self.color_index)
+        cdata, cmapping = self._get_color_data(element, ranges, style,
+                                               name='line_color')
+
+        # Compute segments
+        x0s, y0s, x1s, y1s = (
+            element.dimension_values(x0idx),
+            element.dimension_values(y0idx),
+            element.dimension_values(x1idx),
+            element.dimension_values(y1idx)
+        )
+
+        color = None
+        if cdim:
+            color = cdata.get(cdim.name)
+
+        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+        if cdim and color is not None:
+            data[cdim.name] = color
+            mapping.update(cmapping)
+
+        return (data, mapping, style)

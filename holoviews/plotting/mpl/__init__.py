@@ -115,6 +115,7 @@ GridPlot = PlotSelector(grid_selector,
 
 # Register default Elements
 Store.register({Curve: CurvePlot,
+                Segments: SegmentPlot,
                 Scatter: PointPlot,
                 Bars: BarPlot,
                 Histogram: HistogramPlot,
