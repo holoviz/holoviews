@@ -76,7 +76,7 @@ class BokehRendererTest(ComparisonTestCase):
         table = Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table+table)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (680, 300))
+        self.assertEqual((w, h), (800, 300))
 
     def test_render_to_png(self):
         curve = Curve([])
