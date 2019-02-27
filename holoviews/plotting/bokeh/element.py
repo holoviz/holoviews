@@ -31,10 +31,11 @@ from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField, Path, Contours, Tiles
-from ...streams import Buffer
+from ...streams import Buffer, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
@@ -601,6 +602,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
+    def _update_size(self, width, height, scale):
+        self.state.frame_width = width
+        self.state.frame_height = height
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
