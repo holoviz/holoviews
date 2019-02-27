@@ -551,6 +551,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             width, height = None, None
             match_aspect = True
             aspect_scale = 1 if self.aspect == 'equal' else self.data_aspect
+            if self.dynamic:
+                # Sync the plot size on dynamic plots to support accurate
+                # scaling of dimension ranges
+                stream = PlotSize(subscribers=[self._update_size])
+                self.callbacks.append(PlotSizeCallback(self, [stream], None))
         elif util.isnumeric(aspect):
             if self.responsive:
                 aspect_ratio = aspect
@@ -585,8 +590,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 'plot_height':   height,
                 'plot_width':    width,
             })
-
-        print(plot_props)
 
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
@@ -839,7 +842,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
             if self.drawn or self.aspect not in ['equal' or None]:
                 # After initial draw or if aspect is explicit
-                # adjust range to match initial aspect
+                # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
                 if self.aspect:
                     frame_aspect = self.aspect
