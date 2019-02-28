@@ -1287,16 +1287,26 @@ class SegmentPlot(ColorbarPlot):
         x0idx, y0idx, x1idx, y1idx = (
             (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
         )
+
         # Compute segments
         dims = element.dimensions()
         data = [[(x0, y0), (x1, y1)] for x0, y0, x1, y1
-                in element.array([x0idx, y0idx, x1idx, y1idx])]
+                in zip(
+                    element.dimension_values(x0idx),
+                    element.dimension_values(y0idx),
+                    element.dimension_values(x1idx),
+                    element.dimension_values(y1idx)
+                )]
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (data,), style, {'dimensions': dims}
 
     def get_extents(self, element, ranges, range_type='combined'):
+        """
+        Use first two key dimensions to set names, and all four
+        to set the data range.
+        """
         kdims = element.kdims
         for kdim in [kdims[i].name for i in range(2)]:
             new_range = {}
