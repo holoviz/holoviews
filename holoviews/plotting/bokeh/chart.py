@@ -1131,7 +1131,6 @@ class SegmentPlot(ColorbarPlot):
         to set the data range.
         """
         kdims = element.kdims
-        self.param.warning('entering get_extents')
         # loop over start and end points of segments
         # simultaneously in each dimension
         for kdim0, kdim1 in zip([kdims[i].name for i in range(2)],
