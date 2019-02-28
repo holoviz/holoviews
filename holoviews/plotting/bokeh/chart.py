@@ -1108,7 +1108,7 @@ class SegmentPlot(ColorbarPlot):
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
-        # Get [x0, y0, x1, y1, ...]
+        # Get [x0, y0, x1, y1]
         x0idx, y0idx, x1idx, y1idx = (
             (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
         )
@@ -1131,9 +1131,18 @@ class SegmentPlot(ColorbarPlot):
         to set the data range.
         """
         kdims = element.kdims
-        for kdim in [kdims[i].name for i in range(2)]:
+        self.param.warning('entering get_extents')
+        # loop over start and end points of segments
+        # simultaneously in each dimension
+        for kdim0, kdim1 in zip([kdims[i].name for i in range(2)],
+                                [kdims[i].name for i in range(2,4)]):
             new_range = {}
-            for r in ranges[kdim]:
-                new_range[r] = max_range([ranges[kd.name][r] for kd in kdims])
-            ranges[kdim] = new_range
+            for kdim in [kdim0, kdim1]:
+                # for good measure, update ranges for both start and end kdim
+                for r in ranges[kdim]:
+                    # combine (x0, x1) and (y0, y1) in range calculation
+                    new_range[r] = max_range([ranges[kd][r]
+                                              for kd in [kdim0, kdim1]])
+            ranges[kdim0] = new_range
+            ranges[kdim1] = new_range
         return super(SegmentPlot, self).get_extents(element, ranges, range_type)
