@@ -1124,3 +1124,16 @@ class SegmentPlot(ColorbarPlot):
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         return (data, mapping, style)
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        """
+        Use first two key dimensions to set names, and all four
+        to set the data range.
+        """
+        kdims = element.kdims
+        for kdim in [kdims[i].name for i in range(2)]:
+            new_range = {}
+            for r in ranges[kdim]:
+                new_range[r] = max_range([ranges[kd.name][r] for kd in kdims])
+            ranges[kdim] = new_range
+        return super(SegmentPlot, self).get_extents(element, ranges, range_type)
