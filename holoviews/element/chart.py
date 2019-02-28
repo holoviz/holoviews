@@ -5,7 +5,7 @@ from ..streams import BoundsXY
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from .geom import Points, Geometry, Segments, VectorField # noqa: backward compatible import
+from .geom import Points, VectorField # noqa: backward compatible import
 from .stats import BoxWhisker         # noqa: backward compatible import
 
 

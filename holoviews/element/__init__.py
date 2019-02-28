@@ -2,6 +2,7 @@ from ..core import HoloMap
 from ..core.data import Dataset, DataConversion
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
+from .geom import * # noqa (API import)
 from .chart3d import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
