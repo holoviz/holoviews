@@ -1908,8 +1908,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
-                          'width_policy', 'height_policy', 'margin', 'aspect',
-                          'data_aspect']
+                          'margin', 'aspect', 'data_aspect', 'frame_width',
+                          'frame_height', 'responsive']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)

@@ -41,51 +41,6 @@ class BokehPlot(DimensionedPlot):
     css_classes = param.List(default=[], doc="""
         CSS classes to apply to the layout.""")
 
-    sizing_mode = param.ObjectSelector(default=None, objects=[
-        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None], doc="""
-
-        How the component should size itself.
-
-        This is a high-level setting for maintaining width and height
-        of the component. To gain more fine grained control over
-        sizing, use ``width_policy``, ``height_policy`` and
-        ``aspect_ratio`` instead (those take precedence over
-        ``sizing_mode``).
-
-        * "fixed" : 
-          Component is not responsive. It will retain its original
-          width and height regardless of any subsequent browser window
-          resize events.
-        * "stretch_width"
-          Component will responsively resize to stretch to the
-          available width, without maintaining any aspect ratio. The
-          height of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_height"
-          Component will responsively resize to stretch to the
-          available height, without maintaining any aspect ratio. The
-          width of the component depends on the type of the component
-          and may be fixed or fit to component's contents.
-        * "stretch_both"
-          Component is completely responsive, independently in width
-          and height, and will occupy all the available horizontal and
-          vertical space, even if this changes the aspect ratio of the
-          component.
-        * "scale_width"
-          Component will responsively resize to stretch to the
-          available width, while maintaining the original or provided
-          aspect ratio.
-        * "scale_height"
-          Component will responsively resize to stretch to the
-          available height, while maintaining the original or provided
-          aspect ratio.
-        * "scale_both"
-          Component will responsively resize to both the available
-          width and height, while maintaining the original or provided
-          aspect ratio.
-    """)
-
     shared_datasource = param.Boolean(default=True, doc="""
         Whether Elements drawing the data from the same object should
         share their Bokeh data source allowing for linked brushing
@@ -416,7 +371,7 @@ class BokehPlot(DimensionedPlot):
         if 'title' in self.handles:
             title_div = self.handles['title']
         else:
-            title_div = Div(width=width)  # so it won't wrap long titles easily
+            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
         title_div.text = title_tags
 
         return title_div
@@ -490,6 +445,51 @@ class CompositePlot(BokehPlot):
     to such a plot.
     """
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
+
+        How the component should size itself.
+
+        This is a high-level setting for maintaining width and height
+        of the component. To gain more fine grained control over
+        sizing, use ``width_policy``, ``height_policy`` and
+        ``aspect_ratio`` instead (those take precedence over
+        ``sizing_mode``).
+
+        * "fixed" :
+          Component is not responsive. It will retain its original
+          width and height regardless of any subsequent browser window
+          resize events.
+        * "stretch_width"
+          Component will responsively resize to stretch to the
+          available width, without maintaining any aspect ratio. The
+          height of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_height"
+          Component will responsively resize to stretch to the
+          available height, without maintaining any aspect ratio. The
+          width of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_both"
+          Component is completely responsive, independently in width
+          and height, and will occupy all the available horizontal and
+          vertical space, even if this changes the aspect ratio of the
+          component.
+        * "scale_width"
+          Component will responsively resize to stretch to the
+          available width, while maintaining the original or provided
+          aspect ratio.
+        * "scale_height"
+          Component will responsively resize to stretch to the
+          available height, while maintaining the original or provided
+          aspect ratio.
+        * "scale_both"
+          Component will responsively resize to both the available
+          width and height, while maintaining the original or provided
+          aspect ratio.
+    """)
+
     fontsize = param.Parameter(default={'title': '15pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
@@ -553,6 +553,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         If enabled the x-axes of the GridSpace will be drawn from the
         objects inside the Grid rather than the GridSpace dimensions.""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Adds a legend based on the entries of the middle-right plot""")
+
     xaxis = param.ObjectSelector(default=True,
                                  objects=['bottom', 'top', None, True, False], doc="""
         Whether and where to display the xaxis, supported options are
@@ -585,6 +588,12 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
+        if 'axis_offset' in params:
+            self.param.warning("GridPlot axis_offset option is deprecated "
+                               "since 1.12.0 since subplots are now sized "
+                               "correctly and therefore no longer require "
+                               "an offset.")
+
 
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
@@ -612,29 +621,25 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 view = collate(view)
 
             # Create axes
-            offset = self.axis_offset
             kwargs = {}
+            kwargs['frame_width'] = self.plot_size
+            kwargs['frame_height'] = self.plot_size
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
-                kwargs['width'] = self.plot_size+offset
             if c != 0 and r == 0:
                 kwargs['yaxis'] = None
-                kwargs['height'] = self.plot_size+offset
-            if c == 0 and r == 0:
-                kwargs['width'] = self.plot_size+offset
-                kwargs['height'] = self.plot_size+offset
             if r != 0 and c != 0:
                 kwargs['xaxis'] = None
                 kwargs['yaxis'] = None
 
-            if 'width' not in kwargs or not self.shared_yaxis:
-                kwargs['width'] = self.plot_size
-            if 'height' not in kwargs or not self.shared_xaxis:
-                kwargs['height'] = self.plot_size
             if 'border' not in kwargs:
                 kwargs['border'] = 3
 
-            kwargs['show_legend'] = False
+            if self.show_legend and c == (self.cols-1) and r == (self.rows-1):
+                kwargs['show_legend'] = True
+                kwargs['legend_position'] = 'right'
+            else:
+                kwargs['show_legend'] = False
 
             if not self.shared_xaxis:
                 kwargs['xaxis'] = None
@@ -730,6 +735,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_xaxis:
                 r1, r2 = r2, r1
             if self.shared_yaxis:
+                x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
             plot = gridplot([r1, r2])
         elif y_axis:

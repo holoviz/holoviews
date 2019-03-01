@@ -158,7 +158,15 @@ def compute_plot_size(plot):
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
     elif isinstance(plot, (Figure, Chart)):
-        return plot.plot_width, plot.plot_height
+        if plot.plot_width:
+            width = plot.plot_width
+        else:
+            width = plot.frame_width + plot.min_border_right + plot.min_border_left
+        if plot.plot_height:
+            height = plot.plot_height
+        else:
+            height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
+            return width, height
     elif isinstance(plot, (Plot, DataTable, Spacer)):
         return plot.width, plot.height
     else:
