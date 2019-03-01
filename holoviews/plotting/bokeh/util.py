@@ -513,6 +513,7 @@ class periodic(object):
         self.counter = None
         self._start_time = None
         self.timeout = None
+        self._pcb = None
 
     @property
     def completed(self):
@@ -523,7 +524,7 @@ class periodic(object):
         if self.document is None:
             raise RuntimeError('periodic was registered to be run on bokeh'
                                'server but no document was found.')
-        self.document.add_periodic_callback(self._periodic_callback, self.period)
+        self._pcb = self.document.add_periodic_callback(self._periodic_callback, self.period)
 
     def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
@@ -553,9 +554,10 @@ class periodic(object):
         self.counter = None
         self.timeout = None
         try:
-            self.document.remove_periodic_callback(self._periodic_callback)
+            self.document.remove_periodic_callback(self._pcb)
         except ValueError: # Already stopped
             pass
+        self._pcb = None
 
     def __repr__(self):
         return 'periodic(%s, %s, %s)' % (self.period,
