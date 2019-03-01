@@ -44,6 +44,8 @@ class SankeyPlot(GraphPlot):
 
     filled = True
 
+    style_opts = GraphPlot.style_opts + ['label_text_font_size']
+
     def get_extents(self, element, ranges, range_type='combined'):
         """
         A Chord plot is always drawn on a unit circle.
@@ -124,7 +126,7 @@ class SankeyPlot(GraphPlot):
         if 'text' not in data:
             return []
 
-        fontsize = style.get('text_font_size', 8)
+        fontsize = style.get('label_text_font_size', 8)
         align = 'left' if self.label_position == 'right' else 'right'
         labels = []
         for text in data['text']:
@@ -135,6 +137,7 @@ class SankeyPlot(GraphPlot):
         return labels
 
     def init_artists(self, ax, plot_args, plot_kwargs):
+        fontsize = plot_kwargs.pop('label_text_font_size', 8)
         artists = super(SankeyPlot, self).init_artists(ax, plot_args, plot_kwargs)
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups, ('s', 'node_s'))
@@ -144,6 +147,7 @@ class SankeyPlot(GraphPlot):
         if 'c' in node_opts:
             node_opts['array'] = node_opts.pop('c')
         artists['rects'] = ax.add_collection(PatchCollection(rects, **node_opts))
+        plot_kwargs['label_text_font_size'] = fontsize
         artists['labels'] = self._update_labels(ax, plot_args, plot_kwargs)
         return artists
 
