@@ -962,6 +962,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
+        super(LabelledData, self).__setstate__({})
 
 
 class Dimensioned(LabelledData):
@@ -1557,6 +1558,17 @@ class ViewableTree(AttrTree, Dimensioned):
         cls._unpack_paths(vals, items, counts)
         items = cls._deduplicate_items(items)
         return items
+
+
+    def __setstate__(self, d):
+        """
+        Ensure that object does not try to reference its parent during
+        unpickling.
+        """
+        parent = d.pop('parent', None)
+        d['parent'] = None
+        super(AttrTree, self).__setstate__(d)
+        self.__dict__['parent'] = parent
 
 
     @classmethod
