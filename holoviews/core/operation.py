@@ -153,7 +153,7 @@ class Operation(param.ParameterizedFunction):
             if util.is_param_method(v, has_deps=True):
                 v = v()
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
-                v = getattr(v.owner, v._attrib_name)
+                v = getattr(v.owner, v.name)
             params[k] = v
         self.p = param.ParamOverrides(self, params)
 

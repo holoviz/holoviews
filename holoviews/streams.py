@@ -637,8 +637,10 @@ class Params(Stream):
         for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
             group = list(group)
             inst = [p.owner for _, p in group][0]
-            names = [p._attrib_name for _, p in group]
-            rename = {p._attrib_name: n for n, p in group}
+            if not isinstance(inst, param.Parameterized):
+                continue
+            names = [p.name for _, p in group]
+            rename = {p.name: n for n, p in group}
             streams.append(cls(inst, names, rename=rename))
         return streams
 
