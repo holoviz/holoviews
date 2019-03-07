@@ -1421,12 +1421,12 @@ class DynamicMap(HoloMap):
             contained (Nd)Overlay or Element objects.
         """
         if dynamic == False:
-            if any((not d.values) for d in element.kdims):
+            samples = tuple(d.values for d in self.kdims)
+            if not all(samples):
                 raise ValueError('Applying a function to a DynamicMap '
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
-            samples = tuple(d.values for d in element.kdims)
             return HoloMap(element[samples]).apply(
                 function, streams, link_inputs, dynamic, **kwargs)
         return super(DynamicMap, self).apply(function, streams, link_inputs, dynamic, **kwargs)

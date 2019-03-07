@@ -1384,8 +1384,7 @@ class Dimensioned(LabelledData):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
-        from .spaces import DynamicMap, HoloMap
-        from ..streams import Params
+        from .spaces import DynamicMap
         from ..util import Dynamic
 
         # Filter out instance parameters
