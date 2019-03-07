@@ -10,21 +10,17 @@ import bokeh.plotting
 
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
-from bokeh.models import tools
-from bokeh.models import (
-    Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
+from bokeh.models import Renderer, Title, Legend, ColorBar, tools
+from bokeh.models.axes import CategoricalAxis, DatetimeAxis
+from bokeh.models.formatters import (
     FuncTickFormatter, TickFormatter, PrintfTickFormatter,
-    MercatorTickFormatter, BoxZoomTool, WheelZoomTool)
+    MercatorTickFormatter)
+from bokeh.models.mappers import (
+    LinearColorMapper, LogColorMapper, CategoricalColorMapper)
+from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker)
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.models.mappers import LinearColorMapper
-from bokeh.models import CategoricalAxis
-try:
-    from bokeh.models import ColorBar
-    from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
-except ImportError:
-    LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
@@ -742,7 +738,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dimension = 'lon' if axis == 'x' else 'lat'
             axis_props['ticker'] = MercatorTicker(dimension=dimension)
             axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
-            box_zoom = self.state.select(type=BoxZoomTool)
+            box_zoom = self.state.select(type=tools.BoxZoomTool)
             if box_zoom:
                 box_zoom[0].match_aspect = True
         elif isinstance(axis_obj, CategoricalAxis):
@@ -840,7 +836,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options['width'])
         fixed_height = (self.frame_height or options['height'])
-        if (self.aspect == 'equal' or self.data_aspect):
+
+        data_aspect = (self.aspect == 'equal' or self.data_aspect)
+        xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
+        categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
+        datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+        if data_aspect and (categorical or datetime):
+            ax_type = 'categorical' if categorical else 'datetime axes'
+            self.param.warning('Cannot set data_aspect if one or both '
+                               'axes are %s, the option will '
+                               'be ignored.' % ax_type)
+        elif data_aspect:
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
@@ -880,8 +886,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     plot.aspect_ratio = aspect
 
-                box_zoom = plot.select(type=BoxZoomTool)
-                scroll_zoom = plot.select(type=WheelZoomTool)
+                box_zoom = plot.select(type=tools.BoxZoomTool)
+                scroll_zoom = plot.select(type=tools.WheelZoomTool)
                 if box_zoom:
                     box_zoom.match_aspect = True
                 if scroll_zoom:
