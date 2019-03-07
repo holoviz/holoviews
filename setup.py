@@ -19,13 +19,13 @@ extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy', 'panel']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0,<1.1.0', 'panel']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=3.4',
     'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
-    'cftime', 'netcdf4', 'bzip2']
+    'cftime', 'netcdf4', 'bzip2', 'dask<1.1.3', 'scipy']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
