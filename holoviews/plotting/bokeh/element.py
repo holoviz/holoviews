@@ -35,14 +35,11 @@ from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
-    rgba_tuple, text_properties, validate
-)
+    rgba_tuple, text_properties, validate)
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes,
-    get_tab_title, glyph_order, py2js_tickformatter,
-    recursive_model_update, theme_attr_json, cds_column_replace,
-    hold_policy, match_dim_specs
-)
+    TOOL_TYPES, date_to_integer, decode_bytes, get_tab_title,
+    glyph_order, py2js_tickformatter, recursive_model_update,
+    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs)
 
 
 
@@ -559,9 +556,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif fixed_width:
                 frame_width = actual_width
                 frame_height = int(actual_width/aspect)
+                width, height = None, None
             else:
                 frame_width = int(actual_height*aspect)
                 frame_height = actual_height
+                width, height = None, None
         elif aspect is not None:
             self.param.warning('aspect value of type %s not recognized, '
                                'provide a numeric value, \'equal\' or '
@@ -850,7 +849,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
-            if self.drawn or self.aspect not in ['equal' or None]:
+            if self.drawn or self.aspect not in ['equal', None]:
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -926,15 +925,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     "than or equal to zero, please supply explicit "
                     "lower-bound to override default of %.3f." % low)
             updates = {}
-            reset_supported = bokeh_version > '0.12.16'
             if util.isfinite(low):
                 updates['start'] = (axis_range.start, low)
-                if reset_supported:
-                    updates['reset_start'] = updates['start']
+                updates['reset_start'] = updates['start']
             if util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
-                if reset_supported:
-                    updates['reset_end'] = updates['end']
+                updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
                 if isinstance(new, util.cftime_types):
                     new = date_to_integer(new)
