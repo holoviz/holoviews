@@ -30,7 +30,6 @@ class Operation(param.ParameterizedFunction):
        The group string used to identify the output of the
        Operation. By default this should match the operation name.""")
 
-
     dynamic = param.ObjectSelector(default='default',
                                    objects=['default', True, False], doc="""
        Whether the operation should be applied dynamically when a
@@ -153,12 +152,15 @@ class Operation(param.ParameterizedFunction):
                 params[k] = getattr(v.owner, v.name)
         self.p = param.ParamOverrides(self, params)
         if not self.p.dynamic:
+            kwargs['dynamic'] = False
             if isinstance(element, HoloMap):
                 # Backwards compatibility for key argument
                 return element.clone([(k, self._apply(el, key=k))
                                       for k, el in element.items()])
             elif isinstance(element, ViewableElement):
                 return self._apply(element)
+        elif 'streams' not in kwargs:
+            kwargs['streams'] = self.p.streams
         return element.apply(self, **kwargs)
 
 
