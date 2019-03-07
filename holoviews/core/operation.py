@@ -125,14 +125,14 @@ class Operation(param.ParameterizedFunction):
         return ret
 
 
-    def _process(self, view, key=None):
+    def _process(self, element, key=None):
         """
-        Process a single input element and outputs new single element or
-        overlay. If a HoloMap is passed into an Operation, the
+        Process a single input element and outputs new single element
+        or overlay. If a HoloMap is passed into an Operation, the
         individual components are processed sequentially with the
         corresponding key passed as the optional key argument.
         """
-        raise NotImplementedError
+        return element
 
 
     def process_element(self, element, key, **params):
@@ -152,9 +152,14 @@ class Operation(param.ParameterizedFunction):
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = getattr(v.owner, v.name)
         self.p = param.ParamOverrides(self, params)
-        if isinstance(element, ViewableElement) and not self.p.dynamic:
-            return self._apply(element)
-        return element.apply(self, link_inputs=self.p.link_inputs, **kwargs)
+        if not self.p.dynamic:
+            if isinstance(element, HoloMap):
+                # Backwards compatibility for key argument
+                return element.clone([(k, self._apply(el, key=k))
+                                      for k, el in element.items()])
+            elif isinstance(element, ViewableElement):
+                return self._apply(element)
+        return element.apply(self, **kwargs)
 
 
 

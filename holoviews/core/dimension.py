@@ -1391,11 +1391,13 @@ class Dimensioned(LabelledData):
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
+        param_methods = {p: val for p, val in kwargs.items()
+                         if util.is_param_method(val, has_deps=True)}
 
         if dynamic is None:
             dynamic = (bool(streams) or isinstance(self, DynamicMap) or
                        util.is_param_method(function, has_deps=True) or
-                       params)
+                       params or param_methods)
 
         if applies and dynamic:
             return Dynamic(self, operation=function, streams=streams,
@@ -1409,11 +1411,13 @@ class Dimensioned(LabelledData):
                     inner_kwargs[k] = getattr(v.owner, v.name)
             if hasattr(function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
+            if util.is_param_method(function) and util.get_method_owner(function) is self:
+                return function(**inner_kwargs)
             return function(self, **inner_kwargs)
         elif self._deep_indexable:
             mapped = OrderedDict()
             for k, v in self.data.items():
-                new_val = v.apply(function, streams, link_inputs, **kwargs)
+                new_val = v.apply(function, streams, link_inputs, dynamic, **kwargs)
                 if new_val is not None:
                     mapped[k] = new_val
             return self.clone(mapped, link=link_inputs)

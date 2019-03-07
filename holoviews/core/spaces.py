@@ -1387,6 +1387,7 @@ class DynamicMap(HoloMap):
             self.data.pop(first_key)
         self[key] = val
 
+
     def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 

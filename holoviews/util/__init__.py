@@ -869,20 +869,21 @@ class Dynamic(param.ParameterizedFunction):
                   and isinstance(v.owner, param.Parameterized)}
         streams += Params.from_params(params)
 
-        # Add any keyword arguments which are parameterized methods
-        # with dependencies as streams
-        for value in self.p.kwargs.values():
-            if util.is_param_method(value, has_deps=True):
-                streams.append(value)
-
         # Inherit dimensioned streams
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)
             streams = list(util.unique_iterator(streams + dim_streams))
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if util.is_param_method(self.p.operation, has_deps=True) and watch:
+        has_dependencies = util.is_param_method(self.p.operation, has_deps=True)
+        if has_dependencies and watch:
             streams.append(self.p.operation)
+
+        # Add any keyword arguments which are parameterized methods
+        # with dependencies as streams
+        for value in self.p.kwargs.values():
+            if util.is_param_method(value, has_deps=True):
+                streams.append(value)
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
@@ -892,7 +893,9 @@ class Dynamic(param.ParameterizedFunction):
         return valid
 
     def _process(self, element, key=None, kwargs={}):
-        if isinstance(self.p.operation, Operation):
+        if util.is_param_method(self.p.operation) and util.get_method_owner(self.p.operation) is element:
+            return self.p.operation(**kwargs)
+        elif isinstance(self.p.operation, Operation):
             kwargs = {k: v for k, v in kwargs.items()
                       if k in self.p.operation.params()}
             return self.p.operation.process_element(element, key, **kwargs)

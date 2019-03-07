@@ -381,7 +381,7 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         dmap = dmap.options(plot_opt1='red')
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
-    
+
     def test_dynamic_options_no_clone(self):
         dmap = DynamicMap(lambda X: TestObj(None), kdims=['X']).redim.range(X=(0,10))
         dmap.options(plot_opt1='red', clone=False)
