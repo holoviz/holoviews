@@ -12,23 +12,26 @@ build:
   number: 0
   script: python setup.py --quiet install --single-version-externally-managed --record record.txt
   entry_points:
-    - holoviews = holoviews.util.command:main
+    {% for group,epoints in sdata.get("entry_points",{}).items() %}
+    {% for entry_point in epoints %}
+    - {{ entry_point }}
+    {% endfor %}
+    {% endfor %}
 
 requirements:
   build:
-    - python
-    - param >=1.6.1,<2.0
-    - numpy
-    - setuptools
+    - python {{ sdata['python_requires'] }}
+    {% for dep in sdata['extras_require']['build'] %}
+    - {{ dep }}
+    {% endfor %}
   run:
-    - python
-    - param >=1.8.0,<2.0
-    - pyviz_comms >=0.7.0
-    - numpy
-    - matplotlib>=2.1
-    - bokeh >=1.0.0,<1.1.0
-    - notebook
-    - ipython >=5.4.0,<=7.1.1  # <=7.1.1 due to tab completion regression
+    - python {{ sdata['python_requires'] }}
+    {% for dep in sdata.get('install_requires',{}) %}
+    - {{ dep }}
+    {% endfor %}
+    {% for dep in sdata['extras_require']['recommended'] %}
+    - {{ dep }}
+    {% endfor %}
 
 test:
   requires:
