@@ -1373,9 +1373,9 @@ class Dimensioned(LabelledData):
                 original object will be inherited.
             dynamic (bool, optional): Whether to make object dynamic
                 By default object is made dynamic if streams are
-                supplied, an instance parameter is supplied a keyword
-                argument, or the supplied function is a parameterized
-                method.
+                supplied, an instance parameter is supplied as a
+                keyword argument, or the supplied function is a
+                parameterized method.
             kwargs (dict, optional): Additional keyword arguments
                 Keyword arguments which will be supplied to the
                 function.
@@ -1387,19 +1387,28 @@ class Dimensioned(LabelledData):
         from .spaces import DynamicMap
         from ..util import Dynamic
 
-        # Filter out instance parameters
         applies = isinstance(self, (ViewableElement, DynamicMap))
+        params = {p: val for p, val in kwargs.items()
+                  if isinstance(val, param.Parameter)
+                  and isinstance(val.owner, param.Parameterized)}
+
         if dynamic is None:
-            dynamic = bool(streams) or isinstance(self, DynamicMap)
+            dynamic = (bool(streams) or isinstance(self, DynamicMap) or
+                       util.is_param_method(function, has_deps=True) or
+                       params)
+
         if applies and dynamic:
             return Dynamic(self, operation=function, streams=streams,
                            kwargs=kwargs, link_inputs=link_inputs)
         elif applies:
-            params = {p: val for p, val in kwargs.items() if isinstance(val, param.Parameter)
-                      and isinstance(val.owner, param.Parameterized)}
-            inner_kwargs = {k: v for k, v in kwargs.items() if k not in params}
-            for p, pobj in params.items():
-                inner_kwargs[p] = getattr(pobj.owner, pobj.name)
+            inner_kwargs = dict(kwargs)
+            for k, v in kwargs.items():
+                if util.is_param_method(v, has_deps=True):
+                    inner_kwargs[k] = v()
+                elif k in params:
+                    inner_kwargs[k] = getattr(v.owner, v.name)
+            if hasattr(function, 'dynamic'):
+                inner_kwargs['dynamic'] = False
             return function(self, **inner_kwargs)
         elif self._deep_indexable:
             mapped = OrderedDict()

@@ -145,13 +145,12 @@ class Operation(param.ParameterizedFunction):
 
 
     def __call__(self, element, **kwargs):
-        params = {}
+        params = dict(kwargs)
         for k, v in kwargs.items():
             if util.is_param_method(v, has_deps=True):
-                v = v()
+                params[k] = v()
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
-                v = getattr(v.owner, v.name)
-            params[k] = v
+                params[k] = getattr(v.owner, v.name)
         self.p = param.ParamOverrides(self, params)
         if isinstance(element, ViewableElement) and not self.p.dynamic:
             return self._apply(element)

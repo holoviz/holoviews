@@ -1427,7 +1427,7 @@ class DynamicMap(HoloMap):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
-            return HoloMap(element[samples]).apply(
+            return HoloMap(self[samples]).apply(
                 function, streams, link_inputs, dynamic, **kwargs)
         return super(DynamicMap, self).apply(function, streams, link_inputs, dynamic, **kwargs)
 
