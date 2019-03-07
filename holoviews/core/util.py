@@ -928,28 +928,42 @@ def find_range(values, soft_range=[]):
 def max_range(ranges, combined=True):
     """
     Computes the maximal lower and upper bounds from a list bounds.
+
+    Args:
+       ranges (list of tuples): A list of range tuples
+       combined (boolean, optional): Whether to combine bounds
+          Whether range should be computed on lower and upper bound
+          independently or both at once
+
+    Returns:
+       The maximum range as a single tuple
     """
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and any(isinstance(v, datetime_types)
+            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types)
                           for r in values for v in r):
-                values = [
-                    (pd.Timestamp(i).to_datetime64(),
-                     pd.Timestamp(j).to_datetime64())
-                    if isinstance(i, datetime_types)
-                    and isinstance(j, datetime_types)
-                    else (i, j) for i, j in values
-                ]
+                converted = []
+                for l, h in values:
+                    if isinstance(l, datetime_types) and isinstance(h, datetime_types):
+                        l, h = (pd.Timestamp(l).to_datetime64(),
+                                pd.Timestamp(h).to_datetime64())
+                    converted.append((l, h))
+                values = converted
+
             arr = np.array(values)
             if not len(arr):
                 return np.NaN, np.NaN
             elif arr.dtype.kind in 'OSU':
-                arr = list(python2sort([v for r in values for v in r if not is_nan(v) and v is not None]))
+                arr = list(python2sort([
+                    v for r in values for v in r
+                    if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             elif arr.dtype.kind in 'M':
-                return (arr.min(), arr.max()) if combined else (arr[:, 0].min(), arr[:, 1].min())
+                return ((arr.min(), arr.max()) if combined else
+                        (arr[:, 0].min(), arr[:, 1].min()))
+
             if combined:
                 return (np.nanmin(arr), np.nanmax(arr))
             else:
@@ -1093,15 +1107,27 @@ def unique_iterator(seq):
 def unique_array(arr):
     """
     Returns an array of unique values in the input order.
+
+    Args:
+       arr (np.ndarray or list): The array to compute unique values on
+
+    Returns:
+       A new array of unique values
     """
     if not len(arr):
-        return arr
+        return np.asarray(arr)
     elif pd:
-        datetime_cast = [
-            pd.Timestamp(i).to_datetime64() if isinstance(i, datetime_types)
-            else i for i in arr
-        ]
-        return pd.unique(datetime_cast)
+        if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+            # Avoid expensive unpacking if not potentially datetime
+            return pd.unique(arr)
+
+        values = []
+        for v in arr:
+            if (isinstance(v, datetime_types) and
+                not isinstance(v, cftime_types)):
+                v = pd.Timestamp(v).to_datetime64()
+            values.append(v)
+        return pd.unique(values)
     else:
         arr = np.asarray(arr)
         _, uniq_inds = np.unique(arr, return_index=True)
