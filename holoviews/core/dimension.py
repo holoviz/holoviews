@@ -817,98 +817,40 @@ class LabelledData(param.Parameterized):
         return accumulator
 
 
-    def map(self, function, specs=None, clone=True, streams=[],
-            link_inputs=True, **kwargs):
-        """Applies a function to any matching objects.
+    def map(self, map_fn, specs=None, clone=True):
+        """Map a function to all objects matching the specs
 
-        Mapping allows applying a function to any objects matching the
-        specs. By default map will apply to any (Nd)Overlay or Element
-        objects but it can be mapped to any object given a list of
-        specs. If supplied, keyword arguments and stream values can
-        provide keywords which will be passed to the function when
-        evaluated.
+        Recursively replaces elements using a map function when the
+        specs apply, by default applies to all objects, e.g. to apply
+        the function to all contained Curve objects:
+
+            dmap.map(fn, hv.Curve)
 
         Args:
-            function: A callable function
-                The function will be passed the return value of the
-                DynamicMap as the first argument and any supplied
-                stream values or keywords as additional keyword
-                arguments.
-            specs (list, optional): List of specs to match
+            map_fn: Function to apply to each object
+            specs: List of specs to match
                 List of types, functions or type[.group][.label] specs
-                to select objects to return. By default applies to
-                first Element and (Nd)Overlay object encountered on
-                each branch of the original object, matching the
-                behavior of an operation.
-            clone (boolean, optional): Whether to clone container objects
-            streams (list, optional): A list of Stream objects
-                The Stream objects can dynamically supply values which
-                will be passed to the function as keywords.
-            link_inputs (bool, optional): Whether to link the inputs
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            kwargs (dict, optional): Additional keyword arguments
-                Keyword arguments which will be supplied to the
-                function
+                to select objects to return, by default applies to all
+                objects.
+            clone: Whether to clone the object or transform inplace
 
         Returns:
-            A new object which has applied the function to any objects
-            matching the defined specs.
+            Returns the object after the map_fn has been applied
         """
-        from .spaces import DynamicMap
-        from ..streams import Params
-        from ..util import Dynamic
+        if specs is not None and not isinstance(specs, (list, set, tuple)):
+            specs = [specs]
+        applies = specs is None or any(self.matches(spec) for spec in specs)
 
-        # Ensure that dynamically mapped function is not applied recursively
-        _in_dynamic = kwargs.pop('_in_dynamic', False)
-
-        # Filter keywords and param references
-        params = {p: val for p, val in kwargs.items() if isinstance(val, param.Parameter)
-                  and isinstance(val.owner, param.Parameterized)}
-        kwargs = {k: v for k, v in kwargs.items() if k not in params}
-        inner_kwargs = dict(kwargs, _in_dynamic=_in_dynamic)
-
-        # Process streams from keywords and the function
-        streams = list(streams) + Params.from_params(params)
-        depends = util.is_param_method(function, has_deps=True)
-        if depends:
-            streams.append(function)
-
-        # Determine a match from the specs
-        if specs is None:
-            applies = isinstance(self, ViewableElement)
-        else:
-            if not isinstance(specs, (list, set, tuple)):
-                specs = [specs]
-            applies = specs is None or any(self.matches(spec) for spec in specs)
-
-        # Apply function depending on input type
-        if applies and (streams or depends) and not _in_dynamic:
-            return Dynamic(self, operation=function, streams=streams,
-                           kwargs=kwargs, link_inputs=link_inputs)
-        elif not applies and (isinstance(self, DynamicMap) or streams or depends) and not _in_dynamic:
-            def apply_map(obj, **dynkwargs):
-                inner_kwargs['_in_dynamic'] = True
-                return obj.map(function, specs, clone, streams, link_inputs,
-                               **dict(inner_kwargs, **dynkwargs))
-            if not streams and isinstance(self, DynamicMap):
-                streams = self.streams
-            return Dynamic(self, operation=apply_map, streams=streams,
-                           link_inputs=link_inputs, kwargs=kwargs)
-        elif self._deep_indexable:
-            if applies and specs is None:
-                return function(self, **kwargs)
-
-            mapped = self.clone(shared_data=False, link=link_inputs) if clone else self
+        if self._deep_indexable:
+            deep_mapped = self.clone(shared_data=False) if clone else self
             for k, v in self.items():
-                new_val = v.map(function, specs, clone, streams, link_inputs, **inner_kwargs)
+                new_val = v.map(map_fn, specs, clone)
                 if new_val is not None:
-                    mapped[k] = new_val
-            if applies:
-                mapped = function(mapped, **kwargs)
-            return mapped
+                    deep_mapped[k] = new_val
+            if applies: deep_mapped = map_fn(deep_mapped)
+            return deep_mapped
         else:
-            return function(self, **kwargs) if applies else self
+            return map_fn(self) if applies else self
 
 
     def __getstate__(self):
@@ -1409,6 +1351,66 @@ class Dimensioned(LabelledData):
         return self.opts(options, **kwargs)
 
 
+    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+        """Applies a function to all (Nd)Overlay or Element objects.
+
+        Any keyword arguments are passed through to the function. If
+        keyword arguments are instance parameters, or streams are
+        supplied the returned object will dynamically update in
+        response to changes in those objects.
+
+        Args:
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values or keywords as additional keyword
+                arguments.
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link_inputs (bool, optional): Whether to link the inputs
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            dynamic (bool, optional): Whether to make object dynamic
+                By default object is made dynamic if streams are
+                supplied, an instance parameter is supplied a keyword
+                argument, or the supplied function is a parameterized
+                method.
+            kwargs (dict, optional): Additional keyword arguments
+                Keyword arguments which will be supplied to the
+                function.
+
+        Returns:
+            A new object where the function was applied to all
+            contained (Nd)Overlay or Element objects.
+        """
+        from .spaces import DynamicMap, HoloMap
+        from ..streams import Params
+        from ..util import Dynamic
+
+        # Filter out instance parameters
+        applies = isinstance(self, (ViewableElement, DynamicMap))
+        if dynamic is None:
+            dynamic = bool(streams) or isinstance(self, DynamicMap)
+        if applies and dynamic:
+            return Dynamic(self, operation=function, streams=streams,
+                           kwargs=kwargs, link_inputs=link_inputs)
+        elif applies:
+            params = {p: val for p, val in kwargs.items() if isinstance(val, param.Parameter)
+                      and isinstance(val.owner, param.Parameterized)}
+            inner_kwargs = {k: v for k, v in kwargs.items() if k not in params}
+            for p, pobj in params.items():
+                inner_kwargs[p] = getattr(pobj.owner, pobj.name)
+            return function(self, **inner_kwargs)
+        elif self._deep_indexable:
+            mapped = OrderedDict()
+            for k, v in self.data.items():
+                new_val = v.apply(function, streams, link_inputs, **kwargs)
+                if new_val is not None:
+                    mapped[k] = new_val
+            return self.clone(mapped, link=link_inputs)
+
+
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
 
@@ -1497,6 +1499,7 @@ class Dimensioned(LabelledData):
         combined and returned.
         """
         return Store.render(self)
+
 
 
 class ViewableElement(Dimensioned):

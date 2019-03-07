@@ -145,9 +145,6 @@ class Operation(param.ParameterizedFunction):
 
 
     def __call__(self, element, **kwargs):
-        # Evaluate any keyword arguments which are actually parameterized
-        # methods annotated with param.depends. These will be dynamically
-        # evaluated by the Dynamic utility when the dependencies change.
         params = {}
         for k, v in kwargs.items():
             if util.is_param_method(v, has_deps=True):
@@ -156,37 +153,9 @@ class Operation(param.ParameterizedFunction):
                 v = getattr(v.owner, v.name)
             params[k] = v
         self.p = param.ParamOverrides(self, params)
-
-        dynamic = ((self.p.dynamic == 'default' and
-                    isinstance(element, DynamicMap))
-                   or self.p.dynamic is True)
-
-        if isinstance(element, (GridSpace, NdLayout)):
-            # Initialize an empty axis layout
-            grid_data = ((pos, self(cell, **kwargs))
-                         for pos, cell in element.items())
-            processed = element.clone(grid_data)
-        elif dynamic:
-            from ..util import Dynamic
-            processed = Dynamic(element, streams=self.p.streams,
-                                link_inputs=self.p.link_inputs,
-                                operation=self, kwargs=kwargs)
-        elif isinstance(element, ViewableElement):
-            processed = self._apply(element)
-        elif isinstance(element, DynamicMap):
-            if any((not d.values) for d in element.kdims):
-                raise ValueError('Applying a non-dynamic operation requires '
-                                 'all DynamicMap key dimensions to define '
-                                 'the sampling by specifying values.')
-            samples = tuple(d.values for d in element.kdims)
-            processed = self(element[samples], **params)
-        elif isinstance(element, HoloMap):
-            mapped_items = [(k, self._apply(el, key=k))
-                            for k, el in element.items()]
-            processed = element.clone(mapped_items)
-        else:
-            raise ValueError("Cannot process type %r" % type(element).__name__)
-        return processed
+        if isinstance(element, ViewableElement) and not self.p.dynamic:
+            return self._apply(element)
+        return element.apply(self, link_inputs=self.p.link_inputs, **kwargs)
 
 
 

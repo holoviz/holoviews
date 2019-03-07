@@ -183,27 +183,25 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
 
-    def test_deep_map_apply_element_function(self):
+    def test_deep_apply_element_function(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(lambda x: x.clone(x.data*2), Curve)
+        mapped = dmap.apply(lambda x: x.clone(x.data*2))
         curve = fn(10)
         self.assertEqual(mapped[10], curve.clone(curve.data*2))
 
-    def test_deep_map_apply_element_function_with_kwarg(self):
+    def test_deep_apply_element_function_with_kwarg(self):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(lambda x, label: x.relabel(label), label='New label')
-        curve = fn(10)
-        self.assertEqual(mapped[10], curve.relabel('New label'))
+        mapped = dmap.apply(lambda x, label: x.relabel(label), label='New label')
+        self.assertEqual(mapped[10], fn(10).relabel('New label'))
 
     def test_deep_map_apply_element_function_with_stream_kwarg(self):
         stream = Stream.define('Test', label='New label')()
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(lambda x, label: x.relabel(label), streams=[stream])
-        curve = fn(10)
-        self.assertEqual(mapped[10], curve.relabel('New label'))
+        mapped = dmap.apply(lambda x, label: x.relabel(label), streams=[stream])
+        self.assertEqual(mapped[10], fn(10).relabel('New label'))
 
     def test_deep_map_apply_parameterized_method_with_stream_kwarg(self):
         class Test(param.Parameterized):
@@ -217,13 +215,13 @@ class DynamicMapMethods(ComparisonTestCase):
         test = Test()
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(lambda x, label: x.relabel(label), label=test.value)
+        mapped = dmap.apply(lambda x, label: x.relabel(label), label=test.value)
         curve = fn(10)
         self.assertEqual(mapped[10], curve.relabel('Label'))
         test.label = 'new label'
         self.assertEqual(mapped[10], curve.relabel('New Label'))
 
-    def test_deep_map_apply_parameterized_method_with_dependency(self):
+    def test_deep_apply_parameterized_method_with_dependency(self):
         class Test(param.Parameterized):
 
             label = param.String(default='label')
@@ -235,13 +233,13 @@ class DynamicMapMethods(ComparisonTestCase):
         test = Test()
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(test.relabel)
+        mapped = dmap.apply(test.relabel)
         curve = fn(10)
         self.assertEqual(mapped[10], curve.relabel('Label'))
         test.label = 'new label'
         self.assertEqual(mapped[10], curve.relabel('New Label'))
 
-    def test_deep_map_apply_parameterized_method_with_dependency_and_static_kwarg(self):
+    def test_deep_apply_parameterized_method_with_dependency_and_static_kwarg(self):
         class Test(param.Parameterized):
 
             label = param.String(default='label')
@@ -253,7 +251,7 @@ class DynamicMapMethods(ComparisonTestCase):
         test = Test()
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
-        mapped = dmap.map(test.relabel, group='Group')
+        mapped = dmap.apply(test.relabel, group='Group')
         curve = fn(10)
         self.assertEqual(mapped[10], curve.relabel('Label', 'Group'))
         test.label = 'new label'
@@ -264,6 +262,14 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         dmap[10]
         mapped = dmap.map(lambda x: Scatter(x), Curve)
+        area = mapped[11]
+        self.assertEqual(area, Scatter(fn(11)))
+
+    def test_deep_apply_transform_element_type(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap[10]
+        mapped = dmap.apply(lambda x: Scatter(x))
         area = mapped[11]
         self.assertEqual(area, Scatter(fn(11)))
 

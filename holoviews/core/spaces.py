@@ -1387,6 +1387,82 @@ class DynamicMap(HoloMap):
             self.data.pop(first_key)
         self[key] = val
 
+    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+        """Applies a function to all (Nd)Overlay or Element objects.
+
+        Any keyword arguments are passed through to the function. If
+        keyword arguments are instance parameters, or streams are
+        supplied the returned object will dynamically update in
+        response to changes in those objects.
+
+        Args:
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values or keywords as additional keyword
+                arguments.
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link_inputs (bool, optional): Whether to link the inputs
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            dynamic (bool, optional): Whether to make object dynamic
+                By default object is made dynamic if streams are
+                supplied, an instance parameter is supplied as a
+                keyword argument, or the supplied function is a
+                parameterized method.
+            kwargs (dict, optional): Additional keyword arguments
+                Keyword arguments which will be supplied to the
+                function.
+
+        Returns:
+            A new object where the function was applied to all
+            contained (Nd)Overlay or Element objects.
+        """
+        if dynamic == False:
+            if any((not d.values) for d in element.kdims):
+                raise ValueError('Applying a function to a DynamicMap '
+                                 'and setting dynamic=False is only '
+                                 'possible if key dimensions define '
+                                 'a discrete parameter space.')
+            samples = tuple(d.values for d in element.kdims)
+            return HoloMap(element[samples]).apply(
+                function, streams, link_inputs, dynamic, **kwargs)
+        return super(DynamicMap, self).apply(function, streams, link_inputs, dynamic, **kwargs)
+
+
+    def map(self, map_fn, specs=None, clone=True, link_inputs=True):
+        """Map a function to all objects matching the specs
+
+        Recursively replaces elements using a map function when the
+        specs apply, by default applies to all objects, e.g. to apply
+        the function to all contained Curve objects:
+
+            dmap.map(fn, hv.Curve)
+
+        Args:
+            map_fn: Function to apply to each object
+            specs: List of specs to match
+                List of types, functions or type[.group][.label] specs
+                to select objects to return, by default applies to all
+                objects.
+            clone: Whether to clone the object or transform inplace
+
+        Returns:
+            Returns the object after the map_fn has been applied
+        """
+        deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
+        if isinstance(deep_mapped, type(self)):
+            from ..util import Dynamic
+            def apply_map(obj, **dynkwargs):
+                return obj.map(map_fn, specs, clone)
+            dmap = Dynamic(self, operation=apply_map, streams=self.streams,
+                           link_inputs=link_inputs)
+            dmap.data = deep_mapped.data
+            return dmap
+        return deep_mapped
+
 
     def relabel(self, label=None, group=None, depth=1):
         """Clone object and apply new group and/or label.
