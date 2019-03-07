@@ -904,8 +904,7 @@ class DynamicMap(HoloMap):
         streams = (streams or [])
 
         # If callback is a parameterized method and watch is disabled add as stream
-        param_watch_support = util.param_version >= '1.8.0'
-        if util.is_param_method(callback) and params.get('watch', param_watch_support):
+        if util.is_param_method(callback, has_deps=True) and params.get('watch', True):
             streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):
@@ -1387,6 +1386,51 @@ class DynamicMap(HoloMap):
             first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self[key] = val
+
+
+    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+        """Applies a function to all (Nd)Overlay or Element objects.
+
+        Any keyword arguments are passed through to the function. If
+        keyword arguments are instance parameters, or streams are
+        supplied the returned object will dynamically update in
+        response to changes in those objects.
+
+        Args:
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values or keywords as additional keyword
+                arguments.
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link_inputs (bool, optional): Whether to link the inputs
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            dynamic (bool, optional): Whether to make object dynamic
+                By default object is made dynamic if streams are
+                supplied, an instance parameter is supplied as a
+                keyword argument, or the supplied function is a
+                parameterized method.
+            kwargs (dict, optional): Additional keyword arguments
+                Keyword arguments which will be supplied to the
+                function.
+
+        Returns:
+            A new object where the function was applied to all
+            contained (Nd)Overlay or Element objects.
+        """
+        if dynamic == False:
+            samples = tuple(d.values for d in self.kdims)
+            if not all(samples):
+                raise ValueError('Applying a function to a DynamicMap '
+                                 'and setting dynamic=False is only '
+                                 'possible if key dimensions define '
+                                 'a discrete parameter space.')
+            return HoloMap(self[samples]).apply(
+                function, streams, link_inputs, dynamic, **kwargs)
+        return super(DynamicMap, self).apply(function, streams, link_inputs, dynamic, **kwargs)
 
 
     def map(self, map_fn, specs=None, clone=True, link_inputs=True):

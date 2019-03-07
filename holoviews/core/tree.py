@@ -32,6 +32,7 @@ class AttrTree(object):
             first.update(tree)
         return first
 
+
     def __dir__(self):
         """
         The _dir_mode may be set to 'default' or 'user' in which case

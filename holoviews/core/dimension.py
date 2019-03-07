@@ -904,6 +904,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
+        super(LabelledData, self).__setstate__({})
 
 
 class Dimensioned(LabelledData):
@@ -1350,6 +1351,78 @@ class Dimensioned(LabelledData):
         return self.opts(options, **kwargs)
 
 
+    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+        """Applies a function to all (Nd)Overlay or Element objects.
+
+        Any keyword arguments are passed through to the function. If
+        keyword arguments are instance parameters, or streams are
+        supplied the returned object will dynamically update in
+        response to changes in those objects.
+
+        Args:
+            function: A callable function
+                The function will be passed the return value of the
+                DynamicMap as the first argument and any supplied
+                stream values or keywords as additional keyword
+                arguments.
+            streams (list, optional): A list of Stream objects
+                The Stream objects can dynamically supply values which
+                will be passed to the function as keywords.
+            link_inputs (bool, optional): Whether to link the inputs
+                Determines whether Streams and Links attached to
+                original object will be inherited.
+            dynamic (bool, optional): Whether to make object dynamic
+                By default object is made dynamic if streams are
+                supplied, an instance parameter is supplied as a
+                keyword argument, or the supplied function is a
+                parameterized method.
+            kwargs (dict, optional): Additional keyword arguments
+                Keyword arguments which will be supplied to the
+                function.
+
+        Returns:
+            A new object where the function was applied to all
+            contained (Nd)Overlay or Element objects.
+        """
+        from .spaces import DynamicMap
+        from ..util import Dynamic
+
+        applies = isinstance(self, (ViewableElement, DynamicMap))
+        params = {p: val for p, val in kwargs.items()
+                  if isinstance(val, param.Parameter)
+                  and isinstance(val.owner, param.Parameterized)}
+        param_methods = {p: val for p, val in kwargs.items()
+                         if util.is_param_method(val, has_deps=True)}
+
+        if dynamic is None:
+            dynamic = (bool(streams) or isinstance(self, DynamicMap) or
+                       util.is_param_method(function, has_deps=True) or
+                       params or param_methods)
+
+        if applies and dynamic:
+            return Dynamic(self, operation=function, streams=streams,
+                           kwargs=kwargs, link_inputs=link_inputs)
+        elif applies:
+            inner_kwargs = dict(kwargs)
+            for k, v in kwargs.items():
+                if util.is_param_method(v, has_deps=True):
+                    inner_kwargs[k] = v()
+                elif k in params:
+                    inner_kwargs[k] = getattr(v.owner, v.name)
+            if hasattr(function, 'dynamic'):
+                inner_kwargs['dynamic'] = False
+            if util.is_param_method(function) and util.get_method_owner(function) is self:
+                return function(**inner_kwargs)
+            return function(self, **inner_kwargs)
+        elif self._deep_indexable:
+            mapped = OrderedDict()
+            for k, v in self.data.items():
+                new_val = v.apply(function, streams, link_inputs, dynamic, **kwargs)
+                if new_val is not None:
+                    mapped[k] = new_val
+            return self.clone(mapped, link=link_inputs)
+
+
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
 
@@ -1440,6 +1513,7 @@ class Dimensioned(LabelledData):
         return Store.render(self)
 
 
+
 class ViewableElement(Dimensioned):
     """
     A ViewableElement is a dimensioned datastructure that may be
@@ -1499,6 +1573,17 @@ class ViewableTree(AttrTree, Dimensioned):
         cls._unpack_paths(vals, items, counts)
         items = cls._deduplicate_items(items)
         return items
+
+
+    def __setstate__(self, d):
+        """
+        Ensure that object does not try to reference its parent during
+        unpickling.
+        """
+        parent = d.pop('parent', None)
+        d['parent'] = None
+        super(AttrTree, self).__setstate__(d)
+        self.__dict__['parent'] = parent
 
 
     @classmethod

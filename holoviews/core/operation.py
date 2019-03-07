@@ -4,10 +4,11 @@ the purposes of analysis or visualization.
 """
 import param
 from .dimension import ViewableElement
-from .element import Element, HoloMap, GridSpace, NdLayout
+from .element import Element
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
-from .spaces import DynamicMap, Callable
+from .spaces import Callable, HoloMap
+from . import util
 
 
 class Operation(param.ParameterizedFunction):
@@ -124,14 +125,14 @@ class Operation(param.ParameterizedFunction):
         return ret
 
 
-    def _process(self, view, key=None):
+    def _process(self, element, key=None):
         """
-        Process a single input element and outputs new single element or
-        overlay. If a HoloMap is passed into an Operation, the
+        Process a single input element and outputs new single element
+        or overlay. If a HoloMap is passed into an Operation, the
         individual components are processed sequentially with the
         corresponding key passed as the optional key argument.
         """
-        raise NotImplementedError
+        return element
 
 
     def process_element(self, element, key, **params):
@@ -143,38 +144,22 @@ class Operation(param.ParameterizedFunction):
         return self._apply(element, key)
 
 
-    def __call__(self, element, **params):
+    def __call__(self, element, **kwargs):
+        params = dict(kwargs)
+        for k, v in kwargs.items():
+            if util.is_param_method(v, has_deps=True):
+                params[k] = v()
+            elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+                params[k] = getattr(v.owner, v.name)
         self.p = param.ParamOverrides(self, params)
-        dynamic = ((self.p.dynamic == 'default' and
-                    isinstance(element, DynamicMap))
-                   or self.p.dynamic is True)
-
-        if isinstance(element, (GridSpace, NdLayout)):
-            # Initialize an empty axis layout
-            grid_data = ((pos, self(cell, **params))
-                         for pos, cell in element.items())
-            processed = element.clone(grid_data)
-        elif dynamic:
-            from ..util import Dynamic
-            processed = Dynamic(element, streams=self.p.streams,
-                                link_inputs=self.p.link_inputs,
-                                operation=self, kwargs=params)
-        elif isinstance(element, ViewableElement):
-            processed = self._apply(element)
-        elif isinstance(element, DynamicMap):
-            if any((not d.values) for d in element.kdims):
-                raise ValueError('Applying a non-dynamic operation requires '
-                                 'all DynamicMap key dimensions to define '
-                                 'the sampling by specifying values.')
-            samples = tuple(d.values for d in element.kdims)
-            processed = self(element[samples], **params)
-        elif isinstance(element, HoloMap):
-            mapped_items = [(k, self._apply(el, key=k))
-                            for k, el in element.items()]
-            processed = element.clone(mapped_items)
-        else:
-            raise ValueError("Cannot process type %r" % type(element).__name__)
-        return processed
+        if not self.p.dynamic:
+            if isinstance(element, HoloMap):
+                # Backwards compatibility for key argument
+                return element.clone([(k, self._apply(el, key=k))
+                                      for k, el in element.items()])
+            elif isinstance(element, ViewableElement):
+                return self._apply(element)
+        return element.apply(self, **kwargs)
 
 
 

@@ -1460,11 +1460,25 @@ def get_param_values(data):
     return params
 
 
-def is_param_method(obj):
+def is_param_method(obj, has_deps=False):
+    """Whether the object is a method on a parameterized object.
+
+    Args:
+       obj: Object to check
+       has_deps (boolean, optional): Check for dependencies
+          Whether to also check whether the method has been annotated
+          with param.depends
+
+    Returns:
+       A boolean value indicating whether the object is a method
+       on a Parameterized object and if enabled whether it has any
+       dependencies
     """
-    Whether the object is a method on a parameterized object.
-    """
-    return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    parameterized = (inspect.ismethod(obj) and
+                     isinstance(get_method_owner(obj), param.Parameterized))
+    if parameterized and has_deps:
+        return getattr(obj, "_dinfo", {}).get('dependencies')
+    return parameterized
 
 
 @contextmanager
@@ -1556,12 +1570,21 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
-    param_groups = [s.contents.keys() for s in streams]
+    param_groups = []
+    for s in streams:
+        if not s.contents and isinstance(s.hashkey, dict):
+            param_groups.append(list(s.hashkey))
+        else:
+            param_groups.append(list(s.contents))
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
         clashes = sorted(set([n for n in names if names.count(n) > 1]))
-        clash_streams = [s for s in streams for c in clashes if c in s.contents]
+        clash_streams = []
+        for s in streams:
+            for c in clashes:
+                if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
+                    clash_streams.append(s)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
