@@ -1,8 +1,8 @@
 [![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
 [![Conda](https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg)](https://anaconda.org/pyviz/holoviews)
 [![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/pyviz/holoviews)
-[![BuildStatus](https://travis-ci.org/ioam/holoviews.svg?branch=master)](https://travis-ci.org/pyviz/holoviews)
-[![Coveralls](https://img.shields.io/coveralls/ioam/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
+[![BuildStatus](https://travis-ci.org/pyviz/holoviews.svg?branch=master)](https://travis-ci.org/pyviz/holoviews)
+[![Coveralls](https://img.shields.io/coveralls/pyviz/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/pyviz/pyviz?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pyviz/holoviews/master?filepath=examples)
 
@@ -12,7 +12,7 @@
 itself.**
 
 HoloViews is an
-[open-source](https://github.com/ioam/holoviews/blob/master/LICENSE.txt)
+[open-source](https://github.com/pyviz/holoviews/blob/master/LICENSE.txt)
 Python library designed to make data analysis and visualization seamless
 and simple. With HoloViews, you can usually express what you want to do
 in very few lines of code, letting you focus on what you are trying to
@@ -55,7 +55,7 @@ Installation
 ============
 
 HoloViews works with 
-[Python 2.7 and Python 3](https://travis-ci.org/ioam/holoviews)
+[Python 2.7 and Python 3](https://travis-ci.org/pyviz/holoviews)
 on Linux, Windows, or Mac, and provides optional extensions for working with the 
 [Jupyter/IPython Notebook](http://jupyter.org).
 
@@ -68,13 +68,13 @@ The recommended way to install HoloViews is using the
 
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
-[Numpy](http://numpy.org) and [Param](http://ioam.github.com/param).
+[Numpy](http://numpy.org) and [Param](https://param.pyviz.org).
 Additional installation and configuration options are described in the
 [user guide](http://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 You can also clone holoviews directly from GitHub and install it with:
 
-    git clone git://github.com/ioam/holoviews.git
+    git clone git://github.com/pyviz/holoviews.git
     cd holoviews
     pip install -e .
 
