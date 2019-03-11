@@ -62,13 +62,13 @@ html_context.update({
     'WEBSITE_SERVER': 'https:',
     # Links
     'LINKS': (
-        ('Getting started', '/getting_started/index.html'),
-        ('User Guide', '/user_guide/index.html'),
-        ('Gallery', '/gallery/index.html'),
-        ('Reference Gallery', '/reference/index.html'),
-        ('API Docs', '/Reference_Manual/index.html'),
-        ('FAQ', '/FAQ.html'),
-        ('About', '/about.html')
+        ('Getting started', '/getting_started/index'),
+        ('User Guide', '/user_guide/index'),
+        ('Gallery', '/gallery/index'),
+        ('Reference Gallery', '/reference/index'),
+        ('API Docs', '/Reference_Manual/index'),
+        ('FAQ', '/FAQ'),
+        ('About', '/about')
     ),
     # About Links
     'ABOUT': (
