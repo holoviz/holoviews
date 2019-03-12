@@ -28,6 +28,10 @@ class TestApplyElement(ComparisonTestCase):
         applied = self.element.apply(lambda x: x.relabel('Test'))
         self.assertEqual(applied, self.element.relabel('Test'))
 
+    def test_element_apply_method_as_string(self):
+        applied = self.element.apply('relabel', label='Test')
+        self.assertEqual(applied, self.element.relabel('Test'))
+
     def test_element_apply_with_kwarg(self):
         applied = self.element.apply(lambda x, label: x.relabel(label), label='Test')
         self.assertEqual(applied, self.element.relabel('Test'))
@@ -37,9 +41,9 @@ class TestApplyElement(ComparisonTestCase):
         applied = self.element.apply(lambda x, label: x.relabel(label), label=pinst.param.label, dynamic=False)
         self.assertEqual(applied, self.element.relabel('Test'))
 
-    def test_element_apply_not_dynamic_element_method(self):
+    def test_element_apply_not_dynamic_with_method_string(self):
         pinst = ParamClass()
-        applied = self.element.apply(self.element.relabel, dynamic=False, label=pinst.param.label)
+        applied = self.element.apply('relabel', dynamic=False, label=pinst.param.label)
         self.assertEqual(applied, self.element.relabel('Test'))
 
     def test_element_apply_not_dynamic_with_param_method(self):
@@ -158,6 +162,10 @@ class TestApplyDynamicMap(ComparisonTestCase):
         self.assertEqual(len(applied.streams), 0)
         self.assertEqual(applied[1], self.dmap[1].relabel('Test'))
 
+    def test_element_apply_method_as_string(self):
+        applied = self.dmap.apply('relabel', label='Test')
+        self.assertEqual(applied[1], self.dmap[1].relabel('Test'))
+
     def test_dmap_apply_dynamic_with_kwarg(self):
         applied = self.dmap.apply(lambda x, label: x.relabel(label), label='Test')
         self.assertEqual(len(applied.streams), 0)
@@ -175,6 +183,13 @@ class TestApplyDynamicMap(ComparisonTestCase):
         self.assertEqual(stream.parameters, ['label'])
 
         # Check results
+        self.assertEqual(applied[1], self.dmap[1].relabel('Test'))
+        pinst.label = 'Another label'
+        self.assertEqual(applied[1], self.dmap[1].relabel('Another label'))
+
+    def test_dmap_apply_method_as_string_with_instance_param(self):
+        pinst = ParamClass()
+        applied = self.dmap.apply('relabel', label=pinst.param.label)
         self.assertEqual(applied[1], self.dmap[1].relabel('Test'))
         pinst.label = 'Another label'
         self.assertEqual(applied[1], self.dmap[1].relabel('Another label'))

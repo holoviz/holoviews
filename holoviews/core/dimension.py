@@ -1387,6 +1387,18 @@ class Dimensioned(LabelledData):
         from .spaces import DynamicMap
         from ..util import Dynamic
 
+        if isinstance(function, basestring):
+            method_name = function
+            def function(object, **kwargs):
+                method = getattr(object, method_name, None)
+                if method is None:
+                    raise AttributeError('Applied method %s does not exist.'
+                                         'When declaring a method to apply '
+                                         'as a string ensure a corresponding '
+                                         'method exists on the object.' %
+                                         method_name)
+                return method(**kwargs)
+
         applies = isinstance(self, (ViewableElement, DynamicMap))
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
@@ -1411,8 +1423,6 @@ class Dimensioned(LabelledData):
                     inner_kwargs[k] = getattr(v.owner, v.name)
             if hasattr(function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
-            if util.is_param_method(function) and util.get_method_owner(function) is self:
-                return function(**inner_kwargs)
             return function(self, **inner_kwargs)
         elif self._deep_indexable:
             mapped = OrderedDict()
