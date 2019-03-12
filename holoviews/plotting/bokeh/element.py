@@ -853,17 +853,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
-                if self.aspect:
+                if self.aspect == 'square':
+                    frame_aspect = 1
+                elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
                 else:
                     frame_aspect = plot.frame_width/plot.frame_height
+
+                desired_xspan = yspan*1./(ratio/frame_aspect)
                 desired_yspan = (xspan*(ratio/frame_aspect))
-                if desired_yspan >= yspan:
+                if (np.allclose(desired_xspan, xspan, rtol=0.01) and
+                    np.allclose(desired_yspan, yspan, rtol=0.01)):
+                    pass
+                elif desired_yspan >= yspan:
                     ypad = (desired_yspan-yspan)/2.
                     b, t = b-ypad, t+ypad
                     yupdate = True
                 else:
-                    desired_xspan = yspan*1./(ratio/frame_aspect)
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
