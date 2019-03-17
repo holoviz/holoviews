@@ -120,8 +120,13 @@ class notebook_extension(extension):
                 import nbformat # noqa (ensures availability)
             else:
                 from IPython import nbformat # noqa (ensures availability)
-            from .archive import notebook_archive
-            holoviews.archive = notebook_archive
+            try:
+                from .archive import notebook_archive
+                holoviews.archive = notebook_archive
+            except AttributeError as e:
+                if str(e) != "module 'tornado.web' has no attribute 'asynchronous'":
+                    raise
+
         except ImportError:
             pass
 
