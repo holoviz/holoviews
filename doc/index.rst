@@ -118,7 +118,7 @@ Once you have installed JupyterLab and the extension launch it with::
   jupyter-lab
 
 For more details on installing and configuring HoloViews see `the user
-guide <user_guide/Installing_and_Configuring.html>`_.
+guide <user_guide/index.html>`_.
 
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
