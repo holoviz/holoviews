@@ -146,5 +146,6 @@ guide <user_guide/Installing_and_Configuring.html>`_.
    Releases <releases>
    API <Reference_Manual/index>
    FAQ
+   Roadmap
    Github source <http://github.com/pyviz/holoviews>
    About <about>
