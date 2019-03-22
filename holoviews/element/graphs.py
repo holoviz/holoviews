@@ -21,7 +21,7 @@ class RedimGraph(Redim):
     """
 
     def __call__(self, specs=None, **dimensions):
-        redimmed = super(Redim, self).__call__(specs, **dimensions)
+        redimmed = super(RedimGraph, self).__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self._obj.nodes:
             new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
