@@ -42,6 +42,7 @@ from collections import defaultdict
 import numpy as np
 
 import param
+from .accessors import Opts # noqa (clean up in 2.0)
 from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict
 from .pprint import InfoPrinter

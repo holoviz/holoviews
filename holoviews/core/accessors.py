@@ -9,7 +9,6 @@ import param
 
 from . import util
 from .pprint import PrettyPrinter
-from .options import Options, Store
 
 
 class Apply(object):
@@ -326,6 +325,7 @@ class Opts(object):
             Options object associated with the object containing the
             applied option keywords.
         """
+        from .options import Store, Options
         keywords = {}
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
