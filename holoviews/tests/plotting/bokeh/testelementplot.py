@@ -15,7 +15,8 @@ from ...utils import LoggingComparisonTestCase
 try:
     from bokeh.document import Document
     from bokeh.models import tools
-    from bokeh.models import FuncTickFormatter, PrintfTickFormatter, NumeralTickFormatter
+    from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
+                              NumeralTickFormatter, LogTicker)
 except:
     pass
 
@@ -399,6 +400,13 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low_color, 'red')
         self.assertEqual(cmapper.high_color, 'blue')
+
+    def test_custom_colorbar_ticker(self):
+        ticker = LogTicker()
+        img = Image(np.array([[0, 1], [2, 3]])).options(colorbar=True, colorbar_opts=dict(ticker=ticker))
+        plot = bokeh_renderer.get_plot(img)
+        colorbar = plot.handles['colorbar']
+        self.assertIs(colorbar.ticker, ticker)
 
     def test_explicit_categorical_cmap_on_integer_data(self):
         explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])

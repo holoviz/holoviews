@@ -1402,9 +1402,9 @@ class ColorbarPlot(ElementPlot):
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
-        opts = dict(cbar_opts['opts'], **self._colorbar_defaults)
-        color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
-                             **dict(opts, **self.colorbar_opts))
+        opts = dict(cbar_opts['opts'], color_mapper=color_mapper, ticker=ticker,
+                    **self._colorbar_defaults)
+        color_bar = ColorBar(**dict(opts, **self.colorbar_opts))
 
         plot.add_layout(color_bar, pos)
         self.handles[prefix+'colorbar'] = color_bar
