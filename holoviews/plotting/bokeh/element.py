@@ -39,7 +39,8 @@ from .styles import (
 from .util import (
     TOOL_TYPES, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
-    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs)
+    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
+    compute_layout_properties)
 
 
 
@@ -461,159 +462,39 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a dictionary of plot properties.
         """
+        init = 'plot' not in self.handles
         size_multiplier = self.renderer.size/100.
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
-        fixed_width = (options['width'] or self.frame_width)
-        fixed_height = (options['height'] or self.frame_height)
-        fixed_aspect = self.aspect or self.data_aspect
 
-        # Plot dimensions
-        height = None if self.height is None else int(self.height*size_multiplier)
-        width = None if self.width is None else int(self.width*size_multiplier)
-        frame_height = None if self.frame_height is None else int(self.frame_height*size_multiplier)
-        frame_width = None if self.frame_width is None else int(self.frame_width*size_multiplier)
-        actual_width = frame_width or width
-        actual_height = frame_height or height
+        logger = self.param if init else None
+        aspect_props, dimension_props = compute_layout_properties(
+            self.width, self.height, self.frame_width, self.frame_height,
+            options['width'], options['height'], self.aspect, self.data_aspect,
+            self.responsive, size_multiplier, logger=logger)
 
-        if frame_width is not None:
-            width = None
-        if frame_height is not None:
-            height = None
-
-        # Determine sizing mode
-        init = 'plot' not in self.handles
-        responsive = self.responsive
-        sizing_mode = 'fixed'
-        if responsive:
-            if fixed_height and fixed_width:
-                responsive = False
-                if init:
-                    self.param.warning("responsive mode could not be enabled "
-                                       "because fixed width and height were "
-                                       "specified.")
-            elif fixed_width:
-                height = None
-                sizing_mode = 'fixed' if fixed_aspect else 'stretch_height'
-            elif fixed_height:
-                width = None
-                sizing_mode = 'fixed' if fixed_aspect else 'stretch_width'
-            else:
-                width, height = None, None
-                if fixed_aspect:
-                    if self.responsive == 'width':
-                        sizing_mode = 'scale_width'
-                    elif self.responsive == 'height':
-                        sizing_mode = 'scale_height'
-                    else:
-                        sizing_mode = 'scale_both'
-                else:
-                    if self.responsive == 'width':
-                        sizing_mode = 'stretch_both'
-                    elif self.responsive == 'height':
-                        sizing_mode = 'stretch_height'
-                    else:
-                        sizing_mode = 'stretch_both'
-
-        aspect = 1 if self.aspect == 'square' else self.aspect
-        if fixed_aspect:
-            aspect_type = 'data_aspect' if self.data_aspect else 'aspect'
-            if fixed_width and fixed_height:
-                if not self.data_aspect:
-                    aspect = None
-                if init:
-                    self.param.warning(
-                        "%s value was ignored because absolute width and "
-                        "height values were provided. Either supply "
-                        "explicit frame_width and frame_height to achieve "
-                        "desired aspect OR supply a combination of width "
-                        "or height and an aspect value." % aspect_type)
-            elif fixed_width and responsive:
-                height = None
-                responsive = False
-                if init:
-                    self.param.warning("responsive mode could not be enabled "
-                                       "because fixed width and aspect were "
-                                       "specified.")
-            elif fixed_height and responsive:
-                width = None
-                responsive = False
-                if init:
-                    self.param.warning("responsive mode could not be enabled "
-                                       "because fixed height and aspect were "
-                                       "specified.")
-            elif responsive == 'width':
-                sizing_mode = 'scale_width'
-            elif responsive == 'height':
-                sizing_mode = 'scale_height'
-
-        if responsive == 'width' and fixed_width:
-            responsive = False
-            if init:
-                self.param.warning("responsive width mode could not be "
-                                   "enabled because a fixed width was defined.")
-        if responsive == 'height' and fixed_height:
-            responsive = False
-            if init:
-                self.param.warning("responsive height mode could not be "
-                                   "enabled because a fixed height was defined.")
-
-        match_aspect = False
-        aspect_scale = 1
-        aspect_ratio = None
-        if (fixed_width and fixed_height):
-            pass
-        elif self.data_aspect or self.aspect == 'equal':
-            match_aspect = True
-            if fixed_width or not fixed_height:
-                height = None
-            if fixed_height or not fixed_width:
-                width = None
-            aspect_scale = 1 if self.aspect == 'equal' else self.data_aspect
-            if self.dynamic:
-                # Sync the plot size on dynamic plots to support accurate
-                # scaling of dimension ranges
-                stream = PlotSize(subscribers=[self._update_size])
-                self.callbacks.append(PlotSizeCallback(self, [stream], None))
-        elif util.isnumeric(aspect):
-            if responsive:
-                aspect_ratio = aspect
-            elif fixed_width:
-                frame_width = actual_width
-                frame_height = int(actual_width/aspect)
-                width, height = None, None
-            else:
-                frame_width = int(actual_height*aspect)
-                frame_height = actual_height
-                width, height = None, None
-        elif aspect is not None:
-            self.param.warning('aspect value of type %s not recognized, '
-                               'provide a numeric value, \'equal\' or '
-                               '\'square\'.')
+        print(aspect_props, dimension_props)
 
         if not init:
-            if aspect_ratio is None:
-                aspect_ratio = self.state.aspect_ratio
+            if aspect_props['aspect_ratio'] is None:
+                aspect_props['aspect_ratio'] = self.state.aspect_ratio
+
+        if self.dynamic and aspect_props['match_aspect']:
+            # Sync the plot size on dynamic plots to support accurate
+            # scaling of dimension ranges
+            stream = PlotSize(subscribers=[self._update_size])
+            self.callbacks.append(PlotSizeCallback(self, [stream], None))
 
         plot_props = {
-            'aspect_ratio':  aspect_ratio,
-            'aspect_scale':  aspect_scale,
             'css_classes':   self.css_classes,
             'margin':        self.margin,
             'max_width':     self.max_width,
             'max_height':    self.max_height,
             'min_width':     self.min_width,
-            'min_height':    self.min_height,
-            'match_aspect':  match_aspect,
-            'sizing_mode':   sizing_mode
+            'min_height':    self.min_height
         }
-
+        plot_props.update(aspect_props)
         if not self.drawn:
-            plot_props.update({
-                'frame_width':   frame_width,
-                'frame_height':  frame_height,
-                'plot_height':   height,
-                'plot_width':    width,
-            })
+            plot_props.update(dimension_props)
 
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor

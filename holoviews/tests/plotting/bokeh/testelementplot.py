@@ -524,7 +524,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_width, None)
         self.assertEqual(plot.state.sizing_mode, 'stretch_height')
 
-    def test_element_width_responsive(self):
+    def test_element_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(height=400, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.state.plot_height, 400)
