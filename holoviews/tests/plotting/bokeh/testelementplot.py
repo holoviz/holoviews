@@ -370,6 +370,266 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
         self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
 
+    #################################################################
+    # Aspect tests
+    #################################################################
+
+    def test_element_aspect(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 300)
+        self.assertEqual(plot.state.frame_width, 600)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_width(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_height(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, height=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_width_height(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, height=400, width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "aspect value was ignored")
+        self.assertEqual(plot.state.plot_height, 400)
+        self.assertEqual(plot.state.plot_width, 400)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_frame_width(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, frame_width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_frame_height(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, frame_height=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_aspect_frame_width_frame_height(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, frame_height=400, frame_width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "aspect value was ignored")
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_ratio, None)
+
+    def test_element_data_aspect(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 300)
+        self.assertEqual(plot.state.frame_width, 300)
+        self.assertEqual(plot.state.aspect_scale, 2)
+
+    def test_element_data_aspect_width(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_scale, 2)
+
+    def test_element_data_aspect_height(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_scale, 2)
+
+    def test_element_data_aspect_width_height(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, height=400, width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "data_aspect value was ignored")
+        self.assertEqual(plot.state.plot_height, 400)
+        self.assertEqual(plot.state.plot_width, 400)
+        self.assertEqual(plot.state.aspect_scale, 1)
+
+    def test_element_data_aspect_frame_width(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_scale, 2)
+
+    def test_element_data_aspect_frame_height(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_height=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.assertEqual(plot.state.aspect_scale, 2)
+
+    def test_element_data_aspect_frame_width_frame_height(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_height=400, frame_width=400)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "data_aspect value was ignored")
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.aspect_scale, 1)
+
+    #################################################################
+    # Aspect tests
+    #################################################################
+
+    def test_element_responsive(self):
+        curve = Curve([1, 2, 3]).opts(responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'stretch_both')
+
+    def test_element_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, 400)
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'stretch_height')
+
+    def test_element_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, 400)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'stretch_width')
+
+    def test_element_frame_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(frame_width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'stretch_height')
+
+    def test_element_frame_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(frame_height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'stretch_width')
+
+    def test_element_aspect_responsive(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'scale_both')
+
+    def test_element_aspect_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+
+    def test_element_aspect_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+
+    def test_element_width_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(height=400, width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.plot_height, 400)
+        self.assertEqual(plot.state.plot_width, 400)
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.assertEqual(plot.state.frame_height, None)
+        self.assertEqual(plot.state.frame_width, None)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+
+    def test_element_aspect_frame_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, frame_width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.assertEqual(plot.state.plot_height, None)
+        self.assertEqual(plot.state.plot_width, None)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+
+    def test_element_aspect_frame_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(aspect=2, frame_height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+    def test_element_frame_width_frame_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(frame_height=400, frame_width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+    def test_element_data_aspect_responsive(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.aspect_ratio, 1)
+        self.assertEqual(plot.state.aspect_scale, 2)
+        self.assertEqual(plot.state.sizing_mode, 'scale_both')
+
+    def test_element_data_aspect_width_responsive(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+    def test_element_data_aspect_height_responsive(self):
+        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+    def test_element_data_aspect_frame_width_responsive(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 200)
+        self.assertEqual(plot.state.frame_width, 400)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+    def test_element_data_aspect_frame_height_responsive(self):
+        curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_height=400, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.frame_height, 400)
+        self.assertEqual(plot.state.frame_width, 800)
+        self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+
+
 
 class TestColorbarPlot(TestBokehPlot):
 

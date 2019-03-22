@@ -482,17 +482,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Determine sizing mode
         init = 'plot' not in self.handles
+        responsive = self.responsive
         sizing_mode = 'fixed'
-        if self.responsive:
-            if fixed_height and fixed_width and init:
-                self.param.warning("responsive mode could not be enabled "
-                                   "because fixed width and height were "
-                                   "specified.")
+        if responsive:
+            if fixed_height and fixed_width:
+                responsive = False
+                if init:
+                    self.param.warning("responsive mode could not be enabled "
+                                       "because fixed width and height were "
+                                       "specified.")
             elif fixed_width:
+                height = None
                 sizing_mode = 'fixed' if fixed_aspect else 'stretch_height'
             elif fixed_height:
+                width = None
                 sizing_mode = 'fixed' if fixed_aspect else 'stretch_width'
             else:
+                width, height = None, None
                 if fixed_aspect:
                     if self.responsive == 'width':
                         sizing_mode = 'scale_width'
@@ -508,41 +514,55 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     else:
                         sizing_mode = 'stretch_both'
 
+        aspect = 1 if self.aspect == 'square' else self.aspect
         if fixed_aspect:
             aspect_type = 'data_aspect' if self.data_aspect else 'aspect'
-            if fixed_width and fixed_height and init:
-                self.param.warning(
-                    "%s value was ignored because absolute width and "
-                    "height values were provided. Either supply "
-                    "explicit frame_width and frame_height to achieve "
-                    "desired aspect OR supply a combination of width "
-                    "or height and an aspect value." % aspect_type)
-            elif fixed_width and self.responsive and init:
-                self.param.warning("responsive mode could not be enabled "
-                                   "because fixed width and aspect were "
-                                   "specified.")
-            elif fixed_height and self.responsive and init:
-                self.param.warning("responsive mode could not be enabled "
-                                   "because fixed height and aspect were "
-                                   "specified.")
-            elif self.responsive == 'width':
+            if fixed_width and fixed_height:
+                if not self.data_aspect:
+                    aspect = None
+                if init:
+                    self.param.warning(
+                        "%s value was ignored because absolute width and "
+                        "height values were provided. Either supply "
+                        "explicit frame_width and frame_height to achieve "
+                        "desired aspect OR supply a combination of width "
+                        "or height and an aspect value." % aspect_type)
+            elif fixed_width and responsive:
+                height = None
+                responsive = False
+                if init:
+                    self.param.warning("responsive mode could not be enabled "
+                                       "because fixed width and aspect were "
+                                       "specified.")
+            elif fixed_height and responsive:
+                width = None
+                responsive = False
+                if init:
+                    self.param.warning("responsive mode could not be enabled "
+                                       "because fixed height and aspect were "
+                                       "specified.")
+            elif responsive == 'width':
                 sizing_mode = 'scale_width'
-            elif self.responsive == 'height':
+            elif responsive == 'height':
                 sizing_mode = 'scale_height'
 
-        if self.responsive == 'width' and fixed_width and init:
-            self.param.warning("responsive width mode could not be "
-                               "enabled because a fixed width was defined.")
-        if self.responsive == 'height' and fixed_height and init:
-            self.param.warning("responsive height mode could not be "
-                               "enabled because a fixed height was defined.")
+        if responsive == 'width' and fixed_width:
+            responsive = False
+            if init:
+                self.param.warning("responsive width mode could not be "
+                                   "enabled because a fixed width was defined.")
+        if responsive == 'height' and fixed_height:
+            responsive = False
+            if init:
+                self.param.warning("responsive height mode could not be "
+                                   "enabled because a fixed height was defined.")
 
         match_aspect = False
         aspect_scale = 1
         aspect_ratio = None
-        aspect = 1 if self.aspect == 'square' else self.aspect
-        if self.data_aspect or self.aspect == 'equal':
-            width, height = None, None
+        if (fixed_width and fixed_height):
+            pass
+        elif self.data_aspect or self.aspect == 'equal':
             match_aspect = True
             aspect_scale = 1 if self.aspect == 'equal' else self.data_aspect
             if self.dynamic:
@@ -551,7 +571,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 stream = PlotSize(subscribers=[self._update_size])
                 self.callbacks.append(PlotSizeCallback(self, [stream], None))
         elif util.isnumeric(aspect):
-            if self.responsive:
+            if responsive:
                 aspect_ratio = aspect
             elif fixed_width:
                 frame_width = actual_width
@@ -565,6 +585,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.param.warning('aspect value of type %s not recognized, '
                                'provide a numeric value, \'equal\' or '
                                '\'square\'.')
+
+        if not init:
+            if aspect_ratio is None:
+                aspect_ratio = self.state.aspect_ratio
 
         plot_props = {
             'aspect_ratio':  aspect_ratio,
@@ -840,7 +864,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
-        if data_aspect and (categorical or datetime):
+        if data_aspect and fixed_width and fixed_height:
+            pass
+        elif data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
                                'axes are %s, the option will '
