@@ -564,6 +564,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             pass
         elif self.data_aspect or self.aspect == 'equal':
             match_aspect = True
+            if fixed_width or not fixed_height:
+                height = None
+            if fixed_height or not fixed_width:
+                width = None
             aspect_scale = 1 if self.aspect == 'equal' else self.data_aspect
             if self.dynamic:
                 # Sync the plot size on dynamic plots to support accurate
@@ -864,6 +868,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+
         if data_aspect and fixed_width and fixed_height:
             pass
         elif data_aspect and (categorical or datetime):
@@ -911,9 +916,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if fixed_height:
                     plot.frame_height = height
                     plot.frame_width = int(height*aspect)
+                    plot.plot_width, plot.plot_height = None, None
                 elif fixed_width:
                     plot.frame_width = width
                     plot.frame_height = int(width/aspect)
+                    plot.plot_width, plot.plot_height = None, None
                 else:
                     plot.aspect_ratio = aspect
 
