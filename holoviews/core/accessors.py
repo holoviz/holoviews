@@ -55,8 +55,18 @@ class Apply(object):
             contained (Nd)Overlay or Element objects.
         """
         from .dimension import ViewableElement
-        from .spaces import DynamicMap
+        from .spaces import HoloMap, DynamicMap
         from ..util import Dynamic
+
+        if isinstance(self._obj, DynamicMap) and dynamic == False:
+            samples = tuple(d.values for d in self._obj.kdims)
+            if not all(samples):
+                raise ValueError('Applying a function to a DynamicMap '
+                                 'and setting dynamic=False is only '
+                                 'possible if key dimensions define '
+                                 'a discrete parameter space.')
+            return HoloMap(self._obj[samples]).apply(
+                function, streams, link_inputs, dynamic, **kwargs)
 
         if isinstance(function, util.basestring):
             args = kwargs.pop('_args', ())
