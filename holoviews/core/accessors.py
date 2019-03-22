@@ -68,7 +68,7 @@ class Apply(object):
                 function, streams, link_inputs, dynamic, **kwargs)
 
         if isinstance(function, util.basestring):
-            args = kwargs.pop('_args', ())
+            args = kwargs.pop('_method_args', ())
             method_name = function
             def function(object, **kwargs):
                 method = getattr(object, method_name, None)
@@ -121,7 +121,7 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        kwargs['_args'] = (dimensions, function, spreadfn)
+        kwargs['_method_args'] = (dimensions, function, spreadfn)
         return self.__call__('aggregate', **kwargs)
 
     def opts(self, *args, **kwargs):
@@ -130,7 +130,7 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        kwargs['_args'] = args
+        kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **kwargs):
@@ -139,7 +139,7 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
-        kwargs['_args'] = (dimensions, function, spreadfn)
+        kwargs['_method_args'] = (dimensions, function, spreadfn)
         return self.__call__('reduce', **kwargs)
 
     def select(self, **kwargs):
