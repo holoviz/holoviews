@@ -1,6 +1,6 @@
 environment:
   global:
-    CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
+    CHANS_DEV: "-c pyviz/label/dev -c conda-forge -c bokeh/label/dev"
   matrix:
     - PY: "2.7"
       CONDA: "C:\\Miniconda-x64"
