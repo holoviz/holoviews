@@ -12,11 +12,12 @@ import numpy as np
 import param
 
 from . import traversal, util
+from .accessors import Opts
 from .dimension import OrderedDict, Dimension, ViewableElement, redim
 from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
-from .options import Store, StoreOptions, Opts
+from .options import Store, StoreOptions
 from ..streams import Stream
 
 
@@ -427,6 +428,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             A Table containing the sampled coordinates
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.sample method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.sample().collapse().')
+
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
@@ -491,6 +497,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             The Dataset after reductions have been applied.
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.reduce method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.reduce().collapse().')
+
         from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
                          for k, v in self.items()]

@@ -18,7 +18,8 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts, Options, cleanup_custom_options
+from .accessors import Opts, Apply, redim
+from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -124,158 +125,6 @@ def process_dimensions(kdims, vdims):
                                  'found a %s type.' % type(dim).__name__)
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
-
-
-class redim(object):
-    """
-    Utility that supports re-dimensioning any HoloViews object via the
-    redim method.
-    """
-
-    def __init__(self, parent, mode=None):
-        self.parent = parent
-        # Can be 'dataset', 'dynamic' or None
-        self.mode = mode
-
-    def __str__(self):
-        return "<holoviews.core.dimension.redim method>"
-
-    @classmethod
-    def replace_dimensions(cls, dimensions, overrides):
-        """Replaces dimensions in list with dictionary of overrides.
-
-        Args:
-            dimensions: List of dimensions
-            overrides: Dictionary of dimension specs indexed by name
-
-        Returns:
-            list: List of dimensions with replacements applied
-        """
-        replaced = []
-        for d in dimensions:
-            if d.name in overrides:
-                override = overrides[d.name]
-            elif d.label in overrides:
-                override = overrides[d.label]
-            else:
-                override = None
-
-            if override is None:
-                replaced.append(d)
-            elif isinstance(override, (basestring, tuple)):
-                replaced.append(d.clone(override))
-            elif isinstance(override, Dimension):
-                replaced.append(override)
-            elif isinstance(override, dict):
-                replaced.append(d.clone(override.get('name',None),
-                                        **{k:v for k,v in override.items() if k != 'name'}))
-            else:
-                raise ValueError('Dimension can only be overridden '
-                                 'with another dimension or a dictionary '
-                                 'of attributes')
-        return replaced
-
-
-    def _filter_cache(self, dmap, kdims):
-        """
-        Returns a filtered version of the DynamicMap cache leaving only
-        keys consistently with the newly specified values
-        """
-        filtered = []
-        for key, value in dmap.data.items():
-            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key)):
-                filtered.append((key, value))
-        return filtered
-
-
-    def __call__(self, specs=None, **dimensions):
-        """
-        Replace dimensions on the dataset and allows renaming
-        dimensions in the dataset. Dimension mapping should map
-        between the old dimension name and a dictionary of the new
-        attributes, a completely new dimension or a new string name.
-        """
-        parent = self.parent
-        redimmed = parent
-        if parent._deep_indexable and self.mode != 'dataset':
-            deep_mapped = [(k, v.redim(specs, **dimensions))
-                           for k, v in parent.items()]
-            redimmed = parent.clone(deep_mapped)
-
-        if specs is not None:
-            if not isinstance(specs, list):
-                specs = [specs]
-            matches = any(parent.matches(spec) for spec in specs)
-            if self.mode != 'dynamic' and not matches:
-                return redimmed
-
-        kdims = self.replace_dimensions(parent.kdims, dimensions)
-        vdims = self.replace_dimensions(parent.vdims, dimensions)
-        zipped_dims = zip(parent.kdims+parent.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
-
-        if self.mode == 'dataset':
-            data = parent.data
-            if renames:
-                data = parent.interface.redim(parent, renames)
-            clone = parent.clone(data, kdims=kdims, vdims=vdims)
-            if self.parent.dimensions(label='name') == clone.dimensions(label='name'):
-                # Ensure that plot_id is inherited as long as dimension
-                # name does not change
-                clone._plot_id = self.parent._plot_id
-            return clone
-
-        if self.mode != 'dynamic':
-            return redimmed.clone(kdims=kdims, vdims=vdims)
-
-        from ..util import Dynamic
-        def dynamic_redim(obj, **dynkwargs):
-            return obj.redim(specs, **dimensions)
-        dmap = Dynamic(parent, streams=parent.streams, operation=dynamic_redim)
-        dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
-        with util.disable_constant(dmap):
-            dmap.kdims = kdims
-            dmap.vdims = vdims
-        return dmap
-
-
-    def _redim(self, name, specs, **dims):
-        dimensions = {k:{name:v} for k,v in dims.items()}
-        return self(specs, **dimensions)
-
-    def cyclic(self, specs=None, **values):
-        return self._redim('cyclic', specs, **values)
-
-    def value_format(self, specs=None, **values):
-        return self._redim('value_format', specs, **values)
-
-    def range(self, specs=None, **values):
-        return self._redim('range', specs, **values)
-
-    def label(self, specs=None, **values):
-        for k, v in values.items():
-            dim = self.parent.get_dimension(k)
-            if dim and dim.name != dim.label and dim.label != v:
-                raise ValueError('Cannot override an existing Dimension label')
-        return self._redim('label', specs, **values)
-
-    def soft_range(self, specs=None, **values):
-        return self._redim('soft_range', specs, **values)
-
-    def type(self, specs=None, **values):
-        return self._redim('type', specs, **values)
-
-    def step(self, specs=None, **values):
-        return self._redim('step', specs, **values)
-
-    def default(self, specs=None, **values):
-        return self._redim('default', specs, **values)
-
-    def unit(self, specs=None, **values):
-        return self._redim('unit', specs, **values)
-
-    def values(self, specs=None, **ranges):
-        return self._redim('values', specs, **ranges)
 
 
 
@@ -999,9 +848,11 @@ class Dimensioned(LabelledData):
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
         self._settings = None
-        self.redim = redim(self)
 
+        # Instantiate accessors
+        self.apply = Apply(self)
         self.opts = Opts(self)
+        self.redim = redim(self)
 
 
     def _valid_dimensions(self, dimensions):
@@ -1349,88 +1200,6 @@ class Dimensioned(LabelledData):
             return self.opts.clear()
 
         return self.opts(options, **kwargs)
-
-
-    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
-        """Applies a function to all (Nd)Overlay or Element objects.
-
-        Any keyword arguments are passed through to the function. If
-        keyword arguments are instance parameters, or streams are
-        supplied the returned object will dynamically update in
-        response to changes in those objects.
-
-        Args:
-            function: A callable function
-                The function will be passed the return value of the
-                DynamicMap as the first argument and any supplied
-                stream values or keywords as additional keyword
-                arguments.
-            streams (list, optional): A list of Stream objects
-                The Stream objects can dynamically supply values which
-                will be passed to the function as keywords.
-            link_inputs (bool, optional): Whether to link the inputs
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            dynamic (bool, optional): Whether to make object dynamic
-                By default object is made dynamic if streams are
-                supplied, an instance parameter is supplied as a
-                keyword argument, or the supplied function is a
-                parameterized method.
-            kwargs (dict, optional): Additional keyword arguments
-                Keyword arguments which will be supplied to the
-                function.
-
-        Returns:
-            A new object where the function was applied to all
-            contained (Nd)Overlay or Element objects.
-        """
-        from .spaces import DynamicMap
-        from ..util import Dynamic
-
-        if isinstance(function, basestring):
-            method_name = function
-            def function(object, **kwargs):
-                method = getattr(object, method_name, None)
-                if method is None:
-                    raise AttributeError('Applied method %s does not exist.'
-                                         'When declaring a method to apply '
-                                         'as a string ensure a corresponding '
-                                         'method exists on the object.' %
-                                         method_name)
-                return method(**kwargs)
-
-        applies = isinstance(self, (ViewableElement, DynamicMap))
-        params = {p: val for p, val in kwargs.items()
-                  if isinstance(val, param.Parameter)
-                  and isinstance(val.owner, param.Parameterized)}
-        param_methods = {p: val for p, val in kwargs.items()
-                         if util.is_param_method(val, has_deps=True)}
-
-        if dynamic is None:
-            dynamic = (bool(streams) or isinstance(self, DynamicMap) or
-                       util.is_param_method(function, has_deps=True) or
-                       params or param_methods)
-
-        if applies and dynamic:
-            return Dynamic(self, operation=function, streams=streams,
-                           kwargs=kwargs, link_inputs=link_inputs)
-        elif applies:
-            inner_kwargs = dict(kwargs)
-            for k, v in kwargs.items():
-                if util.is_param_method(v, has_deps=True):
-                    inner_kwargs[k] = v()
-                elif k in params:
-                    inner_kwargs[k] = getattr(v.owner, v.name)
-            if hasattr(function, 'dynamic'):
-                inner_kwargs['dynamic'] = False
-            return function(self, **inner_kwargs)
-        elif self._deep_indexable:
-            mapped = OrderedDict()
-            for k, v in self.data.items():
-                new_val = v.apply(function, streams, link_inputs, dynamic, **kwargs)
-                if new_val is not None:
-                    mapped[k] = new_val
-            return self.clone(mapped, link=link_inputs)
 
 
     def options(self, *args, **kwargs):
