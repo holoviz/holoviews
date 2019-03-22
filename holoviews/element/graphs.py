@@ -5,7 +5,7 @@ import param
 import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
-from ..core.dimension import redim
+from ..core.accessors import redim
 from ..core.util import max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
@@ -23,10 +23,10 @@ class redim_graph(redim):
     def __call__(self, specs=None, **dimensions):
         redimmed = super(redim_graph, self).__call__(specs, **dimensions)
         new_data = (redimmed.data,)
-        if self.parent.nodes:
-            new_data = new_data + (self.parent.nodes.redim(specs, **dimensions),)
-        if self.parent._edgepaths:
-            new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
+        if self._obj.nodes:
+            new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
+        if self._obj._edgepaths:
+            new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
 
 
