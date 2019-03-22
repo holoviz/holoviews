@@ -56,7 +56,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
-                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap'])
+                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap', 'node_radius'])
 
     _nonvectorized_styles =  ['cmap', 'edge_cmap', 'node_cmap']
 
