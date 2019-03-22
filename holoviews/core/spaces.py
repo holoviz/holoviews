@@ -12,11 +12,12 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement, redim
+from .accessors import Opts, Redim
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
-from .options import Store, StoreOptions, Opts
+from .options import Store, StoreOptions
 from ..streams import Stream
 
 
@@ -427,6 +428,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             A Table containing the sampled coordinates
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.sample method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.sample().collapse().')
+
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
@@ -491,6 +497,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             The Dataset after reductions have been applied.
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.reduce method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.reduce().collapse().')
+
         from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
                          for k, v in self.items()]
@@ -944,7 +955,7 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
-        self.redim = redim(self, mode='dynamic')
+        self.redim = Redim(self, mode='dynamic')
         self.periodic = periodic(self)
 
     @property
@@ -1386,51 +1397,6 @@ class DynamicMap(HoloMap):
             first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self[key] = val
-
-
-    def apply(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
-        """Applies a function to all (Nd)Overlay or Element objects.
-
-        Any keyword arguments are passed through to the function. If
-        keyword arguments are instance parameters, or streams are
-        supplied the returned object will dynamically update in
-        response to changes in those objects.
-
-        Args:
-            function: A callable function
-                The function will be passed the return value of the
-                DynamicMap as the first argument and any supplied
-                stream values or keywords as additional keyword
-                arguments.
-            streams (list, optional): A list of Stream objects
-                The Stream objects can dynamically supply values which
-                will be passed to the function as keywords.
-            link_inputs (bool, optional): Whether to link the inputs
-                Determines whether Streams and Links attached to
-                original object will be inherited.
-            dynamic (bool, optional): Whether to make object dynamic
-                By default object is made dynamic if streams are
-                supplied, an instance parameter is supplied as a
-                keyword argument, or the supplied function is a
-                parameterized method.
-            kwargs (dict, optional): Additional keyword arguments
-                Keyword arguments which will be supplied to the
-                function.
-
-        Returns:
-            A new object where the function was applied to all
-            contained (Nd)Overlay or Element objects.
-        """
-        if dynamic == False:
-            samples = tuple(d.values for d in self.kdims)
-            if not all(samples):
-                raise ValueError('Applying a function to a DynamicMap '
-                                 'and setting dynamic=False is only '
-                                 'possible if key dimensions define '
-                                 'a discrete parameter space.')
-            return HoloMap(self[samples]).apply(
-                function, streams, link_inputs, dynamic, **kwargs)
-        return super(DynamicMap, self).apply(function, streams, link_inputs, dynamic, **kwargs)
 
 
     def map(self, map_fn, specs=None, clone=True, link_inputs=True):
