@@ -572,8 +572,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    plot_size = param.Integer(default=120, doc="""
-        Defines the width and height of each plot in the grid""")
+    plot_size = param.ClassSelector(default=120, class_=(int, tuple), doc="""
+        Defines the width and height of each plot in the grid, either
+        as a tuple specifying width and height or an integer for a
+        square plot.""")
 
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
@@ -596,6 +598,11 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
+        if isinstance(self.plot_size, tuple):
+            width, height = self.plot_size
+        else:
+            width, height = self.plot_size, self.plot_size
+
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
@@ -622,8 +629,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
             # Create axes
             kwargs = {}
-            kwargs['frame_width'] = self.plot_size
-            kwargs['frame_height'] = self.plot_size
+            if width is not None:
+                kwargs['frame_width'] = width
+            if height is not None:
+                kwargs['frame_height'] = height
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
             if c != 0 and r == 0:
