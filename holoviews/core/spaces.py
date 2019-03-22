@@ -12,8 +12,8 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .accessors import Opts
-from .dimension import OrderedDict, Dimension, ViewableElement, redim
+from .accessors import Opts, Redim
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
@@ -955,7 +955,7 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
-        self.redim = redim(self, mode='dynamic')
+        self.redim = Redim(self, mode='dynamic')
         self.periodic = periodic(self)
 
     @property

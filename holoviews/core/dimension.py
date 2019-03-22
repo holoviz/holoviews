@@ -18,7 +18,7 @@ import param
 import numpy as np
 
 from . import util
-from .accessors import Opts, Apply, redim
+from .accessors import Opts, Apply, Redim
 from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
@@ -852,7 +852,7 @@ class Dimensioned(LabelledData):
         # Instantiate accessors
         self.apply = Apply(self)
         self.opts = Opts(self)
-        self.redim = redim(self)
+        self.redim = Redim(self)
 
 
     def _valid_dimensions(self, dimensions):

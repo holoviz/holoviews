@@ -5,7 +5,7 @@ import param
 import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
-from ..core.accessors import redim
+from ..core.accessors import Redim
 from ..core.util import max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
@@ -14,14 +14,14 @@ from .util import (split_path, pd, circular_layout, connect_edges,
                    connect_edges_pd, quadratic_bezier)
 
 
-class redim_graph(redim):
+class RedimGraph(Redim):
     """
     Extension for the redim utility that allows re-dimensioning
     Graph objects including their nodes and edgepaths.
     """
 
     def __call__(self, specs=None, **dimensions):
-        redimmed = super(redim_graph, self).__call__(specs, **dimensions)
+        redimmed = super(Redim, self).__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self._obj.nodes:
             new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
@@ -29,6 +29,7 @@ class redim_graph(redim):
             new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
 
+redim_graph = RedimGraph # pickle compatibility - remove in 2.0
 
 
 class layout_nodes(Operation):
@@ -154,7 +155,7 @@ class Graph(Dataset, Element2D):
         if node_info is not None:
             self._add_node_info(node_info)
         self._validate()
-        self.redim = redim_graph(self, mode='dataset')
+        self.redim = RedimGraph(self, mode='dataset')
 
 
     def _add_node_info(self, node_info):
@@ -780,7 +781,7 @@ class Chord(Graph):
                                 % type(edgepaths))
             self._edgepaths = edgepaths
         self._validate()
-        self.redim = redim_graph(self, mode='dataset')
+        self.redim = RedimGraph(self, mode='dataset')
 
 
     @property
