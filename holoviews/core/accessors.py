@@ -461,5 +461,3 @@ class Opts(object):
 
         kwargs['clone'] = False if clone is None else clone
         return self._obj.options(*args, **kwargs)
-
-redim = Redim # pickle compatibility - remove in 2.0

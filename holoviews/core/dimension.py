@@ -31,6 +31,8 @@ ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
 
 title_format = "{name}: {val}{unit}"
 
+redim = Redim # pickle compatibility - remove in 2.0
+
 def param_aliases(d):
     """
     Called from __setstate__ in LabelledData in order to load
