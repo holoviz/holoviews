@@ -472,8 +472,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             options['width'], options['height'], self.aspect, self.data_aspect,
             self.responsive, size_multiplier, logger=logger)
 
-        print(aspect_props, dimension_props)
-
         if not init:
             if aspect_props['aspect_ratio'] is None:
                 aspect_props['aspect_ratio'] = self.state.aspect_ratio

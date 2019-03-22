@@ -166,7 +166,7 @@ def compute_plot_size(plot):
             height = plot.plot_height
         else:
             height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
-            return width, height
+        return width, height
     elif isinstance(plot, (Plot, DataTable, Spacer)):
         return plot.width, plot.height
     else:
