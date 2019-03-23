@@ -14,12 +14,9 @@ from ...streams import Buffer
 from ...core.util import dimension_sanitizer, datetime_types
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
-from .util import bokeh_version
 
 
 class TablePlot(BokehPlot, GenericElementPlot):
-
-    height = param.Number(default=None)
 
     finalize_hooks = param.HookList(default=[], doc="""
         Deprecated; use hooks options instead.""")
@@ -29,13 +26,13 @@ class TablePlot(BokehPlot, GenericElementPlot):
         hook is passed the plot object and the displayed element, and
         other plotting handles can be accessed via plot.handles.""")
 
+    height = param.Number(default=300)
+
     width = param.Number(default=400)
 
-    style_opts = (
-        ['row_headers', 'selectable', 'editable',
-         'sortable', 'fit_columns', 'scroll_to_selection'] +
-        (['index_position'] if bokeh_version >= '0.12.15' else [])
-        )
+    style_opts = ['row_headers', 'selectable', 'editable',
+                  'sortable', 'fit_columns', 'scroll_to_selection',
+                  'index_position']
 
     _stream_data = True
 

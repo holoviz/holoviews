@@ -17,7 +17,7 @@ from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
+from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -32,10 +32,11 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
+from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array)
+    cftime_to_timestamp, pd, unique_array, isnumeric)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -136,7 +137,14 @@ def compute_plot_size(plot):
     Computes the size of bokeh models that make up a layout such as
     figures, rows, columns, widgetboxes and Plot.
     """
-    if isinstance(plot, (Div, ToolbarBox)):
+    if isinstance(plot, GridBox):
+        ndmapping = NdMapping({(x, y): fig for fig, y, x in plot.children}, kdims=['x', 'y'])
+        cols = ndmapping.groupby('x')
+        rows = ndmapping.groupby('y')
+        width = sum([max([compute_plot_size(f)[0] for f in col]) for col in cols])
+        height = sum([max([compute_plot_size(f)[1] for f in row]) for row in rows])
+        return width, height
+    elif isinstance(plot, (Div, ToolbarBox)):
         # Cannot compute size for Div or ToolbarBox
         return 0, 0
     elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
@@ -148,27 +156,183 @@ def compute_plot_size(plot):
         else:
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
-        width, height = w_agg(widths), h_agg(heights)
+        return w_agg(widths), h_agg(heights)
     elif isinstance(plot, (Figure, Chart)):
-        width, height = plot.plot_width, plot.plot_height
+        if plot.plot_width:
+            width = plot.plot_width
+        else:
+            width = plot.frame_width + plot.min_border_right + plot.min_border_left
+        if plot.plot_height:
+            height = plot.plot_height
+        else:
+            height = plot.frame_height + plot.min_border_bottom + plot.min_border_top
+        return width, height
     elif isinstance(plot, (Plot, DataTable, Spacer)):
-        width, height = plot.width, plot.height
-    return width, height
+        return plot.width, plot.height
+    else:
+        return 0, 0
+
+
+def compute_layout_properties(
+        width, height, frame_width, frame_height, explicit_width,
+        explicit_height, aspect, data_aspect, responsive, size_multiplier,
+        logger=None):
+    """
+    Utility to compute the aspect, plot width/height and sizing_mode
+    behavior.
+
+    Args:
+      width (int): Plot width
+      height (int): Plot height
+      frame_width (int): Plot frame width
+      frame_height (int): Plot frame height
+      explicit_width (list): List of user supplied widths
+      explicit_height (list): List of user supplied heights
+      aspect (float): Plot aspect
+      data_aspect (float): Scaling between x-axis and y-axis ranges
+      responsive (boolean): Whether the plot should resize responsively
+      size_multiplier (float): Multiplier for supplied plot dimensions
+      logger (param.Parameters): Parameters object to issue warnings on
+
+    Returns:
+      Returns two dictionaries one for the aspect and sizing modes,
+      and another for the plot dimensions.
+    """
+    fixed_width = (explicit_width or frame_width)
+    fixed_height = (explicit_height or frame_height)
+    fixed_aspect = aspect or data_aspect
+    aspect = 1 if aspect == 'square' else aspect
+
+    # Plot dimensions
+    height = None if height is None else int(height*size_multiplier)
+    width = None if width is None else int(width*size_multiplier)
+    frame_height = None if frame_height is None else int(frame_height*size_multiplier)
+    frame_width = None if frame_width is None else int(frame_width*size_multiplier)
+    actual_width = frame_width or width
+    actual_height = frame_height or height
+
+    if frame_width is not None:
+        width = None
+    if frame_height is not None:
+        height = None
+
+    sizing_mode = 'fixed'
+    if responsive:
+        if fixed_height and fixed_width:
+            responsive = False
+            if logger:
+                logger.warning("responsive mode could not be enabled "
+                               "because fixed width and height were "
+                               "specified.")
+        elif fixed_width:
+            height = None
+            sizing_mode = 'fixed' if fixed_aspect else 'stretch_height'
+        elif fixed_height:
+            width = None
+            sizing_mode = 'fixed' if fixed_aspect else 'stretch_width'
+        else:
+            width, height = None, None
+            if fixed_aspect:
+                if responsive == 'width':
+                    sizing_mode = 'scale_width'
+                elif responsive == 'height':
+                    sizing_mode = 'scale_height'
+                else:
+                    sizing_mode = 'scale_both'
+            else:
+                if responsive == 'width':
+                    sizing_mode = 'stretch_both'
+                elif responsive == 'height':
+                    sizing_mode = 'stretch_height'
+                else:
+                    sizing_mode = 'stretch_both'
+
+    if fixed_aspect:
+        aspect_type = 'data_aspect' if data_aspect else 'aspect'
+        if fixed_width and fixed_height:
+            if not data_aspect:
+                aspect = None
+            if logger:
+                logger.warning(
+                    "%s value was ignored because absolute width and "
+                    "height values were provided. Either supply "
+                    "explicit frame_width and frame_height to achieve "
+                    "desired aspect OR supply a combination of width "
+                    "or height and an aspect value." % aspect_type)
+        elif fixed_width and responsive:
+            height = None
+            responsive = False
+            if logger:
+                logger.warning("responsive mode could not be enabled "
+                               "because fixed width and aspect were "
+                               "specified.")
+        elif fixed_height and responsive:
+            width = None
+            responsive = False
+            if logger:
+                logger.warning("responsive mode could not be enabled "
+                               "because fixed height and aspect were "
+                               "specified.")
+        elif responsive == 'width':
+            sizing_mode = 'scale_width'
+        elif responsive == 'height':
+            sizing_mode = 'scale_height'
+
+
+    if responsive == 'width' and fixed_width:
+        responsive = False
+        if logger:
+            logger.warning("responsive width mode could not be enabled "
+                           "because a fixed width was defined.")
+    if responsive == 'height' and fixed_height:
+        responsive = False
+        if logger:
+            logger.warning("responsive height mode could not be enabled "
+                           "because a fixed height was defined.")
+
+    match_aspect = False
+    aspect_scale = 1
+    aspect_ratio = None
+    if (fixed_width and fixed_height):
+        pass
+    elif data_aspect or aspect == 'equal':
+        match_aspect = True
+        if fixed_width or not fixed_height:
+            height = None
+        if fixed_height or not fixed_width:
+            width = None
+        aspect_scale = 1 if aspect == 'equal' else data_aspect
+    elif isnumeric(aspect):
+        if responsive:
+            aspect_ratio = aspect
+        elif fixed_width:
+            frame_width = actual_width
+            frame_height = int(actual_width/aspect)
+            width, height = None, None
+        else:
+            frame_width = int(actual_height*aspect)
+            frame_height = actual_height
+            width, height = None, None
+    elif aspect is not None and logger:
+        logger.warning('aspect value of type %s not recognized, '
+                       'provide a numeric value, \'equal\' or '
+                       '\'square\'.')
+
+    return ({'aspect_ratio': aspect_ratio,
+             'aspect_scale': aspect_scale,
+             'match_aspect': match_aspect,
+             'sizing_mode' : sizing_mode},
+            {'frame_width' : frame_width,
+             'frame_height': frame_height,
+             'plot_height' : height,
+             'plot_width'  : width})
 
 
 def empty_plot(width, height):
     """
     Creates an empty and invisible plot of the specified size.
     """
-    x_range = Range1d(start=0, end=1)
-    y_range = Range1d(start=0, end=1)
-    p = Figure(plot_width=width, plot_height=height,
-               x_range=x_range, y_range=y_range)
-    p.xaxis.visible = False
-    p.yaxis.visible = False
-    p.outline_line_alpha = 0
-    p.grid.grid_line_alpha = 0
-    return p
+    return Spacer(width=width, height=height)
 
 
 def font_size_to_pixels(size):
