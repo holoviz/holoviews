@@ -142,10 +142,8 @@ def display_hook(fn):
             mimebundle = fn(element, max_frames=max_frames)
             if mimebundle is None:
                 return {}, {}
-
             html = mimebundle_to_html(mimebundle)
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': html}, {}
+            mimebundle = {'text/html': html}, {}
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
