@@ -180,6 +180,23 @@ def compute_layout_properties(
     """
     Utility to compute the aspect, plot width/height and sizing_mode
     behavior.
+
+    Args:
+      width (int): Plot width
+      height (int): Plot height
+      frame_width (int): Plot frame width
+      frame_height (int): Plot frame height
+      explicit_width (list): List of user supplied widths
+      explicit_height (list): List of user supplied heights
+      aspect (float): Plot aspect
+      data_aspect (float): Scaling between x-axis and y-axis ranges
+      responsive (boolean): Whether the plot should resize responsively
+      size_multiplier (float): Multiplier for supplied plot dimensions
+      logger (param.Parameters): Parameters object to issue warnings on
+
+    Returns:
+      Returns two dictionaries one for the aspect and sizing modes,
+      and another for the plot dimensions.
     """
     fixed_width = (explicit_width or frame_width)
     fixed_height = (explicit_height or frame_height)

@@ -483,7 +483,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.callbacks.append(PlotSizeCallback(self, [stream], None))
 
         plot_props = {
-            'css_classes':   self.css_classes,
             'margin':        self.margin,
             'max_width':     self.max_width,
             'max_height':    self.max_height,

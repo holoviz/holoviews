@@ -38,9 +38,6 @@ class BokehPlot(DimensionedPlot):
     plotting interface for Bokeh based plots.
     """
 
-    css_classes = param.List(default=[], doc="""
-        CSS classes to apply to the layout.""")
-
     shared_datasource = param.Boolean(default=True, doc="""
         Whether Elements drawing the data from the same object should
         share their Bokeh data source allowing for linked brushing
@@ -450,12 +447,6 @@ class CompositePlot(BokehPlot):
         'scale_width', 'scale_height', 'scale_both', None], doc="""
 
         How the component should size itself.
-
-        This is a high-level setting for maintaining width and height
-        of the component. To gain more fine grained control over
-        sizing, use ``width_policy``, ``height_policy`` and
-        ``aspect_ratio`` instead (those take precedence over
-        ``sizing_mode``).
 
         * "fixed" :
           Component is not responsive. It will retain its original
