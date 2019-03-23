@@ -143,8 +143,8 @@ def display_hook(fn):
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
-            mime_data['text/html'] = mimebundle_to_html(mime_data)
             if 'text/javascript' in mime_data:
+                mime_data['text/html'] = mimebundle_to_html(mime_data)
                 del mime_data['text/javascript']
 
             # Only want to add to the archive for one display hook...
