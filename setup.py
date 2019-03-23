@@ -97,6 +97,7 @@ def get_setup_version(reponame):
 setup_args.update(dict(
     name='holoviews',
     version=get_setup_version("holoviews"),
+    python_requires=">=2.7",
     install_requires=install_requires,
     extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
