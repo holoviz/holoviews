@@ -301,8 +301,11 @@ def compute_layout_properties(
             height = None
         if fixed_height or not fixed_width:
             width = None
-        aspect_scale = 1 if aspect == 'equal' else data_aspect
-        if responsive:
+
+        aspect_scale = data_aspect
+        if aspect == 'equal':
+            aspect_scale = 1
+        elif responsive:
             aspect_ratio = aspect
     elif isnumeric(aspect):
         if responsive:
