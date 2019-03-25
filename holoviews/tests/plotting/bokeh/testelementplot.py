@@ -617,11 +617,24 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
 
     def test_element_data_aspect_responsive(self):
-        curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, responsive=True)
+        curve = Curve([0, 2]).opts(data_aspect=1, responsive=True)
         plot = bokeh_renderer.get_plot(curve)
-        self.assertEqual(plot.state.aspect_ratio, 1)
-        self.assertEqual(plot.state.aspect_scale, 2)
+        self.assertEqual(plot.state.aspect_ratio, 0.5)
+        self.assertEqual(plot.state.aspect_scale, 1)
         self.assertEqual(plot.state.sizing_mode, 'scale_both')
+
+    def test_element_data_aspect_and_aspect_responsive(self):
+        curve = Curve([0, 2]).opts(data_aspect=1, aspect=2, responsive=True)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.aspect_ratio, 2)
+        self.assertEqual(plot.state.aspect_scale, 1)
+        self.assertEqual(plot.state.sizing_mode, 'scale_both')
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertEqual(x_range.start, -1.5)
+        self.assertEqual(x_range.end, 2.5)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 2)
 
     def test_element_data_aspect_width_responsive(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, width=400, responsive=True)

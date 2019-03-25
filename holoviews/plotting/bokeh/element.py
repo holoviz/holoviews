@@ -800,14 +800,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot.frame_height = int(width/aspect)
                     plot.plot_width, plot.plot_height = None, None
                 else:
-                    plot.aspect_ratio = aspect
+                    plot.aspect_ratio = 1./aspect
 
-                box_zoom = plot.select(type=tools.BoxZoomTool)
-                scroll_zoom = plot.select(type=tools.WheelZoomTool)
-                if box_zoom:
-                    box_zoom.match_aspect = True
-                if scroll_zoom:
-                    scroll_zoom.zoom_on_axis = False
+            box_zoom = plot.select(type=tools.BoxZoomTool)
+            scroll_zoom = plot.select(type=tools.WheelZoomTool)
+            if box_zoom:
+                box_zoom.match_aspect = True
+            if scroll_zoom:
+                scroll_zoom.zoom_on_axis = False
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
