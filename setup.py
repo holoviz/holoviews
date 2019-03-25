@@ -45,6 +45,8 @@ extras_require['nbtests'] = extras_require['recommended'] + [
 
 extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2', 'sphinx_ioam_theme']
 
+extras_require['build'] = ['param >=1.7.0', 'setuptools']
+
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
 
