@@ -426,7 +426,6 @@ class TestCurvePlot(TestBokehPlot):
             else:
                 self.assertEqual(color, 'blue')
             linestyle = glyph.line_dash
-            print(linestyle)
             if ndoverlay[k].iloc[0, 3] == 'A':
                 self.assertEqual(linestyle, [])
             else:
