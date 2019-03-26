@@ -325,7 +325,7 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.get_param_values(onlychanged=True), **overrides)
+        settings = dict(self.get_param_values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
@@ -337,7 +337,6 @@ class Dimension(param.Parameterized):
                     'Using label as supplied by keyword ({!r}), ignoring '
                     'tuple value {!r}'.format(overrides['label'], spec[1]))
             spec = (spec[0],  overrides['label'])
-
         return self.__class__(spec, **{k:v for k,v in settings.items()
                                        if k not in ['name', 'label']})
 
