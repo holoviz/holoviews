@@ -336,7 +336,11 @@ class BokehRenderer(Renderer):
         options = plot.lookup_options(obj, 'plot').options
         width = options.get('width', plot.width)
         height = options.get('height', plot.height)
-        return dict(options, **{'width':int(width), 'height': int(height)})
+        if width is not None:
+            width = int(width)
+        if height is not None:
+            height = int(height)
+        return dict(options, **{'width': width, 'height': height})
 
 
     @bothmethod

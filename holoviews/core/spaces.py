@@ -12,11 +12,12 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement, redim
+from .accessors import Opts, Redim
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
-from .options import Store, StoreOptions, Opts
+from .options import Store, StoreOptions
 from ..streams import Stream
 
 
@@ -427,6 +428,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             A Table containing the sampled coordinates
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.sample method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.sample().collapse().')
+
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
             if dims == 1:
@@ -491,6 +497,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             The Dataset after reductions have been applied.
         """
+        if util.config.future_deprecations:
+            self.param.warning('The HoloMap.reduce method is deprecated, '
+                               'for equivalent functionality use '
+                               'HoloMap.apply.reduce().collapse().')
+
         from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
                          for k, v in self.items()]
@@ -904,8 +915,7 @@ class DynamicMap(HoloMap):
         streams = (streams or [])
 
         # If callback is a parameterized method and watch is disabled add as stream
-        param_watch_support = util.param_version >= '1.8.0'
-        if util.is_param_method(callback) and params.get('watch', param_watch_support):
+        if util.is_param_method(callback, has_deps=True) and params.get('watch', True):
             streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):
@@ -945,7 +955,7 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
-        self.redim = redim(self, mode='dynamic')
+        self.redim = Redim(self, mode='dynamic')
         self.periodic = periodic(self)
 
     @property

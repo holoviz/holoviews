@@ -28,10 +28,8 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (
-    TOOL_TYPES, layout_padding, pad_plots, filter_toolboxes,
-    make_axis, update_shared_sources, empty_plot, decode_bytes,
-    theme_attr_json, cds_column_replace
-)
+    TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
+    empty_plot, decode_bytes, theme_attr_json, cds_column_replace)
 
 
 class BokehPlot(DimensionedPlot):
@@ -39,34 +37,6 @@ class BokehPlot(DimensionedPlot):
     Plotting baseclass for the Bokeh backends, implementing the basic
     plotting interface for Bokeh based plots.
     """
-
-    width = param.Integer(default=300, doc="""
-        Width of the plot in pixels""")
-
-    height = param.Integer(default=300, doc="""
-        Height of the plot in pixels""")
-
-    sizing_mode = param.ObjectSelector(default='fixed',
-        objects=['fixed', 'stretch_both', 'scale_width', 'scale_height',
-                 'scale_both'], doc="""
-        How the item being displayed should size itself.
-
-        "stretch_both" plots will resize to occupy all available
-        space, even if this changes the aspect ratio of the element.
-
-        "fixed" plots are not responsive and will retain their
-        original width and height regardless of any subsequent browser
-        window resize events.
-
-        "scale_width" elements will responsively resize to fit to the
-        width available, while maintaining the original aspect ratio.
-
-        "scale_height" elements will responsively resize to fit to the
-        height available, while maintaining the original aspect ratio.
-
-        "scale_both" elements will responsively resize to for both the
-        width and height available, while maintaining the original
-        aspect ratio.""")
 
     shared_datasource = param.Boolean(default=True, doc="""
         Whether Elements drawing the data from the same object should
@@ -85,6 +55,14 @@ class BokehPlot(DimensionedPlot):
                                    doc="""
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
+
+    width = param.Integer(default=None, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=None, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
 
     _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
                      'poly_select', 'ypan', 'xpan']
@@ -132,6 +110,7 @@ class BokehPlot(DimensionedPlot):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.document = doc
+
 
     def _session_destroy(self, session_context):
         self.cleanup()
@@ -205,6 +184,10 @@ class BokehPlot(DimensionedPlot):
             return
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
+
+        if self._root and 'embedded' in self._root.tags:
+            # Allows external libraries to prevent comm updates
+            return
 
         msg = self.renderer.diff(self, binary=True)
         if msg is None:
@@ -385,7 +368,7 @@ class BokehPlot(DimensionedPlot):
         if 'title' in self.handles:
             title_div = self.handles['title']
         else:
-            title_div = Div(width=width)  # so it won't wrap long titles easily
+            title_div = Div(width=width, style={"white-space": "nowrap"})  # so it won't wrap long titles easily
         title_div.text = title_tags
 
         return title_div
@@ -459,6 +442,45 @@ class CompositePlot(BokehPlot):
     to such a plot.
     """
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
+
+        How the component should size itself.
+
+        * "fixed" :
+          Component is not responsive. It will retain its original
+          width and height regardless of any subsequent browser window
+          resize events.
+        * "stretch_width"
+          Component will responsively resize to stretch to the
+          available width, without maintaining any aspect ratio. The
+          height of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_height"
+          Component will responsively resize to stretch to the
+          available height, without maintaining any aspect ratio. The
+          width of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_both"
+          Component is completely responsive, independently in width
+          and height, and will occupy all the available horizontal and
+          vertical space, even if this changes the aspect ratio of the
+          component.
+        * "scale_width"
+          Component will responsively resize to stretch to the
+          available width, while maintaining the original or provided
+          aspect ratio.
+        * "scale_height"
+          Component will responsively resize to stretch to the
+          available height, while maintaining the original or provided
+          aspect ratio.
+        * "scale_both"
+          Component will responsively resize to both the available
+          width and height, while maintaining the original or provided
+          aspect ratio.
+    """)
+
     fontsize = param.Parameter(default={'title': '15pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
@@ -522,6 +544,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         If enabled the x-axes of the GridSpace will be drawn from the
         objects inside the Grid rather than the GridSpace dimensions.""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Adds a legend based on the entries of the middle-right plot""")
+
     xaxis = param.ObjectSelector(default=True,
                                  objects=['bottom', 'top', None, True, False], doc="""
         Whether and where to display the xaxis, supported options are
@@ -538,8 +563,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    plot_size = param.Integer(default=120, doc="""
-        Defines the width and height of each plot in the grid""")
+    plot_size = param.ClassSelector(default=120, class_=(int, tuple), doc="""
+        Defines the width and height of each plot in the grid, either
+        as a tuple specifying width and height or an integer for a
+        square plot.""")
 
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
@@ -554,8 +581,19 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
+        if 'axis_offset' in params:
+            self.param.warning("GridPlot axis_offset option is deprecated "
+                               "since 1.12.0 since subplots are now sized "
+                               "correctly and therefore no longer require "
+                               "an offset.")
+
 
     def _create_subplots(self, layout, ranges):
+        if isinstance(self.plot_size, tuple):
+            width, height = self.plot_size
+        else:
+            width, height = self.plot_size, self.plot_size
+
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
         keys = self.keys[:1] if self.dynamic else self.keys
@@ -581,29 +619,27 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 view = collate(view)
 
             # Create axes
-            offset = self.axis_offset
             kwargs = {}
+            if width is not None:
+                kwargs['frame_width'] = width
+            if height is not None:
+                kwargs['frame_height'] = height
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
-                kwargs['width'] = self.plot_size+offset
             if c != 0 and r == 0:
                 kwargs['yaxis'] = None
-                kwargs['height'] = self.plot_size+offset
-            if c == 0 and r == 0:
-                kwargs['width'] = self.plot_size+offset
-                kwargs['height'] = self.plot_size+offset
             if r != 0 and c != 0:
                 kwargs['xaxis'] = None
                 kwargs['yaxis'] = None
 
-            if 'width' not in kwargs or not self.shared_yaxis:
-                kwargs['width'] = self.plot_size
-            if 'height' not in kwargs or not self.shared_xaxis:
-                kwargs['height'] = self.plot_size
             if 'border' not in kwargs:
                 kwargs['border'] = 3
 
-            kwargs['show_legend'] = False
+            if self.show_legend and c == (self.cols-1) and r == (self.rows-1):
+                kwargs['show_legend'] = True
+                kwargs['legend_position'] = 'right'
+            else:
+                kwargs['show_legend'] = False
 
             if not self.shared_xaxis:
                 kwargs['xaxis'] = None
@@ -646,8 +682,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
-        plot = gridplot(plots[::-1], toolbar_location=self.toolbar,
-                        merge_tools=self.merge_tools)
+        plot = gridplot(plots[::-1], merge_tools=self.merge_tools,
+                        sizing_mode=self.sizing_mode,
+                        toolbar_location=self.toolbar)
         plot = self._make_axes(plot)
 
         title = self._get_title_div(self.keys[-1])
@@ -673,7 +710,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def _make_axes(self, plot):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
-        kwargs = dict(sizing_mode=self.sizing_mode)
         keys = self.layout.keys(full_grid=True)
         if self.xaxis:
             flip = self.shared_xaxis
@@ -699,17 +735,17 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_xaxis:
                 r1, r2 = r2, r1
             if self.shared_yaxis:
+                x_axis.margin = (0, 0, 0, 50)
                 r1, r2 = r1[::-1], r2[::-1]
-            models = layout_padding([r1, r2], self.renderer)
-            plot = gridplot(models, **kwargs)
+            plot = gridplot([r1, r2])
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
-            plot = Row(*models, **kwargs)
+            plot = Row(*models)
         elif x_axis:
             models = [plot, x_axis]
             if self.shared_xaxis: models = models[::-1]
-            plot = Column(*models, **kwargs)
+            plot = Column(*models)
         return plot
 
 
@@ -962,11 +998,13 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                         grid = subplots[0]
                     elif nsubplots == 2:
                         grid = gridplot([subplots], merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar)
+                                        toolbar_location=self.toolbar,
+                                        sizing_mode=self.sizing_mode)
                     else:
                         grid = [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children=grid, merge_tools=self.merge_tools,
-                                        toolbar_location=self.toolbar)
+                                        toolbar_location=self.toolbar,
+                                        sizing_mode=self.sizing_mode)
                     tab_plots.append((title, grid))
                     continue
 
@@ -982,23 +1020,21 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 passed_plots.append(subplots[0])
 
         # Wrap in appropriate layout model
-        kwargs = dict(sizing_mode=self.sizing_mode)
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
             panels = [Panel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels)
         else:
-            plot_grid = layout_padding(plot_grid, self.renderer)
             plot_grid = filter_toolboxes(plot_grid)
-            plot_grid = pad_plots(plot_grid)
             layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
-                                   merge_tools=self.merge_tools, **kwargs)
+                                   merge_tools=self.merge_tools,
+                                   sizing_mode=self.sizing_mode)
 
         title = self._get_title_div(self.keys[-1])
         if title:
             self.handles['title'] = title
-            layout_plot = Column(title, layout_plot, **kwargs)
+            layout_plot = Column(title, layout_plot)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots

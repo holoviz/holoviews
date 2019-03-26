@@ -928,21 +928,42 @@ def find_range(values, soft_range=[]):
 def max_range(ranges, combined=True):
     """
     Computes the maximal lower and upper bounds from a list bounds.
+
+    Args:
+       ranges (list of tuples): A list of range tuples
+       combined (boolean, optional): Whether to combine bounds
+          Whether range should be computed on lower and upper bound
+          independently or both at once
+
+    Returns:
+       The maximum range as a single tuple
     """
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and all(isinstance(v, pd.Timestamp) for r in values for v in r):
-                values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
+            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types)
+                          for r in values for v in r):
+                converted = []
+                for l, h in values:
+                    if isinstance(l, datetime_types) and isinstance(h, datetime_types):
+                        l, h = (pd.Timestamp(l).to_datetime64(),
+                                pd.Timestamp(h).to_datetime64())
+                    converted.append((l, h))
+                values = converted
+
             arr = np.array(values)
             if not len(arr):
                 return np.NaN, np.NaN
             elif arr.dtype.kind in 'OSU':
-                arr = list(python2sort([v for r in values for v in r if not is_nan(v) and v is not None]))
+                arr = list(python2sort([
+                    v for r in values for v in r
+                    if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             elif arr.dtype.kind in 'M':
-                return (arr.min(), arr.max()) if combined else (arr[:, 0].min(), arr[:, 1].min())
+                return ((arr.min(), arr.max()) if combined else
+                        (arr[:, 0].min(), arr[:, 1].min()))
+
             if combined:
                 return (np.nanmin(arr), np.nanmax(arr))
             else:
@@ -1085,12 +1106,28 @@ def unique_iterator(seq):
 
 def unique_array(arr):
     """
-    Returns an array of unique values in the input order
+    Returns an array of unique values in the input order.
+
+    Args:
+       arr (np.ndarray or list): The array to compute unique values on
+
+    Returns:
+       A new array of unique values
     """
     if not len(arr):
-        return arr
+        return np.asarray(arr)
     elif pd:
-        return pd.unique(arr)
+        if isinstance(arr, np.ndarray) and arr.dtype.kind not in 'MO':
+            # Avoid expensive unpacking if not potentially datetime
+            return pd.unique(arr)
+
+        values = []
+        for v in arr:
+            if (isinstance(v, datetime_types) and
+                not isinstance(v, cftime_types)):
+                v = pd.Timestamp(v).to_datetime64()
+            values.append(v)
+        return pd.unique(values)
     else:
         arr = np.asarray(arr)
         _, uniq_inds = np.unique(arr, return_index=True)
@@ -1423,11 +1460,25 @@ def get_param_values(data):
     return params
 
 
-def is_param_method(obj):
+def is_param_method(obj, has_deps=False):
+    """Whether the object is a method on a parameterized object.
+
+    Args:
+       obj: Object to check
+       has_deps (boolean, optional): Check for dependencies
+          Whether to also check whether the method has been annotated
+          with param.depends
+
+    Returns:
+       A boolean value indicating whether the object is a method
+       on a Parameterized object and if enabled whether it has any
+       dependencies
     """
-    Whether the object is a method on a parameterized object.
-    """
-    return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    parameterized = (inspect.ismethod(obj) and
+                     isinstance(get_method_owner(obj), param.Parameterized))
+    if parameterized and has_deps:
+        return getattr(obj, "_dinfo", {}).get('dependencies')
+    return parameterized
 
 
 @contextmanager
@@ -1519,12 +1570,21 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
-    param_groups = [s.contents.keys() for s in streams]
+    param_groups = []
+    for s in streams:
+        if not s.contents and isinstance(s.hashkey, dict):
+            param_groups.append(list(s.hashkey))
+        else:
+            param_groups.append(list(s.contents))
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
         clashes = sorted(set([n for n in names if names.count(n) > 1]))
-        clash_streams = [s for s in streams for c in clashes if c in s.contents]
+        clash_streams = []
+        for s in streams:
+            for c in clashes:
+                if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
+                    clash_streams.append(s)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '

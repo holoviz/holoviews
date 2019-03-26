@@ -19,13 +19,13 @@ extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.0.0', 'scipy', 'panel']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0dev10', 'panel']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=3.4',
     'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
-    'cftime', 'netcdf4', 'bzip2']
+    'cftime', 'netcdf4', 'bzip2', 'dask<1.1.3', 'scipy']
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
@@ -44,6 +44,8 @@ extras_require['nbtests'] = extras_require['recommended'] + [
     'cyordereddict', 'ipython==5.4.1']
 
 extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2', 'sphinx_ioam_theme']
+
+extras_require['build'] = ['param >=1.7.0', 'setuptools']
 
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
@@ -97,6 +99,7 @@ def get_setup_version(reponame):
 setup_args.update(dict(
     name='holoviews',
     version=get_setup_version("holoviews"),
+    python_requires=">=2.7",
     install_requires=install_requires,
     extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -150,6 +153,7 @@ setup_args.update(dict(
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",

@@ -64,7 +64,7 @@ class BokehRendererTest(ComparisonTestCase):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (419, 413))
+        self.assertEqual((w, h), (437, 431))
 
     def test_get_size_table(self):
         table = Table(range(10), kdims=['x'])
@@ -76,7 +76,7 @@ class BokehRendererTest(ComparisonTestCase):
         table = Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table+table)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (680, 300))
+        self.assertEqual((w, h), (800, 300))
 
     def test_render_to_png(self):
         curve = Curve([])

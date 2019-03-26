@@ -15,7 +15,7 @@ from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
 from ..core import (
     ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
-    Layout, CompositeOverlay, DynamicMap
+    Layout, CompositeOverlay, DynamicMap, Dimensioned
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
@@ -233,6 +233,11 @@ def display(obj, raw_output=False, **kwargs):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
+    if not Store.loaded_backends() and isinstance(obj, Dimensioned):
+        raise RuntimeError('To use display on a HoloViews object ensure '
+                           'a backend is loaded using the holoviews '
+                           'extension.')
+
     raw = True
     if isinstance(obj, GridSpace):
         with option_state(obj):

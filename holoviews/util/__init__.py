@@ -8,11 +8,11 @@ from pyviz_comms import extension as _pyviz_extension
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
-from ..core.util import Aliases, basestring, merge_options_to_dict  # noqa (API import)
+from ..core.util import Aliases, basestring, merge_options_to_dict, OrderedDict  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
-from ..streams import Stream
+from ..streams import Stream, Params
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -118,7 +118,7 @@ class opts(param.ParameterizedFunction):
                             ','.join(repr(k) for k in kwargs.keys()))
 
         # Check whether the user is specifying targets (such as 'Image.Foo')
-        targets = [all(k[0].isupper() for k in grp.keys()) for grp in kwargs.values()]
+        targets = [grp and all(k[0].isupper() for k in grp) for grp in kwargs.values()]
         if any(targets) and not all(targets):
             raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
         elif not any(targets):
@@ -834,6 +834,9 @@ class Dynamic(param.ParameterizedFunction):
         if isinstance(map_obj, DynamicMap):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=streams)
+            if self.p.shared_data:
+                dmap.data = OrderedDict([(k, callback.callable(*k))
+                                          for k, v in dmap.data])
         else:
             dmap = self._make_dynamic(map_obj, callback, streams)
         return dmap
@@ -851,8 +854,9 @@ class Dynamic(param.ParameterizedFunction):
         for stream in self.p.streams:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
-            elif not isinstance(stream, Stream):
-                raise ValueError('Streams must be Stream classes or instances')
+            elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
+                raise ValueError('Streams must be Stream classes or instances, found %s type' %
+                                 type(stream).__name__)
             if isinstance(self.p.operation, Operation):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in self.p.operation.p}
@@ -860,14 +864,27 @@ class Dynamic(param.ParameterizedFunction):
                     reverse = {v: k for k, v in stream._rename.items()}
                     stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
             streams.append(stream)
+
+        params = {k: v for k, v in self.p.kwargs.items() if isinstance(v, param.Parameter)
+                  and isinstance(v.owner, param.Parameterized)}
+        streams += Params.from_params(params)
+
+        # Inherit dimensioned streams
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)
             streams = list(util.unique_iterator(streams + dim_streams))
 
         # If callback is a parameterized method and watch is disabled add as stream
-        param_watch_support = util.param_version >= '1.8.0' and watch
-        if util.is_param_method(self.p.operation) and param_watch_support:
+        has_dependencies = util.is_param_method(self.p.operation, has_deps=True)
+        if has_dependencies and watch:
             streams.append(self.p.operation)
+
+        # Add any keyword arguments which are parameterized methods
+        # with dependencies as streams
+        for value in self.p.kwargs.values():
+            if util.is_param_method(value, has_deps=True):
+                streams.append(value)
+
         valid, invalid = Stream._process_streams(streams)
         if invalid:
             msg = ('The supplied streams list contains objects that '
@@ -875,15 +892,24 @@ class Dynamic(param.ParameterizedFunction):
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
         return valid
 
-
-    def _process(self, element, key=None):
-        if isinstance(self.p.operation, Operation):
-            kwargs = {k: v for k, v in self.p.kwargs.items()
+    def _process(self, element, key=None, kwargs={}):
+        if util.is_param_method(self.p.operation) and util.get_method_owner(self.p.operation) is element:
+            return self.p.operation(**kwargs)
+        elif isinstance(self.p.operation, Operation):
+            kwargs = {k: v for k, v in kwargs.items()
                       if k in self.p.operation.params()}
             return self.p.operation.process_element(element, key, **kwargs)
         else:
-            return self.p.operation(element, **self.p.kwargs)
+            return self.p.operation(element, **kwargs)
 
+    def _eval_kwargs(self):
+        """Evaluates any parameterized methods in the kwargs"""
+        evaled_kwargs = {}
+        for k, v in self.p.kwargs.items():
+            if util.is_param_method(v):
+                v = v()
+            evaled_kwargs[k] = v
+        return evaled_kwargs
 
     def _dynamic_operation(self, map_obj):
         """
@@ -892,13 +918,13 @@ class Dynamic(param.ParameterizedFunction):
         """
         if not isinstance(map_obj, DynamicMap):
             def dynamic_operation(*key, **kwargs):
-                self.p.kwargs.update(kwargs)
+                kwargs = dict(self._eval_kwargs(), **kwargs)
                 obj = map_obj[key] if isinstance(map_obj, HoloMap) else map_obj
-                return self._process(obj, key)
+                return self._process(obj, key, kwargs)
         else:
             def dynamic_operation(*key, **kwargs):
-                self.p.kwargs.update(kwargs)
-                return self._process(map_obj[key], key)
+                kwargs = dict(self._eval_kwargs(), **kwargs)
+                return self._process(map_obj[key], key, kwargs)
         if isinstance(self.p.operation, Operation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
                                      link_inputs=self.p.link_inputs,

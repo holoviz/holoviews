@@ -9,7 +9,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.layouts import Column, Row
-    from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel
+    from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox
     from bokeh.plotting import Figure
 except:
     pass
@@ -81,45 +81,33 @@ class TestLayoutPlot(TestBokehPlot):
         # Unpack until getting down to two rows
         self.assertIsInstance(plot, Column)
         self.assertEqual(len(plot.children), 2)
-        toolbar, column = plot.children
+        toolbar, grid = plot.children
         self.assertIsInstance(toolbar, ToolbarBox)
-        self.assertIsInstance(column, Column)
-        self.assertEqual(len(column.children), 2)
-        row1, row2 = column.children
-        self.assertIsInstance(row1, Row)
-        self.assertIsInstance(row2, Row)
+        self.assertIsInstance(grid, GridBox)
+        self.assertEqual(len(grid.children), 3)
+        (col1, _, _), (col2, _, _), (fig, _, _) = grid.children
+        self.assertIsInstance(col1, Column)
+        self.assertIsInstance(col2, Column)
+        grid1 = col1.children[0]
+        grid2 = col2.children[0]
 
         # Check the row of GridSpaces
-        self.assertEqual(len(row1.children), 2)
-        grid1, grid2 = row1.children
-        self.assertIsInstance(grid1, Column)
-        self.assertIsInstance(grid2, Column)
-        self.assertEqual(len(grid1.children), 1)
-        self.assertEqual(len(grid2.children), 1)
-        grid1, grid2 = grid1.children[0], grid2.children[0]
-        self.assertIsInstance(grid1, Column)
-        self.assertIsInstance(grid2, Column)
-        for grid in [grid1, grid2]:
-            self.assertEqual(len(grid.children), 2)
-            grow1, grow2 = grid.children
-            self.assertIsInstance(grow1, Row)
-            self.assertIsInstance(grow2, Row)
-            self.assertEqual(len(grow1.children), 2)
-            self.assertEqual(len(grow2.children), 2)
-            ax_row, grid_row = grow1.children
-            grow1, grow2 = grid_row.children[0].children
-            gfig1, gfig2 = grow1.children
-            gfig3, gfig4 = grow2.children
+        self.assertEqual(len(grid1.children), 3)
+        _, (col1, _, _), _ = grid1.children
+        self.assertIsInstance(col1, Column)
+        inner_grid1 = col1.children[0]
+
+        self.assertEqual(len(grid2.children), 3)
+        _, (col2, _, _), _ = grid2.children
+        self.assertIsInstance(col2, Column)
+        inner_grid2 = col2.children[0]
+        for grid in [inner_grid1, inner_grid2]:
+            self.assertEqual(len(grid.children), 4)
+            (gfig1, _, _), (gfig2, _, _), (gfig3, _, _), (gfig4, _, _) = grid.children
             self.assertIsInstance(gfig1, Figure)
             self.assertIsInstance(gfig2, Figure)
             self.assertIsInstance(gfig3, Figure)
             self.assertIsInstance(gfig4, Figure)
-
-        # Check the row of Curve and a spacer
-        self.assertEqual(len(row2.children), 2)
-        fig, spacer = row2.children
-        self.assertIsInstance(fig, Figure)
-        self.assertIsInstance(spacer, Figure)
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
@@ -140,25 +128,23 @@ class TestLayoutPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(adjoint)
         adjoint_plot = plot.subplots[(0, 0)]
         self.assertEqual(len(adjoint_plot.subplots), 3)
-        column = plot.state.children[1]
-        row1, row2 = column.children
-        self.assertEqual(row1.children[0].plot_height, row1.children[1].plot_height)
-        self.assertEqual(row1.children[1].plot_width, 0)
-        self.assertEqual(row2.children[1].plot_width, 0)
-        self.assertEqual(row2.children[0].plot_height, row2.children[1].plot_height)
+        grid = plot.state.children[1]
+        (f1, _, _), (f2, _, _), (s1, _, _) = grid.children
+        self.assertIsInstance(s1, Spacer)
+        self.assertEqual(s1.width, 0)
+        self.assertEqual(s1.height, 0)
+        self.assertEqual(f1.plot_height, f2.plot_height)
 
     def test_layout_plot_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).cols(1)
         plot = bokeh_renderer.get_plot(layout)
-        toolbar, column = plot.state.children
+        toolbar, grid = plot.state.children
         self.assertIsInstance(toolbar, ToolbarBox)
-        self.assertIsInstance(column, Column)
-        row1, row2 = column.children
-        fig1, fig2 = row1.children
-        fig3, fig4 = row2.children
-        for fig in (fig1, fig2, fig3, fig4):
+        self.assertIsInstance(grid, GridBox)
+        for (fig, _, _) in grid.children:
             self.assertIsInstance(fig, Figure)
-        self.assertEqual([r for r in fig2.renderers if isinstance(r, GlyphRenderer)], [])
+        self.assertTrue([len([r for r in f.renderers if isinstance(r, GlyphRenderer)])
+                         for (f, _, _) in grid.children], [1, 1, 1])
 
     def test_layout_plot_tabs_with_adjoints(self):
         layout = (Curve([]) + Curve([]).hist()).options(tabs=True)
@@ -239,8 +225,8 @@ class TestLayoutPlot(TestBokehPlot):
     def test_layout_disable_toolbar(self):
         layout = (Curve([]) + Points([])).options(toolbar=None)
         plot = bokeh_renderer.get_plot(layout)
-        self.assertIsInstance(plot.state, Column)
-        self.assertEqual(len(plot.state.children), 1)
+        self.assertIsInstance(plot.state, GridBox)
+        self.assertEqual(len(plot.state.children), 2)
 
     def test_layout_shared_inverted_yaxis(self):
         layout = (Curve([]) + Curve([])).options('Curve', invert_yaxis=True)

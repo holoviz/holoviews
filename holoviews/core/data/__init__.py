@@ -9,7 +9,8 @@ import numpy as np
 import param
 
 from .. import util
-from ..dimension import redim, Dimension, process_dimensions
+from ..accessors import Redim
+from ..dimension import Dimension, process_dimensions
 from ..element import Element
 from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
@@ -212,7 +213,7 @@ class Dataset(Element):
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
-        self.redim = redim(self, mode='dataset')
+        self.redim = Redim(self, mode='dataset')
 
 
     def closest(self, coords=[], **kwargs):

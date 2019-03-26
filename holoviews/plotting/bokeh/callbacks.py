@@ -11,7 +11,7 @@ from bokeh.models import (
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
-from ...core.util import dimension_sanitizer, isscalar
+from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
@@ -525,15 +525,37 @@ class PointerXYCallback(Callback):
 
     def _process_out_of_bounds(self, value, start, end):
         "Clips out of bounds values"
-        if value < start:
+        if isinstance(value, np.datetime64):
+            v = dt64_to_dt(value)
+            if isinstance(start, (int, float)):
+                start = convert_timestamp(start)
+            if isinstance(end, (int, float)):
+                end = convert_timestamp(end)
+            s, e = start, end
+            if isinstance(s, np.datetime64):
+                s = dt64_to_dt(s)
+            if isinstance(e, np.datetime64):
+                e = dt64_to_dt(e)
+        else:
+            v, s, e = value, start, end
+
+        if v < s:
             value = start
-        elif value > end:
+        elif v > e:
             value = end
+
         return value
 
     def _process_msg(self, msg):
         x_range = self.plot.handles.get('x_range')
         y_range = self.plot.handles.get('y_range')
+        xaxis = self.plot.handles.get('xaxis')
+        yaxis = self.plot.handles.get('yaxis')
+
+        if 'x' in msg and isinstance(xaxis, DatetimeAxis):
+            msg['x'] = convert_timestamp(msg['x'])
+        if 'y' in msg and isinstance(yaxis, DatetimeAxis):
+            msg['y'] = convert_timestamp(msg['y'])
 
         server_mode = self.plot.renderer.mode == 'server'
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
@@ -560,12 +582,6 @@ class PointerXYCallback(Callback):
             else:
                 msg['y'] = y
 
-        xaxis = self.plot.handles.get('xaxis')
-        yaxis = self.plot.handles.get('yaxis')
-        if 'x' in msg and isinstance(xaxis, DatetimeAxis):
-            msg['x'] = convert_timestamp(msg['x'])
-        if 'y' in msg and isinstance(yaxis, DatetimeAxis):
-            msg['y'] = convert_timestamp(msg['y'])
         return msg
 
 
@@ -667,7 +683,21 @@ class TapCallback(PointerXYCallback):
 
     def _process_out_of_bounds(self, value, start, end):
         "Sets out of bounds values to None"
-        if value < start or value > end:
+        if isinstance(value, np.datetime64):
+            v = dt64_to_dt(value)
+            if isinstance(start, (int, float)):
+                start = convert_timestamp(start)
+            if isinstance(end, (int, float)):
+                end = convert_timestamp(end)
+            s, e = start, end
+            if isinstance(s, np.datetime64):
+                s = dt64_to_dt(s)
+            if isinstance(e, np.datetime64):
+                e = dt64_to_dt(e)
+        else:
+            v, s, e = value, start, end
+
+        if v < s or v > e:
             value = None
         return value
 

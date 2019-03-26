@@ -10,40 +10,37 @@ import bokeh.plotting
 
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
-from bokeh.models import tools
-from bokeh.models import (
-    Renderer, Range1d, DataRange1d, Title, FactorRange, Legend,
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter)
-from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
+from bokeh.models import Renderer, Title, Legend, ColorBar, tools
+from bokeh.models.axes import CategoricalAxis, DatetimeAxis
+from bokeh.models.formatters import (
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter,
+    MercatorTickFormatter)
+from bokeh.models.mappers import (
+    LinearColorMapper, LogColorMapper, CategoricalColorMapper)
+from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
+from bokeh.models.tickers import (
+    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker)
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.models.mappers import LinearColorMapper
-from bokeh.models import CategoricalAxis
-try:
-    from bokeh.models import ColorBar
-    from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
-except ImportError:
-    LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField, Path, Contours
-from ...streams import Buffer
+from ...element import Graph, VectorField, Path, Contours, Tiles
+from ...streams import Buffer, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
-    rgba_tuple, text_properties, validate
-)
+    rgba_tuple, text_properties, validate)
 from .util import (
-    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes,
-    get_tab_title, glyph_order, py2js_tickformatter,
-    recursive_model_update, theme_attr_json, cds_column_replace,
-    hold_policy, match_dim_specs
-)
+    TOOL_TYPES, date_to_integer, decode_bytes, get_tab_title,
+    glyph_order, py2js_tickformatter, recursive_model_update,
+    theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
+    compute_layout_properties)
 
 
 
@@ -57,6 +54,56 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
+
+    aspect = param.Parameter(default=None, doc="""
+        The aspect ratio mode of the plot. By default, a plot may
+        select its own appropriate aspect ratio but sometimes it may
+        be necessary to force a square aspect ratio (e.g. to display
+        the plot as an element of a grid). The modes 'auto' and
+        'equal' correspond to the axis modes of the same name in
+        matplotlib, a numeric value specifying the ratio between plot
+        width and height may also be passed. To control the aspect
+        ratio between the axis scales use the data_aspect option
+        instead.""")
+
+    data_aspect = param.Number(default=None, doc="""
+        Defines the aspect of the axis scaling, i.e. the ratio of
+        y-unit to x-unit.""")
+
+    width = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=300, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
+
+    frame_width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    frame_height = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
+
+    min_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
+    min_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
+
+    max_width = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal width of the component (in pixels) if width is adjustable.""")
+
+    max_height = param.Integer(default=None, bounds=(0, None), doc="""
+        Minimal height of the component (in pixels) if height is adjustable.""")
+
+    margin = param.Parameter(default=None, doc="""
+        Allows to create additional space around the component. May
+        be specified as a two-tuple of the form (vertical, horizontal)
+        or a four-tuple (top, right, bottom, left).""")
+
+    responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
     finalize_hooks = param.HookList(default=[], doc="""
         Deprecated; use hooks options instead.""")
@@ -88,12 +135,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         accommodate large (but not huge) amounts of data. The available
         options are:
 
-          * factor    - Decimation factor to use when applying
+          * factor    : Decimation factor to use when applying
                         decimation.
-          * interval  - Interval (in ms) downsampling will be enabled
+          * interval  : Interval (in ms) downsampling will be enabled
                         after an interactive event.
-          * threshold - Number of samples before downsampling is enabled.
-          * timeout   - Timeout (in ms) for checking whether interactive
+          * threshold : Number of samples before downsampling is enabled.
+          * timeout   : Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
     show_frame = param.Boolean(default=True, doc="""
@@ -145,6 +192,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.callbacks = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
+        self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
+        if self.geographic and self.projection is None:
+            self.projection = 'mercator'
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
@@ -397,6 +447,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.renderer.webgl:
             properties['output_backend'] = 'webgl'
 
+        properties.update(**self._plot_properties(key, element))
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
@@ -406,14 +458,41 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                          **properties)
 
 
-    def _plot_properties(self, key, plot, element):
+    def _plot_properties(self, key, element):
         """
         Returns a dictionary of plot properties.
         """
+        init = 'plot' not in self.handles
         size_multiplier = self.renderer.size/100.
-        plot_props = dict(plot_height=int(self.height*size_multiplier),
-                          plot_width=int(self.width*size_multiplier),
-                          sizing_mode=self.sizing_mode)
+        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
+
+        logger = self.param if init else None
+        aspect_props, dimension_props = compute_layout_properties(
+            self.width, self.height, self.frame_width, self.frame_height,
+            options['width'], options['height'], self.aspect, self.data_aspect,
+            self.responsive, size_multiplier, logger=logger)
+
+        if not init:
+            if aspect_props['aspect_ratio'] is None:
+                aspect_props['aspect_ratio'] = self.state.aspect_ratio
+
+        if self.dynamic and aspect_props['match_aspect']:
+            # Sync the plot size on dynamic plots to support accurate
+            # scaling of dimension ranges
+            stream = PlotSize(subscribers=[self._update_size])
+            self.callbacks.append(PlotSizeCallback(self, [stream], None))
+
+        plot_props = {
+            'margin':        self.margin,
+            'max_width':     self.max_width,
+            'max_height':    self.max_height,
+            'min_width':     self.min_width,
+            'min_height':    self.min_height
+        }
+        plot_props.update(aspect_props)
+        if not self.drawn:
+            plot_props.update(dimension_props)
+
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
@@ -424,6 +503,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
+    def _update_size(self, width, height, scale):
+        self.state.frame_width = width
+        self.state.frame_height = height
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
@@ -557,7 +639,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif axis == 'y':
             axis_obj = plot.yaxis[0]
 
-        if isinstance(axis_obj, CategoricalAxis):
+        if self.geographic and self.projection == 'mercator':
+            dimension = 'lon' if axis == 'x' else 'lat'
+            axis_props['ticker'] = MercatorTicker(dimension=dimension)
+            axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
+            box_zoom = self.state.select(type=tools.BoxZoomTool)
+            if box_zoom:
+                box_zoom[0].match_aspect = True
+        elif isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
                     # set the group labels equal to major (actually minor)
@@ -579,11 +668,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Updates plot parameters on every frame
         """
+        plot.update(**self._plot_properties(key, element))
+        self._update_labels(key, plot, element)
+        self._update_title(key, plot, element)
+        self._update_grid(plot)
+
+
+    def _update_labels(self, key, plot, element):
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
         dimensions = self._get_axis_dims(el)
-        plot.update(**self._plot_properties(key, plot, element))
-
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
@@ -594,30 +688,34 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
+
+    def _update_title(self, key, plot, element):
         if plot.title:
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
 
+
+    def _update_grid(self, plot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
-        else:
-            replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
-            style_items = list(self.gridstyle.items())
-            both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
-            xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
-            ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
-            xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
-                     for k, v in dict(both, **xgrid).items()}
-            yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
-                     for k, v in dict(both, **ygrid).items()}
-            if plot.xaxis and 'ticker' not in xopts:
-                xopts['ticker'] = plot.xaxis[0].ticker
-            if plot.yaxis and 'ticker' not in yopts:
-                yopts['ticker'] = plot.yaxis[0].ticker
-            plot.xgrid[0].update(**xopts)
-            plot.ygrid[0].update(**yopts)
+            return
+        replace = ['bounds', 'bands', 'visible', 'level', 'ticker', 'visible']
+        style_items = list(self.gridstyle.items())
+        both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+        xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
+        ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
+        xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                 for k, v in dict(both, **xgrid).items()}
+        yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                 for k, v in dict(both, **ygrid).items()}
+        if plot.xaxis and 'ticker' not in xopts:
+            xopts['ticker'] = plot.xaxis[0].ticker
+        if plot.yaxis and 'ticker' not in yopts:
+            yopts['ticker'] = plot.yaxis[0].ticker
+        plot.xgrid[0].update(**xopts)
+        plot.ygrid[0].update(**yopts)
 
 
     def _update_ranges(self, element, ranges):
@@ -639,6 +737,77 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or xfactors is not None)
         yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
+
+        options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
+        fixed_width = (self.frame_width or options['width'])
+        fixed_height = (self.frame_height or options['height'])
+
+        data_aspect = (self.aspect == 'equal' or self.data_aspect)
+        xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
+        categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
+        datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+
+        if data_aspect and fixed_width and fixed_height:
+            pass
+        elif data_aspect and (categorical or datetime):
+            ax_type = 'categorical' if categorical else 'datetime axes'
+            self.param.warning('Cannot set data_aspect if one or both '
+                               'axes are %s, the option will '
+                               'be ignored.' % ax_type)
+        elif data_aspect:
+            plot = self.handles['plot']
+            xspan = r-l if util.is_number(l) and util.is_number(r) else None
+            yspan = t-b if util.is_number(b) and util.is_number(t) else None
+            if self.drawn or self.aspect not in ['equal', None]:
+                # After initial draw or if aspect is explicit
+                # adjust range to match the plot dimension aspect
+                ratio = self.data_aspect or 1
+                if self.aspect == 'square':
+                    frame_aspect = 1
+                elif self.aspect and self.aspect != 'equal':
+                    frame_aspect = self.aspect
+                else:
+                    frame_aspect = plot.frame_width/plot.frame_height
+
+                desired_xspan = yspan*1./(ratio/frame_aspect)
+                desired_yspan = (xspan*(ratio/frame_aspect))
+                if (np.allclose(desired_xspan, xspan, rtol=0.01) and
+                    np.allclose(desired_yspan, yspan, rtol=0.01)):
+                    pass
+                elif desired_yspan >= yspan:
+                    ypad = (desired_yspan-yspan)/2.
+                    b, t = b-ypad, t+ypad
+                    yupdate = True
+                else:
+                    xpad = (desired_xspan-xspan)/2.
+                    l, r = l-xpad, r+xpad
+                    xupdate = True
+            else:
+                # Set initial aspect
+                aspect = self.get_aspect(xspan, yspan)
+                width = plot.frame_width or plot.plot_width or 300
+                height = plot.frame_height or plot.plot_height or 300
+
+                if not (fixed_width or fixed_height) and not self.responsive:
+                    fixed_height = True
+
+                if fixed_height:
+                    plot.frame_height = height
+                    plot.frame_width = int(height*aspect)
+                    plot.plot_width, plot.plot_height = None, None
+                elif fixed_width:
+                    plot.frame_width = width
+                    plot.frame_height = int(width/aspect)
+                    plot.plot_width, plot.plot_height = None, None
+                else:
+                    plot.aspect_ratio = 1./aspect
+
+            box_zoom = plot.select(type=tools.BoxZoomTool)
+            scroll_zoom = plot.select(type=tools.WheelZoomTool)
+            if box_zoom:
+                box_zoom.match_aspect = True
+            if scroll_zoom:
+                scroll_zoom.zoom_on_axis = False
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
@@ -673,15 +842,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     "than or equal to zero, please supply explicit "
                     "lower-bound to override default of %.3f." % low)
             updates = {}
-            reset_supported = bokeh_version > '0.12.16'
             if util.isfinite(low):
                 updates['start'] = (axis_range.start, low)
-                if reset_supported:
-                    updates['reset_start'] = updates['start']
+                updates['reset_start'] = updates['start']
             if util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
-                if reset_supported:
-                    updates['reset_end'] = updates['end']
+                updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
                 if isinstance(new, util.cftime_types):
                     new = date_to_integer(new)
@@ -716,7 +882,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Computes the aspect ratio of the plot
         """
-        return self.width/self.height
+        if self.data_aspect:
+            return (yspan/xspan)*self.data_aspect
+        elif self.aspect == 'equal':
+            return xspan/yspan
+        elif self.aspect == 'square':
+            return 1
+        elif self.aspect is not None:
+            return self.aspect
+        elif self.width is not None and self.height is not None:
+            return self.width/self.height
+        else:
+            return 1
 
 
     def _get_factors(self, element):
@@ -1396,9 +1573,9 @@ class ColorbarPlot(ElementPlot):
 
         if self.clabel:
             self.colorbar_opts.update({'title': self.clabel})
-        opts = dict(cbar_opts['opts'], **self._colorbar_defaults)
-        color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
-                             **dict(opts, **self.colorbar_opts))
+        opts = dict(cbar_opts['opts'], color_mapper=color_mapper, ticker=ticker,
+                    **self._colorbar_defaults)
+        color_bar = ColorBar(**dict(opts, **self.colorbar_opts))
 
         plot.add_layout(color_bar, pos)
         self.handles[prefix+'colorbar'] = color_bar
@@ -1614,7 +1791,6 @@ class LegendPlot(ElementPlot):
             pos = self.legend_position
             if pos in self.legend_specs:
                 plot.legend[:] = []
-                legend.plot = None
                 legend.location = self.legend_offset
                 if pos in ['top', 'bottom']:
                     plot.legend.orientation = 'horizontal'
@@ -1655,7 +1831,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'title', 'title_format', 'legend_position', 'legend_offset',
                           'legend_cols', 'gridstyle', 'legend_muted', 'padding',
                           'xlabel', 'ylabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'active_tools']
+                          'xformatter', 'yformatter', 'active_tools',
+                          'min_height', 'max_height', 'min_width', 'min_height',
+                          'margin', 'aspect', 'data_aspect', 'frame_width',
+                          'frame_height', 'responsive']
 
     def __init__(self, overlay, **params):
         super(OverlayPlot, self).__init__(overlay, **params)
@@ -1754,7 +1933,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.items[:] = []
         elif pos in ['above', 'below', 'right', 'left']:
             plot.legend.pop(plot.legend.index(legend))
-            legend.plot = None
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 

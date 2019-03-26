@@ -18,7 +18,8 @@ import param
 import numpy as np
 
 from . import util
-from .options import Store, Opts, Options, cleanup_custom_options
+from .accessors import Opts, Apply, Redim
+from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
 from .util import basestring, OrderedDict, bytes_to_unicode, unicode
@@ -29,6 +30,8 @@ ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
            'constant_dimensions': 'cdims'}
 
 title_format = "{name}: {val}{unit}"
+
+redim = Redim # pickle compatibility - remove in 2.0
 
 def param_aliases(d):
     """
@@ -124,158 +127,6 @@ def process_dimensions(kdims, vdims):
                                  'found a %s type.' % type(dim).__name__)
         dimensions[group] = [asdim(d) for d in dims]
     return dimensions
-
-
-class redim(object):
-    """
-    Utility that supports re-dimensioning any HoloViews object via the
-    redim method.
-    """
-
-    def __init__(self, parent, mode=None):
-        self.parent = parent
-        # Can be 'dataset', 'dynamic' or None
-        self.mode = mode
-
-    def __str__(self):
-        return "<holoviews.core.dimension.redim method>"
-
-    @classmethod
-    def replace_dimensions(cls, dimensions, overrides):
-        """Replaces dimensions in list with dictionary of overrides.
-
-        Args:
-            dimensions: List of dimensions
-            overrides: Dictionary of dimension specs indexed by name
-
-        Returns:
-            list: List of dimensions with replacements applied
-        """
-        replaced = []
-        for d in dimensions:
-            if d.name in overrides:
-                override = overrides[d.name]
-            elif d.label in overrides:
-                override = overrides[d.label]
-            else:
-                override = None
-
-            if override is None:
-                replaced.append(d)
-            elif isinstance(override, (basestring, tuple)):
-                replaced.append(d.clone(override))
-            elif isinstance(override, Dimension):
-                replaced.append(override)
-            elif isinstance(override, dict):
-                replaced.append(d.clone(override.get('name',None),
-                                        **{k:v for k,v in override.items() if k != 'name'}))
-            else:
-                raise ValueError('Dimension can only be overridden '
-                                 'with another dimension or a dictionary '
-                                 'of attributes')
-        return replaced
-
-
-    def _filter_cache(self, dmap, kdims):
-        """
-        Returns a filtered version of the DynamicMap cache leaving only
-        keys consistently with the newly specified values
-        """
-        filtered = []
-        for key, value in dmap.data.items():
-            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key)):
-                filtered.append((key, value))
-        return filtered
-
-
-    def __call__(self, specs=None, **dimensions):
-        """
-        Replace dimensions on the dataset and allows renaming
-        dimensions in the dataset. Dimension mapping should map
-        between the old dimension name and a dictionary of the new
-        attributes, a completely new dimension or a new string name.
-        """
-        parent = self.parent
-        redimmed = parent
-        if parent._deep_indexable and self.mode != 'dataset':
-            deep_mapped = [(k, v.redim(specs, **dimensions))
-                           for k, v in parent.items()]
-            redimmed = parent.clone(deep_mapped)
-
-        if specs is not None:
-            if not isinstance(specs, list):
-                specs = [specs]
-            matches = any(parent.matches(spec) for spec in specs)
-            if self.mode != 'dynamic' and not matches:
-                return redimmed
-
-        kdims = self.replace_dimensions(parent.kdims, dimensions)
-        vdims = self.replace_dimensions(parent.vdims, dimensions)
-        zipped_dims = zip(parent.kdims+parent.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
-
-        if self.mode == 'dataset':
-            data = parent.data
-            if renames:
-                data = parent.interface.redim(parent, renames)
-            clone = parent.clone(data, kdims=kdims, vdims=vdims)
-            if self.parent.dimensions(label='name') == clone.dimensions(label='name'):
-                # Ensure that plot_id is inherited as long as dimension
-                # name does not change
-                clone._plot_id = self.parent._plot_id
-            return clone
-
-        if self.mode != 'dynamic':
-            return redimmed.clone(kdims=kdims, vdims=vdims)
-
-        from ..util import Dynamic
-        def dynamic_redim(obj, **dynkwargs):
-            return obj.redim(specs, **dimensions)
-        dmap = Dynamic(parent, streams=parent.streams, operation=dynamic_redim)
-        dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
-        with util.disable_constant(dmap):
-            dmap.kdims = kdims
-            dmap.vdims = vdims
-        return dmap
-
-
-    def _redim(self, name, specs, **dims):
-        dimensions = {k:{name:v} for k,v in dims.items()}
-        return self(specs, **dimensions)
-
-    def cyclic(self, specs=None, **values):
-        return self._redim('cyclic', specs, **values)
-
-    def value_format(self, specs=None, **values):
-        return self._redim('value_format', specs, **values)
-
-    def range(self, specs=None, **values):
-        return self._redim('range', specs, **values)
-
-    def label(self, specs=None, **values):
-        for k, v in values.items():
-            dim = self.parent.get_dimension(k)
-            if dim and dim.name != dim.label and dim.label != v:
-                raise ValueError('Cannot override an existing Dimension label')
-        return self._redim('label', specs, **values)
-
-    def soft_range(self, specs=None, **values):
-        return self._redim('soft_range', specs, **values)
-
-    def type(self, specs=None, **values):
-        return self._redim('type', specs, **values)
-
-    def step(self, specs=None, **values):
-        return self._redim('step', specs, **values)
-
-    def default(self, specs=None, **values):
-        return self._redim('default', specs, **values)
-
-    def unit(self, specs=None, **values):
-        return self._redim('unit', specs, **values)
-
-    def values(self, specs=None, **ranges):
-        return self._redim('values', specs, **ranges)
 
 
 
@@ -904,6 +755,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
+        super(LabelledData, self).__setstate__({})
 
 
 class Dimensioned(LabelledData):
@@ -998,9 +850,11 @@ class Dimensioned(LabelledData):
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
         self._settings = None
-        self.redim = redim(self)
 
+        # Instantiate accessors
+        self.apply = Apply(self)
         self.opts = Opts(self)
+        self.redim = Redim(self)
 
 
     def _valid_dimensions(self, dimensions):
@@ -1440,6 +1294,7 @@ class Dimensioned(LabelledData):
         return Store.render(self)
 
 
+
 class ViewableElement(Dimensioned):
     """
     A ViewableElement is a dimensioned datastructure that may be
@@ -1499,6 +1354,17 @@ class ViewableTree(AttrTree, Dimensioned):
         cls._unpack_paths(vals, items, counts)
         items = cls._deduplicate_items(items)
         return items
+
+
+    def __setstate__(self, d):
+        """
+        Ensure that object does not try to reference its parent during
+        unpickling.
+        """
+        parent = d.pop('parent', None)
+        d['parent'] = None
+        super(AttrTree, self).__setstate__(d)
+        self.__dict__['parent'] = parent
 
 
     @classmethod
