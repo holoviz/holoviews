@@ -4,7 +4,7 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import os, sys, traceback
+import sys, traceback
 
 import IPython
 from IPython import get_ipython
@@ -142,20 +142,20 @@ def display_hook(fn):
             mimebundle = fn(element, max_frames=max_frames)
             if mimebundle is None:
                 return {}, {}
-
-            html = mimebundle_to_html(mimebundle)
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': html}, {}
+            mime_data, mime_metadata = mimebundle
+            if 'text/javascript' in mime_data:
+                mime_data['text/html'] = mimebundle_to_html(mime_data)
+                del mime_data['text/javascript']
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
                 if type(holoviews.archive) is not FileArchive:
-                    holoviews.archive.add(element, html=html)
+                    holoviews.archive.add(element, html=mime_data['text/html'])
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
-            return mimebundle
+            return mime_data, mime_metadata
         except SkipRendering as e:
             if e.warn:
                 sys.stderr.write(str(e))
