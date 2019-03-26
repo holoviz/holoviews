@@ -6,6 +6,7 @@ import numpy as np
 from holoviews.core.overlay import NdOverlay
 from holoviews.core.util import pd
 from holoviews.element import Curve
+from holoviews.util.transform import dim
 
 from .testplot import TestMPLPlot, mpl_renderer
 
@@ -185,3 +186,55 @@ class TestCurvePlot(TestMPLPlot):
                        vdims=['y', 'linewidth']).options(linewidth='linewidth')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(curve)
+
+    def test_curve_style_mapping_ndoverlay_dimensions(self):
+        ndoverlay = NdOverlay({
+            (0, 'A'): Curve([1, 2, 0]), (0, 'B'): Curve([1, 2, 1]),
+            (1, 'A'): Curve([1, 2, 2]), (1, 'B'): Curve([1, 2, 3])},
+                              ['num', 'cat']
+        ).opts({
+            'Curve': dict(
+                color=dim('num').categorize({0: 'red', 1: 'blue'}),
+                linestyle=dim('cat').categorize({'A': '-.', 'B': '-'})
+            )
+        })
+        plot = mpl_renderer.get_plot(ndoverlay)
+        for (num, cat), sp in plot.subplots.items():
+            artist = sp.handles['artist']
+            color = artist.get_color()
+            if num == 0:
+                self.assertEqual(color, 'red')
+            else:
+                self.assertEqual(color, 'blue')
+            linestyle = artist.get_linestyle()
+            if cat == 'A':
+                self.assertEqual(linestyle, '-.')
+            else:
+                self.assertEqual(linestyle, '-')
+
+    def test_curve_style_mapping_constant_value_dimensions(self):
+        vdims = ['y', 'num', 'cat']
+        ndoverlay = NdOverlay({
+            0: Curve([(0, 1, 0, 'A'), (1, 0, 0, 'A')], vdims=vdims),
+            1: Curve([(0, 1, 0, 'B'), (1, 1, 0, 'B')], vdims=vdims),
+            2: Curve([(0, 1, 1, 'A'), (1, 2, 1, 'A')], vdims=vdims),
+            3: Curve([(0, 1, 1, 'B'), (1, 3, 1, 'B')], vdims=vdims)}
+        ).opts({
+            'Curve': dict(
+                color=dim('num').categorize({0: 'red', 1: 'blue'}),
+                linestyle=dim('cat').categorize({'A': '-.', 'B': '-'})
+            )
+        })
+        plot = mpl_renderer.get_plot(ndoverlay)
+        for k, sp in plot.subplots.items():
+            artist = sp.handles['artist']
+            color = artist.get_color()
+            if ndoverlay[k].iloc[0, 2] == 0:
+                self.assertEqual(color, 'red')
+            else:
+                self.assertEqual(color, 'blue')
+            linestyle = artist.get_linestyle()
+            if ndoverlay[k].iloc[0, 3] == 'A':
+                self.assertEqual(linestyle, '-.')
+            else:
+                self.assertEqual(linestyle, '-')

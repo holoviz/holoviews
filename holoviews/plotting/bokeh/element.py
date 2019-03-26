@@ -954,7 +954,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
 
             if v.dimension in self.overlay_dims:
-                ds = Dataset([self.overlay_dims[v.dimension]], v.dimension)
+                ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
+                             list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif isinstance(element, Path) and not isinstance(element, Contours):
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
