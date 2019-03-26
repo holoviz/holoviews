@@ -83,7 +83,9 @@ class notebook_extension(extension):
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
-    inline = param.Boolean(default=True, doc="""
+    inline = param.Boolean(
+        default=os.environ.get('HOLOVIEWS_INLINE_JS', 'True').lower() == 'true',
+        doc="""
         Whether to inline JS and CSS resources. 
         If disabled, resources are loaded from CDN if one is available.""")
 
