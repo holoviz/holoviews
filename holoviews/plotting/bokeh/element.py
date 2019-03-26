@@ -23,7 +23,7 @@ from bokeh.models.tickers import (
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension
+from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField, Path, Contours, Tiles
@@ -953,8 +953,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     'as not all dimensions could be resolved.' % (k, v))
                 continue
 
-            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
-                val = self.overlay_dims[v.dimension]
+            if v.dimension in self.overlay_dims:
+                ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
+                             list(self.overlay_dims))
+                val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif isinstance(element, Path) and not isinstance(element, Contours):
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
                                       for el in element.split()])
@@ -962,7 +964,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = v.apply(element, ranges=ranges, flat=True)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
-                (not 'color' in k or validate('color', val))):
+                ((not 'color' in k or validate('color', val)) or k in self._nonvectorized_styles)):
                 val = val[0]
 
             if not util.isscalar(val):

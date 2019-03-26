@@ -558,8 +558,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     % (k, v))
                 continue
 
-            if len(v.ops) == 0 and v.dimension in self.overlay_dims:
-                val = self.overlay_dims[v.dimension]
+            if v.dimension in self.overlay_dims:
+                ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
+                             list(self.overlay_dims))
+                val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif type(element) is Path:
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
                                       for el in element.split()])
