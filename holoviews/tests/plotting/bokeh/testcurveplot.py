@@ -398,7 +398,6 @@ class TestCurvePlot(TestBokehPlot):
                 self.assertEqual(color, 'red')
             else:
                 self.assertEqual(color, 'blue')
-            print(glyph.properties_with_values())
             linestyle = glyph.line_dash
             if cat == 'A':
                 self.assertEqual(linestyle, [])
