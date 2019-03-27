@@ -147,6 +147,6 @@ After you have successfully installed and configured HoloViews, please see `Gett
    Releases <releases>
    API <Reference_Manual/index>
    FAQ
-   Roadmap
+   Roadmap <Roadmap>
    Github source <http://github.com/pyviz/holoviews>
    About <about>
