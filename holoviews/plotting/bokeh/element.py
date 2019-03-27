@@ -1515,6 +1515,10 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
+    clabel = param.String(default=None, doc="""
+        An explicit override of the color bar label, if set takes precedence
+        over the title key in colorbar_opts.""")
+
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
@@ -1569,6 +1573,8 @@ class ColorbarPlot(ElementPlot):
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
+        if self.clabel:
+            self.colorbar_opts.update({'title': self.clabel})
         opts = dict(cbar_opts['opts'], color_mapper=color_mapper, ticker=ticker,
                     **self._colorbar_defaults)
         color_bar = ColorBar(**dict(opts, **self.colorbar_opts))
