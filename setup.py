@@ -15,11 +15,11 @@ install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.2']
 extras_require = {}
 
 # Notebook dependencies
-extras_require['notebook'] = ['ipython>=5.4.0,<=7.1.1', 'notebook']
+extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0dev10', 'panel']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0dev11', 'panel']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
