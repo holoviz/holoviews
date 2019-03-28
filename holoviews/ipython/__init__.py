@@ -100,6 +100,11 @@ class notebook_extension(extension):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert. """)
 
+    allow_jedi_completion = param.Boolean(default=False, doc="""
+       Whether to allow jedi tab-completion to be enabled in IPython.
+       Disabled by default because many HoloViews features rely on
+       tab-completion machinery not supported when using jedi.""")
+
     case_sensitive_completion = param.Boolean(default=False, doc="""
        Whether to monkey patch IPython to use the correct tab-completion
        behavior. """)
@@ -139,6 +144,8 @@ class notebook_extension(extension):
         if p.case_sensitive_completion:
             from IPython.core import completer
             completer.completions_sorting_key = self.completions_sorting_key
+        if not p.allow_jedi_completion:
+            ip.run_line_magic('config', 'IPCompleter.use_jedi = False')
 
         resources = self._get_resources(args, params)
 
