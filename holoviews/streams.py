@@ -146,6 +146,7 @@ class Stream(param.Parameterized):
         # within each group
         subscriber_precedence = defaultdict(list)
         for stream in streams:
+            stream._on_trigger()
             for precedence, subscriber in stream._subscribers:
                 subscriber_precedence[precedence].append(subscriber)
         sorted_subscribers = sorted(subscriber_precedence.items(), key=lambda x: x[0])
@@ -157,10 +158,10 @@ class Stream(param.Parameterized):
                 subscriber(**dict(union))
 
         for stream in streams:
-            stream._on_trigger()
             with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
+
 
     def _on_trigger(self):
         """Called when a stream has been triggered"""
