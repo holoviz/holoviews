@@ -597,6 +597,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif isinstance(ticker, (tuple, list)):
                 if all(isinstance(t, tuple) for t in ticker):
                     ticks, labels = zip(*ticker)
+                    # Ensure floats which are integers are serialized as ints
+                    # because in JS the lookup fails otherwise
+                    ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
+                             for t in ticks]
                     labels = [l if isinstance(l, util.basestring) else str(l)
                               for l in labels]
                     axis_props['ticker'] = FixedTicker(ticks=ticks)
