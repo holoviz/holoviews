@@ -104,13 +104,16 @@ class TestStreamsDefine(ComparisonTestCase):
 
 class TestSubscriber(object):
 
-    def __init__(self):
+    def __init__(self, cb=None):
         self.call_count = 0
         self.kwargs = None
+        self.cb = cb
 
     def __call__(self, **kwargs):
         self.call_count += 1
         self.kwargs = kwargs
+        if self.cb:
+            self.cb()
 
 
 class TestPointerStreams(ComparisonTestCase):
@@ -279,7 +282,7 @@ class TestParamsStream(ComparisonTestCase):
         inner.x = 0
         self.assertEqual(values, [{'action': inner.action, 'x': 0}])
 
-        
+
 
 class TestParamMethodStream(ComparisonTestCase):
 
@@ -480,7 +483,6 @@ class TestSubscribers(ComparisonTestCase):
         position.update(**kwargs)
         self.assertEqual(subscriber.kwargs, None)
 
-
     def test_subscribers(self):
         subscriber1 = TestSubscriber()
         subscriber2 = TestSubscriber()
@@ -520,6 +522,25 @@ class TestSubscribers(ComparisonTestCase):
 
         self.assertEqual(subscriber2.kwargs, dict(x=50, y=100))
         self.assertEqual(subscriber2.call_count, 1)
+
+    def test_pipe_memoization(self):
+        def points(data):
+            subscriber.call_count += 1
+            return Points([(0, data)])
+
+        stream = Pipe(data=0)
+        dmap = DynamicMap(points, streams=[stream])
+        def cb():
+            dmap[()]
+        subscriber = TestSubscriber(cb)
+        stream.add_subscriber(subscriber)
+        dmap[()]
+        stream.send(1)
+
+        # Ensure call count was incremented on init, the subscriber
+        # and the callback
+        self.assertEqual(subscriber.call_count, 3) 
+
 
 
 class TestStreamSource(ComparisonTestCase):
