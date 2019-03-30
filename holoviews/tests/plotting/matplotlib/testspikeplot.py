@@ -192,7 +192,7 @@ class TestSpikesPlot(TestMPLPlot):
         spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims=['y', 'color']).options(color='color', color_index='color')
         with ParamLogStream() as log:
-            plot = mpl_renderer.get_plot(spikes)
+            mpl_renderer.get_plot(spikes)
         log_msg = log.stream.read()
         warning = ("Cannot declare style mapping for 'color' option "
                    "and declare a color_index; ignoring the color_index.\n")

@@ -179,7 +179,7 @@ class TestLabelsPlot(TestBokehPlot):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(text_color='color', color_index='color')        
         with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(labels)
+            bokeh_renderer.get_plot(labels)
         log_msg = log.stream.read()
         warning = ("Cannot declare style mapping for 'text_color' option "
                    "and declare a color_index; ignoring the color_index.\n")

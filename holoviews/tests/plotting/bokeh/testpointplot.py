@@ -167,7 +167,7 @@ class TestPointPlot(TestBokehPlot):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
         points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
         with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(points)
+            bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ('z dimension is not numeric, '
                    'cannot use to scale Points size.\n')
@@ -474,7 +474,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(color='color', color_index='color')        
         with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(points)
+            bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("Cannot declare style mapping for 'color' option "
                    "and declare a color_index; ignoring the color_index.\n")
@@ -494,7 +494,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='size').options(size='size', size_index='size')        
         with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(points)
+            bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
         warning = ("Cannot declare style mapping for 'size' option "
                    "and declare a size_index; ignoring the size_index.\n")
