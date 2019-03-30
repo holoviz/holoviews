@@ -134,9 +134,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         opts = self.graph_options(element, ranges, style)
         graphs = []
         for i, d in enumerate(data):
-            # Initialize graph
-            graph = self.init_graph(d, opts, index=i)
-            graphs.append(graph)
+            # Initialize traces
+            traces = self.init_graph(d, opts, index=i)
+            graphs.extend(traces)
         self.handles['graphs'] = graphs
 
         # Initialize layout
@@ -186,7 +186,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             trace[self._style_key] = dict(trace[self._style_key])
             for s, val in vectorized.items():
                 trace[self._style_key][s] = val[index]
-        return trace
+        return [trace]
 
 
     def get_data(self, element, ranges, style):

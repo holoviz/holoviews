@@ -91,7 +91,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
-        return [dict(x=x, y=y, z=z, simplices=simplices, edges_color='black')]
+        return [dict(x=x, y=y, z=z, simplices=simplices)]
 
     def graph_options(self, element, ranges, style):
         opts = super(TriSurfacePlot, self).graph_options(element, ranges, style)
@@ -100,8 +100,31 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
                             for _, c in copts['colorscale']]
         opts['scale'] = [l for l, _ in copts['colorscale']]
         opts['show_colorbar'] = self.colorbar
+        edges_color = style.get('edges_color', None)
+        if edges_color:
+            opts['edges_color'] = edges_color
+            opts['plot_edges'] = True
+
+        opts['colorbar'] = copts.get('colorbar', None)
+
         return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
 
     def init_graph(self, data, options, index=0):
-        trace = super(TriSurfacePlot, self).init_graph(data, options, index)
-        return trisurface(**trace)[0].to_plotly_json()
+        trisurf_kwargs = super(TriSurfacePlot, self).init_graph(
+            data, options, index)[0]
+
+        # Pop colorbar options since these aren't accepted by the trisurf
+        # figure factory.
+        colorbar = trisurf_kwargs.pop('colorbar', None)
+        trisurface_traces = trisurface(**trisurf_kwargs)
+
+        # Find colorbar to set colorbar options. Colorbar is associated with
+        # a `scatter3d` scatter trace.
+        if colorbar:
+            marker_traces = [trace for trace in trisurface_traces
+                             if trace.type == 'scatter3d' and
+                             trace.mode == 'markers']
+            if marker_traces:
+                marker_traces[0].marker.colorbar = colorbar
+
+        return [t.to_plotly_json() for t in trisurface_traces]
