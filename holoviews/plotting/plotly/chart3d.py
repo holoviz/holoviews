@@ -46,7 +46,6 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
     def graph_options(self, element, ranges, style):
         opts = super(SurfacePlot, self).graph_options(element, ranges, style)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
-        copts['colorscale'] = style.get('cmap', 'Viridis')
         return dict(opts, **copts)
 
     def get_data(self, element, ranges, style):
