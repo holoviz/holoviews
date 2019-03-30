@@ -9,7 +9,7 @@ from .element import ElementPlot, ColorbarPlot
 class BivariatePlot(ChartPlot, ColorbarPlot):
 
     filled = param.Boolean(default=False)
-    
+
     ncontours = param.Integer(default=None)
 
     trace_kwargs = {'type': 'histogram2dcontour'}
@@ -20,10 +20,30 @@ class BivariatePlot(ChartPlot, ColorbarPlot):
 
     def graph_options(self, element, ranges, style):
         opts = super(BivariatePlot, self).graph_options(element, ranges, style)
+        copts = self.get_color_opts(element.vdims[0], element, ranges, style)
+
         if self.ncontours:
             opts['autocontour'] = False
             opts['ncontours'] = self.ncontours
-        opts['contours'] = {'coloring': 'fill' if self.filled else 'lines'}
+
+        # Make line width a little wider (default is less than 1)
+        opts['line'] = {'width': 1}
+
+        # Configure contours
+        opts['contours'] = {
+            'coloring': 'fill' if self.filled else 'lines',
+            'showlines': style.get('showlines', True)
+        }
+
+        # Add colorscale
+        opts['colorscale'] = copts['colorscale']
+
+        # Add colorbar
+        if 'colorbar' in copts:
+            opts['colorbar'] = copts['colorbar']
+
+        opts['showscale'] = copts.get('showscale', False)
+
         return opts
 
 
@@ -37,7 +57,7 @@ class DistributionPlot(ElementPlot):
 
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
-    
+
     style_opts = ['color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
@@ -95,7 +115,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
     style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'box'}
-    
+
     _style_key = 'marker'
 
     def graph_options(self, element, ranges, style):
@@ -107,7 +127,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
 
 class ViolinPlot(MultiDistributionPlot):
 
-    
+
     box = param.Boolean(default=True, doc="""
         Whether to draw a boxplot inside the violin""")
 
@@ -119,7 +139,7 @@ class ViolinPlot(MultiDistributionPlot):
     style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'violin'}
-    
+
     _style_key = 'marker'
 
     def graph_options(self, element, ranges, style):

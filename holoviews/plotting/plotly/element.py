@@ -389,6 +389,7 @@ class ColorbarPlot(ElementPlot):
             else:
                 title = eldim.pprint_label
             opts['colorbar'] = dict(title=title, **self.colorbar_opts)
+            opts['showscale'] = True
         else:
             opts['showscale'] = False
 
