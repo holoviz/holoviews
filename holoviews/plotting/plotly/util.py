@@ -654,9 +654,11 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
     try:
         palette = process_cmap(cmap, ncolors)
     except Exception as e:
-        palette = colors.PLOTLY_SCALES.get(cmap)
-        if palette is None:
+        colorscale = colors.PLOTLY_SCALES.get(cmap)
+        if colorscale is None:
             raise e
+        return colorscale
+
     if isinstance(levels, int):
         colorscale = []
         scale = np.linspace(0, 1, levels+1)
