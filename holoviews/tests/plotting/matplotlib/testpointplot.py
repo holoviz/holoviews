@@ -21,8 +21,8 @@ class TestPointPlot(TestMPLPlot):
         with ParamLogStream() as log:
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ('%s: z dimension is not numeric, '
-                   'cannot use to scale Points size.\n' % plot.name)
+        warning = ('z dimension is not numeric, '
+                   'cannot use to scale Points size.\n')
         self.assertEqual(log_msg, warning)
 
     def test_points_cbar_extend_both(self):
@@ -305,9 +305,8 @@ class TestPointPlot(TestMPLPlot):
         with ParamLogStream() as log:
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ("%s: Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n"
-                   % plot.name)
+        warning = ("Cannot declare style mapping for 'color' option "
+                   "and declare a color_index; ignoring the color_index.\n")
         self.assertEqual(log_msg, warning)
 
     def test_point_size_index_size_clash(self):
@@ -316,7 +315,6 @@ class TestPointPlot(TestMPLPlot):
         with ParamLogStream() as log:
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
-        warning = ("%s: Cannot declare style mapping for 's' option "
-                   "and declare a size_index; ignoring the size_index.\n"
-                   % plot.name)
+        warning = ("Cannot declare style mapping for 's' option "
+                   "and declare a size_index; ignoring the size_index.\n")
         self.assertEqual(log_msg, warning)
