@@ -74,9 +74,8 @@ class TestVectorFieldPlot(TestBokehPlot):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(line_color='color', color_index='color')        
         with ParamLogStream() as log:
-            plot = bokeh_renderer.get_plot(vectorfield)
+            bokeh_renderer.get_plot(vectorfield)
         log_msg = log.stream.read()
-        warning = ("%s: Cannot declare style mapping for 'line_color' option "
-                   "and declare a color_index; ignoring the color_index.\n"
-                   % plot.name)
+        warning = ("Cannot declare style mapping for 'line_color' option "
+                   "and declare a color_index; ignoring the color_index.\n")
         self.assertEqual(log_msg, warning)

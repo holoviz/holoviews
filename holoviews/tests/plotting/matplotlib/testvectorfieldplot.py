@@ -95,9 +95,8 @@ class TestVectorFieldPlot(TestMPLPlot):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
                                   vdims=['A', 'M', 'color']).options(color='color', color_index='A')
         with ParamLogStream() as log:
-            plot = mpl_renderer.get_plot(vectorfield)
+            mpl_renderer.get_plot(vectorfield)
         log_msg = log.stream.read()
-        warning = ("%s: Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n"
-                   % plot.name)
+        warning = ("Cannot declare style mapping for 'color' option "
+                   "and declare a color_index; ignoring the color_index.\n")
         self.assertEqual(log_msg, warning)
