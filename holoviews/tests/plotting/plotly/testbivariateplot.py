@@ -22,9 +22,22 @@ class TestBivariatePlot(TestPlotlyPlot):
             filled=True)
         state = self._get_plot_state(bivariate)
         self.assertEqual(state['data'][0]['contours']['coloring'], 'fill')
-    
+
     def test_bivariate_ncontours(self):
         bivariate = Bivariate(([3, 2, 1], [0, 1, 2])).options(ncontours=5)
         state = self._get_plot_state(bivariate)
         self.assertEqual(state['data'][0]['ncontours'], 5)
         self.assertEqual(state['data'][0]['autocontour'], False)
+
+    def test_bivariate_colorbar(self):
+        bivariate = Bivariate(([3, 2, 1], [0, 1, 2]))\
+
+        bivariate.opts(colorbar=True)
+        state = self._get_plot_state(bivariate)
+        trace = state['data'][0]
+        self.assertTrue(trace['showscale'])
+
+        bivariate.opts(colorbar=False)
+        state = self._get_plot_state(bivariate)
+        trace = state['data'][0]
+        self.assertFalse(trace['showscale'])

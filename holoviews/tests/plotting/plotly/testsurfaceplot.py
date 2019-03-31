@@ -19,3 +19,15 @@ class TestSurfacePlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['xaxis']['range'], [0.5, 3.5])
         self.assertEqual(state['layout']['scene']['yaxis']['range'], [-0.5, 1.5])
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [0, 4])
+
+    def test_surface_colorbar(self):
+        img = Surface(([1, 2, 3], [0, 1], np.array([[0, 1, 2], [2, 3, 4]])))
+        img.opts(colorbar=True)
+        state = self._get_plot_state(img)
+        trace = state['data'][0]
+        self.assertTrue(trace['showscale'])
+
+        img.opts(colorbar=False)
+        state = self._get_plot_state(img)
+        trace = state['data'][0]
+        self.assertFalse(trace['showscale'])

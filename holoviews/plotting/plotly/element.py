@@ -134,9 +134,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         opts = self.graph_options(element, ranges, style)
         graphs = []
         for i, d in enumerate(data):
-            # Initialize graph
-            graph = self.init_graph(d, opts, index=i)
-            graphs.append(graph)
+            # Initialize traces
+            traces = self.init_graph(d, opts, index=i)
+            graphs.extend(traces)
         self.handles['graphs'] = graphs
 
         # Initialize layout
@@ -186,7 +186,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             trace[self._style_key] = dict(trace[self._style_key])
             for s, val in vectorized.items():
                 trace[self._style_key][s] = val[index]
-        return trace
+        return [trace]
 
 
     def get_data(self, element, ranges, style):
@@ -389,6 +389,7 @@ class ColorbarPlot(ElementPlot):
             else:
                 title = eldim.pprint_label
             opts['colorbar'] = dict(title=title, **self.colorbar_opts)
+            opts['showscale'] = True
         else:
             opts['showscale'] = False
 
@@ -412,6 +413,21 @@ class ColorbarPlot(ElementPlot):
 
         cmap = style.pop('cmap', 'viridis')
         colorscale = get_colorscale(cmap, self.color_levels, cmin, cmax)
+
+        # Reduce colorscale length to <= 255 to work around
+        # https://github.com/plotly/plotly.js/issues/3699. Plotly.js performs
+        # colorscale interpolation internally so reducing the number of colors
+        # here makes very little difference to the displayed colorscale.
+        #
+        # Note that we need to be careful to make sure the first and last
+        # colorscale pairs, colorscale[0] and colorscale[-1], are preserved
+        # as the first and last in the subsampled colorscale
+        if isinstance(colorscale, list) and len(colorscale) > 255:
+            last_clr_pair = colorscale[-1]
+            step = int(np.ceil(len(colorscale) / 255))
+            colorscale = colorscale[0::step]
+            colorscale[-1] = last_clr_pair
+
         if cmin is not None:
             opts['cmin'] = cmin
         if cmax is not None:
