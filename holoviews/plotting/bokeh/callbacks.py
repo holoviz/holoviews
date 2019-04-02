@@ -391,6 +391,9 @@ class ServerCallback(MessageCallback):
                 handle.on_event(event, self.on_event)
         if self.on_changes:
             for change in self.on_changes:
+                if change in ['patching', 'streaming']:
+                    # Patch and stream events do not need handling on server
+                    continue
                 handle.on_change(change, self.on_change)
 
 
