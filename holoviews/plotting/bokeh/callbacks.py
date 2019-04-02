@@ -272,7 +272,7 @@ class CustomJSCallback(MessageCallback):
         if self.on_events:
             for event in self.on_events:
                 handle.js_on_event(event, js_callback)
-        elif self.on_changes:
+        if self.on_changes:
             for change in self.on_changes:
                 handle.js_on_change(change, js_callback)
         elif hasattr(handle, 'callback'):
@@ -389,8 +389,11 @@ class ServerCallback(MessageCallback):
         if self.on_events:
             for event in self.on_events:
                 handle.on_event(event, self.on_event)
-        elif self.on_changes:
+        if self.on_changes:
             for change in self.on_changes:
+                if change in ['patching', 'streaming']:
+                    # Patch and stream events do not need handling on server
+                    continue
                 handle.on_change(change, self.on_change)
 
 
@@ -912,7 +915,7 @@ class CDSCallback(Callback):
 
     attributes = {'data': 'source.data'}
     models = ['source']
-    on_changes = ['data']
+    on_changes = ['data', 'patching']
 
     def initialize(self, plot_id=None):
         super(CDSCallback, self).initialize(plot_id)
