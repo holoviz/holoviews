@@ -161,7 +161,7 @@ jobs:
       env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev" HV_DOC_HTML='true' HV_REQUIREMENTS="doc" BUCKET="dev."
       script:
         - bokeh sampledata
-        - pip install awscli
+        - conda install -c conda-forge awscli
         - conda install -c conda-forge mpl_sample_data --no-deps
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
