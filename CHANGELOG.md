@@ -43,15 +43,15 @@ Bug fixes:
   [#3590](https://github.com/pyviz/holoviews/pull/#3450))
 
 - Other miscellaneous fixes
-([#3530](https://github.com/pyviz/holoviews/pull/#3450),
-[#3536](https://github.com/pyviz/holoviews/pull/#3450),
-[#3546](https://github.com/pyviz/holoviews/pull/#3450),
-[#3560](https://github.com/pyviz/holoviews/pull/#3450),
-[#3571](https://github.com/pyviz/holoviews/pull/#3450),
-[#3580](https://github.com/pyviz/holoviews/pull/#3450),
-[#3584](https://github.com/pyviz/holoviews/pull/#3450),
-[#3585](https://github.com/pyviz/holoviews/pull/#3450),
-[#3594](https://github.com/pyviz/holoviews/pull/#3450))
+([#3530](https://github.com/pyviz/holoviews/pull/#3530),
+[#3536](https://github.com/pyviz/holoviews/pull/#3536),
+[#3546](https://github.com/pyviz/holoviews/pull/#3546),
+[#3560](https://github.com/pyviz/holoviews/pull/#3560),
+[#3571](https://github.com/pyviz/holoviews/pull/#3571),
+[#3580](https://github.com/pyviz/holoviews/pull/#3580),
+[#3584](https://github.com/pyviz/holoviews/pull/#3584),
+[#3585](https://github.com/pyviz/holoviews/pull/#3585),
+[#3594](https://github.com/pyviz/holoviews/pull/#3594))
 
 
 Version 1.11.3
