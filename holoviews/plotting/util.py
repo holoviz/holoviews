@@ -686,9 +686,11 @@ def _list_cmaps(provider=None, records=False):
             pass
     if 'colorcet' in provider:
         try:
-            from colorcet import palette_n
-            cmaps += info('colorcet', palette_n)
-            cmaps += info('colorcet', [p+'_r' for p in palette_n])
+            from colorcet import palette_n, glasbey_hv
+            cet_maps = palette_n.copy()
+            cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
+            cmaps += info('colorcet', cet_maps) 
+            cmaps += info('colorcet', [p+'_r' for p in cet_maps])
         except:
             pass
     return sorted(unique_iterator(cmaps))
@@ -851,7 +853,7 @@ register_cmaps('Categorical', 'bokeh', 'misc', 'any',
     ['Colorblind'])
 
 register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'any',
-    ['glasbey', 'glasbey_cool', 'glasbey_warm'])
+    ['glasbey', 'glasbey_cool', 'glasbey_warm', 'glasbey_hv'])
 
 register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'dark',
     ['glasbey_light'])
