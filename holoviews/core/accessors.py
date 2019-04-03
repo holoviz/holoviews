@@ -80,7 +80,7 @@ class Apply(object):
                                          method_name)
                 return method(*args, **kwargs)
 
-        applies = isinstance(self._obj, (ViewableElement, DynamicMap))
+        applies = isinstance(self._obj, (ViewableElement, HoloMap))
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
