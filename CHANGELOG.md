@@ -11,43 +11,43 @@ Features:
 
 - New plot options for controlling layouts including a responsive mode
   as well as improved control over aspect using the newly updated bokeh
-  layout engine ([#3450](https://github.com/pyviz/holoviews/pull/#3450),
-  [#3575](https://github.com/pyviz/holoviews/pull/#3450))
+  layout engine ([#3450](https://github.com/pyviz/holoviews/pull/3450),
+  [#3575](https://github.com/pyviz/holoviews/pull/3575))
 - Added a succinct and powerful way of creating DynamicMaps from
   functions and methods via the new `.apply` method
-  ([#3554](https://github.com/pyviz/holoviews/pull/#3450),
-  [#3474](https://github.com/pyviz/holoviews/pull/#3450))
+  ([#3554](https://github.com/pyviz/holoviews/pull/3554),
+  [#3474](https://github.com/pyviz/holoviews/pull/3474))
 
 Enhancements:
   
 - Added a number of new plot options including a clabel param for
-  colorbars ([#3517](https://github.com/pyviz/holoviews/pull/#3450)),
+  colorbars ([#3517](https://github.com/pyviz/holoviews/pull/3517)),
   exposed Sankey font size
-  ([#3535](https://github.com/pyviz/holoviews/pull/#3450)) and added a
+  ([#3535](https://github.com/pyviz/holoviews/pull/3535)) and added a
   radius for bokeh nodes
-  ([#3556](https://github.com/pyviz/holoviews/pull/#3450))
+  ([#3556](https://github.com/pyviz/holoviews/pull/3556))
 - Switched notebook output to use an HTML mime bundle instead of
   separate HTML and JS components
-  ([#3574](https://github.com/pyviz/holoviews/pull/#3450))
+  ([#3574](https://github.com/pyviz/holoviews/pull/3574))
 - Improved support for style mapping constant values via
   `dim.categorize`
-  ([#3578](https://github.com/pyviz/holoviews/pull/#3450))
+  ([#3578](https://github.com/pyviz/holoviews/pull/3578))
   
 Bug fixes:
 
 - Fixes for colorscales and colorbars
-  ([#3572](https://github.com/pyviz/holoviews/pull/#3450),
-  [#3590](https://github.com/pyviz/holoviews/pull/#3450))
+  ([#3572](https://github.com/pyviz/holoviews/pull/3572),
+  [#3590](https://github.com/pyviz/holoviews/pull/3590))
 - Other miscellaneous fixes
-([#3530](https://github.com/pyviz/holoviews/pull/#3530),
-[#3536](https://github.com/pyviz/holoviews/pull/#3536),
-[#3546](https://github.com/pyviz/holoviews/pull/#3546),
-[#3560](https://github.com/pyviz/holoviews/pull/#3560),
-[#3571](https://github.com/pyviz/holoviews/pull/#3571),
-[#3580](https://github.com/pyviz/holoviews/pull/#3580),
-[#3584](https://github.com/pyviz/holoviews/pull/#3584),
-[#3585](https://github.com/pyviz/holoviews/pull/#3585),
-[#3594](https://github.com/pyviz/holoviews/pull/#3594))
+([#3530](https://github.com/pyviz/holoviews/pull/3530),
+[#3536](https://github.com/pyviz/holoviews/pull/3536),
+[#3546](https://github.com/pyviz/holoviews/pull/3546),
+[#3560](https://github.com/pyviz/holoviews/pull/3560),
+[#3571](https://github.com/pyviz/holoviews/pull/3571),
+[#3580](https://github.com/pyviz/holoviews/pull/3580),
+[#3584](https://github.com/pyviz/holoviews/pull/3584),
+[#3585](https://github.com/pyviz/holoviews/pull/3585),
+[#3594](https://github.com/pyviz/holoviews/pull/3594))
 
 
 Version 1.11.3
