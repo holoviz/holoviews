@@ -69,17 +69,13 @@ class DaskDatasetTest(PandasInterfaceTests):
 
     def test_dataset_from_multi_index(self):
         raise SkipTest("Temporarily skipped")
-
-    def test_dataset_from_multi_index_tuple_dims(self):
-        raise SkipTest("Temporarily skipped")
-    
-    def test_dataset_from_multi_index(self):
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), ['x', 'y'])
         self.assertEqual(ds, Dataset(df, ['x', 'y']))
-    
+
     def test_dataset_from_multi_index_tuple_dims(self):
+        raise SkipTest("Temporarily skipped")
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ddf = dd.from_pandas(df, 1)
         ds = Dataset(ddf.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
