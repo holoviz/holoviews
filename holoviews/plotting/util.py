@@ -816,7 +816,7 @@ register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'any',
     ['blues', 'kr', 'kg', 'kb'])
 
 register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'light',
-    ['coolwarm', 'gwv'])
+    ['coolwarm', 'gwv', 'bwy', 'cwr'])
 
 register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'dark',
     ['bkr', 'bky'])
@@ -849,6 +849,17 @@ register_cmaps('Categorical', 'bokeh', 'colorbrewer', 'any',
 
 register_cmaps('Categorical', 'bokeh', 'misc', 'any',
     ['Colorblind'])
+
+register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'any',
+    ['glasbey', 'glasbey_cool', 'glasbey_warm'])
+
+register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'dark',
+    ['glasbey_light'])
+
+register_cmaps('Uniform Categorical', 'colorcet', 'cet', 'light',
+    ['glasbey_dark'])
+
+
 
 
 
