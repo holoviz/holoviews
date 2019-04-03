@@ -69,7 +69,7 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
         - source activate test-environment
-        - doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
         - doit env_capture
       script:
         - doit test_all_recommended
