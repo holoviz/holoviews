@@ -3,9 +3,9 @@ Version 1.12.0
 
 This release provides a number of exciting new features as well as a set
 of important bug fixes. Many thanks to our users for reporting these
-issues and @ahuang11 @jonmease @poplarShift @reckoner for their code
-contributions and @scottclowe @syhooper for their contributions to the
-documentation.
+issues, and special thanks to @ahuang11, @jonmmease, @poplarShift,
+@reckoner, @scottclowe and @syhooper for their contributions to the code
+and the documentation.
 
 Features:
 
