@@ -1164,7 +1164,7 @@ Changes affecting backwards compatibility:
 
 Version 1.7
 ~~~~~~~~~~~
-   
+
 Version 1.7.0
 *************
 
@@ -1542,7 +1542,7 @@ Changes affecting backwards compatibility:
 
 Version 1.6
 ~~~~~~~~~~~
-   
+
 Version 1.6.2
 *************
 
@@ -1628,7 +1628,7 @@ Features and improvements:
    `#728 <https://github.com/pyviz/holoviews/pull/728>`__).
 Version 1.5
 ~~~~~~~~~~~
-   
+
 Version 1.5.0
 *************
 
@@ -1685,7 +1685,7 @@ Backwards compatibility:
 
 Version 1.4
 ~~~~~~~~~~~
-   
+
 Version 1.4.3
 *************
 
@@ -1996,7 +1996,7 @@ API Changes
 
 Version 1.2
 ~~~~~~~~~~~
-   
+
 Version 1.2.0
 *************
 
