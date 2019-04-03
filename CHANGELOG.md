@@ -13,7 +13,6 @@ Features:
   as well as improved control over aspect using the newly updated bokeh
   layout engine ([#3450](https://github.com/pyviz/holoviews/pull/#3450),
   [#3575](https://github.com/pyviz/holoviews/pull/#3450))
-
 - Added a succinct and powerful way of creating DynamicMaps from
   functions and methods via the new `.apply` method
   ([#3554](https://github.com/pyviz/holoviews/pull/#3450),
@@ -27,11 +26,9 @@ Enhancements:
   ([#3535](https://github.com/pyviz/holoviews/pull/#3450)) and added a
   radius for bokeh nodes
   ([#3556](https://github.com/pyviz/holoviews/pull/#3450))
-
 - Switched notebook output to use an HTML mime bundle instead of
   separate HTML and JS components
   ([#3574](https://github.com/pyviz/holoviews/pull/#3450))
-
 - Improved support for style mapping constant values via
   `dim.categorize`
   ([#3578](https://github.com/pyviz/holoviews/pull/#3450))
@@ -41,7 +38,6 @@ Bug fixes:
 - Fixes for colorscales and colorbars
   ([#3572](https://github.com/pyviz/holoviews/pull/#3450),
   [#3590](https://github.com/pyviz/holoviews/pull/#3450))
-
 - Other miscellaneous fixes
 ([#3530](https://github.com/pyviz/holoviews/pull/#3530),
 [#3536](https://github.com/pyviz/holoviews/pull/#3536),
