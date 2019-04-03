@@ -10,6 +10,64 @@ Announcements
 Release notes
 -------------
 
+
+Version 1.12
+~~~~~~~~~~~~
+
+Version 1.12.0
+**************
+
+This release provides a number of exciting new features as well as a set
+of important bug fixes. Many thanks to our users for reporting these
+issues, and special thanks to @ahuang11, @jonmmease, @poplarShift,
+@reckoner, @scottclowe and @syhooper for their contributions to the code
+and the documentation.
+
+Features:
+
+-  New plot options for controlling layouts including a responsive mode
+   as well as improved control over aspect using the newly updated bokeh
+   layout engine
+   (`#3450 <https://github.com/pyviz/holoviews/pull/#3450>`__,
+   `#3575 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+-  Added a succinct and powerful way of creating DynamicMaps from
+   functions and methods via the new ``.apply`` method
+   (`#3554 <https://github.com/pyviz/holoviews/pull/#3450>`__,
+   `#3474 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+
+Enhancements:
+
+-  Added a number of new plot options including a clabel param for
+   colorbars
+   (`#3517 <https://github.com/pyviz/holoviews/pull/#3450>`__), exposed
+   Sankey font size
+   (`#3535 <https://github.com/pyviz/holoviews/pull/#3450>`__) and added
+   a radius for bokeh nodes
+   (`#3556 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+-  Switched notebook output to use an HTML mime bundle instead of
+   separate HTML and JS components
+   (`#3574 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+-  Improved support for style mapping constant values via
+   ``dim.categorize``
+   (`#3578 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+
+Bug fixes:
+
+-  Fixes for colorscales and colorbars
+   (`#3572 <https://github.com/pyviz/holoviews/pull/#3450>`__,
+   `#3590 <https://github.com/pyviz/holoviews/pull/#3450>`__)
+-  Other miscellaneous fixes
+   (`#3530 <https://github.com/pyviz/holoviews/pull/#3530>`__,
+   `#3536 <https://github.com/pyviz/holoviews/pull/#3536>`__,
+   `#3546 <https://github.com/pyviz/holoviews/pull/#3546>`__,
+   `#3560 <https://github.com/pyviz/holoviews/pull/#3560>`__,
+   `#3571 <https://github.com/pyviz/holoviews/pull/#3571>`__,
+   `#3580 <https://github.com/pyviz/holoviews/pull/#3580>`__,
+   `#3584 <https://github.com/pyviz/holoviews/pull/#3584>`__,
+   `#3585 <https://github.com/pyviz/holoviews/pull/#3585>`__,
+   `#3594 <https://github.com/pyviz/holoviews/pull/#3594>`__)
+
+
 Version 1.11
 ~~~~~~~~~~~~
 
