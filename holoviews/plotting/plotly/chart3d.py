@@ -100,11 +100,8 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
                             for _, c in copts['colorscale']]
         opts['scale'] = [l for l, _ in copts['colorscale']]
         opts['show_colorbar'] = self.colorbar
-        edges_color = style.get('edges_color', None)
-        if edges_color:
-            opts['edges_color'] = edges_color
-            opts['plot_edges'] = True
-
+        opts['edges_color'] = style.get('edges_color', 'black')
+        opts['plot_edges'] = 'edges_color' in style
         opts['colorbar'] = copts.get('colorbar', None)
 
         return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
