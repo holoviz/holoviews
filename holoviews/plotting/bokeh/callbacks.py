@@ -949,28 +949,24 @@ class CDSCallback(Callback):
 class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
-      var length = cb_obj.data['xs'].length;
+      var length = cb_obj.data[length_var].length;
       for (i = 0; i < length; i++) {
         for (var style in styles) {
-          if (cb_obj.data[style][i] === empty) {
-            var values = styles[style];
-            cb_obj.data[style][i] = values[i % values.length];
-          }
+          var values = styles[style];
+          cb_obj.data[style][i] = values[i % values.length];
         }
       }
     """
 
-    def _create_style_callback(self):
-        plot = self.plot
+    def _create_style_callback(self, cds, glyph, length_var):
         stream = self.streams[0]
-        cds = plot.handles['cds']
         for style, values in stream.style_cycles.items():
-            cds.data[style] = [values[i % len(values)] for i in range(len(cds.data['xs']))]
-            glyph = plot.handles['glyph']
+            cds.data[style] = [values[i % len(values)] for i in range(len(cds.data[length_var]))]
             setattr(glyph, style, style)
         cb = CustomJS(code=self._style_callback,
                       args={'styles': stream.style_cycles,
-                            'empty': stream.empty_value})
+                            'empty': stream.empty_value,
+                            'length_var': length_var})
         cds.js_on_change('data', cb)
 
 
@@ -1011,7 +1007,7 @@ class PolyDrawCallback(GlyphDrawCallback):
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
         if stream.style_cycles:
-            self._create_style_callback()
+            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=stream.empty_value,
                                  renderers=[plot.handles['glyph_renderer']],
@@ -1040,6 +1036,8 @@ class FreehandDrawCallback(PolyDrawCallback):
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
+        if stream.style_cycles:
+            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
         poly_tool = FreehandDrawTool(
             empty_value=stream.empty_value,
             num_objects=stream.num_objects,
@@ -1050,7 +1048,7 @@ class FreehandDrawCallback(PolyDrawCallback):
         CDSCallback.initialize(self, plot_id)
 
 
-class BoxEditCallback(CDSCallback):
+class BoxEditCallback(GlyphDrawCallback):
 
     attributes = {'data': 'rect_source.data'}
     models = ['rect_source']
@@ -1078,6 +1076,8 @@ class BoxEditCallback(CDSCallback):
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
+        if stream.style_cycles:
+            self._create_style_callback(rect_source, r1.glyph, 'x')
         box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:

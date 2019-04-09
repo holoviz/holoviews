@@ -1065,11 +1065,16 @@ class FreehandDraw(CDSStream):
     num_objects: int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
+
+    style_cycles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new freehand glyph is drawn.
     """
 
-    def __init__(self, empty_value=None, num_objects=0, **params):
+    def __init__(self, empty_value=None, num_objects=0, style_cycles={}, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
+        self.style_cycles = style_cycles
         super(FreehandDraw, self).__init__(**params)
 
     @property
@@ -1091,20 +1096,29 @@ class FreehandDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
         return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
-    
+
 
 
 class BoxEdit(CDSStream):
     """
     Attaches a BoxEditTool and syncs the datasource.
 
+    empty_value: int/float/string/None
+        The value to insert on non-position columns when adding a new box
+
     num_objects: int
         The number of boxes that can be drawn before overwriting the
         oldest drawn box.
+
+    style_cycles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new box glyph is drawn.
     """
 
-    def __init__(self, num_objects=0, **params):
+    def __init__(self, empty_value=None, num_objects=0, style_cycles={}, **params):
+        self.empty_value = empty_value
         self.num_objects = num_objects
+        self.style_cycles = style_cycles
         super(BoxEdit, self).__init__(**params)
 
     @property
