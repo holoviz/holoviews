@@ -6,7 +6,8 @@ import param
 import numpy as np
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox,
-    Range1d, DataRange1d
+    Range1d, DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
+    FreehandDrawTool, PointDrawTool
 )
 from pyviz_comms import JS_CALLBACK
 
@@ -16,7 +17,8 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
-                        PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw)
+                        PointDraw, PolyDraw, PolyEdit, CDSStream,
+                        FreehandDraw)
 from ..links import Link, RangeToolLink, DataLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp, bokeh_version
@@ -944,6 +946,34 @@ class CDSCallback(Callback):
         return msg
 
 
+class DrawCallback(CDSCallback):
+
+    _style_callback = """
+      var length = cb_obj.data['xs'].length;
+      for (i = 0; i < length; i++) {
+        for (var style in styles) {
+          if (cb_obj.data[style][i] === empty) {
+            var values = styles[style];
+            cb_obj.data[style][i] = values[i % values.length];
+          }
+        }
+      }
+    """
+
+    def _create_style_callback(self):
+        plot = self.plot
+        stream = self.streams[0]
+        cds = plot.handles['cds']
+        for style, values in stream.style_cycles.items():
+            cds.data[style] = [values[i % len(values)] for i in range(len(cds.data['xs']))]
+            glyph = plot.handles['glyph']
+            setattr(glyph, style, style)
+        cb = CustomJS(code=self._style_callback,
+                      args={'styles': stream.style_cycles,
+                            'empty': stream.empty_value})
+        cds.js_on_change('data', cb)
+
+
 class PointDrawCallback(CDSCallback):
 
     def initialize(self, plot_id=None):
@@ -968,7 +998,7 @@ class PointDrawCallback(CDSCallback):
         super(PointDrawCallback, self).initialize(plot_id)
 
 
-class PolyDrawCallback(CDSCallback):
+class PolyDrawCallback(DrawCallback):
 
     def initialize(self, plot_id=None):
         plot = self.plot
@@ -980,6 +1010,8 @@ class PolyDrawCallback(CDSCallback):
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
+        if stream.style_cycles:
+            self._create_style_callback()
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=stream.empty_value,
                                  renderers=[plot.handles['glyph_renderer']],

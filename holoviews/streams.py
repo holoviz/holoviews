@@ -1017,15 +1017,21 @@ class PolyDraw(CDSStream):
         A dictionary specifying the style options for the vertices.
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
+
+    style_cycles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new Poly glyph is drawn.
     """
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, **params):
+                 show_vertices=False, vertex_style={}, style_cycles={},
+                 **params):
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.show_vertices = show_vertices
         self.vertex_style = vertex_style
+        self.style_cycles = style_cycles
         super(PolyDraw, self).__init__(**params)
 
     @property
