@@ -947,22 +947,11 @@ class CDSCallback(Callback):
 class PointDrawCallback(CDSCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PointDrawTool
-        except Exception:
-            param.main.param.warning('PointDraw requires bokeh >= 0.12.14')
-            return
-
         stream = self.streams[0]
         renderers = [self.plot.handles['glyph_renderer']]
         kwargs = {}
         if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to PointDraw stream requires '
-                    'a bokeh version >= 1.0.0.')
+            kwargs['num_objects'] = stream.num_objects
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
                                    empty_value=stream.empty_value,
                                    renderers=renderers, **kwargs)
@@ -982,30 +971,15 @@ class PointDrawCallback(CDSCallback):
 class PolyDrawCallback(CDSCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PolyDrawTool
-        except:
-            param.main.param.warning('PolyDraw requires bokeh >= 0.12.14')
-            return
         plot = self.plot
         stream = self.streams[0]
         kwargs = {}
         if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to PointDraw stream requires '
-                    'a bokeh version >=1.0.0.')
+            kwargs['num_objects'] = stream.num_objects
         if stream.show_vertices:
-            if bokeh_version >= '1.0.0':
-                vertex_style = dict({'size': 10}, **stream.vertex_style)
-                r1 = plot.state.scatter([], [], **vertex_style)
-                kwargs['vertex_renderer'] = r1
-            else:
-                param.main.param.warning(
-                    'Enabling vertices on the PointDraw stream requires '
-                    'a bokeh version >=1.0.0.')
+            vertex_style = dict({'size': 10}, **stream.vertex_style)
+            r1 = plot.state.scatter([], [], **vertex_style)
+            kwargs['vertex_renderer'] = r1
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=stream.empty_value,
                                  renderers=[plot.handles['glyph_renderer']],
@@ -1032,11 +1006,6 @@ class PolyDrawCallback(CDSCallback):
 class FreehandDrawCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import FreehandDrawTool
-        except:
-            param.main.param.warning('FreehandDraw requires bokeh >= 0.13.0')
-            return
         plot = self.plot
         stream = self.streams[0]
         poly_tool = FreehandDrawTool(
@@ -1055,24 +1024,13 @@ class BoxEditCallback(CDSCallback):
     models = ['rect_source']
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import BoxEditTool
-        except:
-            param.main.param.warning('BoxEdit requires bokeh >= 0.12.14')
-            return
-
         plot = self.plot
         data = plot.handles['cds'].data
         element = self.plot.current_frame
         stream = self.streams[0]
         kwargs = {}
         if stream.num_objects:
-            if bokeh_version >= '1.0.0':
-                kwargs['num_objects'] = stream.num_objects
-            else:
-                param.main.param.warning(
-                    'Specifying num_objects to BoxEdit stream requires '
-                    'a bokeh version >=1.0.0.')
+            kwargs['num_objects'] = stream.num_objects
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
@@ -1115,11 +1073,6 @@ class BoxEditCallback(CDSCallback):
 class PolyEditCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
-        try:
-            from bokeh.models import PolyEditTool
-        except:
-            param.main.param.warning('PolyEdit requires bokeh >= 0.12.14')
-            return
         plot = self.plot
         vertex_tool = None
         if all(s.shared for s in self.streams):
