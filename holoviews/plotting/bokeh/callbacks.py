@@ -21,7 +21,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         FreehandDraw)
 from ..links import Link, RangeToolLink, DataLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import convert_timestamp, bokeh_version
+from .util import convert_timestamp
 
 
 class MessageCallback(object):
@@ -946,7 +946,7 @@ class CDSCallback(Callback):
         return msg
 
 
-class DrawCallback(CDSCallback):
+class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
       var length = cb_obj.data['xs'].length;
@@ -998,7 +998,7 @@ class PointDrawCallback(CDSCallback):
         super(PointDrawCallback, self).initialize(plot_id)
 
 
-class PolyDrawCallback(DrawCallback):
+class PolyDrawCallback(GlyphDrawCallback):
 
     def initialize(self, plot_id=None):
         plot = self.plot
