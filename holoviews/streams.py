@@ -166,30 +166,42 @@ class Stream(param.Parameterized):
     def _on_trigger(self):
         """Called when a stream has been triggered"""
 
+
     @classmethod
     def _process_streams(cls, streams):
         """
         Processes a list of streams promoting Parameterized objects and
         methods to Param based streams.
         """
-        param_watch_support = util.param_version >= '1.8.0'
-        parameterizeds = [s.parameterized for s in streams if isinstance(s, Params)]
+        parameterizeds = defaultdict(set)
         valid, invalid = [], []
         for s in streams:
-            if not isinstance(s, Stream):
-                if isinstance(s, param.Parameterized) and param_watch_support:
-                    if s not in parameterizeds:
-                        s = Params(s)
-                    else:
-                        continue
-                elif util.is_param_method(s) and param_watch_support:
-                    if not hasattr(s, "_dinfo") or util.get_method_owner(s) in parameterizeds:
-                        continue
-                    else:
-                        s = ParamMethod(s)
-                else:
-                    invalid.append(s)
+            if isinstance(s, Stream):
+                pass
+            elif isinstance(s, param.Parameter):
+                s = Params(s.owner, [s.name])
+            elif isinstance(s, param.Parameterized):
+                s = Params(s)
+            elif util.is_param_method(s):
+                if not hasattr(s, "_dinfo"):
                     continue
+                s = ParamMethod(s)
+            else:
+                invalid.append(s)
+                continue
+            if isinstance(s, Params):
+                pid = id(s.parameterized)
+                overlap = (set(s.parameters) & parameterizeds[pid])
+                if overlap:
+                    pname = type(s.parameterized).__name__
+                    param.main.param.warning(
+                        'The %s parameter(s) on the %s object have '
+                        'already been supplied in another stream. '
+                        'Ensure that the supplied streams only specify '
+                        'each parameter once, otherwise multiple '
+                        'events will be triggered when the parameter '
+                        'changes.' % (sorted(overlap), pname))
+                parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
 
