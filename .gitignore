@@ -26,3 +26,4 @@ holoviews.rc
 /examples/assets/
 ghostdriver.log
 holoviews/.version
+.dir-locals.el
