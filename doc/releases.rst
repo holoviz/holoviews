@@ -14,6 +14,18 @@ Release notes
 Version 1.12
 ~~~~~~~~~~~~
 
+Version 1.12.1
+**************
+
+This is a minor release that pins to the newly released Bokeh 1.1 and
+adds support for parameter instances as streams:
+
+Enhancements:
+
+- Add support for passing in parameter instances as streams
+  (`#3616 <https://github.com/pyviz/holoviews/pull/3616>`__)
+
+
 Version 1.12.0
 **************
 
