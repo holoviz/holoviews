@@ -12,6 +12,9 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
 from holoviews.util import Dynamic
 
+from .utils import LoggingComparisonTestCase
+
+
 def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
                       isinstance(v, type) and issubclass(v, Stream)]
@@ -178,7 +181,7 @@ class TestParamValuesStream(ComparisonTestCase):
 
 
 
-class TestParamsStream(ComparisonTestCase):
+class TestParamsStream(LoggingComparisonTestCase):
 
     def setUp(self):
         class Inner(param.Parameterized):
@@ -236,8 +239,8 @@ class TestParamsStream(ComparisonTestCase):
         params1 = Params(inner)
         params2 = Params(inner)
 
-        with self.assertRaises(ValueError):
-            Stream._process_streams([params1, params2])
+        Stream._process_streams([params1, params2])
+        self.log_handler.assertContains('WARNING', "['x', 'y']")
 
     def test_param_parameter_instance_separate_parameters(self):
         inner = self.inner()
@@ -252,8 +255,8 @@ class TestParamsStream(ComparisonTestCase):
 
     def test_param_parameter_instance_overlapping_parameters(self):
         inner = self.inner()
-        with self.assertRaises(ValueError):
-            Stream._process_streams([inner.param.x, inner.param.x])
+        Stream._process_streams([inner.param.x, inner.param.x])
+        self.log_handler.assertContains('WARNING', "['x']")
 
     def test_param_stream_parameter_override(self):
         inner = self.inner(x=2)

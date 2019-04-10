@@ -173,7 +173,7 @@ class Stream(param.Parameterized):
         Processes a list of streams promoting Parameterized objects and
         methods to Param based streams.
         """
-        parameterizeds = defaultdict(list)
+        parameterizeds = defaultdict(set)
         valid, invalid = [], []
         for s in streams:
             if isinstance(s, Stream):
@@ -191,16 +191,17 @@ class Stream(param.Parameterized):
                 continue
             if isinstance(s, Params):
                 pid = id(s.parameterized)
-                if pid in parameterizeds:
-                    overlap = (set(s.parameters) & set(parameterizeds[pid]))
-                    if overlap:
-                        pname = type(s.parameterized).__name__
-                        raise ValueError('Found multiple Params streams '
-                                         'subscribing to the %s parameter(s) '
-                                         'on the %s object. Ensure that '
-                                         'you only subscribe to a parameter '
-                                         'once.' % (list(overlap), pname))
-                parameterizeds[pid] += s.parameters
+                overlap = (set(s.parameters) & parameterizeds[pid])
+                if overlap:
+                    pname = type(s.parameterized).__name__
+                    param.main.param.warning(
+                        'The %s parameter(s) on the %s object have '
+                        'already been supplied in another stream. '
+                        'Ensure that the supplied streams only specify '
+                        'each parameter once, otherwise multiple '
+                        'events will be triggered when the parameter '
+                        'changes.' % (sorted(overlap), pname))
+                parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
 
