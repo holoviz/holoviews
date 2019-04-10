@@ -181,9 +181,6 @@ class TestParamValuesStream(ComparisonTestCase):
 class TestParamsStream(ComparisonTestCase):
 
     def setUp(self):
-        if LooseVersion(param.__version__) < '1.8.0':
-            raise SkipTest('Params stream requires param >= 1.8.0')
-
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
@@ -222,6 +219,41 @@ class TestParamsStream(ComparisonTestCase):
         stream.add_subscriber(subscriber)
         inner.y = 2
         self.assertEqual(values, [{'x': 2, 'y': 2}])
+
+    def test_param_stream_instance_separate_parameters(self):
+        inner = self.inner()
+
+        xparam = Params(inner, ['x'])
+        yparam = Params(inner, ['y'])
+
+        valid, invalid = Stream._process_streams([xparam, yparam])
+        self.assertEqual(len(valid), 2)
+        self.assertEqual(len(invalid), 0)
+
+    def test_param_stream_instance_overlapping_parameters(self):
+        inner = self.inner()
+
+        params1 = Params(inner)
+        params2 = Params(inner)
+
+        with self.assertRaises(ValueError):
+            Stream._process_streams([params1, params2])
+
+    def test_param_parameter_instance_separate_parameters(self):
+        inner = self.inner()
+
+        valid, invalid = Stream._process_streams([inner.param.x, inner.param.y])
+        xparam, yparam = valid
+
+        self.assertIs(xparam.parameterized, inner)
+        self.assertEqual(xparam.parameters, ['x'])
+        self.assertIs(yparam.parameterized, inner)
+        self.assertEqual(yparam.parameters, ['y'])
+
+    def test_param_parameter_instance_overlapping_parameters(self):
+        inner = self.inner()
+        with self.assertRaises(ValueError):
+            Stream._process_streams([inner.param.x, inner.param.x])
 
     def test_param_stream_parameter_override(self):
         inner = self.inner(x=2)
