@@ -15,6 +15,7 @@ import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
+from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
 from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
@@ -331,6 +332,20 @@ def compute_layout_properties(
              'frame_height': frame_height,
              'plot_height' : height,
              'plot_width'  : width})
+
+
+@contextmanager
+def silence_warnings(*warnings):
+    """
+    Context manager for silencing bokeh validation warnings.
+    """
+    for warning in warnings:
+        silence(warning)
+    try:
+        yield
+    finally:
+        for warning in warnings:
+            silence(warning, False)
 
 
 def empty_plot(width, height):
