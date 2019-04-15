@@ -12,6 +12,7 @@ from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
+from bokeh.core.validation.warnings import EMPTY_LAYOUT, MISSING_RENDERERS
 from bokeh.document import Document
 from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc, show as bkshow
@@ -26,7 +27,7 @@ from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import attach_periodic, compute_plot_size, bokeh_version
+from .util import attach_periodic, compute_plot_size, bokeh_version, silence_warnings
 
 NOTEBOOK_DIV = """
 {plot_div}
@@ -286,7 +287,8 @@ class BokehRenderer(Renderer):
                 js = ''
         else:
             try:
-                js, div, _ = notebook_content(model)
+                with silence_warnings(EMPTY_LAYOUT, MISSING_RENDERERS):
+                    js, div, _ = notebook_content(model)
                 html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
                 data = encode_utf8(html)
                 doc.hold()
