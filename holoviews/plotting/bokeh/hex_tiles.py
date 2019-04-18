@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
+from inspect import signature
 
 import param
 import numpy as np
@@ -25,8 +26,9 @@ class hex_binning(Operation):
     Should not be user facing as the returned element is not directly
     useable.
     """
-
     aggregator = param.Callable(default=np.size)
+
+    aggregate_input_vdims = param.List(default=[])
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
@@ -70,7 +72,7 @@ class hex_binning(Operation):
             vdims = ['Count']
         elif not element.vdims:
             raise ValueError('HexTiles aggregated by value must '
-                             'define a value dimensions.')
+                             'define a value dimension.')
         else:
             vdims = element.vdims
             values = tuple(element.dimension_values(vdim) for vdim in vdims)
@@ -80,7 +82,21 @@ class hex_binning(Operation):
         xd, yd = (element.get_dimension(i) for i in indexes)
         xd, yd = xd(range=(x0, x1)), yd(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
-        agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
+        element_axial = element.clone(data, kdims=kdims, vdims=vdims)
+        if len(self.p.aggregate_input_vdims):
+            # helper function to apply aggregator over multiple vdims
+            def apply_aggregator(g):
+                return aggregator(
+                    *(g.iloc[:,i]
+                    for i in range(len(signature(aggregator).parameters))))
+            # grouped dataframe
+            grouped = element_axial.data.groupby(
+                [kdim.name for kdim in kdims])[self.p.aggregate_input_vdims]
+            applied = grouped.apply(apply_aggregator)
+            data_new = applied.rename('Aggregated').reset_index()
+            agg = element.clone(data_new, kdims=kdims, vdims='Aggregated')
+        else:
+            agg = element_axial.aggregate(function=aggregator)
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
         return agg
@@ -99,6 +115,11 @@ class HexTilesPlot(ColorbarPlot):
       Aggregation function used to compute bin values. Any NumPy
       reduction is allowed, defaulting to np.size to count the number
       of values in each bin.""")
+
+    aggregate_input_vdims = param.List(default=[], doc="""
+      Specify input dimensions to aggregator function (if it accepts several
+      value dimensions as inputs). Empty list (default) means each value
+      dimension is processed on its own.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
