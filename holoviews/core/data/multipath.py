@@ -59,9 +59,9 @@ class MultiInterface(Interface):
             return
 
         from holoviews.element import Polygons
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             ds.interface.validate(ds, vdims)
             if isinstance(dataset, Polygons) and ds.interface is DictInterface:
                 holes = ds.interface.holes(ds)
@@ -76,14 +76,14 @@ class MultiInterface(Interface):
 
 
     @classmethod
-    def _inner_dataset_template(cls, dataset):
+    def _inner_dataset_template(cls, dataset, i):
         """
         Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
         """
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
-        return Dataset(dataset.data[0], datatype=cls.subtypes,
+        return Dataset(dataset.data[i], datatype=cls.subtypes,
                        kdims=dataset.kdims, vdims=vdims)
 
     @classmethod
@@ -93,7 +93,7 @@ class MultiInterface(Interface):
             # Other interfaces declare equivalent of empty array
             # which defaults to float type
             return float
-        ds = cls._inner_dataset_template(dataset)
+        ds = cls._inner_dataset_template(dataset, 0)
         return ds.interface.dimension_type(ds, dim)
 
     @classmethod
@@ -101,7 +101,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return (None, None)
         ranges = []
-        ds = cls._inner_dataset_template(dataset)
+
 
         # Backward compatibility for Contours/Polygons level
         level = getattr(dataset, 'level', None)
@@ -109,8 +109,8 @@ class MultiInterface(Interface):
         if level is not None and dim is dataset.vdims[0]:
             return (level, level)
 
-        for d in dataset.data:
-            ds.data = d
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             ranges.append(ds.interface.range(ds, dim))
         return util.max_range(ranges)
 
@@ -119,9 +119,9 @@ class MultiInterface(Interface):
     def has_holes(cls, dataset):
         if not dataset.data:
             return False
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             if ds.interface.has_holes(ds):
                 return True
         return False
@@ -131,9 +131,9 @@ class MultiInterface(Interface):
         holes = []
         if not dataset.data:
             return holes
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             holes += ds.interface.holes(ds)
         return holes
 
@@ -145,10 +145,10 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return True
-        ds = cls._inner_dataset_template(dataset)
+
         isscalar = []
-        for d in dataset.data:
-            ds.data = d
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             isscalar.append(ds.interface.isscalar(ds, dim))
         return all(isscalar)
 
@@ -160,10 +160,10 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return []
-        ds = cls._inner_dataset_template(dataset)
+
         data = []
-        for d in dataset.data:
-            ds.data = d
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             sel = ds.interface.select(ds, **selection)
             data.append(sel)
         return data
@@ -235,9 +235,9 @@ class MultiInterface(Interface):
             return (0, len(dataset.dimensions()))
 
         rows, cols = 0, 0
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             r, cols = ds.interface.shape(ds)
             rows += r
         return rows+len(dataset.data)-1, cols
@@ -252,9 +252,9 @@ class MultiInterface(Interface):
         if not dataset.data:
             return 0
         length = 0
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             length += ds.interface.length(ds)
         return length+len(dataset.data)-1
 
@@ -267,9 +267,9 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         new_data = []
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             new_data.append(ds.interface.redim(ds, dimensions))
         return new_data
 
@@ -283,9 +283,9 @@ class MultiInterface(Interface):
         if not dataset.data:
             return np.array([])
         values = []
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             dvals = ds.interface.values(ds, dimension, expanded, flat)
             if not len(dvals):
                 continue
@@ -314,9 +314,9 @@ class MultiInterface(Interface):
             return objs
         elif not dataset.data:
             return objs
-        ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
-            ds.data = d
+
+        for i in range(len(dataset.data)):
+            ds = cls._inner_dataset_template(dataset, i)
             if datatype == 'array':
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
