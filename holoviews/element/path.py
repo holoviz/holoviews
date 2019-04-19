@@ -476,7 +476,7 @@ class Bounds(BaseShape):
     used to compute the corresponding lbrt tuple.
     """
 
-    lbrt = param.NumericTuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
+    lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
           The (left, bottom, right, top) coordinates of the bounding box.""")
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
