@@ -76,7 +76,7 @@ class MultiInterface(Interface):
 
 
     @classmethod
-    def _inner_dataset_template(cls, dataset, i):
+    def _inner_dataset_template(cls, dataset, i=0):
         """
         Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
