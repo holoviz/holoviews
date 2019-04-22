@@ -79,6 +79,34 @@ _trace_to_subplot = {
     'scattermapbox': ['mapbox']
 }
 
+# trace types that support legends
+legend_trace_types = {
+    'scatter',
+    'bar',
+    'box',
+    'histogram',
+    'histogram2dcontour',
+    'contour',
+    'scatterternary',
+    'violin',
+    'waterfall',
+    'pie',
+    'scatter3d',
+    'scattergeo',
+    'scattergl',
+    'splom',
+    'pointcloud',
+    'scattermapbox',
+    'scattercarpet',
+    'contourcarpet',
+    'ohlc',
+    'candlestick',
+    'scatterpolar',
+    'scatterpolargl',
+    'barpolar',
+    'area',
+}
+
 # Aliases - map common style options to more common names
 
 STYLE_ALIASES = {'line_width': 'width', 'alpha': 'opacity',

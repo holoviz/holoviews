@@ -10,7 +10,8 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, dynamic_update
 from .plot import PlotlyPlot
-from .util import STYLE_ALIASES, get_colorscale, merge_figure
+from .util import (
+    STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types)
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
@@ -158,8 +159,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             legend = element.label
 
         opts = dict(
-            showlegend=self.show_legend, legendgroup=element.group,
             name=legend, **self.trace_kwargs)
+
+        if self.trace_kwargs.get('type', None) in legend_trace_types:
+            opts.update(
+                showlegend=self.show_legend, legendgroup=element.group)
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)

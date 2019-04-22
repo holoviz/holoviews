@@ -5,7 +5,8 @@ import json
 
 import param
 with param.logging_level('CRITICAL'):
-    from plotly.offline.offline import utils, get_plotlyjs, init_notebook_mode
+    from plotly import utils
+    from plotly.offline import get_plotlyjs, init_notebook_mode
     import plotly.graph_objs as go
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
