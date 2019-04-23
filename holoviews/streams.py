@@ -138,9 +138,17 @@ class Stream(param.Parameterized):
         items = [stream.contents.items() for stream in streams]
         union = [kv for kvs in items for kv in kvs]
         klist = [k for k, _ in union]
-        clashes = set([k for k in klist if klist.count(k) > 1])
-        if clashes:
-            param.main.param.warning('Parameter name clashes for keys: %r' % clashes)
+        key_clashes = set([k for k in klist if klist.count(k) > 1])
+        if key_clashes:
+            clashes = []
+            dicts = [dict(kvs) for kvs in items]
+            for clash in key_clashes:
+                values = set(d[clash] for d in dicts if clash in d)
+                if len(values) > 1:
+                    clashes.append((clash, values))
+            if clashes:
+                msg = ', '.join(['%r has values %r' % (k,v) for k,v in clashes ])
+                print('Parameter value clashes where %s' % msg )
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
