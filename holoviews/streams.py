@@ -147,7 +147,7 @@ class Stream(param.Parameterized):
                 if len(values) > 1:
                     clashes.append((clash, values))
             if clashes:
-                msg = ', '.join(['%r has values %r' % (k,v) for k,v in clashes ])
+                msg = ', '.join(['%r has values %r' % (k, v) for k, v in clashes])
                 print('Parameter value clashes where %s' % msg )
 
         # Group subscribers by precedence while keeping the ordering
