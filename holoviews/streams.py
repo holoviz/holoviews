@@ -135,7 +135,7 @@ class Stream(param.Parameterized):
         needs to be called once.
         """
         # Union of stream contents
-        items = [stream.contents.items() for stream in streams]
+        items = [stream.contents.items() for stream in set(streams)]
         union = [kv for kvs in items for kv in kvs]
         klist = [k for k, _ in union]
         key_clashes = set([k for k in klist if klist.count(k) > 1])
