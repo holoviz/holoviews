@@ -130,6 +130,21 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             return
         super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
 
+    def _box_stats(self, vals):
+        vals = vals[isfinite(vals)]
+
+        if len(vals):
+            q1, q2, q3 = (np.percentile(vals, q=q)
+                          for q in range(25, 100, 25))
+            iqr = q3 - q1
+            upper = min(q3 + 1.5 * iqr, vals.max())
+            lower = max(q1 - 1.5 * iqr, vals.min())
+        else:
+            q1, q2, q3 = 0, 0, 0
+            upper, lower = 0, 0
+        outliers = vals[(vals > upper) | (vals < lower)]
+        return q1, q2, q3, upper, lower, outliers
+
     def get_data(self, element, ranges, style):
         if element.kdims:
             with sorted_context(False):
@@ -186,17 +201,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
-            vals = vals[isfinite(vals)]
-            if len(vals):
-                q1, q2, q3 = (np.percentile(vals, q=q)
-                              for q in range(25, 100, 25))
-                iqr = q3 - q1
-                upper = min(q3 + 1.5*iqr, vals.max())
-                lower = max(q1 - 1.5*iqr, vals.min())
-            else:
-                q1, q2, q3 = 0, 0, 0
-                lower, upper = 0, 0
-            outliers = vals[(vals>upper) | (vals<lower)]
+            q1, q2, q3, upper, lower, outliers = self._box_stats(vals)
+
             # Add to CDS data
             for data in [r1_data, r2_data]:
                 data['index'].append(label)
@@ -365,11 +371,7 @@ class ViolinPlot(BoxWhiskerPlot):
                     segments['y1'].append(sy)
         elif self.inner == 'box':
             xpos = key+(0,)
-            q1, q2, q3 = (np.percentile(values, q=q)
-                          for q in range(25, 100, 25))
-            iqr = q3 - q1
-            upper = min(q3 + 1.5*iqr, np.nanmax(values))
-            lower = max(q1 - 1.5*iqr, np.nanmin(values))
+            q1, q2, q3, upper, lower, _ = self._box_stats(values)
             segments['x'].append(xpos)
             segments['y0'].append(lower)
             segments['y1'].append(upper)
