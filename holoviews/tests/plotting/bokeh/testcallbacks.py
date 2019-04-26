@@ -14,6 +14,7 @@ import pyviz_comms as comms
 
 try:
     from bokeh.events import Tap
+    from bokeh.io.doc import set_curdoc
     from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
     from holoviews.plotting.bokeh.callbacks import (
         Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
@@ -49,6 +50,7 @@ class TestCallbacks(CallbackTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
+        set_curdoc(plot.document)
         plot.callbacks[0].on_msg({"x": 0.3, "y": 0.2})
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.array([0.3]))
@@ -58,6 +60,7 @@ class TestCallbacks(CallbackTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
+        set_curdoc(plot.document)
         plot.callbacks[0].on_msg({"x": -0.3, "y": 1.2})
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.array([0]))
@@ -68,6 +71,7 @@ class TestCallbacks(CallbackTestCase):
         stream = PointerXY(source=points)
         plot = bokeh_server_renderer.get_plot(points.clone())
         bokeh_server_renderer(plot)
+        set_curdoc(plot.document)
         plot.callbacks[0].on_msg({"x": 0.8, "y": 0.3})
         self.assertEqual(stream.x, 0.8)
         self.assertEqual(stream.y, 0.3)
@@ -83,6 +87,7 @@ class TestCallbacks(CallbackTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
+        set_curdoc(plot.document)
         model = plot.state
         plot.callbacks[0].on_msg({"x": {'id': model.ref['id'], 'value': 0.5},
                                   "y": {'id': model.ref['id'], 'value': 0.4}})
@@ -98,6 +103,7 @@ class TestCallbacks(CallbackTestCase):
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = bokeh_server_renderer.get_plot(dmap)
         bokeh_server_renderer(plot)
+        set_curdoc(plot.document)
         for i in range(20):
             stream.event(x=i)
         data = plot.handles['source'].data
@@ -137,6 +143,7 @@ class TestPointerCallbacks(CallbackTestCase):
         points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
         PointerX(source=points)
         plot = bokeh_server_renderer.get_plot(points)
+        set_curdoc(plot.document)
         callback = plot.callbacks[0]
         self.assertIsInstance(callback, PointerXCallback)
         msg = callback._process_msg({'x': 1000})
@@ -148,6 +155,7 @@ class TestPointerCallbacks(CallbackTestCase):
         points = Points([(dt.datetime(2017, 1, 1), 1), (dt.datetime(2017, 1, 3), 3)])
         SingleTap(source=points)
         plot = bokeh_server_renderer.get_plot(points)
+        set_curdoc(plot.document)
         callback = plot.callbacks[0]
         self.assertIsInstance(callback, TapCallback)
         msg = callback._process_msg({'x': 1000, 'y': 2})
