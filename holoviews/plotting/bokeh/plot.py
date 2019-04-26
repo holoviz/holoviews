@@ -7,6 +7,7 @@ from collections import defaultdict
 import numpy as np
 import param
 
+from bokeh.io import curdoc
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
@@ -175,6 +176,12 @@ class BokehPlot(DimensionedPlot):
             cbs.append(cb(self, cb_streams, source))
         return cbs
 
+    def refresh(self, **kwargs):
+        if self.renderer.mode == 'server' and curdoc() is not self.document:
+            # If we do not have the Document lock, schedule refresh as callback
+            self.document.add_next_tick_callback(self.refresh)
+        else:
+            super(BokehPlot, self).refresh(**kwargs)
 
     def push(self):
         """
