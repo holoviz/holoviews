@@ -1918,7 +1918,7 @@ def date_range(start, end, length, time_unit='us'):
 
 def parse_datetime(date):
     """
-    Parses dates specified as string or integer
+    Parses dates specified as string or integer or pandas Timestamp
     """
     if pd is None:
         raise ImportError('Parsing dates from strings requires pandas')
@@ -1931,6 +1931,9 @@ def parse_datetime_selection(sel):
     """
     if isinstance(sel, basestring):
         sel = parse_datetime(sel)
+    if pd:
+        if isinstance(sel, pd.Timestamp):
+            sel = parse_datetime(sel)
     if isinstance(sel, slice):
         if isinstance(sel.start, basestring):
             sel = slice(parse_datetime(sel.start), sel.stop)
