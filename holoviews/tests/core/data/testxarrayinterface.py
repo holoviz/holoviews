@@ -199,7 +199,16 @@ class XArrayInterfaceTests(GridInterfaceTests):
         expected = (np.datetime64(dt.datetime(2017, 12, 31, 12, 0)),
                     np.datetime64(dt.datetime(2018, 1, 10, 12, 0)))
         self.assertEqual(ds.range('x'), expected)
-        
+
+    def test_select_dropped_dimensions_restoration(self):
+        d = np.random.randn(3, 8)
+        da = xr.DataArray(d, name='stuff', dims=['chain', 'value'],
+            coords=dict(chain=range(d.shape[0]), value=range(d.shape[1])))
+        ds = Dataset(da)
+        t = ds.select(chain=0)
+        self.assertEqual(t.data.dims , dict(chain=1,value=8))
+        self.assertEqual(t.data.stuff.shape , (1,8))
+
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")
