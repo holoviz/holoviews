@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
-from .util import config, sanitize_identifier, unique_array
+from .util import config, sanitize_identifier, unique_array, dimensioned_streams
 
 
 class Overlayable(object):
@@ -33,7 +33,7 @@ class Overlayable(object):
             callback = Callable(dynamic_mul, inputs=[self, other])
             callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
-                               streams=[])
+                               streams=dimensioned_streams(other))
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
@@ -187,7 +187,7 @@ class Overlay(ViewableTree, CompositeOverlay):
             callback = Callable(dynamic_mul, inputs=[self, other])
             callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
-                               streams=[])
+                               streams=dimensioned_streams(other))
         elif not isinstance(other, ViewableElement):
             return NotImplemented
         return Overlay([self, other])
