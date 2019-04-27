@@ -455,6 +455,11 @@ class XArrayInterface(GridInterface):
                    if not data[d.name].data.shape)
         if dropped and not indexed:
             data = data.expand_dims(dropped)
+            # see https://github.com/pydata/xarray/issues/2891
+            # since we only exapanded on dimnesions of size 1
+            # we can monkeypatch the dataarray back to writeable.
+            for d in data.values():
+                d.data.flags.writeable = True 
 
         da = dask_array_module()
         if (indexed and len(data.data_vars) == 1 and
