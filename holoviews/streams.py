@@ -1018,20 +1018,20 @@ class PolyDraw(CDSStream):
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
 
-    style_cycles: dict
+    styles: dict
         A dictionary specifying lists of styles to cycle over whenever
         a new Poly glyph is drawn.
     """
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, style_cycles={},
+                 show_vertices=False, vertex_style={}, styles={},
                  **params):
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.show_vertices = show_vertices
         self.vertex_style = vertex_style
-        self.style_cycles = style_cycles
+        self.styles = styles
         super(PolyDraw, self).__init__(**params)
 
     @property
@@ -1066,15 +1066,15 @@ class FreehandDraw(CDSStream):
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
 
-    style_cycles: dict
+    styles: dict
         A dictionary specifying lists of styles to cycle over whenever
         a new freehand glyph is drawn.
     """
 
-    def __init__(self, empty_value=None, num_objects=0, style_cycles={}, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles={}, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
-        self.style_cycles = style_cycles
+        self.styles = styles
         super(FreehandDraw, self).__init__(**params)
 
     @property
@@ -1110,15 +1110,15 @@ class BoxEdit(CDSStream):
         The number of boxes that can be drawn before overwriting the
         oldest drawn box.
 
-    style_cycles: dict
+    styles: dict
         A dictionary specifying lists of styles to cycle over whenever
         a new box glyph is drawn.
     """
 
-    def __init__(self, empty_value=None, num_objects=0, style_cycles={}, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles={}, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
-        self.style_cycles = style_cycles
+        self.styles = styles
         super(BoxEdit, self).__init__(**params)
 
     @property

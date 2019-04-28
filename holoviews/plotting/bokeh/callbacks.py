@@ -949,22 +949,28 @@ class CDSCallback(Callback):
 class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
+      var types = require("core/util/types");
       var length = cb_obj.data[length_var].length;
       for (i = 0; i < length; i++) {
         for (var style in styles) {
-          var values = styles[style];
-          cb_obj.data[style][i] = values[i % values.length];
+          var value = styles[style];
+          if (types.isArray(value)) {
+            value = value[i % value.length];
+          }
+          cb_obj.data[style][i] = value;
         }
       }
     """
 
     def _create_style_callback(self, cds, glyph, length_var):
         stream = self.streams[0]
-        for style, values in stream.style_cycles.items():
-            cds.data[style] = [values[i % len(values)] for i in range(len(cds.data[length_var]))]
+        for style, values in stream.styles.items():
+            cds.data[style] = [
+                values[i % len(values)]
+                for i in range(len(cds.data[length_var]))]
             setattr(glyph, style, style)
         cb = CustomJS(code=self._style_callback,
-                      args={'styles': stream.style_cycles,
+                      args={'styles': stream.styles,
                             'empty': stream.empty_value,
                             'length_var': length_var})
         cds.js_on_change('data', cb)
@@ -1006,7 +1012,7 @@ class PolyDrawCallback(GlyphDrawCallback):
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
-        if stream.style_cycles:
+        if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=stream.empty_value,
@@ -1036,7 +1042,7 @@ class FreehandDrawCallback(PolyDrawCallback):
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
-        if stream.style_cycles:
+        if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
         poly_tool = FreehandDrawTool(
             empty_value=stream.empty_value,
@@ -1076,7 +1082,7 @@ class BoxEditCallback(GlyphDrawCallback):
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
-        if stream.style_cycles:
+        if stream.styles:
             self._create_style_callback(rect_source, r1.glyph, 'x')
         box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
