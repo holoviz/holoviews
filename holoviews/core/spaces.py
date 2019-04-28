@@ -296,7 +296,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 callback = Callable(dynamic_mul, inputs=[self, other])
                 callback._is_overlay = True
                 return self.clone(shared_data=False, callback=callback,
-                                  streams=[])
+                                  streams=util.dimensioned_streams(self))
             items = [(k, other * v) if reverse else (k, v * other)
                      for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
@@ -1527,6 +1527,7 @@ class DynamicMap(HoloMap):
 
         # Get stream mapping from callback
         remapped_streams = []
+        self_dstreams = util.dimensioned_streams(self)
         streams = self.callback.stream_mapping
         for i, (k, v) in enumerate(initialized.last.data.items()):
             vstreams = streams.get(i, [])
@@ -1576,6 +1577,7 @@ class DynamicMap(HoloMap):
                                         selection_index=type_counter[type(v)],
                                         selection_type=type(v)),
                                 inputs=[self])
+            vstreams = list(util.unique_iterator(self_dstreams + vstreams))
             vdmap = self.clone(callback=callback, shared_data=False,
                                streams=vstreams)
             type_counter[type(v)] += 1
