@@ -1017,15 +1017,21 @@ class PolyDraw(CDSStream):
         A dictionary specifying the style options for the vertices.
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
+
+    styles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new Poly glyph is drawn.
     """
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
-                 show_vertices=False, vertex_style={}, **params):
+                 show_vertices=False, vertex_style={}, styles={},
+                 **params):
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.show_vertices = show_vertices
         self.vertex_style = vertex_style
+        self.styles = styles
         super(PolyDraw, self).__init__(**params)
 
     @property
@@ -1059,11 +1065,16 @@ class FreehandDraw(CDSStream):
     num_objects: int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
+
+    styles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new freehand glyph is drawn.
     """
 
-    def __init__(self, empty_value=None, num_objects=0, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles={}, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
+        self.styles = styles
         super(FreehandDraw, self).__init__(**params)
 
     @property
@@ -1085,20 +1096,29 @@ class FreehandDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
         return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
-    
+
 
 
 class BoxEdit(CDSStream):
     """
     Attaches a BoxEditTool and syncs the datasource.
 
+    empty_value: int/float/string/None
+        The value to insert on non-position columns when adding a new box
+
     num_objects: int
         The number of boxes that can be drawn before overwriting the
         oldest drawn box.
+
+    styles: dict
+        A dictionary specifying lists of styles to cycle over whenever
+        a new box glyph is drawn.
     """
 
-    def __init__(self, num_objects=0, **params):
+    def __init__(self, empty_value=None, num_objects=0, styles={}, **params):
+        self.empty_value = empty_value
         self.num_objects = num_objects
+        self.styles = styles
         super(BoxEdit, self).__init__(**params)
 
     @property
