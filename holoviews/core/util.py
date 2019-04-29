@@ -875,7 +875,7 @@ def isdatetime(value):
     if isinstance(value, np.ndarray):
         return (value.dtype.kind == "M" or
                 (value.dtype.kind == "O" and len(value) and
-                 isinstance(value, datetime_types)))
+                 isinstance(value[0], datetime_types)))
     else:
         return isinstance(value, datetime_types)
 
