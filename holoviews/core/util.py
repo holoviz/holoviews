@@ -868,6 +868,18 @@ def isfinite(val):
     return np.isfinite(val)
 
 
+def isdatetime(value):
+    """
+    Whether the array or scalar is recognized datetime type.
+    """
+    if isinstance(value, np.ndarray):
+        return (value.dtype.kind == "M" or
+                (value.dtype.kind == "O" and len(value) and
+                 isinstance(value[0], datetime_types)))
+    else:
+        return isinstance(value, datetime_types)
+
+
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns

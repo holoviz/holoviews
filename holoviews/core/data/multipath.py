@@ -323,7 +323,7 @@ class MultiInterface(Interface):
                 obj = ds.dframe(**kwargs)
             elif datatype == 'columns':
                 if ds.interface.datatype == 'dictionary':
-                    obj = dict(d)
+                    obj = dict(ds.data)
                 else:
                     obj = ds.columns(**kwargs)
             else:

@@ -11,7 +11,7 @@ import param
 from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import config, disable_constant, isscalar
+from ..core.util import OrderedDict, config, disable_constant, isscalar
 from .geom import Geometry
 
 
@@ -476,7 +476,7 @@ class Bounds(BaseShape):
     used to compute the corresponding lbrt tuple.
     """
 
-    lbrt = param.NumericTuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
+    lbrt = param.Tuple(default=(-0.5, -0.5, 0.5, 0.5), doc="""
           The (left, bottom, right, top) coordinates of the bounding box.""")
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
@@ -489,4 +489,6 @@ class Bounds(BaseShape):
 
         super(Bounds, self).__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
-        self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
+        xdim, ydim = self.kdims
+        self.data = [OrderedDict([(xdim.name, np.array([l, l, r, r, l])),
+                                  (ydim.name, np.array([b, t, t, b, b]))])]

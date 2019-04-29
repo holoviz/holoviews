@@ -11,7 +11,7 @@ from bokeh.models.widgets import (
 from ...core import Dataset, Dimension
 from ...element import ItemTable
 from ...streams import Buffer
-from ...core.util import dimension_sanitizer, datetime_types
+from ...core.util import dimension_sanitizer, isdatetime
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 
@@ -99,7 +99,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
             elif kind == 'f':
                 formatter = NumberFormatter(format='0,0.0[00000]')
                 editor = NumberEditor()
-            elif kind == 'M' or (kind == 'O' and len(data[col]) and type(data[col][0]) in datetime_types):
+            elif isdatetime(data[col]):
                 dimtype = element.get_dimension_type(col)
                 dformat = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
                 formatter = DateFormatter(format=dformat)
