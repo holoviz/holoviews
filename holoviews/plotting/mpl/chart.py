@@ -15,7 +15,7 @@ from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, max_range,
     isfinite, datetime_types, dt_to_int, dt64_to_dt, search_indices,
-    unique_array, isscalar
+    unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -82,7 +82,7 @@ class CurvePlot(ChartPlot):
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
-        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
+        if isdatetime(xs):
             dimtype = element.get_dimension_type(0)
             dt_format = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
             dims[0] = dims[0](value_format=DateFormatter(dt_format))
@@ -91,7 +91,7 @@ class CurvePlot(ChartPlot):
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
-        if xs.dtype.kind == 'M' or (len(xs) and isinstance(xs[0], datetime_types)):
+        if isdatetime(xs):
             artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
         else:
             artist = ax.plot(xs, ys, **plot_kwargs)[0]
@@ -382,7 +382,7 @@ class HistogramPlot(ColorbarPlot):
         xlim = hist.range(0)
         ylim = hist.range(1)
         isdatetime = False
-        if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
+        if isdatetime(edges):
             edges = np.array([dt64_to_dt(e) if isinstance(e, np.datetime64) else e for e in edges])
             edges = date2num(edges)
             xlim = tuple(dt_to_int(v, 'D') for v in xlim)

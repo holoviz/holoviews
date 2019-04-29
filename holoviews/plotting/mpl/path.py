@@ -3,9 +3,11 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 import numpy as np
 
+from matplotlib.dates import date2num, DateFormatter
 from matplotlib.collections import PatchCollection, LineCollection
 
 from ...core import util
+from ...core.dimension import Dimension
 from ...core.options import abbreviated_exception
 from ...element import Polygons
 from .element import ColorbarPlot
@@ -32,20 +34,34 @@ class PathPlot(ColorbarPlot):
             style = self._apply_transforms(element, ranges, style)
 
         cdim = element.get_dimension(self.color_index)
-        if cdim: cidx = element.get_dimension_index(cdim)
         style_mapping = any(True for v in style.values() if isinstance(v, np.ndarray))
-        if not (cdim or style_mapping):
-            paths = element.split(datatype='array', dimensions=element.kdims)
-            if self.invert_axes:
-                paths = [p[:, ::-1] for p in paths]
-            return (paths,), style, {}
-        paths, cvals = [], []
-        for path in element.split(datatype='array'):
-            length = len(path)
+        dims = element.kdims
+        xdim, ydim = dims
+        generic_dt_format = Dimension.type_formatters[np.datetime64]
+        paths, cvals, dims = [], [], {}
+        for path in element.split(datatype='columns'):
+            xarr, yarr = path[xdim.name], path[ydim.name]
+            if isdatetime(xarr):
+                dt_format = Dimension.type_formatters.get(type(xarr[0]), generic_dt_format)
+                xarr = date2num(xarr)
+                dims[0] = xdim(value_format=DateFormatter(dt_format))
+            if isdatetime(yarr):
+                dt_format = Dimension.type_formatters.get(type(yarr[0]), generic_dt_format)
+                yarr = date2num(yarr)
+                dims[1] = ydim(value_format=DateFormatter(dt_format))
+            arr = np.column_stack([xarr, yarr])
+            if not (cdim or style_mapping):
+                paths.append(arr)
+                continue
+            length = len(xarr)
             for (s1, s2) in zip(range(length-1), range(1, length+1)):
                 if cdim:
-                    cvals.append(path[s1, cidx])
-                paths.append(path[s1:s2+1, :2])
+                    cvals.append(path[cdim.name])
+                paths.append(arr[s1:s2+1])
+        if self.invert_axes:
+            paths = [p[::-1] for p in paths]
+        if not (cdim or style_mapping):
+            return (paths,), style, {'dimensions': dims}
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
             style['array'] = np.array(cvals)
@@ -53,7 +69,7 @@ class PathPlot(ColorbarPlot):
             style['array'] = style.pop('c')
         if 'vmin' in style:
             style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
-        return (paths,), style, {}
+        return (paths,), style, {'dimensions': dims}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)

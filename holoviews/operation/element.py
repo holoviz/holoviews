@@ -13,7 +13,8 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int)
+                         basestring, datetime_types, isfinite, dt_to_int,
+                         isdatetime)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -586,7 +587,7 @@ class histogram(Operation):
         bins = None if self.p.bins is None else np.asarray(self.p.bins)
         steps = self.p.num_bins + 1
         start, end = hist_range
-        if data.dtype.kind == 'M' or (data.dtype.kind == 'O' and isinstance(data[0], datetime_types)):
+        if isdatetime(data):
             start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
             datetimes = True
             data = data.astype('datetime64[ns]').astype('int64')
@@ -770,7 +771,7 @@ class interpolate_curve(Operation):
             return element
         x = element.dimension_values(0)
         dtype = x.dtype
-        is_datetime = dtype.kind == 'M' or isinstance(x[0], datetime_types)
+        is_datetime = isdatetime(x)
         if is_datetime:
             dt_type = 'datetime64[ns]'
             x = x.astype(dt_type).astype('int64')
