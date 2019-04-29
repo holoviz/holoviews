@@ -770,7 +770,6 @@ class interpolate_curve(Operation):
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
         x = element.dimension_values(0)
-        dtype = x.dtype
         is_datetime = isdatetime(x)
         if is_datetime:
             dt_type = 'datetime64[ns]'

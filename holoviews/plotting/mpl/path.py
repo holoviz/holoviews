@@ -41,11 +41,11 @@ class PathPlot(ColorbarPlot):
         paths, cvals, dims = [], [], {}
         for path in element.split(datatype='columns'):
             xarr, yarr = path[xdim.name], path[ydim.name]
-            if isdatetime(xarr):
+            if util.isdatetime(xarr):
                 dt_format = Dimension.type_formatters.get(type(xarr[0]), generic_dt_format)
                 xarr = date2num(xarr)
                 dims[0] = xdim(value_format=DateFormatter(dt_format))
-            if isdatetime(yarr):
+            if util.isdatetime(yarr):
                 dt_format = Dimension.type_formatters.get(type(yarr[0]), generic_dt_format)
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
