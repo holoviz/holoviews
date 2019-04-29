@@ -65,7 +65,6 @@ class PathPlot(ColorbarPlot):
         style_mapping = any(
             s for s, v in style.items() if (s not in self._nonvectorized_styles) and
             (isinstance(v, util.basestring) and v in element) or isinstance(v, dim))
-        inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
         if not cdim and not style_mapping and 'hover' not in self.handles:
             if self.static_source:
@@ -73,6 +72,8 @@ class PathPlot(ColorbarPlot):
             else:
                 paths = element.split(datatype='columns', dimensions=element.kdims)
                 xs, ys = ([path[kd.name] for path in paths] for kd in element.kdims)
+                if self.invert_axes:
+                    xs, ys = ys, xs
                 data = dict(xs=xs, ys=ys)
             return data, mapping, style
 
@@ -107,6 +108,8 @@ class PathPlot(ColorbarPlot):
                 if values.dtype.kind == 'M':
                     vals[vd_name+'_dt_strings'].append([vd.pprint_value(v) for v in values])
         values = {d: np.concatenate(vs) if len(vs) else [] for d, vs in vals.items()}
+        if self.invert_axes:
+            xpaths, ypaths = ypaths, xpaths
         data = dict(xs=xpaths, ys=ypaths, **values)
         self._get_hover_data(data, element)
         return data, mapping, style
