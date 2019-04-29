@@ -873,6 +873,12 @@ class shade(LinkableOperation):
     supplied as an Iterable or a Callable.
     """
 
+    alpha = param.Integer(default=255, bounds=(0, 255), doc="""
+        Value between 0 - 255 representing the alpha value to use for
+        colormapped pixels that contain data (i.e. non-NaN values).
+        Regardless of this value, ``NaN`` values are set to be fully
+        transparent when doing colormapping.""")
+
     cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
         Iterable or callable which returns colors as hex colors
         or web color names (as defined by datashader), to be used
@@ -900,7 +906,7 @@ class shade(LinkableOperation):
         wishing to override autoranging.
         """)
 
-    min_alpha = param.Number(default=40, doc="""
+    min_alpha = param.Number(default=40, bounds=(0, 255), doc="""
         The minimum alpha value to use for non-empty pixels when doing
         colormapping, in [0, 255].  Use a higher value to avoid
         undersaturation, i.e. poorly visible low-value datapoints, at
@@ -975,7 +981,9 @@ class shade(LinkableOperation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=self.p.normalization, min_alpha=self.p.min_alpha)
+        shade_opts = dict(how=self.p.normalization,
+                          min_alpha=self.p.min_alpha,
+                          alpha=self.p.alpha)
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
