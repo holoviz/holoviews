@@ -2,6 +2,11 @@ import os, sys, inspect, shutil
 
 from collections import defaultdict
 
+try:
+    from pathlib import Path
+except:
+    Path = None
+
 import param
 from pyviz_comms import extension as _pyviz_extension
 
@@ -738,6 +743,8 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
     renderer_obj = renderer(backend)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
+    if Path is not None and isinstance(filename, Path):
+        filename = str(filename.absolute())
     if isinstance(filename, basestring):
         supported = [mfmt for tformats in renderer_obj.mode_formats.values()
                      for mformats in tformats.values() for mfmt in mformats]
