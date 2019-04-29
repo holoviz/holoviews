@@ -732,6 +732,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_ranges(self, element, ranges):
+        plot = self.handles['plot']
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
 
@@ -746,9 +747,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
-        xupdate = ((not self.model_changed(x_range) and (framewise or streaming))
+        xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
+                    and (framewise or streaming))
                    or xfactors is not None)
-        yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
+        yupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
+                    and (framewise or streaming))
                    or yfactors is not None)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
