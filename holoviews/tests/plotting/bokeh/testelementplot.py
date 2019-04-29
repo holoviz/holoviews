@@ -4,7 +4,7 @@ from collections import OrderedDict
 import numpy as np
 
 from bokeh.core.properties import value
-from holoviews.core import Dimension, DynamicMap, NdOverlay
+from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
@@ -369,6 +369,14 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         toolbar = plot.state.toolbar
         self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
         self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
+
+    def test_hover_tooltip_update(self):
+        hmap = HoloMap({'a': Curve([1, 2, 3], vdims='a'), 'b': Curve([1, 2, 3], vdims='b')}).opts(
+            tools=['hover'])
+        plot = bokeh_renderer.get_plot(hmap)
+        self.assertEqual(plot.handles['hover'].tooltips, [('x', '@{x}'), ('a', '@{a}')])
+        plot.update(('b',))
+        self.assertEqual(plot.handles['hover'].tooltips, [('x', '@{x}'), ('b', '@{b}')])
 
     #################################################################
     # Aspect tests
