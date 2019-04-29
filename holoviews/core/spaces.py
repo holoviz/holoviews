@@ -1055,9 +1055,10 @@ class DynamicMap(HoloMap):
 
         streams = []
         for stream in self.streams:
+            contents = stream.contents
             applicable_kws = {k:v for k,v in kwargs.items()
-                              if k in set(stream.contents.keys())}
-            if not applicable_kws:
+                              if k in set(contents.keys())}
+            if not applicable_kws and contents:
                 continue
             streams.append(stream)
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
