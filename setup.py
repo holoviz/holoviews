@@ -19,7 +19,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0rc1,<2.0.0', 'panel']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0', 'panel']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
@@ -37,13 +37,14 @@ extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py']
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
 
 extras_require['basic_tests'] = extras_require['tests']+[
-    'matplotlib>=2.1', 'bokeh>=1.0.0']+extras_require['notebook']
+    'matplotlib>=2.1', 'bokeh>=1.1.0']+extras_require['notebook']
 
 extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
 
-extras_require['doc'] = extras_require['examples'] + ['nbsite>0.5.2', 'sphinx_ioam_theme']
+extras_require['doc'] = extras_require['examples'] + [
+    'nbsite>0.5.2', 'sphinx<2.0', 'sphinx_ioam_theme']
 
 extras_require['build'] = ['param >=1.7.0', 'setuptools']
 
