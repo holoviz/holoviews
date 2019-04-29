@@ -65,14 +65,15 @@ class PathPlot(ColorbarPlot):
         style_mapping = any(
             s for s, v in style.items() if (s not in self._nonvectorized_styles) and
             (isinstance(v, util.basestring) and v in element) or isinstance(v, dim))
-        inds = (1, 0) if self.invert_axes else (0, 1)
         mapping = dict(self._mapping)
         if not cdim and not style_mapping and 'hover' not in self.handles:
             if self.static_source:
                 data = {}
             else:
-                paths = element.split(datatype='array', dimensions=element.kdims)
-                xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+                paths = element.split(datatype='columns', dimensions=element.kdims)
+                xs, ys = ([path[kd.name] for path in paths] for kd in element.kdims)
+                if self.invert_axes:
+                    xs, ys = ys, xs
                 data = dict(xs=xs, ys=ys)
             return data, mapping, style
 
@@ -86,14 +87,16 @@ class PathPlot(ColorbarPlot):
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
             vals[dim_name] = []
 
-        paths = []
+        xpaths, ypaths = [], []
         for path in element.split():
             if cdim:
                 cvals = path.dimension_values(cdim)
                 vals[dim_name].append(cvals[:-1])
-            array = path.array(path.kdims)
-            alen = len(array)
-            paths += [array[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
+            cols = path.columns(path.kdims)
+            xs, ys = (cols[kd.name] for kd in element.kdims)
+            alen = len(xs)
+            xpaths += [xs[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
+            ypaths += [ys[s1:s2+1] for (s1, s2) in zip(range(alen-1), range(1, alen+1))]
             if not hover:
                 continue
             for vd in element.vdims:
@@ -104,9 +107,10 @@ class PathPlot(ColorbarPlot):
                 vals[vd_name].append(values)
                 if values.dtype.kind == 'M':
                     vals[vd_name+'_dt_strings'].append([vd.pprint_value(v) for v in values])
-        xs, ys = ([path[:, idx] for path in paths] for idx in inds)
         values = {d: np.concatenate(vs) if len(vs) else [] for d, vs in vals.items()}
-        data = dict(xs=xs, ys=ys, **values)
+        if self.invert_axes:
+            xpaths, ypaths = ypaths, xpaths
+        data = dict(xs=xpaths, ys=ypaths, **values)
         self._get_hover_data(data, element)
         return data, mapping, style
 
