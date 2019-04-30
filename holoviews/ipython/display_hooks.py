@@ -21,6 +21,7 @@ from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
 from ..core.util import mimebundle_to_html
 from ..plotting import Plot
+from ..plotting.renderer import MIME_TYPES
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -143,9 +144,9 @@ def display_hook(fn):
             if mimebundle is None:
                 return {}, {}
             mime_data, mime_metadata = mimebundle
-            if 'text/javascript' in mime_data:
+            if MIME_TYPES['js'] in mime_data:
                 mime_data['text/html'] = mimebundle_to_html(mime_data)
-                del mime_data['text/javascript']
+                del mime_data[MIME_TYPES['js']]
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
