@@ -744,7 +744,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         xfactors, yfactors = None, None
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
-            xfactors, yfactors = self._get_factors(element)
+            xfactors, yfactors = self._get_factors(element, ranges)
         framewise = self.framewise
         streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
         xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
@@ -912,15 +912,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return 1
 
 
-    def _get_factors(self, element):
+    def _get_factors(self, element, ranges):
         """
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        xvals, yvals = [element.dimension_values(i, False)
-                        for i in range(2)]
+        xvals = np.asarray(xdim.values or element.dimension_values(0, False))
+        yvals = np.asarray(ydim.values or element.dimension_values(1, False))
         coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
-                  for dim, vals in [(xdim, xvals), (ydim, yvals)])
+                       for dim, vals in [(xdim, xvals), (ydim, yvals)])
         if self.invert_axes: coords = coords[::-1]
         return coords
 
@@ -2019,12 +2019,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 self.handles['hover'] = tool
 
 
-    def _get_factors(self, overlay):
+    def _get_factors(self, overlay, ranges):
         xfactors, yfactors = [], []
         for k, sp in self.subplots.items():
             el = overlay.data.get(k)
             if el is not None:
-                xfs, yfs = sp._get_factors(el)
+                xfs, yfs = sp._get_factors(el, ranges)
                 xfactors.append(xfs)
                 yfactors.append(yfs)
         if xfactors:
