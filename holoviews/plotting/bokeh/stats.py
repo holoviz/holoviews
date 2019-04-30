@@ -109,7 +109,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 element = element.clone([(agg,)])
         return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
 
-    def _get_factors(self, element):
+    def _get_factors(self, element, ranges):
         """
         Get factors for categorical axes.
         """

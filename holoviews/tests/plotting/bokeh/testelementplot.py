@@ -378,6 +378,12 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot.update(('b',))
         self.assertEqual(plot.handles['hover'].tooltips, [('x', '@{x}'), ('b', '@{b}')])
 
+    def test_categorical_dimension_values(self):
+        curve = Curve([('C', 1), ('B', 3)]).redim.values(x=['A', 'B', 'C'])
+        plot = bokeh_renderer.get_plot(curve)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+
     #################################################################
     # Aspect tests
     #################################################################
@@ -794,3 +800,17 @@ class TestOverlayPlot(TestBokehPlot):
         toolbar = plot.state.toolbar
         self.assertIsInstance(toolbar.active_tap, tools.PointDrawTool)
         self.assertIsInstance(toolbar.active_drag, tools.PointDrawTool)
+
+    def test_categorical_overlay_dimension_values(self):
+        curve = Curve([('C', 1), ('B', 3)]).redim.values(x=['A', 'B', 'C'])
+        scatter = Scatter([('A', 2)])
+        plot = bokeh_renderer.get_plot(curve*scatter)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+
+    def test_categorical_overlay_dimension_values_skip_factor(self):
+        curve = Curve([('C', 1), ('B', 3)])
+        scatter = Scatter([('A', 2)])
+        plot = bokeh_renderer.get_plot((curve*scatter).redim.values(x=['A', 'C']))
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, ['A', 'C'])

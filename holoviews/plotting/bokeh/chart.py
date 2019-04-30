@@ -803,7 +803,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         return (x0, y0, x1, y1)
 
 
-    def _get_factors(self, element):
+    def _get_factors(self, element, ranges):
         """
         Get factors for categorical axes.
         """
@@ -817,11 +817,13 @@ class BarPlot(ColorbarPlot, LegendPlot):
             sdim = element.get_dimension(1)
 
         xdim, ydim = element.dimensions()[:2]
-        xvals = element.dimension_values(0, False)
+
+        xvals = np.asarray(xdim.values or element.dimension_values(0, False))
         xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
                  for x in xvals]
+
         if gdim and not sdim:
-            gvals = element.dimension_values(gdim, False)
+            gvals = np.asarray(gdim.values or element.dimension_values(gdim, False))
             xvals = sorted([(x, g) for x in xvals for g in gvals])
             is_str = gvals.dtype.kind in 'SU'
             xvals = [(x, g if is_str else gdim.pprint_value(g)) for (x, g) in xvals]
