@@ -29,8 +29,7 @@ class TestHTMLDisplay(TestDisplayHooks):
     def test_store_render_html(self):
         curve = Curve([1, 2, 3])
         data, metadata = Store.render(curve)
-        mime_types = {'text/html', 'application/javascript',
-                      'application/vnd.holoviews_exec.v0+json'}
+        mime_types = {'text/html'}
         self.assertEqual(set(data), mime_types)
 
 
@@ -69,7 +68,5 @@ class TestCombinedDisplay(TestDisplayHooks):
     def test_store_render_combined(self):
         curve = Curve([1, 2, 3])
         data, metadata = Store.render(curve)
-        mime_types = {'text/html', 'application/javascript',
-                      'application/vnd.holoviews_exec.v0+json',
-                      'image/svg+xml', 'image/png'}
+        mime_types = {'text/html', 'image/svg+xml', 'image/png'}
         self.assertEqual(set(data), mime_types)
