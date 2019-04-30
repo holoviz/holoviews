@@ -14,6 +14,53 @@ Release notes
 Version 1.12
 ~~~~~~~~~~~~
 
+Version 1.12.2
+**************
+
+This is a minor release with a number of important bug fixes and a
+small number of enhancements. Many thanks to our users for reporting
+these issues, and special thanks to our internal developers
+@philippjfr, @jlstevens and @jonmease and external contributors
+incluing @ahuang11 and @arabidopsis for their contributions to the
+code and the documentation.
+
+Enhancements:
+
+-  Add styles argument to draw tool streams to allow cycling colors when
+   drawing glyphs
+   (`#3612 <https://github.com/pyviz/holoviews/pull/3612>`__)
+-  Add ability to define alpha on (data)shade operation
+   (`#3611 <https://github.com/pyviz/holoviews/pull/3611>`__)
+-  Ensure that categorical plots respect Dimension.values order
+   (`#3675 <https://github.com/pyviz/holoviews/pull/3675>`__)
+
+Compatibility:
+
+-  Compatibility with Plotly 3.8
+   (`#3644 <https://github.com/pyviz/holoviews/pull/3644>`__)
+
+Bug fixes:
+
+-  Ensure that bokeh server plot updates have the exclusive Document
+   lock (`#3621 <https://github.com/pyviz/holoviews/pull/3621>`__)
+-  Ensure that Dimensioned streams are inherited on ``__mul__``
+   (`#3658 <https://github.com/pyviz/holoviews/pull/3658>`__)
+-  Ensure that bokeh hover tooltips are updated when dimensions change
+   (`#3609 <https://github.com/pyviz/holoviews/pull/3609>`__)
+-  Fix DynamicMap.event method for empty streams
+   (`#3564 <https://github.com/pyviz/holoviews/pull/3564>`__)
+-  Fixed handling of datetimes on Path plots
+   (`#3464 <https://github.com/pyviz/holoviews/pull/3464>`__,
+   `#3662 <https://github.com/pyviz/holoviews/pull/3662>`__)
+-  Ensure that resampling operations do not cause event loops
+   (`#3614 <https://github.com/pyviz/holoviews/issues/3614>`__)
+
+Backward compatibility:
+
+-  Added color cycles on Violin and BoxWhisker elements due to earlier
+   regression (`#3592 <https://github.com/pyviz/holoviews/pull/3592>`__)
+
+
 Version 1.12.1
 **************
 

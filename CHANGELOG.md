@@ -1,7 +1,12 @@
 Version 1.12.2
 ==============
 
-This is a minor release with a number of important bug fixes.
+This is a minor release with a number of important bug fixes and a
+small number of enhancements. Many thanks to our users for reporting
+these issues, and special thanks to our internal developers
+@philippjfr, @jlstevens and @jonmease and external contributors
+incluing @ahuang11 and @arabidopsis for their contributions to the
+code and the documentation.
 
 Enhancements:
 
@@ -28,13 +33,16 @@ Bug fixes:
   ([#3609](https://github.com/pyviz/holoviews/pull/3609))
 - Fix DynamicMap.event method for empty streams
   ([#3564](https://github.com/pyviz/holoviews/pull/3564))
-- Ensure that color cycles on Violin and BoxWhisker elements
-  ([#3592](https://github.com/pyviz/holoviews/pull/3592))
 - Fixed handling of datetimes on Path plots
   ([#3464](https://github.com/pyviz/holoviews/pull/3464),
    [#3662](https://github.com/pyviz/holoviews/pull/3662))
 - Ensure that resampling operations do not cause event loops
   ([#3614](https://github.com/pyviz/holoviews/issues/3614))
+
+Backward compatibility:
+
+- Added color cycles on Violin and BoxWhisker elements due to earlier
+  regression ([#3592](https://github.com/pyviz/holoviews/pull/3592))
 
 Version 1.12.1
 ==============
@@ -81,7 +89,7 @@ Enhancements:
 - Improved support for style mapping constant values via
   `dim.categorize`
   ([#3578](https://github.com/pyviz/holoviews/pull/3578))
-  
+
 Bug fixes:
 
 - Fixes for colorscales and colorbars
