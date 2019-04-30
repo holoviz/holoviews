@@ -6,7 +6,7 @@ This is a minor release with a number of important bug fixes.
 Enhancements:
 
 - Add styles argument to draw tool streams to allow cycling colors
-  when drawing glyphs
+  and other styling when drawing glyphs
   ([#3612](https://github.com/pyviz/holoviews/pull/3612))
 - Add ability to define alpha on (data)shade operation
   ([#3611](https://github.com/pyviz/holoviews/pull/3611))
