@@ -11,7 +11,6 @@ from IPython.display import HTML, publish_display_data
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
-from ..core.util import mimebundle_to_html
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
 from ..plotting.renderer import Renderer, MIME_TYPES
@@ -272,8 +271,6 @@ class notebook_extension(extension):
                 MIME_TYPES['js']           : widgetjs,
                 MIME_TYPES['jlab-hv-load'] : widgetjs
             }
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': mimebundle_to_html(mimebundle)}
             publish_display_data(data=mimebundle)
 
 
