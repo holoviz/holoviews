@@ -20,7 +20,7 @@ from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
-from pyviz_comms import CommManager, JupyterCommManager, embed_js
+from pyviz_comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
@@ -338,8 +338,6 @@ class Renderer(Exporter):
                                                        plot_id=plot_id)
                 js = '\n'.join([js, comm_js])
             html = "<div id='%s' style='display: table; margin: 0 auto;'>%s</div>" % (plot_id, html)
-        if not os.environ.get('HV_DOC_HTML', False) and js is not None:
-            js = embed_js.format(widget_id=widget_id, plot_id=plot_id, html=html) + js
 
         data['text/html'] = html
         if js:

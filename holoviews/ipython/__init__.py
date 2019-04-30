@@ -272,8 +272,6 @@ class notebook_extension(extension):
                 MIME_TYPES['js']           : widgetjs,
                 MIME_TYPES['jlab-hv-load'] : widgetjs
             }
-            if os.environ.get('HV_DOC_HTML', False):
-                mimebundle = {'text/html': mimebundle_to_html(mimebundle)}
             publish_display_data(data=mimebundle)
 
 
