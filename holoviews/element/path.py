@@ -68,8 +68,12 @@ class Path(Geometry):
                 data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
             # Allow unpacking of a list of Path elements
+            kdims = kdims or self.kdims
             paths = []
             for path in data:
+                if path.kdims != kdims:
+                    redim = {okd.name: nkd for okd, nkd in zip(path.kdims, kdims)}
+                    path = path.redim(**redim)
                 if path.interface.multi and isinstance(path.data, list):
                     paths += path.data
                 else:
