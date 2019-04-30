@@ -11,7 +11,6 @@ from IPython.display import HTML, publish_display_data
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
-from ..core.util import mimebundle_to_html
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
 from ..plotting.renderer import Renderer, MIME_TYPES

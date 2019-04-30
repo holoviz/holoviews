@@ -320,12 +320,10 @@ class Renderer(Exporter):
         else:
             plot, fmt = self._validate(obj, fmt)
 
-        widget_id = None
         data, metadata = {}, {}
         if isinstance(plot, NdWidget):
             js, html = plot(as_script=True)
             plot_id = plot.plot_id
-            widget_id = plot.id
         else:
             html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
