@@ -140,15 +140,7 @@ class Stream(param.Parameterized):
         klist = [k for k, _ in union]
         key_clashes = set([k for k in klist if klist.count(k) > 1])
         if key_clashes:
-            clashes = []
-            dicts = [dict(kvs) for kvs in items]
-            for clash in key_clashes:
-                values = set(d[clash] for d in dicts if clash in d)
-                if len(values) > 1:
-                    clashes.append((clash, values))
-            if clashes:
-                msg = ', '.join(['%r has values %r' % (k, v) for k, v in clashes])
-                print('Parameter value clashes where %s' % msg)
+            print('Parameter name clashes for keys %r' % key_clashes)
 
         # Group subscribers by precedence while keeping the ordering
         # within each group
