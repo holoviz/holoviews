@@ -488,8 +488,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.dynamic and aspect_props['match_aspect']:
             # Sync the plot size on dynamic plots to support accurate
             # scaling of dimension ranges
-            stream = PlotSize(subscribers=[self._update_size])
-            self.callbacks.append(PlotSizeCallback(self, [stream], None))
+            plot_size = [s for s in self.streams if isinstance(s, PlotSize)]
+            if plot_size:
+                stream = plot_size[0]
+                stream.add_subscriber(self._update_size)
+            else:
+                stream = PlotSize(subscribers=[self._update_size])
+                self.callbacks.append(PlotSizeCallback(self, [stream], None))
 
         plot_props = {
             'margin':        self.margin,
