@@ -1,6 +1,6 @@
 
 from __future__ import print_function, absolute_import
-import os, pydoc, io
+import os, io
 
 import numpy as np # noqa (API import)
 import param
@@ -85,7 +85,8 @@ def help(obj, visualization=True, ansi=True, backend=None,
     if info:
         print((msg if visualization is False else '') + info)
     else:
+        import pydoc
         pydoc.help(obj)
 
 
-del absolute_import, io, np, os, print_function, pydoc, rcfile, warnings
+del absolute_import, io, np, os, print_function, rcfile, warnings
