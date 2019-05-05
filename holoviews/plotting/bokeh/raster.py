@@ -47,6 +47,13 @@ class RasterPlot(ColorbarPlot):
         xaxis = self.handles['xaxis']
         yaxis = self.handles['yaxis']
 
+        unproj_x = element.get_dimension('unproj_x')
+        unproj_y = element.get_dimension('unproj_y')
+        if unproj_x is not None and unproj_y is not None:
+            x_tooltip = (str(xdim), '@unproj_x')
+            y_tooltip = (str(ydim), '@unproj_y')
+            hover.tooltips = [x_tooltip, y_tooltip] + hover.tooltips[2:]
+
         code = """
         var {ax} = special_vars.{ax};
         var date = new Date({ax});
