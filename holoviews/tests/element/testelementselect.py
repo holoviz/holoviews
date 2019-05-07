@@ -1,8 +1,14 @@
 from itertools import product
+import datetime as dt
 import numpy as np
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 from holoviews.core import HoloMap
-from holoviews.element import Image, Contours
+from holoviews.element import Image, Contours, Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 class DimensionedSelectionTest(ComparisonTestCase):
@@ -11,6 +17,11 @@ class DimensionedSelectionTest(ComparisonTestCase):
         self.img_fn = lambda: Image(np.random.rand(10, 10))
         self.contour_fn = lambda: Contours([np.random.rand(10, 2)
                                             for i in range(2)])
+        self.datetime_fn = lambda: Curve((
+            [dt.datetime(2000,1,1), dt.datetime(2000,1,2),
+             dt.datetime(2000,1,3)],
+            np.random.rand(3)
+            ), 'time', 'x')
         params = [list(range(3)) for i in range(2)]
         self.sanitized_map = HoloMap({i: Image(i*np.random.rand(10,10))
                                       for i in range(1,10)}, kdims=['A B'])
@@ -85,3 +96,14 @@ class DimensionedSelectionTest(ComparisonTestCase):
     def test_overlap_select(self):
         selection = self.overlap_layout.select(Default=(6, None))
         self.assertEqual(selection, self.overlap1.clone(shared_data=False) + self.overlap2[6:])
+
+    def test_datetime_select(self):
+        s, e = '1999-12-31', '2000-1-2'
+        curve = self.datetime_fn()
+        overlay = curve * self.datetime_fn()
+        for el in [curve, overlay]:
+            self.assertEqual(el.select(time=(s, e)), el[s:e])
+            if pd:
+                self.assertEqual(el.select(
+                    time=(pd.Timestamp(s), pd.Timestamp(e))
+                ), el[pd.Timestamp(s):pd.Timestamp(e)])
