@@ -287,7 +287,7 @@ class Interface(param.Parameterized):
             if isinstance(sel, tuple):
                 sel = slice(*sel)
             arr = cls.values(dataset, dim)
-            if arr.dtype.kind == 'M' and util.pd:
+            if util.isdatetime(arr) and util.pd:
                 try:
                     sel = util.parse_datetime_selection(sel)
                 except:
