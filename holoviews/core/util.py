@@ -1931,13 +1931,16 @@ def parse_datetime_selection(sel):
     """
     if isinstance(sel, basestring):
         sel = parse_datetime(sel)
-    if pd:
-        if isinstance(sel, pd.Timestamp):
+    if pd and isinstance(sel, pd.Timestamp):
             sel = parse_datetime(sel)
     if isinstance(sel, slice):
         if isinstance(sel.start, basestring):
             sel = slice(parse_datetime(sel.start), sel.stop)
+        elif pd and isinstance(sel.start, pd.Timestamp):
+            sel = slice(parse_datetime(sel.start), sel.stop)
         if isinstance(sel.stop, basestring):
+            sel = slice(sel.start, parse_datetime(sel.stop))
+        elif pd and isinstance(sel.stop, pd.Timestamp):
             sel = slice(sel.start, parse_datetime(sel.stop))
     if isinstance(sel, (set, list)):
         sel = [parse_datetime(v) if isinstance(v, basestring) else v for v in sel]
