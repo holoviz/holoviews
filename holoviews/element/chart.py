@@ -45,21 +45,7 @@ class Chart(Dataset, Element2D):
     __abstract = True
 
     def __getitem__(self, index):
-        sliced = super(Chart, self).__getitem__(index)
-        if not isinstance(sliced, Chart):
-            return sliced
-
-        if not isinstance(index, tuple): index = (index,)
-        ndims = len(self.extents)//2
-        lower_bounds, upper_bounds = [None]*ndims, [None]*ndims
-        for i, slc in enumerate(index[:ndims]):
-            if isinstance(slc, slice):
-                lbound = self.extents[i]
-                ubound = self.extents[ndims:][i]
-                lower_bounds[i] = lbound if slc.start is None else slc.start
-                upper_bounds[i] = ubound if slc.stop is None else slc.stop
-        sliced.extents = tuple(lower_bounds+upper_bounds)
-        return sliced
+        return super(Chart, self).__getitem__(index)
 
 
 class Scatter(Chart):
@@ -69,7 +55,7 @@ class Scatter(Chart):
     location along the x-axis while the first value dimension
     represents the location of the point along the y-axis.
     """
-    
+
     group = param.String(default='Scatter', constant=True)
 
 
