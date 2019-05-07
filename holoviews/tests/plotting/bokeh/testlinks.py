@@ -125,3 +125,14 @@ class TestLinkCallbacks(TestBokehPlot):
         self.assertEqual(len(Link.registry[table1]), 1)
         self.assertIn(link1, Link.registry[table1])
 
+    def test_data_link_nan(self):
+        arr = np.random.rand(3, 5)
+        arr[0, 0] = np.nan
+        data = {k: v for k, v in zip(['x', 'y', 'z'], arr)}
+        a = Scatter(data, 'x', 'z')
+        b = Scatter(data, 'x', 'y')
+        DataLink(a, b)
+        try:
+            bokeh_renderer.get_plot(a+b)
+        except:
+            self.fail()
