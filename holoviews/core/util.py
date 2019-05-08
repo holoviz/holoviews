@@ -1929,18 +1929,12 @@ def parse_datetime_selection(sel):
     """
     Parses string selection specs as datetimes.
     """
-    if isinstance(sel, basestring):
+    if isinstance(sel, basestring) or isdatetime(sel):
         sel = parse_datetime(sel)
-    if pd and isinstance(sel, pd.Timestamp):
-            sel = parse_datetime(sel)
     if isinstance(sel, slice):
-        if isinstance(sel.start, basestring):
+        if isinstance(sel.start, basestring) or isdatetime(sel.start):
             sel = slice(parse_datetime(sel.start), sel.stop)
-        elif pd and isinstance(sel.start, pd.Timestamp):
-            sel = slice(parse_datetime(sel.start), sel.stop)
-        if isinstance(sel.stop, basestring):
-            sel = slice(sel.start, parse_datetime(sel.stop))
-        elif pd and isinstance(sel.stop, pd.Timestamp):
+        if isinstance(sel.stop, basestring) or isdatetime(sel.stop):
             sel = slice(sel.start, parse_datetime(sel.stop))
     if isinstance(sel, (set, list)):
         sel = [parse_datetime(v) if isinstance(v, basestring) else v for v in sel]
