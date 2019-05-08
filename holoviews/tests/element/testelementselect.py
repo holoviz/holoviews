@@ -103,6 +103,9 @@ class DimensionedSelectionTest(ComparisonTestCase):
         overlay = curve * self.datetime_fn()
         for el in [curve, overlay]:
             self.assertEqual(el.select(time=(s, e)), el[s:e])
+            self.assertEqual(el.select(time=
+                (dt.datetime(1999, 12, 31), dt.datetime(2000, 1, 2))), el[s:e]
+            )
             if pd:
                 self.assertEqual(el.select(
                     time=(pd.Timestamp(s), pd.Timestamp(e))
