@@ -39,7 +39,7 @@ def max_frame_warning(max_frames):
         "You are trying to display over {max_frames} frames.\n"
         "To avoid unexpected lengthy rendering times this will be skipped.\n"
         "This can be changed using the following notebook magic:\n"
-        "%output max_frames=<insert number>".format(max_frames=max_frames)
+        "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
     )
 
 def process_object(obj):
