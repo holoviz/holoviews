@@ -35,10 +35,12 @@ ABBREVIATE_TRACEBACKS = True
 
 
 def max_frame_warning(max_frames):
-    sys.stderr.write("Skipping regular visual display to avoid "
-                     "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on OutputSettings (%d)]"
-                     % max_frames)
+    sys.stderr.write(
+        "You are trying to display over {max_frames} frames.\n"
+        "To avoid unexpected lengthy rendering times this will be skipped.\n"
+        "This can be changed using the following notebook magic:\n"
+        "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
+    )
 
 def process_object(obj):
     "Hook to process the object currently being displayed."
