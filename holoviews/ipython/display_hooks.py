@@ -36,9 +36,9 @@ ABBREVIATE_TRACEBACKS = True
 
 def max_frame_warning(max_frames):
     sys.stderr.write(
-        "You are trying to display over {max_frames} frames.\n"
-        "To avoid unexpected lengthy rendering times this will be skipped.\n"
-        "This can be changed using the following notebook magic:\n"
+        "Animation longer than the max_frames limit {max_frames};\n"
+        "skipping rendering to avoid unexpected lengthy computations.\n"
+        "If desired, the limit can be increased using:\n"
         "hv.output(max_frames=<insert number>)".format(max_frames=max_frames)
     )
 
