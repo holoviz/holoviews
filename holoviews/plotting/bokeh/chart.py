@@ -54,7 +54,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
-    _batched_style_opts = line_properties + fill_properties + ['size']
+    _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -124,11 +124,16 @@ class PointPlot(LegendPlot, ColorbarPlot):
     def get_batched_data(self, element, ranges):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
+
+        # Angles need special handling since they are tied to the
+        # marker in certain cases
+        has_angles = False 
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.param.set_param(**self.lookup_options(el, 'plot').options)
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
+            style = mpl_to_bokeh(style)
             for k, eld in eldata.items():
                 data[k].append(eld)
 
@@ -140,9 +145,17 @@ class PointPlot(LegendPlot, ColorbarPlot):
             nvals = len(list(eldata.values())[0])
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
+            if 'angle' in sdata and '__angle' not in data and 'marker' in data:
+                data['__angle'] = [np.zeros(len(d)) for d in data['marker']]
+                has_angles = True
             elmapping.update(smapping)
-            for k, v in sdata.items():
+            for k, v in sorted(sdata.items()):
+                if k == 'angle':
+                    k = '__angle'
+                    has_angles = True
                 data[k].append(v)
+            if has_angles and 'angle' not in sdata:
+                data['__angle'].append(np.zeros(len(v)))
 
             if 'hover' in self.handles:
                 for d, k in zip(element.dimensions(), key):
@@ -150,6 +163,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
                     data[sanitized].append([k]*nvals)
 
         data = {k: np.concatenate(v) for k, v in data.items()}
+        if '__angle' in data:
+            elmapping['angle'] = {'field': '__angle'}
         return data, elmapping, style
 
 
