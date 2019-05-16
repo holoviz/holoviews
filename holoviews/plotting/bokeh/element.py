@@ -2130,16 +2130,16 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if element is not None:
             ranges = self.compute_ranges(range_obj, key, ranges)
 
-        # Update plot options
-        plot_opts = self.lookup_options(element, 'plot').options
-        inherited = self._traverse_options(element, 'plot',
-                                           self._propagate_options,
-                                           defaults=False)
-        plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.param.set_param(**plot_opts)
+            # Update plot options
+            plot_opts = self.lookup_options(element, 'plot').options
+            inherited = self._traverse_options(element, 'plot',
+                                               self._propagate_options,
+                                               defaults=False)
+            plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
+            self.param.set_param(**plot_opts)
 
-        if element and not self.overlaid and not self.tabs and not self.batched:
-            self._update_ranges(element, ranges)
+            if not self.overlaid and not self.tabs and not self.batched:
+                self._update_ranges(element, ranges)
 
         # Determine which stream (if any) triggered the update
         triggering = [stream for stream in self.streams if stream._triggering]
