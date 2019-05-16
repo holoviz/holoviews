@@ -13,9 +13,9 @@ from ..ndmapping import OrderedDict, NdMapping
 
 def get_array_types():
     array_types = (np.ndarray,)
-    if 'dask' in sys.modules:
-        import dask.array as da
-        array_types += (da.Array,)
+    dask_array = dask_array_module()
+    if dask_array:
+        array_types += (dask_array,)
     return array_types
 
 def dask_array_module():
