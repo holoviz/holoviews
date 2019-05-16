@@ -13,8 +13,8 @@ from ..ndmapping import OrderedDict, NdMapping
 
 def get_array_types():
     array_types = (np.ndarray,)
-    if 'dask' in sys.modules:
-        import dask.array as da
+    da = dask_array_module()
+    if da is not None:
         array_types += (da.Array,)
     return array_types
 
@@ -26,9 +26,8 @@ def dask_array_module():
         return None
 
 def is_dask(array):
-    if 'dask' in sys.modules:
-        import dask.array as da
-    else:
+    da = dask_array_module()
+    if da is None:
         return False
     return da and isinstance(array, da.Array)
 
