@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
 from holoviews.core.options import Cycle
 from holoviews.element import Curve, Points, ErrorBars, Text, VLine
+from holoviews.streams import Stream
 from holoviews.util import Dynamic
 
 from .testplot import TestBokehPlot, bokeh_renderer
@@ -277,4 +278,13 @@ class TestLegends(TestBokehPlot):
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
         self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}, {'value': 'C'}])
+
+    def test_dynamicmap_ndoverlay_shrink_number_of_items(self):
+        selected = Stream.define('selected', items=3)()
+        def callback(items):
+            return NdOverlay({j: Overlay([Curve([1, 2, j])]) for j in range(items)})
+        dmap = DynamicMap(callback, streams=[selected])
+        plot = bokeh_renderer.get_plot(dmap)
+        selected.event(items=2)
+        self.assertEqual(len([r for r in plot.state.renderers if r.visible]), 2)
 
