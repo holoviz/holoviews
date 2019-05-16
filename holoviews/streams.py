@@ -280,7 +280,7 @@ class Stream(param.Parameterized):
         Resets stream parameters to their defaults.
         """
         with util.disable_constant(self):
-            for k, p in self.params().items():
+            for k, p in self.param.objects('existing').items():
                 if k != 'name':
                     setattr(self, k, p.default)
 
@@ -303,7 +303,7 @@ class Stream(param.Parameterized):
 
 
     def _validate_rename(self, mapping):
-        param_names = [k for k in self.params().keys() if k != 'name']
+        param_names = [k for k in self.param if k != 'name']
         for k, v in mapping.items():
             if k not in param_names:
                 raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
@@ -628,7 +628,7 @@ class Params(Stream):
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:
-            parameters = [p for p in parameterized.params() if p != 'name']
+            parameters = [p for p in parameterized.param if p != 'name']
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
