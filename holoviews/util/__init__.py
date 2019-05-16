@@ -931,6 +931,8 @@ class Dynamic(param.ParameterizedFunction):
         else:
             def dynamic_operation(*key, **kwargs):
                 kwargs = dict(self._eval_kwargs(), **kwargs)
+                if map_obj._posarg_keys and not key:
+                    key = tuple(kwargs[k] for k in map_obj._posarg_keys)
                 return self._process(map_obj[key], key, kwargs)
         if isinstance(self.p.operation, Operation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
