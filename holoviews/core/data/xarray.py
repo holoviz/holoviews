@@ -459,7 +459,8 @@ class XArrayInterface(GridInterface):
             # since we only exapanded on dimnesions of size 1
             # we can monkeypatch the dataarray back to writeable.
             for d in data.values():
-                d.data.flags.writeable = True 
+                if hasattr(d.data, 'flags'):
+                    d.data.flags.writeable = True
 
         da = dask_array_module()
         if (indexed and len(data.data_vars) == 1 and
