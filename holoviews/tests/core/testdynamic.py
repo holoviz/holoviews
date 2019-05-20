@@ -388,6 +388,12 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
 
+    def test_dynamic_posargs_resolved(self):
+        def f(s):
+            return Curve([1, 2, s])
+        dmap = DynamicMap(f, kdims=['scale']).opts(color='red')
+        self.asserrtdmap[2]
+
     def test_dynamic_opts_link_inputs(self):
         stream = LinkedStream()
         inputs = [DynamicMap(lambda: None, streams=[stream])]
