@@ -14,6 +14,37 @@ Release notes
 Version 1.12
 ~~~~~~~~~~~~
 
+Version 1.12.3
+**************
+
+This is a minor release primarily focused on a number of important bug
+fixes. Thanks to our users for reporting issues, and special thanks to
+the internal developers @philippjfr and @jlstevens and external
+developers including @poplarShift, @fedario and @odoublewen for their
+contributions.
+
+Bug fixes:
+
+- Fixed regression causing unhashable data to cause errors in streams
+  (`#3681 <https://github.com/pyviz/holoviews/issues/3681`_)
+- Ensure that hv.help handles non-HoloViews objects
+  (`#3689 <https://github.com/pyviz/holoviews/issues/3689`_)
+- Ensure that DataLink handles data containing NaNs
+  (`#3694 <https://github.com/pyviz/holoviews/issues/3694`_)
+- Ensure that bokeh backend handles Cycle of markers
+  (`#3706 <https://github.com/pyviz/holoviews/issues/3706`_)
+- Fix for using opts method on DynamicMap
+  (`#3691 <https://github.com/pyviz/holoviews/issues/3691`_) 
+- Ensure that bokeh backend handles DynamicMaps with variable length
+  NdOverlay (`#3696 <https://github.com/pyviz/holoviews/issues/3696`_)
+- Fix default width/height setting for HeatMap
+  (`#3703 <https://github.com/pyviz/holoviews/issues/3703`_)
+- Ensure that dask imports handle modularity
+  (`#3685 <https://github.com/pyviz/holoviews/issues/3685`_)
+- Fixed regression in xarray data interface
+  (`#3724 <https://github.com/pyviz/holoviews/issues/3724`_)
+
+
 Version 1.12.2
 **************
 
