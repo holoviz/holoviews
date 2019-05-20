@@ -29,6 +29,8 @@ Bug fixes:
   ([#3724](https://github.com/pyviz/holoviews/issues/3724))
 - Ensure that RGB hover displays the integer RGB value
   ([#3727](https://github.com/pyviz/holoviews/issues/3727))
+- Ensure that param streams handle subobjects
+  ([#3728](https://github.com/pyviz/holoviews/pull/3728))
 
 Version 1.12.2
 ==============
