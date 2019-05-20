@@ -628,12 +628,19 @@ class Params(Stream):
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
         if parameters is None:
-            parameters = [p for p in parameterized.param if p != 'name']
+            parameters = [parameterized.param[p] for p in parameterized.param if p != 'name']
+        else:
+            parameters = [p if isinstance(p, param.Parameter) else parameterized.param[p]
+                          for p in parameters]
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
         if watch:
-            self.parameterized.param.watch(self._watcher, self.parameters)
+            # Subscribe to parameters
+            keyfn = lambda x: id(x.owner)
+            for _, group in groupby(sorted(parameters, key=keyfn)):
+                group = list(group)
+                group[0].owner.param.watch(self._watcher, [p.name for p in group])
 
     @classmethod
     def from_params(cls, params):
@@ -681,8 +688,7 @@ class Params(Stream):
 
     @property
     def hashkey(self):
-        hashkey = {k: v for k, v in self.parameterized.get_param_values()
-                   if k in self.parameters}
+        hashkey = {p.name: getattr(p.owner, p.name) for p in self.parameters}
         hashkey = {self._rename.get(k, k): v for (k, v) in hashkey.items()
                    if self._rename.get(k, True) is not None}
         hashkey['_memoize_key'] = self._memoize_counter
@@ -719,7 +725,7 @@ class ParamMethod(Params):
         method = parameterized
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
-            parameters = [p.name for p in parameterized.param.params_depended_on(method.__name__)]
+            parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
 
     @property
