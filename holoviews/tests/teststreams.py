@@ -198,7 +198,8 @@ class TestParamsStream(LoggingComparisonTestCase):
 
     def test_param_stream_class(self):
         stream = Params(self.inner)
-        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(set(stream.parameters), {self.inner.param.x,
+                                                  self.inner.param.y})
         self.assertEqual(stream.contents, {'x': 0, 'y': 0})
 
         values = []
@@ -212,7 +213,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_stream_instance(self):
         inner = self.inner(x=2)
         stream = Params(inner)
-        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(set(stream.parameters), {inner.param.x, inner.param.y})
         self.assertEqual(stream.contents, {'x': 2, 'y': 0})
 
         values = []
@@ -249,9 +250,9 @@ class TestParamsStream(LoggingComparisonTestCase):
         xparam, yparam = valid
 
         self.assertIs(xparam.parameterized, inner)
-        self.assertEqual(xparam.parameters, ['x'])
+        self.assertEqual(xparam.parameters, [inner.param.x])
         self.assertIs(yparam.parameterized, inner)
-        self.assertEqual(yparam.parameters, ['y'])
+        self.assertEqual(yparam.parameters, [inner.param.y])
 
     def test_param_parameter_instance_overlapping_parameters(self):
         inner = self.inner()
@@ -261,7 +262,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_stream_parameter_override(self):
         inner = self.inner(x=2)
         stream = Params(inner, parameters=['x'])
-        self.assertEqual(stream.parameters, ['x'])
+        self.assertEqual(stream.parameters, [inner.param.x])
         self.assertEqual(stream.contents, {'x': 2})
 
         values = []
@@ -275,7 +276,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_stream_rename(self):
         inner = self.inner(x=2)
         stream = Params(inner, rename={'x': 'X', 'y': 'Y'})
-        self.assertEqual(set(stream.parameters), {'x', 'y'})
+        self.assertEqual(set(stream.parameters), {inner.param.x, inner.param.y})
         self.assertEqual(stream.contents, {'X': 2, 'Y': 0})
 
         values = []
@@ -289,7 +290,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_stream_action(self):
         inner = self.inner_action()
         stream = Params(inner, ['action'])
-        self.assertEqual(set(stream.parameters), {'action'})
+        self.assertEqual(set(stream.parameters), {inner.param.action})
 
         values = []
         def subscriber(**kwargs):
@@ -304,7 +305,7 @@ class TestParamsStream(LoggingComparisonTestCase):
     def test_param_stream_memoization(self):
         inner = self.inner_action()
         stream = Params(inner, ['action', 'x'])
-        self.assertEqual(set(stream.parameters), {'action', 'x'})
+        self.assertEqual(set(stream.parameters), {inner.param.action, inner.param.x})
 
         values = []
         def subscriber(**kwargs):
@@ -353,12 +354,21 @@ class TestParamMethodStream(ComparisonTestCase):
             def method_no_deps(self):
                 pass
 
+        class InnerSubObj(Inner):
+
+            sub = param.Parameter()
+
+            @param.depends('sub.x')
+            def subobj_method(self):
+                pass
+
         self.inner = Inner
+        self.innersubobj = InnerSubObj
 
     def test_param_method_depends(self):
         inner = self.inner()
         stream = ParamMethod(inner.method)
-        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(set(stream.parameters), {inner.param.x})
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -373,7 +383,10 @@ class TestParamMethodStream(ComparisonTestCase):
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
-        self.assertEqual(set(stream.parameters), {'x', 'y', 'action', 'name', 'count'})
+        self.assertEqual(set(stream.parameters), {
+            inner.param.x, inner.param.y, inner.param.action,
+            inner.param.name, inner.param.count
+        })
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -384,6 +397,19 @@ class TestParamMethodStream(ComparisonTestCase):
         inner.x = 2
         inner.y = 2
         self.assertEqual(values, [{}, {}])
+
+    def test_param_method_depends_on_subobj(self):
+        inner = self.innersubobj(sub=self.inner())
+        stream = ParamMethod(inner.subobj_method)
+        self.assertEqual(set(stream.parameters), {inner.sub.param.x})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.sub.x = 2
+        self.assertEqual(values, [{}])
 
     def test_dynamicmap_param_method_deps(self):
         inner = self.inner()
@@ -405,7 +431,7 @@ class TestParamMethodStream(ComparisonTestCase):
     def test_param_method_depends_trigger_no_memoization(self):
         inner = self.inner()
         stream = ParamMethod(inner.method)
-        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(set(stream.parameters), {inner.param.x})
         self.assertEqual(stream.contents, {})
 
         values = []
@@ -421,13 +447,13 @@ class TestParamMethodStream(ComparisonTestCase):
         inner = self.inner()
         dmap = DynamicMap(inner.method)
         stream = dmap.streams[0]
-        self.assertEqual(set(stream.parameters), {'x'})
+        self.assertEqual(set(stream.parameters), {inner.param.x})
         self.assertEqual(stream.contents, {})
 
         dmap[()]
         dmap[()]
         self.assertEqual(inner.count, 1)
-        
+
     def test_dynamicmap_param_method_no_deps(self):
         inner = self.inner()
         dmap = DynamicMap(inner.method_no_deps)
@@ -438,7 +464,7 @@ class TestParamMethodStream(ComparisonTestCase):
         dmap = DynamicMap(inner.action_method)
         self.assertEqual(len(dmap.streams), 1)
         stream = dmap.streams[0]
-        self.assertEqual(set(stream.parameters), {'action'})
+        self.assertEqual(set(stream.parameters), {inner.param.action})
         self.assertIsInstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
@@ -457,7 +483,7 @@ class TestParamMethodStream(ComparisonTestCase):
         dmap = DynamicMap(inner.action_number_method)
         self.assertEqual(len(dmap.streams), 1)
         stream = dmap.streams[0]
-        self.assertEqual(set(stream.parameters), {'action', 'x'})
+        self.assertEqual(set(stream.parameters), {inner.param.action, inner.param.x})
         self.assertIsInstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
@@ -483,7 +509,7 @@ class TestParamMethodStream(ComparisonTestCase):
         op_dmap = Dynamic(dmap, operation=inner.op_method)
         self.assertEqual(len(op_dmap.streams), 1)
         stream = op_dmap.streams[0]
-        self.assertEqual(set(stream.parameters), {'y'})
+        self.assertEqual(set(stream.parameters), {inner.param.y})
         self.assertIsInstance(stream, ParamMethod)
         self.assertEqual(stream.contents, {})
 
@@ -501,7 +527,7 @@ class TestParamMethodStream(ComparisonTestCase):
         self.assertEqual(values_y, [{}])
 
 
-        
+
 class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):
@@ -574,7 +600,7 @@ class TestSubscribers(ComparisonTestCase):
 
         # Ensure call count was incremented on init, the subscriber
         # and the callback
-        self.assertEqual(subscriber.call_count, 3) 
+        self.assertEqual(subscriber.call_count, 3)
 
 
 
@@ -663,7 +689,7 @@ class TestParameterRenaming(ComparisonTestCase):
         self.assertEquals(reenabled.contents, {'foo':0, 'y':0})
 
 
-        
+
 class TestPlotSizeTransform(ComparisonTestCase):
 
     def test_plotsize_initial_contents_1(self):
