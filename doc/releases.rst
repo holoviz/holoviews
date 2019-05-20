@@ -26,23 +26,25 @@ contributions.
 Bug fixes:
 
 - Fixed regression causing unhashable data to cause errors in streams
-  (`#3681 <https://github.com/pyviz/holoviews/issues/3681`_)
+  (`#3681 <https://github.com/pyviz/holoviews/issues/3681>`_)
 - Ensure that hv.help handles non-HoloViews objects
-  (`#3689 <https://github.com/pyviz/holoviews/issues/3689`_)
+  (`#3689 <https://github.com/pyviz/holoviews/issues/3689>`_)
 - Ensure that DataLink handles data containing NaNs
-  (`#3694 <https://github.com/pyviz/holoviews/issues/3694`_)
+  (`#3694 <https://github.com/pyviz/holoviews/issues/3694>`_)
 - Ensure that bokeh backend handles Cycle of markers
-  (`#3706 <https://github.com/pyviz/holoviews/issues/3706`_)
+  (`#3706 <https://github.com/pyviz/holoviews/issues/3706>`_)
 - Fix for using opts method on DynamicMap
-  (`#3691 <https://github.com/pyviz/holoviews/issues/3691`_) 
+  (`#3691 <https://github.com/pyviz/holoviews/issues/3691>`_) 
 - Ensure that bokeh backend handles DynamicMaps with variable length
-  NdOverlay (`#3696 <https://github.com/pyviz/holoviews/issues/3696`_)
+  NdOverlay (`#3696 <https://github.com/pyviz/holoviews/issues/3696>`_)
 - Fix default width/height setting for HeatMap
-  (`#3703 <https://github.com/pyviz/holoviews/issues/3703`_)
+  (`#3703 <https://github.com/pyviz/holoviews/issues/3703>`_)
 - Ensure that dask imports handle modularity
-  (`#3685 <https://github.com/pyviz/holoviews/issues/3685`_)
+  (`#3685 <https://github.com/pyviz/holoviews/issues/3685>`_)
 - Fixed regression in xarray data interface
-  (`#3724 <https://github.com/pyviz/holoviews/issues/3724`_)
+  (`#3724 <https://github.com/pyviz/holoviews/issues/3724>`_)
+- Ensure that RGB hover displays the integer RGB value
+  (`#3727 <https://github.com/pyviz/holoviews/issues/3727>`_)
 
 
 Version 1.12.2
