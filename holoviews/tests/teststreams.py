@@ -354,7 +354,16 @@ class TestParamMethodStream(ComparisonTestCase):
             def method_no_deps(self):
                 pass
 
+        class InnerSubObj(Inner):
+
+            sub = param.Parameter()
+
+            @param.depends('sub.x')
+            def subobj_method(self):
+                pass
+
         self.inner = Inner
+        self.innersubobj = InnerSubObj
 
     def test_param_method_depends(self):
         inner = self.inner()
@@ -388,6 +397,19 @@ class TestParamMethodStream(ComparisonTestCase):
         inner.x = 2
         inner.y = 2
         self.assertEqual(values, [{}, {}])
+
+    def test_param_method_depends_on_subobj(self):
+        inner = self.innersubobj(sub=self.inner())
+        stream = ParamMethod(inner.subobj_method)
+        self.assertEqual(set(stream.parameters), {inner.sub.param.x})
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+
+        stream.add_subscriber(subscriber)
+        inner.sub.x = 2
+        self.assertEqual(values, [{}])
 
     def test_dynamicmap_param_method_deps(self):
         inner = self.inner()
@@ -431,7 +453,7 @@ class TestParamMethodStream(ComparisonTestCase):
         dmap[()]
         dmap[()]
         self.assertEqual(inner.count, 1)
-        
+
     def test_dynamicmap_param_method_no_deps(self):
         inner = self.inner()
         dmap = DynamicMap(inner.method_no_deps)
@@ -578,7 +600,7 @@ class TestSubscribers(ComparisonTestCase):
 
         # Ensure call count was incremented on init, the subscriber
         # and the callback
-        self.assertEqual(subscriber.call_count, 3) 
+        self.assertEqual(subscriber.call_count, 3)
 
 
 
@@ -667,7 +689,7 @@ class TestParameterRenaming(ComparisonTestCase):
         self.assertEquals(reenabled.contents, {'foo':0, 'y':0})
 
 
-        
+
 class TestPlotSizeTransform(ComparisonTestCase):
 
     def test_plotsize_initial_contents_1(self):
