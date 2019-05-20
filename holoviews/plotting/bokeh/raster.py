@@ -28,12 +28,11 @@ class RasterPlot(ColorbarPlot):
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
         tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
-        if bokeh_version >= '0.12.16' and not isinstance(element, (RGB, HSV)):
-            vdims = element.vdims
-            tooltips.append((vdims[0].pprint_label, '@image'))
-            for vdim in vdims[1:]:
-                vname = dimension_sanitizer(vdim.name)
-                tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
+        vdims = element.vdims
+        tooltips.append((vdims[0].pprint_label, '@image'))
+        for vdim in vdims[1:]:
+            vname = dimension_sanitizer(vdim.name)
+            tooltips.append((vdim.pprint_label, '@{0}'.format(vname)))
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
@@ -126,6 +125,11 @@ class RGBPlot(ElementPlot):
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image_rgba')
+
+    def _hover_opts(self, element):
+        xdim, ydim = element.kdims
+        return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
+                ('RGBA', '@image')], {}
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
