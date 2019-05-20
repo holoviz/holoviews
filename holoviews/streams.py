@@ -200,7 +200,7 @@ class Stream(param.Parameterized):
                         'Ensure that the supplied streams only specify '
                         'each parameter once, otherwise multiple '
                         'events will be triggered when the parameter '
-                        'changes.' % (sorted(overlap), pname))
+                        'changes.' % (sorted([p.name for p in overlap]), pname))
                 parameterizeds[pid] |= set(s.parameters)
             valid.append(s)
         return valid, invalid
@@ -665,10 +665,11 @@ class Params(Stream):
         return streams
 
     def _validate_rename(self, mapping):
+        pnames = [p.name for p in self.parameters]
         for k, v in mapping.items():
-            if k not in self.parameters:
+            if k not in pnames:
                 raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
-            if k != v and v in self.parameters:
+            if k != v and v in pnames:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping
@@ -703,8 +704,7 @@ class Params(Stream):
 
     @property
     def contents(self):
-        filtered = {k: v for k, v in self.parameterized.get_param_values()
-                    if k in self.parameters}
+        filtered = {p.name: getattr(p.owner, p.name) for p in self.parameters}
         return {self._rename.get(k, k): v for (k, v) in filtered.items()
                 if self._rename.get(k, True) is not None}
 
