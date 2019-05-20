@@ -27,6 +27,8 @@ Bug fixes:
   ([#3685](https://github.com/pyviz/holoviews/issues/3685))
 - Fixed regression in xarray data interface
   ([#3724](https://github.com/pyviz/holoviews/issues/3724))
+- Ensure that RGB hover displays the integer RGB value
+  ([#3727](https://github.com/pyviz/holoviews/issues/3727))
 
 Version 1.12.2
 ==============
