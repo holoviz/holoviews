@@ -6,10 +6,10 @@ import param
 from bokeh.models import DatetimeAxis, CustomJSHover
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
-from ...element import Raster, RGB, HSV
+from ...element import Raster
 from .element import ElementPlot, ColorbarPlot
 from .styles import line_properties, fill_properties, mpl_to_bokeh
-from .util import bokeh_version, colormesh
+from .util import colormesh
 
 
 class RasterPlot(ColorbarPlot):
