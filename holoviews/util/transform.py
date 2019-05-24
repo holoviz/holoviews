@@ -31,6 +31,21 @@ def norm(values, min=None, max=None):
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
 
+def lognorm(values, min=None, max=None):
+    """Unity-based normalization on log scale.
+
+    Args:
+        values: Array of values to be normalized
+        min (float, optional): Lower bound of normalization range
+        max (float, optional): Upper bound of normalization range
+
+    Returns:
+        Array of normalized values
+    """
+    min = np.log(np.min(values)) if min is None else np.log(min)
+    max = np.log(np.max(values)) if max is None else np.log(max)
+    return (np.log(values) - min) / (max-min)
+
 
 def bin(values, bins, labels=None):
     """Bins data into declared bins
@@ -253,6 +268,17 @@ class dim(object):
             default: Default value to assign if value not in categories
         """
         return dim(self, categorize, categories=categories, default=default)
+
+    def lognorm(self, limits=None):
+        """Unity-based normalization log scale.
+
+        Args:
+            limits: tuple of (min, max) defining the normalization range
+        """
+        kwargs = {}
+        if limits is not None:
+            kwargs = {'min': limits[0], 'max': limits[1]}
+        return dim(self, lognorm, **kwargs)
 
     def norm(self, limits=None):
         """Unity-based normalization to scale data into 0-1 range.
