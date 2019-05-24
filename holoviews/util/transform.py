@@ -124,7 +124,7 @@ class dim(object):
 
     _builtin_funcs = {abs: 'abs', round: 'round'}
 
-    _custom_funcs = {norm: 'norm', bin: 'bin', categorize: 'categorize'}
+    _custom_funcs = {norm: 'norm', lognorm: 'lognorm', bin: 'bin', categorize: 'categorize'}
 
     _numpy_funcs = {
         np.any: 'any', np.all: 'all', np.asarray: 'astype',
@@ -357,7 +357,7 @@ class dim(object):
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
             kwargs = o['kwargs']
-            if o['fn'] is norm and drange != {} and not ('min' in kwargs and 'max' in kwargs):
+            if ((o['fn'] is norm) or (o['fn'] is lognorm)) and drange != {} and not ('min' in kwargs and 'max' in kwargs):
                 data = o['fn'](data, *drange)
             else:
                 data = o['fn'](*args, **kwargs)
