@@ -222,6 +222,8 @@ class dim(object):
     def sum(self, **kwargs):     return dim(self, np.sum, **kwargs)
     def std(self, **kwargs):     return dim(self, np.std, **kwargs)
     def var(self, **kwargs):     return dim(self, np.var, **kwargs)
+    def log(self, **kwargs):     return dim(self, np.log, **kwargs)
+    def log10(self, **kwargs):   return dim(self, np.log10, **kwargs)
 
     ## Custom functions
 
