@@ -31,6 +31,22 @@ def norm(values, min=None, max=None):
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
 
+def lognorm(values, min=None, max=None):
+    """Unity-based normalization on log scale.
+       Apply the same transformation as matplotlib.colors.LogNorm
+    
+    Args:
+        values: Array of values to be normalized
+        min (float, optional): Lower bound of normalization range
+        max (float, optional): Upper bound of normalization range
+
+    Returns:
+        Array of normalized values
+    """
+    min = np.log(np.min(values)) if min is None else np.log(min)
+    max = np.log(np.max(values)) if max is None else np.log(max)
+    return (np.log(values) - min) / (max-min)
+
 
 def bin(values, bins, labels=None):
     """Bins data into declared bins
@@ -109,7 +125,7 @@ class dim(object):
 
     _builtin_funcs = {abs: 'abs', round: 'round'}
 
-    _custom_funcs = {norm: 'norm', bin: 'bin', categorize: 'categorize'}
+    _custom_funcs = {norm: 'norm', lognorm: 'lognorm', bin: 'bin', categorize: 'categorize'}
 
     _numpy_funcs = {
         np.any: 'any', np.all: 'all', np.asarray: 'astype',
@@ -254,6 +270,18 @@ class dim(object):
         """
         return dim(self, categorize, categories=categories, default=default)
 
+    def lognorm(self, limits=None):
+        """Unity-based normalization log scale.
+           Apply the same transformation as matplotlib.colors.LogNorm
+
+        Args:
+            limits: tuple of (min, max) defining the normalization range
+        """
+        kwargs = {}
+        if limits is not None:
+            kwargs = {'min': limits[0], 'max': limits[1]}
+        return dim(self, lognorm, **kwargs)
+
     def norm(self, limits=None):
         """Unity-based normalization to scale data into 0-1 range.
 
@@ -331,7 +359,7 @@ class dim(object):
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
             kwargs = o['kwargs']
-            if o['fn'] is norm and drange != {} and not ('min' in kwargs and 'max' in kwargs):
+            if ((o['fn'] is norm) or (o['fn'] is lognorm)) and drange != {} and not ('min' in kwargs and 'max' in kwargs):
                 data = o['fn'](data, *drange)
             else:
                 data = o['fn'](*args, **kwargs)
