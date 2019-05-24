@@ -115,7 +115,8 @@ class dim(object):
         np.any: 'any', np.all: 'all', np.asarray: 'astype',
         np.cumprod: 'cumprod', np.cumsum: 'cumsum', np.max: 'max',
         np.mean: 'mean', np.min: 'min', np.round: 'round',
-        np.sum: 'sum', np.std: 'std', np.var: 'var'}
+        np.sum: 'sum', np.std: 'std', np.var: 'var', np.log: 'log',
+        np.log10: 'log10'}
 
     _unary_funcs = {operator.pos: '+', operator.neg: '-', operator.not_: '~'}
 
