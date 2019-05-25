@@ -111,6 +111,14 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(dim('float').var().apply(self.dataset),
                          self.linear_floats.var())
 
+    def test_log_transform(self):
+        self.assertEqual(dim('float').log().apply(self.dataset),
+                         np.log(self.linear_floats))
+
+    def test_log10_transform(self):
+        self.assertEqual(dim('float').log10().apply(self.dataset),
+                         np.log10(self.linear_floats))
+
     # Custom functions
 
     def test_norm_transform(self):
@@ -162,7 +170,7 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(repr(1+dim('float')), "1+dim('float')")
 
     def test_ufunc_expression_repr(self):
-        self.assertEqual(repr(np.log(dim('float'))), "np.log(dim('float'))")
+        self.assertEqual(repr(np.log(dim('float'))), "dim('float').log()")
 
     def test_custom_func_repr(self):
         self.assertEqual(repr(dim('float').norm()), "dim('float').norm()")
