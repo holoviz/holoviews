@@ -14,7 +14,7 @@ from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, max_range,
-    isfinite, datetime_types, dt_to_int, dt64_to_dt, search_indices,
+    isfinite, dt_to_int, dt64_to_dt, search_indices,
     unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
@@ -1192,7 +1192,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
                 if isdatetime(vs):
-                    generic_dt_format = dt_format = Dimension.type_formatters.get(
+                    dt_format = Dimension.type_formatters.get(
                         type(vs[0]),
                         Dimension.type_formatters[np.datetime64]
                     )
