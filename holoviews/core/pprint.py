@@ -44,7 +44,8 @@ class ParamFilter(param.ParameterizedFunction):
 
         name = obj.__name__ if isinstance(obj,type) else obj.__class__.__name__
         class_proxy = type(name, (param.Parameterized,),
-                      {k:v for k,v in obj.params().items() if filter_fn(k,v)})
+                      {k:v for k,v in obj.param.objects('existing').items()
+                       if filter_fn(k,v)})
 
         if isinstance(obj,type):
             return class_proxy
@@ -52,8 +53,8 @@ class ParamFilter(param.ParameterizedFunction):
             instance_params = obj.get_param_values()
             obj_proxy = class_proxy()
             filtered = {k:v for k,v in instance_params
-                        if (k in obj_proxy.params())
-                            and not obj_proxy.params(k).constant}
+                        if (k in obj_proxy.param)
+                            and not obj_proxy.param.objects('existing')[k].constant}
             obj_proxy.param.set_param(**filtered)
             return obj_proxy
 
@@ -94,7 +95,7 @@ class InfoPrinter(object):
         if cls.ppager is None: return ''
         if pattern is not None:
             obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-            if len(obj.params()) <=1:
+            if len(obj.param) <= 1:
                 return None
         param_info = cls.ppager.get_param_info(obj)
         param_list = cls.ppager.param_docstrings(param_info)
@@ -150,7 +151,7 @@ class InfoPrinter(object):
         if visualization is False or plot_class is None:
             if pattern is not None:
                 obj = ParamFilter(obj, ParamFilter.regexp_filter(pattern))
-                if len(obj.params()) <=1:
+                if len(obj.param) <= 1:
                     return ('No %r parameters found matching specified pattern %r'
                             % (name, pattern))
             info = param.ipython.ParamPager()(obj)

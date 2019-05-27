@@ -472,7 +472,7 @@ def callable_name(callable_obj):
             and issubclass(callable_obj, param.ParameterizedFunction)):
             return callable_obj.__name__
         elif (isinstance(callable_obj, param.Parameterized)
-              and 'operation' in callable_obj.params()):
+              and 'operation' in callable_obj.param):
             return callable_obj.operation.__name__
         elif isinstance(callable_obj, partial):
             return str(callable_obj)
@@ -1445,7 +1445,7 @@ def is_series(data):
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)
-    if (data.group != data.params()['group'].default and not
+    if (data.group != data.param.objects(False)['group'].default and not
         isinstance(type(data).group, property)):
         params['group'] = data.group
     return params
@@ -1478,7 +1478,7 @@ def disable_constant(parameterized):
     Temporarily set parameters on Parameterized object to
     constant=False.
     """
-    params = parameterized.params().values()
+    params = parameterized.param.objects('existing').values()
     constants = [p.constant for p in params]
     for p in params:
         p.constant = False
@@ -1526,7 +1526,7 @@ def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
     If reverse is True, the mapping is from the renamed strings to the
     original stream parameter names.
     """
-    filtered = [k for k in stream.params().keys() if k not in exclude_params]
+    filtered = [k for k in stream.param if k not in exclude_params]
     mapping = {k:stream._rename.get(k,k) for k in filtered}
     if reverse:
         return {v:k for k,v in mapping.items()}

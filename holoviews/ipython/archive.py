@@ -94,7 +94,8 @@ class NotebookArchive(FileArchive):
         self._timestamp = None
         self._tags = {MIME_TYPES[k]:v for k,v in HTML_TAGS.items() if k in MIME_TYPES}
 
-        keywords = ['%s=%s' % (k, v.__class__.__name__) for k,v in self.params().items()]
+        keywords = ['%s=%s' % (k, v.__class__.__name__)
+                    for k, v in self.param.objects().items()]
         self.auto.__func__.__doc__ = 'auto(enabled=Boolean, %s)' % ', '.join(keywords)
 
 
