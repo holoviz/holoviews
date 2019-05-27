@@ -359,7 +359,7 @@ class aggregate(AggregationOperation):
         if ytype == 'datetime':
             y_range = tuple((np.array(y_range)/1e3).astype('datetime64[us]'))
         agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
-                           if k in aggregate.params()},
+                           if k in aggregate.param},
                           x_range=x_range, y_range=y_range)
         bbox = BoundingBox(points=[(x_range[0], y_range[0]), (x_range[1], y_range[1])])
 
@@ -849,7 +849,7 @@ class rasterize(AggregationOperation):
     def _process(self, element, key=None):
         for predicate, transform in self._transforms:
             op_params = dict({k: v for k, v in self.p.items()
-                              if k in transform.params()
+                              if k in transform.param
                               and not (v is None and k == 'aggregator')},
                              dynamic=False)
             op = transform.instance(**op_params)

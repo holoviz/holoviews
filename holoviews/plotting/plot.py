@@ -121,6 +121,7 @@ class PlotSelector(object):
     """
 
     _disabled_opts = []
+
     def __init__(self, selector, plot_classes, allow_mismatch=False):
         """
         The selector function accepts a component instance and returns

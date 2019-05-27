@@ -110,7 +110,8 @@ def list_backends():
     for backend in Store.renderers:
         backends.append(backend)
         renderer = Store.renderers[backend]
-        modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
+        modes = [mode for mode in renderer.param.objects('existing')['mode'].objects
+                 if mode  != 'default']
         backends += ['%s:%s' % (backend, mode) for mode in modes]
     return backends
 

@@ -903,8 +903,7 @@ class Dynamic(param.ParameterizedFunction):
         if util.is_param_method(self.p.operation) and util.get_method_owner(self.p.operation) is element:
             return self.p.operation(**kwargs)
         elif isinstance(self.p.operation, Operation):
-            kwargs = {k: v for k, v in kwargs.items()
-                      if k in self.p.operation.params()}
+            kwargs = {k: v for k, v in kwargs.items() if k in self.p.operation.param}
             return self.p.operation.process_element(element, key, **kwargs)
         else:
             return self.p.operation(element, **kwargs)

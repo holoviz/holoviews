@@ -281,7 +281,7 @@ class notebook_extension(extension):
         of resources.
         """
         elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
-        for name, p in self_or_cls.params().items():
+        for name, p in self_or_cls.param.objects().items():
             param_type = p.__class__.__name__
             elements.append("%s=%s" % (name, param_type))
 

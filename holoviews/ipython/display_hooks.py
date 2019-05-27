@@ -79,7 +79,8 @@ def single_frame_plot(obj):
 
     plot_cls = renderer.plotting_class(obj)
     plot = plot_cls(obj, **renderer.plot_options(obj, renderer.size))
-    fmt = renderer.params('fig').objects[0] if renderer.fig == 'auto' else renderer.fig
+    fmt = (renderer.param.objects('existing')['fig'].objects[0]
+           if renderer.fig == 'auto' else renderer.fig)
     return plot, renderer, fmt
 
 
@@ -299,7 +300,7 @@ def image_display(element, max_frames, fmt):
     plot = renderer.get_plot(element)
 
     # Current renderer does not support the image format
-    if fmt not in renderer.params('fig').objects:
+    if fmt not in renderer.param.objects('existing')['fig'].objects:
         return None
 
     data, info = renderer(plot, fmt=fmt)

@@ -387,10 +387,11 @@ class Dimension(param.Parameterized):
         if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
             return 'Dimension({spec})'.format(spec=repr(self.name))
 
-        ordering = sorted( sorted(changed.keys()),
-                           key=lambda k: (- float('inf')
-                                          if self.params(k).precedence is None
-                                          else self.params(k).precedence))
+        params = self.param.objects('existing')
+        ordering = sorted(
+            sorted(changed.keys()), key=lambda k: (
+                -float('inf') if params[k].precedence is None
+                else params[k].precedence))
         kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
         return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
@@ -547,10 +548,10 @@ class LabelledData(param.Parameterized):
             clone_type = self.__class__
         else:
             clone_type = new_type
-            new_params = new_type.params()
+            new_params = new_type.param.objects('existing')
             params = {k: v for k, v in params.items()
                       if k in new_params}
-            if params.get('group') == self.params()['group'].default:
+            if params.get('group') == self.param.objects('existing')['group'].default:
                 params.pop('group')
         settings = dict(params, **overrides)
         if 'id' not in settings:
@@ -1326,7 +1327,7 @@ class ViewableTree(AttrTree, Dimensioned):
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in list(self.param)+['id', 'plot_id'] if p in kwargs}
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)

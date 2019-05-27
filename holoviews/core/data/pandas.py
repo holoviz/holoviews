@@ -30,7 +30,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        element_params = eltype.params()
+        element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_series(data):

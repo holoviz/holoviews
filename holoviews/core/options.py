@@ -320,7 +320,7 @@ class Cycle(param.Parameterized):
 
 
     def __repr__(self):
-        if self.key == self.param.params('key').default:
+        if self.key == self.param.objects(False)['key'].default:
             vrepr = ''
         elif self.key:
             vrepr = repr(self.key)
@@ -1065,7 +1065,7 @@ class Compositor(param.Parameterized):
             if self.transfer_parameters:
                 plot_opts = Store.lookup_options(backend, value, 'plot').kwargs
                 kwargs.update({k: v for k, v in plot_opts.items()
-                               if k in self.operation.params()})
+                               if k in self.operation.param})
 
         transformed = self.operation(value, input_ranges=input_ranges, **kwargs)
         if self.transfer_options:
@@ -1313,7 +1313,10 @@ class Store(object):
                              for opt in style_aliases.get(key, [])]
             style_opts = sorted(set(opt for opt in (expanded_opts + plot.style_opts)
                                     if opt not in plot._disabled_opts))
-            plot_opts = [k for k in plot.params().keys() if k not in ['name']]
+
+            # Special handling for PlotSelector which just proxies parameters
+            params = list(plot.param) if hasattr(plot, 'param') else plot.params()
+            plot_opts = [k for k in params if k not in ['name']]
 
             with param.logging_level('CRITICAL'):
                 plot.style_opts = style_opts

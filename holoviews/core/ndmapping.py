@@ -837,7 +837,7 @@ class UniformNdMapping(NdMapping):
             clone_type = self.__class__
         else:
             clone_type = new_type
-            new_params = new_type.params()
+            new_params = new_type.param.objects()
             settings = {k: v for k, v in settings.items()
                       if k in new_params}
         settings = dict(settings, **overrides)

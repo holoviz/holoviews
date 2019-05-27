@@ -98,7 +98,7 @@ class DataConversion(object):
         can be automatically sorted via the sort option and kwargs can
         be passed through.
         """
-        element_params = new_type.params()
+        element_params = new_type.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if isinstance(kdim_param.bounds[1], int):
@@ -119,7 +119,7 @@ class DataConversion(object):
         # Checks Element type supports dimensionality
         type_name = new_type.__name__
         for dim_type, dims in (('kdims', kdims), ('vdims', vdims)):
-            min_d, max_d = new_type.params(dim_type).bounds
+            min_d, max_d = element_params[dim_type].bounds
             if ((min_d is not None and len(dims) < min_d) or
                 (max_d is not None and len(dims) > max_d)):
                 raise ValueError("%s %s must be between length %s and %s." %
@@ -149,7 +149,7 @@ class DataConversion(object):
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
                   'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
-        if selected.group != selected.params()['group'].default:
+        if selected.group != selected.param.objects('existing')['group'].default:
             params['group'] = selected.group
         params.update(kwargs)
         if len(kdims) == selected.ndims or not groupby:
@@ -657,7 +657,7 @@ class Dataset(Element):
         vdims = [vd for vd in vdims if vd not in dropped]
 
         ndims = len(dimensions)
-        min_d, max_d = self.params('kdims').bounds
+        min_d, max_d = self.param.objects('existing')['kdims'].bounds
         generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
 
         if spreadfn:
@@ -679,7 +679,7 @@ class Dataset(Element):
                 # Should be checking the dimensions declared on the element are compatible
                 return self.clone(aggregated, kdims=kdims, vdims=vdims)
             except:
-                datatype = self.params('datatype').default
+                datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=Dataset if generic_type else None,
                                   datatype=datatype)

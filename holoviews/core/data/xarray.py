@@ -61,7 +61,7 @@ class XArrayInterface(GridInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import xarray as xr
-        element_params = eltype.params()
+        element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
 
