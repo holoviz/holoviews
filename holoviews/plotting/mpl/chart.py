@@ -996,7 +996,7 @@ class BarPlot(LegendPlot):
 
     def _create_bars(self, axis, element):
         # Get style and dimension information
-        values = self.values    
+        values = self.values
         if self.group_index != 0:
             self.warning('Bars group_index plot option is deprecated '
                          'and will be ignored, set stacked=True/False '
@@ -1173,10 +1173,13 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
         pos = self.position
         if ndims > 1:
-            data = [[(x, pos), (x, pos+y)] for x, y in element.array([0, 1])]
+            data = element.columns([0, 1])
+            xs, ys = data[dimensions[0]], data[dimensions[1]]
+            data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys)]
         else:
+            xs = element.array([0])
             height = self.spike_length
-            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array([0])]
+            data = [[(x[0], pos), (x[0], pos+height)] for x in xs]
 
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]
@@ -1188,10 +1191,13 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             cols = []
             for i, vs in enumerate((xs, ys)):
                 vs = np.array(vs)
-                if (vs.dtype.kind == 'M' or (len(vs) and isinstance(vs[0], datetime_types))) and i < len(dims):
-                    dt_format = Dimension.type_formatters[np.datetime64]
+                if isdatetime(vs):
+                    generic_dt_format = dt_format = Dimension.type_formatters.get(
+                        type(vs[0]),
+                        Dimension.type_formatters[np.datetime64]
+                    )
+                    vs = date2num(vs)
                     dims[i] = dims[i](value_format=DateFormatter(dt_format))
-                    vs = np.array([dt_to_int(v, 'D') for v in vs])
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 
@@ -1256,4 +1262,3 @@ class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
         Whether and where to display the yaxis, bare options allow suppressing
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
-
