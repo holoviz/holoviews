@@ -859,15 +859,16 @@ class Dynamic(param.ParameterizedFunction):
         added to the list.
         """
         streams = []
+        op = self.p.operation
         for stream in self.p.streams:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
                 raise ValueError('Streams must be Stream classes or instances, found %s type' %
                                  type(stream).__name__)
-            if isinstance(self.p.operation, Operation):
-                updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
-                           if v is None and k in self.p.operation.p}
+            if isinstance(op, Operation):
+                updates = {k: op.p.get(k) for k, v in stream.contents.items()
+                           if v is None and k in op.p}
                 if updates:
                     reverse = {v: k for k, v in stream._rename.items()}
                     stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
@@ -883,10 +884,10 @@ class Dynamic(param.ParameterizedFunction):
             streams = list(util.unique_iterator(streams + dim_streams))
 
         # If callback is a parameterized method and watch is disabled add as stream
-        has_dependencies = (util.is_param_method(self.p.operation, has_deps=True) or
-                            isinstance(callback, FunctionType) and hasattr(callback, '_dinfo'))
-        if (has_dependencies and watch:
-            streams.append(self.p.operation)
+        has_dependencies = (util.is_param_method(op, has_deps=True) or
+                            isinstance(op, FunctionType) and hasattr(op, '_dinfo'))
+        if has_dependencies and watch:
+            streams.append(op)
 
         # Add any keyword arguments which are parameterized methods
         # with dependencies as streams
