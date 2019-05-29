@@ -190,7 +190,8 @@ class Stream(param.Parameterized):
             elif isinstance(s, FunctionType) and hasattr(s, "_dinfo"):
                 deps = s._dinfo
                 dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
-                s = Params(parameters=dep_params)
+                rename = {p.name: k for k, p in deps.get('kw', {}).items()}
+                s = Params(parameters=dep_params, rename=rename)
             else:
                 invalid.append(s)
                 continue
