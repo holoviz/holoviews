@@ -9,6 +9,7 @@ from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import groupby
+from types import FunctionType
 
 import param
 import numpy as np
@@ -186,6 +187,10 @@ class Stream(param.Parameterized):
                 if not hasattr(s, "_dinfo"):
                     continue
                 s = ParamMethod(s)
+            elif isinstance(s, FunctionType) and hasattr(s, "_dinfo"):
+                deps = s._dinfo
+                dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
+                s = Params(parameters=dep_params)
             else:
                 invalid.append(s)
                 continue
@@ -623,13 +628,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, doc="""
+                                        constant=True, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized, parameters=None, watch=True, **params):
+    def __init__(self, parameterized=None, parameters=None, watch=True, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
@@ -725,7 +730,7 @@ class ParamMethod(Params):
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
-            raise ValueError('ParamMethodStream expects a method on a '
+            raise ValueError('ParamMethod stream expects a method on a '
                              'parameterized class, found %s.'
                              % type(parameterized).__name__)
         method = parameterized

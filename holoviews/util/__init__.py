@@ -1,6 +1,7 @@
 import os, sys, inspect, shutil
 
 from collections import defaultdict
+from types import FunctionType
 
 try:
     from pathlib import Path
@@ -882,8 +883,9 @@ class Dynamic(param.ParameterizedFunction):
             streams = list(util.unique_iterator(streams + dim_streams))
 
         # If callback is a parameterized method and watch is disabled add as stream
-        has_dependencies = util.is_param_method(self.p.operation, has_deps=True)
-        if has_dependencies and watch:
+        has_dependencies = (util.is_param_method(self.p.operation, has_deps=True) or
+                            isinstance(callback, FunctionType) and hasattr(callback, '_dinfo'))
+        if (has_dependencies and watch:
             streams.append(self.p.operation)
 
         # Add any keyword arguments which are parameterized methods
