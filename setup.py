@@ -29,7 +29,7 @@ extras_require['examples'] = extras_require['recommended'] + [
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
-    'cyordereddict', 'flexx==0.4.1']
+    'cyordereddict', 'pscript==0.7.1']
 
 # Test requirements
 extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py']

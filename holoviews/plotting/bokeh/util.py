@@ -527,14 +527,14 @@ def filter_toolboxes(plots):
 
 def py2js_tickformatter(formatter, msg=''):
     """
-    Uses flexx.pyscript to compile a python tick formatter to JS code
+    Uses py2js to compile a python tick formatter to JS code
     """
     try:
-        from flexx.pyscript import py2js
+        from pscript import py2js
     except ImportError:
         param.main.param.warning(
-            msg+'Ensure Flexx is installed ("conda install -c bokeh flexx" '
-            'or "pip install flexx")')
+            msg+'Ensure pscript is installed ("conda install pscript" '
+            'or "pip install pscript")')
         return
     try:
         jscode = py2js(formatter, 'formatter')
