@@ -233,12 +233,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.overlaid = False
         self.hmap = layout
         if layout.ndims > 1:
-            xkeys, ykeys = zip(*layout.data.keys())
+            xkeys, ykeys = zip(*layout.keys())
         else:
             xkeys = layout.keys()
             ykeys = [None]
-        self._xkeys = sorted(set(xkeys))
-        self._ykeys = sorted(set(ykeys))
+        self._xkeys = list(dict.fromkeys(xkeys))
+        self._ykeys = list(dict.fromkeys(ykeys))
+        
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
         self.fig_inches = self._get_size()
