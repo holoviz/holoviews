@@ -18,7 +18,7 @@ except:
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer, basestring
-from ...element import HLine
+from ...element import HLine, VLine
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .styles import text_properties, line_properties
@@ -130,6 +130,9 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
     style_opts = line_properties + ['level']
 
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
     _plot_methods = dict(single='Span')
 
     def get_data(self, element, ranges, style):
@@ -153,7 +156,15 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         return None, box
 
     def get_extents(self, element, ranges=None, range_type='combined'):
-        return None, None, None, None
+        loc = element.data
+        if isinstance(element, VLine):
+            dim = 'x'
+        elif isinstance(element, HLine):
+            dim = 'y'
+        if self.invert_axes:
+            dim = 'x' if dim == 'y' else 'x'
+        ranges[dim]['soft'] = loc, loc
+        return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
 
 
 
