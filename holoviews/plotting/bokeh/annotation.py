@@ -130,8 +130,9 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
     style_opts = line_properties + ['level']
 
-    apply_ranges = False
-    
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
     _plot_methods = dict(single='Span')
 
     def get_data(self, element, ranges, style):
