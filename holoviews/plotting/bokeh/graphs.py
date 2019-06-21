@@ -218,7 +218,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         start, end = (element.dimension_values(i) for i in range(2))
         if nodes.dtype.kind == 'f':
             start, end = start.astype(np.int32), end.astype(np.int32)
-        elif nodes.dtype.kind != 'i':
+        elif nodes.dtype.kind not in 'ui':
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
