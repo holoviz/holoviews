@@ -1903,8 +1903,8 @@ class GridSpace(UniformNdMapping):
         keys = super(GridSpace, self).keys()
         if self.ndims == 1 or not full_grid:
             return keys
-        dim1_keys = list(dict.fromkeys(k[0] for k in keys))
-        dim2_keys = list(dict.fromkeys(k[1] for k in keys))
+        dim1_keys = list(OrderedDict.fromkeys(k[0] for k in keys))
+        dim2_keys = list(OrderedDict.fromkeys(k[1] for k in keys))
         return [(d1, d2) for d1 in dim1_keys for d2 in dim2_keys]
 
 
