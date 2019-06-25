@@ -34,7 +34,7 @@ class PathPlot(ColorbarPlot):
             style = self._apply_transforms(element, ranges, style)
 
         cdim = element.get_dimension(self.color_index)
-        style_mapping = any(True for v in style.values() if isinstance(v, np.ndarray))
+        style_mapping = any(True for v in style.values() if isinstance(v, util.arraylike_types))
         dims = element.kdims
         xdim, ydim = dims
         generic_dt_format = Dimension.type_formatters[np.datetime64]

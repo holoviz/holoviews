@@ -17,7 +17,7 @@ from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
                          unique_iterator, closest_match, is_number, isfinite,
-                         python2sort, disable_constant)
+                         python2sort, disable_constant, arraylike_types)
 from ..streams import LinkedStream
 from ..util.transform import dim
 
@@ -518,7 +518,7 @@ def map_colors(arr, crange, cmap, hex=True):
     Maps an array of values to RGB hex strings, given
     a color range and colormap.
     """
-    if isinstance(crange, np.ndarray):
+    if isinstance(crange, arraylike_types):
         xsorted = np.argsort(crange)
         ypos = np.searchsorted(crange, arr)
         arr = xsorted[ypos]

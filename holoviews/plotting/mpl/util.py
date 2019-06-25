@@ -25,7 +25,8 @@ except:
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, _getargspec, basestring, cftime_types, is_number)
+    LooseVersion, _getargspec, arraylike_types, basestring,
+    cftime_types, is_number,)
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
@@ -89,7 +90,7 @@ def validate(style, value, vectorized=True):
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, (np.ndarray, list)) and vectorized:
+    if isinstance(value, arraylike_types+(list,)) and vectorized:
         return all(validator(v) for v in value)
     try:
         valid = validator(value)

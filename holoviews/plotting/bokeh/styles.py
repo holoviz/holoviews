@@ -15,7 +15,7 @@ except ImportError:
     cm, colors = None, None
 
 from ...core.options import abbreviated_exception
-from ...core.util import basestring
+from ...core.util import basestring, arraylike_types
 from ...util.transform import dim
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
@@ -133,7 +133,7 @@ def validate(style, value, scalar=False):
     validator = get_validator(style)
     if validator is None:
         return None
-    if isinstance(value, (np.ndarray, list)):
+    if isinstance(value, arraylike_types+(list,)):
         if scalar:
             return False
         return all(validator(v) for v in value)
