@@ -363,6 +363,20 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
         self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
 
+    def test_point_categorical_dtype_color_op(self):
+        df = pd.DataFrame(dict(sample_id=['subject 1', 'subject 2', 'subject 3', 'subject 4'], category=['apple', 'pear', 'apple', 'pear'], value=[1, 2, 3, 4]))
+        df['category'] = df['category'].astype('category')
+        points = Points(df, ['sample_id', 'value']).opts(color='category')
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        cmapper = plot.handles['color_color_mapper']
+        self.assertTrue(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['apple', 'pear'])
+        self.assertEqual(np.asarray(cds.data['color']), np.array(['apple', 'pear', 'apple', 'pear']))
+        self.assertEqual(glyph.fill_color, {'field': 'color', 'transform': cmapper})
+        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper})
+
     def test_point_explicit_cmap_color_op(self):
         points = Points([(0, 0), (0, 1), (0, 2)]).options(
             color='y', cmap={0: 'red', 1: 'green', 2: 'blue'})

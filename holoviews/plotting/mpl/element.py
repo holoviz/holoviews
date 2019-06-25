@@ -587,7 +587,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             groups = [sg for sg in style_groups if k.startswith(sg)]
             group = groups[0] if groups else None
             prefix = '' if group is None else group+'_'
-            if (k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray)
+            if (k in (prefix+'c', prefix+'color') and isinstance(val, util.arraylike_types)
                 and not validate('color', val)):
                 new_style.pop(k)
                 self._norm_kwargs(element, ranges, new_style, v, val, prefix)
@@ -617,7 +617,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 (prefix != 'edge' or getattr(self, 'filled', True))
                 and any(o.startswith(prefix+'face') for o in self.style_opts))
 
-            if k in (prefix+'c', prefix+'color') and isinstance(val, np.ndarray):
+            if k in (prefix+'c', prefix+'color') and isinstance(val, util.arraylike_types):
                 fill_style = new_style.get(prefix+'facecolor')
                 if fill_style and validate('color', fill_style):
                     new_style.pop('facecolor')

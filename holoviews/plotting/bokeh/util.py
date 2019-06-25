@@ -37,7 +37,7 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric)
+    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -98,7 +98,7 @@ def decode_bytes(array):
     bokeh serialization errors
     """
     if (sys.version_info.major == 2 or not len(array) or
-        (isinstance(array, np.ndarray) and array.dtype.kind != 'O')):
+        (isinstance(array, arraylike_types) and array.dtype.kind != 'O')):
         return array
     decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
     if isinstance(array, np.ndarray):
@@ -603,7 +603,8 @@ def cds_column_replace(source, data):
     needs to be updated. A replacement is required if untouched
     columns are not the same length as the columns being updated.
     """
-    current_length = [len(v) for v in source.data.values() if isinstance(v, (list, np.ndarray))]
+    current_length = [len(v) for v in source.data.values()
+                      if isinstance(v, (list,)+arraylike_types)]
     new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
     untouched = [k for k in source.data if k not in data]
     return bool(untouched and current_length and new_length and current_length[0] != new_length[0])

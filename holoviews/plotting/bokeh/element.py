@@ -1019,8 +1019,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, np.ndarray) and val.dtype.kind in 'uifMm'
-            if ('color' in k and isinstance(val, np.ndarray) and
+            numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMm'
+            if ('color' in k and isinstance(val, util.arraylike_types) and
                 (numeric or not validate('color', val))):
                 kwargs = {}
                 if val.dtype.kind not in 'ifMu':
