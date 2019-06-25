@@ -9,7 +9,7 @@ you can obtain by downloading the file from AWS:
 
 Place this parquet in a data/ subfolder and install the python dependencies, e.g.
 
-  conda install dask xyarray fastparquet python-snappy
+  conda install datashader fastparquet python-snappy
 
 You can now run this app with:
 
