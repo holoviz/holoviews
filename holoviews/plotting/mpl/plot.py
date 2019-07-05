@@ -27,7 +27,13 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    deprecated = ['text.latex.unicode', 'examples.directory']
+    deprecated = [
+        'text.latex.unicode',
+        'examples.directory',
+        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
+    ]
     old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
                     if mpl_version < '3.0' or k not in deprecated}
     mpl.rcParams.clear()
