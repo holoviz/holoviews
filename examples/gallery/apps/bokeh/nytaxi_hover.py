@@ -7,8 +7,11 @@ you can obtain by downloading the file from AWS:
 
   https://s3.amazonaws.com/datashader-data/nyc_taxi_wide.parq
 
-Once this parquet is placed in a data/ subfolder, you can run this app
-with:
+Place this parquet in a data/ subfolder and install the python dependencies, e.g.
+
+  conda install datashader fastparquet python-snappy
+
+You can now run this app with:
 
   bokeh serve --show nytaxi_hover.py
 
