@@ -23,7 +23,7 @@ notifications:
 
 env:
   global:
-    - PYENV_VERSION=3.6
+    - PYENV_VERSION=3.7
     - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
@@ -60,16 +60,14 @@ jobs:
 
     - &default
       stage: test
-      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests"
+      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
-        - conda install python=$PYENV_VERSION
-        - conda update -n base -c defaults conda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       install:
-        - doit env_create $CHANS_DEV --python=$PYENV_VERSION
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
         - doit env_capture
@@ -79,7 +77,7 @@ jobs:
       after_failure: sleep 10
 
     - <<: *default
-      env: DESC="Python 2.7 tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
+      env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
 
     # - &regression_test
     #   <<: *default
@@ -117,7 +115,7 @@ jobs:
     #     - if [ "$TRAVIS_BRANCH" == 'master' ]; then
     #         cd doc/test_data;
     #         zip -r test_data.zip *;
-    #         aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYENV_VERSION:0:1}.zip";
+    #         aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${PYTHON_VERSION:0:1}.zip";
     #         cd -;
     #       fi
     #     - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
@@ -135,7 +133,7 @@ jobs:
     #     - sleep 10
 
     # - <<: *regression_test
-    #   env: DESC="Python 2.7 regression tests" PYENV_VERSION=2.7 HV_REQUIREMENTS="nbtests"
+    #   env: DESC="Python 2.7 regression tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="nbtests"
 
     - &basic_deps
       <<: *default
