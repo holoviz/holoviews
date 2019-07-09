@@ -1030,12 +1030,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     else:
                         factors = util.unique_array(val)
                     kwargs['factors'] = factors
-                    if factors is not None and getattr(self, 'show_legend', False):
-                        new_style['legend'] = key
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
-                if isinstance(cmapper, CategoricalColorMapper) and val.dtype.kind in 'ifMu':
+                categorical = isinstance(cmapper, CategoricalColorMapper)
+                if categorical and val.dtype.kind in 'ifMu':
                     if v.dimension in element:
                         formatter = element.get_dimension(v.dimension).pprint_value
                     else:
@@ -1044,6 +1043,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     data[k+'_str__'] = [formatter(d) for d in val]
                 else:
                     field = k
+                if categorical and getattr(self, 'show_legend', False):
+                    new_style['legend'] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
