@@ -23,7 +23,7 @@ notifications:
 
 env:
   global:
-    - PYENV_VERSION=3.7
+    - PYENV_VERSION=3.7.1
     - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
