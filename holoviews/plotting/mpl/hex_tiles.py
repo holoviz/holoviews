@@ -29,7 +29,7 @@ class HexTilesPlot(ColorbarPlot):
       The display threshold before a bin is shown, by default bins with
       a count of less than 1 are hidden.""")
 
-    style_opts = ['edgecolors', 'alpha', 'linewidths', 'marginals']
+    style_opts = ['cmap', 'edgecolors', 'alpha', 'linewidths', 'marginals']
 
     _nonvectorized_styles = style_opts
 
