@@ -66,6 +66,7 @@ jobs:
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
         - conda install python=$PYENV_VERSION
+        - conda update -n base -c defaults conda
         - conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       install:
         - doit env_create $CHANS_DEV --python=$PYENV_VERSION
