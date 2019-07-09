@@ -3,10 +3,12 @@ from unittest import SkipTest
 
 import param
 import holoviews
-from pyviz_comms import nb_mime_js
+
 from IPython import version_info
-from param import ipython as param_ext
+from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
+from param import ipython as param_ext
+from pyviz_comms import nb_mime_js
 
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
@@ -143,7 +145,7 @@ class notebook_extension(extension):
         if p.case_sensitive_completion:
             from IPython.core import completer
             completer.completions_sorting_key = self.completions_sorting_key
-        if not p.allow_jedi_completion:
+        if not p.allow_jedi_completion and hasattr(IPCompleter, 'use_jedi'):
             ip.run_line_magic('config', 'IPCompleter.use_jedi = False')
 
         resources = self._get_resources(args, params)
