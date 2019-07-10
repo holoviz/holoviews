@@ -13,7 +13,6 @@ init:
 
 install:
   - "conda install -y -c pyviz pyctdev && doit ecosystem_setup"
-  - "conda install -y conda<4.6"
   - "doit env_create %CHANS_DEV% --name=test --python=%PY%"
   - "activate test"
   - "doit develop_install %CHANS_DEV% -o unit_tests"
