@@ -23,13 +23,10 @@ try:
 except:
     from collections import OrderedDict
 
-try:
-   import __builtin__ as builtins # noqa (compatibility)
-except:
-   import builtins as builtins   # noqa (compatibility)
-
 # Python3 compatibility
 if sys.version_info.major >= 3:
+    import builtins as builtins   # noqa (compatibility)
+    
     basestring = str
     unicode = str
     long = int
@@ -40,6 +37,8 @@ if sys.version_info.major >= 3:
     get_keywords = operator.attrgetter('varkw')
     LooseVersion = _LooseVersion
 else:
+    import __builtin__ as builtins # noqa (compatibility)
+    
     basestring = basestring
     unicode = unicode
     from itertools import izip
