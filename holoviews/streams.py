@@ -473,9 +473,14 @@ class Buffer(Pipe):
     When streaming a DataFrame will reset the DataFrame index by
     default making it available to HoloViews elements as dimensions,
     this may be disabled by setting index=False.
+
+    The ``following`` argument determines whether any plot which is
+    subscribed to this stream will update the axis ranges when an
+    update is pushed. This makes it possible to control whether zooming
+    is allowed while streaming.
     """
 
-    def __init__(self, data, length=1000, index=True, **params):
+    def __init__(self, data, length=1000, index=True, following=True, **params):
         if (util.pd and isinstance(data, util.pd.DataFrame)):
             example = data
         elif isinstance(data, np.ndarray):
@@ -512,6 +517,7 @@ class Buffer(Pipe):
         params['data'] = example
         super(Buffer, self).__init__(**params)
         self.length = length
+        self.following = following
         self._chunk_length = 0
         self._count = 0
         self._index = index
