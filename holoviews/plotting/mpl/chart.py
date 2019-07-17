@@ -945,7 +945,8 @@ class BarPlot(LegendPlot):
             return 0, 0, ngroups, np.NaN
         else:
             vrange = ranges[vdim]['combined']
-            return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
+            lower_limit = vrange[0] if self.logy else np.nanmin([vrange[0], 0])
+            return 0, lower_limit, ngroups, vrange[1]
 
 
     @mpl_rc_context
