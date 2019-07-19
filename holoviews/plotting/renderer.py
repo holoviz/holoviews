@@ -13,11 +13,14 @@ except ImportError:
 from contextlib import contextmanager
 
 import param
+
+from panel.pane import HoloViews
+from panel.viewable import Viewable
+
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import find_file, unicode, unbound_dimensions, basestring
 from .. import Layout, HoloMap, AdjointLayout, DynamicMap
-from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
 from pyviz_comms import CommManager, JupyterCommManager
@@ -145,15 +148,7 @@ class Renderer(Exporter):
     comm_msg_handler = None
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
-
-    core_dependencies = {'jQueryUI': {'js': ['https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'],
-                                      'css': ['https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css']}}
-
-    extra_dependencies = {'jQuery': {'js': ['https://code.jquery.com/jquery-2.1.4.min.js']},
-                          'underscore': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js']},
-                          'require': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']},
-                          'bootstrap': {'css': ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css']}}
+    widgets = ['scrubber', 'widgets']
 
     # Any additional JS and CSS dependencies required by a specific backend
     backend_dependencies = {}
@@ -215,25 +210,23 @@ class Renderer(Exporter):
         Helper method to be used in the __call__ method to get a
         suitable plot or widget object and the appropriate format.
         """
-        if isinstance(obj, tuple(self.widgets.values())):
+        if isinstance(obj, Viewable):
             return obj, 'html'
-        plot = self.get_plot(obj, renderer=self, **kwargs)
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None]:
-            if (((len(plot) == 1 and not plot.dynamic)
-                or (len(plot) > 1 and self.holomap is None) or
-                (plot.dynamic and len(plot.keys[0]) == 0)) or
-                not unbound_dimensions(plot.streams, plot.dimensions, no_duplicates=False)):
-                fmt = fig_formats[0] if self.fig=='auto' else self.fig
+            if any(len(o) > 1 or isinstance(o, DynamicMap) for o in obj.traverse(lambda x: x, HoloMap)):
+                fmt = holomap_formats[0] if self.holomap == 'auto' else self.holomap
             else:
-                fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+                fmt = fig_formats[0] if self.fig == 'auto' else self.fig
 
         if fmt in self.widgets:
-            plot = self.get_widget(plot, fmt, display_options={'fps': self.fps})
+            plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
+        else:
+            plot = self.get_plot(obj, renderer=self, **kwargs)
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
@@ -315,15 +308,14 @@ class Renderer(Exporter):
         JS code will set up a Websocket comm channel using the
         currently defined CommManager.
         """
-        if isinstance(obj, (Plot, NdWidget)):
+        if isinstance(obj, Plot):
             plot = obj
         else:
             plot, fmt = self._validate(obj, fmt)
 
         data, metadata = {}, {}
-        if isinstance(plot, NdWidget):
-            js, html = plot(as_script=True)
-            plot_id = plot.plot_id
+        if isinstance(plot, Viewable):
+            return plot._repr_mimebundle_()
         else:
             html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
@@ -352,6 +344,7 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
+        
         js_html, css_html = self.html_assets()
         if template is None: template = static_template
         html = self.html(obj, fmt)
@@ -360,30 +353,9 @@ class Renderer(Exporter):
 
     @bothmethod
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
-        if not isinstance(plot, Plot):
-            plot = self_or_cls.get_plot(plot)
-        dynamic = plot.dynamic
-        # Whether dimensions define discrete space
-        discrete = all(d.values for d in plot.dimensions)
-        if widget_type == 'auto':
-            isuniform = plot.uniform
-            if not isuniform:
-                widget_type = 'scrubber'
-            else:
-                widget_type = 'widgets'
-        elif dynamic and not discrete:
-            widget_type = 'widgets'
-
-        if widget_type in [None, 'auto']:
-            holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]
-            widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
-
-        widget_cls = self_or_cls.widgets[widget_type]
-        renderer = self_or_cls
-        if not isinstance(self_or_cls, Renderer):
-            renderer = self_or_cls.instance()
-        embed = self_or_cls.widget_mode == 'embed'
-        return widget_cls(plot, renderer=renderer, embed=embed, **kwargs)
+        if widget_type != 'scrubber':
+            widget_type = 'individual'
+        return HoloViews(plot, widget_type=widget_type)
 
 
     @bothmethod
@@ -400,30 +372,7 @@ class Renderer(Exporter):
         if fmt not in list(self_or_cls.widgets.keys())+['auto', None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
-
-        if not isinstance(obj, NdWidget):
-            if not isinstance(filename, (BytesIO, StringIO)):
-                filedir = os.path.dirname(filename)
-                current_path = os.getcwd()
-                html_path = os.path.abspath(filedir)
-                rel_path = os.path.relpath(html_path, current_path)
-                save_path = os.path.join(rel_path, json_path)
-            else:
-                save_path = json_path
-            kwargs['json_save_path'] = save_path
-            kwargs['json_load_path'] = json_path
-            widget = self_or_cls.get_widget(obj, fmt, **kwargs)
-        else:
-            widget = obj
-
-        html = self_or_cls.static_html(widget, fmt, template)
-        encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
-        if isinstance(filename, (BytesIO, StringIO)):
-            filename.write(encoded)
-            filename.seek(0)
-        else:
-            with open(filename, 'wb') as f:
-                f.write(encoded)
+        self.get_widget(obj, fmt).save(filename)
 
 
     @classmethod
@@ -454,31 +403,7 @@ class Renderer(Exporter):
         if backends is None:
             backends = [cls.backend] if cls.backend else []
 
-        # Get all the widgets and find the set of required js widget files
-        widgets = [wdgt for r in [Renderer]+Renderer.__subclasses__()
-                   for wdgt in r.widgets.values()]
-        css = list({wdgt.css for wdgt in widgets})
-        basejs = list({wdgt.basejs for wdgt in widgets})
-        extensionjs = list({wdgt.extensionjs for wdgt in widgets})
-
-        # Join all the js widget code into one string
-        path = os.path.dirname(os.path.abspath(__file__))
-
-        def open_and_read(path, f):
-            with open(find_file(path, f), 'r') as f:
-                txt = f.read()
-            return txt
-
-        widgetjs = '\n'.join(open_and_read(path, f)
-                             for f in basejs + extensionjs if f is not None)
-        widgetcss = '\n'.join(open_and_read(path, f)
-                              for f in css if f is not None)
-
         dependencies = {}
-        if core:
-            dependencies.update(cls.core_dependencies)
-        if extras:
-            dependencies.update(cls.extra_dependencies)
         for backend in backends:
             dependencies[backend] = Store.renderers[backend].backend_dependencies
 
@@ -501,11 +426,6 @@ class Renderer(Exporter):
             else:
                 for css in css_data:
                     css_html += '\n<link rel="stylesheet" href="%s">' % css
-        if script:
-            js_html += widgetjs
-        else:
-            js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
-        css_html += '\n<style>%s</style>' % widgetcss
 
         comm_js = cls.comm_manager.js_manager
         if script:

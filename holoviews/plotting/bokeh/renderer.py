@@ -10,24 +10,21 @@ import bokeh
 
 from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
-from bokeh.application.handlers import FunctionHandler
-from bokeh.application import Application
 from bokeh.core.validation.warnings import EMPTY_LAYOUT, MISSING_RENDERERS
 from bokeh.document import Document
 from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc, show as bkshow
 from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
-from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
-from bokeh.server.server import Server
 from bokeh.themes.theme import Theme
+from panel.pane import HoloViews
 
 from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size, bokeh_version, silence_warnings
+
 
 NOTEBOOK_DIV = """
 {plot_div}
@@ -75,10 +72,6 @@ class BokehRenderer(Renderer):
 
     webgl = param.Boolean(default=False, doc="""
         Whether to render plots with WebGL if available""")
-
-    widgets = {'scrubber': BokehScrubberWidget,
-               'widgets': BokehSelectionWidget,
-               'server': BokehServerWidgets}
 
     backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
@@ -138,16 +131,6 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def get_widget(self_or_cls, plot, widget_type, doc=None, **kwargs):
-        if not isinstance(plot, Plot):
-            plot = self_or_cls.get_plot(plot, doc)
-        if self_or_cls.mode == 'server':
-            return BokehServerWidgets(plot, renderer=self_or_cls.instance(), **kwargs)
-        else:
-            return super(BokehRenderer, self_or_cls).get_widget(plot, widget_type, **kwargs)
-
-
-    @bothmethod
     def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
         """
         Creates a bokeh app from a HoloViews object or plot. By
@@ -161,58 +144,12 @@ class BokehRenderer(Renderer):
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
         """
-        if not isinstance(self_or_cls, BokehRenderer) or self_or_cls.mode != 'server':
-            renderer = self_or_cls.instance(mode='server')
+        pane = HoloViews(plot)
+        if new_window:
+            return pane._get_server(port, websocket_origin, show=show)
         else:
-            renderer = self_or_cls
-
-        def modify_doc(doc):
-            renderer(plot, doc=doc)
-        handler = FunctionHandler(modify_doc)
-        app = Application(handler)
-
-        if not show:
-            # If not showing and in notebook context return app
-            return app
-        elif self_or_cls.notebook_context and not new_window:
-            # If in notebook, show=True and no new window requested
-            # display app inline
-            if isinstance(websocket_origin, list):
-                if len(websocket_origin) > 1:
-                    raise ValueError('In the notebook only a single websocket origin '
-                                     'may be defined, which must match the URL of the '
-                                     'notebook server.')
-                websocket_origin = websocket_origin[0]
-            opts = dict(notebook_url=websocket_origin) if websocket_origin else {}
-            return bkshow(app, **opts)
-
-        # If app shown outside notebook or new_window requested
-        # start server and open in new browser tab
-        from tornado.ioloop import IOLoop
-        loop = IOLoop.current()
-        if websocket_origin and not isinstance(websocket_origin, list):
-            websocket_origin = [websocket_origin]
-        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
-        opts['io_loop'] = loop
-        server = Server({'/': app}, port=port, **opts)
-        def show_callback():
-            server.show('/')
-        server.io_loop.add_callback(show_callback)
-        server.start()
-
-        def sig_exit(*args, **kwargs):
-            loop.add_callback_from_signal(do_stop)
-
-        def do_stop(*args, **kwargs):
-            loop.stop()
-
-        signal.signal(signal.SIGINT, sig_exit)
-        try:
-            loop.start()
-        except RuntimeError:
-            pass
-        return server
-
+            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {} 
+            return pane.app(port, **kwargs)
 
     @bothmethod
     def server_doc(self_or_cls, obj, doc=None):
@@ -221,33 +158,11 @@ class BokehRenderer(Renderer):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        if not isinstance(obj, (Plot, BokehServerWidgets)):
-            if not isinstance(self_or_cls, BokehRenderer) or self_or_cls.mode != 'server':
-                renderer = self_or_cls.instance(mode='server')
-            else:
-                renderer = self_or_cls
-            plot, _ =  renderer._validate(obj, 'auto')
-        else:
-            plot = obj
-
-        root = plot.state
-        if isinstance(plot, BokehServerWidgets):
-            plot = plot.plot
-
-        if doc is None:
-            doc = plot.document
-        else:
-            plot.document = doc
-
-        plot.traverse(lambda x: attach_periodic(x), [GenericElementPlot])
-        doc.add_root(root)
-        return doc
+        return HoloViews(obj).server_doc(doc)
 
 
     def components(self, obj, fmt=None, comm=True, **kwargs):
-        # Bokeh has to handle comms directly in <0.12.15
-        comm = False if bokeh_version < '0.12.15' else comm
-        return super(BokehRenderer, self).components(obj,fmt, comm, **kwargs)
+        return super(BokehRenderer, self).components(obj, fmt, comm, **kwargs)
 
 
     def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
