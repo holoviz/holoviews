@@ -17,7 +17,6 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox, mpl_version
 
 class OutputWarning(param.Parameterized):pass
@@ -88,10 +87,6 @@ class MPLRenderer(Renderer):
 
     counter = 0
 
-    # Define appropriate widget classes
-    widgets = {'scrubber': MPLScrubberWidget,
-               'widgets': MPLSelectionWidget}
-
     # Define the handler for updating matplotlib plots
     comm_msg_handler = mpl_msg_handler
 
@@ -103,11 +98,8 @@ class MPLRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if isinstance(plot, tuple(self.widgets.values())):
-            data = plot()
-        else:
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+        with mpl.rc_context(rc=plot.fig_rcparams):
+            data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
         data = self._apply_post_render_hooks(data, obj, fmt)
         return data, {'file-ext':fmt,

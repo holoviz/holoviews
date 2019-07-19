@@ -36,10 +36,6 @@ class BokehRendererTest(ComparisonTestCase):
         bytesio = BytesIO()
         self.renderer.save(self.image1, bytesio)
 
-    def test_export_widgets(self):
-        bytesio = BytesIO()
-        self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
-
     def test_render_get_plot_server_doc(self):
         renderer = self.renderer.instance(mode='server')
         plot = renderer.get_plot(self.image1)

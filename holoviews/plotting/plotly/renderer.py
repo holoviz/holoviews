@@ -12,7 +12,6 @@ with param.logging_level('CRITICAL'):
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
-from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 
 plotly_msg_handler = """
@@ -41,8 +40,7 @@ class PlotlyRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'png', 'svg', 'json']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
 
-    widgets = {'scrubber': PlotlyScrubberWidget,
-               'widgets': PlotlySelectionWidget}
+    widgets = ['scrubber', 'widgets']
 
     backend_dependencies = {'js': (get_plotlyjs(),)}
 
@@ -54,9 +52,7 @@ class PlotlyRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        if isinstance(plot, tuple(self.widgets.values())):
-            return plot(), mime_types
-        elif fmt in ('html', 'png', 'svg'):
+        if fmt in ('html', 'png', 'svg'):
             return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
         elif fmt == 'json':
             return self.diff(plot), mime_types
