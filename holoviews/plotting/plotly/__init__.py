@@ -16,12 +16,16 @@ from .stats import *                 # noqa (API import)
 from .tabular import *               # noqa (API import)
 from ...core.util import LooseVersion, VersionError
 import plotly
+import panel as pn
+
 
 if LooseVersion(plotly.__version__) < '3.4.0':
     raise VersionError(
         "The plotly extension requires a plotly version >=3.4.0, "
         "please upgrade from plotly %s to a more recent version."
         % plotly.__version__, plotly.__version__, '3.4.0')
+
+pn.extension("plotly")
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 
