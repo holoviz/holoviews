@@ -4,7 +4,7 @@ regardless of plotting package or backend.
 """
 from __future__ import unicode_literals
 
-import os, base64
+import base64
 from io import BytesIO
 try:
     from StringIO import StringIO
@@ -20,7 +20,7 @@ from panel.viewable import Viewable
 
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import find_file, unicode, unbound_dimensions, basestring
+from ..core.util import unicode, unbound_dimensions
 from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 
 from . import Plot
@@ -218,7 +218,8 @@ class Renderer(Exporter):
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None]:
-            if any(len(o) > 1 or isinstance(o, DynamicMap) for o in obj.traverse(lambda x: x, HoloMap)):
+            if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o)
+                                  for o in obj.traverse(lambda x: x, HoloMap)):
                 fmt = holomap_formats[0] if self.holomap == 'auto' else self.holomap
             else:
                 fmt = fig_formats[0] if self.fig == 'auto' else self.fig
@@ -374,7 +375,7 @@ class Renderer(Exporter):
         if fmt not in self_or_cls.widgets+['auto', None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
-        self.get_widget(obj, fmt).save(filename)
+        self_or_cls.get_widget(obj, fmt).save(filename)
 
 
     @classmethod

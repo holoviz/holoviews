@@ -1,22 +1,22 @@
-import os, sys, warnings, operator
+import sys, warnings, operator
+import json
 import time
 import types
 import numbers
 import inspect
 import itertools
-import string, fnmatch
+import string
 import unicodedata
 import datetime as dt
-from collections import defaultdict
-from functools import partial
-from contextlib import contextmanager
-from distutils.version import LooseVersion as _LooseVersion
 
+from distutils.version import LooseVersion as _LooseVersion
+from functools import partial
+from collections import defaultdict
+from contextlib import contextmanager
 from threading import Thread, Event
+
 import numpy as np
 import param
-
-import json
 
 try:
     from cyordereddict import OrderedDict
@@ -1401,22 +1401,6 @@ def get_spec(obj):
    """
    return (obj.__class__.__name__,
            obj.group, obj.label)
-
-
-def find_file(folder, filename):
-    """
-    Find a file given folder and filename. If the filename can be
-    resolved directly returns otherwise walks the supplied folder.
-    """
-    matches = []
-    if os.path.isabs(filename) and os.path.isfile(filename):
-        return filename
-    for root, _, filenames in os.walk(folder):
-        for fn in fnmatch.filter(filenames, filename):
-            matches.append(os.path.join(root, fn))
-    if not matches:
-        raise IOError('File %s could not be found' % filename)
-    return matches[-1]
 
 
 def is_dataframe(data):
