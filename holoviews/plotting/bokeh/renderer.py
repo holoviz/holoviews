@@ -16,6 +16,7 @@ from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc, show as bkshow
 from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
+from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
 from panel.pane import HoloViews
@@ -92,8 +93,8 @@ class BokehRenderer(Renderer):
 
         if self.mode == 'server':
             return self.server_doc(plot, doc), info
-        elif isinstance(plot, tuple(self.widgets.values())):
-            return plot(), info
+        elif isinstance(plot, Viewable):
+            return plot, info
         elif fmt == 'png':
             png = self._figure_data(plot, fmt=fmt, doc=doc)
             return png, info
