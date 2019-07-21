@@ -128,7 +128,6 @@ setup_args.update(dict(
               "holoviews.plotting.mpl",
               "holoviews.plotting.bokeh",
               "holoviews.plotting.plotly",
-              "holoviews.plotting.widgets",
               "holoviews.tests",
               "holoviews.tests.core",
               "holoviews.tests.core.data",
@@ -146,7 +145,6 @@ setup_args.update(dict(
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js', '*.css'],
                   'holoviews.plotting.plotly': ['*.js'],
-                  'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css'],
                   'holoviews.tests.ipython.notebooks': ['*.ipynb']},
     classifiers=[
         "License :: OSI Approved :: BSD License",
