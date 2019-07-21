@@ -751,7 +751,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element, ranges)
         framewise = self.framewise
-        streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
+        streaming = (self.streaming and any(stream._triggering and stream.following
+                                            for stream in self.streaming))
         xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
                     and (framewise or streaming))
                    or xfactors is not None)
