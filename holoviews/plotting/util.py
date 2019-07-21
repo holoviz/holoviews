@@ -11,7 +11,7 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, Store, NdOverlay)
+                    Overlay, GridSpace, NdLayout, NdOverlay)
 from ..core.options import Cycle
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
@@ -480,20 +480,6 @@ def initialize_unbounded(obj, dimensions, key):
         obj.select([DynamicMap], **select)
     except KeyError:
         pass
-
-
-def save_frames(obj, filename, fmt=None, backend=None, options=None):
-    """
-    Utility to export object to files frame by frame, numbered individually.
-    Will use default backend and figure format by default.
-    """
-    backend = Store.current_backend if backend is None else backend
-    renderer = Store.renderers[backend]
-    fmt = renderer.params('fig').objects[0] if fmt is None else fmt
-    plot = renderer.get_plot(obj)
-    for i in range(len(plot)):
-        plot.update(i)
-        renderer.save(plot, '%s_%s' % (filename, i), fmt=fmt, options=options)
 
 
 def dynamic_update(plot, subplot, key, overlay, items):

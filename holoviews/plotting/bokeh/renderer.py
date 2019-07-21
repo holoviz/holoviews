@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, unicode_literals
 
 import base64
 import logging
-import signal
 from io import BytesIO
 
 import param
@@ -13,18 +12,18 @@ from param.parameterized import bothmethod
 from bokeh.core.validation.warnings import EMPTY_LAYOUT, MISSING_RENDERERS
 from bokeh.document import Document
 from bokeh.embed.notebook import encode_utf8, notebook_content
-from bokeh.io import curdoc, show as bkshow
+from bokeh.io import curdoc
 from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
-from panel.pane import HoloViews
+from panel.pane import HoloViews, Viewable
 
 from ...core import Store, HoloMap
-from ..plot import Plot, GenericElementPlot
+from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import attach_periodic, compute_plot_size, bokeh_version, silence_warnings
+from .util import compute_plot_size, silence_warnings
 
 
 NOTEBOOK_DIV = """
