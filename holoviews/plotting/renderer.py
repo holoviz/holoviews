@@ -14,6 +14,7 @@ from contextlib import contextmanager
 
 import param
 
+from panel import config
 from panel.pane import HoloViews
 from panel.viewable import Viewable
 
@@ -315,7 +316,8 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            return plot._repr_mimebundle_()
+            with config.set(embed=not bool(plot.object.traverse(DynamicMap))):
+                return plot.layout._repr_mimebundle_()
         else:
             html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
@@ -355,7 +357,7 @@ class Renderer(Exporter):
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
         if widget_type != 'scrubber':
             widget_type = 'individual'
-        return HoloViews(plot, widget_type=widget_type)
+        return HoloViews(plot, widget_type=widget_type, fancy_layout=True)
 
 
     @bothmethod
@@ -369,7 +371,7 @@ class Renderer(Exporter):
         data to a json file in the supplied json_path (defaults to
         current path).
         """
-        if fmt not in list(self_or_cls.widgets.keys())+['auto', None]:
+        if fmt not in self_or_cls.widgets+['auto', None]:
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
         self.get_widget(obj, fmt).save(filename)
@@ -458,17 +460,11 @@ class Renderer(Exporter):
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
 
-        if isinstance(obj, (Plot, NdWidget)):
-            plot = obj
-        else:
-            with StoreOptions.options(obj, options, **kwargs):
-                plot = self_or_cls.get_plot(obj)
+        with StoreOptions.options(obj, options, **kwargs):
+            plot, fmt = self_or_cls._validate(obj, fmt)
 
-        if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
-            with StoreOptions.options(obj, options, **kwargs):
-                if isinstance(basename, basestring):
-                    basename = basename+'.html'
-                self_or_cls.export_widgets(plot, basename, fmt)
+        if isinstance(plot, Viewable):
+            plot.save(basename, embed=True)
             return
 
         rendered = self_or_cls(plot, fmt)
