@@ -218,8 +218,8 @@ class Renderer(Exporter):
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None]:
-            if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o)
-                                  for o in obj.traverse(lambda x: x, HoloMap)):
+            if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
+                   for o in obj.traverse(lambda x: x, HoloMap)):
                 fmt = holomap_formats[0] if self.holomap == 'auto' else self.holomap
             else:
                 fmt = fig_formats[0] if self.fig == 'auto' else self.fig
