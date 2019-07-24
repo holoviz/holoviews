@@ -74,7 +74,7 @@ class PlotlyRenderer(Renderer):
             return diff
 
 
-    def _figure_data(self, plot, fmt=None, divuuid=None, comm=True, as_script=False, width=800, height=600):
+    def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
         # and applies any default theme.
         figure = go.Figure(plot.state)
@@ -87,51 +87,11 @@ class PlotlyRenderer(Renderer):
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
                 div = tag.format(src=src, mime_type=mime_type, css='')
-                js = ''
-                return div, js
-            return data
-
-        if divuuid is None:
-            divuuid = plot.id
-
-        jdata = json.dumps(figure.data, cls=utils.PlotlyJSONEncoder)
-        jlayout = json.dumps(figure.layout, cls=utils.PlotlyJSONEncoder)
-
-        config = {}
-        config['showLink'] = False
-        jconfig = json.dumps(config)
-
-        if as_script:
-            header = 'window.PLOTLYENV=window.PLOTLYENV || {};'
+                return div
+            else:
+                return data
         else:
-            header = ('<script type="text/javascript">'
-                      'window.PLOTLYENV=window.PLOTLYENV || {};'
-                      '</script>')
-
-        script = '\n'.join([
-            'var plotly = window._Plotly || window.Plotly;'
-            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
-            '}})']).format(id=divuuid,
-                           data=jdata,
-                           layout=jlayout,
-                           config=jconfig)
-
-        html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
-                'Drawing...</div>'
-                '<div id="{id}" style="height: {height}; width: {width};" '
-                'class="plotly-graph-div">'
-                '</div>'.format(id=divuuid, height=height, width=width))
-        if as_script:
-            return html, header + script
-
-        content = (
-            '{html}'
-            '<script type="text/javascript">'
-            '  {script}'
-            '</script>'
-        ).format(html=html, script=script)
-        return '\n'.join([header, content])
+            raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
 
 
     @classmethod

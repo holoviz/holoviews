@@ -177,7 +177,7 @@ class MPLRenderer(Renderer):
         return self.html(plot, figure_format)
 
 
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
@@ -223,7 +223,7 @@ class MPLRenderer(Renderer):
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
             html = tag.format(src=src, mime_type=mime_type, css='')
-            return html, ''
+            return html
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data

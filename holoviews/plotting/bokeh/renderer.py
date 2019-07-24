@@ -161,7 +161,7 @@ class BokehRenderer(Renderer):
         return super(BokehRenderer, self).components(obj, fmt, comm, **kwargs)
 
 
-    def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
         """
         Given a plot instance, an output format and an optional bokeh
         document, return the corresponding data. If as_script is True,
@@ -195,23 +195,14 @@ class BokehRenderer(Renderer):
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
                 div = tag.format(src=src, mime_type=mime_type, css='')
-                js = ''
         else:
-            try:
-                with silence_warnings(EMPTY_LAYOUT, MISSING_RENDERERS):
-                    js, div, _ = notebook_content(model)
-                html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-                data = encode_utf8(html)
-                doc.hold()
-            except:
-                logger.disabled = False
-                raise
-            logger.disabled = False
+            raise ValueError('Unsupported format: {fmt}'.format(fmt=fmt))
 
         plot.document = doc
         if as_script:
-            return div, js
-        return data
+            return div
+        else:
+            return data
 
 
     def diff(self, plot, binary=True):
