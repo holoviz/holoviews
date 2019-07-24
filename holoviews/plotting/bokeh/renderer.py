@@ -28,13 +28,6 @@ from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .util import compute_plot_size, silence_warnings
 
 
-NOTEBOOK_DIV = """
-{plot_div}
-<script type="text/javascript">
-  {plot_script}
-</script>
-"""
-
 default_theme = Theme(json={
     'attrs': {
         'Title': {'text_color': 'black', 'text_font_size': '12pt'}

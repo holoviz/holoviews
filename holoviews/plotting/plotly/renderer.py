@@ -6,7 +6,6 @@ import json
 import param
 with param.logging_level('CRITICAL'):
     from plotly import utils
-    from plotly.offline import get_plotlyjs, init_notebook_mode
     import plotly.graph_objs as go
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
@@ -15,21 +14,6 @@ from ...core import HoloMap
 
 import panel as pn
 from panel.pane import Viewable
-
-plotly_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{plot_id}')[0];
-var data = JSON.parse(msg);
-$.each(data.data, function(i, obj) {{
-  $.each(Object.keys(obj), function(j, key) {{
-    plot.data[i][key] = obj[key];
-  }});
-}});
-var plotly = window._Plotly || window.Plotly;
-plotly.relayout(plot, data.layout);
-plotly.redraw(plot);
-"""
-
 
 class PlotlyRenderer(Renderer):
 
@@ -43,10 +27,6 @@ class PlotlyRenderer(Renderer):
                     'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
 
     widgets = ['scrubber', 'widgets']
-
-    backend_dependencies = {'js': (get_plotlyjs(),)}
-
-    comm_msg_handler = plotly_msg_handler
 
     _loaded = False
 
