@@ -227,6 +227,8 @@ class Renderer(Exporter):
         if fmt in self.widgets:
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
+        elif fmt == 'html':
+            plot, fmt = HoloViews(obj), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
