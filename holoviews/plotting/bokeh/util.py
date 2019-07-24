@@ -310,11 +310,10 @@ def compute_layout_properties(
         match_aspect = True
         if (fixed_width and fixed_height):
             frame_width, frame_height = width, height
-        else:
-            if fixed_width or not fixed_height:
-                height = None
-            if fixed_height or not fixed_width:
-                width = None
+        elif fixed_width or not fixed_height:
+            height = None
+        elif fixed_height or not fixed_width:
+            width = None
 
         aspect_scale = data_aspect
         if aspect == 'equal':

@@ -779,7 +779,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
 
-            if self.drawn or self.aspect != 'equal':
+            if self.drawn or (self.aspect != 'equal' and fixed_width and fixed_height):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -814,11 +814,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
                 if fixed_height:
                     plot.frame_height = height
-                    plot.frame_width = int(height*aspect)
+                    plot.frame_width = int(height/aspect)
                     plot.plot_width, plot.plot_height = None, None
                 elif fixed_width:
                     plot.frame_width = width
-                    plot.frame_height = int(width/aspect)
+                    plot.frame_height = int(width*aspect)
                     plot.plot_width, plot.plot_height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
@@ -906,7 +906,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.data_aspect:
             return (yspan/xspan)*self.data_aspect
         elif self.aspect == 'equal':
-            return xspan/yspan
+            return yspan/xspan
         elif self.aspect == 'square':
             return 1
         elif self.aspect is not None:
