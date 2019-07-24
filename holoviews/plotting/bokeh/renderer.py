@@ -18,6 +18,8 @@ from bokeh.models import Model
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
+
+import panel as pn
 from panel.pane import HoloViews, Viewable
 
 from ...core import Store, HoloMap
@@ -269,8 +271,4 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
-        bokeh.io.notebook.LOAD_MIME_TYPE = MIME_TYPES['jlab-hv-load']
-        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-        bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
-        bokeh.io.notebook.curstate().output_notebook()
+        pn.extension()

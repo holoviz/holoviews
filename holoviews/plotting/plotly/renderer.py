@@ -13,6 +13,7 @@ from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 
+import panel as pn
 from panel.pane import Viewable
 
 plotly_msg_handler = """
@@ -110,8 +111,5 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import publish_display_data
         cls._loaded = True
-        init_notebook_mode(connected=not inline)
-        publish_display_data(data={MIME_TYPES['jlab-hv-load']:
-                                   get_plotlyjs()})
+        pn.extension("plotly")
