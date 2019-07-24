@@ -63,6 +63,10 @@ class PlotlyRenderer(Renderer):
         if fmt in ('png', 'svg'):
             import plotly.io as pio
             data = pio.to_image(figure, fmt)
+
+            if fmt == 'svg':
+                data = data.decode('utf-8')
+                
             if as_script:
                 b64 = base64.b64encode(data).decode("utf-8")
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
