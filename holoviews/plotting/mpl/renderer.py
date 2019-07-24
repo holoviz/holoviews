@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from itertools import chain
 
 import param
+from panel.pane import Viewable
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -95,16 +96,19 @@ class MPLRenderer(Renderer):
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        plot, fmt =  self._validate(obj, fmt)
-        if plot is None: return
+        plot, fmt = self._validate(obj, fmt)
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        with mpl.rc_context(rc=plot.fig_rcparams):
-            data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+        if plot is None:
+            return
+        elif isinstance(plot, Viewable):
+            return plot, info
+        else:
+            with mpl.rc_context(rc=plot.fig_rcparams):
+                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
-        data = self._apply_post_render_hooks(data, obj, fmt)
-        return data, {'file-ext':fmt,
-                      'mime_type':MIME_TYPES[fmt]}
-
+            data = self._apply_post_render_hooks(data, obj, fmt)
+            return data, info
 
     def show(self, obj):
         """

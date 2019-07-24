@@ -97,10 +97,6 @@ class BokehRenderer(Renderer):
         elif fmt == 'png':
             png = self._figure_data(plot, fmt=fmt, doc=doc)
             return png, info
-        elif fmt == 'html':
-            html = self._figure_data(plot, doc=doc)
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-            return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             return self.diff(plot), info
 

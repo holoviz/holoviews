@@ -13,6 +13,7 @@ from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 
+from panel.pane import Viewable
 
 plotly_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
@@ -52,7 +53,10 @@ class PlotlyRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        if fmt in ('html', 'png', 'svg'):
+        if isinstance(plot, Viewable):
+            # fmt == 'html'
+            return plot, mime_types
+        elif fmt in ('png', 'svg'):
             return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
         elif fmt == 'json':
             return self.diff(plot), mime_types
