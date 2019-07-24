@@ -2,6 +2,9 @@ from __future__ import absolute_import, division, unicode_literals
 
 import base64
 import json
+import re
+
+import panel as pn
 
 import param
 with param.logging_level('CRITICAL'):
@@ -87,48 +90,17 @@ class PlotlyRenderer(Renderer):
                 return div, js
             return data
 
-        if divuuid is None:
-            divuuid = plot.id
-
-        jdata = json.dumps(figure.data, cls=utils.PlotlyJSONEncoder)
-        jlayout = json.dumps(figure.layout, cls=utils.PlotlyJSONEncoder)
-
-        config = {}
-        config['showLink'] = False
-        jconfig = json.dumps(config)
+        figure_pane = pn.pane.Plotly(figure)
+        mimebundle = figure_pane._repr_mimebundle_()
+        html = mimebundle[0]['text/html']
 
         if as_script:
-            header = 'window.PLOTLYENV=window.PLOTLYENV || {};'
-        else:
-            header = ('<script type="text/javascript">'
-                      'window.PLOTLYENV=window.PLOTLYENV || {};'
-                      '</script>')
+            script_ind = html.find('<script')
+            just_html, script_with_tags = html[:script_ind], html[script_ind:]
+            just_script = re.sub(r"(<script[^>]*>)|(</script>)", "", script_with_tags)
+            return just_html, just_script
 
-        script = '\n'.join([
-            'var plotly = window._Plotly || window.Plotly;'
-            'plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
-            '}})']).format(id=divuuid,
-                           data=jdata,
-                           layout=jlayout,
-                           config=jconfig)
-
-        html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
-                'Drawing...</div>'
-                '<div id="{id}" style="height: {height}; width: {width};" '
-                'class="plotly-graph-div">'
-                '</div>'.format(id=divuuid, height=height, width=width))
-        if as_script:
-            return html, header + script
-
-        content = (
-            '{html}'
-            '<script type="text/javascript">'
-            '  {script}'
-            '</script>'
-        ).format(html=html, script=script)
-        return '\n'.join([header, content])
-
+        return html
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -146,8 +118,4 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import publish_display_data
-        cls._loaded = True
-        init_notebook_mode(connected=not inline)
-        publish_display_data(data={MIME_TYPES['jlab-hv-load']:
-                                   get_plotlyjs()})
+        pn.extension("plotly")
