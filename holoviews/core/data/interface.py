@@ -273,6 +273,12 @@ class Interface(param.Parameterized):
 
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        name = dataset.get_dimension(dimension, strict=True).name
+        return dataset.data[name].dtype
+
+
+    @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and

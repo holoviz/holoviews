@@ -18,6 +18,11 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
         for d in 'xy':
             self.assertEqual(dataset.dimension_values(d).dtype, np.float64)
 
+    def test_dataset_empty_list_dtypes(self):
+        dataset = Dataset([], kdims=['x'], vdims=['y'])
+        for d in 'xy':
+            self.assertEqual(dataset.interface.dtype(dataset, d), np.float64)
+
     def test_dataset_simple_dict_sorted(self):
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],

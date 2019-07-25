@@ -259,6 +259,13 @@ class MultiInterface(Interface):
         return length+len(dataset.data)-1
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        if not dataset.data:
+            return np.dtype('float')
+        ds = cls._inner_dataset_template(dataset)
+        return ds.interface.dtype(dataset, dimension)
+
+    @classmethod
     def nonzero(cls, dataset):
         return bool(dataset.data)
 

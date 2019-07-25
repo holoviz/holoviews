@@ -31,6 +31,12 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
         self.assertEqual(dataset.dimension_values('z', flat=False),
                          canonical)
 
+    def test_gridded_dtypes(self):
+        ds = self.dataset_grid
+        self.assertEqual(ds.interface.dtype(ds, 'x'), np.float64)
+        self.assertEqual(ds.interface.dtype(ds, 'y'), np.float64)
+        self.assertEqual(ds.interface.dtype(ds, 'z'), np.int64)
+
     def test_dataset_groupby_with_transposed_dimensions(self):
         raise SkipTest('Image interface does not support multi-dimensional data.')
 

@@ -20,6 +20,13 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
                                           kdims=['x'], vdims=['y']))
 
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype('<U1'))
+        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype('int64'))
+        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype('int64'))
+        self.assertEqual(ds.interface.dtype(ds, 'Height'), np.dtype('float64'))
+
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':
