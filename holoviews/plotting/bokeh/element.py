@@ -769,9 +769,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
 
-        if data_aspect and fixed_width and fixed_height:
-            pass
-        elif data_aspect and (categorical or datetime):
+        if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
                                'axes are %s, the option will '
@@ -780,7 +778,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
-            if self.drawn or self.aspect not in ['equal', None]:
+
+            if self.drawn or (self.aspect != 'equal' and fixed_width and fixed_height):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -804,7 +803,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
-            else:
+            elif not (fixed_height and fixed_width):
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
                 width = plot.frame_width or plot.plot_width or 300
@@ -815,11 +814,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
                 if fixed_height:
                     plot.frame_height = height
-                    plot.frame_width = int(height*aspect)
+                    plot.frame_width = int(height/aspect)
                     plot.plot_width, plot.plot_height = None, None
                 elif fixed_width:
                     plot.frame_width = width
-                    plot.frame_height = int(width/aspect)
+                    plot.frame_height = int(width*aspect)
                     plot.plot_width, plot.plot_height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
@@ -907,7 +906,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.data_aspect:
             return (yspan/xspan)*self.data_aspect
         elif self.aspect == 'equal':
-            return xspan/yspan
+            return yspan/xspan
         elif self.aspect == 'square':
             return 1
         elif self.aspect is not None:

@@ -202,7 +202,10 @@ def compute_layout_properties(
     fixed_width = (explicit_width or frame_width)
     fixed_height = (explicit_height or frame_height)
     fixed_aspect = aspect or data_aspect
-    aspect = 1 if aspect == 'square' else aspect
+    if aspect == 'square':
+        aspect = 1
+    elif aspect == 'equal':
+        data_aspect = 1
 
     # Plot dimensions
     height = None if height is None else int(height*size_multiplier)
@@ -250,16 +253,25 @@ def compute_layout_properties(
 
     if fixed_aspect:
         aspect_type = 'data_aspect' if data_aspect else 'aspect'
-        if fixed_width and fixed_height:
-            if not data_aspect:
+        if fixed_width and fixed_height and aspect:
+            if aspect == 'equal':
+                data_aspect = None
+                if logger:
+                    logger.warning(
+                        "%s value was ignored because absolute width and "
+                        "height values were provided. To set the scaling "
+                        "between the x- and y-axis independent of the "
+                        "width and height values set the data_aspect."
+                        % aspect_type)
+            elif not data_aspect:
                 aspect = None
-            if logger:
-                logger.warning(
-                    "%s value was ignored because absolute width and "
-                    "height values were provided. Either supply "
-                    "explicit frame_width and frame_height to achieve "
-                    "desired aspect OR supply a combination of width "
-                    "or height and an aspect value." % aspect_type)
+                if logger:
+                    logger.warning(
+                        "%s value was ignored because absolute width and "
+                        "height values were provided. Either supply "
+                        "explicit frame_width and frame_height to achieve "
+                        "desired aspect OR supply a combination of width "
+                        "or height and an aspect value." % aspect_type)
         elif fixed_width and responsive:
             height = None
             responsive = False
@@ -294,13 +306,13 @@ def compute_layout_properties(
     match_aspect = False
     aspect_scale = 1
     aspect_ratio = None
-    if (fixed_width and fixed_height):
-        pass
-    elif data_aspect or aspect == 'equal':
+    if data_aspect:
         match_aspect = True
-        if fixed_width or not fixed_height:
+        if (fixed_width and fixed_height):
+            frame_width, frame_height = frame_width or width, frame_height or height
+        elif fixed_width or not fixed_height:
             height = None
-        if fixed_height or not fixed_width:
+        elif fixed_height or not fixed_width:
             width = None
 
         aspect_scale = data_aspect
@@ -308,6 +320,8 @@ def compute_layout_properties(
             aspect_scale = 1
         elif responsive:
             aspect_ratio = aspect
+    elif (fixed_width and fixed_height):
+        pass
     elif isnumeric(aspect):
         if responsive:
             aspect_ratio = aspect
