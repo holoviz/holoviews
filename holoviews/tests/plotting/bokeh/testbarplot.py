@@ -92,6 +92,13 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(y_range.start, 0.001)
         self.assertEqual(y_range.end, 3.0000000000000013)
 
+    def test_bars_ylim(self):
+        bars = Bars([1, 2, 3]).opts(ylim=(0, 200))
+        plot = bokeh_renderer.get_plot(bars)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 200)
+        
     def test_bars_padding_square(self):
         points = Bars([(1, 2), (2, -1), (3, 3)]).options(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
