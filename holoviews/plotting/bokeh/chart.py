@@ -10,7 +10,9 @@ from bokeh.transform import jitter
 
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
-from ...core.util import OrderedDict, max_range, basestring, dimension_sanitizer, isfinite, range_pad
+from ...core.util import (
+    OrderedDict, max_range, basestring, dimension_sanitizer,
+    isfinite, range_pad, dimension_range)
 from ...element import Bars
 from ...operation import interpolate_curve
 from ...util.transform import dim
@@ -811,6 +813,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
         else:
             y0 = 0
+
+        y0, y1 = dimension_range(y0, y1, self.ylim, (None, None))
 
         # Ensure x-axis is picked up as categorical
         x0 = xdim.pprint_value(extents[0])
