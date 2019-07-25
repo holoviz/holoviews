@@ -123,7 +123,7 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         data = dataset.data
         dim_idx = dataset.get_dimension_index(dim)
         if data.ndim == 1:

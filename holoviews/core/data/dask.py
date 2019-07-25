@@ -90,12 +90,12 @@ class DaskInterface(PandasInterface):
         return dataset.data
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         dim = dataset.get_dimension(dim)
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-        return data.compute().values
+        return data.compute().values if compute else data.values
 
     @classmethod
     def select_mask(cls, dataset, selection):
