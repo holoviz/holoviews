@@ -847,11 +847,15 @@ def isfinite(val):
     Helper function to determine if scalar or array value is finite extending
     np.isfinite with support for None, string, datetime types.
     """
-    if not np.isscalar(val):
+    is_dask = is_dask_array(val)
+    if not np.isscalar(val) and not is_dask:
         val = asarray(val, strict=False)
 
     if val is None:
         return False
+    elif is_dask:
+        import dask.array as da
+        return da.isfinite(val)
     elif isinstance(val, np.ndarray):
         if val.dtype.kind == 'M':
             return ~isnat(val)
@@ -1424,7 +1428,7 @@ def is_dataframe(data):
     Checks whether the supplied data is of DataFrame type.
     """
     dd = None
-    if 'dask' in sys.modules and 'pandas' in sys.modules:
+    if 'dask.dataframe' in sys.modules and 'pandas' in sys.modules:
         import dask.dataframe as dd
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
@@ -1435,10 +1439,17 @@ def is_series(data):
     Checks whether the supplied data is of Series type.
     """
     dd = None
-    if 'dask' in sys.modules:
+    if 'dask.dataframe' in sys.modules:
         import dask.dataframe as dd
     return((pd is not None and isinstance(data, pd.Series)) or
           (dd is not None and isinstance(data, dd.Series)))
+
+
+def is_dask_array(data):
+    da = None
+    if 'dask.array' in sys.modules:
+        import dask.array as da
+    return (da is not None and isinstance(data, da.Array))
 
 
 def get_param_values(data):
