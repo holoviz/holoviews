@@ -9,6 +9,10 @@ from contextlib import contextmanager
 from itertools import chain
 
 import param
+
+import panel as pn
+from panel.pane import Viewable
+
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -95,16 +99,19 @@ class MPLRenderer(Renderer):
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        plot, fmt =  self._validate(obj, fmt)
-        if plot is None: return
+        plot, fmt = self._validate(obj, fmt)
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        with mpl.rc_context(rc=plot.fig_rcparams):
-            data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+        if plot is None:
+            return
+        elif isinstance(plot, Viewable):
+            return plot, info
+        else:
+            with mpl.rc_context(rc=plot.fig_rcparams):
+                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
 
-        data = self._apply_post_render_hooks(data, obj, fmt)
-        return data, {'file-ext':fmt,
-                      'mime_type':MIME_TYPES[fmt]}
-
+            data = self._apply_post_render_hooks(data, obj, fmt)
+            return data, info
 
     def show(self, obj):
         """
@@ -173,7 +180,7 @@ class MPLRenderer(Renderer):
         return self.html(plot, figure_format)
 
 
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
@@ -219,7 +226,7 @@ class MPLRenderer(Renderer):
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
             html = tag.format(src=src, mime_type=mime_type, css='')
-            return html, ''
+            return html
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
@@ -293,3 +300,5 @@ class MPLRenderer(Renderer):
         backend = plt.get_backend()
         if backend not in ['agg', 'module://ipykernel.pylab.backend_inline']:
             plt.switch_backend('agg')
+
+        pn.extension()
