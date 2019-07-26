@@ -18,6 +18,8 @@ from bokeh.models import Model
 from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
+
+import panel as pn
 from panel.pane import HoloViews, Viewable
 
 from ...core import Store, HoloMap
@@ -25,13 +27,6 @@ from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .util import compute_plot_size, silence_warnings
 
-
-NOTEBOOK_DIV = """
-{plot_div}
-<script type="text/javascript">
-  {plot_script}
-</script>
-"""
 
 default_theme = Theme(json={
     'attrs': {
@@ -97,10 +92,6 @@ class BokehRenderer(Renderer):
         elif fmt == 'png':
             png = self._figure_data(plot, fmt=fmt, doc=doc)
             return png, info
-        elif fmt == 'html':
-            html = self._figure_data(plot, doc=doc)
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-            return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             return self.diff(plot), info
 
@@ -165,7 +156,7 @@ class BokehRenderer(Renderer):
         return super(BokehRenderer, self).components(obj, fmt, comm, **kwargs)
 
 
-    def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
         """
         Given a plot instance, an output format and an optional bokeh
         document, return the corresponding data. If as_script is True,
@@ -199,23 +190,14 @@ class BokehRenderer(Renderer):
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
                 div = tag.format(src=src, mime_type=mime_type, css='')
-                js = ''
         else:
-            try:
-                with silence_warnings(EMPTY_LAYOUT, MISSING_RENDERERS):
-                    js, div, _ = notebook_content(model)
-                html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-                data = encode_utf8(html)
-                doc.hold()
-            except:
-                logger.disabled = False
-                raise
-            logger.disabled = False
+            raise ValueError('Unsupported format: {fmt}'.format(fmt=fmt))
 
         plot.document = doc
         if as_script:
-            return div, js
-        return data
+            return div
+        else:
+            return data
 
 
     def diff(self, plot, binary=True):
@@ -282,8 +264,4 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
-        bokeh.io.notebook.LOAD_MIME_TYPE = MIME_TYPES['jlab-hv-load']
-        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-        bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
-        bokeh.io.notebook.curstate().output_notebook()
+        pn.extension()

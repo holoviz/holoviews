@@ -227,6 +227,8 @@ class Renderer(Exporter):
         if fmt in self.widgets:
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
+        elif fmt == 'html':
+            plot, fmt = HoloViews(obj), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -320,24 +322,10 @@ class Renderer(Exporter):
             with config.set(embed=not bool(plot.object.traverse(DynamicMap))):
                 return plot.layout._repr_mimebundle_()
         else:
-            html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
-            plot_id = plot.id
-            if comm and plot.comm is not None and self.comm_msg_handler:
-                msg_handler = self.comm_msg_handler.format(plot_id=plot_id)
-                html = plot.comm.html_template.format(init_frame=html,
-                                                      plot_id=plot_id)
-                comm_js = plot.comm.js_template.format(msg_handler=msg_handler,
-                                                       comm_id=plot.comm.id,
-                                                       plot_id=plot_id)
-                js = '\n'.join([js, comm_js])
-            html = "<div id='%s' style='display: table; margin: 0 auto;'>%s</div>" % (plot_id, html)
+            html = self._figure_data(plot, fmt, as_script=True, **kwargs)
 
         data['text/html'] = html
-        if js:
-            data[MIME_TYPES['js']] = js
-            data[MIME_TYPES['jlab-hv-exec']] = ''
-            metadata['id'] = plot_id
-            self._plots[plot_id] = plot
+
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
