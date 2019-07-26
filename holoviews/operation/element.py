@@ -14,7 +14,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int,
-                         isdatetime)
+                         isdatetime, is_dask_array)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -566,18 +566,32 @@ class histogram(Operation):
         else:
             selected_dim = [d.name for d in element.vdims + element.kdims][0]
         dim = element.get_dimension(selected_dim)
-        data = np.array(element.dimension_values(selected_dim))
+
+        if hasattr(element, 'interface'):
+            data = element.interface.values(element, selected_dim, compute=False)
+        else:
+            data = element.dimension_values(selected_dim)
+
+        if is_dask_array(data):
+            import dask.array as da
+            histogram = da.histogram
+        else:
+            histogram = np.histogram
+
+        mask = isfinite(data)
         if self.p.nonzero:
-            mask = data > 0
-            data = data[mask]
+            mask = mask & (data > 0)
+        data = data[mask]
         if self.p.weight_dimension:
-            weights = np.array(element.dimension_values(self.p.weight_dimension))
+            if hasattr(element, 'interface'):
+                weights = element.interface.values(element, self.p.weight_dimension, compute=False)
+            else:
+                weights = element.dimension_values(self.p.weight_dimension)
             if self.p.nonzero:
                 weights = weights[mask]
         else:
             weights = None
 
-        data = data[isfinite(data)]
         hist_range = self.p.bin_range or element.range(selected_dim)
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
@@ -605,19 +619,17 @@ class histogram(Operation):
             edges = np.linspace(start, end, steps)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
 
-        if len(data):
+        if is_dask_array(data) or len(data):
             if normed:
                 # This covers True, 'height', 'integral'
-                hist, edges = np.histogram(data, density=True, range=(start, end),
-                                           weights=weights, bins=edges)
+                hist, edges = histogram(data, density=True,
+                                        weights=weights, bins=edges)
                 if normed=='height':
                     hist /= hist.max()
             else:
-                hist, edges = np.histogram(data, normed=normed, range=(start, end),
-                                           weights=weights, bins=edges)
+                hist, edges = histogram(data, normed=normed, weights=weights, bins=edges)
                 if self.p.weight_dimension and self.p.mean_weighted:
-                    hist_mean, _ = np.histogram(data, density=False, range=(start, end),
-                                                bins=self.p.num_bins)
+                    hist_mean, _ = histogram(data, density=False, bins=self.p.num_bins)
                     hist /= hist_mean
         else:
             hist = np.zeros(self.p.num_bins)
