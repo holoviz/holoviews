@@ -441,7 +441,8 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
+    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
+             options=None, resources='cdn', **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
@@ -453,7 +454,12 @@ class Renderer(Exporter):
             plot, fmt = self_or_cls._validate(obj, fmt)
 
         if isinstance(plot, Viewable):
-            plot.save(basename, embed=True)
+            from bokeh.resources import CDN, INLINE
+            if resources == 'cdn':
+                resources = CDN
+            elif resources == 'inline':
+                resources = INLINE
+            plot.layout.save(basename, embed=True, resources=resources)
             return
 
         rendered = self_or_cls(plot, fmt)
