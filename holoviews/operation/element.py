@@ -624,7 +624,7 @@ class histogram(Operation):
                 # This covers True, 'height', 'integral'
                 hist, edges = histogram(data, density=True,
                                         weights=weights, bins=edges)
-                if normed=='height':
+                if normed == 'height':
                     hist /= hist.max()
             else:
                 hist, edges = histogram(data, normed=normed, weights=weights, bins=edges)
