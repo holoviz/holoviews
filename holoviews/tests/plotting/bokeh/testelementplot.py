@@ -384,6 +384,12 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
+    def test_categorical_dimension_type(self):
+        curve = Curve([]).redim.type(x=str)
+        plot = bokeh_renderer.get_plot(curve)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, [])
+
     #################################################################
     # Aspect tests
     #################################################################
