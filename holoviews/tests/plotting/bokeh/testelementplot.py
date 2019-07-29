@@ -117,9 +117,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_element_xformatter_function(self):
         try:
-            import flexx # noqa
+            import pscript # noqa
         except:
-            raise SkipTest('Test requires flexx')
+            raise SkipTest('Test requires pscript')
         def formatter(value):
             return str(value) + ' %'
         curve = Curve(range(10)).options(xformatter=formatter)
@@ -129,9 +129,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_element_yformatter_function(self):
         try:
-            import flexx # noqa
+            import pscript # noqa
         except:
-            raise SkipTest('Test requires flexx')
+            raise SkipTest('Test requires pscript')
         def formatter(value):
             return str(value) + ' %'
         curve = Curve(range(10)).options(yformatter=formatter)
@@ -234,9 +234,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_element_formatter_xaxis(self):
         try:
-            import flexx # noqa
+            import pscript # noqa
         except:
-            raise SkipTest('Test requires flexx')
+            raise SkipTest('Test requires pscript')
         def formatter(x):
             return '%s' % x
         curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
@@ -245,9 +245,9 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_element_formatter_yaxis(self):
         try:
-            import flexx # noqa
+            import pscript # noqa
         except:
-            raise SkipTest('Test requires flexx')
+            raise SkipTest('Test requires pscript')
         def formatter(x):
             return '%s' % x
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
