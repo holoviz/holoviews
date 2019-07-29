@@ -20,7 +20,7 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph
+from ..element import Table, Graph, Contours
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -486,6 +486,8 @@ class DimensionedPlot(Plot):
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
                         dtype = el.nodes.interface.dtype(el.nodes, el_dim)
+                    elif isinstance(el, Contours) and el.level is not None:
+                        dtype = None # Deprecated level
                     else:
                         dtype = el.interface.dtype(el, el_dim)
                 else:
@@ -493,7 +495,7 @@ class DimensionedPlot(Plot):
 
                 if all(util.isfinite(r) for r in el_dim.range):
                     data_range = (None, None)
-                elif dtype is not None and dtype.kind in 'OSU':
+                elif dtype is not None and dtype.kind in 'SU':
                     data_range = ('', '')
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
