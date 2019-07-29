@@ -361,8 +361,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             l, b, r, t = b, l, t, r
 
         categorical = any(self.traverse(lambda x: x._categorical))
-        categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
-        categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
+        if any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
+            categorical_x = True
+        else:
+            categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
+
+        if any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
+            categorical_y = True
+        else:
+            categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
         x_axis_type = 'log' if self.logx else 'auto'
         if xdims:
@@ -561,7 +568,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
-        elif 'top' in self.xaxis:
+        elif isinstance(self.xaxis, util.basestring) and 'top' in self.xaxis:
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
@@ -570,7 +577,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif 'right' in self.yaxis:
+        elif isinstance(self.yaxis, util.basestring) and'right' in self.yaxis:
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right

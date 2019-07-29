@@ -483,16 +483,27 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
-                if isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                if hasattr(el, 'interface'):
+                    dtype = el.interface.dtype(el, el_dim)
+                else:
+                    dtype = None
+
+                if all(util.isfinite(r) for r in el_dim.range):
+                    data_range = (None, None)
+                elif dtype is not None and dtype.kind in 'OSU':
+                    data_range = ('', '')
+                elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
                 else:
                     data_range = el.range(el_dim, dimension_range=False)
+
                 if el_dim.name not in group_ranges:
                     group_ranges[el_dim.name] = {'data': [], 'hard': [], 'soft': []}
                 group_ranges[el_dim.name]['data'].append(data_range)
                 group_ranges[el_dim.name]['hard'].append(el_dim.range)
                 group_ranges[el_dim.name]['soft'].append(el_dim.soft_range)
-                if any(isinstance(r, util.basestring) for r in data_range):
+                if (any(isinstance(r, util.basestring) for r in data_range) or
+                    el_dim.type is not None and issubclass(el_dim.type, util.basestring)):
                     if 'factors' not in group_ranges[el_dim.name]:
                         group_ranges[el_dim.name]['factors'] = []
                     if el_dim.values not in ([], None):
