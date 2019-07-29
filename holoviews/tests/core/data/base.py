@@ -104,8 +104,8 @@ class HomogeneousColumnTests(object):
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dtypes(self):
-        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'x'), np.int64)
-        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'y'), np.int64)
+        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'x'), np.dtype(int))
+        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'y'), np.dtype(int))
 
     def test_dataset_array_init_hm_tuple_dims(self):
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
@@ -449,8 +449,8 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
         self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype('object'))
-        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype('int64'))
-        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype('int64'))
+        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype(int))
         self.assertEqual(ds.interface.dtype(ds, 'Height'), np.dtype('float64'))
 
     # Test literal formats
@@ -916,9 +916,9 @@ class GriddedInterfaceTests(object):
 
     def test_gridded_dtypes(self):
         ds = self.dataset_grid
-        self.assertEqual(ds.interface.dtype(ds, 'x'), np.int64)
+        self.assertEqual(ds.interface.dtype(ds, 'x'), np.dtype(int))
         self.assertEqual(ds.interface.dtype(ds, 'y'), np.float64)
-        self.assertEqual(ds.interface.dtype(ds, 'z'), np.int64)
+        self.assertEqual(ds.interface.dtype(ds, 'z'), np.dtype(int))
 
     def test_select_slice(self):
         ds = self.element(
