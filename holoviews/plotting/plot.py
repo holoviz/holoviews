@@ -484,7 +484,10 @@ class DimensionedPlot(Plot):
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
                 if hasattr(el, 'interface'):
-                    dtype = el.interface.dtype(el, el_dim)
+                    if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
+                        dtype = el.nodes.interface.dtype(el.nodes, el_dim)
+                    else:
+                        dtype = el.interface.dtype(el, el_dim)
                 else:
                     dtype = None
 
