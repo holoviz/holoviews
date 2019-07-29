@@ -275,7 +275,11 @@ class Interface(param.Parameterized):
     @classmethod
     def dtype(cls, dataset, dimension):
         name = dataset.get_dimension(dimension, strict=True).name
-        return dataset.data[name].dtype
+        data = dataset.data[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
 
 
     @classmethod
