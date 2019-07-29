@@ -78,6 +78,15 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        idx = dataset.get_dimension_index(dimension)
+        if idx in [0, 1]:
+            return np.dtype('float')
+        else:
+            return dataset.data.dtype
+
+
+    @classmethod
     def length(cls, dataset):
         return np.product(dataset.data.shape[:2], dtype=np.intp)
 

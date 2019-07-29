@@ -98,6 +98,11 @@ class ArrayInterface(Interface):
 
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        return dataset.data.dtype
+
+
+    @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = dataset.data.copy()
         return np.insert(data, dim_pos, values, axis=1)
@@ -118,7 +123,7 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         data = dataset.data
         dim_idx = dataset.get_dimension_index(dim)
         if data.ndim == 1:

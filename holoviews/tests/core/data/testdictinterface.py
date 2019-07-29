@@ -1,4 +1,7 @@
+import sys
+
 from collections import OrderedDict
+
 import numpy as np
 
 from holoviews.core.dimension import OrderedDict as cyODict
@@ -19,6 +22,14 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
                                           kdims=['x'], vdims=['y']))
+
+    def test_dataset_dataset_ht_dtypes(self):
+        ds = self.table
+        str_type = '<U1' if sys.version_info.major >= 3 else 'S1'
+        self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype(str_type))
+        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype(int))
+        self.assertEqual(ds.interface.dtype(ds, 'Height'), np.dtype('float64'))
 
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])

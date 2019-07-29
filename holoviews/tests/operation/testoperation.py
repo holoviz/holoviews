@@ -8,6 +8,11 @@ try:
 except:
     mpl = None
 
+try:
+    import dask.array as da
+except:
+    da = None
+
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
                        QuadMesh, Dataset)
@@ -19,7 +24,8 @@ from holoviews.operation.element import (operation, transform, threshold,
                                          interpolate_curve)
 
 pd_skip = skipIf(pd is None, "Pandas not available")
-mpl_skip = skipIf(mpl is None, "Matplotlib is available")
+mpl_skip = skipIf(mpl is None, "Matplotlib is not available")
+da_skip = skipIf(da is None, "dask.array is not available")
 
 
 class OperationTests(ComparisonTestCase):
@@ -137,8 +143,45 @@ class OperationTests(ComparisonTestCase):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3)
 
-        hist = Histogram(([0.1, 0.1, 0.133333], [0, 3, 6, 9]),
+        hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @da_skip
+    def test_dataset_histogram_dask(self):
+        import dask.array as da 
+        ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
+                     ['x'], datatype=['dask'])
+        op_hist = histogram(ds, num_bins=3)
+
+        hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertIsInstance(op_hist.data['x_frequency'], da.Array)
+        self.assertEqual(op_hist, hist)
+
+    @da_skip
+    def test_dataset_cumulative_histogram_dask(self):
+        import dask.array as da 
+        ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
+                     ['x'], datatype=['dask'])
+        op_hist = histogram(ds, num_bins=3, cumulative=True)
+
+        hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
+                         vdims=('x_frequency', 'Frequency'))
+        self.assertIsInstance(op_hist.data['x_frequency'], da.Array)
+        self.assertEqual(op_hist, hist)
+
+    @da_skip
+    def test_dataset_weighted_histogram_dask(self):
+        import dask.array as da
+        ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=3),
+                      da.from_array([i/10. for i in range(10)], chunks=3)),
+                     ['x', 'y'], datatype=['dask'])
+        op_hist = histogram(ds, weight_dimension='y', num_bins=3)
+
+        hist = Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]),
+                         vdims='y')
+        self.assertIsInstance(op_hist.data['y'], da.Array)
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
@@ -170,7 +213,7 @@ class OperationTests(ComparisonTestCase):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, normed=False)
 
-        hist = Histogram(([3, 3, 4], [0, 3, 6, 9]),
+        hist = Histogram(([0, 3, 6, 9], [3, 3, 4]),
                          vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
