@@ -297,7 +297,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             l, b, z0, r, t, z1 = extent
 
-        options = {}
+        options = {'uirevision': True}
 
         dims = self._get_axis_dims(el)
         if len(dims) > 2:
