@@ -9,6 +9,26 @@ with param.logging_level('CRITICAL'):
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
+from .callbacks import callbacks
+
+
+def _PlotlyHoloviews(fig_dict):
+    """
+    Custom Plotly pane constructor for use by the HoloViews Pane.
+    """
+    plotly_pane = pn.pane.Plotly(fig_dict)
+
+    # Configure pane callbacks
+    plotly_pane.viewport_update_policy = 'mouseup'
+
+    # Register callbacks on pane
+    for callback_cls in callbacks.values():
+        plotly_pane.param.watch(
+            lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
+            callback_cls.callback_property,
+        )
+
+    return plotly_pane
 
 
 class PlotlyRenderer(Renderer):
@@ -68,3 +88,10 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+
+
+def _activate_plotly_backend(renderer):
+    if renderer == "plotly":
+        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviews
+
+Store._backend_switch_hooks.append(_activate_plotly_backend)
