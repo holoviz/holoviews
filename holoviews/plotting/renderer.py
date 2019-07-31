@@ -228,7 +228,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
         elif fmt == 'html':
-            plot, fmt = HoloViews(obj), 'html'
+            plot, fmt = HoloViews(obj, backend=Store.current_backend), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -346,7 +346,13 @@ class Renderer(Exporter):
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
         if widget_type != 'scrubber':
             widget_type = 'individual'
-        return HoloViews(plot, widget_type=widget_type, fancy_layout=True)
+
+        return HoloViews(
+            plot,
+            backend=Store.current_backend,
+            widget_type=widget_type,
+            fancy_layout=True,
+        )
 
 
     @bothmethod
