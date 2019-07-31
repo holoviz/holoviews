@@ -796,7 +796,7 @@ def render(obj, backend=None, **kwargs):
     plot = renderer_obj.get_plot(obj)
     if backend == 'matplotlib' and len(plot) > 1:
         return plot.anim(fps=renderer_obj.fps)
-    return renderer_obj.get_plot(obj).state
+    return renderer_obj.get_plot_state(obj)
 
 
 class Dynamic(param.ParameterizedFunction):
