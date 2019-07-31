@@ -24,6 +24,10 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
     height = param.Integer(default=400)
 
     def __init__(self, *args, **kwargs):
+        # The Plotly backend doesn't use a comm directly because it's dynamic
+        # interactions are handled by the Plotly panel pane.  So ignore any comm
+        # passed here
+        kwargs.pop('comm', None)
         super(PlotlyPlot, self).__init__(*args, **kwargs)
 
         # Generate plot-level uid
@@ -41,6 +45,10 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
         """
         return self.handles['fig']
 
+    def init_comm(self):
+        # Plotly backend doesn't use comms directly, override so that we don't open
+        # initialize extra unneeded comms.
+        return None
 
     def _trigger_refresh(self, key):
         "Triggers update to a plot on a refresh event"
