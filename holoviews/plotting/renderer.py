@@ -234,6 +234,13 @@ class Renderer(Exporter):
             plot.document = doc
         return plot
 
+    @bothmethod
+    def get_plot_state(self_or_cls, obj, renderer=None, **kwargs):
+        """
+        Given a HoloViews Viewable return a corresponding plot state.
+        """
+        plot = self_or_cls.get_plot(obj, renderer, **kwargs)
+        return plot.state
 
     def _validate(self, obj, fmt, **kwargs):
         """

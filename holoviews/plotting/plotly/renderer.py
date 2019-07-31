@@ -6,6 +6,8 @@ import json
 from weakref import WeakValueDictionary
 
 import param
+from param.parameterized import bothmethod
+
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
@@ -56,6 +58,16 @@ class PlotlyRenderer(Renderer):
     _render_with_panel = True
 
     _plot_panes = WeakValueDictionary()
+
+    @bothmethod
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
+        """
+        Given a HoloViews Viewable return a corresponding figure dictionary.
+        Allows cleaning the dictionary of any internal properties that were added
+        """
+        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        fig_dict.pop('_id', None)
+        return fig_dict
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
