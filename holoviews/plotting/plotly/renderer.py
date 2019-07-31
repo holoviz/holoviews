@@ -1,6 +1,9 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import base64
+import json
+
+from weakref import WeakValueDictionary
 
 import param
 with param.logging_level('CRITICAL'):
@@ -20,6 +23,10 @@ def _PlotlyHoloviews(fig_dict):
 
     # Configure pane callbacks
     plotly_pane.viewport_update_policy = 'mouseup'
+
+    # Add pane to renderer so that we can find it again to update it
+    plot_id = fig_dict['_id']
+    PlotlyRenderer._plot_panes[plot_id] = plotly_pane
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
@@ -45,7 +52,10 @@ class PlotlyRenderer(Renderer):
     widgets = ['scrubber', 'widgets']
 
     _loaded = False
+
     _render_with_panel = True
+
+    _plot_panes = WeakValueDictionary()
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
@@ -88,6 +98,14 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+
+
+
+    @classmethod
+    def trigger_plot_pane(cls, plot_id, fig_dict):
+        if plot_id in cls._plot_panes:
+            pane = cls._plot_panes[plot_id]
+            pane.object = fig_dict
 
 
 def _activate_plotly_backend(renderer):

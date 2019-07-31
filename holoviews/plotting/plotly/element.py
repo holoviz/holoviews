@@ -11,6 +11,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, dynamic_update
 from .plot import PlotlyPlot
+from .renderer import PlotlyRenderer
 from .util import (
     STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types)
 
@@ -162,6 +163,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Create figure and return it
         self.drawn = True
         fig = dict(data=graphs, layout=layout)
+
+        # Add plot's id to figure for bookkeeping
+        fig['_id'] = self.id
+
         self.handles['fig'] = fig
         return fig
 
@@ -376,6 +381,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         to the key.
         """
         self.generate_plot(key, ranges, element)
+        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
 
 
 class ColorbarPlot(ElementPlot):
@@ -507,6 +513,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         layout = self.init_layout(key, element, ranges)
         figure['layout'].update(layout)
         self.drawn = True
+
+        # Add plot's id to figure for bookkeeping
+        figure['_id'] = self.id
+
         self.handles['fig'] = figure
         return figure
 
@@ -531,3 +541,4 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self._create_dynamic_subplots(key, items, ranges)
 
         self.generate_plot(key, ranges, element)
+        PlotlyRenderer.trigger_plot_pane(self.id, self.state)

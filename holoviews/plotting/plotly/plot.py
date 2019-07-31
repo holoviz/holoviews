@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import uuid
 import param
 
+from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.util import attach_streams
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
@@ -21,6 +23,16 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
     width = param.Integer(default=400)
 
     height = param.Integer(default=400)
+
+    def __init__(self, *args, **kwargs):
+        super(PlotlyPlot, self).__init__(*args, **kwargs)
+
+        # Generate plot-level uid
+        self._id = str(uuid.uuid4())
+
+    @property
+    def id(self):
+        return self._id
 
     @property
     def state(self):
@@ -45,8 +57,9 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
 
     def update_frame(self, key, ranges=None):
-        return self.generate_plot(key, ranges)
-
+        plot = self.generate_plot(key, ranges)
+        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
+        return plot
 
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
@@ -238,6 +251,9 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                              title=self._format_title(key))
 
         self.drawn = True
+
+        # Add plot's id to figure for bookkeeping
+        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
@@ -371,6 +387,9 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
                              title=self._format_title(key))
 
         self.drawn = True
+
+        # Add plot's id to figure for bookkeeping
+        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
