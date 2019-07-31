@@ -3,7 +3,7 @@ import pickle
 from unittest import SkipTest
 
 import numpy as np
-from holoviews import Store, Histogram, Image, Curve, DynamicMap, opts
+from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
 )
@@ -21,6 +21,12 @@ except:
 try:
     # Needed to register backend  and options
     from holoviews.plotting import bokeh # noqa
+except:
+    pass
+
+try:
+    # Needed to register backend  and options
+    from holoviews.plotting import plotly # noqa
 except:
     pass
 
@@ -936,6 +942,37 @@ class TestCrossBackendOptions(ComparisonTestCase):
                "type across all extensions. No similar options found.")
         with self.assertRaisesRegexp(ValueError, err):
             opts.Curve(foobar=3)
+
+
+class TestLookupOptions(ComparisonTestCase):
+
+    def test_lookup_options_honors_backend(self):
+        points = Points([[1, 2], [3, 4]])
+
+        # Lookup points style options with matplotlib and plotly backends while current
+        # backend is bokeh
+        Store.current_backend = 'bokeh'
+        options_matplotlib = Store.lookup_options("matplotlib", points, "style")
+        options_plotly = Store.lookup_options("plotly", points, "style")
+
+        # Lookup points style options with bokeh backend while current
+        # backend is matplotlib
+        Store.current_backend = 'matplotlib'
+        options_bokeh = Store.lookup_options("bokeh", points, "style")
+
+        # Check matplotlib style options
+        for opt in ["cmap", "color", "marker"]:
+            self.assertIn(opt, options_matplotlib.keys())
+        self.assertNotIn("muted_alpha", options_matplotlib.keys())
+
+        # Check bokeh style options
+        for opt in ["cmap", "color", "muted_alpha", "size"]:
+            self.assertIn(opt, options_bokeh.keys())
+
+        # Check plotly style options
+        for opt in ["color"]:
+            self.assertIn(opt, options_plotly.keys())
+        self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
 
 class TestCrossBackendOptionSpecification(ComparisonTestCase):
