@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import uuid
 import numpy as np
 import param
 
@@ -100,6 +101,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = []
 
+    def __init__(self, element, plot=None, **params):
+        super(ElementPlot, self).__init__(element, **params)
+        self.trace_uid = str(uuid.uuid4())
+        self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
+        self.callbacks = self._construct_callbacks()
+
+
     def initialize_plot(self, ranges=None):
         """
         Initializes a new plot object with the last available frame.
@@ -138,6 +146,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             # Initialize traces
             traces = self.init_graph(d, opts, index=i)
             graphs.extend(traces)
+
+            if i == 0:
+                # Associate element with trace.uid property of the first
+                # plotly trace that is used to render the element. This is
+                # used to associate the element with the trace during callbacks
+                traces[0]['uid'] = self.trace_uid
+
         self.handles['graphs'] = graphs
 
         # Initialize layout

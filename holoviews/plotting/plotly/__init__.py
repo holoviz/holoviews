@@ -14,6 +14,7 @@ from .raster import *                # noqa (API import)
 from .plot import *                  # noqa (API import)
 from .stats import *                 # noqa (API import)
 from .tabular import *               # noqa (API import)
+from .callbacks import *             # noqa (API import)
 from ...core.util import LooseVersion, VersionError
 import plotly
 

@@ -9,11 +9,11 @@ from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
-    GenericElementPlot
+    GenericElementPlot, CallbackPlot
 from .util import figure_grid
 
 
-class PlotlyPlot(DimensionedPlot):
+class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     backend = 'plotly'
 
