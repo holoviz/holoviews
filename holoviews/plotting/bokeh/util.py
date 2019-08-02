@@ -255,14 +255,7 @@ def compute_layout_properties(
         aspect_type = 'data_aspect' if data_aspect else 'aspect'
         if fixed_width and fixed_height and aspect:
             if aspect == 'equal':
-                data_aspect = None
-                if logger:
-                    logger.warning(
-                        "%s value was ignored because absolute width and "
-                        "height values were provided. To set the scaling "
-                        "between the x- and y-axis independent of the "
-                        "width and height values set the data_aspect."
-                        % aspect_type)
+                data_aspect = 1
             elif not data_aspect:
                 aspect = None
                 if logger:
