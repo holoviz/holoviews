@@ -284,6 +284,14 @@ def compute_layout_properties(
         elif responsive == 'height':
             sizing_mode = 'scale_height'
 
+        if ((explicit_width and not frame_width) != (explicit_height and not frame_height)) and fixed_aspect and logger:
+            logger.warning('Due to internal constraints, when aspect and '
+                           'width/height is set, the bokeh backend uses '
+                           'those values as frame_width/frame_height instead. '
+                           'This ensures the aspect is respected, but means '
+                           'that the plot might be slightly larger than '
+                           'anticipated. Set the frame_width/frame_height '
+                           'explicitly to suppress this warning.')
 
     if responsive == 'width' and fixed_width:
         responsive = False
