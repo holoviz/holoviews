@@ -493,10 +493,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.plot_height, 400)
         self.assertEqual(plot.state.plot_width, 400)
         self.assertEqual(plot.state.aspect_scale, 2)
-        self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 2)
-        self.assertEqual(y_range.start, -0.5)
-        self.assertEqual(y_range.end, 3.5)
+        self.assertEqual(x_range.start, -2)
+        self.assertEqual(x_range.end, 4)
+        self.assertEqual(y_range.start, 0)
+        self.assertEqual(y_range.end, 3)
 
     def test_element_data_aspect_frame_width(self):
         curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400)
