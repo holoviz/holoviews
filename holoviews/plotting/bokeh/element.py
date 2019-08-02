@@ -797,8 +797,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     frame_aspect = plot.frame_width/plot.frame_height
 
-                desired_xspan = yspan*1./(ratio/frame_aspect)
-                desired_yspan = (xspan*(ratio/frame_aspect))
+                desired_xspan = yspan*(ratio/frame_aspect)
+                desired_yspan = xspan/(ratio/frame_aspect)
                 if (np.allclose(desired_xspan, xspan, rtol=0.01) and
                     np.allclose(desired_yspan, yspan, rtol=0.01)):
                     pass
