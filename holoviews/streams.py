@@ -9,6 +9,7 @@ from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
 from itertools import groupby
+from types import FunctionType
 
 import param
 import numpy as np
@@ -186,6 +187,11 @@ class Stream(param.Parameterized):
                 if not hasattr(s, "_dinfo"):
                     continue
                 s = ParamMethod(s)
+            elif isinstance(s, FunctionType) and hasattr(s, "_dinfo"):
+                deps = s._dinfo
+                dep_params = list(deps['dependencies']) + list(deps.get('kw', {}).values())
+                rename = {(p.owner, p.name): k for k, p in deps.get('kw', {}).items()}
+                s = Params(parameters=dep_params, rename=rename)
             else:
                 invalid.append(s)
                 continue
@@ -623,13 +629,13 @@ class Params(Stream):
 
     parameterized = param.ClassSelector(class_=(param.Parameterized,
                                                 param.parameterized.ParameterizedMetaclass),
-                                        constant=True, doc="""
+                                        constant=True, allow_None=True, doc="""
         Parameterized instance to watch for parameter changes.""")
 
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized, parameters=None, watch=True, **params):
+    def __init__(self, parameterized=None, parameters=None, watch=True, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
@@ -638,6 +644,17 @@ class Params(Stream):
         else:
             parameters = [p if isinstance(p, param.Parameter) else parameterized.param[p]
                           for p in parameters]
+
+        if 'rename' in params:
+            rename = {}
+            owners = [p.owner for p in parameters]
+            for k, v in params['rename'].items():
+                if isinstance(k, tuple):
+                    rename[k] = v
+                else:
+                    rename.update({(o, k): v for o in owners})
+            params['rename'] = rename
+
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
@@ -673,9 +690,10 @@ class Params(Stream):
     def _validate_rename(self, mapping):
         pnames = [p.name for p in self.parameters]
         for k, v in mapping.items():
-            if k not in pnames:
-                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
-            if k != v and v in pnames:
+            n = k[1] if isinstance(k, tuple) else k
+            if n not in pnames:
+                raise KeyError('Cannot rename %r as it is not a stream parameter' % n)
+            if n != v and v in pnames:
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping
@@ -695,9 +713,9 @@ class Params(Stream):
 
     @property
     def hashkey(self):
-        hashkey = {p.name: getattr(p.owner, p.name) for p in self.parameters}
-        hashkey = {self._rename.get(k, k): v for (k, v) in hashkey.items()
-                   if self._rename.get(k, True) is not None}
+        hashkey = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
+        hashkey = {self._rename.get((o, n), n): v for (o, n), v in hashkey.items()
+                   if self._rename.get((o, n), True) is not None}
         hashkey['_memoize_key'] = self._memoize_counter
         return hashkey
 
@@ -710,9 +728,9 @@ class Params(Stream):
 
     @property
     def contents(self):
-        filtered = {p.name: getattr(p.owner, p.name) for p in self.parameters}
-        return {self._rename.get(k, k): v for (k, v) in filtered.items()
-                if self._rename.get(k, True) is not None}
+        filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
+        return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
+                if self._rename.get((o, n), True) is not None}
 
 
 
@@ -725,7 +743,7 @@ class ParamMethod(Params):
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
-            raise ValueError('ParamMethodStream expects a method on a '
+            raise ValueError('ParamMethod stream expects a method on a '
                              'parameterized class, found %s.'
                              % type(parameterized).__name__)
         method = parameterized

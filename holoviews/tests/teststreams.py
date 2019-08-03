@@ -380,6 +380,18 @@ class TestParamMethodStream(ComparisonTestCase):
         inner.y = 2
         self.assertEqual(values, [{}])
 
+    def test_param_function_depends(self):
+        inner = self.inner()
+
+        @param.depends(inner.param.x)
+        def test(x):
+            return Points([x])
+
+        dmap = DynamicMap(test)
+
+        inner.x = 10
+        self.assertEqual(dmap[()], Points([10]))
+
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
