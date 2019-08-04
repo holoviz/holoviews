@@ -709,7 +709,7 @@ class decimate(Operation):
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
-            return element.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
+            return sliced.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
         return sliced
 
     def _process(self, element, key=None):
