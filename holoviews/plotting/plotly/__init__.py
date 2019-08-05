@@ -42,6 +42,7 @@ Store.register({Points: ScatterPlot,
                 Bivariate: BivariatePlot,
                 Distribution: DistributionPlot,
                 Bars: BarPlot,
+                Histogram: HistogramPlot,
                 BoxWhisker: BoxWhiskerPlot,
                 Violin: ViolinPlot,
 
@@ -98,6 +99,7 @@ options.Points = Options('style', color=Cycle())
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
 options.TriSurface = Options('style', cmap='viridis')
+options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)

@@ -279,3 +279,34 @@ class BarPlot(ElementPlot):
             stack_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
         return layout
+
+
+class HistogramPlot(ElementPlot):
+
+    trace_kwargs = {'type': 'bar'}
+
+    style_opts = ['color', 'line_color', 'line_width', 'opacity']
+
+    _style_key = 'marker'
+
+    def get_data(self, element, ranges, style):
+        xdim = element.kdims[0]
+        ydim = element.vdims[0]
+        values = element.interface.coords(element, ydim)
+        edges = element.interface.coords(element, xdim)
+        binwidth = edges[1] - edges[0]
+
+        if self.invert_axes:
+            ys = edges
+            xs = values
+            orientation = 'h'
+        else:
+            xs = edges
+            ys = values
+            orientation = 'v'
+        return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
+
+    def init_layout(self, key, element, ranges):
+        layout = super(HistogramPlot, self).init_layout(key, element, ranges)
+        layout['barmode'] = 'overlay'
+        return layout
