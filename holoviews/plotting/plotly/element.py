@@ -379,6 +379,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.logx:
                 xaxis['type'] = 'log'
             self._get_ticks(xaxis, self.xticks)
+
+            if self.projection != '3d' and self.xaxis:
+                xaxis['automargin'] = False
         else:
             xaxis = {}
 
@@ -395,6 +398,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.logy:
                 yaxis['type'] = 'log'
             self._get_ticks(yaxis, self.yticks)
+
+            if self.projection != '3d' and self.yaxis:
+                yaxis['automargin'] = False
+
         else:
             yaxis = {}
 
