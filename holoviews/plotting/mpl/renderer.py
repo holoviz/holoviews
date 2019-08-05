@@ -10,7 +10,6 @@ from itertools import chain
 
 import param
 
-import panel as pn
 from panel.pane import Viewable
 
 import matplotlib as mpl

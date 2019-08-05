@@ -8,12 +8,13 @@ with param.logging_level('CRITICAL'):
     from plotly import utils
     import plotly.graph_objs as go
 
+from panel.pane import Viewable
+
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 
-import panel as pn
-from panel.pane import Viewable
+
 
 class PlotlyRenderer(Renderer):
 
@@ -95,5 +96,5 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
+        import panel.models.plotly # noqa
         cls._loaded = True
-        import panel.models.plotly

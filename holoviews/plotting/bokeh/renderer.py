@@ -9,23 +9,18 @@ import bokeh
 
 from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
-from bokeh.core.validation.warnings import EMPTY_LAYOUT, MISSING_RENDERERS
 from bokeh.document import Document
-from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc
-from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
 from bokeh.protocol import Protocol
-from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
 
-import panel as pn
 from panel.pane import HoloViews, Viewable
 
 from ...core import Store, HoloMap
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import compute_plot_size, silence_warnings
+from .util import compute_plot_size
 
 
 default_theme = Theme(json={
