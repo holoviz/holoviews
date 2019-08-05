@@ -96,4 +96,4 @@ class PlotlyRenderer(Renderer):
         Loads the plotly notebook resources.
         """
         cls._loaded = True
-        pn.extension("plotly")
+        import panel.models.plotly

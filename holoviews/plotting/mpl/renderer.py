@@ -300,5 +300,3 @@ class MPLRenderer(Renderer):
         backend = plt.get_backend()
         if backend not in ['agg', 'module://ipykernel.pylab.backend_inline']:
             plt.switch_backend('agg')
-
-        pn.extension()
