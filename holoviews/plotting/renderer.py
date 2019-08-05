@@ -393,7 +393,7 @@ class Renderer(Exporter):
         Deprecated: No longer needed
         """
         param.main.warning("Renderer.html_assets is deprecated as all "
-                           "JS and CSS dependencies are not handled by "
+                           "JS and CSS dependencies are now handled by "
                            "Panel.")
 
     @classmethod
