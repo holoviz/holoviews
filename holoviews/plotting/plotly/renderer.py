@@ -7,6 +7,8 @@ from weakref import WeakValueDictionary
 import param
 from param.parameterized import bothmethod
 
+from holoviews.plotting.plotly.util import clean_internal_figure_properties
+
 with param.logging_level('CRITICAL'):
     from plotly import utils
     import plotly.graph_objs as go
@@ -25,13 +27,19 @@ def _PlotlyHoloviews(fig_dict):
     """
     Custom Plotly pane constructor for use by the HoloViews Pane.
     """
+    # Save plot id
+    plot_id = fig_dict['_id']
+
+    # Remove internal HoloViews properties
+    clean_internal_figure_properties(fig_dict)
+
+    # Create plotly pane
     plotly_pane = pn.pane.Plotly(fig_dict)
 
     # Configure pane callbacks
     plotly_pane.viewport_update_policy = 'mouseup'
 
     # Add pane to renderer so that we can find it again to update it
-    plot_id = fig_dict['_id']
     PlotlyRenderer._plot_panes[plot_id] = plotly_pane
 
     # Register callbacks on pane
@@ -92,7 +100,16 @@ class PlotlyRenderer(Renderer):
         Allows cleaning the dictionary of any internal properties that were added
         """
         fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
-        fig_dict.pop('_id', None)
+
+        # Remove internal properties (e.g. '_id', '_dim')
+        clean_internal_figure_properties(fig_dict)
+
+        # Run through Figure constructor to normalize keys
+        # (e.g. to expand magic underscore notation)
+        fig_dict = go.Figure(fig_dict).to_dict()
+
+        # Remove template
+        fig_dict.get('layout', {}).pop('template', None)
         return fig_dict
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
@@ -142,6 +159,7 @@ class PlotlyRenderer(Renderer):
     @classmethod
     def trigger_plot_pane(cls, plot_id, fig_dict):
         if plot_id in cls._plot_panes:
+            clean_internal_figure_properties(fig_dict)
             pane = cls._plot_panes[plot_id]
             pane.object = fig_dict
 

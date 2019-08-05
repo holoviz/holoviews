@@ -14,9 +14,9 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['type'], 'box')
         self.assertEqual(state['data'][0]['name'], '')
         self.assertEqual(state['data'][0]['y'], np.array([1, 1, 2, 3, 3, 4, 5, 5]))
-        self.assertEqual(state['layout']['xaxis'], {})
+        self.assertEqual(state['layout'].get('xaxis', {}), {})
         self.assertEqual(state['layout']['yaxis']['range'], [1, 5])
-        self.assertEqual(state['layout']['yaxis']['title'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_boxwhisker_single_invert_axes(self):
         box = BoxWhisker([1, 1, 2, 3, 3, 4, 5, 5]).options(invert_axes=True)
@@ -25,9 +25,9 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['type'], 'box')
         self.assertEqual(state['data'][0]['name'], '')
         self.assertEqual(state['data'][0]['x'], np.array([1, 1, 2, 3, 3, 4, 5, 5]))
-        self.assertEqual(state['layout']['yaxis'], {})
+        self.assertEqual(state['layout'].get('yaxis', {}), {})
         self.assertEqual(state['layout']['xaxis']['range'], [1, 5])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
 
     def test_boxwhisker_multi(self):
         box = BoxWhisker((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y')
@@ -39,9 +39,9 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'box')
         self.assertEqual(state['data'][1]['name'], 'B')
         self.assertEqual(state['data'][1]['y'], np.array([1, 1, 2, 3, 3, 4, 5, 5]))
-        self.assertEqual(state['layout']['xaxis']['title'], 'x')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'x')
         self.assertEqual(state['layout']['yaxis']['range'], [1, 5])
-        self.assertEqual(state['layout']['yaxis']['title'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_boxwhisker_multi_invert_axes(self):
         box = BoxWhisker((['A']*8+['B']*8, [1, 1, 2, 3, 3, 4, 5, 5]*2), 'x', 'y').options(
@@ -54,6 +54,6 @@ class TestBoxWhiskerPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'box')
         self.assertEqual(state['data'][1]['name'], 'B')
         self.assertEqual(state['data'][1]['x'], np.array([1, 1, 2, 3, 3, 4, 5, 5]))
-        self.assertEqual(state['layout']['yaxis']['title'], 'x')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
         self.assertEqual(state['layout']['xaxis']['range'], [1, 5])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')

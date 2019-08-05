@@ -30,17 +30,17 @@ class TestElementPlot(TestPlotlyPlot):
     def test_element_plot_xlabel(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['layout']['xaxis']['title'], 'X-Axis')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'X-Axis')
 
     def test_element_plot_ylabel(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(ylabel='Y-Axis')
         state = self._get_plot_state(curve)
-        self.assertEqual(state['layout']['yaxis']['title'], 'Y-Axis')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'Y-Axis')
 
     def test_element_plot_zlabel(self):
         scatter = Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['layout']['scene']['zaxis']['title'], 'Z-Axis')
+        self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
 
     ### Axis ranges ###
         
@@ -156,21 +156,21 @@ class TestElementPlot(TestPlotlyPlot):
     def test_element_plot_xticks_items(self):
         curve = Curve([(1, 1), (5, 2), (10, 3)]).options(xticks=[(1, 'A'), (5, 'B'), (10, 'C')])
         state = self._get_plot_state(curve)
-        self.assertEqual(state['layout']['xaxis']['tickvals'], (1, 5, 10))
+        self.assertEqual(state['layout']['xaxis']['tickvals'], [1, 5, 10])
         self.assertEqual(state['layout']['xaxis']['ticktext'], ['A', 'B', 'C'])
 
     def test_element_plot_yticks_items(self):
         curve = Curve([(1, 1), (5, 2), (10, 3)]).options(
             yticks=[(1, 'A'), (1.5, 'B'), (2.5, 'C'), (3, 'D')])
         state = self._get_plot_state(curve)
-        self.assertEqual(state['layout']['yaxis']['tickvals'], (1, 1.5, 2.5, 3))
+        self.assertEqual(state['layout']['yaxis']['tickvals'], [1, 1.5, 2.5, 3])
         self.assertEqual(state['layout']['yaxis']['ticktext'], ['A', 'B', 'C', 'D'])
 
     def test_element_plot_zticks_items(self):
         scatter = Scatter3D([(0, 1, 10), (1, 2, 100), (2, 3, 1000)]).options(
             zticks=[(0, 'A'), (500, 'B'), (1000, 'C')])
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], (0, 500, 1000))
+        self.assertEqual(state['layout']['scene']['zaxis']['tickvals'], [0, 500, 1000])
         self.assertEqual(state['layout']['scene']['zaxis']['ticktext'], ['A', 'B', 'C'])
 
 
@@ -205,14 +205,14 @@ class TestOverlayPlot(TestPlotlyPlot):
     def test_overlay_plot_xlabel(self):
         overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
         state = self._get_plot_state(overlay)
-        self.assertEqual(state['layout']['xaxis']['title'], 'X-Axis')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'X-Axis')
 
     def test_overlay_plot_ylabel(self):
         overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).options(ylabel='Y-Axis')
         state = self._get_plot_state(overlay)
-        self.assertEqual(state['layout']['yaxis']['title'], 'Y-Axis')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'Y-Axis')
 
     def test_overlay_plot_zlabel(self):
         scatter = Path3D([]) * Scatter3D([(10, 1, 2), (100, 2, 3), (1000, 3, 5)]).options(zlabel='Z-Axis')
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['layout']['scene']['zaxis']['title'], 'Z-Axis')
+        self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')

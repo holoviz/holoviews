@@ -14,9 +14,9 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['y'], np.array([3, 2, 1]))
         self.assertEqual(state['data'][0]['type'], 'bar')
         self.assertEqual(state['layout']['xaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['xaxis']['title'], 'x')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'x')
         self.assertEqual(state['layout']['yaxis']['range'], [0, 3])
-        self.assertEqual(state['layout']['yaxis']['title'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_plot_inverted(self):
         bars = Bars([3, 2, 1]).options(invert_axes=True)
@@ -25,9 +25,9 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['x'], np.array([3, 2, 1]))
         self.assertEqual(state['data'][0]['type'], 'bar')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 3])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
         self.assertEqual(state['layout']['yaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['yaxis']['title'], 'x')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
 
     def test_bars_grouped(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
@@ -41,9 +41,9 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'bar')
         self.assertEqual(state['layout']['barmode'], 'group')
         self.assertEqual(state['layout']['xaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['xaxis']['title'], 'A, B')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'A, B')
         self.assertEqual(state['layout']['yaxis']['range'], [0, 4])
-        self.assertEqual(state['layout']['yaxis']['title'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_grouped_inverted(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
@@ -57,9 +57,9 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'bar')
         self.assertEqual(state['layout']['barmode'], 'group')
         self.assertEqual(state['layout']['yaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['yaxis']['title'], 'A, B')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'A, B')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 4])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
         
     def test_bars_stacked(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
@@ -73,9 +73,9 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'bar')
         self.assertEqual(state['layout']['barmode'], 'stack')
         self.assertEqual(state['layout']['xaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['xaxis']['title'], 'A')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'A')
         self.assertEqual(state['layout']['yaxis']['range'], [0, 7])
-        self.assertEqual(state['layout']['yaxis']['title'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_stacked_inverted(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
@@ -89,6 +89,6 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['type'], 'bar')
         self.assertEqual(state['layout']['barmode'], 'stack')
         self.assertEqual(state['layout']['yaxis']['range'], [-0.5, 2.5])
-        self.assertEqual(state['layout']['yaxis']['title'], 'A')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'A')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 7])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')

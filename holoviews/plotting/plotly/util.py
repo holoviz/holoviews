@@ -703,3 +703,25 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
         palette, (cmin, cmax) = color_intervals(
             palette, levels, clip=(cmin, cmax))
     return colors.make_colorscale(palette)
+def clean_internal_figure_properties(fig):
+    """
+    Remove all HoloViews internal properties (those with leading underscores) from the
+    inupt figure.
+
+    Note: This function mutates the input figure
+
+    Parameters
+    ----------
+    fig: dict
+        The figure dictionary to process.
+    """
+    fig_props = list(fig)
+    for prop in fig_props:
+        val = fig[prop]
+        if prop.startswith('_'):
+            fig.pop(prop)
+        elif isinstance(val, dict):
+            clean_internal_figure_properties(val)
+        elif isinstance(val, (list, tuple)) and val and isinstance(val[0], dict):
+            for el in val:
+                clean_internal_figure_properties(el)
