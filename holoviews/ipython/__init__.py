@@ -8,14 +8,13 @@ from IPython import version_info
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
-from pyviz_comms import nb_mime_js
 
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
-from ..plotting.renderer import Renderer, MIME_TYPES
+from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import pprint_display, png_display, svg_display

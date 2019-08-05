@@ -22,7 +22,7 @@ from panel.viewable import Viewable
 
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unicode, unbound_dimensions
+from ..core.util import unbound_dimensions
 from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 
 from . import Plot
