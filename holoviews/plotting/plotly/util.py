@@ -608,24 +608,29 @@ def _compute_subplot_domains(widths, spacing):
     # normalize widths
     widths_sum = float(sum(widths))
     total_spacing = (len(widths) - 1) * spacing
-    widths = [(w / widths_sum)*(1-total_spacing) for w in widths]
+    total_width = widths_sum + total_spacing
+
+    relative_spacing = spacing / (widths_sum + total_spacing)
+    relative_widths = [(w / total_width) for w in widths]
+
     domains = []
 
     for c in range(len(widths)):
-        domain_start = c * spacing + sum(widths[:c])
-        domain_stop = min(1, domain_start + widths[c])
+        domain_start = c * relative_spacing + sum(relative_widths[:c])
+        domain_stop = min(1, domain_start + relative_widths[c])
         domains.append((domain_start, domain_stop))
 
     return domains
 
 
 def figure_grid(figures_grid,
-                row_heights=None,
-                column_widths=None,
-                row_spacing=0.15,
-                column_spacing=0.15,
+                row_spacing=50,
+                column_spacing=50,
                 share_xaxis=False,
-                share_yaxis=False):
+                share_yaxis=False,
+                width=None,
+                height=None
+                ):
     """
     Construct a figure from a 2D grid of sub-figures
 
@@ -635,40 +640,63 @@ def figure_grid(figures_grid,
         2D list of plotly figure dicts that will be combined in a grid to
         produce the resulting figure.  None values maybe used to leave empty
         grid cells
-    row_heights: list of float (default None)
-        List of the relative heights of each row in the grid (these values
-        will be normalized by the function)
-    column_widths: list of float (default None)
-        List of the relative widths of each column in the grid (these values
-        will be normalized by the function)
-    row_spacing: float (default 0.15)
-        Vertical spacing between rows in the gird in normalized coordinates
-    column_spacing: float (default 0.15)
-        Horizontal spacing between columns in the grid in normalized
+    row_spacing: float (default 50)
+        Vertical spacing between rows in the gird in pixels
+    column_spacing: float (default 50)
+        Horizontal spacing between columns in the grid in pixels
         coordinates
     share_xaxis: bool (default False)
-        Share x-axis between sub-figures in the same column. This will only
-        work if each sub-figure has a single x-axis
+        Share x-axis between sub-figures in the same column. Also link all x-axes in the
+        figure. This will only work if each sub-figure has a single x-axis
     share_yaxis: bool (default False)
-        Share y-axis between sub-figures in the same row. This will only work
-        if each subfigure has a single y-axis
+        Share y-axis between sub-figures in the same row. Also link all y-axes in the
+        figure. This will only work if each subfigure has a single y-axis
+    width: int (default None)
+        Final figure width. If not specified, width is the sum of the max width of
+        the figures in each column
+    height: int (default None)
+        Final figure width. If not specified, height is the sum of the max height of
+        the figures in each row
 
     Returns
     -------
     dict
         A plotly figure dict
     """
-
-    # compute number of rows/cols
-    rows = len(figures_grid)
-    columns = len(figures_grid[0])
-
     # Initialize row heights / column widths
-    if not row_heights:
-        row_heights = [1 for _ in range(rows)]
+    row_heights = [-1 for _ in figures_grid]
+    column_widths = [-1 for _ in figures_grid[0]]
 
-    if not column_widths:
-        column_widths = [1 for _ in range(columns)]
+    nrows = len(row_heights)
+    ncols = len(column_widths)
+
+    for r in range(nrows):
+        for c in range(ncols):
+            fig_element = figures_grid[r][c]
+            if not fig_element:
+                continue
+
+            w = fig_element.get('layout', {}).get('width', None)
+            if w:
+                column_widths[c] = max(w, column_widths[c])
+
+            h = fig_element.get('layout', {}).get('height', None)
+            if h:
+                row_heights[r] = max(h, row_heights[r])
+
+    if width:
+        available_column_width = width - (ncols - 1) * column_spacing
+        column_width_scale = available_column_width / sum(column_widths)
+        column_widths = [w * column_width_scale for w in column_widths]
+    else:
+        column_width_scale = 1.0
+
+    if height:
+        available_row_height = height - (nrows - 1) * row_spacing
+        row_height_scale = available_row_height / sum(row_heights)
+        row_heights = [h * row_height_scale for h in row_heights]
+    else:
+        row_height_scale = 1.0
 
     # Compute domain widths/heights for subplots
     column_domains = _compute_subplot_domains(column_widths, column_spacing)
@@ -699,14 +727,31 @@ def figure_grid(figures_grid,
 
                 _offset_subplot_ids(fig, subplot_offsets)
 
-                scale_x = column_domain[1] - column_domain[0]
-                scale_y = row_domain[1] - row_domain[0]
+                fig_height = fig['layout']['height'] * row_height_scale
+                fig_width = fig['layout']['width'] * column_width_scale
+
+                scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
+                scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
                 _scale_translate(fig,
                                  scale_x, scale_y,
                                  column_domain[0], row_domain[0])
 
                 merge_figure(output_figure, fig)
 
+    # Set output figure width/height
+    if height:
+        output_figure['layout']['height'] = height
+    else:
+        output_figure['layout']['height'] = (
+            sum(row_heights) + row_spacing * (nrows - 1)
+        )
+
+    if width:
+        output_figure['layout']['width'] = width
+    else:
+        output_figure['layout']['width'] = (
+                sum(column_widths) + column_spacing * (ncols - 1)
+        )
 
     if share_xaxis:
         for prop, val in output_figure['layout'].items():
