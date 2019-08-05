@@ -143,27 +143,45 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Get data and options and merge them
         data = self.get_data(element, ranges, style)
         opts = self.graph_options(element, ranges, style)
-        graphs = []
+
+        components = {
+            'traces': [],
+            'images': [],
+            'annotations': [],
+            'shapes': [],
+        }
+
         for i, d in enumerate(data):
             # Initialize traces
-            traces = self.init_graph(d, opts, index=i)
-            graphs.extend(traces)
+            datum_components = self.init_graph(d, opts, index=i)
 
-            if i == 0:
+            # Handle traces
+            traces = datum_components.get('traces', [])
+            components['traces'].extend(traces)
+
+            if i == 0 and traces:
                 # Associate element with trace.uid property of the first
                 # plotly trace that is used to render the element. This is
                 # used to associate the element with the trace during callbacks
                 traces[0]['uid'] = self.trace_uid
 
-        self.handles['graphs'] = graphs
+            # Handle images, shapes, annotations
+            for k in ['images', 'shapes', 'annotations']:
+                components[k].extend(datum_components.get(k, []))
+
+        self.handles['components'] = components
 
         # Initialize layout
         layout = self.init_layout(key, element, ranges)
+        for k in ['images', 'shapes', 'annotations']:
+            layout.setdefault(k, [])
+            layout[k].extend(components.get(k, []))
+
         self.handles['layout'] = layout
 
         # Create figure and return it
         self.drawn = True
-        fig = dict(data=graphs, layout=layout)
+        fig = dict(data=components['traces'], layout=layout)
 
         # Add plot's id to figure for bookkeeping
         fig['_id'] = self.id
@@ -203,10 +221,31 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         return opts
 
+    def init_graph(self, datum, options, index=0):
+        """
+        Initialize the plotly components that will represent the element
 
-    def init_graph(self, data, options, index=0):
+        Parameters
+        ----------
+        datum: dict
+            An element of the data list returned by the get_data method
+        options: dict
+            Graph options that were returned by the graph_options method
+        index: int
+            Index of datum in the original list returned by the get_data method
+
+        Returns
+        -------
+        dict
+            Dictionary of the plotly components that represent the element.
+            Keys may include:
+             - 'traces': List of trace dicts
+             - 'annotations': List of annotations dicts
+             - 'images': List of image dicts
+             - 'shapes': List of shape dicts
+        """
         trace = dict(options)
-        for k, v in data.items():
+        for k, v in datum.items():
             if k in trace and isinstance(trace[k], dict):
                 trace[k].update(v)
             else:
@@ -218,7 +257,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             trace[self._style_key] = dict(trace[self._style_key])
             for s, val in vectorized.items():
                 trace[self._style_key][s] = val[index]
-        return [trace]
+        return {'traces': [trace]}
 
 
     def get_data(self, element, ranges, style):
