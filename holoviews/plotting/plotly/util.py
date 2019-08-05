@@ -109,7 +109,7 @@ legend_trace_types = {
 
 # Aliases - map common style options to more common names
 
-STYLE_ALIASES = {'line_width': 'width', 'alpha': 'opacity',
+STYLE_ALIASES = {'alpha': 'opacity',
                  'cell_height': 'height', 'marker': 'symbol'}
 
 # Regular expression to extract any trailing digits from a subplot-style

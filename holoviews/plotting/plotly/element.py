@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import uuid
 import numpy as np
 import param
+import re
 
 from ...core import util
 from ...core.element import Element
@@ -187,6 +188,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
+
+            # If style starts with '{_style_key}_', remove the prefix.  This way
+            # a line_color property with self._style_key of 'line' doesn't end up
+            # as `line_line_color`
+            key_prefix_re = re.compile('^' + self._style_key + '_')
+            styles = {key_prefix_re.sub('', k): v for k, v in styles.items()}
+
             opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
                                      for k, v in styles.items()}
         else:
