@@ -15,12 +15,14 @@ from contextlib import contextmanager
 import param
 
 from panel import config
+from panel.io.notebook import load_notebook
 from panel.pane import HoloViews
+from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
 
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unicode, unbound_dimensions
+from ..core.util import unbound_dimensions
 from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 
 from . import Plot
@@ -151,9 +153,6 @@ class Renderer(Exporter):
     # Define appropriate widget classes
     widgets = ['scrubber', 'widgets']
 
-    # Any additional JS and CSS dependencies required by a specific backend
-    backend_dependencies = {}
-
     # Whether in a notebook context, set when running Renderer.load_nb
     notebook_context = False
 
@@ -235,7 +234,8 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
         elif fmt == 'html':
-            plot, fmt = HoloViews(obj, backend=Store.current_backend), 'html'
+            plot, fmt = HoloViews(
+                obj, fancy_layout=True, backend=Store.current_backend), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -342,7 +342,6 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        
         js_html, css_html = self.html_assets()
         if template is None: template = static_template
         html = self.html(obj, fmt)
@@ -353,14 +352,11 @@ class Renderer(Exporter):
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
         if widget_type != 'scrubber':
             widget_type = 'individual'
-
-        return HoloViews(
-            plot,
-            backend=Store.current_backend,
-            widget_type=widget_type,
-            fancy_layout=True,
-        )
-
+        layout = HoloViews(plot, widget_type=widget_type, fancy_layout=True)
+        interval = int((1./self_or_cls.fps) * 1000)
+        for player in layout.layout.select(PlayerBase):
+            player.interval = interval
+        return layout
 
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
@@ -402,43 +398,11 @@ class Renderer(Exporter):
     @classmethod
     def html_assets(cls, core=True, extras=True, backends=None, script=False):
         """
-        Returns JS and CSS and for embedding of widgets.
+        Deprecated: No longer needed
         """
-        if backends is None:
-            backends = [cls.backend] if cls.backend else []
-
-        dependencies = {}
-        for backend in backends:
-            dependencies[backend] = Store.renderers[backend].backend_dependencies
-
-        js_html, css_html = '', ''
-        for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
-            js_data = dep.get('js', [])
-            if isinstance(js_data, tuple):
-                for js in js_data:
-                    if script:
-                        js_html += js
-                    else:
-                        js_html += '\n<script type="text/javascript">%s</script>' % js
-            elif not script:
-                for js in js_data:
-                    js_html += '\n<script src="%s" type="text/javascript"></script>' % js
-            css_data = dep.get('css', [])
-            if isinstance(js_data, tuple):
-                for css in css_data:
-                    css_html += '\n<style>%s</style>' % css
-            else:
-                for css in css_data:
-                    css_html += '\n<link rel="stylesheet" href="%s">' % css
-
-        comm_js = cls.comm_manager.js_manager
-        if script:
-            js_html += comm_js
-        else:
-            js_html += '\n<script type="text/javascript">%s</script>' % comm_js
-
-        return unicode(js_html), unicode(css_html)
-
+        param.main.warning("Renderer.html_assets is deprecated as all "
+                           "JS and CSS dependencies are not handled by "
+                           "Panel.")
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -531,6 +495,7 @@ class Renderer(Exporter):
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
+        load_notebook(inline)
         with param.logging_level('ERROR'):
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager

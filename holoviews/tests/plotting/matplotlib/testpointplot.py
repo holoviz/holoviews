@@ -217,7 +217,7 @@ class TestPointPlot(TestMPLPlot):
                         vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(points)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
         self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_point_linear_color_op_update(self):
@@ -237,7 +237,7 @@ class TestPointPlot(TestMPLPlot):
                         vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(points)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_point_size_op(self):

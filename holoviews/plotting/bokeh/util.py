@@ -202,7 +202,10 @@ def compute_layout_properties(
     fixed_width = (explicit_width or frame_width)
     fixed_height = (explicit_height or frame_height)
     fixed_aspect = aspect or data_aspect
-    aspect = 1 if aspect == 'square' else aspect
+    if aspect == 'square':
+        aspect = 1
+    elif aspect == 'equal':
+        data_aspect = 1
 
     # Plot dimensions
     height = None if height is None else int(height*size_multiplier)
@@ -248,18 +251,30 @@ def compute_layout_properties(
                 else:
                     sizing_mode = 'stretch_both'
 
+
     if fixed_aspect:
+        if ((explicit_width and not frame_width) != (explicit_height and not frame_height)) and logger:
+            logger.warning('Due to internal constraints, when aspect and '
+                           'width/height is set, the bokeh backend uses '
+                           'those values as frame_width/frame_height instead. '
+                           'This ensures the aspect is respected, but means '
+                           'that the plot might be slightly larger than '
+                           'anticipated. Set the frame_width/frame_height '
+                           'explicitly to suppress this warning.')
+
         aspect_type = 'data_aspect' if data_aspect else 'aspect'
-        if fixed_width and fixed_height:
-            if not data_aspect:
+        if fixed_width and fixed_height and aspect:
+            if aspect == 'equal':
+                data_aspect = 1
+            elif not data_aspect:
                 aspect = None
-            if logger:
-                logger.warning(
-                    "%s value was ignored because absolute width and "
-                    "height values were provided. Either supply "
-                    "explicit frame_width and frame_height to achieve "
-                    "desired aspect OR supply a combination of width "
-                    "or height and an aspect value." % aspect_type)
+                if logger:
+                    logger.warning(
+                        "%s value was ignored because absolute width and "
+                        "height values were provided. Either supply "
+                        "explicit frame_width and frame_height to achieve "
+                        "desired aspect OR supply a combination of width "
+                        "or height and an aspect value." % aspect_type)
         elif fixed_width and responsive:
             height = None
             responsive = False
@@ -279,7 +294,6 @@ def compute_layout_properties(
         elif responsive == 'height':
             sizing_mode = 'scale_height'
 
-
     if responsive == 'width' and fixed_width:
         responsive = False
         if logger:
@@ -294,13 +308,13 @@ def compute_layout_properties(
     match_aspect = False
     aspect_scale = 1
     aspect_ratio = None
-    if (fixed_width and fixed_height):
-        pass
-    elif data_aspect or aspect == 'equal':
+    if data_aspect:
         match_aspect = True
-        if fixed_width or not fixed_height:
+        if (fixed_width and fixed_height):
+            frame_width, frame_height = frame_width or width, frame_height or height
+        elif fixed_width or not fixed_height:
             height = None
-        if fixed_height or not fixed_width:
+        elif fixed_height or not fixed_width:
             width = None
 
         aspect_scale = data_aspect
@@ -308,6 +322,8 @@ def compute_layout_properties(
             aspect_scale = 1
         elif responsive:
             aspect_ratio = aspect
+    elif (fixed_width and fixed_height):
+        pass
     elif isnumeric(aspect):
         if responsive:
             aspect_ratio = aspect
@@ -527,14 +543,14 @@ def filter_toolboxes(plots):
 
 def py2js_tickformatter(formatter, msg=''):
     """
-    Uses flexx.pyscript to compile a python tick formatter to JS code
+    Uses py2js to compile a python tick formatter to JS code
     """
     try:
-        from flexx.pyscript import py2js
+        from pscript import py2js
     except ImportError:
         param.main.param.warning(
-            msg+'Ensure Flexx is installed ("conda install -c bokeh flexx" '
-            'or "pip install flexx")')
+            msg+'Ensure pscript is installed ("conda install pscript" '
+            'or "pip install pscript")')
         return
     try:
         jscode = py2js(formatter, 'formatter')

@@ -652,7 +652,7 @@ class TestBokehUtils(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test bokeh plot utils.")
         try:
-            import flexx # noqa
+            import pscript # noqa
         except:
             raise SkipTest("Flexx required to test transpiling formatter functions.")
 

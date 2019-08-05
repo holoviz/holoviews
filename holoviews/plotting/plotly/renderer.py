@@ -11,13 +11,14 @@ with param.logging_level('CRITICAL'):
     from plotly import utils
     import plotly.graph_objs as go
 
+import panel as pn
+from panel.pane import Viewable
+
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 from .callbacks import callbacks
 
-import panel as pn
-from panel.pane import Viewable
 
 
 def _PlotlyHoloviews(fig_dict):
@@ -105,7 +106,7 @@ class PlotlyRenderer(Renderer):
 
             if fmt == 'svg':
                 data = data.decode('utf-8')
-                
+
             if as_script:
                 b64 = base64.b64encode(data).decode("utf-8")
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
@@ -134,8 +135,8 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
+        import panel.models.plotly # noqa
         cls._loaded = True
-        pn.extension("plotly")
 
 
     @classmethod

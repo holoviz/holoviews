@@ -361,8 +361,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             l, b, r, t = b, l, t, r
 
         categorical = any(self.traverse(lambda x: x._categorical))
-        categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
-        categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
+        if xdims is not None and any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
+            categorical_x = True
+        else:
+            categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
+
+        if ydims is not None and any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
+            categorical_y = True
+        else:
+            categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
         x_axis_type = 'log' if self.logx else 'auto'
         if xdims:
@@ -561,7 +568,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
-        elif 'top' in self.xaxis:
+        elif isinstance(self.xaxis, util.basestring) and 'top' in self.xaxis:
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
@@ -570,7 +577,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif 'right' in self.yaxis:
+        elif isinstance(self.yaxis, util.basestring) and'right' in self.yaxis:
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
@@ -751,7 +758,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element, ranges)
         framewise = self.framewise
-        streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
+        streaming = (self.streaming and any(stream._triggering and stream.following
+                                            for stream in self.streaming))
         xupdate = ((not (self.model_changed(x_range) or self.model_changed(plot))
                     and (framewise or streaming))
                    or xfactors is not None)
@@ -768,9 +776,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
 
-        if data_aspect and fixed_width and fixed_height:
-            pass
-        elif data_aspect and (categorical or datetime):
+        if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
             self.param.warning('Cannot set data_aspect if one or both '
                                'axes are %s, the option will '
@@ -779,7 +785,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot = self.handles['plot']
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
-            if self.drawn or self.aspect not in ['equal', None]:
+
+            if self.drawn or (fixed_width and fixed_height):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -788,12 +795,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
                 else:
-                    frame_aspect = plot.frame_width/plot.frame_height
+                    frame_aspect = plot.frame_height/plot.frame_width
 
-                desired_xspan = yspan*1./(ratio/frame_aspect)
-                desired_yspan = (xspan*(ratio/frame_aspect))
-                if (np.allclose(desired_xspan, xspan, rtol=0.01) and
-                    np.allclose(desired_yspan, yspan, rtol=0.01)):
+                desired_xspan = yspan*(ratio/frame_aspect)
+                desired_yspan = xspan/(ratio/frame_aspect)
+                if ((np.allclose(desired_xspan, xspan, rtol=0.01) and
+                     np.allclose(desired_yspan, yspan, rtol=0.01)) or
+                    not (util.isfinite(xspan) and util.isfinite(yspan))):
                     pass
                 elif desired_yspan >= yspan:
                     ypad = (desired_yspan-yspan)/2.
@@ -803,7 +811,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
-            else:
+            elif not (fixed_height and fixed_width):
                 # Set initial aspect
                 aspect = self.get_aspect(xspan, yspan)
                 width = plot.frame_width or plot.plot_width or 300
@@ -814,11 +822,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
                 if fixed_height:
                     plot.frame_height = height
-                    plot.frame_width = int(height*aspect)
+                    plot.frame_width = int(height/aspect)
                     plot.plot_width, plot.plot_height = None, None
                 elif fixed_width:
                     plot.frame_width = width
-                    plot.frame_height = int(width/aspect)
+                    plot.frame_height = int(width*aspect)
                     plot.plot_width, plot.plot_height = None, None
                 else:
                     plot.aspect_ratio = 1./aspect
@@ -906,7 +914,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.data_aspect:
             return (yspan/xspan)*self.data_aspect
         elif self.aspect == 'equal':
-            return xspan/yspan
+            return yspan/xspan
         elif self.aspect == 'square':
             return 1
         elif self.aspect is not None:
@@ -1030,12 +1038,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     else:
                         factors = util.unique_array(val)
                     kwargs['factors'] = factors
-                    if factors is not None and getattr(self, 'show_legend', False):
-                        new_style['legend'] = key
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
-                if isinstance(cmapper, CategoricalColorMapper) and val.dtype.kind in 'ifMu':
+                categorical = isinstance(cmapper, CategoricalColorMapper)
+                if categorical and val.dtype.kind in 'ifMu':
                     if v.dimension in element:
                         formatter = element.get_dimension(v.dimension).pprint_value
                     else:
@@ -1044,6 +1051,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     data[k+'_str__'] = [formatter(d) for d in val]
                 else:
                     field = k
+                if categorical and getattr(self, 'show_legend', False):
+                    new_style['legend'] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 

@@ -9,23 +9,18 @@ import bokeh
 
 from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
-from bokeh.core.validation.warnings import EMPTY_LAYOUT, MISSING_RENDERERS
 from bokeh.document import Document
-from bokeh.embed.notebook import encode_utf8, notebook_content
 from bokeh.io import curdoc
-from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
 from bokeh.protocol import Protocol
-from bokeh.resources import CDN, INLINE
 from bokeh.themes.theme import Theme
 
-import panel as pn
 from panel.pane import HoloViews, Viewable
 
 from ...core import Store, HoloMap
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import compute_plot_size, silence_warnings
+from .util import compute_plot_size
 
 
 default_theme = Theme(json={
@@ -68,9 +63,6 @@ class BokehRenderer(Renderer):
     webgl = param.Boolean(default=False, doc="""
         Whether to render plots with WebGL if available""")
 
-    backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
-                            'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
-
     _loaded = False
 
     # Define the handler for updating bokeh plots
@@ -98,8 +90,6 @@ class BokehRenderer(Renderer):
     @bothmethod
     def _save_prefix(self_or_cls, ext):
         "Hook to prefix content for instance JS when saving HTML"
-        if ext == 'html':
-            return '\n'.join(self_or_cls.html_assets()).encode('utf8')
         return
 
 
@@ -139,7 +129,7 @@ class BokehRenderer(Renderer):
         if new_window:
             return pane._get_server(port, websocket_origin, show=show)
         else:
-            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {} 
+            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {}
             return pane.app(port, **kwargs)
 
     @bothmethod
@@ -261,7 +251,4 @@ class BokehRenderer(Renderer):
 
     @classmethod
     def load_nb(cls, inline=True):
-        """
-        Loads the bokeh notebook resources.
-        """
-        pn.extension()
+        cls._loaded = True

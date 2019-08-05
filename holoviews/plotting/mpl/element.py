@@ -295,6 +295,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
+        if self.projection == '3d':
+            return
+
         if ((isinstance(aspect, util.basestring) and aspect != 'square') or
             self.data_aspect):
             data_ratio = self.data_aspect or aspect
@@ -907,7 +910,13 @@ class ColorbarPlot(ElementPlot):
 
         if not isinstance(cmap, mpl_colors.Colormap):
             if isinstance(cmap, dict):
-                factors = util.unique_array(values)
+                # The palette needs to correspond to the map's limits (vmin/vmax). So use the same
+                # factors as in the map's clim computation above.
+                range_key = dim_range_key(vdim)
+                if range_key in ranges and 'factors' in ranges[range_key]:
+                    factors = ranges[range_key]['factors']
+                else:
+                    factors = util.unique_array(values)
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:

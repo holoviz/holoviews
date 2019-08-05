@@ -1,3 +1,71 @@
+Version 1.12.4
+==============
+
+This is a minor release with a number of bug and compatibility fixes
+as well as a number of enhancements.
+
+Many thanks to recent @henriqueribeiro, @poplarShift, @hojo590,
+@stuarteberg, @justinbois, @schumann-tim, @ZuluPro and @jonmmease for
+their contributions and the many users filing issues.
+
+Enhancements:
+
+- Add numpy log to dim transforms
+  ([#3731](https://github.com/pyviz/holoviews/issues/3731))
+- Make Buffer stream following behavior togglable
+  ([#3823](https://github.com/pyviz/holoviews/issues/3823))
+- Added internal methods to access dask arrays and made histogram
+  operation operate on dask arrays
+  ([#3854](https://github.com/pyviz/holoviews/issues/3854))
+- Optimized range finding if Dimension.range is set
+  ([#3860](https://github.com/pyviz/holoviews/issues/3860))
+- Add ability to use functions annotated with param.depends as
+  DynamicMap callbacks
+  ([#3744](https://github.com/pyviz/holoviews/issues/3744))
+
+Bug fixes:
+
+- Fixed handling datetimes on Spikes elements
+  ([#3736](https://github.com/pyviz/holoviews/issues/3736))
+- Fix graph plotting for unsigned integer node indices
+  ([#3773](https://github.com/pyviz/holoviews/issues/3773))
+- Fix sort=False on GridSpace and GridMatrix
+  ([#3769](https://github.com/pyviz/holoviews/issues/3769))
+- Fix extent scaling on VLine/HLine annotations
+  ([#3761](https://github.com/pyviz/holoviews/issues/3761))
+- Fix BoxWhisker to match convention
+  ([#3755](https://github.com/pyviz/holoviews/issues/3755))
+- Improved handling of custom array types
+  ([#3792](https://github.com/pyviz/holoviews/issues/3792))
+- Allow setting cmap on HexTiles in matplotlib
+  ([#3803](https://github.com/pyviz/holoviews/issues/3803))
+- Fixed handling of data_aspect in bokeh backend
+  ([#3848](https://github.com/pyviz/holoviews/issues/3848),
+  [#3872](https://github.com/pyviz/holoviews/issues/3872))
+- Fixed legends on bokeh Path plots
+  ([#3809](https://github.com/pyviz/holoviews/issues/3809))
+- Ensure Bars respect xlim and ylim
+  ([#3853](https://github.com/pyviz/holoviews/issues/3853))
+- Allow setting Chord edge colors using explicit colormapping
+  ([#3734](https://github.com/pyviz/holoviews/issues/3734))
+- Fixed bug in decimate operation
+  ([#3875](https://github.com/pyviz/holoviews/issues/3875))
+
+Compatibility:
+
+- Improve compatibility with deprecated matplotlib rcparams
+  ([#3745](https://github.com/pyviz/holoviews/issues/3745),
+  [#3804](https://github.com/pyviz/holoviews/issues/3804))
+
+Backwards incompatible changes:
+
+- Unfortunately due to a major mixup the data_aspect option added in
+  1.12.0 was not correctly implemented and fixing it changed its
+  behavior significantly (inverting it entirely in some cases).
+- A mixup in the convention used to compute the whisker of a
+  box-whisker plots was fixed resulting in different results going
+  forward.
+
 Version 1.12.3
 ==============
 

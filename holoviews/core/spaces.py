@@ -7,6 +7,7 @@ from itertools import groupby
 from functools import partial
 from collections import defaultdict
 from contextlib import contextmanager
+from types import FunctionType
 
 import numpy as np
 import param
@@ -915,7 +916,8 @@ class DynamicMap(HoloMap):
         streams = (streams or [])
 
         # If callback is a parameterized method and watch is disabled add as stream
-        if util.is_param_method(callback, has_deps=True) and params.get('watch', True):
+        if (util.is_param_method(callback, has_deps=True) and params.get('watch', True)
+            or isinstance(callback, FunctionType) and hasattr(callback, '_dinfo')):
             streams.append(callback)
 
         if isinstance(callback, types.GeneratorType):

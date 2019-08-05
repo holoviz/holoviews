@@ -274,7 +274,7 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
         if not expanded:

@@ -10,7 +10,6 @@ from itertools import chain
 
 import param
 
-import panel as pn
 from panel.pane import Viewable
 
 import matplotlib as mpl
@@ -300,5 +299,3 @@ class MPLRenderer(Renderer):
         backend = plt.get_backend()
         if backend not in ['agg', 'module://ipykernel.pylab.backend_inline']:
             plt.switch_backend('agg')
-
-        pn.extension()

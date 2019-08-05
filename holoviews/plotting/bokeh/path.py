@@ -15,7 +15,7 @@ from .styles import (expand_batched_style, line_properties, fill_properties,
 from .util import bokeh_version, multi_polygons_data
 
 
-class PathPlot(ColorbarPlot):
+class PathPlot(LegendPlot, ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -143,7 +143,7 @@ class PathPlot(ColorbarPlot):
         return data, elmapping, style
 
 
-class ContourPlot(LegendPlot, PathPlot):
+class ContourPlot(PathPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
