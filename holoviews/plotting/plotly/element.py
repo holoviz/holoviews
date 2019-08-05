@@ -383,6 +383,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.projection != '3d' and self.xaxis:
                 xaxis['automargin'] = False
 
+                # Create dimension string used to compute matching axes
+                if isinstance(xdim, (list, tuple)):
+                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                                        for d in xdim])
+                else:
+                    dim_str = "%s^%s^%s" % (xdim.name, xdim.label, xdim.unit)
+
+                xaxis['_dim'] = dim_str
+
                 if 'bare' in self.xaxis:
                     xaxis['ticks'] = ''
                     xaxis['showticklabels'] = False
@@ -412,6 +421,14 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             if self.projection != '3d' and self.yaxis:
                 yaxis['automargin'] = False
 
+                # Create dimension string used to compute matching axes
+                if isinstance(ydim, (list, tuple)):
+                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                                        for d in ydim])
+                else:
+                    dim_str = "%s^%s^%s" % (ydim.name, ydim.label, ydim.unit)
+
+                yaxis['_dim'] = dim_str,
                 if 'bare' in self.yaxis:
                     yaxis['ticks'] = ''
                     yaxis['showticklabels'] = False

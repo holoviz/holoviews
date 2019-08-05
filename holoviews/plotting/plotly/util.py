@@ -378,6 +378,23 @@ def _offset_subplot_ids(fig, offsets):
             else:
                 yaxis['anchor'] = 'x'
 
+    # Axis matches references
+    for layout_prop in list(layout.keys()):
+        if layout_prop[1:5] == 'axis':
+            axis = layout[layout_prop]
+            matches_val = axis.get('matches', None)
+            if matches_val:
+
+                if matches_val[0] == 'x':
+                    matches_number = _get_subplot_number(matches_val) + x_offset
+                elif matches_val[0] == 'y':
+                    matches_number = _get_subplot_number(matches_val) + y_offset
+                else:
+                    continue
+
+                suffix = str(matches_number) if matches_number > 1 else ""
+                axis['matches'] = matches_val[0] + suffix
+
     # annotations/shapes/images
     for layout_prop in ['annotations', 'shapes', 'images']:
         for obj in layout.get(layout_prop, []):
@@ -690,6 +707,17 @@ def figure_grid(figures_grid,
 
                 merge_figure(output_figure, fig)
 
+
+    if share_xaxis:
+        for prop, val in output_figure['layout'].items():
+            if prop.startswith('xaxis'):
+                val['matches'] = 'x'
+
+    if share_yaxis:
+        for prop, val in output_figure['layout'].items():
+            if prop.startswith('yaxis'):
+                val['matches'] = 'y'
+
     return output_figure
 
 
@@ -737,6 +765,53 @@ def get_colorscale(cmap, levels=None, cmin=None, cmax=None):
         palette, (cmin, cmax) = color_intervals(
             palette, levels, clip=(cmin, cmax))
     return colors.make_colorscale(palette)
+
+
+def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
+    """
+    Configure matching axes for a figure
+
+    Note: This function mutates the input figure
+
+    Parameters
+    ----------
+    fig: dict
+        The figure dictionary to process.
+    matching_prop: str
+        The name of the axis property that should be used to determine that two axes
+        should be matched together.  If the property is missing or None, axes will not
+        be matched
+    """
+
+    # Build mapping from matching properties to (axis, ref) tuples
+    axis_map = {}
+
+    # print(fig['layout'])
+
+    for k, v in fig.get('layout', {}).items():
+        if k[1:5] == 'axis':
+            matching_val = v.get(matching_prop, None)
+            axis_map.setdefault(matching_val, [])
+
+            # Get axis reference as used by matching ('xaxis3' -> 'x3')
+            axis_ref = k.replace('axis', '')
+
+            # Append axis entry to maping
+            axis_pair = (axis_ref, v)
+            axis_map[matching_val].append(axis_pair)
+
+    # print(axis_map)
+
+    # Set matching
+    for _, axis_pairs in axis_map.items():
+        if len(axis_pairs) < 2:
+            continue
+
+        matches_reference = axis_pairs[0][0]
+        for _, axis in axis_pairs[1:]:
+            axis['matches'] = matches_reference
+
+
 def clean_internal_figure_properties(fig):
     """
     Remove all HoloViews internal properties (those with leading underscores) from the

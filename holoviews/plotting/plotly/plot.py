@@ -12,7 +12,7 @@ from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
     GenericElementPlot, CallbackPlot
-from .util import figure_grid
+from .util import figure_grid, configure_matching_axes_from_dims
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):
@@ -74,6 +74,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     hspacing = param.Number(default=0.15, bounds=(0, 1))
 
     vspacing = param.Number(default=0.15, bounds=(0, 1))
+    shared_axes = param.Boolean(default=True, doc="""
+            Whether axes should be shared across plots""")
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
@@ -253,6 +255,9 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         fig = figure_grid(list(reversed(plots)),
                           column_spacing=self.hspacing,
                           row_spacing=self.vspacing)
+
+        # Configure axis matching
+        configure_matching_axes_from_dims(fig)
 
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
