@@ -17,6 +17,7 @@ import param
 from panel import config
 from panel.io.notebook import load_notebook
 from panel.pane import HoloViews
+from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
 
 from ..core.io import Exporter
@@ -343,8 +344,11 @@ class Renderer(Exporter):
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
         if widget_type != 'scrubber':
             widget_type = 'individual'
-        return HoloViews(plot, widget_type=widget_type, fancy_layout=True)
-
+        layout = HoloViews(plot, widget_type=widget_type, fancy_layout=True)
+        interval = int((1./self_or_cls.fps) * 1000)
+        for player in layout.layout.select(PlayerBase):
+            player.interval = interval
+        return layout
 
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
