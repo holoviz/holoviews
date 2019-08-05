@@ -382,6 +382,16 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
             if self.projection != '3d' and self.xaxis:
                 xaxis['automargin'] = False
+
+                if 'bare' in self.xaxis:
+                    xaxis['ticks'] = ''
+                    xaxis['showticklabels'] = False
+                    xaxis['title'] = ''
+
+                if 'top' in self.xaxis:
+                    xaxis['side'] = 'top'
+                else:
+                    xaxis['side'] = 'bottom'
         else:
             xaxis = {}
 
@@ -401,6 +411,16 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
             if self.projection != '3d' and self.yaxis:
                 yaxis['automargin'] = False
+
+                if 'bare' in self.yaxis:
+                    yaxis['ticks'] = ''
+                    yaxis['showticklabels'] = False
+                    yaxis['title'] = ''
+
+                if 'right' in self.yaxis:
+                    yaxis['side'] = 'right'
+                else:
+                    yaxis['side'] = 'left'
 
         else:
             yaxis = {}
