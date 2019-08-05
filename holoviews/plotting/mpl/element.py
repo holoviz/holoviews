@@ -295,6 +295,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
+        if self.projection == '3d':
+            return
+
         if ((isinstance(aspect, util.basestring) and aspect != 'square') or
             self.data_aspect):
             data_ratio = self.data_aspect or aspect
