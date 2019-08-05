@@ -37,7 +37,7 @@ class TestMplGraphPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(self.graph)
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
-        self.assertEqual(nodes.get_offsets(), self.graph.nodes.array([0, 1]))
+        self.assertEqual(np.asarray(nodes.get_offsets()), self.graph.nodes.array([0, 1]))
         self.assertEqual([p.vertices for p in edges.get_paths()],
                          [p.array() for p in self.graph.edgepaths.split()])
 
@@ -59,7 +59,7 @@ class TestMplGraphPlot(TestMPLPlot):
         g = self.graph3.opts(plot=dict(color_index='Weight'), style=dict(cmap='viridis'))
         plot = mpl_renderer.get_plot(g)
         nodes = plot.handles['nodes']
-        self.assertEqual(nodes.get_array(), self.weights)
+        self.assertEqual(np.asarray(nodes.get_array()), self.weights)
         self.assertEqual(nodes.get_clim(), (self.weights.min(), self.weights.max()))
 
     def test_plot_graph_categorical_colored_edges(self):
@@ -123,7 +123,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph((edges, nodes)).options(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([0.5, 1.5, 2.5]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0.5, 1.5, 2.5]))
         self.assertEqual(artist.get_clim(), (0.5, 2.5))
 
     def test_graph_op_node_color_linear_update(self):
@@ -150,7 +150,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph((edges, nodes)).options(node_color='color')
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
 
     def test_graph_op_node_size(self):
         edges = [(0, 1), (0, 2)]
@@ -306,7 +306,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
         self.assertIsInstance(edges, LineCollection)
-        self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
+        self.assertEqual(np.asarray(nodes.get_offsets()), self.trimesh.nodes.array([0, 1]))
         self.assertEqual([p.vertices for p in edges.get_paths()],
                          [p.array() for p in self.trimesh._split_edgepaths.split()])
 
@@ -315,7 +315,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         nodes = plot.handles['nodes']
         edges = plot.handles['edges']
         self.assertIsInstance(edges, PolyCollection)
-        self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
+        self.assertEqual(np.asarray(nodes.get_offsets()), self.trimesh.nodes.array([0, 1]))
         paths = self.trimesh._split_edgepaths.split(datatype='array')
         self.assertEqual([p.vertices[:4] for p in edges.get_paths()],
                          paths)
@@ -364,7 +364,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([2, 1, 3, 4]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 1, 3, 4]))
         self.assertEqual(artist.get_clim(), (1, 4))
 
     def test_trimesh_op_node_color_categorical(self):
@@ -373,7 +373,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(node_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 2, 0]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2, 0]))
         self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_trimesh_op_node_size(self):
@@ -494,7 +494,7 @@ class TestMplChordPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(g)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
-        self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(nodes.get_array()), np.array([0, 1, 2]))
         self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
         self.assertEqual(nodes.get_clim(), (0, 2))
         self.assertEqual(arcs.get_clim(), (0, 2))
