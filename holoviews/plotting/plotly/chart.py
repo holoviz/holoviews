@@ -41,7 +41,11 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
             copts['color'] = element.dimension_values(cdim)
-            opts['marker'].update(opts)
+            opts['marker'].update(copts)
+
+        # If cmap was present and applicable, it was processed by get_color_opts above.
+        # Remove it now to avoid plotly validation error
+        opts.get('marker', {}).pop('cmap', None)
         return opts
 
 
