@@ -16,6 +16,7 @@ from .stats import *                 # noqa (API import)
 from .tabular import *               # noqa (API import)
 from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
+from .images import *                # noqa (API import)
 from ...core.util import LooseVersion, VersionError
 import plotly
 
@@ -49,6 +50,7 @@ Store.register({Points: ScatterPlot,
                 Image: RasterPlot,
                 HeatMap: HeatMapPlot,
                 QuadMesh: QuadMeshPlot,
+                RGB: RGBPlot,
 
                 # 3D Plot
                 Scatter3D: Scatter3DPlot,
