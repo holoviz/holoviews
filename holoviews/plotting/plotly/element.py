@@ -367,6 +367,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             zlabel = ''
 
         if xdim:
+            try:
+                if any(np.isnan([r, l])):
+                    r, l = 0, 1
+            except TypeError:
+                # r and l not numeric, don't change anything
+                pass
+
             xrange = [r, l] if self.invert_xaxis else [l, r]
             xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
@@ -376,6 +383,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             xaxis = {}
 
         if ydim:
+            try:
+                if any(np.isnan([b, t])):
+                    b, t = 0, 1
+            except TypeError:
+                # b and t not numeric, don't change anything
+                pass
+
             yrange = [t, b] if self.invert_yaxis else [b, t]
             yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
