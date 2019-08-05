@@ -68,9 +68,6 @@ class BokehRenderer(Renderer):
     webgl = param.Boolean(default=False, doc="""
         Whether to render plots with WebGL if available""")
 
-    backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
-                            'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
-
     _loaded = False
 
     # Define the handler for updating bokeh plots
@@ -98,8 +95,6 @@ class BokehRenderer(Renderer):
     @bothmethod
     def _save_prefix(self_or_cls, ext):
         "Hook to prefix content for instance JS when saving HTML"
-        if ext == 'html':
-            return '\n'.join(self_or_cls.html_assets()).encode('utf8')
         return
 
 
@@ -261,7 +256,4 @@ class BokehRenderer(Renderer):
 
     @classmethod
     def load_nb(cls, inline=True):
-        """
-        Loads the bokeh notebook resources.
-        """
-        pn.extension()
+        cls._loaded = True
