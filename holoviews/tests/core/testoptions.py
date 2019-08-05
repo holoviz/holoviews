@@ -949,30 +949,55 @@ class TestLookupOptions(ComparisonTestCase):
     def test_lookup_options_honors_backend(self):
         points = Points([[1, 2], [3, 4]])
 
+        try:
+            import holoviews.plotting.matplotlib # noqa
+        except:
+            pass
+
+        try:
+            import holoviews.plotting.bokeh # noqa
+        except:
+            pass
+
+        try:
+            import holoviews.plotting.plotly # noqa
+        except:
+            pass
+
+        backends = Store.loaded_backends()
+
         # Lookup points style options with matplotlib and plotly backends while current
         # backend is bokeh
-        Store.current_backend = 'bokeh'
-        options_matplotlib = Store.lookup_options("matplotlib", points, "style")
-        options_plotly = Store.lookup_options("plotly", points, "style")
+        if 'bokeh' in backends:
+            Store.set_current_backend('bokeh')
+            if 'matplotlib' in backends:
+                options_matplotlib = Store.lookup_options("matplotlib", points, "style")
+            if 'plotly' in backends:
+                options_plotly = Store.lookup_options("plotly", points, "style")
 
         # Lookup points style options with bokeh backend while current
         # backend is matplotlib
-        Store.current_backend = 'matplotlib'
-        options_bokeh = Store.lookup_options("bokeh", points, "style")
+        if 'matplotlib' in backends:
+            Store.set_current_backend('matplotlib')
+            if 'bokeh' in backends:
+                options_bokeh = Store.lookup_options("bokeh", points, "style")
 
         # Check matplotlib style options
-        for opt in ["cmap", "color", "marker"]:
-            self.assertIn(opt, options_matplotlib.keys())
-        self.assertNotIn("muted_alpha", options_matplotlib.keys())
+        if 'matplotlib' in backends:
+            for opt in ["cmap", "color", "marker"]:
+                self.assertIn(opt, options_matplotlib.keys())
+            self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
         # Check bokeh style options
-        for opt in ["cmap", "color", "muted_alpha", "size"]:
-            self.assertIn(opt, options_bokeh.keys())
+        if 'bokeh' in backends:
+            for opt in ["cmap", "color", "muted_alpha", "size"]:
+                self.assertIn(opt, options_bokeh.keys())
 
         # Check plotly style options
-        for opt in ["color"]:
-            self.assertIn(opt, options_plotly.keys())
-        self.assertNotIn("muted_alpha", options_matplotlib.keys())
+        if 'plotly' in backends:
+            for opt in ["color"]:
+                self.assertIn(opt, options_plotly.keys())
+            self.assertNotIn("muted_alpha", options_matplotlib.keys())
 
 
 class TestCrossBackendOptionSpecification(ComparisonTestCase):
