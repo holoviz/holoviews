@@ -264,6 +264,7 @@ def _get_max_subplot_ids(fig):
     max_subplot_ids['xaxis'] = 0
     max_subplot_ids['yaxis'] = 0
 
+    # Check traces
     for trace in fig.get('data', []):
         trace_type = trace.get('type', 'scatter')
         subplot_types = _trace_to_subplot.get(trace_type, [])
@@ -278,6 +279,20 @@ def _get_max_subplot_ids(fig):
 
             max_subplot_ids[subplot_type] = max(
                 max_subplot_ids[subplot_type], subplot_number)
+
+    # check annotations/shapes/images
+    layout = fig.get('layout', {})
+    for layout_prop in ['annotations', 'shapes', 'images']:
+        for obj in layout.get(layout_prop, []):
+            xref = obj.get('xref', 'x')
+            if xref != 'paper':
+                xref_number = _get_subplot_number(xref)
+                max_subplot_ids['xaxis'] = max(max_subplot_ids['xaxis'], xref_number)
+
+            yref = obj.get('yref', 'y')
+            if yref != 'paper':
+                yref_number = _get_subplot_number(yref)
+                max_subplot_ids['yaxis'] = max(max_subplot_ids['yaxis'], yref_number)
 
     return max_subplot_ids
 
@@ -481,7 +496,26 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
     for obj in layout.get('annotations', []):
         if obj.get('xref', None) == 'paper':
             obj['x'] = obj.get('x', 0.5) * scale_x + translate_x
+        if obj.get('yref', None) == 'paper':
             obj['y'] = obj.get('y', 0.5) * scale_y + translate_y
+
+    # shapes
+    for obj in layout.get('shapes', []):
+        if obj.get('xref', None) == 'paper':
+            obj['x0'] = obj.get('x0', 0.25) * scale_x + translate_x
+            obj['x1'] = obj.get('x1', 0.75) * scale_x + translate_x
+        if obj.get('yref', None) == 'paper':
+            obj['y0'] = obj.get('y0', 0.25) * scale_y + translate_y
+            obj['y1'] = obj.get('y1', 0.75) * scale_y + translate_y
+
+    # images
+    for obj in layout.get('images', []):
+        if obj.get('xref', None) == 'paper':
+            obj['x'] = obj.get('x', 0.5) * scale_x + translate_x
+            obj['sizex'] = obj.get('sizex', 0) * scale_x
+        if obj.get('yref', None) == 'paper':
+            obj['y'] = obj.get('y', 0.5) * scale_y + translate_y
+            obj['sizey'] = obj.get('sizey', 0) * scale_y
 
 
 def merge_figure(fig, subfig):

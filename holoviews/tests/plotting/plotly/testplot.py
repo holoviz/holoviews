@@ -187,3 +187,109 @@ class TestPlotlyFigureGrid(TestPlotlyPlot):
         self.assertEqual(annotations[3]['text'], 'Four')
         self.assertEqual(annotations[3]['xref'], 'x2')
         self.assertEqual(annotations[3]['yref'], 'y2')
+
+    def test_shapes_stick_with_axis(self):
+        fig = figure_grid([[
+            {'data': [{'type': 'scatter',
+                       'y': [1, 3, 2]}],
+             'layout': {
+                 'width': 400,
+                 'height': 400,
+                 'shapes': [
+                     {'type': 'rect',
+                      'xref': 'x', 'yref': 'y',
+                      'x0': 0, 'y0': 0, 'x1': 1, 'y1': 1},
+                     {'type': 'circle',
+                      'xref': 'x', 'yref': 'y',
+                      'x0': 1, 'y0': 1, 'x1': 2, 'y1': 2}
+                 ]}}
+            ,
+            {'data': [{'type': 'bar',
+                       'y': [2, 3, 1]}],
+             'layout': {
+                 'width': 400,
+                 'height': 400,
+                 'shapes': [
+                     {'type': 'line',
+                      'xref': 'x', 'yref': 'y',
+                      'x0': 2, 'y0': 0, 'x1': 1, 'y1': 3},
+                     {'type': 'path',
+                      'xref': 'x', 'yref': 'y',
+                      'x0': 3, 'y0': 0, 'x1': 3, 'y1': 6}
+                 ]}}
+        ]])
+
+        # Validate resulting figure object
+        go.Figure(fig)
+
+        shapes = fig['layout']['shapes']
+        self.assertEqual(len(shapes), 4)
+        self.assertEqual(shapes[0]['type'], 'rect')
+        self.assertEqual(shapes[0]['xref'], 'x')
+        self.assertEqual(shapes[0]['yref'], 'y')
+
+        self.assertEqual(shapes[1]['type'], 'circle')
+        self.assertEqual(shapes[1]['xref'], 'x')
+        self.assertEqual(shapes[1]['yref'], 'y')
+
+        self.assertEqual(shapes[2]['type'], 'line')
+        self.assertEqual(shapes[2]['xref'], 'x2')
+        self.assertEqual(shapes[2]['yref'], 'y2')
+
+        self.assertEqual(shapes[3]['type'], 'path')
+        self.assertEqual(shapes[3]['xref'], 'x2')
+        self.assertEqual(shapes[3]['yref'], 'y2')
+
+    def test_images_stick_with_axis(self):
+        fig = figure_grid([[
+            {'data': [{'type': 'scatter',
+                       'y': [1, 3, 2]}],
+             'layout': {
+                 'width': 400,
+                 'height': 400,
+                 'images': [
+                     {'source': 'One.png',
+                      'xref': 'x', 'yref': 'y',
+                      'x': 0, 'y': 0},
+                     {'source': 'Two.png',
+                      'xref': 'x', 'yref': 'y',
+                      'x': 1, 'y': 0}
+                 ]}
+             }
+            ,
+            {'data': [{'type': 'bar',
+                       'y': [2, 3, 1]}],
+             'layout': {
+                 'width': 400,
+                 'height': 400,
+                 'images': [
+                         {'source': 'Three.png',
+                          'xref': 'x', 'yref': 'y',
+                          'x': 2, 'y': 0},
+                         {'source': 'Four.png',
+                          'xref': 'x', 'yref': 'y',
+                          'x': 3, 'y': 0}
+                 ]}}
+        ]])
+
+        # Validate resulting figure object
+        go.Figure(fig)
+
+        images = fig['layout']['images']
+        self.assertEqual(len(images), 4)
+        self.assertEqual(images[0]['source'], 'One.png')
+        self.assertEqual(images[0]['xref'], 'x')
+        self.assertEqual(images[0]['yref'], 'y')
+
+        self.assertEqual(images[1]['source'], 'Two.png')
+        self.assertEqual(images[1]['xref'], 'x')
+        self.assertEqual(images[1]['yref'], 'y')
+
+        self.assertEqual(images[2]['source'], 'Three.png')
+        self.assertEqual(images[2]['xref'], 'x2')
+        self.assertEqual(images[2]['yref'], 'y2')
+
+        self.assertEqual(images[3]['source'], 'Four.png')
+        self.assertEqual(images[3]['xref'], 'x2')
+        self.assertEqual(images[3]['yref'], 'y2')
+
