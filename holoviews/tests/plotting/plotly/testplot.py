@@ -31,13 +31,31 @@ class TestPlotlyPlot(ComparisonTestCase):
         plotly_renderer.comm_manager = self.comm_manager
 
     def _get_plot_state(self, element):
-        plot = plotly_renderer.get_plot(element)
-        plot.initialize_plot()
+        fig_dict = plotly_renderer.get_plot_state(element)
+        return fig_dict
 
-        # Pass to plotly.py for full property validation
-        go.Figure(plot.state)
+    def assert_property_values(self, obj, props):
+        """
+        Assert that a dictionary has the specified properties, handling magic underscore
+        notation
 
-        return plot.state
+        For example
+
+        self.assert_property_values(
+            {'a': {'b': 23}, 'c': 42},
+            {'a_b': 23, 'c': 42}
+        )
+
+        will pass this test
+        """
+
+        for prop, val in props.items():
+            prop_parts = prop.split('_')
+            prop_parent = obj
+            for prop_part in prop_parts[:-1]:
+                prop_parent = prop_parent.get(prop_part, {})
+
+            self.assertEqual(val, prop_parent[prop_parts[-1]])
 
 
 class TestPlotDefinitions(TestPlotlyPlot):
