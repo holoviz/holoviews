@@ -243,7 +243,8 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         )
 
         # Configure axis matching
-        configure_matching_axes_from_dims(fig)
+        if self.shared_axes:
+            configure_matching_axes_from_dims(fig)
 
         fig['layout'].update(title=self._format_title(key))
 
