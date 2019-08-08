@@ -52,3 +52,10 @@ class TestScatterPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         self.assertEqual(state['data'][0]['marker']['symbol'],
                          np.array(['square', 'circle', 'triangle-up']))
+
+    def test_scatter_selectedpoints(self):
+        scatter = Scatter([
+            (0, 1,), (1, 2), (2, 3)
+        ]).options(selectedpoints=[1, 2])
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['data'][0]['selectedpoints'], [1, 2])

@@ -27,9 +27,11 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['marker', 'color', 'cmap', 'alpha', 'size', 'sizemin']
+    style_opts = [
+        'marker', 'color', 'cmap', 'alpha', 'size', 'sizemin', 'selectedpoints'
+    ]
 
-    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin']
+    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin', 'selectedpoints']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
 
