@@ -142,9 +142,7 @@ setup_args.update(dict(
               "holoviews.tests.util"],
     package_data={'holoviews': ['.version'],
                   'holoviews.ipython': ['*.html'],
-                  'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
-                  'holoviews.plotting.bokeh': ['*.js', '*.css'],
-                  'holoviews.plotting.plotly': ['*.js'],
+                  'holoviews.plotting.mpl': ['*.mplstyle'],
                   'holoviews.tests.ipython.notebooks': ['*.ipynb']},
     classifiers=[
         "License :: OSI Approved :: BSD License",

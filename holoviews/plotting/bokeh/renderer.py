@@ -43,7 +43,7 @@ class BokehRenderer(Renderer):
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['widgets', 'scrubber', 'server',
+                                   objects=['widgets', 'scrubber',
                                             None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
@@ -109,41 +109,6 @@ class BokehRenderer(Renderer):
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer, **kwargs)
         plot.document = doc
         return plot
-
-
-    @bothmethod
-    def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
-        """
-        Creates a bokeh app from a HoloViews object or plot. By
-        default simply attaches the plot to bokeh's curdoc and returns
-        the Document, if show option is supplied creates an
-        Application instance and displays it either in a browser
-        window or inline if notebook extension has been loaded.  Using
-        the new_window option the app may be displayed in a new
-        browser tab once the notebook extension has been loaded.  A
-        websocket origin is required when launching from an existing
-        tornado server (such as the notebook) and it is not on the
-        default port ('localhost:8888').
-        """
-        pane = HoloViews(plot)
-        if new_window:
-            return pane._get_server(port, websocket_origin, show=show)
-        else:
-            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {} 
-            return pane.app(port, **kwargs)
-
-    @bothmethod
-    def server_doc(self_or_cls, obj, doc=None):
-        """
-        Get a bokeh Document with the plot attached. May supply
-        an existing doc, otherwise bokeh.io.curdoc() is used to
-        attach the plot to the global document instance.
-        """
-        return HoloViews(obj).server_doc(doc)
-
-
-    def components(self, obj, fmt=None, comm=True, **kwargs):
-        return super(BokehRenderer, self).components(obj, fmt, comm, **kwargs)
 
 
     def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):

@@ -96,14 +96,14 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
-    dpi=param.Integer(None, doc="""
+    dpi = param.Integer(None, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps=param.Number(20, doc="""
+    fps = param.Number(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -115,15 +115,21 @@ class Renderer(Exporter):
          The available rendering modes. As a minimum, the 'default'
          mode must be supported.""")
 
-    size=param.Integer(100, doc="""
+    size = param.Integer(100, doc="""
         The rendered size as a percentage size""")
+
+    widget_location = param.ObjectSelector(default=None, allow_None=True, objects=[
+        'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+        'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+        'right_top', 'right_bottom'], doc="""
+        The position of the widgets relative to the plot.""")
 
     widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
         The widget mode determining whether frames are embedded or generated
         'live' when interacting with the widget.""")
 
-    css = param.Dict(default={},
-                     doc="Dictionary of CSS attributes and values to apply to HTML output")
+    css = param.Dict(default={}, doc="""
+        Dictionary of CSS attributes and values to apply to HTML output.""")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
@@ -227,7 +233,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
         elif fmt == 'html':
-            plot, fmt = HoloViews(obj, fancy_layout=True), 'html'
+            plot, fmt = HoloViews(obj, center=True), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -318,7 +324,8 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            with config.set(embed=not bool(plot.object.traverse(DynamicMap))):
+            with config.set(embed=not (bool(plot.object.traverse(DynamicMap))
+                                       or self.widget_mode == 'live')):
                 return plot.layout._repr_mimebundle_()
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
@@ -342,13 +349,18 @@ class Renderer(Exporter):
 
     @bothmethod
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
-        if widget_type != 'scrubber':
+        if widget_type == 'scrubber':
+            widget_location = self_or_cls.widget_location or 'bottom'
+        else:
             widget_type = 'individual'
-        layout = HoloViews(plot, widget_type=widget_type, fancy_layout=True)
+            widget_location = self_or_cls.widget_location or 'right'
+        layout = HoloViews(plot, widget_type=widget_type, center=True,
+                           widget_location=widget_location)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):
             player.interval = interval
         return layout
+
 
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
@@ -365,6 +377,50 @@ class Renderer(Exporter):
             raise ValueError("Renderer.export_widget may only export "
                              "registered widget types.")
         self_or_cls.get_widget(obj, fmt).save(filename)
+
+
+    @bothmethod
+    def _widget_kwargs(self_or_cls):
+        if self_or_cls.holomap in ('auto', 'widgets'):
+            widget_type = 'individual'
+            loc = self_or_cls.widget_location or 'right'
+        else:
+            widget_type = 'scrubber'
+            loc = self_or_cls.widget_location or 'bottom'
+        return {'widget_location': loc, 'widget_type': widget_type, 'center': True}
+
+
+    @bothmethod
+    def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
+        """
+        Creates a bokeh app from a HoloViews object or plot. By
+        default simply attaches the plot to bokeh's curdoc and returns
+        the Document, if show option is supplied creates an
+        Application instance and displays it either in a browser
+        window or inline if notebook extension has been loaded.  Using
+        the new_window option the app may be displayed in a new
+        browser tab once the notebook extension has been loaded.  A
+        websocket origin is required when launching from an existing
+        tornado server (such as the notebook) and it is not on the
+        default port ('localhost:8888').
+        """
+        pane = HoloViews(plot, backend=self_or_cls.backend, **self_or_cls._widget_kwargs())
+        if new_window:
+            return pane._get_server(port, websocket_origin, show=show)
+        else:
+            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {}
+            return pane.app(port, **kwargs)
+
+
+    @bothmethod
+    def server_doc(self_or_cls, obj, doc=None):
+        """
+        Get a bokeh Document with the plot attached. May supply
+        an existing doc, otherwise bokeh.io.curdoc() is used to
+        attach the plot to the global document instance.
+        """
+        return HoloViews(obj, backend=self_or_cls.backend,
+                         **self_or_cls._widget_kwargs()).server_doc(doc)
 
 
     @classmethod
