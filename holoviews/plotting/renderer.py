@@ -69,10 +69,6 @@ MIME_TYPES = {
 
 static_template = """
 <html>
-  <head>
-    {css}
-    {js}
-  </head>
   <body>
     {html}
   </body>
@@ -277,7 +273,7 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, **kwargs):
+    def html(self, obj, fmt=None, css=None, resources='cdn', **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
@@ -287,7 +283,18 @@ class Renderer(Exporter):
         figdata, _ = self(plot, fmt, **kwargs)
         if css is None: css = self.css
 
-        if fmt in ['html', 'json']:
+        if isinstance(plot, Viewable):
+            from bokeh.document import Document
+            from bokeh.embed import file_html
+            from bokeh.resources import CDN, INLINE
+            doc = Document()
+            plot._render_model(doc)
+            if resources == 'cdn':
+                resources = CDN
+            elif resources == 'inline':
+                resources = INLINE
+            return file_html(doc, resources)
+        elif fmt in ['html', 'json']:
             return figdata
         else:
             if fmt == 'svg':
@@ -324,8 +331,9 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            with config.set(embed=not (bool(plot.object.traverse(DynamicMap))
-                                       or self.widget_mode == 'live')):
+            with config.set(embed=(not (bool(plot.object.traverse(DynamicMap))
+                                       or self.widget_mode == 'live') or
+                                   config.embed)):
                 return plot.layout._repr_mimebundle_()
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
@@ -341,10 +349,10 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        js_html, css_html = self.html_assets()
-        if template is None: template = static_template
-        html = self.html(obj, fmt)
-        return template.format(js=js_html, css=css_html, html=html)
+        html_bytes = StringIO()
+        self.save(obj, html_bytes, fmt)
+        html_bytes.seek(0)
+        return html_bytes.read()
 
 
     @bothmethod
@@ -354,6 +362,7 @@ class Renderer(Exporter):
         else:
             widget_type = 'individual'
             widget_location = self_or_cls.widget_location or 'right'
+
         layout = HoloViews(plot, widget_type=widget_type, center=True,
                            widget_location=widget_location)
         interval = int((1./self_or_cls.fps) * 1000)
