@@ -15,7 +15,7 @@ from bokeh.models import Model
 from bokeh.protocol import Protocol
 from bokeh.themes.theme import Theme
 
-from panel.pane import HoloViews, Viewable
+from panel.pane import Viewable
 
 from ...core import Store, HoloMap
 from ..plot import Plot
