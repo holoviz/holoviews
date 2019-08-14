@@ -15,6 +15,7 @@ from bokeh.models import Model
 from bokeh.protocol import Protocol
 from bokeh.themes.theme import Theme
 
+from panel.io.notebook import render_mimebundle
 from panel.pane import Viewable
 
 from ...core import Store, HoloMap
@@ -146,7 +147,7 @@ class BokehRenderer(Renderer):
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
                 div = tag.format(src=src, mime_type=mime_type, css='')
         else:
-            raise ValueError('Unsupported format: {fmt}'.format(fmt=fmt))
+            div = render_mimebundle(plot.state, doc, plot.comm)[0]['text/html']
 
         plot.document = doc
         if as_script:
