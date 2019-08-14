@@ -7,6 +7,7 @@ from io import BytesIO
 import param
 import bokeh
 
+from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.models import Model
 from bokeh.themes.theme import Theme
@@ -67,10 +68,10 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        if self_or_cls.notebook_context:
-            curdoc().theme = self_or_cls.theme
-        doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, doc, renderer, **kwargs)
+        if plot.document is None:
+            plot.document = Document() if self_or_cls.notebook_context else curdoc()
+        plot.document.theme = self_or_cls.theme
         return plot
 
 
