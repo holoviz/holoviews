@@ -367,7 +367,7 @@ class Renderer(Exporter):
             widget_location = self_or_cls.widget_location or 'right'
 
         layout = HoloViews(plot, widget_type=widget_type, center=True,
-                           widget_location=widget_location, renderer=self)
+                           widget_location=widget_location, renderer=self_or_cls)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):
             player.interval = interval
@@ -416,10 +416,10 @@ class Renderer(Exporter):
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
         """
-        if isinstance(obj, HoloViews):
-            pane = obj
+        if isinstance(plot, HoloViews):
+            pane = plot
         else:
-            pane = HoloViews(plot, backend=self_or_cls.backend, renderer=self,
+            pane = HoloViews(plot, backend=self_or_cls.backend, renderer=self_or_cls,
                              **self_or_cls._widget_kwargs())
         if new_window:
             return pane._get_server(port, websocket_origin, show=show)
