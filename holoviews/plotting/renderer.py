@@ -107,9 +107,11 @@ class Renderer(Exporter):
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
-         The available rendering modes. As a minimum, the 'default'
-         mode must be supported.""")
+    mode = param.ObjectSelector(default='default',
+                                objects=['default', 'server'], doc="""
+        Whether to render the object in regular or server mode. In server
+        mode a bokeh Document will be returned which can be served as a
+        bokeh server app. By default renders all output is rendered to HTML.""")
 
     size = param.Integer(100, doc="""
         The rendered size as a percentage size""")
@@ -142,15 +144,12 @@ class Renderer(Exporter):
        data before output is saved to file or displayed.""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': [None, 'auto']},
-                    'holomap': {'default': [None, 'auto']}}
+    mode_formats = {'fig': [None, 'auto'],
+                    'holomap': [None, 'auto']}
 
     # The comm_manager handles the creation and registering of client,
     # and server side comms
     comm_manager = CommManager
-
-    # JS code which handles comm messages and updates the plot
-    comm_msg_handler = None
 
     # Define appropriate widget classes
     widgets = ['scrubber', 'widgets']
@@ -173,7 +172,7 @@ class Renderer(Exporter):
         if plot is None:
             return None, info
         elif self.mode == 'server':
-            return self.server_doc(plot, doc), info
+            return self.server_doc(plot, doc=kwargs.get('doc')), info
         elif isinstance(plot, Viewable):
             return plot, info
         else:
@@ -241,8 +240,8 @@ class Renderer(Exporter):
         if isinstance(obj, Viewable):
             return obj, 'html'
 
-        fig_formats = self.mode_formats['fig'][self.mode]
-        holomap_formats = self.mode_formats['holomap'][self.mode]
+        fig_formats = self.mode_formats['fig']
+        holomap_formats = self.mode_formats['holomap']
 
         if fmt in ['auto', None]:
             if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
@@ -265,24 +264,6 @@ class Renderer(Exporter):
                             % (fmt, self.mode, fig_formats + holomap_formats))
         self.last_plot = plot
         return plot, fmt
-
-
-    def __call__(self, obj, fmt=None):
-        """
-        Render the supplied HoloViews component or plot instance using
-        the appropriate backend. The output is not a file format but a
-        suitable, in-memory byte stream together with any suitable
-        metadata.
-        """
-        plot, fmt =  self._validate(obj, fmt)
-        if plot is None: return
-        # [Backend specific code goes here to generate data]
-        data = None
-
-        # Example of how post_render_hooks are applied
-        data = self._apply_post_render_hooks(data, obj, fmt)
-        # Example of the return format where the first value is the rendered data.
-        return data, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
     def _apply_post_render_hooks(self, data, obj, fmt):

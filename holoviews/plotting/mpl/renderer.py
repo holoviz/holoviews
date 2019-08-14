@@ -10,8 +10,6 @@ from itertools import chain
 
 import param
 
-from panel.pane import Viewable
-
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -84,15 +82,11 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                            'html', None, 'auto']}}
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'html', None, 'auto'],
+                    'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                'html', None, 'auto']}
 
     counter = 0
-
-    # Define the handler for updating matplotlib plots
-    comm_msg_handler = mpl_msg_handler
-
 
     def show(self, obj):
         """

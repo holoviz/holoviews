@@ -7,15 +7,11 @@ from io import BytesIO
 import param
 import bokeh
 
-from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
-from bokeh.io import curdoc
 from bokeh.models import Model
-from bokeh.protocol import Protocol
 from bokeh.themes.theme import Theme
 
 from panel.io.notebook import render_mimebundle
-from panel.pane import Viewable
 
 from ...core import Store, HoloMap
 from ..plot import Plot
@@ -32,11 +28,8 @@ default_theme = Theme(json={
 
 class BokehRenderer(Renderer):
 
-    theme = param.ClassSelector(default=default_theme, class_=(Theme, str),
-                                allow_None=True, doc="""
-       The applicable Bokeh Theme object (if any).""")
-
     backend = param.String(default='bokeh', doc="The backend name.")
+
 
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
         Output render format for static figures. If None, no figure
@@ -48,26 +41,18 @@ class BokehRenderer(Renderer):
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
-    mode = param.ObjectSelector(default='default',
-                                objects=['default', 'server'], doc="""
-        Whether to render the object in regular or server mode. In server
-        mode a bokeh Document will be returned which can be served as a
-        bokeh server app. By default renders all output is rendered to HTML.""")
-
-    # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json', 'auto', 'png'],
-                            'server': ['html', 'json', 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
-                                'server': ['server', 'auto', None]}}
+    theme = param.ClassSelector(default=default_theme, class_=(Theme, str),
+                                allow_None=True, doc="""
+       The applicable Bokeh Theme object (if any).""")
 
     webgl = param.Boolean(default=False, doc="""
         Whether to render plots with WebGL if available""")
 
+    # Defines the valid output formats for each mode.
+    mode_formats = {'fig': ['html', 'auto', 'png'],
+                    'holomap': ['widgets', 'scrubber', 'auto', None]}
+
     _loaded = False
-
-    # Define the handler for updating bokeh plots
-    comm_msg_handler = bokeh_msg_handler
-
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):

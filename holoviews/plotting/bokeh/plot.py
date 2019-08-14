@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import json
 from itertools import groupby
 from collections import defaultdict
 
 import numpy as np
 import param
 
-from bokeh.io import curdoc
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs

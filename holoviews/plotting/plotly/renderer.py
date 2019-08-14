@@ -1,31 +1,26 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import base64
-import json
 
 import param
 with param.logging_level('CRITICAL'):
-    from plotly import utils
     import plotly.graph_objs as go
-
-from panel.pane import Viewable
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 
 
-
 class PlotlyRenderer(Renderer):
 
     backend = param.String(default='plotly', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'png', 'svg', 'auto'], doc="""
+    fig = param.ObjectSelector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    mode_formats = {'fig': {'default': ['html', 'png', 'svg', 'json']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
+    mode_formats = {'fig': ['html', 'png', 'svg'],
+                    'holomap': ['widgets', 'scrubber', 'auto']}
 
     widgets = ['scrubber', 'widgets']
 
