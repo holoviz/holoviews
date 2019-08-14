@@ -334,8 +334,8 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            with config.set(embed=(not (bool(plot.object.traverse(DynamicMap))
-                                       or self.widget_mode == 'live') or
+            dynamic = bool(plot.object.traverse(lambda x: x, [DynamicMap]))
+            with config.set(embed=(not (dynamic or self.widget_mode == 'live') or
                                    config.embed)):
                 return plot.layout._repr_mimebundle_()
         else:
@@ -425,7 +425,7 @@ class Renderer(Exporter):
             return pane._get_server(port, websocket_origin, show=show)
         else:
             kwargs = {'notebook_url': websocket_origin} if websocket_origin else {}
-            return pane.app(port, **kwargs)
+            return pane.app(port=port, **kwargs)
 
 
     @bothmethod
