@@ -131,6 +131,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
         self._compute_styles(element, ranges, style)
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
+        if style.get('edgecolors') == 'none':
+            style.pop('edgecolors')
         return (xs, ys, zs), style, {}
 
     def update_handles(self, key, axis, element, ranges, style):
