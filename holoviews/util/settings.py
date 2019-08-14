@@ -141,40 +141,46 @@ class OutputSettings(KeywordSettings):
     """
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : list_backends(),
-               'fig'         : list_formats('fig'),
-               'holomap'     : list_formats('holomap'),
-               'widgets'     : ['embed', 'live'],
-               'fps'         : (0, float('inf')),
-               'max_frames'  : (0, float('inf')),
-               'max_branches': {None},            # Deprecated
-               'size'        : (0, float('inf')),
-               'dpi'         : (1, float('inf')),
-               'filename'    : {None},
-               'info'        : [True, False],
-               'css'         : {k: basestring
-                                for k in ['width', 'height', 'padding', 'margin',
-                                          'max-width', 'min-width', 'max-height',
-                                          'min-height', 'outline', 'float']}}
+    allowed = {'backend'       : list_backends(),
+               'fig'           : list_formats('fig'),
+               'holomap'       : list_formats('holomap'),
+               'widgets'       : ['embed', 'live'],
+               'fps'           : (0, float('inf')),
+               'max_frames'    : (0, float('inf')),
+               'max_branches'  : {None},            # Deprecated
+               'size'          : (0, float('inf')),
+               'dpi'           : (1, float('inf')),
+               'filename'      : {None},
+               'info'          : [True, False],
+               'widget_location' : [
+                   'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
+                   'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
+                   'right_top', 'right_bottom'],
+               'css'           : {k: basestring
+                                  for k in ['width', 'height', 'padding', 'margin',
+                                            'max-width', 'min-width', 'max-height',
+                                            'min-height', 'outline', 'float']}}
 
-    defaults = OrderedDict([('backend'     , None),
-                            ('fig'         , None),
-                            ('holomap'     , None),
-                            ('widgets'     , None),
-                            ('fps'         , None),
-                            ('max_frames'  , 500),
-                            ('size'        , None),
-                            ('dpi'         , None),
-                            ('filename'    , None),
-                            ('info'        , False),
-                            ('css'         , None)])
+    defaults = OrderedDict([('backend'      , None),
+                            ('fig'          , None),
+                            ('holomap'      , None),
+                            ('widgets'      , None),
+                            ('fps'          , None),
+                            ('max_frames'   , 500),
+                            ('size'         , None),
+                            ('dpi'          , None),
+                            ('filename'     , None),
+                            ('info'         , False),
+                            ('widget_location', None),
+                            ('css'          , None)])
 
     # Defines the options the OutputSettings remembers. All other options
     # are held by the backend specific Renderer.
     remembered = ['max_frames', 'info', 'filename']
 
     # Remaining backend specific options renderer options
-    render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css', 'widget_mode', 'mode']
+    render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
+                     'widget_mode', 'mode', 'widget_location']
 
     options = OrderedDict()
     _backend_options = defaultdict(dict)
@@ -222,11 +228,12 @@ class OutputSettings(KeywordSettings):
         info = ("info    : The information to page about the displayed objects (default %r)"
                 % cls.defaults['info'])
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
-
+        widget_location = "widget_location : The position of the widgets relative to the plot"
+        
         descriptions = [backend, fig, holomap, widgets, fps, max_frames, size,
-                        dpi, filename, info, css]
+                        dpi, filename, info, css, widget_location]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
-                    'size', 'dpi', 'filename', 'info', 'css']
+                    'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
         signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
         return '\n'.join([signature] + intro + descriptions)
 
