@@ -142,7 +142,7 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc"
+      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
       script:
         - bokeh sampledata
         - conda install -c conda-forge awscli
