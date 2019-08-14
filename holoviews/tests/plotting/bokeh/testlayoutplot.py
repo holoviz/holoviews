@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
                             NdOverlay, DynamicMap, Dimension)
-from holoviews.element import Curve, Image, Points, HLine, VLine, Path, Histogram
+from holoviews.element import Curve, Image, Points, Histogram
 from holoviews.streams import Stream
 
 from .testplot import TestBokehPlot, bokeh_renderer
