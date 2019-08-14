@@ -223,7 +223,7 @@ class Renderer(Exporter):
         if isinstance(self_or_cls, Renderer):
             self_or_cls.last_plot = plot
 
-        if plot.comm:
+        if plot.comm or self_or_cls.mode == 'server':
             from bokeh.document import Document
             from bokeh.io import curdoc
             if doc is None:

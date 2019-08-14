@@ -7,11 +7,11 @@ from io import BytesIO
 import param
 import bokeh
 
-from param.parameterized import bothmethod
+from bokeh.io import curdoc
 from bokeh.models import Model
 from bokeh.themes.theme import Theme
-
 from panel.io.notebook import render_mimebundle
+from param.parameterized import bothmethod
 
 from ...core import Store, HoloMap
 from ..plot import Plot

@@ -129,7 +129,7 @@ def list_formats(format_type, backend=None):
         backend, mode = split if len(split)==2 else (split[0], 'default')
 
     if backend in Store.renderers:
-        return Store.renderers[backend].mode_formats[format_type][mode]
+        return Store.renderers[backend].mode_formats[format_type]
     else:
         return []
 
