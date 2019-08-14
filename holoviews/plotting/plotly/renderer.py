@@ -44,18 +44,6 @@ class PlotlyRenderer(Renderer):
             return self.diff(plot), mime_types
 
 
-    def diff(self, plot, serialize=True):
-        """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
-        """
-        diff = plot.state
-        if serialize:
-            return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
-        else:
-            return diff
-
-
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
         # and applies any default theme.

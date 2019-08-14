@@ -167,7 +167,7 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj, renderer=None, **kwargs):
+    def get_plot(self_or_cls, obj, renderer=None, doc=None, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -207,6 +207,13 @@ class Renderer(Exporter):
 
         if isinstance(self_or_cls, Renderer):
             self_or_cls.last_plot = plot
+
+        if plot.comm:
+            from bokeh.document import Document
+            from bokeh.io import curdoc
+            if doc is None:
+                doc = Document() if self_or_cls.notebook_context else curdoc()
+            plot.document = doc
         return plot
 
 
@@ -400,6 +407,19 @@ class Renderer(Exporter):
             widget_type = 'scrubber'
             loc = self_or_cls.widget_location or 'bottom'
         return {'widget_location': loc, 'widget_type': widget_type, 'center': True}
+
+
+    def diff(self, plot, binary=True):
+        """
+        Returns a json diff required to update an existing plot with
+        the latest plot data.
+        """
+        events = list(plot.document._held_events)
+        if not events:
+            return None
+        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
+        plot.document._held_events = []
+        return msg
 
 
     @bothmethod

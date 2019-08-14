@@ -9,7 +9,6 @@ import bokeh
 
 from pyviz_comms import bokeh_msg_handler
 from param.parameterized import bothmethod
-from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.models import Model
 from bokeh.protocol import Protocol
@@ -80,13 +79,13 @@ class BokehRenderer(Renderer):
 
         if self.mode == 'server':
             return self.server_doc(plot, doc), info
+        elif fmt == 'json':
+            return self.diff(plot), info
         elif isinstance(plot, Viewable):
             return plot, info
         elif fmt == 'png':
             png = self._figure_data(plot, fmt=fmt, doc=doc)
             return png, info
-        elif fmt == 'json':
-            return self.diff(plot), info
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
@@ -101,14 +100,10 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        if doc is None:
-            doc = Document() if self_or_cls.notebook_context else curdoc()
-
         if self_or_cls.notebook_context:
             curdoc().theme = self_or_cls.theme
         doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer, **kwargs)
-        plot.document = doc
         return plot
 
 
@@ -154,19 +149,6 @@ class BokehRenderer(Renderer):
             return div
         else:
             return data
-
-
-    def diff(self, plot, binary=True):
-        """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
-        """
-        events = list(plot.document._held_events)
-        if not events:
-            return None
-        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
-        plot.document._held_events = []
-        return msg
 
 
     @classmethod

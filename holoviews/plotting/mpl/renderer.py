@@ -168,17 +168,6 @@ class MPLRenderer(Renderer):
         return (int(w*dpi), int(h*dpi))
 
 
-    def diff(self, plot):
-        """
-        Returns the latest plot data to update an existing plot.
-        """
-        if self.fig == 'auto':
-            figure_format = self.params('fig').objects[0]
-        else:
-            figure_format = self.fig
-        return self.html(plot, figure_format)
-
-
     def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding
