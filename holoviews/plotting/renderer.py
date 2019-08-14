@@ -2,7 +2,7 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 
 import base64
 from io import BytesIO
@@ -246,7 +246,7 @@ class Renderer(Exporter):
         if fmt in ['auto', None]:
             if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
                    for o in obj.traverse(lambda x: x, [HoloMap])):
-                fmt = holomap_formats[0] if self.holomap == 'auto' else self.holomap
+                fmt = holomap_formats[0] if self.holomap in ['auto', None] else self.holomap
             else:
                 fmt = fig_formats[0] if self.fig == 'auto' else self.fig
 
@@ -489,7 +489,7 @@ class Renderer(Exporter):
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
-             options=None, resources='cdn', **kwargs):
+             options=None, resources='inline', **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.

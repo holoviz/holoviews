@@ -3,6 +3,7 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
+from __future__ import absolute_import
 
 import warnings
 from itertools import groupby, product
