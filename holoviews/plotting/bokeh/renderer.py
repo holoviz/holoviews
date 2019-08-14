@@ -68,24 +68,6 @@ class BokehRenderer(Renderer):
     # Define the handler for updating bokeh plots
     comm_msg_handler = bokeh_msg_handler
 
-    def __call__(self, obj, fmt=None, doc=None):
-        """
-        Render the supplied HoloViews component using the appropriate
-        backend. The output is not a file format but a suitable,
-        in-memory byte stream together with any suitable metadata.
-        """
-        plot, fmt =  self._validate(obj, fmt, doc=doc)
-        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if self.mode == 'server':
-            return self.server_doc(plot, doc), info
-        elif fmt == 'json':
-            return self.diff(plot), info
-        elif isinstance(plot, Viewable):
-            return plot, info
-        elif fmt == 'png':
-            png = self._figure_data(plot, fmt=fmt, doc=doc)
-            return png, info
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
@@ -103,7 +85,7 @@ class BokehRenderer(Renderer):
         if self_or_cls.notebook_context:
             curdoc().theme = self_or_cls.theme
         doc.theme = self_or_cls.theme
-        plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer, **kwargs)
+        plot = super(BokehRenderer, self_or_cls).get_plot(obj, doc, renderer, **kwargs)
         return plot
 
 

@@ -166,8 +166,24 @@ class Renderer(Exporter):
         super(Renderer, self).__init__(**params)
 
 
+    def __call__(self, obj, fmt='auto', **kwargs):
+        plot, fmt = self._validate(obj, fmt)
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
+
+        if plot is None:
+            return None, info
+        elif self.mode == 'server':
+            return self.server_doc(plot, doc), info
+        elif isinstance(plot, Viewable):
+            return plot, info
+        else:
+            data = self._figure_data(plot, fmt, **kwargs)
+            data = self._apply_post_render_hooks(data, obj, fmt)
+            return data, info
+
+
     @bothmethod
-    def get_plot(self_or_cls, obj, renderer=None, doc=None, **kwargs):
+    def get_plot(self_or_cls, obj, doc=None, renderer=None, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -407,19 +423,6 @@ class Renderer(Exporter):
             widget_type = 'scrubber'
             loc = self_or_cls.widget_location or 'bottom'
         return {'widget_location': loc, 'widget_type': widget_type, 'center': True}
-
-
-    def diff(self, plot, binary=True):
-        """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
-        """
-        events = list(plot.document._held_events)
-        if not events:
-            return None
-        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
-        plot.document._held_events = []
-        return msg
 
 
     @bothmethod

@@ -31,19 +31,6 @@ class PlotlyRenderer(Renderer):
 
     _loaded = False
 
-    def __call__(self, obj, fmt='html', divuuid=None):
-        plot, fmt =  self._validate(obj, fmt)
-        mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if isinstance(plot, Viewable):
-            # fmt == 'html'
-            return plot, mime_types
-        elif fmt in ('png', 'svg'):
-            return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
-        elif fmt == 'json':
-            return self.diff(plot), mime_types
-
-
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
         # and applies any default theme.
@@ -66,7 +53,6 @@ class PlotlyRenderer(Renderer):
                 return data
         else:
             raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
-
 
     @classmethod
     def plot_options(cls, obj, percent_size):

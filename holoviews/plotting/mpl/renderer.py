@@ -93,24 +93,6 @@ class MPLRenderer(Renderer):
     # Define the handler for updating matplotlib plots
     comm_msg_handler = mpl_msg_handler
 
-    def __call__(self, obj, fmt='auto'):
-        """
-        Render the supplied HoloViews component or MPLPlot instance
-        using matplotlib.
-        """
-        plot, fmt = self._validate(obj, fmt)
-        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if plot is None:
-            return
-        elif isinstance(plot, Viewable):
-            return plot, info
-        else:
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
-
-            data = self._apply_post_render_hooks(data, obj, fmt)
-            return data, info
 
     def show(self, obj):
         """
