@@ -204,6 +204,9 @@ class Renderer(Exporter):
             plot.update(init_key)
         else:
             plot = obj
+
+        if isinstance(self_or_cls, Renderer):
+            self_or_cls.last_plot = plot
         return plot
 
 
@@ -220,7 +223,7 @@ class Renderer(Exporter):
 
         if fmt in ['auto', None]:
             if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
-                   for o in obj.traverse(lambda x: x, HoloMap)):
+                   for o in obj.traverse(lambda x: x, [HoloMap])):
                 fmt = holomap_formats[0] if self.holomap == 'auto' else self.holomap
             else:
                 fmt = fig_formats[0] if self.fig == 'auto' else self.fig
@@ -229,7 +232,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
             fmt = 'html'
         elif fmt == 'html':
-            plot, fmt = HoloViews(obj, center=True), 'html'
+            plot, fmt = HoloViews(obj, center=True, renderer=self), 'html'
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -364,7 +367,7 @@ class Renderer(Exporter):
             widget_location = self_or_cls.widget_location or 'right'
 
         layout = HoloViews(plot, widget_type=widget_type, center=True,
-                           widget_location=widget_location)
+                           widget_location=widget_location, renderer=self)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):
             player.interval = interval
@@ -413,7 +416,11 @@ class Renderer(Exporter):
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
         """
-        pane = HoloViews(plot, backend=self_or_cls.backend, **self_or_cls._widget_kwargs())
+        if isinstance(obj, HoloViews):
+            pane = obj
+        else:
+            pane = HoloViews(plot, backend=self_or_cls.backend, renderer=self,
+                             **self_or_cls._widget_kwargs())
         if new_window:
             return pane._get_server(port, websocket_origin, show=show)
         else:
@@ -428,7 +435,9 @@ class Renderer(Exporter):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        return HoloViews(obj, backend=self_or_cls.backend,
+        if isinstance(obj, HoloViews):
+            return obj.server_doc(doc)
+        return HoloViews(obj, renderer=self_or_cls, backend=self_or_cls.backend,
                          **self_or_cls._widget_kwargs()).server_doc(doc)
 
 
