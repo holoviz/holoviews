@@ -29,7 +29,7 @@ class BokehRendererTest(ComparisonTestCase):
 
     def setUp(self):
         if 'bokeh' not in Store.renderers and pn is not None:
-            raise SkipTest("Bokeh and panel required to test bokeh renderer")
+            raise SkipTest("Bokeh and Panel required to test 'bokeh' renderer")
         self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
