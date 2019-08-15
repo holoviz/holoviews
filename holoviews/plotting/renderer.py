@@ -15,7 +15,7 @@ from contextlib import contextmanager
 import param
 
 from panel import config
-from panel.io.notebook import load_notebook
+from panel.io.notebook import load_notebook, render_model, render_mimebundle
 from panel.pane import HoloViews
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
@@ -160,6 +160,9 @@ class Renderer(Exporter):
     # Plot registry
     _plots = {}
 
+    # Whether to render plots with Panel
+    _render_with_panel = False
+
     def __init__(self, **params):
         self.last_plot = None
         super(Renderer, self).__init__(**params)
@@ -174,7 +177,7 @@ class Renderer(Exporter):
         elif self.mode == 'server':
             return self.server_doc(plot, doc=kwargs.get('doc')), info
         elif isinstance(plot, Viewable):
-            return plot, info
+            return self.static_html(plot), info
         else:
             data = self._figure_data(plot, fmt, **kwargs)
             data = self._apply_post_render_hooks(data, obj, fmt)
@@ -243,18 +246,21 @@ class Renderer(Exporter):
         fig_formats = self.mode_formats['fig']
         holomap_formats = self.mode_formats['holomap']
 
+        holomaps = obj.traverse(lambda x: x, [HoloMap])
+        dynamic = any(isinstance(m, DynamicMap) for m in holomaps)
+
         if fmt in ['auto', None]:
             if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
-                   for o in obj.traverse(lambda x: x, [HoloMap])):
+                   for o in holomaps):
                 fmt = holomap_formats[0] if self.holomap in ['auto', None] else self.holomap
             else:
                 fmt = fig_formats[0] if self.fig == 'auto' else self.fig
 
         if fmt in self.widgets:
-            plot = self.get_widget(obj, fmt, display_options={'fps': self.fps})
+            plot = self.get_widget(obj, fmt)
             fmt = 'html'
-        elif fmt == 'html':
-            plot, fmt = HoloViews(obj, center=True, renderer=self), 'html'
+        elif dynamic or (self._render_with_panel and fmt == 'html'):
+            plot, fmt = HoloViews(obj, center=True, backend=self.backend, renderer=self), fmt
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -326,10 +332,7 @@ class Renderer(Exporter):
         """
         Returns data and metadata dictionaries containing HTML and JS
         components to include render in app, notebook, or standalone
-        document. Depending on the backend the fmt defines the format
-        embedded in the HTML, e.g. png or svg. If comm is enabled the
-        JS code will set up a Websocket comm channel using the
-        currently defined CommManager.
+        document.
         """
         if isinstance(obj, Plot):
             plot = obj
@@ -338,13 +341,16 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
+            from bokeh.document import Document
             dynamic = bool(plot.object.traverse(lambda x: x, [DynamicMap]))
-            with config.set(embed=(not (dynamic or self.widget_mode == 'live') or
-                                   config.embed)):
-                return plot.layout._repr_mimebundle_()
+            embed = (not (dynamic or self.widget_mode == 'live') or config.embed)
+            comm = self.comm_manager.get_server_comm() if comm else None
+            doc = Document()
+            with config.set(embed=embed):
+                model = plot.layout._render_model(doc, comm)
+            return render_model(model, comm) if embed else render_mimebundle(model, doc, comm)
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
-
         data['text/html'] = html
 
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
@@ -439,10 +445,10 @@ class Renderer(Exporter):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        if isinstance(obj, HoloViews):
-            return obj.server_doc(doc)
-        return HoloViews(obj, renderer=self_or_cls, backend=self_or_cls.backend,
-                         **self_or_cls._widget_kwargs()).server_doc(doc)
+        if not isinstance(obj, HoloViews):
+            obj = HoloViews(obj, renderer=self_or_cls, backend=self_or_cls.backend,
+                            **self_or_cls._widget_kwargs())
+        return obj.layout.server_doc(doc)
 
 
     @classmethod

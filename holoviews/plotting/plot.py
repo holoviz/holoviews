@@ -156,21 +156,19 @@ class Plot(param.Parameterized):
 
     def push(self):
         """
-        Pushes updated plot data via the Comm.
+        Pushes plot updates to the frontend.
         """
-        if self.renderer.mode == 'server':
-            return
-        if self.comm is None:
-            raise Exception('Renderer does not have a comm.')
+        root = self._root
+        if (root and self._pane is not None and
+            root.ref['id'] in self._pane._plots):
+            child_pane = self._pane._plots[root.ref['id']][1]
+        else:
+            child_pane = None
 
-        if self._root and 'embedded' in self._root.tags:
-            # Allows external libraries to prevent comm updates
-            return
-
-        if self.renderer.backend != 'bokeh' and self._pane is not None:
-            child_pane = self._pane._plots[self.root.ref['id']][1]
+        if self.renderer.backend != 'bokeh':
             child_pane.object = self.state
-        push(self.document, self.comm)
+        elif self.renderer.mode != 'server' or (root and 'embedded' in root.tags):
+            push(self.document, self.comm)
 
 
     def init_comm(self):

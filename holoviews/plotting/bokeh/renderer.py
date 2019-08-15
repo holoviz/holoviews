@@ -54,6 +54,7 @@ class BokehRenderer(Renderer):
                     'holomap': ['widgets', 'scrubber', 'auto', None]}
 
     _loaded = False
+    _render_with_panel = True
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):

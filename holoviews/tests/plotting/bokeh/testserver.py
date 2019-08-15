@@ -1,11 +1,17 @@
+import time
+
+import requests
+
 from unittest import SkipTest
+from functools import partial
+from threading import Event
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Curve, Polygons, Path, HLine
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
-from holoviews.streams import RangeXY, PlotReset
+from holoviews.streams import Stream, RangeXY, PlotReset
 
 try:
     from bokeh.application.handlers import FunctionHandler
@@ -13,16 +19,20 @@ try:
     from bokeh.client import pull_session
     from bokeh.document import Document
     from bokeh.io import curdoc
+    from bokeh.models import ColumnDataSource, Slider
     from bokeh.server.server import Server
 
     from holoviews.plotting.bokeh.callbacks import (
         Callback, RangeXYCallback, ResetCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
+    from panel import state
+    from panel.widgets import DiscreteSlider, FloatSlider
+    from panel.io.server import StoppableThread
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
     bokeh_renderer = None
-
+        
 
 class TestBokehServerSetup(ComparisonTestCase):
 
@@ -89,43 +99,64 @@ class TestBokehServerRun(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
+        self._loaded = Event()
+        self._port = None
+        self._thread = None
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         Callback._callbacks = {}
+        if self._thread is not None:
+            try:
+                self._thread.stop()
+            except:
+                pass
 
-    def test_launch_simple_server(self):
-        obj = Curve([])
+    def _launcher(self, obj, threaded=False, io_loop=None):
+        if io_loop:
+            io_loop.make_current()
         launched = []
         def modify_doc(doc):
             bokeh_renderer(obj, doc=doc)
             launched.append(True)
-            server.stop()
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
-        server = Server({'/': app}, port=0)
+        server = Server({'/': app}, port=0, io_loop=io_loop)
         server.start()
-        url = "http://localhost:" + str(server.port) + "/"
-        pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertTrue(len(launched)==1)
+        self._port = server.port
+        if threaded:
+            server.io_loop.add_callback(self._loaded.set)
+            io_loop.start()
+        else:
+            url = "http://localhost:" + str(server.port) + "/"
+            session = pull_session(session_id='Test', url=url, io_loop=server.io_loop)
+            self.assertTrue(len(launched)==1)
+            return session, server
+        return None, server
+
+    def _threaded_launcher(self, obj):
+        from tornado.ioloop import IOLoop
+        io_loop = IOLoop()
+        thread = StoppableThread(target=self._launcher, io_loop=io_loop,
+                                 args=(obj, True, io_loop))
+        thread.setDaemon(True)
+        thread.start()
+        self._loaded.wait()
+        requests.get("http://localhost:" + str(self._port) + "/")
+        self._thread = thread
+        return thread
+
+    def test_launch_simple_server(self):
+        obj = Curve([])
+        launched = []
+        _, server = self._launcher(obj)
+        server.stop()
 
     def test_launch_server_with_stream(self):
         obj = Curve([])
         stream = RangeXY(source=obj)
 
-        launched = []
-        def modify_doc(doc):
-            bokeh_renderer(obj, doc=doc)
-            launched.append(True)
-            server.stop()
-        handler = FunctionHandler(modify_doc)
-        app = Application(handler)
-        server = Server({'/': app}, port=0)
-        server.start()
-        url = "http://localhost:" + str(server.port) + "/"
-        pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-
-        self.assertTrue(len(launched)==1)
+        session, server = self._launcher(obj)
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
@@ -135,7 +166,7 @@ class TestBokehServerRun(ComparisonTestCase):
         y_range = bokeh_renderer.last_plot.handles['y_range']
         self.assertIn(cb.on_change, y_range._callbacks['start'])
         self.assertIn(cb.on_change, y_range._callbacks['end'])
-
+        server.stop()
 
     def test_launch_server_with_complex_plot(self):
         dmap = DynamicMap(lambda x_range, y_range: Curve([]), streams=[RangeXY()])
@@ -143,15 +174,54 @@ class TestBokehServerRun(ComparisonTestCase):
         static = Polygons([]) * Path([]) * Curve([])
         layout = overlay + static
 
-        launched = []
-        def modify_doc(doc):
-            bokeh_renderer(layout, doc=doc)
-            launched.append(True)
-            server.stop()
-        handler = FunctionHandler(modify_doc)
-        app = Application(handler)
-        server = Server({'/': app}, port=0)
-        server.start()
-        url = "http://localhost:" + str(server.port) + "/"
-        pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertTrue(len(launched)==1)
+        _, server = self._launcher(layout)
+        server.stop()
+
+    def test_server_dynamicmap_with_dims(self):
+        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
+        obj, _ = bokeh_renderer._validate(dmap, None)
+        thread = self._threaded_launcher(obj)
+        [(plot, _)] = obj._plots.values()
+        [(doc, _)] = obj.layout._documents.items()
+
+        self.assertEqual(plot.handles['cds'].data['y'][2], 0.1)
+        def set_slider():
+            slider = obj.layout.select(FloatSlider)[0]
+            slider.value = 3.1
+        doc.add_next_tick_callback(set_slider)
+        time.sleep(0.2)
+        self.assertEqual(plot.handles['cds'].data['y'][2], 3.1)
+
+    def test_render_dynamicmap_with_stream(self):
+        stream = Stream.define('Custom', y=2)()
+        dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
+        obj, _ = bokeh_renderer._validate(dmap, None)
+        thread = self._threaded_launcher(obj)
+        [(plot, _)] = obj._plots.values()
+
+        self.assertEqual(plot.handles['cds'].data['y'][2], 2)
+        stream.event(y=3)
+        time.sleep(0.2)
+        self.assertEqual(plot.handles['cds'].data['y'][2], 3)
+
+    def test_render_dynamicmap_with_stream_dims(self):
+        stream = Stream.define('Custom', y=2)()
+        dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
+                          streams=[stream]).redim.values(x=[1, 2, 3])
+        obj, _ = bokeh_renderer._validate(dmap, None)
+        thread = self._threaded_launcher(obj)
+        [(plot, _)] = obj._plots.values()
+        [(doc, _)] = obj.layout._documents.items()
+
+        self.assertEqual(plot.handles['cds'].data['y'][2], 2)
+        stream.event(y=3)
+        time.sleep(0.2)
+        self.assertEqual(plot.handles['cds'].data['y'][2], 3)
+
+        self.assertEqual(plot.handles['cds'].data['y'][0], 1)
+        def set_slider():
+            slider = obj.layout.select(DiscreteSlider)[0]
+            slider.value = 3
+        doc.add_next_tick_callback(set_slider)
+        time.sleep(0.2)
+        self.assertEqual(plot.handles['cds'].data['y'][0], 3)

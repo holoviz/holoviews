@@ -25,6 +25,7 @@ class PlotlyRenderer(Renderer):
     widgets = ['scrubber', 'widgets']
 
     _loaded = False
+    _render_with_panel = True
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
