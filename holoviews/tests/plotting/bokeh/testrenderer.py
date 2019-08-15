@@ -5,11 +5,13 @@ from io import BytesIO
 from unittest import SkipTest
 
 import numpy as np
+import param
 
 from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve, Store
 from holoviews.streams import Stream
 from holoviews.plotting import Renderer
 from holoviews.element.comparison import ComparisonTestCase
+from pyviz_comms import CommManager
 
 try:
     import panel as pn
@@ -33,10 +35,15 @@ class BokehRendererTest(ComparisonTestCase):
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
         self.renderer = BokehRenderer.instance()
         self.nbcontext = Renderer.notebook_context
-        Renderer.notebook_context = False
+        self.comm_manager = Renderer.comm_manager
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = False
+            Renderer.comm_manager = CommManager
 
     def tearDown(self):
-        Renderer.notebook_context = self.nbcontext
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = self.nbcontext
+            Renderer.comm_manager = self.comm_manager
 
     def test_save_html(self):
         bytesio = BytesIO()
