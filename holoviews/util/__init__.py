@@ -712,7 +712,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
     """
     Saves the supplied object to file.
 
@@ -736,6 +736,10 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
         and if widgets are desired either 'widgets' or 'scrubber'
     backend: string
         A valid HoloViews rendering backend, e.g. bokeh or matplotlib
+    resources: string or bokeh.resource.Resources
+        Bokeh resources used to load bokehJS components. Defaults to
+        CDN, to embed resources inline for offline usage use 'inline'
+        or bokeh.resources.INLINE.
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
@@ -754,7 +758,7 @@ def save(obj, filename, fmt='auto', backend=None, **kwargs):
             fmt = formats[-1]
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
-    return renderer_obj.save(obj, filename, fmt=fmt)
+    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources)
 
 
 def render(obj, backend=None, **kwargs):

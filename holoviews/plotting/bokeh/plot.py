@@ -1,13 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import json
 from itertools import groupby
 from collections import defaultdict
 
 import numpy as np
 import param
 
-from bokeh.io import curdoc
 from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
@@ -24,7 +22,7 @@ from ...streams import Stream
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot
+    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot
 )
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
@@ -79,48 +77,8 @@ class BokehPlot(DimensionedPlot):
     backend = 'bokeh'
 
     @property
-    def document(self):
-        return self._document
-
-    @property
     def id(self):
         return self.root.ref['id'] if self.root else None
-
-    @property
-    def root(self):
-        if self._root:
-            return self._root
-        elif 'plot' in self.handles and self.top_level:
-            return self.state
-        else:
-            return None
-
-    @document.setter
-    def document(self, doc):
-        if (doc and hasattr(doc, 'on_session_destroyed') and
-            self.root is self.handles.get('plot') and not isinstance(self, AdjointLayoutPlot)):
-            doc.on_session_destroyed(self._session_destroy)
-            if self._document:
-                if isinstance(self._document._session_destroyed_callbacks, set):
-                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
-                else:
-                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
-
-        self._document = doc
-        if self.subplots:
-            for plot in self.subplots.values():
-                if plot is not None:
-                    plot.document = doc
-
-
-    def _session_destroy(self, session_context):
-        self.cleanup()
-
-    def __init__(self, *args, **params):
-        root = params.pop('root', None)
-        super(BokehPlot, self).__init__(*args, **params)
-        self._document = None
-        self._root = root
 
 
     def get_data(self, element, ranges, style):
@@ -175,36 +133,6 @@ class BokehPlot(DimensionedPlot):
             cb_streams = [s for _, s in group]
             cbs.append(cb(self, cb_streams, source))
         return cbs
-
-    def refresh(self, **kwargs):
-        if self.renderer.mode == 'server' and curdoc() is not self.document:
-            # If we do not have the Document lock, schedule refresh as callback
-            self.document.add_next_tick_callback(self.refresh)
-        else:
-            super(BokehPlot, self).refresh(**kwargs)
-
-    def push(self):
-        """
-        Pushes updated plot data via the Comm.
-        """
-        if self.renderer.mode == 'server':
-            return
-        if self.comm is None:
-            raise Exception('Renderer does not have a comm.')
-
-        if self._root and 'embedded' in self._root.tags:
-            # Allows external libraries to prevent comm updates
-            return
-
-        msg = self.renderer.diff(self, binary=True)
-        if msg is None:
-            return
-        self.comm.send(msg.header_json)
-        self.comm.send(msg.metadata_json)
-        self.comm.send(msg.content_json)
-        for header, payload in msg.buffers:
-            self.comm.send(json.dumps(header))
-            self.comm.send(buffers=[payload])
 
 
     def set_root(self, root):
@@ -1075,11 +1003,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
 
 
-class AdjointLayoutPlot(BokehPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 

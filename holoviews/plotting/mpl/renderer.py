@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from itertools import chain
 
 import param
+
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -17,7 +18,6 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox, mpl_version
 
 class OutputWarning(param.Parameterized):pass
@@ -82,37 +82,11 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                            'html', None, 'auto']}}
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'html', None, 'auto'],
+                    'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                'html', None, 'auto']}
 
     counter = 0
-
-    # Define appropriate widget classes
-    widgets = {'scrubber': MPLScrubberWidget,
-               'widgets': MPLSelectionWidget}
-
-    # Define the handler for updating matplotlib plots
-    comm_msg_handler = mpl_msg_handler
-
-    def __call__(self, obj, fmt='auto'):
-        """
-        Render the supplied HoloViews component or MPLPlot instance
-        using matplotlib.
-        """
-        plot, fmt =  self._validate(obj, fmt)
-        if plot is None: return
-
-        if isinstance(plot, tuple(self.widgets.values())):
-            data = plot()
-        else:
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
-
-        data = self._apply_post_render_hooks(data, obj, fmt)
-        return data, {'file-ext':fmt,
-                      'mime_type':MIME_TYPES[fmt]}
-
 
     def show(self, obj):
         """
@@ -170,18 +144,7 @@ class MPLRenderer(Renderer):
         return (int(w*dpi), int(h*dpi))
 
 
-    def diff(self, plot):
-        """
-        Returns the latest plot data to update an existing plot.
-        """
-        if self.fig == 'auto':
-            figure_format = self.params('fig').objects[0]
-        else:
-            figure_format = self.fig
-        return self.html(plot, figure_format)
-
-
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
+    def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding
         data.  If as_script is True, the content will be split in an
@@ -227,7 +190,7 @@ class MPLRenderer(Renderer):
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
             src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
             html = tag.format(src=src, mime_type=mime_type, css='')
-            return html, ''
+            return html
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data

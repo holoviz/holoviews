@@ -8,14 +8,13 @@ from IPython import version_info
 from IPython.core.completer import IPCompleter
 from IPython.display import HTML, publish_display_data
 from param import ipython as param_ext
-from pyviz_comms import nb_mime_js
 
 from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
-from ..plotting.renderer import Renderer, MIME_TYPES
+from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import pprint_display, png_display, svg_display
@@ -172,15 +171,16 @@ class notebook_extension(extension):
             css += '<style>div.container { width: %s%% }</style>' % p.width
         if p.css:
             css += '<style>%s</style>' % p.css
+
         if css:
             display(HTML(css))
 
         resources = list(resources)
         if len(resources) == 0: return
 
-        Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+        Renderer.load_nb()
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
@@ -191,8 +191,7 @@ class notebook_extension(extension):
                        bokeh_logo=  p.logo and ('bokeh' in resources),
                        mpl_logo=    p.logo and (('matplotlib' in resources)
                                                 or resources==['holoviews']),
-                       plotly_logo= p.logo and ('plotly' in resources),
-                       JS=('holoviews' in resources))
+                       plotly_logo= p.logo and ('plotly' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
@@ -246,34 +245,16 @@ class notebook_extension(extension):
         Displays javascript and CSS to initialize HoloViews widgets.
         """
         import jinja2
-        # Evaluate load_notebook.html template with widgetjs code
-        if JS:
-            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[], script=True)
-        else:
-            widgetjs, widgetcss = '', ''
-
-        # Add classic notebook MIME renderer
-        widgetjs += nb_mime_js
 
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        html = template.render({'widgetcss':   widgetcss,
-                                'logo':        logo,
+        html = template.render({'logo':        logo,
                                 'bokeh_logo':  bokeh_logo,
                                 'mpl_logo':    mpl_logo,
                                 'plotly_logo': plotly_logo,
                                 'message':     message})
         publish_display_data(data={'text/html': html})
-
-        # Vanilla JS mime type is only consumed by classic notebook
-        # Custom mime type is only consumed by JupyterLab
-        if JS:
-            mimebundle = {
-                MIME_TYPES['js']           : widgetjs,
-                MIME_TYPES['jlab-hv-load'] : widgetjs
-            }
-            publish_display_data(data=mimebundle)
 
 
     @param.parameterized.bothmethod

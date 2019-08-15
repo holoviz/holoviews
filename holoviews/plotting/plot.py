@@ -3,13 +3,19 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
+from __future__ import absolute_import
 
+import threading
 import warnings
+
 from itertools import groupby, product
 from collections import Counter, defaultdict
 
 import numpy as np
 import param
+
+from panel.io.notebook import push
+from panel.io.state import state
 
 from ..core import OrderedDict
 from ..core import util, traversal
@@ -42,6 +48,46 @@ class Plot(param.Parameterized):
     # Use this list to disable any invalid style options
     _disabled_opts = []
 
+    @property
+    def state(self):
+        """
+        The plotting state that gets updated via the update method and
+        used by the renderer to generate output.
+        """
+        raise NotImplementedError
+
+    @property
+    def root(self):
+        if self._root:
+            return self._root
+        elif 'plot' in self.handles and self.top_level:
+            return self.state
+        else:
+            return None
+
+    @property
+    def document(self):
+        return self._document
+
+    @document.setter
+    def document(self, doc):
+        if (doc and hasattr(doc, 'on_session_destroyed') and
+            self.root is self.handles.get('plot') and
+            not isinstance(self, GenericAdjointLayoutPlot)):
+            doc.on_session_destroyed(self._session_destroy)
+            if self._document:
+                if isinstance(self._document._session_destroyed_callbacks, set):
+                    self._document._session_destroyed_callbacks.discard(self._session_destroy)
+                else:
+                    self._document._session_destroyed_callbacks.pop(self._session_destroy, None)
+
+        self._document = doc
+        if self.subplots:
+            for plot in self.subplots.values():
+                if plot is not None:
+                    plot.document = doc
+
+
     def initialize_plot(self, ranges=None):
         """
         Initialize the matplotlib figure.
@@ -56,14 +102,6 @@ class Plot(param.Parameterized):
         state.
         """
         return self.state
-
-    @property
-    def state(self):
-        """
-        The plotting state that gets updated via the update method and
-        used by the renderer to generate output.
-        """
-        raise NotImplementedError
 
 
     def cleanup(self):
@@ -83,6 +121,75 @@ class Plot(param.Parameterized):
             self.comm.close()
 
 
+    def _session_destroy(self, session_context):
+        self.cleanup()
+
+
+    def refresh(self, **kwargs):
+        """
+        Refreshes the plot by rerendering it and then pushing
+        the updated data if the plot has an associated Comm.
+        """
+        if self.renderer.mode == 'server':
+            from bokeh.io import curdoc
+            thread = threading.current_thread()
+            thread_id = thread.ident if thread else None
+            if (curdoc() is not self.document or (state._thread_id is not None and
+                thread_id != state._thread_id)):
+                # If we do not have the Document lock, schedule refresh as callback
+                self.document.add_next_tick_callback(self.refresh)
+                return
+
+        traverse_setter(self, '_force', True)
+        key = self.current_key if self.current_key else self.keys[0]
+        dim_streams = [stream for stream in self.streams
+                       if any(c in self.dimensions for c in stream.contents)]
+        stream_params = stream_parameters(dim_streams)
+        key = tuple(None if d in stream_params else k
+                    for d, k in zip(self.dimensions, key))
+        stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
+
+        self._trigger_refresh(stream_key)
+        if self.comm is not None and self.top_level:
+            self.push()
+
+
+    def _trigger_refresh(self, key):
+        "Triggers update to a plot on a refresh event"
+        # Update if not top-level, batched or an ElementPlot
+        if not self.top_level or isinstance(self, GenericElementPlot):
+            self.update(key)
+
+
+    def push(self):
+        """
+        Pushes plot updates to the frontend.
+        """
+        root = self._root
+        if (root and self._pane is not None and
+            root.ref['id'] in self._pane._plots):
+            child_pane = self._pane._plots[root.ref['id']][1]
+        else:
+            child_pane = None
+
+        if self.renderer.backend != 'bokeh' and child_pane is not None:
+            child_pane.object = self.state
+        elif self.renderer.mode != 'server' or (root and 'embedded' in root.tags):
+            push(self.document, self.comm)
+
+
+    def init_comm(self):
+        """
+        Initializes comm and attaches streams.
+        """
+        if self.comm:
+            return self.comm
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            comm = self.renderer.comm_manager.get_server_comm()
+        return comm
+
+
     @property
     def id(self):
         return self.comm.id if self.comm else id(self.state)
@@ -93,6 +200,7 @@ class Plot(param.Parameterized):
         Returns the total number of available frames.
         """
         raise NotImplementedError
+
 
     @classmethod
     def lookup_options(cls, obj, group):
@@ -224,7 +332,7 @@ class DimensionedPlot(Plot):
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
                  style=None, subplots=None, dynamic=False, renderer=None,
-                 comm=None, **params):
+                 comm=None, root=None, pane=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -244,6 +352,9 @@ class DimensionedPlot(Plot):
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self.comm = comm
         self._force = False
+        self._document = None
+        self._root = root
+        self._pane = pane
         self._updated = False # Whether the plot should be marked as updated
         params = {k: v for k, v in params.items()
                   if k in self.params()}
@@ -613,54 +724,6 @@ class DimensionedPlot(Plot):
         item = self.__getitem__(key)
         self.traverse(lambda x: setattr(x, '_updated', True))
         return item
-
-
-    def refresh(self, **kwargs):
-        """
-        Refreshes the plot by rerendering it and then pushing
-        the updated data if the plot has an associated Comm.
-        """
-        traverse_setter(self, '_force', True)
-        key = self.current_key if self.current_key else self.keys[0]
-        dim_streams = [stream for stream in self.streams
-                       if any(c in self.dimensions for c in stream.contents)]
-        stream_params = stream_parameters(dim_streams)
-        key = tuple(None if d in stream_params else k
-                    for d, k in zip(self.dimensions, key))
-        stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
-
-        self._trigger_refresh(stream_key)
-        if self.comm is not None and self.top_level:
-            self.push()
-
-
-    def _trigger_refresh(self, key):
-        "Triggers update to a plot on a refresh event"
-        # Update if not top-level, batched or an ElementPlot
-        if not self.top_level or isinstance(self, GenericElementPlot):
-            self.update(key)
-
-
-    def push(self):
-        """
-        Pushes updated plot data via the Comm.
-        """
-        if self.comm is None:
-            raise Exception('Renderer does not have a comm.')
-        diff = self.renderer.diff(self)
-        self.comm.send(diff)
-
-
-    def init_comm(self):
-        """
-        Initializes comm and attaches streams.
-        """
-        if self.comm:
-            return self.comm
-        comm = None
-        if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comm_manager.get_server_comm()
-        return comm
 
 
     def __len__(self):
@@ -1539,3 +1602,16 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape[::-1] if self.transpose else layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
+
+
+class GenericAdjointLayoutPlot(Plot):
+    """
+    AdjointLayoutPlot allows placing up to three Views in a number of
+    predefined and fixed layouts, which are defined by the layout_dict
+    class attribute. This allows placing subviews next to a main plot
+    in either a 'top' or 'right' position.
+    """
+
+    layout_dict = {'Single': {'positions': ['main']},
+                   'Dual':   {'positions': ['main', 'right']},
+                   'Triple': {'positions': ['main', 'right', 'top']}}
