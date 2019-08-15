@@ -16,7 +16,7 @@ import param
 
 from panel import config
 from panel.io.notebook import load_notebook, render_model, render_mimebundle
-from panel.pane import HoloViews
+from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
 
@@ -260,7 +260,7 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot, fmt = HoloViews(obj, center=True, backend=self.backend, renderer=self), fmt
+            plot, fmt = HoloViewsPane(obj, center=True, backend=self.backend, renderer=self), fmt
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -286,7 +286,7 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, resources='cdn', **kwargs):
+    def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
@@ -376,8 +376,8 @@ class Renderer(Exporter):
             widget_type = 'individual'
             widget_location = self_or_cls.widget_location or 'right'
 
-        layout = HoloViews(plot, widget_type=widget_type, center=True,
-                           widget_location=widget_location, renderer=self_or_cls)
+        layout = HoloViewsPane(plot, widget_type=widget_type, center=True,
+                               widget_location=widget_location, renderer=self_or_cls)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):
             player.interval = interval
@@ -426,11 +426,11 @@ class Renderer(Exporter):
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
         """
-        if isinstance(plot, HoloViews):
+        if isinstance(plot, HoloViewsPane):
             pane = plot
         else:
-            pane = HoloViews(plot, backend=self_or_cls.backend, renderer=self_or_cls,
-                             **self_or_cls._widget_kwargs())
+            pane = HoloViewsPane(plot, backend=self_or_cls.backend, renderer=self_or_cls,
+                                 **self_or_cls._widget_kwargs())
         if new_window:
             return pane._get_server(port, websocket_origin, show=show)
         else:
@@ -445,9 +445,9 @@ class Renderer(Exporter):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        if not isinstance(obj, HoloViews):
-            obj = HoloViews(obj, renderer=self_or_cls, backend=self_or_cls.backend,
-                            **self_or_cls._widget_kwargs())
+        if not isinstance(obj, HoloViewsPane):
+            obj = HoloViewsPane(obj, renderer=self_or_cls, backend=self_or_cls.backend,
+                                **self_or_cls._widget_kwargs())
         return obj.layout.server_doc(doc)
 
 
@@ -508,9 +508,9 @@ class Renderer(Exporter):
 
         if isinstance(plot, Viewable):
             from bokeh.resources import CDN, INLINE
-            if resources == 'cdn':
+            if resources.lower() == 'cdn':
                 resources = CDN
-            elif resources == 'inline':
+            elif resources.lower() == 'inline':
                 resources = INLINE
             plot.layout.save(basename, embed=True, resources=resources)
             return
