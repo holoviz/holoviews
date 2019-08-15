@@ -189,7 +189,7 @@ class TestBokehServerRun(ComparisonTestCase):
             slider = obj.layout.select(FloatSlider)[0]
             slider.value = 3.1
         doc.add_next_tick_callback(set_slider)
-        time.sleep(0.2)
+        time.sleep(0.5)
         
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3.1)
@@ -203,7 +203,7 @@ class TestBokehServerRun(ComparisonTestCase):
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 2)
         stream.event(y=3)
-        time.sleep(0.2)
+        time.sleep(0.5)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3)
 
@@ -218,7 +218,7 @@ class TestBokehServerRun(ComparisonTestCase):
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(orig_cds.data['y'][2], 2)
         stream.event(y=3)
-        time.sleep(0.2)
+        time.sleep(0.5)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3)
 
@@ -227,6 +227,6 @@ class TestBokehServerRun(ComparisonTestCase):
             slider = obj.layout.select(DiscreteSlider)[0]
             slider.value = 3
         doc.add_next_tick_callback(set_slider)
-        time.sleep(0.2)
+        time.sleep(0.5)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][0], 3)
