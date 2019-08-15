@@ -613,7 +613,7 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(MPLPlot, AdjointLayoutPlot):
+class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
     """
     Initially, a AdjointLayoutPlot computes an appropriate layout based for
     the number of Views in the AdjointLayout object it has been given, but

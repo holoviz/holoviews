@@ -12,6 +12,7 @@ import param
 from holoviews import (DynamicMap, HoloMap, Store, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
+from pyviz_comms import CommManager
 
 try:
     import panel as pn
