@@ -12,6 +12,7 @@ from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
+import param
 
 from holoviews import (DynamicMap, HoloMap, Image, ItemTable, Store,
                        GridSpace, Table, Curve)
@@ -22,6 +23,7 @@ try:
     import panel as pn
 
     from holoviews.plotting.mpl import MPLRenderer, CurvePlot
+    from holoviews.plotting.renderer import Renderer
     from panel.widgets import DiscreteSlider, Player, FloatSlider
 except:
     pn = None
@@ -46,6 +48,16 @@ class MPLRendererTest(ComparisonTestCase):
                                        label='Poincaré', group='α Festkörperphysik')
 
         self.renderer = MPLRenderer.instance()
+        self.nbcontext = Renderer.notebook_context
+        self.comm_manager = Renderer.comm_manager
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = False
+            Renderer.comm_manager = CommManager
+
+    def tearDown(self):
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = self.nbcontext
+            Renderer.comm_manager = self.comm_manager
 
     def test_get_size_single_plot(self):
         plot = self.renderer.get_plot(self.image1)

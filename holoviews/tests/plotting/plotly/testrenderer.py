@@ -7,6 +7,8 @@ from __future__ import unicode_literals
 from collections import OrderedDict
 from unittest import SkipTest
 
+import param
+
 from holoviews import (DynamicMap, HoloMap, Store, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
@@ -15,6 +17,7 @@ try:
     import panel as pn
 
     from holoviews.plotting.plotly import PlotlyRenderer
+    from holoviews.plotting.renderer import Renderer
     from panel.widgets import DiscreteSlider, Player, FloatSlider
 except:
     pn = None
@@ -27,6 +30,16 @@ class PlotlyRendererTest(ComparisonTestCase):
             raise SkipTest("Plotly and Panel required to test rendering.")
 
         self.renderer = PlotlyRenderer.instance()
+        self.nbcontext = Renderer.notebook_context
+        self.comm_manager = Renderer.comm_manager
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = False
+            Renderer.comm_manager = CommManager
+
+    def tearDown(self):
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = self.nbcontext
+            Renderer.comm_manager = self.comm_manager
 
     def test_render_static(self):
         curve = Curve([])
