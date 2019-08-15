@@ -5,7 +5,9 @@ of this Plot baseclass.
 """
 from __future__ import absolute_import
 
+import threading
 import warnings
+
 from itertools import groupby, product
 from collections import Counter, defaultdict
 
@@ -13,6 +15,7 @@ import numpy as np
 import param
 
 from panel.io.notebook import push
+from panel.io.state import state
 
 from ..core import OrderedDict
 from ..core import util, traversal
@@ -129,7 +132,10 @@ class Plot(param.Parameterized):
         """
         if self.renderer.mode == 'server':
             from bokeh.io import curdoc
-            if curdoc() is not self.document:
+            thread = threading.current_thread()
+            thread_id = thread.ident if thread else None
+            if (curdoc() is not self.document or (state._thread_id is not None and
+                thread_id != state._thread_id)):
                 # If we do not have the Document lock, schedule refresh as callback
                 self.document.add_next_tick_callback(self.refresh)
                 return

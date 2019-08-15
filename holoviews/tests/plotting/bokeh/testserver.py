@@ -1,4 +1,5 @@
 import time
+import threading
 
 from unittest import SkipTest
 from threading import Event
@@ -25,6 +26,7 @@ try:
     from holoviews.plotting.bokeh.renderer import BokehRenderer
     from panel.widgets import DiscreteSlider, FloatSlider
     from panel.io.server import StoppableThread
+    from panel.io.state import state
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
     bokeh_renderer = None
@@ -45,6 +47,8 @@ class TestBokehServerSetup(ComparisonTestCase):
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
         Renderer.notebook_context = self.nbcontext
+        state.curdoc = None
+        curdoc().clear()
 
     def test_render_server_doc_element(self):
         obj = Curve([])
@@ -98,6 +102,7 @@ class TestBokehServerRun(ComparisonTestCase):
         self._loaded = Event()
         self._port = None
         self._thread = None
+        self._server = None
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
@@ -107,6 +112,13 @@ class TestBokehServerRun(ComparisonTestCase):
                 self._thread.stop()
             except:
                 pass
+        state._thread_id = None
+        if self._server is not None:
+            try:
+                self._server.stop()
+            except:
+                pass
+        time.sleep(1)
 
     def _launcher(self, obj, threaded=False, io_loop=None):
         if io_loop:
@@ -120,8 +132,11 @@ class TestBokehServerRun(ComparisonTestCase):
         server = Server({'/': app}, port=0, io_loop=io_loop)
         server.start()
         self._port = server.port
+        self._server = server
         if threaded:
             server.io_loop.add_callback(self._loaded.set)
+            thread = threading.current_thread()
+            state._thread_id = thread.ident if thread else None
             io_loop.start()
         else:
             url = "http://localhost:" + str(server.port) + "/"
@@ -148,8 +163,7 @@ class TestBokehServerRun(ComparisonTestCase):
 
     def test_launch_simple_server(self):
         obj = Curve([])
-        _, server = self._launcher(obj)
-        server.stop()
+        self._launcher(obj)
 
     def test_launch_server_with_stream(self):
         obj = Curve([])
@@ -185,29 +199,31 @@ class TestBokehServerRun(ComparisonTestCase):
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 0.1)
-        def set_slider():
-            slider = obj.layout.select(FloatSlider)[0]
+        slider = obj.layout.select(FloatSlider)[0]
+        def run():
             slider.value = 3.1
-        doc.add_next_tick_callback(set_slider)
-        time.sleep(0.5)
-        
+        doc.add_next_tick_callback(run)
+        time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3.1)
 
-    def test_render_dynamicmap_with_stream(self):
+    def test_server_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = bokeh_renderer._validate(dmap, None)
         session = self._threaded_launcher(obj)
+        [(doc, _)] = obj.layout._documents.items()
 
         cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 2)
-        stream.event(y=3)
-        time.sleep(0.5)
+        def run():
+            stream.event(y=3)
+        doc.add_next_tick_callback(run)
+        time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3)
 
-    def test_render_dynamicmap_with_stream_dims(self):
+    def test_server_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
@@ -217,16 +233,18 @@ class TestBokehServerRun(ComparisonTestCase):
 
         orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(orig_cds.data['y'][2], 2)
-        stream.event(y=3)
-        time.sleep(0.5)
+        def run():
+            stream.event(y=3)
+        doc.add_next_tick_callback(run)
+        time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][2], 3)
 
         self.assertEqual(orig_cds.data['y'][0], 1)
-        def set_slider():
-            slider = obj.layout.select(DiscreteSlider)[0]
+        slider = obj.layout.select(DiscreteSlider)[0]
+        def run():
             slider.value = 3
-        doc.add_next_tick_callback(set_slider)
-        time.sleep(0.5)
+        doc.add_next_tick_callback(run)
+        time.sleep(1)
         cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
         self.assertEqual(cds.data['y'][0], 3)
