@@ -173,6 +173,6 @@ class BokehRendererTest(ComparisonTestCase):
 
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
-        dmap = DynamicMap(lambda x, Curve([x, 1, y]), kdims=['x', 'y'],
+        dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)

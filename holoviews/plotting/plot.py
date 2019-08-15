@@ -165,7 +165,7 @@ class Plot(param.Parameterized):
         else:
             child_pane = None
 
-        if self.renderer.backend != 'bokeh':
+        if self.renderer.backend != 'bokeh' and child_pane is not None:
             child_pane.object = self.state
         elif self.renderer.mode != 'server' or (root and 'embedded' in root.tags):
             push(self.document, self.comm)
