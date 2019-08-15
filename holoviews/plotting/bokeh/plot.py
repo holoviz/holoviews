@@ -22,7 +22,7 @@ from ...streams import Stream
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot
+    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot
 )
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
@@ -1003,11 +1003,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
 
 
-class AdjointLayoutPlot(BokehPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 

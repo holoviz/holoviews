@@ -8,8 +8,9 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
-    GenericElementPlot
+from ..plot import (
+    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
+    GenericElementPlot, GenericAdjointLayoutPlot)
 from .util import figure_grid
 
 
@@ -242,11 +243,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
 
 
-class AdjointLayoutPlot(PlotlyPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 

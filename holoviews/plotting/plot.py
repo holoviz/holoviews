@@ -69,7 +69,8 @@ class Plot(param.Parameterized):
     @document.setter
     def document(self, doc):
         if (doc and hasattr(doc, 'on_session_destroyed') and
-            self.root is self.handles.get('plot') and not hasattr(self, 'layout_dict')):
+            self.root is self.handles.get('plot') and
+            not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
             if self._document:
                 if isinstance(self._document._session_destroyed_callbacks, set):
@@ -1595,3 +1596,16 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape[::-1] if self.transpose else layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
+
+
+class GenericAdjointLayoutPlot(Plot):
+    """
+    AdjointLayoutPlot allows placing up to three Views in a number of
+    predefined and fixed layouts, which are defined by the layout_dict
+    class attribute. This allows placing subviews next to a main plot
+    in either a 'top' or 'right' position.
+    """
+
+    layout_dict = {'Single': {'positions': ['main']},
+                   'Dual':   {'positions': ['main', 'right']},
+                   'Triple': {'positions': ['main', 'right', 'top']}}
