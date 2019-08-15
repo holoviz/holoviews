@@ -6,7 +6,8 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews import HoloMap, Image, GridSpace, Table, Curve, Store
+from holoviews import DynamicMap, HoloMap, Image, GridSpace, Table, Curve, Store
+from holoviews.streams import Stream
 from holoviews.plotting import Renderer
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -17,7 +18,7 @@ try:
     from holoviews.plotting.bokeh import BokehRenderer
     from bokeh.themes.theme import Theme
 
-    from panel.widgets import DiscreteSlider, Player
+    from panel.widgets import DiscreteSlider, Player, FloatSlider
 except:
     pn = None
 
@@ -165,14 +166,41 @@ class BokehRendererTest(ComparisonTestCase):
     def test_render_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = self.renderer._validate(dmap, None)
-        
+        self.renderer.components(obj)
+        [(plot, pane)] = obj._plots.values()
+        cds = plot.handles['cds']
+
+        self.assertEqual(cds.data['y'][2], 0.1)
+        slider = obj.layout.select(FloatSlider)[0]
+        slider.value = 3.1
+        self.assertEqual(cds.data['y'][2], 3.1)
+
     def test_render_dynamicmap_with_stream(self):
-        stream = Stream.define('Custom', y=2)()
+        stream = Stream.define(str('Custom'), y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = self.renderer._validate(dmap, None)
+        self.renderer.components(obj)
+        [(plot, pane)] = obj._plots.values()
+        cds = plot.handles['cds']
+
+        self.assertEqual(cds.data['y'][2], 2)
+        stream.event(y=3)
+        self.assertEqual(cds.data['y'][2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
-        stream = Stream.define('Custom', y=2)()
+        stream = Stream.define(str('Custom'), y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = self.renderer._validate(dmap, None)
+        self.renderer.components(obj)
+        [(plot, pane)] = obj._plots.values()
+        cds = plot.handles['cds']
+
+        self.assertEqual(cds.data['y'][2], 2)
+        stream.event(y=3)
+        self.assertEqual(cds.data['y'][2], 3)
+
+        self.assertEqual(cds.data['y'][0], 1)
+        slider = obj.layout.select(DiscreteSlider)[0]
+        slider.value = 3
+        self.assertEqual(cds.data['y'][0], 3)
