@@ -1,9 +1,6 @@
 import time
 
-import requests
-
 from unittest import SkipTest
-from functools import partial
 from threading import Event
 
 from holoviews.core.spaces import DynamicMap
@@ -19,20 +16,19 @@ try:
     from bokeh.client import pull_session
     from bokeh.document import Document
     from bokeh.io import curdoc
-    from bokeh.models import ColumnDataSource, Slider
+    from bokeh.models import ColumnDataSource
     from bokeh.server.server import Server
 
     from holoviews.plotting.bokeh.callbacks import (
         Callback, RangeXYCallback, ResetCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
-    from panel import state
     from panel.widgets import DiscreteSlider, FloatSlider
     from panel.io.server import StoppableThread
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
     bokeh_renderer = None
-        
+
 
 class TestBokehServerSetup(ComparisonTestCase):
 
@@ -142,13 +138,16 @@ class TestBokehServerRun(ComparisonTestCase):
         thread.setDaemon(True)
         thread.start()
         self._loaded.wait()
-        requests.get("http://localhost:" + str(self._port) + "/")
         self._thread = thread
-        return thread
+        return self.session
+
+    @property
+    def session(self):
+        url = "http://localhost:" + str(self._port) + "/"
+        return pull_session(session_id='Test', url=url)
 
     def test_launch_simple_server(self):
         obj = Curve([])
-        launched = []
         _, server = self._launcher(obj)
         server.stop()
 
@@ -156,7 +155,7 @@ class TestBokehServerRun(ComparisonTestCase):
         obj = Curve([])
         stream = RangeXY(source=obj)
 
-        session, server = self._launcher(obj)
+        _, server = self._launcher(obj)
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
@@ -180,48 +179,54 @@ class TestBokehServerRun(ComparisonTestCase):
     def test_server_dynamicmap_with_dims(self):
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y']).redim.range(y=(0.1, 5))
         obj, _ = bokeh_renderer._validate(dmap, None)
-        thread = self._threaded_launcher(obj)
+        session = self._threaded_launcher(obj)
         [(plot, _)] = obj._plots.values()
         [(doc, _)] = obj.layout._documents.items()
 
-        self.assertEqual(plot.handles['cds'].data['y'][2], 0.1)
+        cds = session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][2], 0.1)
         def set_slider():
             slider = obj.layout.select(FloatSlider)[0]
             slider.value = 3.1
         doc.add_next_tick_callback(set_slider)
         time.sleep(0.2)
-        self.assertEqual(plot.handles['cds'].data['y'][2], 3.1)
+        
+        cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda y: Curve([1, 2, y]), kdims=['y'], streams=[stream])
         obj, _ = bokeh_renderer._validate(dmap, None)
-        thread = self._threaded_launcher(obj)
-        [(plot, _)] = obj._plots.values()
+        session = self._threaded_launcher(obj)
 
-        self.assertEqual(plot.handles['cds'].data['y'][2], 2)
+        cds = session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][2], 2)
         stream.event(y=3)
         time.sleep(0.2)
-        self.assertEqual(plot.handles['cds'].data['y'][2], 3)
+        cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
         stream = Stream.define('Custom', y=2)()
         dmap = DynamicMap(lambda x, y: Curve([x, 1, y]), kdims=['x', 'y'],
                           streams=[stream]).redim.values(x=[1, 2, 3])
         obj, _ = bokeh_renderer._validate(dmap, None)
-        thread = self._threaded_launcher(obj)
-        [(plot, _)] = obj._plots.values()
+        session = self._threaded_launcher(obj)
         [(doc, _)] = obj.layout._documents.items()
 
-        self.assertEqual(plot.handles['cds'].data['y'][2], 2)
+        orig_cds = session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(orig_cds.data['y'][2], 2)
         stream.event(y=3)
         time.sleep(0.2)
-        self.assertEqual(plot.handles['cds'].data['y'][2], 3)
+        cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][2], 3)
 
-        self.assertEqual(plot.handles['cds'].data['y'][0], 1)
+        self.assertEqual(orig_cds.data['y'][0], 1)
         def set_slider():
             slider = obj.layout.select(DiscreteSlider)[0]
             slider.value = 3
         doc.add_next_tick_callback(set_slider)
         time.sleep(0.2)
-        self.assertEqual(plot.handles['cds'].data['y'][0], 3)
+        cds = self.session.document.roots[0].select_one({'type': ColumnDataSource})
+        self.assertEqual(cds.data['y'][0], 3)
