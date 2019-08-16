@@ -663,10 +663,6 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
-    cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
-        Formatter for ticks along the colorbar axis.""")
-
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
@@ -778,7 +774,6 @@ class ColorbarPlot(ElementPlot):
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
             cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self.extend)
-            self._set_axis_formatter(cbar.ax.yaxis, dimension, self.cformatter)
             self._adjust_cbar(cbar, label, dimension)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
