@@ -695,9 +695,9 @@ class ColorbarPlot(ElementPlot):
         Whether to make the colormap symmetric around zero.""")
 
     extend = param.ObjectSelector(
-        objects=['neither', 'both', 'min', 'max'], default=None, docs="""
+        objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
-        )
+    )
 
     _colorbars = {}
 
