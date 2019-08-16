@@ -6,6 +6,8 @@ import json
 from weakref import WeakValueDictionary
 
 import param
+import panel as pn
+
 from param.parameterized import bothmethod
 
 with param.logging_level('CRITICAL'):
