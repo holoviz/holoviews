@@ -32,7 +32,7 @@ extras_require['extras'] = extras_require['examples']+[
     'cyordereddict', 'pscript==0.7.1']
 
 # Test requirements
-extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py', 'matplotlib>=2.1,<3.1']
+extras_require['tests'] = ['nose', 'mock', 'flake8==3.6.0', 'coveralls', 'path.py', 'matplotlib>=2.1,<3.1']
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
 
