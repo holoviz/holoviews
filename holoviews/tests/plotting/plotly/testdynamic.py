@@ -1,5 +1,10 @@
 from unittest import TestCase
-from unittest.mock import Mock
+
+try:
+    from unittest.mock import Mock
+except:
+    from mock import Mock
+
 import holoviews as hv
 import panel as pn
 import numpy as np

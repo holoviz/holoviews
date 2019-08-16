@@ -1,5 +1,10 @@
 from unittest import TestCase
-from unittest.mock import Mock
+
+try:
+    from unittest.mock import Mock
+except:
+    from mock import Mock
+
 import uuid
 import plotly.graph_objs as go
 

@@ -1,5 +1,8 @@
 from weakref import WeakValueDictionary
-from holoviews.streams import (
+
+from param.parameterized import add_metaclass
+
+from ...streams import (
     Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY
 )
 
@@ -32,7 +35,8 @@ class MetaPlotlyCallback(type):
         return inst
 
 
-class PlotlyCallback(object, metaclass=MetaPlotlyCallback):
+@add_metaclass(MetaPlotlyCallback)
+class PlotlyCallback(object):
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
