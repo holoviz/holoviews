@@ -37,7 +37,7 @@ class TestDynamicMap(TestCase):
 
         # Create HoloViews Pane using panel so that we can access the plotly pane
         # used to display the plotly figure
-        dmap_pane = pn.pane.HoloViews(dmap)
+        dmap_pane = pn.pane.HoloViews(dmap, backend='plotly')
 
         # Call get_root to force instantiation of internal plots/models
         doc = Document()
@@ -97,7 +97,7 @@ class TestInteractiveStream(TestCase):
 
         # Build layout and layout Pane
         layout = scatter1 + scatter2 + scatter3
-        layout_pane = pn.pane.HoloViews(layout)
+        layout_pane = pn.pane.HoloViews(layout, backend='plotly')
 
         # Get plotly pane reference
         doc = Document()
