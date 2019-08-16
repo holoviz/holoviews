@@ -663,6 +663,10 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
+    cformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        Formatter for ticks along the colorbar axis.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
@@ -694,13 +698,17 @@ class ColorbarPlot(ElementPlot):
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
+    extend = param.ObjectSelector(
+        objects=['neither', 'both', 'min', 'max'], default=None, docs="""
+        If not 'neither', make pointed end(s) for out-of- range values."""
+        )
+
     _colorbars = {}
 
     _default_nan = '#8b8b8b'
 
     def __init__(self, *args, **kwargs):
         super(ColorbarPlot, self).__init__(*args, **kwargs)
-        self._cbar_extend = 'neither'
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
@@ -769,7 +777,8 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self._cbar_extend)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self.extend)
+            self._set_axis_formatter(cbar.ax.yaxis, dimension, self.cformatter)
             self._adjust_cbar(cbar, label, dimension)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
@@ -885,12 +894,15 @@ class ColorbarPlot(ElementPlot):
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
         vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
-        if el_min < vmin and el_max > vmax:
-            self._cbar_extend = 'both'
-        elif el_min < vmin:
-            self._cbar_extend = 'min'
-        elif el_max > vmax:
-            self._cbar_extend = 'max'
+        if self.extend is None:
+            if el_min < vmin and el_max > vmax:
+                self.extend = 'both'
+            elif el_min < vmin:
+                self.extend = 'min'
+            elif el_max > vmax:
+                self.extend = 'max'
+            else:
+                self.extend = 'neither'
 
         # Define special out-of-range colors on colormap
         colors = {}
