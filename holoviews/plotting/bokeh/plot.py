@@ -21,7 +21,7 @@ from ...core.util import (
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot
+    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot,
     CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
