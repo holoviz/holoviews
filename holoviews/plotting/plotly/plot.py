@@ -46,10 +46,6 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
         """
         return self.handles['fig']
 
-    def init_comm(self):
-        # Plotly backend doesn't use comms directly, override so that we don't open
-        # initialize extra unneeded comms.
-        return None
 
     def _trigger_refresh(self, key):
         "Triggers update to a plot on a refresh event"
@@ -65,9 +61,7 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
 
     def update_frame(self, key, ranges=None):
-        plot = self.generate_plot(key, ranges)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
-        return plot
+        return self.generate_plot(key, ranges)
 
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
@@ -81,8 +75,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -325,8 +317,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 

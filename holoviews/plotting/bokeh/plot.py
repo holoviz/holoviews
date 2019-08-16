@@ -91,16 +91,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         raise NotImplementedError
 
 
-    def set_root(self, root):
-        """
-        Sets the root model on all subplots.
-        """
-        if root is None:
-            return
-        for plot in self.traverse(lambda x: x):
-            plot._root = root
-
-
     def _init_datasource(self, data):
         """
         Initializes a data source to be passed into the bokeh glyph.
@@ -218,9 +208,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if get_method_owner(subscriber) not in plots
                 ]
-
-        if self.comm and self.root is self.handles.get('plot'):
-            self.comm.close()
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -466,10 +453,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
         if 'axis_offset' in params:
@@ -677,10 +661,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     def __init__(self, layout, keys=None, **params):
         super(LayoutPlot, self).__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 

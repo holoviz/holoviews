@@ -381,7 +381,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         to the key.
         """
         self.generate_plot(key, ranges, element)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
 
 
 class ColorbarPlot(ElementPlot):
@@ -541,4 +540,3 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self._create_dynamic_subplots(key, items, ranges)
 
         self.generate_plot(key, ranges, element)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)

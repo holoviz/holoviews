@@ -186,7 +186,7 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj, doc=None, renderer=None, **kwargs):
+    def get_plot(self_or_cls, obj, doc=None, renderer=None, comm=None, **kwargs):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -211,6 +211,7 @@ class Renderer(Exporter):
             renderer = self_or_cls
             if not isinstance(self_or_cls, Renderer):
                 renderer = self_or_cls.instance()
+
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
@@ -227,13 +228,17 @@ class Renderer(Exporter):
         if isinstance(self_or_cls, Renderer):
             self_or_cls.last_plot = plot
 
-        if plot.comm or self_or_cls.mode == 'server':
+        if comm:
+            plot.comm = comm
+
+        if comm or self_or_cls.mode == 'server':
             from bokeh.document import Document
             from bokeh.io import curdoc
             if doc is None:
                 doc = Document() if self_or_cls.notebook_context else curdoc()
             plot.document = doc
         return plot
+
 
     @bothmethod
     def get_plot_state(self_or_cls, obj, renderer=None, **kwargs):
@@ -242,6 +247,7 @@ class Renderer(Exporter):
         """
         plot = self_or_cls.get_plot(obj, renderer, **kwargs)
         return plot.state
+
 
     def _validate(self, obj, fmt, **kwargs):
         """
