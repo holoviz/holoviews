@@ -587,6 +587,12 @@ class Renderer(Exporter):
         """
         load_notebook(inline)
         with param.logging_level('ERROR'):
+            try:
+                ip = get_ipython() # noqa
+            except:
+                ip = None
+            if not ip or not hasattr(ip, 'kernel'):
+                return
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager
             state._comm_manager = JupyterCommManager
