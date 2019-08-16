@@ -75,17 +75,6 @@ class PlotlyRenderer(Renderer):
             raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
 
 
-    @bothmethod
-    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding figure dictionary.
-        Allows cleaning the dictionary of any internal properties that were added
-        """
-        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
-        fig_dict.pop('_id', None)
-        return fig_dict
-
-
     @classmethod
     def plot_options(cls, obj, percent_size):
         factor = percent_size / 100.0

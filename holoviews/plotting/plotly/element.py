@@ -163,9 +163,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         self.drawn = True
         fig = dict(data=graphs, layout=layout)
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
-
         self.handles['fig'] = fig
         return fig
 
@@ -511,9 +508,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         layout = self.init_layout(key, element, ranges)
         figure['layout'].update(layout)
         self.drawn = True
-
-        # Add plot's id to figure for bookkeeping
-        figure['_id'] = self.id
 
         self.handles['fig'] = figure
         return figure

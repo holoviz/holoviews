@@ -23,20 +23,6 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     height = param.Integer(default=400)
 
-    def __init__(self, *args, **kwargs):
-        # The Plotly backend doesn't use a comm directly because it's dynamic
-        # interactions are handled by the Plotly panel pane.  So ignore any comm
-        # passed here
-        kwargs.pop('comm', None)
-        super(PlotlyPlot, self).__init__(*args, **kwargs)
-
-        # Generate plot-level uid
-        self._id = str(uuid.uuid4())
-
-    @property
-    def id(self):
-        return self._id
-
     @property
     def state(self):
         """
@@ -251,8 +237,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
@@ -385,8 +369,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
