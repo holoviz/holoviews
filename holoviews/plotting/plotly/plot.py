@@ -3,7 +3,6 @@ from __future__ import absolute_import, division, unicode_literals
 import uuid
 import param
 
-from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.util import attach_streams
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)

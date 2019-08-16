@@ -11,7 +11,6 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, dynamic_update
 from .plot import PlotlyPlot
-from .renderer import PlotlyRenderer
 from .util import (
     STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types)
 
