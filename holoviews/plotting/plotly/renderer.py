@@ -5,8 +5,6 @@ import base64
 import param
 import panel as pn
 
-from param.parameterized import bothmethod
-
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
@@ -16,14 +14,11 @@ from ...core import HoloMap
 from .callbacks import callbacks
 
 
-def _PlotlyHoloviews(fig_dict):
+def _PlotlyHoloviewsPane(fig_dict):
     """
     Custom Plotly pane constructor for use by the HoloViews Pane.
     """
-    plotly_pane = pn.pane.Plotly(fig_dict)
-
-    # Configure pane callbacks
-    plotly_pane.viewport_update_policy = 'mouseup'
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
@@ -95,9 +90,8 @@ class PlotlyRenderer(Renderer):
         cls._loaded = True
 
 
-
 def _activate_plotly_backend(renderer):
     if renderer == "plotly":
-        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviews
+        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviewsPane
 
 Store._backend_switch_hooks.append(_activate_plotly_backend)

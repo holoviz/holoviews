@@ -1,6 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import uuid
 import param
 
 from holoviews.plotting.util import attach_streams
