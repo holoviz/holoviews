@@ -18,7 +18,6 @@ from ...core.options import SkipRendering
 from ...core.util import (
     basestring, cftime_to_timestamp, cftime_types, get_method_owner,
     unique_iterator, wrap_tuple, wrap_tuple_streams, _STANDARD_CALENDARS)
-
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
