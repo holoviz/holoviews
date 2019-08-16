@@ -12,7 +12,7 @@ from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
-    GridSpace, HoloMap, Element, DynamicMap
+    GridSpace, HoloMap, Element
 )
 from ...core.options import SkipRendering
 from ...core.util import (

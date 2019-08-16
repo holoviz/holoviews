@@ -16,6 +16,7 @@ import param
 
 from panel import config
 from panel.io.notebook import load_notebook, render_model, render_mimebundle
+from panel.io.state import state
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
@@ -582,6 +583,7 @@ class Renderer(Exporter):
         with param.logging_level('ERROR'):
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager
+            state._comm_manager = JupyterCommManager
 
 
     @classmethod

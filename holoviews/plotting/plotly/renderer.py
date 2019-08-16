@@ -60,16 +60,6 @@ class PlotlyRenderer(Renderer):
 
     _plot_panes = WeakValueDictionary()
 
-    @bothmethod
-    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
-        """
-        Given a HoloViews Viewable return a corresponding figure dictionary.
-        Allows cleaning the dictionary of any internal properties that were added
-        """
-        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
-        fig_dict.pop('_id', None)
-        return fig_dict
-
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
         # and applies any default theme.
@@ -81,7 +71,7 @@ class PlotlyRenderer(Renderer):
 
             if fmt == 'svg':
                 data = data.decode('utf-8')
-                
+
             if as_script:
                 b64 = base64.b64encode(data).decode("utf-8")
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
@@ -92,6 +82,18 @@ class PlotlyRenderer(Renderer):
                 return data
         else:
             raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+
+
+    @bothmethod
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
+        """
+        Given a HoloViews Viewable return a corresponding figure dictionary.
+        Allows cleaning the dictionary of any internal properties that were added
+        """
+        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        fig_dict.pop('_id', None)
+        return fig_dict
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -113,12 +115,12 @@ class PlotlyRenderer(Renderer):
         cls._loaded = True
 
 
-
     @classmethod
     def trigger_plot_pane(cls, plot_id, fig_dict):
         if plot_id in cls._plot_panes:
             pane = cls._plot_panes[plot_id]
             pane.object = fig_dict
+
 
 
 def _activate_plotly_backend(renderer):
