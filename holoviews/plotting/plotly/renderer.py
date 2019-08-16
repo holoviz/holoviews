@@ -3,12 +3,30 @@ from __future__ import absolute_import, division, unicode_literals
 import base64
 
 import param
+import panel as pn
+
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
+from .callbacks import callbacks
+
+
+def _PlotlyHoloviewsPane(fig_dict):
+    """
+    Custom Plotly pane constructor for use by the HoloViews Pane.
+    """
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
+
+    # Register callbacks on pane
+    for callback_cls in callbacks.values():
+        plotly_pane.param.watch(
+            lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
+            callback_cls.callback_property,
+        )
+    return plotly_pane
 
 
 class PlotlyRenderer(Renderer):
@@ -25,6 +43,7 @@ class PlotlyRenderer(Renderer):
     widgets = ['scrubber', 'widgets']
 
     _loaded = False
+
     _render_with_panel = True
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
@@ -38,7 +57,7 @@ class PlotlyRenderer(Renderer):
 
             if fmt == 'svg':
                 data = data.decode('utf-8')
-                
+
             if as_script:
                 b64 = base64.b64encode(data).decode("utf-8")
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
@@ -49,6 +68,7 @@ class PlotlyRenderer(Renderer):
                 return data
         else:
             raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -68,3 +88,10 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+
+
+def _activate_plotly_backend(renderer):
+    if renderer == "plotly":
+        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviewsPane
+
+Store._backend_switch_hooks.append(_activate_plotly_backend)

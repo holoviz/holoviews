@@ -12,17 +12,17 @@ from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
-    GridSpace, HoloMap, Element, DynamicMap
+    GridSpace, HoloMap, Element
 )
 from ...core.options import SkipRendering
 from ...core.util import (
     basestring, cftime_to_timestamp, cftime_types, get_method_owner,
     unique_iterator, wrap_tuple, wrap_tuple_streams, _STANDARD_CALENDARS)
-from ...streams import Stream
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot
+    GenericElementPlot, GenericOverlayPlot, GenericAdjointLayoutPlot,
+    CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
@@ -31,7 +31,7 @@ from .util import (
     empty_plot, decode_bytes, theme_attr_json, cds_column_replace)
 
 
-class BokehPlot(DimensionedPlot):
+class BokehPlot(DimensionedPlot, CallbackPlot):
     """
     Plotting baseclass for the Bokeh backends, implementing the basic
     plotting interface for Bokeh based plots.
@@ -89,60 +89,6 @@ class BokehPlot(DimensionedPlot):
         the column in the datasource.
         """
         raise NotImplementedError
-
-
-    @property
-    def link_sources(self):
-        "Returns potential Link or Stream sources."
-        if isinstance(self, GenericOverlayPlot):
-            zorders = []
-        elif self.batched:
-            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
-        else:
-            zorders = [self.zorder]
-
-        if isinstance(self, GenericOverlayPlot) and not self.batched:
-            sources = []
-        elif not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [o for i, inputs in self.stream_sources.items()
-                       for o in inputs if i in zorders]
-        else:
-            sources = [self.hmap.last]
-        return sources
-
-
-    def _construct_callbacks(self):
-        """
-        Initializes any callbacks for streams which have defined
-        the plotted object as a source.
-        """
-        cb_classes = set()
-        registry = list(Stream.registry.items())
-        callbacks = Stream._callbacks['bokeh']
-        for source in self.link_sources:
-            streams = [
-                s for src, streams in registry for s in streams
-                if src is source or (src._plot_id is not None and
-                                     src._plot_id == source._plot_id)]
-            cb_classes |= {(callbacks[type(stream)], stream) for stream in streams
-                           if type(stream) in callbacks and stream.linked
-                           and stream.source is not None}
-        cbs = []
-        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
-        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
-            cb_streams = [s for _, s in group]
-            cbs.append(cb(self, cb_streams, source))
-        return cbs
-
-
-    def set_root(self, root):
-        """
-        Sets the root model on all subplots.
-        """
-        if root is None:
-            return
-        for plot in self.traverse(lambda x: x):
-            plot._root = root
 
 
     def _init_datasource(self, data):
@@ -262,9 +208,6 @@ class BokehPlot(DimensionedPlot):
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if get_method_owner(subscriber) not in plots
                 ]
-
-        if self.comm and self.root is self.handles.get('plot'):
-            self.comm.close()
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -510,10 +453,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
         if 'axis_offset' in params:
@@ -721,10 +661,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     def __init__(self, layout, keys=None, **params):
         super(LayoutPlot, self).__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
-        self.set_root(params.pop('root', None))
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 

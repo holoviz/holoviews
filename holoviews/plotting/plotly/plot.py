@@ -10,11 +10,11 @@ from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import (
     DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot)
+    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot)
 from .util import figure_grid
 
 
-class PlotlyPlot(DimensionedPlot):
+class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     backend = 'plotly'
 
@@ -48,7 +48,6 @@ class PlotlyPlot(DimensionedPlot):
         return self.generate_plot(key, ranges)
 
 
-
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
     hspacing = param.Number(default=0.15, bounds=(0, 1))
@@ -60,8 +59,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -238,6 +235,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                              title=self._format_title(key))
 
         self.drawn = True
+
         self.handles['fig'] = fig
         return self.handles['fig']
 
@@ -301,8 +299,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -371,6 +367,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
                              title=self._format_title(key))
 
         self.drawn = True
+
         self.handles['fig'] = fig
         return self.handles['fig']
 

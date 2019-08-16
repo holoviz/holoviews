@@ -350,8 +350,6 @@ class GridPlot(CompositePlot):
             self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
                                                                              ranges, create_axes)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -767,8 +765,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
