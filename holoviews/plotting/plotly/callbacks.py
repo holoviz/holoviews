@@ -9,7 +9,7 @@ from ...streams import (
 from .util import _trace_to_subplot
 
 
-class MetaPlotlyCallback(type):
+class PlotlyCallbackMetaClass(type):
     """
     Metaclass for PlotlyCallback classes.
 
@@ -18,13 +18,13 @@ class MetaPlotlyCallback(type):
     """
 
     def __init__(cls, name, bases, attrs):
-        super(MetaPlotlyCallback, cls).__init__(name, bases, attrs)
+        super(PlotlyCallbackMetaClass, cls).__init__(name, bases, attrs)
 
         # Create weak-value dictionary to hold instances of the class
         cls.instances = WeakValueDictionary()
 
     def __call__(cls, *args, **kwargs):
-        inst = super(MetaPlotlyCallback, cls).__call__(*args, **kwargs)
+        inst = super(PlotlyCallbackMetaClass, cls).__call__(*args, **kwargs)
 
         # Store weak reference to the callback instance in the _instances
         # WeakValueDictionary. This will allow instances to be garbage collected and
@@ -35,7 +35,7 @@ class MetaPlotlyCallback(type):
         return inst
 
 
-@add_metaclass(MetaPlotlyCallback)
+@add_metaclass(PlotlyCallbackMetaClass)
 class PlotlyCallback(object):
 
     def __init__(self, plot, streams, source, **params):
