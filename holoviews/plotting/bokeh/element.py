@@ -630,7 +630,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
-            formatter = wrap_formatter(formatter)
+            formatter = wrap_formatter(formatter, axis)
             if formatter is not None:
                 axis_props['formatter'] = formatter
         elif FuncTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
@@ -1602,7 +1602,7 @@ class ColorbarPlot(ElementPlot):
             self.colorbar_opts.update({'title': self.clabel})
 
         if self.cformatter is not None:
-            self.colorbar_opts.update({'formatter': wrap_formatter(self.cformatter)})
+            self.colorbar_opts.update({'formatter': wrap_formatter(self.cformatter, 'c')})
 
         opts = dict(cbar_opts['opts'], color_mapper=color_mapper, ticker=ticker,
                     **self._colorbar_defaults)

@@ -902,7 +902,7 @@ def match_dim_specs(specs1, specs2):
     return True
 
 
-def wrap_formatter(formatter):
+def wrap_formatter(formatter, axis):
     """
     Wraps formatting function or string in
     appropriate bokeh formatter type.
