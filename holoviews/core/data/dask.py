@@ -44,7 +44,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def loaded(cls):
-        return 'dask' in sys.modules and 'pandas' in sys.modules
+        return 'dask.dataframe' in sys.modules and 'pandas' in sys.modules
 
     @classmethod
     def applies(cls, obj):

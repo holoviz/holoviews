@@ -183,8 +183,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         self.drawn = True
         fig = dict(data=components['traces'], layout=layout)
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
 
         self.handles['fig'] = fig
         return fig
@@ -490,7 +488,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         to the key.
         """
         self.generate_plot(key, ranges, element)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
 
 
 class ColorbarPlot(ElementPlot):
@@ -623,9 +620,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         figure['layout'].update(layout)
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        figure['_id'] = self.id
-
         self.handles['fig'] = figure
         return figure
 
@@ -650,4 +644,3 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self._create_dynamic_subplots(key, items, ranges)
 
         self.generate_plot(key, ranges, element)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)

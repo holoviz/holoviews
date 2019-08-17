@@ -10,8 +10,6 @@ from itertools import chain
 
 import param
 
-from panel.pane import Viewable
-
 import matplotlib as mpl
 
 from matplotlib import pyplot as plt
@@ -84,33 +82,11 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                            'html', None, 'auto']}}
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'html', None, 'auto'],
+                    'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                'html', None, 'auto']}
 
     counter = 0
-
-    # Define the handler for updating matplotlib plots
-    comm_msg_handler = mpl_msg_handler
-
-    def __call__(self, obj, fmt='auto'):
-        """
-        Render the supplied HoloViews component or MPLPlot instance
-        using matplotlib.
-        """
-        plot, fmt = self._validate(obj, fmt)
-        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if plot is None:
-            return
-        elif isinstance(plot, Viewable):
-            return plot, info
-        else:
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
-
-            data = self._apply_post_render_hooks(data, obj, fmt)
-            return data, info
 
     def show(self, obj):
         """
@@ -166,17 +142,6 @@ class MPLRenderer(Renderer):
         w, h = plot.state.get_size_inches()
         dpi = self_or_cls.dpi if self_or_cls.dpi else plot.state.dpi
         return (int(w*dpi), int(h*dpi))
-
-
-    def diff(self, plot):
-        """
-        Returns the latest plot data to update an existing plot.
-        """
-        if self.fig == 'auto':
-            figure_format = self.params('fig').objects[0]
-        else:
-            figure_format = self.fig
-        return self.html(plot, figure_format)
 
 
     def _figure_data(self, plot, fmt, bbox_inches='tight', as_script=False, **kwargs):

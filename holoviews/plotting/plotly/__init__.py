@@ -17,6 +17,7 @@ from .tabular import *               # noqa (API import)
 from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
 from .images import *                # noqa (API import)
+
 from ...core.util import LooseVersion, VersionError
 import plotly
 

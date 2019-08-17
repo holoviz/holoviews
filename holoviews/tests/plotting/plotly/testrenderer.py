@@ -4,18 +4,12 @@ Test cases for rendering exporters
 """
 from __future__ import unicode_literals
 
-import os
-import sys
-import subprocess
-
 from collections import OrderedDict
 from unittest import SkipTest
 
-import numpy as np
 import param
 
-from holoviews import (DynamicMap, HoloMap, Image, ItemTable, Store,
-                       GridSpace, Table, Curve)
+from holoviews import (DynamicMap, HoloMap, Store, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream
 from pyviz_comms import CommManager
@@ -23,32 +17,20 @@ from pyviz_comms import CommManager
 try:
     import panel as pn
 
-    from holoviews.plotting.mpl import MPLRenderer, CurvePlot
+    from holoviews.plotting.plotly import PlotlyRenderer
     from holoviews.plotting.renderer import Renderer
     from panel.widgets import DiscreteSlider, Player, FloatSlider
 except:
     pn = None
 
 
-class MPLRendererTest(ComparisonTestCase):
-    """
-    Note if not possible to compare the hashes of SVG and WebM formats
-    as the hashes are not stable across exports.
-    """
-
+class PlotlyRendererTest(ComparisonTestCase):
+    
     def setUp(self):
-        if 'matplotlib' not in Store.renderers and pn is not None:
-            raise SkipTest("Matplotlib and Panel required to test rendering.")
+        if 'plotly' not in Store.renderers and pn is not None:
+            raise SkipTest("Plotly and Panel required to test rendering.")
 
-        self.basename = 'no-file'
-        self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
-        self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
-        self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
-
-        self.unicode_table = ItemTable([('β','Δ1'), ('°C', '3×4')],
-                                       label='Poincaré', group='α Festkörperphysik')
-
-        self.renderer = MPLRenderer.instance()
+        self.renderer = PlotlyRenderer.instance()
         self.nbcontext = Renderer.notebook_context
         self.comm_manager = Renderer.comm_manager
         with param.logging_level('ERROR'):
@@ -60,53 +42,13 @@ class MPLRendererTest(ComparisonTestCase):
             Renderer.notebook_context = self.nbcontext
             Renderer.comm_manager = self.comm_manager
 
-    def test_get_size_single_plot(self):
-        plot = self.renderer.get_plot(self.image1)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 288))
-
-    def test_get_size_row_plot(self):
-        plot = self.renderer.get_plot(self.image1+self.image2)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 255))
-
-    def test_get_size_column_plot(self):
-        plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 505))
-
-    def test_get_size_grid_plot(self):
-        grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
-        plot = self.renderer.get_plot(grid)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (345, 345))
-
-    def test_get_size_table(self):
-        table = Table(range(10), kdims=['x'])
-        plot = self.renderer.get_plot(table)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 288))
-
-    def test_render_gif(self):
-        data, metadata = self.renderer.components(self.map1, 'gif')
-        self.assertIn("<img src='data:image/gif", data['text/html'])
-
-    def test_render_mp4(self):
-        if sys.version_info.major > 2:
-            devnull = subprocess.DEVNULL
-        else:
-            devnull = open(os.devnull, 'w')
-        try:
-            subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
-        except:
-            raise SkipTest('ffmpeg not available, skipping mp4 export test')
-        data, metadata = self.renderer.components(self.map1, 'mp4')
-        self.assertIn("<source src='data:video/mp4", data['text/html'])
-
     def test_render_static(self):
         curve = Curve([])
         obj, _ = self.renderer._validate(curve, None)
-        self.assertIsInstance(obj, CurvePlot)
+        self.assertIsInstance(obj, pn.pane.HoloViews)
+        self.assertEqual(obj.center, True)
+        self.assertIs(obj.renderer, self.renderer)
+        self.assertEqual(obj.backend, 'plotly')
 
     def test_render_holomap_individual(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
@@ -165,13 +107,12 @@ class MPLRendererTest(ComparisonTestCase):
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, pane)] = obj._plots.values()
-        artist = plot.handles['artist']
 
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 0.1)
         slider = obj.layout.select(FloatSlider)[0]
         slider.value = 3.1
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 3.1)
 
     def test_render_dynamicmap_with_stream(self):
@@ -180,12 +121,11 @@ class MPLRendererTest(ComparisonTestCase):
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, pane)] = obj._plots.values()
-        artist = plot.handles['artist']
 
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)
         stream.event(y=3)
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 3)
 
     def test_render_dynamicmap_with_stream_dims(self):
@@ -195,17 +135,16 @@ class MPLRendererTest(ComparisonTestCase):
         obj, _ = self.renderer._validate(dmap, None)
         self.renderer.components(obj)
         [(plot, pane)] = obj._plots.values()
-        artist = plot.handles['artist']
 
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 2)
         stream.event(y=3)
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[2], 3)
 
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[0], 1)
         slider = obj.layout.select(DiscreteSlider)[0]
         slider.value = 3
-        (_, y) = artist.get_data()
+        y = plot.handles['fig']['data'][0]['y']
         self.assertEqual(y[0], 3)

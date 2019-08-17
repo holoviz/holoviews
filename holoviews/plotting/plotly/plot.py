@@ -10,8 +10,10 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
-    GenericElementPlot, CallbackPlot
+from ..plot import (
+    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
+    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+)
 from .util import figure_grid, configure_matching_axes_from_dims
 
 
@@ -23,20 +25,6 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     height = param.Integer(default=400)
 
-    def __init__(self, *args, **kwargs):
-        # The Plotly backend doesn't use a comm directly because it's dynamic
-        # interactions are handled by the Plotly panel pane.  So ignore any comm
-        # passed here
-        kwargs.pop('comm', None)
-        super(PlotlyPlot, self).__init__(*args, **kwargs)
-
-        # Generate plot-level uid
-        self._id = str(uuid.uuid4())
-
-    @property
-    def id(self):
-        return self._id
-
     @property
     def state(self):
         """
@@ -45,10 +33,6 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
         """
         return self.handles['fig']
 
-    def init_comm(self):
-        # Plotly backend doesn't use comms directly, override so that we don't open
-        # initialize extra unneeded comms.
-        return None
 
     def _trigger_refresh(self, key):
         "Triggers update to a plot on a refresh event"
@@ -64,9 +48,8 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
 
     def update_frame(self, key, ranges=None):
-        plot = self.generate_plot(key, ranges)
-        PlotlyRenderer.trigger_plot_pane(self.id, self.state)
-        return plot
+        return self.generate_plot(key, ranges)
+
 
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
@@ -85,8 +68,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -250,18 +231,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
 
 
-class AdjointLayoutPlot(PlotlyPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 
@@ -319,8 +294,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -395,8 +368,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 

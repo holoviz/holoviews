@@ -19,7 +19,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0', 'panel']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0', 'panel>=0.7.0a8']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
@@ -32,7 +32,7 @@ extras_require['extras'] = extras_require['examples']+[
     'cyordereddict', 'pscript==0.7.1']
 
 # Test requirements
-extras_require['tests'] = ['nose', 'flake8==3.6.0', 'coveralls', 'path.py', 'matplotlib>=2.1,<3.1']
+extras_require['tests'] = ['nose', 'mock', 'flake8==3.6.0', 'coveralls', 'path.py', 'matplotlib>=2.1,<3.1']
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
 
@@ -142,9 +142,7 @@ setup_args.update(dict(
               "holoviews.tests.util"],
     package_data={'holoviews': ['.version'],
                   'holoviews.ipython': ['*.html'],
-                  'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
-                  'holoviews.plotting.bokeh': ['*.js', '*.css'],
-                  'holoviews.plotting.plotly': ['*.js'],
+                  'holoviews.plotting.mpl': ['*.mplstyle'],
                   'holoviews.tests.ipython.notebooks': ['*.ipynb']},
     classifiers=[
         "License :: OSI Approved :: BSD License",

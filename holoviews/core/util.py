@@ -1830,7 +1830,7 @@ def dt64_to_dt(dt64):
     Safely converts NumPy datetime64 to a datetime object.
     """
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00')) / np.timedelta64(1, 's')
-    return dt.datetime.utcfromtimestamp(ts)
+    return dt.datetime(1970,1,1,0,0,0) + dt.timedelta(seconds=ts)
 
 
 def is_nan(x):
@@ -1908,6 +1908,31 @@ def date_range(start, end, length, time_unit='us'):
         start = start.to_datetime64()
     step = np.timedelta64(int(round(step)), time_unit)
     return start+step/2.+np.arange(length)*step
+
+
+def parse_datetime(date):
+    """
+    Parses dates specified as string or integer or pandas Timestamp
+    """
+    if pd is None:
+        raise ImportError('Parsing dates from strings requires pandas')
+    return pd.to_datetime(date).to_datetime64()
+
+
+def parse_datetime_selection(sel):
+    """
+    Parses string selection specs as datetimes.
+    """
+    if isinstance(sel, basestring) or isdatetime(sel):
+        sel = parse_datetime(sel)
+    if isinstance(sel, slice):
+        if isinstance(sel.start, basestring) or isdatetime(sel.start):
+            sel = slice(parse_datetime(sel.start), sel.stop)
+        if isinstance(sel.stop, basestring) or isdatetime(sel.stop):
+            sel = slice(sel.start, parse_datetime(sel.stop))
+    if isinstance(sel, (set, list)):
+        sel = [parse_datetime(v) if isinstance(v, basestring) else v for v in sel]
+    return sel
 
 
 def dt_to_int(value, time_unit='us'):
