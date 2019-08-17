@@ -14,8 +14,6 @@ from bokeh.themes.theme import Theme
 from panel.io.notebook import render_mimebundle
 from param.parameterized import bothmethod
 
-from panel.pane import HoloViews, Viewable
-
 from ...core import Store, HoloMap
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS

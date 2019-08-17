@@ -1,8 +1,9 @@
 import numpy as np
 
-from holoviews.element import Raster, Image, RGB
 import PIL.Image
 import plotly.graph_objs as go
+
+from holoviews.element import RGB
 
 from .testplot import TestPlotlyPlot, plotly_renderer
 

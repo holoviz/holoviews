@@ -1,9 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import uuid
 import param
 
-from holoviews.plotting.plotly import PlotlyRenderer
 from holoviews.plotting.util import attach_streams
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, GridMatrix)
@@ -194,7 +192,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def generate_plot(self, key, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
-        insert_rows, insert_cols = [], []
+        insert_rows = []
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:

@@ -8,7 +8,6 @@ import panel as pn
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
-from panel.pane import Viewable
 from param.parameterized import bothmethod
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS

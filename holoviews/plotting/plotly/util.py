@@ -687,14 +687,14 @@ def figure_grid(figures_grid,
     if width:
         available_column_width = width - (ncols - 1) * column_spacing
         column_width_scale = available_column_width / sum(column_widths)
-        column_widths = [w * column_width_scale for w in column_widths]
+        column_widths = [wi * column_width_scale for wi in column_widths]
     else:
         column_width_scale = 1.0
 
     if height:
         available_row_height = height - (nrows - 1) * row_spacing
         row_height_scale = available_row_height / sum(row_heights)
-        row_heights = [h * row_height_scale for h in row_heights]
+        row_heights = [hi * row_height_scale for hi in row_heights]
     else:
         row_height_scale = 1.0
 

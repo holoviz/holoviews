@@ -1,5 +1,3 @@
-import numpy as np
-
 from holoviews.element import VLine, HLine, Bounds, Box
 
 from .testplot import TestPlotlyPlot
