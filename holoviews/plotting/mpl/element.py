@@ -708,9 +708,15 @@ class ColorbarPlot(ElementPlot):
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
+
+        for label in ['clabel', 'labels']:
+            labelsize = self._fontsize(label, common=False).get('fontsize')
+            if labelsize is not None:
+                break
+
         if (cbar.solids and noalpha):
             cbar.solids.set_edgecolor("face")
-        cbar.set_label(label)
+        cbar.set_label(label, fontsize=labelsize)
         if isinstance(self.cbar_ticks, ticker.Locator):
             cbar.ax.yaxis.set_major_locator(self.cbar_ticks)
         elif self.cbar_ticks == 0:
@@ -726,6 +732,12 @@ class ColorbarPlot(ElementPlot):
                                         for t in self.cbar_ticks])
             cbar.set_ticks(ticks)
             cbar.set_ticklabels(labels)
+
+        for tick in ['cticks', 'ticks']:
+            ticksize = self._fontsize(tick, common=False).get('fontsize')
+            if ticksize is not None:
+                cbar.ax.tick_params(labelsize=ticksize)
+                break
 
 
     def _finalize_artist(self, element):
