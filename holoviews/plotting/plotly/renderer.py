@@ -1,25 +1,20 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import base64
-import json
-from weakref import WeakValueDictionary
 
 import param
-from param.parameterized import bothmethod
-
-from holoviews.plotting.plotly.util import clean_internal_figure_properties
+import panel as pn
 
 with param.logging_level('CRITICAL'):
-    from plotly import utils
     import plotly.graph_objs as go
 
-import panel as pn
 from panel.pane import Viewable
 
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 from .callbacks import callbacks
+from .util import clean_internal_figure_properties
 
 
 
@@ -27,28 +22,18 @@ def _PlotlyHoloviews(fig_dict):
     """
     Custom Plotly pane constructor for use by the HoloViews Pane.
     """
-    # Save plot id
-    plot_id = fig_dict['_id']
 
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
-
-    # Create plotly pane
-    plotly_pane = pn.pane.Plotly(fig_dict)
-
-    # Configure pane callbacks
-    plotly_pane.viewport_update_policy = 'mouseup'
-
-    # Add pane to renderer so that we can find it again to update it
-    PlotlyRenderer._plot_panes[plot_id] = plotly_pane
-
+    
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
+    
     # Register callbacks on pane
     for callback_cls in callbacks.values():
         plotly_pane.param.watch(
             lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
             callback_cls.callback_property,
         )
-
     return plotly_pane
 
 
@@ -56,42 +41,18 @@ class PlotlyRenderer(Renderer):
 
     backend = param.String(default='plotly', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'png', 'svg', 'auto'], doc="""
+    fig = param.ObjectSelector(default='auto', objects=['html', 'png', 'svg', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    mode_formats = {'fig': {'default': ['html', 'png', 'svg', 'json']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
+    mode_formats = {'fig': ['html', 'png', 'svg'],
+                    'holomap': ['widgets', 'scrubber', 'auto']}
 
     widgets = ['scrubber', 'widgets']
 
     _loaded = False
-
-    _plot_panes = WeakValueDictionary()
-
-    def __call__(self, obj, fmt='html', divuuid=None):
-        plot, fmt =  self._validate(obj, fmt)
-        mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if isinstance(plot, Viewable):
-            # fmt == 'html'
-            return plot, mime_types
-        elif fmt in ('png', 'svg'):
-            return self._figure_data(plot, fmt, divuuid=divuuid), mime_types
-        elif fmt == 'json':
-            return self.diff(plot), mime_types
-
-
-    def diff(self, plot, serialize=True):
-        """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
-        """
-        diff = plot.state
-        if serialize:
-            return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
-        else:
-            return diff
+ 
+    _render_with_panel = True
 
     @bothmethod
     def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
@@ -111,6 +72,7 @@ class PlotlyRenderer(Renderer):
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
         return fig_dict
+
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation
@@ -156,17 +118,8 @@ class PlotlyRenderer(Renderer):
         cls._loaded = True
 
 
-    @classmethod
-    def trigger_plot_pane(cls, plot_id, fig_dict):
-        if plot_id in cls._plot_panes:
-            clean_internal_figure_properties(fig_dict)
-            pane = cls._plot_panes[plot_id]
-            pane.object = fig_dict
-
-
 def _activate_plotly_backend(renderer):
     if renderer == "plotly":
-        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviews
-
+        pn.pane.HoloViews._panes["plotly"] = _PlotlyHoloviewsPane
 
 Store._backend_switch_hooks.append(_activate_plotly_backend)

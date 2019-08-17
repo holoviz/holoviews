@@ -7,13 +7,12 @@ from io import BytesIO
 import param
 import bokeh
 
-from pyviz_comms import bokeh_msg_handler
-from param.parameterized import bothmethod
 from bokeh.document import Document
 from bokeh.io import curdoc
 from bokeh.models import Model
-from bokeh.protocol import Protocol
 from bokeh.themes.theme import Theme
+from panel.io.notebook import render_mimebundle
+from param.parameterized import bothmethod
 
 from panel.pane import HoloViews, Viewable
 
@@ -32,60 +31,32 @@ default_theme = Theme(json={
 
 class BokehRenderer(Renderer):
 
-    theme = param.ClassSelector(default=default_theme, class_=(Theme, str),
-                                allow_None=True, doc="""
-       The applicable Bokeh Theme object (if any).""")
-
     backend = param.String(default='bokeh', doc="The backend name.")
+
 
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['widgets', 'scrubber', 'server',
+                                   objects=['widgets', 'scrubber',
                                             None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
-    mode = param.ObjectSelector(default='default',
-                                objects=['default', 'server'], doc="""
-        Whether to render the object in regular or server mode. In server
-        mode a bokeh Document will be returned which can be served as a
-        bokeh server app. By default renders all output is rendered to HTML.""")
-
-    # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json', 'auto', 'png'],
-                            'server': ['html', 'json', 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
-                                'server': ['server', 'auto', None]}}
+    theme = param.ClassSelector(default=default_theme, class_=(Theme, str),
+                                allow_None=True, doc="""
+       The applicable Bokeh Theme object (if any).""")
 
     webgl = param.Boolean(default=False, doc="""
         Whether to render plots with WebGL if available""")
 
+    # Defines the valid output formats for each mode.
+    mode_formats = {'fig': ['html', 'auto', 'png'],
+                    'holomap': ['widgets', 'scrubber', 'auto', None]}
+
     _loaded = False
-
-    # Define the handler for updating bokeh plots
-    comm_msg_handler = bokeh_msg_handler
-
-    def __call__(self, obj, fmt=None, doc=None):
-        """
-        Render the supplied HoloViews component using the appropriate
-        backend. The output is not a file format but a suitable,
-        in-memory byte stream together with any suitable metadata.
-        """
-        plot, fmt =  self._validate(obj, fmt, doc=doc)
-        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
-
-        if self.mode == 'server':
-            return self.server_doc(plot, doc), info
-        elif isinstance(plot, Viewable):
-            return plot, info
-        elif fmt == 'png':
-            png = self._figure_data(plot, fmt=fmt, doc=doc)
-            return png, info
-        elif fmt == 'json':
-            return self.diff(plot), info
+    _render_with_panel = True
 
     @bothmethod
     def _save_prefix(self_or_cls, ext):
@@ -100,50 +71,11 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        if doc is None:
-            doc = Document() if self_or_cls.notebook_context else curdoc()
-
-        if self_or_cls.notebook_context:
-            curdoc().theme = self_or_cls.theme
-        doc.theme = self_or_cls.theme
-        plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer, **kwargs)
-        plot.document = doc
+        plot = super(BokehRenderer, self_or_cls).get_plot(obj, doc, renderer, **kwargs)
+        if plot.document is None:
+            plot.document = Document() if self_or_cls.notebook_context else curdoc()
+        plot.document.theme = self_or_cls.theme
         return plot
-
-
-    @bothmethod
-    def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
-        """
-        Creates a bokeh app from a HoloViews object or plot. By
-        default simply attaches the plot to bokeh's curdoc and returns
-        the Document, if show option is supplied creates an
-        Application instance and displays it either in a browser
-        window or inline if notebook extension has been loaded.  Using
-        the new_window option the app may be displayed in a new
-        browser tab once the notebook extension has been loaded.  A
-        websocket origin is required when launching from an existing
-        tornado server (such as the notebook) and it is not on the
-        default port ('localhost:8888').
-        """
-        pane = HoloViews(plot)
-        if new_window:
-            return pane._get_server(port, websocket_origin, show=show)
-        else:
-            kwargs = {'notebook_url': websocket_origin} if websocket_origin else {}
-            return pane.app(port, **kwargs)
-
-    @bothmethod
-    def server_doc(self_or_cls, obj, doc=None):
-        """
-        Get a bokeh Document with the plot attached. May supply
-        an existing doc, otherwise bokeh.io.curdoc() is used to
-        attach the plot to the global document instance.
-        """
-        return HoloViews(obj).server_doc(doc)
-
-
-    def components(self, obj, fmt=None, comm=True, **kwargs):
-        return super(BokehRenderer, self).components(obj, fmt, comm, **kwargs)
 
 
     def _figure_data(self, plot, fmt, doc=None, as_script=False, **kwargs):
@@ -181,26 +113,13 @@ class BokehRenderer(Renderer):
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
                 div = tag.format(src=src, mime_type=mime_type, css='')
         else:
-            raise ValueError('Unsupported format: {fmt}'.format(fmt=fmt))
+            div = render_mimebundle(plot.state, doc, plot.comm)[0]['text/html']
 
         plot.document = doc
         if as_script:
             return div
         else:
             return data
-
-
-    def diff(self, plot, binary=True):
-        """
-        Returns a json diff required to update an existing plot with
-        the latest plot data.
-        """
-        events = list(plot.document._held_events)
-        if not events:
-            return None
-        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
-        plot.document._held_events = []
-        return msg
 
 
     @classmethod

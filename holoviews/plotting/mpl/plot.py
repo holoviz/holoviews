@@ -17,7 +17,7 @@ from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
 from ...core.options import Store, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_streams
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-                    GenericElementPlot)
+                    GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
 from .util import compute_ratios, fix_aspect, mpl_version
 
@@ -350,8 +350,6 @@ class GridPlot(CompositePlot):
             self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
                                                                              ranges, create_axes)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -613,14 +611,9 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(MPLPlot):
+class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
     """
-    LayoutPlot allows placing up to three Views in a number of
-    predefined and fixed layouts, which are defined by the layout_dict
-    class attribute. This allows placing subviews next to a main plot
-    in either a 'top' or 'right' position.
-
-    Initially, a LayoutPlot computes an appropriate layout based for
+    Initially, a AdjointLayoutPlot computes an appropriate layout based for
     the number of Views in the AdjointLayout object it has been given, but
     when embedded in a NdLayout, it can recompute the layout to
     match the number of rows and columns as part of a larger grid.
@@ -772,8 +765,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 

@@ -10,8 +10,10 @@ from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
 from ...element import Histogram
 from ...core.options import Store
 from ...core.util import wrap_tuple
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot, \
-    GenericElementPlot, CallbackPlot
+from ..plot import (
+    DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
+    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+)
 from .util import figure_grid, configure_matching_axes_from_dims
 
 
@@ -68,7 +70,6 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
         PlotlyRenderer.trigger_plot_pane(self.id, self.state)
         return plot
 
-
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
     hspacing = param.Number(default=120, bounds=(0, None))
@@ -85,8 +86,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -250,18 +249,12 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
 
 
-class AdjointLayoutPlot(PlotlyPlot):
-
-    layout_dict = {'Single': {'positions': ['main']},
-                   'Dual':   {'positions': ['main', 'right']},
-                   'Triple': {'positions': ['main', 'right', 'top']}}
+class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
 
     registry = {}
 
@@ -319,8 +312,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
         if self.top_level:
-            self.comm = self.init_comm()
-            self.traverse(lambda x: setattr(x, 'comm', self.comm))
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
@@ -395,8 +386,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
         self.drawn = True
 
-        # Add plot's id to figure for bookkeeping
-        fig['_id'] = self.id
         self.handles['fig'] = fig
         return self.handles['fig']
 
