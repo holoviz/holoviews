@@ -13,7 +13,7 @@ class RGBPlot(ElementPlot):
     apply_ranges = True
 
     def init_graph(self, datum, options, index=0):
-        image = dict(**datum, **options)
+        image = dict(datum, **options)
 
         # Create a dummy invisible scatter trace for this image.
         # This serves two purposes

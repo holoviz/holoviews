@@ -12,7 +12,7 @@ class ShapePlot(ElementPlot):
     apply_ranges = False
 
     def init_graph(self, datum, options, index=0):
-        shape = dict(type=self._shape_type, **datum, **options)
+        shape = dict(type=self._shape_type, **dict(datum, **options))
         return dict(shapes=[shape])
 
     @staticmethod
@@ -26,6 +26,7 @@ class ShapePlot(ElementPlot):
             path += 'Z'
 
         return path
+
 
 
 class PathShapePlot(ShapePlot):
@@ -42,6 +43,7 @@ class PathShapePlot(ShapePlot):
 
         path = ShapePlot.build_path(xs, ys)
         return [dict(path=path, xref='x', yref='y')]
+
 
 
 class HLinePlot(ShapePlot):

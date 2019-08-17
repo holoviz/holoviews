@@ -25,9 +25,9 @@ def _PlotlyHoloviewsPane(fig_dict):
 
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
-    
+
     plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
-    
+
     # Register callbacks on pane
     for callback_cls in callbacks.values():
         plotly_pane.param.watch(
