@@ -5,6 +5,7 @@ import time
 import sys
 import calendar
 import datetime as dt
+from types import FunctionType
 
 from collections import defaultdict
 from contextlib import contextmanager
@@ -19,6 +20,7 @@ from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
 from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
+from bokeh.models.formatters import FuncTickFormatter, TickFormatter, PrintfTickFormatter
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -898,3 +900,23 @@ def match_dim_specs(specs1, specs2):
             if s1 != s2:
                 return False
     return True
+
+
+def wrap_formatter(formatter):
+    """
+    Wraps formatting function or string in
+    appropriate bokeh formatter type.
+    """
+    if isinstance(formatter, TickFormatter):
+        pass
+    elif isinstance(formatter, FunctionType):
+        msg = ('%sformatter could not be '
+               'converted to tick formatter. ' % axis)
+        jsfunc = py2js_tickformatter(formatter, msg)
+        if jsfunc:
+            formatter = FuncTickFormatter(code=jsfunc)
+        else:
+            formatter = None
+    else:
+        formatter = PrintfTickFormatter(format=formatter)
+    return formatter
