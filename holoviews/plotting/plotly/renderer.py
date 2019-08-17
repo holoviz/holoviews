@@ -8,16 +8,24 @@ import panel as pn
 with param.logging_level('CRITICAL'):
     import plotly.graph_objs as go
 
+from param.parameterized import bothmethod
+
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from ...core.options import Store
 from ...core import HoloMap
 from .callbacks import callbacks
+from .util import clean_internal_figure_properties
+
 
 
 def _PlotlyHoloviewsPane(fig_dict):
     """
     Custom Plotly pane constructor for use by the HoloViews Pane.
     """
+
+    # Remove internal HoloViews properties
+    clean_internal_figure_properties(fig_dict)
+
     plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
 
     # Register callbacks on pane
@@ -45,6 +53,26 @@ class PlotlyRenderer(Renderer):
     _loaded = False
 
     _render_with_panel = True
+
+    @bothmethod
+    def get_plot_state(self_or_cls, obj, doc=None, renderer=None, **kwargs):
+        """
+        Given a HoloViews Viewable return a corresponding figure dictionary.
+        Allows cleaning the dictionary of any internal properties that were added
+        """
+        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+
+        # Remove internal properties (e.g. '_id', '_dim')
+        clean_internal_figure_properties(fig_dict)
+
+        # Run through Figure constructor to normalize keys
+        # (e.g. to expand magic underscore notation)
+        fig_dict = go.Figure(fig_dict).to_dict()
+
+        # Remove template
+        fig_dict.get('layout', {}).pop('template', None)
+        return fig_dict
+
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         # Wrapping plot.state in go.Figure here performs validation

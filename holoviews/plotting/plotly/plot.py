@@ -10,8 +10,9 @@ from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import (
     DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
-    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot)
-from .util import figure_grid
+    GenericElementPlot, GenericAdjointLayoutPlot, CallbackPlot
+)
+from .util import figure_grid, configure_matching_axes_from_dims
 
 
 class PlotlyPlot(DimensionedPlot, CallbackPlot):
@@ -48,11 +49,17 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
         return self.generate_plot(key, ranges)
 
 
+
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
 
-    hspacing = param.Number(default=0.15, bounds=(0, 1))
+    hspacing = param.Number(default=120, bounds=(0, None))
 
-    vspacing = param.Number(default=0.15, bounds=(0, 1))
+    vspacing = param.Number(default=100, bounds=(0, None))
+
+    adjoint_spacing = param.Number(default=20, bounds=(0, None))
+
+    shared_axes = param.Boolean(default=True, doc="""
+            Whether axes should be shared across plots""")
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
@@ -185,7 +192,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def generate_plot(self, key, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
-        insert_rows, insert_cols = [], []
+        insert_rows = []
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
@@ -195,44 +202,30 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    if r not in insert_rows:
-                        # Insert and pad marginal row if none exists
-                        plots.insert(r+offset, [None for _ in range(len(plots[r]))])
-                        # Pad previous rows
-                        for ir in range(r):
-                            plots[ir].insert(c+1, None)
-                        # Add to row offset
-                        insert_rows.append(r)
-                        offset += 1
-                    # Add top marginal
-                    plots[r+offset-1] += [subplots.pop(-1), None]
+                    subplot = figure_grid([[subplots[0], subplots[1]],
+                                           [subplots[2], None]],
+                                          column_spacing=self.adjoint_spacing,
+                                          row_spacing=self.adjoint_spacing)
                 elif len(subplots) > 1:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    # Pad previous rows
-                    for ir in range(r):
-                        plots[r].insert(c+1, None)
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += 2*[None]
+                    subplot = figure_grid([subplots],
+                                          column_spacing=self.adjoint_spacing,
+                                          row_spacing=self.adjoint_spacing)
                 else:
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += [None] * (1+(c in insert_cols))
-                plots[r+offset] += subplots
-                if len(subplots) == 1 and c in insert_cols:
-                    plots[r+offset].append(None)
+                    subplot = subplots[0]
 
-        width, height = self._get_size()
+                plots[r + offset] += [subplot]
 
-        fig = figure_grid(list(reversed(plots)),
-                          column_spacing=self.hspacing,
-                          row_spacing=self.vspacing)
+        fig = figure_grid(
+            list(reversed(plots)),
+            column_spacing=self.hspacing,
+            row_spacing=self.vspacing
+        )
 
-        fig['layout'].update(height=height, width=width,
-                             title=self._format_title(key))
+        # Configure axis matching
+        if self.shared_axes:
+            configure_matching_axes_from_dims(fig)
+
+        fig['layout'].update(title=self._format_title(key))
 
         self.drawn = True
 
@@ -286,9 +279,9 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     object.
     """
 
-    hspacing = param.Number(default=0.05, bounds=(0, 1))
+    hspacing = param.Number(default=15, bounds=(0, None))
 
-    vspacing = param.Number(default=0.05, bounds=(0, 1))
+    vspacing = param.Number(default=15, bounds=(0, None))
 
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
@@ -356,15 +349,20 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
 
+        # Compute final width/height
+        w, h = self._get_size(subplot.width, subplot.height)
+        print(w, h)
+
         fig = figure_grid(plots,
                           column_spacing=self.hspacing,
                           row_spacing=self.vspacing,
                           share_xaxis=True,
-                          share_yaxis=True)
+                          share_yaxis=True,
+                          width=w,
+                          height=h
+                          )
 
-        w, h = self._get_size(subplot.width, subplot.height)
-        fig['layout'].update(width=w, height=h,
-                             title=self._format_title(key))
+        fig['layout'].update(title=self._format_title(key))
 
         self.drawn = True
 

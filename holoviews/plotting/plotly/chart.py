@@ -27,9 +27,11 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['marker', 'color', 'cmap', 'alpha', 'size', 'sizemin']
+    style_opts = [
+        'marker', 'color', 'cmap', 'alpha', 'size', 'sizemin', 'selectedpoints'
+    ]
 
-    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin']
+    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin', 'selectedpoints']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
 
@@ -41,7 +43,11 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
             copts['color'] = element.dimension_values(cdim)
-            opts['marker'].update(opts)
+            opts['marker'].update(copts)
+
+        # If cmap was present and applicable, it was processed by get_color_opts above.
+        # Remove it now to avoid plotly validation error
+        opts.get('marker', {}).pop('cmap', None)
         return opts
 
 
@@ -274,4 +280,35 @@ class BarPlot(ElementPlot):
         if element.ndims > 1 and (self.stacked or self.stack_index):
             stack_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
+        return layout
+
+
+class HistogramPlot(ElementPlot):
+
+    trace_kwargs = {'type': 'bar'}
+
+    style_opts = ['color', 'line_color', 'line_width', 'opacity']
+
+    _style_key = 'marker'
+
+    def get_data(self, element, ranges, style):
+        xdim = element.kdims[0]
+        ydim = element.vdims[0]
+        values = element.interface.coords(element, ydim)
+        edges = element.interface.coords(element, xdim)
+        binwidth = edges[1] - edges[0]
+
+        if self.invert_axes:
+            ys = edges
+            xs = values
+            orientation = 'h'
+        else:
+            xs = edges
+            ys = values
+            orientation = 'v'
+        return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
+
+    def init_layout(self, key, element, ranges):
+        layout = super(HistogramPlot, self).init_layout(key, element, ranges)
+        layout['barmode'] = 'overlay'
         return layout

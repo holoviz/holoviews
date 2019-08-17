@@ -226,7 +226,7 @@ class Plot(param.Parameterized):
             child_pane = None
 
         if self.renderer.backend != 'bokeh' and child_pane is not None:
-            child_pane.object = self.state
+            child_pane.object = self.renderer.get_plot_state(self)
         elif ((self.renderer.mode != 'server' or (root and 'embedded' in root.tags))
               and self.document and self.comm):
             push(self.document, self.comm)
@@ -768,6 +768,8 @@ class DimensionedPlot(Plot):
 
 
 class CallbackPlot(object):
+
+    backend = None
 
     def _construct_callbacks(self):
         """

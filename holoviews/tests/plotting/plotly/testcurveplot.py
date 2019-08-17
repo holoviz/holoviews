@@ -24,8 +24,8 @@ class TestCurvePlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['mode'], 'lines')
         self.assertEqual(state['layout']['xaxis']['range'], [1, 3])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
-        self.assertEqual(state['layout']['yaxis']['title'], 'x')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
 
     def test_curve_interpolation(self):
         curve = Curve([1, 2, 3]).options(interpolation='steps-mid')

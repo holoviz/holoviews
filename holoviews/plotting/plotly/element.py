@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import uuid
 import numpy as np
 import param
+import re
 
 from ...core import util
 from ...core.element import Element
@@ -141,27 +142,46 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Get data and options and merge them
         data = self.get_data(element, ranges, style)
         opts = self.graph_options(element, ranges, style)
-        graphs = []
+
+        components = {
+            'traces': [],
+            'images': [],
+            'annotations': [],
+            'shapes': [],
+        }
+
         for i, d in enumerate(data):
             # Initialize traces
-            traces = self.init_graph(d, opts, index=i)
-            graphs.extend(traces)
+            datum_components = self.init_graph(d, opts, index=i)
 
-            if i == 0:
+            # Handle traces
+            traces = datum_components.get('traces', [])
+            components['traces'].extend(traces)
+
+            if i == 0 and traces:
                 # Associate element with trace.uid property of the first
                 # plotly trace that is used to render the element. This is
                 # used to associate the element with the trace during callbacks
                 traces[0]['uid'] = self.trace_uid
 
-        self.handles['graphs'] = graphs
+            # Handle images, shapes, annotations
+            for k in ['images', 'shapes', 'annotations']:
+                components[k].extend(datum_components.get(k, []))
+
+        self.handles['components'] = components
 
         # Initialize layout
         layout = self.init_layout(key, element, ranges)
+        for k in ['images', 'shapes', 'annotations']:
+            layout.setdefault(k, [])
+            layout[k].extend(components.get(k, []))
+
         self.handles['layout'] = layout
 
         # Create figure and return it
         self.drawn = True
-        fig = dict(data=graphs, layout=layout)
+        fig = dict(data=components['traces'], layout=layout)
+
 
         self.handles['fig'] = fig
         return fig
@@ -183,18 +203,50 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
         if self._style_key is not None:
             styles = self._apply_transforms(element, ranges, style)
+
+            # If style starts with '{_style_key}_', remove the prefix.  This way
+            # a line_color property with self._style_key of 'line' doesn't end up
+            # as `line_line_color`
+            key_prefix_re = re.compile('^' + self._style_key + '_')
+            styles = {key_prefix_re.sub('', k): v for k, v in styles.items()}
+
             opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
                                      for k, v in styles.items()}
+
+            # Move selectedpoints from style key back to root
+            if 'selectedpoints' in opts.get(self._style_key, {}):
+                opts['selectedpoints'] = opts[self._style_key].pop('selectedpoints')
         else:
             opts.update({STYLE_ALIASES.get(k, k): v
                          for k, v in style.items() if k != 'cmap'})
 
         return opts
 
+    def init_graph(self, datum, options, index=0):
+        """
+        Initialize the plotly components that will represent the element
 
-    def init_graph(self, data, options, index=0):
+        Parameters
+        ----------
+        datum: dict
+            An element of the data list returned by the get_data method
+        options: dict
+            Graph options that were returned by the graph_options method
+        index: int
+            Index of datum in the original list returned by the get_data method
+
+        Returns
+        -------
+        dict
+            Dictionary of the plotly components that represent the element.
+            Keys may include:
+             - 'traces': List of trace dicts
+             - 'annotations': List of annotations dicts
+             - 'images': List of image dicts
+             - 'shapes': List of shape dicts
+        """
         trace = dict(options)
-        for k, v in data.items():
+        for k, v in datum.items():
             if k in trace and isinstance(trace[k], dict):
                 trace[k].update(v)
             else:
@@ -206,7 +258,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             trace[self._style_key] = dict(trace[self._style_key])
             for s, val in vectorized.items():
                 trace[self._style_key][s] = val[index]
-        return [trace]
+        return {'traces': [trace]}
 
 
     def get_data(self, element, ranges, style):
@@ -316,20 +368,78 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             zlabel = ''
 
         if xdim:
+            try:
+                if any(np.isnan([r, l])):
+                    r, l = 0, 1
+            except TypeError:
+                # r and l not numeric, don't change anything
+                pass
+
             xrange = [r, l] if self.invert_xaxis else [l, r]
             xaxis = dict(range=xrange, title=xlabel)
             if self.logx:
                 xaxis['type'] = 'log'
             self._get_ticks(xaxis, self.xticks)
+
+            if self.projection != '3d' and self.xaxis:
+                xaxis['automargin'] = False
+
+                # Create dimension string used to compute matching axes
+                if isinstance(xdim, (list, tuple)):
+                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                                        for d in xdim])
+                else:
+                    dim_str = "%s^%s^%s" % (xdim.name, xdim.label, xdim.unit)
+
+                xaxis['_dim'] = dim_str
+
+                if 'bare' in self.xaxis:
+                    xaxis['ticks'] = ''
+                    xaxis['showticklabels'] = False
+                    xaxis['title'] = ''
+
+                if 'top' in self.xaxis:
+                    xaxis['side'] = 'top'
+                else:
+                    xaxis['side'] = 'bottom'
         else:
             xaxis = {}
 
         if ydim:
+            try:
+                if any(np.isnan([b, t])):
+                    b, t = 0, 1
+            except TypeError:
+                # b and t not numeric, don't change anything
+                pass
+
             yrange = [t, b] if self.invert_yaxis else [b, t]
             yaxis = dict(range=yrange, title=ylabel)
             if self.logy:
                 yaxis['type'] = 'log'
             self._get_ticks(yaxis, self.yticks)
+
+            if self.projection != '3d' and self.yaxis:
+                yaxis['automargin'] = False
+
+                # Create dimension string used to compute matching axes
+                if isinstance(ydim, (list, tuple)):
+                    dim_str = "-".join(["%s^%s^%s" % (d.name, d.label, d.unit)
+                                        for d in ydim])
+                else:
+                    dim_str = "%s^%s^%s" % (ydim.name, ydim.label, ydim.unit)
+
+                yaxis['_dim'] = dim_str,
+                if 'bare' in self.yaxis:
+                    yaxis['ticks'] = ''
+                    yaxis['showticklabels'] = False
+                    yaxis['title'] = ''
+
+                if 'right' in self.yaxis:
+                    yaxis['side'] = 'right'
+                else:
+                    yaxis['side'] = 'left'
+
         else:
             yaxis = {}
 

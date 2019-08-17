@@ -15,14 +15,17 @@ from .plot import *                  # noqa (API import)
 from .stats import *                 # noqa (API import)
 from .tabular import *               # noqa (API import)
 from .callbacks import *             # noqa (API import)
+from .shapes import *                # noqa (API import)
+from .images import *                # noqa (API import)
+
 from ...core.util import LooseVersion, VersionError
 import plotly
 
-if LooseVersion(plotly.__version__) < '3.4.0':
+if LooseVersion(plotly.__version__) < '4.0.0':
     raise VersionError(
-        "The plotly extension requires a plotly version >=3.4.0, "
+        "The plotly extension requires a plotly version >=4.0.0, "
         "please upgrade from plotly %s to a more recent version."
-        % plotly.__version__, plotly.__version__, '3.4.0')
+        % plotly.__version__, plotly.__version__, '4.0.0')
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 
@@ -40,6 +43,7 @@ Store.register({Points: ScatterPlot,
                 Bivariate: BivariatePlot,
                 Distribution: DistributionPlot,
                 Bars: BarPlot,
+                Histogram: HistogramPlot,
                 BoxWhisker: BoxWhiskerPlot,
                 Violin: ViolinPlot,
 
@@ -48,6 +52,7 @@ Store.register({Points: ScatterPlot,
                 Image: RasterPlot,
                 HeatMap: HeatMapPlot,
                 QuadMesh: QuadMeshPlot,
+                RGB: RGBPlot,
 
                 # 3D Plot
                 Scatter3D: Scatter3DPlot,
@@ -62,6 +67,13 @@ Store.register({Points: ScatterPlot,
 
                 # Annotations
                 Labels: LabelPlot,
+
+                # Shapes
+                Box: PathShapePlot,
+                Bounds: PathShapePlot,
+                Ellipse: PathShapePlot,
+                HLine: HLinePlot,
+                VLine: VLinePlot,
 
                 # Container Plots
                 Overlay: OverlayPlot,
@@ -88,9 +100,14 @@ options.Points = Options('style', color=Cycle())
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
 options.TriSurface = Options('style', cmap='viridis')
+options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)
 options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdBu_r')
+
+# 3D
+options.Scatter3D = Options('style', color=Cycle(), size=6)
+

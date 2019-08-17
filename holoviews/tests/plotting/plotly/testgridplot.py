@@ -22,15 +22,25 @@ class TestGridPlot(TestPlotlyPlot):
 
         state = self._get_plot_state(layout)
 
+        # Compute expected x domain break
+        start_fig_width = 400
+        grid_fig_width = 400 * 1.1
+        x_domain_break1 = start_fig_width / (start_fig_width + grid_fig_width)
+
+        # Compute expect y domain break for left scatter plot
+        start_fig_height = 400
+        grid_fig_height = start_fig_height * 1.1
+        y_domain_break1 = start_fig_height / grid_fig_height
+
         # Check the scatter plot on the left
         self.assertEqual(state['data'][0]['y'], np.array([-10, 0]))
         self.assertEqual(state['data'][0]['mode'], 'markers')
         self.assertEqual(state['data'][0]['xaxis'], 'x')
         self.assertEqual(state['data'][0]['yaxis'], 'y')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 1])
-        self.assertEqual(state['layout']['xaxis']['domain'], [0, 0.5])
+        self.assertEqual(state['layout']['xaxis']['domain'], [0, x_domain_break1])
         self.assertEqual(state['layout']['yaxis']['range'], [-10, 0])
-        self.assertEqual(state['layout']['yaxis']['domain'], [0, 1])
+        self.assertEqual(state['layout']['yaxis']['domain'], [0, y_domain_break1])
 
         # Check the grid plot on the right
 
@@ -59,8 +69,11 @@ class TestGridPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][4]['yaxis'], 'y3')
 
         # Axes
-        self.assertEqual(state['layout']['xaxis2']['domain'], [0.5, 0.75])
-        self.assertEqual(state['layout']['xaxis3']['domain'], [0.75, 1.0])
+        x_dimain_break2 = x_domain_break1 + (1 - x_domain_break1) / 2
+        self.assertEqual(state['layout']['xaxis2']['domain'],
+                         [x_domain_break1, x_dimain_break2])
+        self.assertEqual(state['layout']['xaxis3']['domain'],
+                         [x_dimain_break2, 1.0])
         self.assertEqual(state['layout']['yaxis2']['domain'], [0, 0.5])
         self.assertEqual(state['layout']['yaxis3']['domain'], [0.5, 1.0])
 

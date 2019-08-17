@@ -106,9 +106,9 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
 
         return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
 
-    def init_graph(self, data, options, index=0):
+    def init_graph(self, datum, options, index=0):
         trisurf_kwargs = super(TriSurfacePlot, self).init_graph(
-            data, options, index)[0]
+            datum, options, index)[0]
 
         # Pop colorbar options since these aren't accepted by the trisurf
         # figure factory.
@@ -124,4 +124,4 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
             if marker_traces:
                 marker_traces[0].marker.colorbar = colorbar
 
-        return [t.to_plotly_json() for t in trisurface_traces]
+        return {'traces': [t.to_plotly_json() for t in trisurface_traces]}

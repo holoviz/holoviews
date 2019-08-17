@@ -22,8 +22,8 @@ class TestScatterPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['mode'], 'markers')
         self.assertEqual(state['layout']['xaxis']['range'], [1, 3])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
-        self.assertEqual(state['layout']['xaxis']['title'], 'y')
-        self.assertEqual(state['layout']['yaxis']['title'], 'x')
+        self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+        self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
 
     def test_scatter_color_mapped(self):
         scatter = Scatter([3, 2, 1]).options(color='x')
@@ -52,3 +52,10 @@ class TestScatterPlot(TestPlotlyPlot):
         state = self._get_plot_state(scatter)
         self.assertEqual(state['data'][0]['marker']['symbol'],
                          np.array(['square', 'circle', 'triangle-up']))
+
+    def test_scatter_selectedpoints(self):
+        scatter = Scatter([
+            (0, 1,), (1, 2), (2, 3)
+        ]).options(selectedpoints=[1, 2])
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['data'][0]['selectedpoints'], [1, 2])
