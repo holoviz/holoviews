@@ -1871,10 +1871,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive']
 
-    def __init__(self, overlay, **params):
-        super(OverlayPlot, self).__init__(overlay, **params)
-        self.set_root(params.pop('root', None))
-
     def _process_legend(self):
         plot = self.handles['plot']
         subplots = self.traverse(lambda x: x, [lambda x: x is not self])

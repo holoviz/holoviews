@@ -18,7 +18,7 @@ class TestElementPlot(TestPlotlyPlot):
         stream = PointerX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = plotly_renderer.get_plot(dmap)
-        plotly_renderer(plot)
+        plotly_renderer(dmap)
         for i in range(20):
             stream.event(x=i)
         state = plot.state
