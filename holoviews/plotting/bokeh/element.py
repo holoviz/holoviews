@@ -13,8 +13,7 @@ from bokeh.document.events import ModelChangedEvent
 from bokeh.models import Renderer, Title, Legend, ColorBar, tools
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, PrintfTickFormatter,
-    MercatorTickFormatter)
+    FuncTickFormatter, TickFormatter, MercatorTickFormatter)
 from bokeh.models.mappers import (
     LinearColorMapper, LogColorMapper, CategoricalColorMapper)
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
@@ -40,7 +39,7 @@ from .util import (
     TOOL_TYPES, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties)
+    compute_layout_properties, wrap_formatter)
 
 
 
@@ -631,18 +630,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
-            if isinstance(formatter, TickFormatter):
-                pass
-            elif isinstance(formatter, FunctionType):
-                msg = ('%sformatter could not be '
-                       'converted to tick formatter. ' % axis)
-                jsfunc = py2js_tickformatter(formatter, msg)
-                if jsfunc:
-                    formatter = FuncTickFormatter(code=jsfunc)
-                else:
-                    formatter = None
-            else:
-                formatter = PrintfTickFormatter(format=formatter)
+            formatter = wrap_formatter(formatter, axis)
             if formatter is not None:
                 axis_props['formatter'] = formatter
         elif FuncTickFormatter is not None and ax_mapping and isinstance(dimension, Dimension):
@@ -1556,6 +1544,10 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
+    cformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the colorbar axis.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -1608,6 +1600,10 @@ class ColorbarPlot(ElementPlot):
 
         if self.clabel:
             self.colorbar_opts.update({'title': self.clabel})
+
+        if self.cformatter is not None:
+            self.colorbar_opts.update({'formatter': wrap_formatter(self.cformatter, 'c')})
+
         opts = dict(cbar_opts['opts'], color_mapper=color_mapper, ticker=ticker,
                     **self._colorbar_defaults)
         color_bar = ColorBar(**dict(opts, **self.colorbar_opts))
