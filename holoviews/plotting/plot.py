@@ -345,8 +345,8 @@ class DimensionedPlot(Plot):
        together using the 'labels' key.""")
 
     #Allowed fontsize keys
-    _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'labels',
-                      'xticks', 'yticks', 'zticks', 'ticks',
+    _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'clabel', 'labels',
+                      'xticks', 'yticks', 'zticks', 'cticks', 'ticks',
                       'minor_xticks', 'minor_yticks', 'minor_ticks',
                       'title', 'legend', 'legend_title',
                       ]
@@ -484,9 +484,9 @@ class DimensionedPlot(Plot):
 
         if key in self.fontsize:
             return {label:self.fontsize[key]}
-        elif key in ['zlabel', 'ylabel', 'xlabel'] and 'labels' in self.fontsize:
+        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel'] and 'labels' in self.fontsize:
             return {label:self.fontsize['labels']}
-        elif key in ['xticks', 'yticks', 'zticks'] and 'ticks' in self.fontsize:
+        elif key in ['xticks', 'yticks', 'zticks', 'cticks'] and 'ticks' in self.fontsize:
             return {label:self.fontsize['ticks']}
         elif key in ['minor_xticks', 'minor_yticks'] and 'minor_ticks' in self.fontsize:
             return {label:self.fontsize['minor_ticks']}
