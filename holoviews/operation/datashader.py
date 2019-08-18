@@ -111,10 +111,12 @@ class ResamplingOperation(LinkableOperation):
         inst._precomputed = {}
         return inst
 
-    def _get_sampling(self, element, x, y, ndim=2):
+    def _get_sampling(self, element, x, y, ndim=2, default=None):
         target = self.p.target
 
-        default = (-0.5, 0.5) if ndim == 2 else (0, element.range(1)[1] if y else 1)
+        if default is None:
+            default = (-0.5, 0.5)
+
         if target:
             x_range, y_range = target.range(x), target.range(y)
             height, width = target.dimension_values(2, flat=False).shape
@@ -554,9 +556,21 @@ class spikes_aggregate(AggregationOperation):
 
         if element.vdims:
             x, y = element.dimensions()
+            if not self.p.y_range:
+                y0, y1 = element.range(1)
+                values = element.interface.values(element, y, compute=False)
+                if (values>=0).all():
+                    default = (0, y1)
+                elif (values<=0).all():
+                    default = (y0, 0)
+                else:
+                    default = (y0, y1)
+            else:
+                default = None
         else:
             x, y = element.kdims[0], None
-        info = self._get_sampling(element, x, y, ndim=1)
+            default = (0, 1)
+        info = self._get_sampling(element, x, y, ndim=1, default=default)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
