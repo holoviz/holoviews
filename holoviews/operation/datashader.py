@@ -549,14 +549,6 @@ class spikes_aggregate(AggregationOperation):
     """
     Aggregates Spikes element
     """
-
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
-                                     default=ds.count(), doc="""
-        Datashader reduction function used for aggregating the data.
-        The aggregator may also define a column to aggregate; if
-        no column is defined the first value dimension of the element
-        will be used. May also be defined as a string.""")
-
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
 
@@ -582,8 +574,13 @@ class spikes_aggregate(AggregationOperation):
         if xtype == 'datetime':
             df[x.name] = df[x.name].astype('datetime64[us]').astype('int64')
 
-        params = dict(get_param_values(element), kdims=[x, y],
-                      vdims=['z'], datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        if isinstance(agg_fn, (ds.count, ds.any)):
+            vdim = type(agg_fn).__name__
+        else:
+            vdim = element.get_dimension(agg_fn.column)
+
+        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
+                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)

@@ -1,8 +1,10 @@
+import datetime as dt
+
 from unittest import SkipTest
 
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
-                       Graph, TriMesh, QuadMesh, NdOverlay, Contours)
+                       Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes)
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -161,7 +163,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=['Count'])
-        img = aggregate(ndoverlay, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+        img = aggregate(ndoverlay, dynamic=False, x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         self.assertEqual(img, expected)
 
@@ -191,6 +193,36 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         self.assertEqual(img, expected)
 
+    def test_spikes_aggregate_count(self):
+        spikes = Spikes([1, 2, 3])
+        agg = rasterize(spikes, width=5, dynamic=False)
+        expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
+                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 1))
+        self.assertEqual(agg, expected)
+
+    def test_spikes_aggregate_dt_count(self):
+        spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)])
+        agg = rasterize(spikes, width=5, dynamic=False)
+        bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
+                  np.datetime64('2016-01-03T00:00:00.000000'), 1)
+        expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
+        self.assertEqual(agg, expected)
+
+    def test_spikes_aggregate_with_height_count(self):
+        spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
+        agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
+        xs = [1.2, 1.6, 2.0, 2.4, 2.8]
+        ys = [0.1, 0.3, 0.5, 0.7, 0.9]
+        arr = np.array([
+            [1, 0, 1, 0, 1],
+            [1, 0, 1, 0, 1],
+            [0, 0, 1, 0, 1],
+            [0, 0, 1, 0, 0],
+            [0, 0, 1, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+        
 
 class DatashaderShadeTests(ComparisonTestCase):
 
