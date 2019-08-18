@@ -25,7 +25,7 @@ from ..core.data import PandasInterface, XArrayInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values)
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours)
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours, Spikes)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -111,15 +111,17 @@ class ResamplingOperation(LinkableOperation):
         inst._precomputed = {}
         return inst
 
-    def _get_sampling(self, element, x, y):
+    def _get_sampling(self, element, x, y, ndim=2):
         target = self.p.target
+
+        default = (-0.5, 0.5) if ndim == 2 else (0, element.range(1)[1] if y else 1)
         if target:
             x_range, y_range = target.range(x), target.range(y)
             height, width = target.dimension_values(2, flat=False).shape
         else:
-            if x is None or y is None:
+            if x is None or (y is None and ndim == 2):
                 x_range = self.p.x_range or (-0.5, 0.5)
-                y_range = self.p.y_range or (-0.5, 0.5)
+                y_range = self.p.y_range or default
             else:
                 if self.p.expand or not self.p.x_range:
                     x_range = self.p.x_range or element.range(x)
@@ -130,10 +132,10 @@ class ResamplingOperation(LinkableOperation):
                                np.max([np.min([x1, ex1]), ex0]))
 
                 if self.p.expand or not self.p.y_range:
-                    y_range = self.p.y_range or element.range(y)
+                    y_range = self.p.y_range or (element.range(y) if ndim == 2 else default)
                 else:
                     y0, y1 = self.p.y_range
-                    ey0, ey1 = element.range(y)
+                    ey0, ey1 = element.range(y) if ndim == 2 else default
                     y_range = (np.min([np.max([y0, ey0]), ey1]),
                                np.max([np.min([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
@@ -468,8 +470,15 @@ class overlay_aggregate(aggregate):
                              'reduction.')
 
         # Compute overall bounds
-        x, y = element.last.dimensions()[0:2]
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
+        dims = element.last.dimensions()[0:2]
+        ndims = len(dims)
+        if len(dims) == 1:
+            x, y = dims[0], None
+        else:
+            dims = x, y
+
+        info = self._get_sampling(element, x, y, ndims)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
         agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
                            if k in aggregate.param},
@@ -479,7 +488,7 @@ class overlay_aggregate(aggregate):
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
             agg_params.update(dict(dynamic=False, aggregator=ds.count()))
-            agg_fn1 = aggregate.instance(**agg_params)
+            agg_fn1 = rasterize.instance(**agg_params)
             if element.ndims == 1:
                 grouped = element
             else:
@@ -495,10 +504,10 @@ class overlay_aggregate(aggregate):
         # into two aggregates
         column = agg_fn.column or 'Count'
         if isinstance(agg_fn, ds.mean):
-            agg_fn1 = aggregate.instance(**dict(agg_params, aggregator=ds.sum(column)))
-            agg_fn2 = aggregate.instance(**dict(agg_params, aggregator=ds.count()))
+            agg_fn1 = rasterize.instance(**dict(agg_params, aggregator=ds.sum(column)))
+            agg_fn2 = rasterize.instance(**dict(agg_params, aggregator=ds.count()))
         else:
-            agg_fn1 = aggregate.instance(**agg_params)
+            agg_fn1 = rasterize.instance(**agg_params)
             agg_fn2 = None
         is_sum = isinstance(agg_fn1.aggregator, ds.sum)
 
@@ -534,6 +543,62 @@ class overlay_aggregate(aggregate):
             agg.data[column].values[mask] = np.NaN
 
         return agg.clone(bounds=bbox)
+
+
+
+class spikes_aggregate(AggregationOperation):
+    """
+    Aggregates Spikes element
+    """
+
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+                                     default=ds.count(), doc="""
+        Datashader reduction function used for aggregating the data.
+        The aggregator may also define a column to aggregate; if
+        no column is defined the first value dimension of the element
+        will be used. May also be defined as a string.""")
+
+    def _process(self, element, key=None):
+        agg_fn = self._get_aggregator(element)
+
+        if element.vdims:
+            x, y = element.dimensions()
+        else:
+            x, y = element.kdims[0], None
+        info = self._get_sampling(element, x, y, ndim=1)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
+
+        if y is None:
+            df = element.dframe([x])
+            y = 'y'
+            df['y0'] = y_range[0]
+            df['y1'] = y_range[1]
+            yagg = ['y0', 'y1']
+            height = 1
+        else:
+            df = element.dframe([x, y])
+            df['y0'] = np.array(0, df.dtypes[y.name])
+            yagg = ['y0', y.name]
+        if xtype == 'datetime':
+            df[x.name] = df[x.name].astype('datetime64[us]').astype('int64')
+
+        params = dict(get_param_values(element), kdims=[x, y],
+                      vdims=['z'], datatype=['xarray'], bounds=(x0, y0, x1, y1))
+
+        if width == 0 or height == 0:
+            return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1)
+        if xtype == "datetime":
+            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+
+        # Replacing x and y coordinates to avoid numerical precision issues
+        eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
+        return self.p.element_type(eldata, **params)
 
 
 
@@ -860,6 +925,7 @@ class rasterize(AggregationOperation):
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image)),
                     aggregate),
+                   (Spikes, spikes_aggregate),
                    (Contours, contours_rasterize),
                    (lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image))),
