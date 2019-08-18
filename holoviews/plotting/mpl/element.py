@@ -695,13 +695,13 @@ class ColorbarPlot(ElementPlot):
     cbar_width = param.Number(default=0.05, doc="""
         Width of the colorbar as a fraction of the main plot""")
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
-    extend = param.ObjectSelector(
+    cbar_extend = param.ObjectSelector(
         objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
+
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
 
     _colorbars = {}
 
@@ -777,7 +777,7 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self.extend)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self.cbar_extend)
             self._set_axis_formatter(cbar.ax.yaxis, dimension, self.cformatter)
             self._adjust_cbar(cbar, label, dimension)
             self.handles['cax'] = cax
@@ -894,15 +894,15 @@ class ColorbarPlot(ElementPlot):
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
         vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
-        if self.extend is None:
+        if self.cbar_extend is None:
             if el_min < vmin and el_max > vmax:
-                self.extend = 'both'
+                self.cbar_extend = 'both'
             elif el_min < vmin:
-                self.extend = 'min'
+                self.cbar_extend = 'min'
             elif el_max > vmax:
-                self.extend = 'max'
+                self.cbar_extend = 'max'
             else:
-                self.extend = 'neither'
+                self.cbar_extend = 'neither'
 
         # Define special out-of-range colors on colormap
         colors = {}
