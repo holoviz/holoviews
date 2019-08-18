@@ -1604,14 +1604,14 @@ class ColorbarPlot(ElementPlot):
         if self.cformatter is not None:
             self.colorbar_opts.update({'formatter': wrap_formatter(self.cformatter, 'c')})
 
-        for tick in ['cticks', 'ticks']:
-            ticksize = self._fontsize(tick, common=False).get('fontsize')
+        for tk in ['cticks', 'ticks']:
+            ticksize = self._fontsize(tk, common=False).get('fontsize')
             if ticksize is not None:
                 self.colorbar_opts.update({'major_label_text_font_size': ticksize})
                 break
 
-        for label in ['clabel', 'labels']:
-            labelsize = self._fontsize(label, common=False).get('fontsize')
+        for lb in ['clabel', 'labels']:
+            labelsize = self._fontsize(lb, common=False).get('fontsize')
             if labelsize is not None:
                 self.colorbar_opts.update({'title_text_font_size': labelsize})
                 break
