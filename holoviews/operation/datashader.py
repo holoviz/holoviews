@@ -462,7 +462,6 @@ class overlay_aggregate(aggregate):
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
-        category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
         if not self.applies(element, agg_fn):
             raise ValueError('overlay_aggregate only handles aggregation '
@@ -472,10 +471,10 @@ class overlay_aggregate(aggregate):
         # Compute overall bounds
         dims = element.last.dimensions()[0:2]
         ndims = len(dims)
-        if len(dims) == 1:
+        if ndims == 1:
             x, y = dims[0], None
         else:
-            dims = x, y
+            x, y = dims
 
         info = self._get_sampling(element, x, y, ndims)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
@@ -488,7 +487,7 @@ class overlay_aggregate(aggregate):
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
             agg_params.update(dict(dynamic=False, aggregator=ds.count()))
-            agg_fn1 = rasterize.instance(**agg_params)
+            agg_fn1 = aggregate.instance(**agg_params)
             if element.ndims == 1:
                 grouped = element
             else:
@@ -504,10 +503,10 @@ class overlay_aggregate(aggregate):
         # into two aggregates
         column = agg_fn.column or 'Count'
         if isinstance(agg_fn, ds.mean):
-            agg_fn1 = rasterize.instance(**dict(agg_params, aggregator=ds.sum(column)))
-            agg_fn2 = rasterize.instance(**dict(agg_params, aggregator=ds.count()))
+            agg_fn1 = aggregate.instance(**dict(agg_params, aggregator=ds.sum(column)))
+            agg_fn2 = aggregate.instance(**dict(agg_params, aggregator=ds.count()))
         else:
-            agg_fn1 = rasterize.instance(**agg_params)
+            agg_fn1 = aggregate.instance(**agg_params)
             agg_fn2 = None
         is_sum = isinstance(agg_fn1.aggregator, ds.sum)
 
