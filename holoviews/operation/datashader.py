@@ -25,7 +25,8 @@ from ..core.data import PandasInterface, XArrayInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values)
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours, Spikes)
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
+                       QuadMesh, Contours, Spikes, Area, Spread)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -114,32 +115,29 @@ class ResamplingOperation(LinkableOperation):
     def _get_sampling(self, element, x, y, ndim=2, default=None):
         target = self.p.target
 
-        if default is None:
-            default = (-0.5, 0.5)
-
         if target:
             x_range, y_range = target.range(x), target.range(y)
             height, width = target.dimension_values(2, flat=False).shape
         else:
-            if x is None or (y is None and ndim == 2):
+            if x is None:
                 x_range = self.p.x_range or (-0.5, 0.5)
-                y_range = self.p.y_range or default
+            elif self.p.expand or not self.p.x_range:
+                x_range = self.p.x_range or element.range(x)
             else:
-                if self.p.expand or not self.p.x_range:
-                    x_range = self.p.x_range or element.range(x)
-                else:
-                    x0, x1 = self.p.x_range
-                    ex0, ex1 = element.range(x)
-                    x_range = (np.min([np.max([x0, ex0]), ex1]),
-                               np.max([np.min([x1, ex1]), ex0]))
+                x0, x1 = self.p.x_range
+                ex0, ex1 = element.range(x)
+                x_range = (np.min([np.max([x0, ex0]), ex1]),
+                           np.max([np.min([x1, ex1]), ex0]))
 
-                if self.p.expand or not self.p.y_range:
-                    y_range = self.p.y_range or (element.range(y) if ndim == 2 else default)
-                else:
-                    y0, y1 = self.p.y_range
-                    ey0, ey1 = element.range(y) if ndim == 2 else default
-                    y_range = (np.min([np.max([y0, ey0]), ey1]),
-                               np.max([np.min([y1, ey1]), ey0]))
+            if (y is None and ndim == 2):
+                y_range = self.p.y_range or default or (-0.5, 0.5)
+            elif self.p.expand or not self.p.y_range:
+                y_range = self.p.y_range or (element.range(y) if default is None else default)
+            else:
+                y0, y1 = self.p.y_range
+                ey0, ey1 = element.range(y) if default is None else default
+                y_range = (np.min([np.max([y0, ey0]), ey1]),
+                           np.max([np.min([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
@@ -547,6 +545,72 @@ class overlay_aggregate(aggregate):
 
 
 
+class area_aggregate(AggregationOperation):
+    """
+    Aggregates Area elements
+    """
+
+    def _process(self, element, key=None):
+        x, y = element.dimensions()[:2]
+        agg_fn = self._get_aggregator(element)
+
+        default = None
+        if not self.p.y_range:
+            y0, y1 = element.range(1)
+            if len(element.vdims) > 1:
+                y0, _ = element.range(2)
+            elif y0 >= 0:
+                y0 = 0
+            elif y1 <= 0:
+                y1 = 0
+            default = (y0, y1)
+
+        ystack = element.vdims[1].name if len(element.vdims) > 1 else None
+        info = self._get_sampling(element, x, y, ndim=2, default=default)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
+
+        df = PandasInterface.as_dframe(element)
+
+        if isinstance(agg_fn, (ds.count, ds.any)):
+            vdim = type(agg_fn).__name__
+        else:
+            vdim = element.get_dimension(agg_fn.column)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
+                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+
+        agg = cvs.area(df, x.name, y.name, agg_fn, axis=0, y_stack=ystack)
+        if xtype == "datetime":
+            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+
+        return self.p.element_type(agg, **params)
+
+
+
+class spread_aggregate(area_aggregate):
+    """
+    Aggregates Spread elements
+    """
+
+    def _process(self, element, key=None):
+        x, y = element.dimensions()[:2]
+        df = PandasInterface.as_dframe(element)
+        if df is element.data:
+            df = df.copy()
+
+        pos, neg = element.vdims[1:3] if len(element.vdims) > 2 else element.vdims[1:2]*2
+        yvals = df[y.name]
+        df[y.name] = yvals+df[pos.name]
+        df['_lower'] = yvals-df[neg.name]
+        area = element.clone(df, vdims=[y, '_lower']+element.vdims[3:], new_type=Area)
+        return super(spread_aggregate, self)._process(area, key=None)
+
+
+
 class spikes_aggregate(AggregationOperation):
     """
     Aggregates Spikes element
@@ -558,10 +622,9 @@ class spikes_aggregate(AggregationOperation):
             x, y = element.dimensions()
             if not self.p.y_range:
                 y0, y1 = element.range(1)
-                values = element.interface.values(element, y, compute=False)
-                if (values>=0).all():
+                if y0 >= 0:
                     default = (0, y1)
-                elif (values<=0).all():
+                elif y1 <= 0:
                     default = (y0, 0)
                 else:
                     default = (y0, y1)
@@ -606,9 +669,7 @@ class spikes_aggregate(AggregationOperation):
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
 
-        # Replacing x and y coordinates to avoid numerical precision issues
-        eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
-        return self.p.element_type(eldata, **params)
+        return self.p.element_type(agg, **params)
 
 
 
@@ -936,6 +997,8 @@ class rasterize(AggregationOperation):
                                and not issubclass(x.type, Image)),
                     aggregate),
                    (Spikes, spikes_aggregate),
+                   (Area, area_aggregate),
+                   (Spread, spread_aggregate),
                    (Contours, contours_rasterize),
                    (lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image))),
