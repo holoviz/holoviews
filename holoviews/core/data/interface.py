@@ -63,7 +63,7 @@ class iloc(object):
         rows, cols = index
         if rows is Ellipsis:
             rows = slice(None)
-        data = self.dataset.interface.iloc(self.dataset, (rows, cols))
+        data = self.dataset.interface.iloc(self.dataset.dataset, (rows, cols))
         kdims = self.dataset.kdims
         vdims = self.dataset.vdims
         if np.isscalar(data):

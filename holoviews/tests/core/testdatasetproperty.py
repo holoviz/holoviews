@@ -107,3 +107,24 @@ class ReindexTestCase(DatasetPropertyTestCase):
         curve_ba = curve_ab.reindex(kdims='b', vdims='a')
         self.assertEqual(curve_ab.dataset, self.ds)
         self.assertEqual(curve_ba.dataset, self.ds)
+
+
+class IlocTestCase(DatasetPropertyTestCase):
+    def test_iloc_dataset(self):
+        expected = self.ds.iloc[[0, 2]]
+
+        # Dataset
+        self.assertEqual(
+            self.ds.clone().iloc[[0, 2]].dataset,
+            expected
+        )
+
+    def test_iloc_curve(self):
+        expected = self.ds.iloc[[0, 2]]
+
+        # Curve
+        curve = self.ds.to.curve('a', 'b', groupby=[])
+        self.assertEqual(
+            curve.iloc[[0, 2]].dataset,
+            expected
+        )
