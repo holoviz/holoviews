@@ -1,6 +1,6 @@
 from holoviews.element.comparison import ComparisonTestCase
 import pandas as pd
-from holoviews import Dataset, Curve, Dimension, Scatter, Histogram
+from holoviews import Dataset, Curve, Dimension, Scatter
 import dask.dataframe as dd
 
 class DatasetPropertyTestCase(ComparisonTestCase):

@@ -486,7 +486,7 @@ class LabelledData(param.Parameterized):
         This class also has an id instance attribute, which
         may be set to associate some custom options with the object.
         """
-        from . import Dataset
+        from . import Dataset, DataError
         self.data = data
 
         # Handle initializing the dataset property.
@@ -499,7 +499,12 @@ class LabelledData(param.Parameterized):
             self._dataset = input_dataset.clone(data=self.data)
         else:
             # Create a default Dataset to wrap input data
-            self._dataset = Dataset(self.data)
+            try:
+                self._dataset = Dataset(self.data)
+            except DataError:
+                # Data not supported by any storage backend. leave _dataset as
+                # None
+                self._dataset = None
 
         self._id = None
         self.id = id

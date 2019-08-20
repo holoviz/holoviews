@@ -222,7 +222,7 @@ class Histogram(Chart):
             selection_specs=selection_specs, **selection
         )
 
-        if not np.isscalar(selected) and not np.equal(selected.data, self.data):
+        if not np.isscalar(selected) and not np.array_equal(selected.data, self.data):
             # Selection changed histogram bins, so update dataset
             selection = {
                 dim: sel for dim, sel in selection.items()
