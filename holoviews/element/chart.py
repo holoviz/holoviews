@@ -192,6 +192,31 @@ class Histogram(Chart):
             # the element.
             self._dataset = dataset.clone()
 
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        if 'dataset' in overrides:
+            dataset = overrides.pop('dataset', None)
+        else:
+            dataset = self.dataset
+
+        overrides["dataset"] = None
+
+        new_element = super(Histogram, self).clone(
+            data=data,
+            shared_data=shared_data,
+            new_type=new_type,
+            *args,
+            **overrides
+        )
+
+        if dataset:
+            # Histogram is a special case in which we keep the data from the
+            # input dataset rather than replace it with the element data.
+            # This is so that dataset contains the data needed to reconstruct
+            # the element.
+            new_element._dataset = dataset.clone()
+
+        return new_element
+
     def __setstate__(self, state):
         """
         Ensures old-style Histogram types without an interface can be unpickled.

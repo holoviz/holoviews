@@ -154,3 +154,6 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
     def test_construction(self):
         self.assertEqual(self.hist.dataset, self.ds)
+
+    def test_clone(self):
+        self.assertEqual(self.hist.clone().dataset, self.ds)
