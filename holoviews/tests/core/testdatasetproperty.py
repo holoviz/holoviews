@@ -128,3 +128,20 @@ class IlocTestCase(DatasetPropertyTestCase):
             curve.iloc[[0, 2]].dataset,
             expected
         )
+
+
+class SelectTestCase(DatasetPropertyTestCase):
+    def test_select_dataset(self):
+        # Dataset
+        self.assertEqual(
+            self.ds.select(b=10).dataset,
+            self.ds.select(b=10)
+        )
+
+    def test_select_curve(self):
+        # Curve
+        self.assertEqual(
+            self.ds.to.curve('a', 'b', groupby=[]).select(b=10).dataset,
+            self.ds.select(b=10)
+        )
+
