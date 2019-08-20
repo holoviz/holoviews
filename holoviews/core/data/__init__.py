@@ -854,8 +854,18 @@ class Dataset(Element):
         if 'datatype' not in overrides:
             datatypes = [self.interface.datatype] + self.datatype
             overrides['datatype'] = list(util.unique_iterator(datatypes))
-        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
+        if 'dataset' in overrides:
+            dataset = overrides.pop('dataset')
+        else:
+            dataset = self.dataset
+
+        new_dataset = super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
+
+        if dataset:
+            new_dataset._dataset = dataset.clone(data=new_dataset.data, dataset=None)
+
+        return new_dataset
 
     @property
     def iloc(self):

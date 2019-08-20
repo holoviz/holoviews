@@ -40,3 +40,39 @@ class ToTestCase(DatasetPropertyTestCase):
 
         scatter = curve.to(Scatter)
         self.assertEqual(scatter.dataset, self.ds)
+
+
+class CloneTestCase(DatasetPropertyTestCase):
+    def test_clone(self):
+        # Dataset
+        self.assertEqual(self.ds.clone().dataset, self.ds)
+
+        # Curve
+        self.assertEqual(
+            self.ds.to.curve('a', 'b', groupby=[]).clone().dataset,
+            self.ds
+        )
+
+
+class ReindexTestCase(DatasetPropertyTestCase):
+    def test_reindex_dataset(self):
+        ds_ab = self.ds.reindex(kdims=['a'], vdims=['b'])
+        self.assertEqual(ds_ab.dataset, self.ds)
+
+    def test_double_reindex_dataset(self):
+        ds_abc = self.ds.reindex(kdims=['a'], vdims=['b', 'c'])
+        ds_ab = ds_abc.reindex(kdims=['a'], vdims=['b'])
+        self.assertEqual(ds_ab.dataset, self.ds)
+
+    def test_reindex_curve(self):
+        curve_ab = self.ds.to(Curve, 'a', 'b', groupby=[])
+        curve_ba = curve_ab.reindex(kdims='b', vdims='a')
+        self.assertEqual(curve_ab.dataset, self.ds)
+        self.assertEqual(curve_ba.dataset, self.ds)
+
+    def test_double_reindex_curve(self):
+        curve_abc = self.ds.to(Curve, 'a', ['b', 'c'], groupby=[])
+        curve_ab = curve_abc.reindex(kdims='a', vdims='b')
+        curve_ba = curve_ab.reindex(kdims='b', vdims='a')
+        self.assertEqual(curve_ab.dataset, self.ds)
+        self.assertEqual(curve_ba.dataset, self.ds)
