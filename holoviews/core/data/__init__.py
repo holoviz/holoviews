@@ -153,6 +153,8 @@ class DataConversion(object):
             params['group'] = selected.group
         params.update(kwargs)
         if len(kdims) == selected.ndims or not groupby:
+            # Propagate dataset
+            params['dataset'] = self._element.dataset
             element = new_type(selected, **params)
             return element.sort() if sort else element
         group = selected.groupby(groupby, container_type=HoloMap,

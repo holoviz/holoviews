@@ -31,3 +31,12 @@ class ConstructorTestCase(DatasetPropertyTestCase):
 
         element = Curve(self.df)
         self.assertEqual(element.dataset, expected)
+
+
+class ToTestCase(DatasetPropertyTestCase):
+    def test_to_element(self):
+        curve = self.ds.to(Curve, 'a', 'b', groupby=[])
+        self.assertEqual(curve.dataset, self.ds)
+
+        scatter = curve.to(Scatter)
+        self.assertEqual(scatter.dataset, self.ds)
