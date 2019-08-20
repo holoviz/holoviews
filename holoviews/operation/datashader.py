@@ -547,7 +547,9 @@ class overlay_aggregate(aggregate):
 
 class area_aggregate(AggregationOperation):
     """
-    Aggregates Area elements
+    Aggregates Area elements by filling the area between zero and
+    the y-values if only one value dimension is defined and the area
+    between the curves if two are provided.
     """
 
     def _process(self, element, key=None):
@@ -583,6 +585,9 @@ class area_aggregate(AggregationOperation):
         params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
                       datatype=['xarray'], bounds=(x0, y0, x1, y1))
 
+        if width == 0 or height == 0:
+            return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
+
         agg = cvs.area(df, x.name, y.name, agg_fn, axis=0, y_stack=ystack)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
@@ -593,7 +598,8 @@ class area_aggregate(AggregationOperation):
 
 class spread_aggregate(area_aggregate):
     """
-    Aggregates Spread elements
+    Aggregates Spread elements by filling the area between the lower
+    and upper error band.
     """
 
     def _process(self, element, key=None):
@@ -613,7 +619,9 @@ class spread_aggregate(area_aggregate):
 
 class spikes_aggregate(AggregationOperation):
     """
-    Aggregates Spikes element
+    Aggregates Spikes elements by drawing individual line segments
+    over the entire y_range if no value dimension is defined and 
+    between zero and the y-value if one is defined.
     """
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)

@@ -4,7 +4,8 @@ from unittest import SkipTest
 
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
-                       Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes)
+                       Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
+                       Spread, Area)
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -284,7 +285,78 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
-        
+    def test_area_aggregate_simple_count(self):
+        area = Area([1, 2, 1])
+        agg = rasterize(area, width=4, height=4, y_range=(0, 3), dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.375, 1.125, 1.875, 2.625]
+        arr = np.array([
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [0, 1, 1, 0],
+            [0, 0, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_area_aggregate_negative_count(self):
+        area = Area([-1, -2, -3])
+        agg = rasterize(area, width=4, height=4, y_range=(-3, 0), dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [-2.625, -1.875, -1.125, -0.375]
+        arr = np.array([
+            [0, 0, 0, 1],
+            [0, 1, 1, 1],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_area_aggregate_crossover_count(self):
+        area = Area([-1, 2, 3])
+        agg = rasterize(area, width=4, height=4, y_range=(-3, 3), dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [-2.25, -0.75, 0.75, 2.25]
+        arr = np.array([
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+            [1, 1, 1, 1],
+            [0, 0, 1, 1]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_spread_aggregate_symmetric_count(self):
+        spread = Spread([(0, 1, 0.8), (1, 2, 0.3), (2, 3, 0.8)])
+        agg = rasterize(spread, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.65, 1.55, 2.45, 3.35]
+        arr = np.array([
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 0, 1]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_spread_aggregate_assymmetric_count(self):
+        spread = Spread([(0, 1, 0.4, 0.8), (1, 2, 0.8, 0.4), (2, 3, 0.5, 1)],
+                        vdims=['y', 'pos', 'neg'])
+        agg = rasterize(spread, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.6125, 1.4375, 2.2625, 3.0875]
+        arr = np.array([
+            [0, 0, 0, 0],
+            [1, 0, 0, 0],
+            [0, 1, 1, 0],
+            [0, 0, 1, 1]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+
 
 class DatashaderShadeTests(ComparisonTestCase):
 
