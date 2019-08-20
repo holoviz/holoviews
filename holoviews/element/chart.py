@@ -217,6 +217,22 @@ class Histogram(Chart):
 
         return new_element
 
+    def select(self, selection_specs=None, **selection):
+        selected = super(Histogram, self).select(
+            selection_specs=selection_specs, **selection
+        )
+
+        if not np.isscalar(selected) and not np.equal(selected.data, self.data):
+            # Selection changed histogram bins, so update dataset
+            selection = {
+                dim: sel for dim, sel in selection.items()
+                if dim in self.dimensions()+['selection_mask']
+            }
+
+            selected._dataset = self.dataset.select(**selection)
+
+        return selected
+
     def __setstate__(self, state):
         """
         Ensures old-style Histogram types without an interface can be unpickled.

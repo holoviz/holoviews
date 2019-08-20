@@ -157,3 +157,23 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
     def test_clone(self):
         self.assertEqual(self.hist.clone().dataset, self.ds)
+
+    def test_select_single(self):
+        sub_hist = self.hist.select(a=(1, None))
+        self.assertEqual(sub_hist.dataset, self.ds.select(a=(1, None)))
+
+    def test_select_multi(self):
+        # Add second selection on b. b is a dimension in hist.dataset but
+        # not in hist.  Make sure that we only apply the a selection (and not
+        # the b selection) to the .dataset property
+        sub_hist = self.hist.select(a=(1, None), b=100)
+
+        self.assertNotEqual(
+            sub_hist.dataset,
+            self.ds.select(a=(1, None), b=100)
+        )
+
+        self.assertEqual(
+            sub_hist.dataset,
+            self.ds.select(a=(1, None))
+        )
