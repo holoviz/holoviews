@@ -190,6 +190,9 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
+
         group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, sort=False)]

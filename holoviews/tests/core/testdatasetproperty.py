@@ -1,7 +1,7 @@
 from holoviews.element.comparison import ComparisonTestCase
 import pandas as pd
 from holoviews import Dataset, Curve, Dimension, Scatter, Histogram
-
+import dask.dataframe as dd
 
 class DatasetPropertyTestCase(ComparisonTestCase):
 
@@ -40,6 +40,37 @@ class ToTestCase(DatasetPropertyTestCase):
 
         scatter = curve.to(Scatter)
         self.assertEqual(scatter.dataset, self.ds)
+
+    def test_to_holomap(self):
+        curve_hmap = self.ds.to(Curve, 'a', 'b', groupby=['c'])
+
+        # Check HoloMap element datasets
+        for v in self.df.c.drop_duplicates():
+            curve = curve_hmap.data[(v,)]
+            self.assertEqual(
+                curve.dataset, self.ds.select(c=v)
+            )
+
+    def test_to_holomap_dask(self):
+        ddf = dd.from_pandas(self.df, npartitions=2)
+        dds = Dataset(
+            ddf,
+            kdims=[
+                Dimension('a', label="The a Column"),
+                Dimension('b', label="The b Column"),
+                Dimension('c', label="The c Column"),
+                Dimension('d', label="The d Column"),
+            ]
+        )
+
+        curve_hmap = dds.to(Curve, 'a', 'b', groupby=['c'])
+
+        # Check HoloMap element datasets
+        for v in self.df.c.drop_duplicates():
+            curve = curve_hmap.data[(v,)]
+            self.assertEqual(
+                curve.dataset, self.ds.select(c=v)
+            )
 
 
 class CloneTestCase(DatasetPropertyTestCase):

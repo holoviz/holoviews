@@ -164,6 +164,9 @@ class DaskInterface(PandasInterface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
+
         data = []
         group_by = [d.name for d in index_dims]
         groupby = dataset.data.groupby(group_by)
