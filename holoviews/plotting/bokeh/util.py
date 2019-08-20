@@ -433,6 +433,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     p.grid.grid_line_alpha = 0
 
     if axis == 'x':
+        p.align = 'end'
         p.yaxis.visible = False
         axis = p.xaxis[0]
         if flip:
