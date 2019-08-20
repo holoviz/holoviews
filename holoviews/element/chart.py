@@ -181,8 +181,16 @@ class Histogram(Chart):
             data = (edges, data)
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
+
+        dataset = params.pop("dataset", None)
         super(Histogram, self).__init__(data, **params)
 
+        if dataset:
+            # Histogram is a special case in which we keep the data from the
+            # input dataset rather than replace it with the element data.
+            # This is so that dataset contains the data needed to reconstruct
+            # the element.
+            self._dataset = dataset.clone()
 
     def __setstate__(self, state):
         """

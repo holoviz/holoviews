@@ -656,7 +656,7 @@ class histogram(Operation):
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
-                         label=element.label, **params)
+                         label=element.label, dataset=element.dataset, **params)
 
 
 class decimate(Operation):

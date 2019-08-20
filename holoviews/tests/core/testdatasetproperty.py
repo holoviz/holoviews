@@ -145,3 +145,12 @@ class SelectTestCase(DatasetPropertyTestCase):
             self.ds.select(b=10)
         )
 
+
+class HistogramTestCase(DatasetPropertyTestCase):
+
+    def setUp(self):
+        super(HistogramTestCase, self).setUp()
+        self.hist = self.ds.hist('a', adjoin=False, normed=False)
+
+    def test_construction(self):
+        self.assertEqual(self.hist.dataset, self.ds)
