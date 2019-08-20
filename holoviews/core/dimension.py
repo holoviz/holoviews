@@ -486,7 +486,16 @@ class LabelledData(param.Parameterized):
         This class also has an id instance attribute, which
         may be set to associate some custom options with the object.
         """
+        from . import Dataset
         self.data = data
+
+        # Handle initializing the dataset property.
+        if type(self) is Dataset:
+            self._dataset = self
+        else:
+            # Create a default Dataset to wrap input data
+            self._dataset = Dataset(self.data)
+
         self._id = None
         self.id = id
         self._plot_id = plot_id or util.builtins.id(self)
@@ -507,6 +516,10 @@ class LabelledData(param.Parameterized):
         elif not util.label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
+
+    @property
+    def dataset(self):
+        return self._dataset
 
     @property
     def id(self):
