@@ -177,3 +177,7 @@ class HistogramTestCase(DatasetPropertyTestCase):
             sub_hist.dataset,
             self.ds.select(a=(1, None))
         )
+
+    def test_hist_to_curve(self):
+        # No exception thrown
+        self.hist.to.curve()

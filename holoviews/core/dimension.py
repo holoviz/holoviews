@@ -490,21 +490,26 @@ class LabelledData(param.Parameterized):
         self.data = data
 
         # Handle initializing the dataset property.
+        self._dataset = None
         input_dataset = params.pop('dataset', None)
         if type(self) is Dataset:
             self._dataset = self
         elif input_dataset is not None:
             # Clone dimension info from input dataset with reference to new
             # data. This way we keep the metadata for all of the dimensions.
-            self._dataset = input_dataset.clone(data=self.data)
-        else:
+            try:
+                self._dataset = input_dataset.clone(data=self.data)
+            except DataError:
+                # Dataset not compatible with input data
+                pass
+        if self._dataset is None:
             # Create a default Dataset to wrap input data
             try:
                 self._dataset = Dataset(self.data)
             except DataError:
                 # Data not supported by any storage backend. leave _dataset as
                 # None
-                self._dataset = None
+                pass
 
         self._id = None
         self.id = id
