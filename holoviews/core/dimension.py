@@ -505,7 +505,11 @@ class LabelledData(param.Parameterized):
         if self._dataset is None:
             # Create a default Dataset to wrap input data
             try:
-                self._dataset = Dataset(self.data)
+                dataset = Dataset(self.data)
+                if len(dataset.dimensions()) == 0:
+                    # No dimensions could be auto-detected in data
+                    raise DataError("No dimensions detected")
+                self._dataset = dataset
             except DataError:
                 # Data not supported by any storage backend. leave _dataset as
                 # None
