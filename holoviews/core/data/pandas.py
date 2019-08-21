@@ -274,12 +274,21 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
+    def values(
+            cls,
+            dataset,
+            dim,
+            expanded=True,
+            flat=True,
+            compute=True,
+            keep_index=False,
+    ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
         if not expanded:
             return data.unique()
-        return data.values
+
+        return data if keep_index else data.values
 
 
     @classmethod
