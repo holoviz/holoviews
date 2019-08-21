@@ -229,7 +229,8 @@ class Histogram(Chart):
                 if dim in self.dimensions()+['selection_mask']
             }
 
-            selected._dataset = self.dataset.select(**selection)
+            if selected._dataset is not None:
+                selected._dataset = self.dataset.select(**selection)
 
         return selected
 
