@@ -110,11 +110,11 @@ class Path(Geometry):
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
 
-    def select(self, selection_specs=None, **kwargs):
+    def select(self, *args, **kwargs):
         """
         Bypasses selection on data and sets extents based on selection.
         """
-        return super(Element2D, self).select(selection_specs, **kwargs)
+        return super(Element2D, self).select(*args, **kwargs)
 
 
     def split(self, start=None, end=None, datatype=None, **kwargs):

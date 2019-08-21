@@ -335,7 +335,7 @@ class Dataset(Element):
         return self.clone(data, **dimensions)
 
 
-    def select(self, selection_specs=None, **selection):
+    def select(self, selection_specs=None, selection_expr=None, **selection):
         """Applies selection by dimension name
 
         Applies a selection along the dimensions of the object using
@@ -360,11 +360,18 @@ class Dataset(Element):
 
             ds.select(x=[0, 1, 2])
 
+        * predicate expression: A holoviews.dim expression, e.g.:
+
+            from holoviews import dim
+            ds.select(selection_expr=dim('x') % 2 == 0)
+
         Args:
             selection_specs: List of specs to match on
                 A list of types, functions, or type[.group][.label]
                 strings specifying which objects to apply the
                 selection on.
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
             **selection: Dictionary declaring selections by dimension
                 Selections can be scalar values, tuple ranges, lists
                 of discrete values and boolean arrays
@@ -378,10 +385,21 @@ class Dataset(Element):
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-            or not selection):
+                or (not selection and not selection_expr)):
             return self
 
-        data = self.interface.select(self, **selection)
+        # Handle selection dim expression
+        if selection_expr is not None:
+            mask = selection_expr.apply(self, compute=False, keep_index=True)
+            dataset = self[mask]
+        else:
+            dataset = self
+
+        # Handle selection kwargs
+        if selection:
+            data = dataset.interface.select(dataset, **selection)
+        else:
+            data = dataset.data
 
         if np.isscalar(data):
             return data
