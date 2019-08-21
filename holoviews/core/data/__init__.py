@@ -453,7 +453,7 @@ class Dataset(Element):
                object.
         """
         slices = util.process_ellipses(self, slices, vdim_selection=True)
-        if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
+        if getattr(getattr(slices, 'dtype', None), 'kind', None) == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.select(selection_mask=slices))

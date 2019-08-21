@@ -266,8 +266,12 @@ class PandasInterface(Interface):
         df = dataset.data
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+
         indexed = cls.indexed(dataset, selection)
-        df = df.iloc[selection_mask]
+        if isinstance(selection_mask, pd.Series):
+            df = df[selection_mask]
+        else:
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
