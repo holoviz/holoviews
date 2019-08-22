@@ -335,7 +335,7 @@ class Dataset(Element):
         return self.clone(data, **dimensions)
 
 
-    def select(self, selection_specs=None, selection_expr=None, **selection):
+    def select(self, selection_expr=None, selection_specs=None, **selection):
         """Applies selection by dimension name
 
         Applies a selection along the dimensions of the object using
@@ -366,12 +366,12 @@ class Dataset(Element):
             ds.select(selection_expr=dim('x') % 2 == 0)
 
         Args:
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
             selection_specs: List of specs to match on
                 A list of types, functions, or type[.group][.label]
                 strings specifying which objects to apply the
                 selection on.
-            selection_expr: holoviews.dim predicate expression
-                specifying selection.
             **selection: Dictionary declaring selections by dimension
                 Selections can be scalar values, tuple ranges, lists
                 of discrete values and boolean arrays
@@ -380,10 +380,17 @@ class Dataset(Element):
             Returns an Dimensioned object containing the selected data
             or a scalar if a single value was selected
         """
+        from ...util.transform import dim
+        if selection_expr is not None and not isinstance(selection_expr, dim):
+            raise ValueError("""\
+The first positional argument to the Dataset.select method is expected to be a
+holoviews.util.transform.dim expression. Use the selection_specs keyword
+argument to specify a selection specification""")
+
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        selection = {dim: sel for dim, sel in selection.items()
-                     if dim in self.dimensions()+['selection_mask']}
+        selection = {dim_name: sel for dim_name, sel in selection.items()
+                     if dim_name in self.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
                 or (not selection and not selection_expr)):
             return self
