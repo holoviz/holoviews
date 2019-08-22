@@ -147,9 +147,40 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
+    def test_histogram_operation_kwargs(self):
+        points = Points([float(j) for i in range(10) for j in [i] * (2 * i)])
+        op_hist = histogram(
+            points,
+            dimension='y',
+            normed=False,
+            num_bins=10,
+            bin_range=[0, 10],
+        )
+
+        hist = Histogram((
+            [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0],
+            [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]
+        ), vdims=('y_count', 'Count'), kdims='y')
+
+        # Check histogram
+        self.assertEqual(op_hist, hist)
+
+        # Check operation kwargs for histogram generated with operation
+        self.assertEqual(
+            op_hist.operation_kwargs,
+            {'dimension': 'y',
+             'normed': False,
+             'dynamic': False,
+             'bins': [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]}
+        )
+
+        # Check that operation kwargs is None for histogram generated directly
+        # from the Histogram constructor
+        self.assertIsNone(hist.operation_kwargs)
+
     @da_skip
     def test_dataset_histogram_dask(self):
-        import dask.array as da 
+        import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
                      ['x'], datatype=['dask'])
         op_hist = histogram(ds, num_bins=3)
@@ -161,7 +192,7 @@ class OperationTests(ComparisonTestCase):
 
     @da_skip
     def test_dataset_cumulative_histogram_dask(self):
-        import dask.array as da 
+        import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
                      ['x'], datatype=['dask'])
         op_hist = histogram(ds, num_bins=3, cumulative=True)
