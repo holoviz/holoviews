@@ -505,7 +505,13 @@ class LabelledData(param.Parameterized):
         if self._dataset is None:
             # Create a default Dataset to wrap input data
             try:
-                dataset = Dataset(self.data)
+                kdims = list(params.get('kdims', []))
+                vdims = list(params.get('vdims', []))
+                dims = kdims + vdims
+                dataset = Dataset(
+                    self.data,
+                    kdims=dims if dims else None
+                )
                 if len(dataset.dimensions()) == 0:
                     # No dimensions could be auto-detected in data
                     raise DataError("No dimensions detected")

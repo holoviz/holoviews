@@ -25,11 +25,13 @@ class DatasetPropertyTestCase(ComparisonTestCase):
 
 
 class ConstructorTestCase(DatasetPropertyTestCase):
-    def test_constructors(self):
+    def test_constructors_dataset(self):
         expected = Dataset(self.df)
         self.assertIs(expected, expected.dataset)
 
+    def test_constructor_curve(self):
         element = Curve(self.df)
+        expected = Dataset(self.df)
         self.assertEqual(element.dataset, expected)
 
 
