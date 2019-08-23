@@ -670,6 +670,9 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
+    colorbar_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
@@ -789,7 +792,8 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self.cbar_extend)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis,
+                extend=self.cbar_extend, **self.colorbar_opts)
             self._set_axis_formatter(cbar.ax.yaxis, dimension, self.cformatter)
             self._adjust_cbar(cbar, label, dimension)
             self.handles['cax'] = cax
