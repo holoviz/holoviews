@@ -145,6 +145,16 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(dim('categories').categorize({'A': 'circle', 'B': 'square'}, default='triangle').apply(self.dataset),
                          np.array((['circle', 'square', 'triangle']*3)+['circle']))
 
+    # Numpy functions
+
+    def test_digitize(self):
+        self.assertEqual(dim('int').digitize([1, 5, 10]).apply(self.dataset),
+                         np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3]))
+
+    def test_isin(self):
+        self.assertEqual(dim('int').digitize([1, 5, 10]).isin([1, 3]).apply(self.dataset),
+                         np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype='bool'))
+
     # Complex expressions
 
     def test_multi_operator_expression(self):
