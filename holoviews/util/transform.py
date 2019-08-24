@@ -232,6 +232,8 @@ class dim(object):
     def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
     def cumprod(self, **kwargs): return dim(self, np.cumprod, **kwargs)
     def cumsum(self, **kwargs):  return dim(self, np.cumsum, **kwargs)
+    def digitize(self, **kwargs): return dim(self, np.digitize, **kwargs)
+    def isin(self, **kwargs):    return dim(self, np.isin, **kwargs)
     def max(self, **kwargs):     return dim(self, np.max, **kwargs)
     def mean(self, **kwargs):    return dim(self, np.mean, **kwargs)
     def min(self, **kwargs):     return dim(self, np.min, **kwargs)
