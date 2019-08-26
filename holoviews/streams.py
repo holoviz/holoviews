@@ -767,8 +767,8 @@ def ParamValues(*args, **kwargs):
 
 class SelectionExprStream(Stream):
 
-    selection_expr = param.Parameter(default=None)
-    bbox = param.Dict(default=None)
+    selection_expr = param.Parameter(default=None, constant=True)
+    bbox = param.Dict(default=None, constant=True)
 
     def __init__(self, source, **params):
         from .element import Element
@@ -783,8 +783,10 @@ The source of SelectionExprStream must be an instance of an Element subclass""")
     def _register_chart(self, chart):
 
         def _set_expr(**params):
-            self.selection_expr, self.bbox = \
+            selection_expr, bbox = \
                 chart._get_selection_expr_for_stream_value(**params)
+
+            self.event(selection_expr=selection_expr, bbox=bbox)
 
         for stream_type in chart._selection_streams:
             stream = stream_type(source=chart)
