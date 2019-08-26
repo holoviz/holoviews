@@ -3,6 +3,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
+from ..streams import BoundsXY
 
 
 class Geometry(Dataset, Element2D):
@@ -26,7 +27,35 @@ class Geometry(Dataset, Element2D):
     __abstract = True
 
 
-class Points(Geometry):
+class GeometrySelectionExpr(object):
+    """
+    Mixin class for Geometry elements to add basic support for
+    SelectionExprStream streams.
+    """
+    _selection_streams = (BoundsXY,)
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        from ..util.transform import dim
+        if 'bounds' in kwargs:
+            x0, y0, x1, y1 = kwargs['bounds']
+
+            xdim, ydim = self.kdims[:2]
+
+            bbox = {
+                xdim.name: (x0, x1),
+                ydim.name: (y0, y1),
+            }
+
+            selection_expr = (
+                    (dim(xdim) >= x0) & (dim(xdim) <= x1) &
+                    (dim(ydim) >= y0) & (dim(ydim) <= y1)
+            )
+
+            return selection_expr, bbox
+        return None, None
+
+
+class Points(GeometrySelectionExpr, Geometry):
     """
     Points represents a set of coordinates in 2D space, which may
     optionally be associated with any number of value dimensions.
@@ -37,7 +66,7 @@ class Points(Geometry):
     _auto_indexable_1d = True
 
 
-class VectorField(Geometry):
+class VectorField(GeometrySelectionExpr, Geometry):
     """
     A VectorField represents a set of vectors in 2D spac with an
     associated angle, as well as an optional magnitude and any number

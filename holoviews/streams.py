@@ -765,6 +765,38 @@ def ParamValues(*args, **kwargs):
     return Params(*args, **kwargs)
 
 
+class SelectionExprStream(Stream):
+
+    selection_expr = param.Parameter(default=None)
+    bbox = param.Dict(default=None)
+
+    def __init__(self, source, **params):
+        from .element import Element
+        if not isinstance(source, Element):
+            raise ValueError("""
+The source of SelectionExprStream must be an instance of an Element subclass""")
+
+        self._source_streams = []
+        super(SelectionExprStream, self).__init__(source=source, **params)
+        self._register_chart(source)
+
+    def _register_chart(self, chart):
+
+        def _set_expr(**params):
+            self.selection_expr, self.bbox = \
+                chart._get_selection_expr_for_stream_value(**params)
+
+        for stream_type in chart._selection_streams:
+            stream = stream_type(source=chart)
+            self._source_streams.append(stream)
+
+            stream.add_subscriber(_set_expr)
+
+    def _unregister_chart(self):
+        for stream in self._source_streams:
+            stream.source = None
+        self._source_streams.clear()
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
