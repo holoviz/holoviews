@@ -797,7 +797,20 @@ The source of SelectionExprStream must be an instance of an Element subclass""")
     def _unregister_chart(self):
         for stream in self._source_streams:
             stream.source = None
+            stream.clear()
         self._source_streams.clear()
+
+    @property
+    def source(self):
+        return Stream.source.fget(self)
+
+    @source.setter
+    def source(self, value):
+        self._unregister_chart()
+        Stream.source.fset(self, value)
+
+    def __del__(self):
+        self._unregister_chart()
 
 class LinkedStream(Stream):
     """
