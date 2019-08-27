@@ -58,7 +58,7 @@ class Chart2dSelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-        if 'bounds' in kwargs:
+        if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
 
             xdim = self.kdims[0]
@@ -215,7 +215,7 @@ class Histogram(Chart):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-        if 'bounds' in kwargs:
+        if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
 
             xdim = self.kdims[0]
