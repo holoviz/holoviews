@@ -1,6 +1,6 @@
 from holoviews.element.comparison import ComparisonTestCase
 import pandas as pd
-from holoviews import Dataset, Curve, Dimension, Scatter
+from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 import dask.dataframe as dd
 
 class DatasetPropertyTestCase(ComparisonTestCase):
@@ -183,3 +183,13 @@ class HistogramTestCase(DatasetPropertyTestCase):
     def test_hist_to_curve(self):
         # No exception thrown
         self.hist.to.curve()
+
+
+class DistributionTestCase(DatasetPropertyTestCase):
+
+    def setUp(self):
+        super(DistributionTestCase, self).setUp()
+        self.distribution = self.ds.to(Distribution, kdims='a', groupby=[])
+
+    def test_distribution_dataset(self):
+        self.assertEqual(self.distribution.dataset, self.ds)
