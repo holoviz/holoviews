@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 import param
 
 from ..core import util
@@ -198,6 +198,13 @@ class Histogram(Chart):
         will be None.
         """
         return self._operation_kwargs
+
+    def clone(self, *args, **kwargs):
+        return super(Histogram, self).clone(
+            *args,
+            operation_kwargs=copy.deepcopy(self.operation_kwargs),
+            **kwargs
+        )
 
     def __setstate__(self, state):
         """

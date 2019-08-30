@@ -174,6 +174,15 @@ class OperationTests(ComparisonTestCase):
              'bins': [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]}
         )
 
+        # Test that operation_kwargs is preserved through clone
+        self.assertEqual(
+            op_hist.clone().operation_kwargs,
+            {'dimension': 'y',
+             'normed': False,
+             'dynamic': False,
+             'bins': [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]}
+        )
+
         # Check that operation kwargs is None for histogram generated directly
         # from the Histogram constructor
         self.assertIsNone(hist.operation_kwargs)
