@@ -75,14 +75,14 @@ class ResamplingOperation(LinkableOperation):
        if set to None.""")
 
     y_range  = param.NumericTuple(default=None, length=2, doc="""
-       The x_range as a tuple of min and max y-value. Auto-ranges
+       The y-axis range as a tuple of min and max y value. Auto-ranges
        if set to None.""")
 
     x_sampling = param.Number(default=None, doc="""
-        Specifies the smallest allowed sampling interval along the y-axis.""")
+        Specifies the smallest allowed sampling interval along the x axis.""")
 
     y_sampling = param.Number(default=None, doc="""
-        Specifies the smallest allowed sampling interval along the y-axis.""")
+        Specifies the smallest allowed sampling interval along the y axis.""")
 
     target = param.ClassSelector(class_=Image, doc="""
         A target Image which defines the desired x_range, y_range,
