@@ -281,7 +281,15 @@ class MultiInterface(Interface):
         return new_data
 
     @classmethod
-    def values(cls, dataset, dimension, expanded=True, flat=True, compute=True):
+    def values(
+            cls,
+            dataset,
+            dimension,
+            expanded=True,
+            flat=True,
+            compute=True,
+            keep_index=False,
+    ):
         """
         Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
@@ -293,7 +301,9 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
-            dvals = ds.interface.values(ds, dimension, expanded, flat, compute)
+            dvals = ds.interface.values(
+                ds, dimension, expanded, flat, compute, keep_index
+            )
             if not len(dvals):
                 continue
             elif expanded:

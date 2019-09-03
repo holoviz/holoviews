@@ -338,7 +338,9 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
+    def values(
+            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
+    ):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]

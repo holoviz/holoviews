@@ -477,7 +477,7 @@ def initialize_unbounded(obj, dimensions, key):
     """
     select = dict(zip([d.name for d in dimensions], key))
     try:
-        obj.select([DynamicMap], **select)
+        obj.select(selection_specs=[DynamicMap], **select)
     except KeyError:
         pass
 

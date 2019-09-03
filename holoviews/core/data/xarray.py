@@ -303,7 +303,7 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False

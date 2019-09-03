@@ -86,7 +86,9 @@ class DimensionedSelectionTest(ComparisonTestCase):
         self.assertEqual(selection, hmap1 + hmap2)
 
     def test_spec_duplicate_dim_select(self):
-        selection = self.duplicate_map.select((HoloMap,), x=(0, 1), y=(1, 3))
+        selection = self.duplicate_map.select(
+            selection_specs=(HoloMap,), x=(0, 1), y=(1, 3)
+        )
         self.assertEqual(selection, self.duplicate_map[0:1, 1:3])
 
     def test_duplicate_dim_select(self):
@@ -102,7 +104,8 @@ class DimensionedSelectionTest(ComparisonTestCase):
         curve = self.datetime_fn()
         overlay = curve * self.datetime_fn()
         for el in [curve, overlay]:
-            self.assertEqual(el.select(time=(s, e)), el[s:e])
+            v = el.select(time=(s, e))
+            self.assertEqual(v, el[s:e])
             self.assertEqual(el.select(time=
                 (dt.datetime(1999, 12, 31), dt.datetime(2000, 1, 2))), el[s:e]
             )
@@ -110,3 +113,11 @@ class DimensionedSelectionTest(ComparisonTestCase):
                 self.assertEqual(el.select(
                     time=(pd.Timestamp(s), pd.Timestamp(e))
                 ), el[pd.Timestamp(s):pd.Timestamp(e)])
+
+    def test_selection_spec_positional_error_message(self):
+        s, e = '1999-12-31', '2000-1-2'
+        curve = self.datetime_fn()
+        with self.assertRaisesRegexp(
+                ValueError, "Use the selection_specs keyword"
+        ):
+            curve.select((Curve,), time=(s, e))

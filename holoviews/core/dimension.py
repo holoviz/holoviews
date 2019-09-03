@@ -1147,14 +1147,14 @@ class Dimensioned(LabelledData):
             # Apply the selection on the selected object of a different type
             dimensions = selection.dimensions() + ['value']
             if any(kw in dimensions for kw in kwargs):
-                selection = selection.select(selection_specs, **kwargs)
+                selection = selection.select(selection_specs=selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
                 dimensions = v.dimensions() + ['value']
                 if any(kw in dimensions for kw in kwargs):
-                    items.append((k, v.select(selection_specs, **kwargs)))
+                    items.append((k, v.select(selection_specs=selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
             selection = selection.clone(items)
