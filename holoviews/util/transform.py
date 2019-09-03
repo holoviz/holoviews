@@ -324,7 +324,16 @@ class dim(object):
                     applies &= arg.applies(dataset)
         return applies
 
-    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False):
+    def apply(
+            self,
+            dataset,
+            flat=False,
+            expanded=None,
+            ranges={},
+            all_values=False,
+            keep_index=False,
+            compute=True,
+    ):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -336,6 +345,10 @@ class dim(object):
                Whether to evaluate on all available values, for some
                element types, such as Graphs, this may include values
                not included in the referenced column
+           keep_index: For data types that support indexes, whether the index
+               should be preserved in the result.
+           compute: For data types that support lazy evaluation, whether
+               the result should be computed before it is returned.
 
         Returns:
             values: NumPy array computed by evaluating the expression
@@ -348,7 +361,15 @@ class dim(object):
             if dimension in dataset.kdims and all_values:
                 dimension = dataset.nodes.kdims[2]
             dataset = dataset if dimension in dataset else dataset.nodes
-        data = dataset.dimension_values(dimension, expanded=expanded, flat=flat)
+
+        data = dataset.interface.values(
+            dataset,
+            dimension,
+            expanded=expanded,
+            flat=flat,
+            compute=compute,
+            keep_index=keep_index
+        )
         for o in self.ops:
             args = o['args']
             fn_args = [data]

@@ -9,6 +9,7 @@ except:
     raise SkipTest("Could not import dask, skipping DaskInterface tests.")
 
 from holoviews.core.data import Dataset
+from holoviews.util.transform import dim
 
 from .testpandasinterface import PandasInterfaceTests
 
@@ -92,3 +93,16 @@ class DaskDatasetTest(PandasInterfaceTests):
         ds_range = ds.range(0)
         self.assertTrue(np.isnan(ds_range[0]))
         self.assertTrue(np.isnan(ds_range[1]))
+
+    def test_select_expression_lazy(self):
+        df = pd.DataFrame({
+            'a': [1, 2, 3, 4, 5],
+            'b': [10, 10, 11, 11, 10],
+        })
+        ddf = dd.from_pandas(df, npartitions=2)
+        ds = Dataset(ddf)
+        new_ds = ds.select(selection_expr=dim('b') == 10)
+
+        # Make sure that selecting by expression didn't cause evaluation
+        self.assertIsInstance(new_ds.data, dd.DataFrame)
+        self.assertEqual(new_ds.data.compute(), df[df.b == 10])

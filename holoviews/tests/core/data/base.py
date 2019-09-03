@@ -11,7 +11,8 @@ from holoviews import Dataset, HoloMap, Dimension
 from holoviews.core.data import concat
 from holoviews.core.data.interface import DataError
 from holoviews.element import Scatter, Curve
-from holoviews.element.comparison import ComparisonTestCase 
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.util.transform import dim
 
 from collections import OrderedDict
 
@@ -697,6 +698,13 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(row, indexed)
 
+    def test_dataset_select_rows_gender_male_expr(self):
+        row = self.table.select(selection_expr=dim('Gender') == 'M')
+        indexed = Dataset({'Gender': ['M', 'M'], 'Age': [10, 16],
+                           'Weight': [15, 18], 'Height': [0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(row, indexed)
+
     def test_dataset_select_rows_gender_male_alias(self):
         row = self.alias_table.select(Gender='M')
         alias_row = self.alias_table.select(gender='M')
@@ -859,9 +867,23 @@ class ScalarColumnTests(object):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.select(A=1).dimension_values('B'), np.arange(10))
 
+    def test_dataset_scalar_select_expr(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(
+            ds.select(selection_expr=dim('A') == 1).dimension_values('B'),
+            np.arange(10)
+        )
+
     def test_dataset_scalar_empty_select(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.select(A=0).dimension_values('B'), np.array([]))
+
+    def test_dataset_scalar_empty_select_expr(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(
+            ds.select(selection_expr=dim('A') == 0).dimension_values('B'),
+            np.array([])
+        )
 
     def test_dataset_scalar_sample(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])

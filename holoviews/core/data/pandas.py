@@ -190,6 +190,9 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
+
         group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 dataset.data.groupby(group_by, sort=False)]
@@ -266,20 +269,33 @@ class PandasInterface(Interface):
         df = dataset.data
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+
         indexed = cls.indexed(dataset, selection)
-        df = df.iloc[selection_mask]
+        if isinstance(selection_mask, pd.Series):
+            df = df[selection_mask]
+        else:
+            df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
+    def values(
+            cls,
+            dataset,
+            dim,
+            expanded=True,
+            flat=True,
+            compute=True,
+            keep_index=False,
+    ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
         if not expanded:
             return data.unique()
-        return data.values
+
+        return data if keep_index else data.values
 
 
     @classmethod
