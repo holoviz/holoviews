@@ -52,7 +52,7 @@ class Chart(Dataset, Element2D):
 class Chart2dSelectionExpr(object):
     """
     Mixin class for Cartesian 2D Chart elements to add basic support for
-    SelectionExprStream streams.
+    SelectionExpr streams.
     """
     _selection_streams = (BoundsXY,)
 

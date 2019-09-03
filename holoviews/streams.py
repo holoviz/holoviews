@@ -765,7 +765,7 @@ def ParamValues(*args, **kwargs):
     return Params(*args, **kwargs)
 
 
-class SelectionExprStream(Stream):
+class SelectionExpr(Stream):
 
     selection_expr = param.Parameter(default=None, constant=True)
     bbox = param.Dict(default=None, constant=True)
@@ -774,10 +774,10 @@ class SelectionExprStream(Stream):
         from .element import Element
         if not isinstance(source, Element):
             raise ValueError("""
-The source of SelectionExprStream must be an instance of an Element subclass""")
+The source of SelectionExpr must be an instance of an Element subclass""")
 
         self._source_streams = []
-        super(SelectionExprStream, self).__init__(source=source, **params)
+        super(SelectionExpr, self).__init__(source=source, **params)
         self._register_chart(source)
 
     def _register_chart(self, chart):

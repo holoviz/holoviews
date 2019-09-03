@@ -905,9 +905,9 @@ class TestExprSelectionStream(ComparisonTestCase):
 
     def test_selection_expr_stream_scatter_points(self):
         for element_type in [Scatter, Points, Curve]:
-            # Create SelectionExprStream on element
+            # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10]))
-            expr_stream = SelectionExprStream(element)
+            expr_stream = SelectionExpr(element)
 
             # Check stream properties
             self.assertEqual(len(expr_stream._source_streams), 1)
@@ -918,7 +918,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Simulate interactive update by triggering source stream
             expr_stream._source_streams[0].event(bounds=(1, 1, 3, 4))
 
-            # Check SelectionExprStream values
+            # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
                 repr((dim('x') >= 1) & (dim('x') <= 3) &
@@ -930,9 +930,9 @@ class TestExprSelectionStream(ComparisonTestCase):
             )
 
     def test_selection_expr_stream_hist(self):
-        # Create SelectionExprStream on element
+        # Create SelectionExpr on element
         hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7]))
-        expr_stream = SelectionExprStream(hist)
+        expr_stream = SelectionExpr(hist)
 
         # Check stream properties
         self.assertEqual(len(expr_stream._source_streams), 1)

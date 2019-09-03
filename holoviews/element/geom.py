@@ -30,7 +30,7 @@ class Geometry(Dataset, Element2D):
 class GeometrySelectionExpr(object):
     """
     Mixin class for Geometry elements to add basic support for
-    SelectionExprStream streams.
+    SelectionExpr streams.
     """
     _selection_streams = (BoundsXY,)
 
