@@ -147,6 +147,26 @@ class SelectTestCase(DatasetPropertyTestCase):
             self.ds.select(b=10)
         )
 
+    def test_select_curve_all_dimensions(self):
+        curve1 = self.ds.to.curve('a', 'b', groupby=[])
+
+        # Check curve1 dataset property
+        self.assertEqual(curve1.dataset, self.ds)
+
+        # Down select curve 1 on b, which is a value dimension, and c,
+        # which is a dimension in the original dataset, but not a kdim or vdim
+        curve2 = curve1.select(b=10, c='A')
+
+        # This selection should be equivalent to down selecting the dataset
+        # before creating the curve
+        self.assertEqual(
+            curve2,
+            self.ds.select(b=10, c='A').to.curve('a', 'b', groupby=[])
+        )
+
+        # Check that we get the same result when using a dim expression
+        curve3 = curve1.select((dim('b') == 10) & (dim('c') == 'A'))
+        self.assertEqual(curve3, curve2)
 
 class HistogramTestCase(DatasetPropertyTestCase):
 

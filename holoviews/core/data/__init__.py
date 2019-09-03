@@ -391,18 +391,26 @@ argument to specify a selection specification""")
 
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
+
+        # Get reference to the dataset that selections will be applied to
+        if (self.dataset is not None
+                and self.interface == self.dataset.interface):
+            # We can operate directly on self.dataset so select has access to
+            # all of the dimensions in dataset
+            dataset = self.dataset
+        else:
+            dataset = self
+
         selection = {dim_name: sel for dim_name, sel in selection.items()
-                     if dim_name in self.dimensions()+['selection_mask']}
+                     if dim_name in dataset.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
                 or (not selection and not selection_expr)):
             return self
 
         # Handle selection dim expression
         if selection_expr is not None:
-            mask = selection_expr.apply(self, compute=False, keep_index=True)
-            dataset = self[mask]
-        else:
-            dataset = self
+            mask = selection_expr.apply(dataset, compute=False, keep_index=True)
+            dataset = dataset[mask]
 
         # Handle selection kwargs
         if selection:
