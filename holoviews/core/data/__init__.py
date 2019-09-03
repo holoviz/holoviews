@@ -14,7 +14,7 @@ from ..dimension import Dimension, process_dimensions
 from ..element import Element
 from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
-from .interface import Interface, iloc, ndloc
+from .interface import Interface, iloc, ndloc, DataError
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
@@ -153,6 +153,8 @@ class DataConversion(object):
             params['group'] = selected.group
         params.update(kwargs)
         if len(kdims) == selected.ndims or not groupby:
+            # Propagate dataset
+            params['dataset'] = self._element.dataset
             element = new_type(selected, **params)
             return element.sort() if sort else element
         group = selected.groupby(groupby, container_type=HoloMap,
@@ -852,8 +854,23 @@ class Dataset(Element):
         if 'datatype' not in overrides:
             datatypes = [self.interface.datatype] + self.datatype
             overrides['datatype'] = list(util.unique_iterator(datatypes))
-        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
+        if 'dataset' in overrides:
+            dataset = overrides.pop('dataset')
+        else:
+            dataset = self.dataset
+
+        new_dataset = super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
+
+        if dataset is not None:
+            try:
+                new_dataset._dataset = dataset.clone(data=new_dataset.data, dataset=None)
+            except DataError:
+                # New dataset doesn't have the necessary dimensions to
+                # propagate dataset. Do nothing
+                pass
+
+        return new_dataset
 
     @property
     def iloc(self):

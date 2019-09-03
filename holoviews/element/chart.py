@@ -181,8 +181,58 @@ class Histogram(Chart):
             data = (edges, data)
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
+
+        dataset = params.pop("dataset", None)
         super(Histogram, self).__init__(data, **params)
 
+        if dataset:
+            # Histogram is a special case in which we keep the data from the
+            # input dataset rather than replace it with the element data.
+            # This is so that dataset contains the data needed to reconstruct
+            # the element.
+            self._dataset = dataset.clone()
+
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        if 'dataset' in overrides:
+            dataset = overrides.pop('dataset', None)
+        else:
+            dataset = self.dataset
+
+        overrides["dataset"] = None
+
+        new_element = super(Histogram, self).clone(
+            data=data,
+            shared_data=shared_data,
+            new_type=new_type,
+            *args,
+            **overrides
+        )
+
+        if dataset:
+            # Histogram is a special case in which we keep the data from the
+            # input dataset rather than replace it with the element data.
+            # This is so that dataset contains the data needed to reconstruct
+            # the element.
+            new_element._dataset = dataset.clone()
+
+        return new_element
+
+    def select(self, selection_specs=None, **selection):
+        selected = super(Histogram, self).select(
+            selection_specs=selection_specs, **selection
+        )
+
+        if not np.isscalar(selected) and not np.array_equal(selected.data, self.data):
+            # Selection changed histogram bins, so update dataset
+            selection = {
+                dim: sel for dim, sel in selection.items()
+                if dim in self.dimensions()+['selection_mask']
+            }
+
+            if selected._dataset is not None:
+                selected._dataset = self.dataset.select(**selection)
+
+        return selected
 
     def __setstate__(self, state):
         """
