@@ -58,11 +58,17 @@ class Chart2dSelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
         if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
-
-            xdim = self.kdims[0]
-            ydim = self.vdims[0]
+            if invert_axes:
+                ydim = self.kdims[0]
+                xdim = self.vdims[0]
+            else:
+                xdim = self.kdims[0]
+                ydim = self.vdims[0]
 
             bbox = {
                 xdim.name: (x0, x1),
@@ -266,8 +272,14 @@ class Histogram(Chart):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
         if kwargs.get('bounds', None):
-            x0, y0, x1, y1 = kwargs['bounds']
+            if invert_axes:
+                y0, x0, y1, x1 = kwargs['bounds']
+            else:
+                x0, y0, x1, y1 = kwargs['bounds']
 
             xdim = self.kdims[0]
             ydim = self.vdims[0]

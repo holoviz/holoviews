@@ -36,10 +36,16 @@ class GeometrySelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
         if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
 
-            xdim, ydim = self.kdims[:2]
+            if invert_axes:
+                ydim, xdim = self.kdims[:2]
+            else:
+                xdim, ydim = self.kdims[:2]
 
             bbox = {
                 xdim.name: (x0, x1),

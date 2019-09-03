@@ -10,7 +10,7 @@ from holoviews.core.util import LooseVersion, pd
 from holoviews.element import Points, Scatter, Curve, Histogram
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
-from holoviews.util import Dynamic
+from holoviews.util import Dynamic, extension
 from holoviews.util.transform import dim
 
 from .utils import LoggingComparisonTestCase
@@ -903,6 +903,9 @@ class TestBufferDataFrameStream(ComparisonTestCase):
 
 class TestExprSelectionStream(ComparisonTestCase):
 
+    def setUp(self):
+        extension("bokeh")
+
     def test_selection_expr_stream_scatter_points(self):
         for element_type in [Scatter, Points, Curve]:
             # Create SelectionExpr on element
@@ -929,6 +932,32 @@ class TestExprSelectionStream(ComparisonTestCase):
                 {'x': (1, 3), 'y': (1, 4)}
             )
 
+    def test_selection_expr_stream_invert_axes(self):
+        for element_type in [Scatter, Points, Curve]:
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream._source_streams), 1)
+            self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream._source_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('y') >= 1) & (dim('y') <= 3) &
+                     (dim('x') >= 1) & (dim('x') <= 4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'y': (1, 3), 'x': (1, 4)}
+            )
+
     def test_selection_expr_stream_hist(self):
         # Create SelectionExpr on element
         hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7]))
@@ -953,6 +982,39 @@ class TestExprSelectionStream(ComparisonTestCase):
         # handling when last bar is selected to include values exactly on the
         # upper edge in the selection
         expr_stream._source_streams[0].event(bounds=(2.5, -10, 8, 10))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
+                 (dim('x') == hist.edges[-1]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+
+    def test_selection_expr_stream_hist_invert_axes(self):
+        # Create SelectionExpr on element
+        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
+            invert_axes=True
+        )
+        expr_stream = SelectionExpr(hist)
+
+        # Check stream properties
+        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+        self.assertIsNone(expr_stream.bbox)
+        self.assertIsNone(expr_stream.selection_expr)
+
+        # Simulate interactive update by triggering source stream.
+        # Select second and forth bar.
+        expr_stream._source_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+
+        # Select third, forth, and fifth bar.  Make sure there is special
+        # handling when last bar is selected to include values exactly on the
+        # upper edge in the selection
+        expr_stream._source_streams[0].event(bounds=(-10, 2.5, 10, 8))
         self.assertEqual(
             repr(expr_stream.selection_expr),
             repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
