@@ -505,7 +505,7 @@ def process_ellipses(obj, key, vdim_selection=False):
     will be exactly one longer than the number of kdims). Note: this
     flag should not be used for composite types.
     """
-    if isinstance(key, np.ndarray) and key.dtype.kind == 'b':
+    if getattr(getattr(key, 'dtype', None), 'kind', None) == 'b':
         return key
     wrapped_key = wrap_tuple(key)
     if wrapped_key.count(Ellipsis)== 0:

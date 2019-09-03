@@ -668,7 +668,7 @@ class histogram(Operation):
         }
         params['_operation_kwargs']['bins'] = list(edges)
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
-                         label=element.label, **params)
+                         label=element.label, dataset=element.dataset, **params)
 
 
 class decimate(Operation):

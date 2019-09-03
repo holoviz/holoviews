@@ -156,7 +156,9 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
+    def values(
+            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
+    ):
         """
         The set of samples available along a particular dimension.
         """

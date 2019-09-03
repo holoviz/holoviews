@@ -1371,7 +1371,7 @@ class DynamicMap(HoloMap):
         """
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        selection = super(DynamicMap, self).select(selection_specs, **kwargs)
+        selection = super(DynamicMap, self).select(selection_specs=selection_specs, **kwargs)
         def dynamic_select(obj, **dynkwargs):
             if selection_specs is not None:
                 matches = any(obj.matches(spec) for spec in selection_specs)
