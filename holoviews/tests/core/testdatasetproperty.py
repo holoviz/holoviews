@@ -1,7 +1,10 @@
 from holoviews.element.comparison import ComparisonTestCase
 import pandas as pd
+import numpy as np
 from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 import dask.dataframe as dd
+from holoviews.operation import histogram
+from holoviews import dim
 
 class DatasetPropertyTestCase(ComparisonTestCase):
 
@@ -186,23 +189,62 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
     def test_select_multi(self):
         # Add second selection on b. b is a dimension in hist.dataset but
-        # not in hist.  Make sure that we only apply the a selection (and not
-        # the b selection) to the .dataset property
+        # not in hist.  Make sure that we apply the selection on both
+        # properties.
         sub_hist = self.hist.select(a=(1, None), b=100)
-
-        self.assertNotEqual(
-            sub_hist.dataset,
-            self.ds.select(a=(1, None), b=100)
-        )
 
         self.assertEqual(
             sub_hist.dataset,
-            self.ds.select(a=(1, None))
+            self.ds.select(a=(1, None), b=100)
         )
 
     def test_hist_to_curve(self):
         # No exception thrown
         self.hist.to.curve()
+
+    def test_hist_selection_all_dims(self):
+        xs = [float(j) for i in range(10) for j in [i] * (2 * i)]
+        df = pd.DataFrame({
+            'x': xs,
+            'y': [v % 3 for v in range(len(xs))]
+        })
+
+        ds = Dataset(df)
+        hist1 = histogram(
+            ds,
+            dimension='x',
+            normed=False,
+            num_bins=10,
+            bin_range=[0, 10],
+        )
+
+        # Make sure hist1 dataset equal to original
+        self.assertEqual(hist1.dataset, ds)
+
+        # Check histogram data
+        self.assertEqual(
+            hist1.data,
+            {'x': np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]),
+             'x_count': np.array([0, 2, 4, 6, 8, 10, 12, 14, 16, 18])}
+        )
+
+        # Select histogram subset using the x and y dimensions
+        hist2 = hist1.select(x=(4, None), y=2)
+
+        # Check dataset down selection
+        self.assertEqual(hist2.dataset, ds.select(x=(4, None), y=2))
+
+        # Check histogram data. Bins should match and counts should be
+        # reduced from hist1 due to selection
+        self.assertEqual(
+            hist2.data,
+            {'x': np.array([0., 1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]),
+             'x_count': np.array([0, 0, 0, 0, 2, 4, 4, 4, 6, 6])}
+        )
+
+        # Check that selection using dim expression produces the same result
+        hist3 = hist1.select((dim('x') >= 4) & (dim('y') == 2))
+        self.assertEqual(hist3, hist2)
 
 
 class DistributionTestCase(DatasetPropertyTestCase):

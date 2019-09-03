@@ -220,22 +220,50 @@ class Histogram(Chart):
 
         return new_element
 
-    def select(self, selection_specs=None, **selection):
-        selected = super(Histogram, self).select(
-            selection_specs=selection_specs, **selection
-        )
+    def select(self, selection_expr=None, selection_specs=None, **selection):
+        from ..operation import histogram
+        # Handle selection_specs and early exit
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
+            selection_specs = [selection_specs]
+        if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
+                or (not selection and not selection_expr)):
+            return self
 
-        if not np.isscalar(selected) and not np.array_equal(selected.data, self.data):
-            # Selection changed histogram bins, so update dataset
-            selection = {
-                dim: sel for dim, sel in selection.items()
-                if dim in self.dimensions()+['selection_mask']
-            }
+        if self.dataset is not None and self._operation_kwargs is not None:
+            # We have what we need to perform selection on dataset and
+            # regenerate the histogram.
+            selected_dataset = self.dataset.select(selection_expr, **selection)
+            selected = histogram(selected_dataset, **self._operation_kwargs)
+            if selected_dataset.dataset is not None:
+                selected._dataset = selected_dataset.dataset
+            else:
+                selected._dataset = selected_dataset
+            return selected
+        else:
+            # Perform selection directly on histogram
+            selected = super(Histogram, self).select(
+                selection_expr=selection_expr,
+                selection_specs=selection_specs,
+                **selection
+            )
 
-            if selected._dataset is not None:
-                selected._dataset = self.dataset.select(**selection)
+            # Handle updating dataset
+            if (not np.isscalar(selected)
+                    and not np.array_equal(selected.data, self.data)
+                    and selected._dataset is not None):
 
-        return selected
+                # Selection changed histogram bins, so update dataset
+                selection = {
+                    dim: sel for dim, sel in selection.items()
+                    if dim in self.dimensions() + ['selection_mask']
+                }
+
+                if selected._dataset is not None:
+                    selected._dataset = self.dataset.select(
+                        selection_expr=selection_expr, **selection
+                    )
+
+            return selected
 
     def __setstate__(self, state):
         """
