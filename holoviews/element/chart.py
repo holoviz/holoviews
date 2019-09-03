@@ -1,5 +1,5 @@
 import numpy as np
-
+import copy
 import param
 
 from ..core import util
@@ -182,6 +182,8 @@ class Histogram(Chart):
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
 
+        self._operation_kwargs = params.pop('_operation_kwargs', None)
+
         dataset = params.pop("dataset", None)
         super(Histogram, self).__init__(data, **params)
 
@@ -204,6 +206,7 @@ class Histogram(Chart):
             data=data,
             shared_data=shared_data,
             new_type=new_type,
+            _operation_kwargs=copy.deepcopy(self._operation_kwargs),
             *args,
             **overrides
         )

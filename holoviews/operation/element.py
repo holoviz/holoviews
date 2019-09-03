@@ -655,6 +655,18 @@ class histogram(Operation):
             hist = np.cumsum(hist)
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
+
+        # Save off the kwargs needed to reproduce this Histogram later.
+        # We remove the properties that are used as instructions for how to
+        # calculate the bins, and replace those with the explicit list of bin
+        # edges.  This way, not only can we regenerate this exact histogram
+        # from the same data set, but we can also generate a histogram using
+        # a different dataset that will share the exact same bins.
+        exclusions = {'log', 'bin_range', 'num_bins'}
+        params['_operation_kwargs'] = {
+            k: v for k, v in self.p.items() if k not in exclusions
+        }
+        params['_operation_kwargs']['bins'] = list(edges)
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
                          label=element.label, dataset=element.dataset, **params)
 
