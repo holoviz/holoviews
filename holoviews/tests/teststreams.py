@@ -960,7 +960,7 @@ class TestExprSelectionStream(ComparisonTestCase):
 
     def test_selection_expr_stream_invert_xaxis_yaxis(self):
         for element_type in [Scatter, Points, Curve]:
-            print(element_type)
+
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(
                 invert_xaxis=True,
