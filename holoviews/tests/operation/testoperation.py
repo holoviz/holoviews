@@ -167,7 +167,7 @@ class OperationTests(ComparisonTestCase):
 
         # Check operation kwargs for histogram generated with operation
         self.assertEqual(
-            op_hist.operation_kwargs,
+            op_hist._operation_kwargs,
             {'dimension': 'y',
              'normed': False,
              'dynamic': False,
@@ -176,7 +176,7 @@ class OperationTests(ComparisonTestCase):
 
         # Test that operation_kwargs is preserved through clone
         self.assertEqual(
-            op_hist.clone().operation_kwargs,
+            op_hist.clone()._operation_kwargs,
             {'dimension': 'y',
              'normed': False,
              'dynamic': False,
@@ -185,7 +185,7 @@ class OperationTests(ComparisonTestCase):
 
         # Check that operation kwargs is None for histogram generated directly
         # from the Histogram constructor
-        self.assertIsNone(hist.operation_kwargs)
+        self.assertIsNone(hist._operation_kwargs)
 
     @da_skip
     def test_dataset_histogram_dask(self):

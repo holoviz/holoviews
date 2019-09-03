@@ -663,10 +663,10 @@ class histogram(Operation):
         # from the same data set, but we can also generate a histogram using
         # a different dataset that will share the exact same bins.
         exclusions = {'log', 'bin_range', 'num_bins'}
-        params['operation_kwargs'] = {
+        params['_operation_kwargs'] = {
             k: v for k, v in self.p.items() if k not in exclusions
         }
-        params['operation_kwargs']['bins'] = list(edges)
+        params['_operation_kwargs']['bins'] = list(edges)
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
                          label=element.label, **params)
 
