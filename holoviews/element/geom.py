@@ -42,6 +42,12 @@ class GeometrySelectionExpr(object):
         if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
 
+            # Handle invert_xaxis/invert_yaxis
+            if y0 > y1:
+                y0, y1 = y1, y0
+            if x0 > x1:
+                x0, x1 = x1, x0
+
             if invert_axes:
                 ydim, xdim = self.kdims[:2]
             else:

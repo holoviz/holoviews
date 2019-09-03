@@ -63,6 +63,13 @@ class Chart2dSelectionExpr(object):
 
         if kwargs.get('bounds', None):
             x0, y0, x1, y1 = kwargs['bounds']
+
+            # Handle invert_xaxis/invert_yaxis
+            if y0 > y1:
+                y0, y1 = y1, y0
+            if x0 > x1:
+                x0, x1 = x1, x0
+
             if invert_axes:
                 ydim = self.kdims[0]
                 xdim = self.vdims[0]
@@ -280,6 +287,12 @@ class Histogram(Chart):
                 y0, x0, y1, x1 = kwargs['bounds']
             else:
                 x0, y0, x1, y1 = kwargs['bounds']
+
+            # Handle invert_xaxis/invert_yaxis
+            if y0 > y1:
+                y0, y1 = y1, y0
+            if x0 > x1:
+                x0, x1 = x1, x0
 
             xdim = self.kdims[0]
             ydim = self.vdims[0]
