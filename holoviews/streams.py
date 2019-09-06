@@ -772,24 +772,49 @@ class SelectionExpr(Stream):
 
     def __init__(self, source, **params):
         from .element import Element
-        if not isinstance(source, Element):
+        from .core.spaces import DynamicMap
+        from .plotting.util import initialize_dynamic
+
+        if isinstance(source, DynamicMap):
+            initialize_dynamic(source)
+
+        if isinstance(source, Element) or (
+                isinstance(source, DynamicMap) and
+                issubclass(source.type, Element)
+        ):
+            self._source_streams = []
+            super(SelectionExpr, self).__init__(source=source, **params)
+            self._register_chart(source)
+        else:
             raise ValueError("""
-The source of SelectionExpr must be an instance of an Element subclass""")
+The source of SelectionExpr must be an instance of an Element subclass,
+or a DynamicMap that returns such an instance
+            Received value of type {typ}: {val}""".format(
+            typ=type(source), val=source
+        ))
 
-        self._source_streams = []
-        super(SelectionExpr, self).__init__(source=source, **params)
-        self._register_chart(source)
+    def _register_chart(self, hvobj):
+        from .core.spaces import DynamicMap
 
-    def _register_chart(self, chart):
+        if isinstance(hvobj, DynamicMap):
+            element_type = hvobj.type
+        else:
+            element_type = hvobj
+
+        selection_streams = element_type._selection_streams
 
         def _set_expr(**params):
+            if isinstance(hvobj, DynamicMap):
+                element = hvobj.values()[-1]
+            else:
+                element = hvobj
             selection_expr, bbox = \
-                chart._get_selection_expr_for_stream_value(**params)
+                element._get_selection_expr_for_stream_value(**params);
 
             self.event(selection_expr=selection_expr, bbox=bbox)
 
-        for stream_type in chart._selection_streams:
-            stream = stream_type(source=chart)
+        for stream_type in selection_streams:
+            stream = stream_type(source=hvobj)
             self._source_streams.append(stream)
 
             stream.add_subscriber(_set_expr)
