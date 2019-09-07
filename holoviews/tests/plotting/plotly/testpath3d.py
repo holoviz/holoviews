@@ -42,3 +42,8 @@ class TestPath3DPlot(TestPlotlyPlot):
         state = self._get_plot_state(path3D)
         self.assertEqual(state['data'][0]['line']['color'], 'red')
         self.assertEqual(state['data'][1]['line']['color'], 'blue')
+
+    def test_visible(self):
+        element = Path3D([(0, 1, 0), (1, 2, 1), (2, 3, 2)]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

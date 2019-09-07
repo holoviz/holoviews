@@ -13,7 +13,7 @@ class TablePlot(ElementPlot):
 
     trace_kwargs = {'type': 'table'}
 
-    style_opts = ['line', 'fill', 'align', 'font', 'cell_height']
+    style_opts = ['visible', 'line', 'fill', 'align', 'font', 'cell_height']
 
     _style_key = 'cells'
 

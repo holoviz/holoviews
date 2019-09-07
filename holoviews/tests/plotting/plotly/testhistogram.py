@@ -51,3 +51,8 @@ class TestHistogramPlot(TestPlotlyPlot):
         state = self._get_plot_state(hist)
         marker = state['data'][0]['marker']
         self.assert_property_values(marker, props)
+
+    def test_visible(self):
+        element = Histogram((self.edges, self.frequencies)).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

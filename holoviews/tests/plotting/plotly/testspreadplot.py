@@ -29,3 +29,11 @@ class TestSpreadPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['fill'], 'tonextx')
         self.assertEqual(state['layout']['xaxis']['range'], [0.5, 5.25])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
+
+    def test_visible(self):
+        element = Spread(
+            [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
+            vdims=['y', 'y2']
+        ).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

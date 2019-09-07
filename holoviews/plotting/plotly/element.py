@@ -213,9 +213,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             opts[self._style_key] = {STYLE_ALIASES.get(k, k): v
                                      for k, v in styles.items()}
 
-            # Move selectedpoints from style key back to root
-            if 'selectedpoints' in opts.get(self._style_key, {}):
-                opts['selectedpoints'] = opts[self._style_key].pop('selectedpoints')
+            # Move certain options from the style key back to root
+            for k in ['selectedpoints', 'visible']:
+                if k in opts.get(self._style_key, {}):
+                    opts[k] = opts[self._style_key].pop(k)
+
         else:
             opts.update({STYLE_ALIASES.get(k, k): v
                          for k, v in style.items() if k != 'cmap'})

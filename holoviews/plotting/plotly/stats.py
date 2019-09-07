@@ -14,7 +14,7 @@ class BivariatePlot(ChartPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'histogram2dcontour'}
 
-    style_opts = ['cmap', 'showlabels', 'labelfont', 'labelformat', 'showlines']
+    style_opts = ['visible', 'cmap', 'showlabels', 'labelfont', 'labelformat', 'showlines']
 
     _style_key = 'contours'
 
@@ -58,7 +58,7 @@ class DistributionPlot(ElementPlot):
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
 
-    style_opts = ['color', 'dash', 'line_width']
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
@@ -112,7 +112,7 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
+    style_opts = ['visible', 'color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'box'}
 
@@ -136,7 +136,7 @@ class ViolinPlot(MultiDistributionPlot):
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
 
-    style_opts = ['color', 'alpha', 'outliercolor', 'marker', 'size']
+    style_opts = ['visible', 'color', 'alpha', 'outliercolor', 'marker', 'size']
 
     trace_kwargs = {'type': 'violin'}
 

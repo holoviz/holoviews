@@ -52,3 +52,8 @@ class TestCurvePlot(TestPlotlyPlot):
         curve = Curve([1, 2, 3]).options(line_width=5)
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['line']['width'], 5)
+
+    def test_visible(self):
+        element = Curve([1, 2, 3]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

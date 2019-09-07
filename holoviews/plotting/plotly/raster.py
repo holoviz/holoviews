@@ -9,7 +9,7 @@ from .element import ColorbarPlot
 
 class RasterPlot(ColorbarPlot):
 
-    style_opts = ['cmap', 'alpha']
+    style_opts = ['visible', 'cmap', 'alpha']
 
     trace_kwargs = {'type': 'heatmap'}
 

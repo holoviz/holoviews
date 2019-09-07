@@ -28,3 +28,8 @@ class TestScatter3DPlot(TestPlotlyPlot):
         scatter = Scatter3D(([0,1], [2,3], [4,5])).options(size='y')
         state = self._get_plot_state(scatter)
         self.assertEqual(state['data'][0]['marker']['size'], np.array([2, 3]))
+
+    def test_visible(self):
+        element = Scatter3D(([0, 1], [2, 3], [4, 5])).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)
