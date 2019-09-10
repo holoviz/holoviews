@@ -52,7 +52,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'visible'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
@@ -129,7 +129,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
         # Angles need special handling since they are tied to the
         # marker in certain cases
-        has_angles = False 
+        has_angles = False
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.param.set_param(**self.lookup_options(el, 'plot').options)
             style = self.lookup_options(element.last, 'style')
@@ -211,9 +211,9 @@ class VectorFieldPlot(ColorbarPlot):
         transforms using the magnitude option, e.g.
         `dim('Magnitude').norm()`.""")
 
-    style_opts = line_properties + ['scale', 'cmap']
+    style_opts = line_properties + ['scale', 'cmap', 'visible']
 
-    _nonvectorized_styles = ['scale', 'cmap']
+    _nonvectorized_styles = ['scale', 'cmap', 'visible']
 
     _plot_methods = dict(single='segment')
 
@@ -324,8 +324,8 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    style_opts = line_properties
-    _nonvectorized_styles = line_properties
+    style_opts = line_properties + ['visible']
+    _nonvectorized_styles = line_properties + ['visible']
 
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
@@ -391,10 +391,10 @@ class CurvePlot(ElementPlot):
 
 class HistogramPlot(ColorbarPlot):
 
-    style_opts = line_properties + fill_properties + ['cmap']
+    style_opts = line_properties + fill_properties + ['cmap', 'visible']
     _plot_methods = dict(single='quad')
 
-    _nonvectorized_styles = ['line_dash']
+    _nonvectorized_styles = ['line_dash', 'visible']
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -497,9 +497,9 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
-    style_opts = line_properties + ['lower_head', 'upper_head']
+    style_opts = line_properties + ['lower_head', 'upper_head', 'visible']
 
-    _nonvectorized_styles = ['line_dash']
+    _nonvectorized_styles = ['line_dash', 'visible']
 
     _mapping = dict(base="base", upper="upper", lower="lower")
 
@@ -553,7 +553,7 @@ class ErrorPlot(ColorbarPlot):
 
 class SpreadPlot(ElementPlot):
 
-    style_opts = line_properties + fill_properties
+    style_opts = line_properties + fill_properties + ['visible']
     _no_op_style = style_opts
 
     _plot_methods = dict(single='patch')
@@ -659,7 +659,7 @@ class SpikesPlot(ColorbarPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    style_opts = (['color', 'cmap', 'palette'] + line_properties)
+    style_opts = (['color', 'cmap', 'palette', 'visible'] + line_properties)
 
     _plot_methods = dict(single='segment')
 
@@ -767,9 +767,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
        Deprecated; use stacked option instead.""")
 
-    style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
+    style_opts = (line_properties
+                  + fill_properties
+                  + ['width', 'bar_width', 'cmap', 'visible'])
 
-    _nonvectorized_styles = ['bar_width', 'cmap', 'width']
+    _nonvectorized_styles = ['bar_width', 'cmap', 'width', 'visible']
 
     _plot_methods = dict(single=('vbar', 'hbar'))
 

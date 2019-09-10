@@ -19,7 +19,7 @@ class RasterPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap', 'alpha']
+    style_opts = ['cmap', 'alpha', 'visible']
 
     _nonvectorized_styles = style_opts
 
@@ -120,7 +120,7 @@ class RasterPlot(ColorbarPlot):
 
 class RGBPlot(ElementPlot):
 
-    style_opts = ['alpha']
+    style_opts = ['alpha', 'visible']
 
     _nonvectorized_styles = style_opts
 
@@ -194,7 +194,7 @@ class QuadMeshPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+    style_opts = ['cmap', 'color', 'visible'] + line_properties + fill_properties
 
     _nonvectorized_styles = style_opts
 
