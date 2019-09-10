@@ -41,7 +41,7 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'surface'}
 
-    style_opts = ['alpha', 'lighting', 'lightposition', 'cmap']
+    style_opts = ['visible', 'alpha', 'lighting', 'lightposition', 'cmap']
 
     def graph_options(self, element, ranges, style):
         opts = super(SurfacePlot, self).graph_options(element, ranges, style)

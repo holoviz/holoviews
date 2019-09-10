@@ -18,3 +18,8 @@ class TestDistributionPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['type'], 'scatter')
         self.assertEqual(state['data'][0]['mode'], 'lines')
         self.assertEqual(state['data'][0].get('fill'), None)
+
+    def test_visible(self):
+        element = Distribution([1, 1.1,  2.1, 3, 2, 1, 2.2]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

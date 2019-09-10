@@ -31,3 +31,10 @@ class TestSurfacePlot(TestPlotlyPlot):
         state = self._get_plot_state(img)
         trace = state['data'][0]
         self.assertFalse(trace['showscale'])
+
+    def test_visible(self):
+        element = Surface(
+            ([1, 2, 3], [0, 1], np.array([[0, 1, 2], [2, 3, 4]]))
+        ).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

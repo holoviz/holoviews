@@ -138,7 +138,7 @@ class HexTilesPlot(ColorbarPlot):
 
     _plot_methods = dict(single='hex_tile')
 
-    style_opts = ['cmap', 'color', 'scale'] + line_properties + fill_properties
+    style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
 
     _nonvectorized_styles = ['cmap', 'line_dash']
 

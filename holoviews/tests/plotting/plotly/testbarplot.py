@@ -60,7 +60,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'A, B')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 4])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
-        
+
     def test_bars_stacked(self):
         bars = Bars([('A', 1, 1), ('B', 2, 2), ('C', 2, 3), ('C', 1, 4)],
                     kdims=['A', 'B']).options(stacked=True)
@@ -92,3 +92,8 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'A')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 7])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+
+    def test_visible(self):
+        element = Bars([3, 2, 1]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

@@ -57,3 +57,8 @@ class TestViolinPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
         self.assertEqual(state['layout']['xaxis']['range'], [1, 5])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
+
+    def test_visible(self):
+        element = Violin([1, 1, 2, 3, 3, 4, 5, 5]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

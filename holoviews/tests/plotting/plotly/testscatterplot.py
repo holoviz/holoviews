@@ -59,3 +59,8 @@ class TestScatterPlot(TestPlotlyPlot):
         ]).options(selectedpoints=[1, 2])
         state = self._get_plot_state(scatter)
         self.assertEqual(state['data'][0]['selectedpoints'], [1, 2])
+
+    def test_visible(self):
+        element = Scatter([3, 2, 1]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

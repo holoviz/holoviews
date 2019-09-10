@@ -50,3 +50,8 @@ class TestAreaPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][1]['fill'], 'tonextx')
         self.assertEqual(state['layout']['xaxis']['range'], [0.5, 3])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 2])
+
+    def test_area_visible(self):
+        curve = Area([1, 2, 3]).options(visible=False)
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['data'][0]['visible'], False)

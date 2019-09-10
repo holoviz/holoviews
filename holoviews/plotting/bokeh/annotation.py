@@ -28,7 +28,7 @@ from .util import date_to_integer
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = text_properties+['color', 'angle']
+    style_opts = text_properties+['color', 'angle', 'visible']
     _plot_methods = dict(single='text', batched='text')
 
     def get_data(self, element, ranges, style):
@@ -86,7 +86,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    style_opts = text_properties + ['cmap', 'angle']
+    style_opts = text_properties + ['cmap', 'angle', 'visible']
 
     _nonvectorized_styles = ['cmap']
 
@@ -128,7 +128,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
 class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = line_properties + ['level']
+    style_opts = line_properties + ['level', 'visible']
 
     apply_ranges = param.Boolean(default=False, doc="""
         Whether to include the annotation in axis range calculations.""")
@@ -174,7 +174,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
     Does not support matplotlib Path codes.
     """
 
-    style_opts = line_properties
+    style_opts = line_properties + ['visible']
     _plot_methods = dict(single='bezier')
 
     def get_data(self, element, ranges, style):

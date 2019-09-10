@@ -26,3 +26,11 @@ class TestErrorBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['error_x']['arrayminus'], np.array([0.5, 1, 2.25]))
         self.assertEqual(state['data'][0]['mode'], 'lines')
         self.assertEqual(state['layout']['xaxis']['range'], [0.5, 5.25])
+
+    def test_visible(self):
+        element = ErrorBars(
+            [(0, 1, 0.5), (1, 2, 1), (2, 3, 2.25)],
+            vdims=['y', 'y2']
+        ).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

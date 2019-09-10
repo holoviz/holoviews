@@ -45,3 +45,8 @@ class TestLabelsPlot(TestPlotlyPlot):
         labels = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(yoffset=0.5)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][0]['y'], np.array([3.5, 2.5, 1.5]))
+
+    def test_visible(self):
+        element = Labels([(0, 3, 0), (1, 2, 1), (2, 1, 1)]).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

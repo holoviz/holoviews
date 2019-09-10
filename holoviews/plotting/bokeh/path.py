@@ -26,7 +26,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    style_opts = line_properties + ['cmap']
+    style_opts = line_properties + ['cmap', 'visible']
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
     _batched_style_opts = line_properties
@@ -270,7 +270,7 @@ class ContourPlot(PathPlot):
 
 class PolygonPlot(ContourPlot):
 
-    style_opts = ['cmap'] + line_properties + fill_properties
+    style_opts = ['cmap', 'visible'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'

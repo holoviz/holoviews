@@ -41,3 +41,8 @@ class TestBivariatePlot(TestPlotlyPlot):
         state = self._get_plot_state(bivariate)
         trace = state['data'][0]
         self.assertFalse(trace['showscale'])
+
+    def test_visible(self):
+        element = Bivariate(([3, 2, 1], [0, 1, 2])).options(visible=False)
+        state = self._get_plot_state(element)
+        self.assertEqual(state['data'][0]['visible'], False)

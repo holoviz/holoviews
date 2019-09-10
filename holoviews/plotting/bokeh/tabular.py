@@ -32,7 +32,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'scroll_to_selection',
-                  'index_position']
+                  'index_position', 'visible']
 
     _stream_data = True
 

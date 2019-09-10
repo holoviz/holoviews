@@ -52,7 +52,7 @@ class HeatMapPlot(ColorbarPlot):
 
     style_opts = (['xmarks_' + p for p in line_properties] +
                   ['ymarks_' + p for p in line_properties] +
-                  ['cmap', 'color', 'dilate'] + line_properties + fill_properties)
+                  ['cmap', 'color', 'dilate', 'visible'] + line_properties + fill_properties)
 
     _categorical = True
 

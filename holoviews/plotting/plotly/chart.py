@@ -28,10 +28,17 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
       Index of the dimension from which the color will the drawn""")
 
     style_opts = [
-        'marker', 'color', 'cmap', 'alpha', 'size', 'sizemin', 'selectedpoints'
+        'visible',
+        'marker',
+        'color',
+        'cmap',
+        'alpha',
+        'size',
+        'sizemin',
+        'selectedpoints',
     ]
 
-    _nonvectorized_styles = ['cmap', 'alpha', 'sizemin', 'selectedpoints']
+    _nonvectorized_styles = ['visible', 'cmap', 'alpha', 'sizemin', 'selectedpoints']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
 
@@ -62,7 +69,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
-    style_opts = ['color', 'dash', 'line_width']
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _nonvectorized_styles = style_opts
 
@@ -76,7 +83,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
 
 class AreaPlot(ChartPlot):
 
-    style_opts = ['color', 'dash', 'line_width']
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
@@ -112,7 +119,7 @@ class AreaPlot(ChartPlot):
 
 class SpreadPlot(ChartPlot):
 
-    style_opts = ['color', 'dash', 'line_width']
+    style_opts = ['visible', 'color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
@@ -129,13 +136,13 @@ class SpreadPlot(ChartPlot):
         upper = mean + pos_error
         return [{x: xs, y: lower, 'fill': None},
                 {x: xs, y: upper, 'fill': 'tonext'+y}]
-    
+
 
 class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
 
-    style_opts = ['color', 'dash', 'line_width', 'thickness']
+    style_opts = ['visible', 'color', 'dash', 'line_width', 'thickness']
 
     _nonvectorized_styles = style_opts
 
@@ -175,6 +182,8 @@ class BarPlot(ElementPlot):
        Element, which will stacked.""")
 
     stacked = param.Boolean(default=False)
+
+    style_opts = ['visible']
 
     trace_kwargs = {'type': 'bar'}
 
@@ -287,7 +296,7 @@ class HistogramPlot(ElementPlot):
 
     trace_kwargs = {'type': 'bar'}
 
-    style_opts = ['color', 'line_color', 'line_width', 'opacity']
+    style_opts = ['visible', 'color', 'line_color', 'line_width', 'opacity']
 
     _style_key = 'marker'
 
