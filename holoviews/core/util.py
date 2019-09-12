@@ -1835,10 +1835,17 @@ def expand_grid_coords(dataset, dim):
     dataset into an ND-array matching the dimensionality of
     the dataset.
     """
-    arrays = [dataset.interface.coords(dataset, d.name, True)
-              for d in dataset.kdims]
-    idx = dataset.get_dimension_index(dim)
-    return cartesian_product(arrays, flat=False)[idx].T
+    irregular = [d.name for d in dataset.kdims
+                 if d is not dim and dataset.interface.irregular(dataset, d)]
+    if irregular:
+        array = dataset.interface.coords(dataset, dim, True)
+        example = dataset.interface.values(dataset, irregular[0], True, False)
+        return array * np.ones_like(example)
+    else:
+        arrays = [dataset.interface.coords(dataset, d.name, True)
+                  for d in dataset.kdims]
+        idx = dataset.get_dimension_index(dim)
+        return cartesian_product(arrays, flat=False)[idx].T
 
 
 def dt64_to_dt(dt64):
