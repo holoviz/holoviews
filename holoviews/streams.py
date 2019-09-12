@@ -765,6 +765,78 @@ def ParamValues(*args, **kwargs):
     return Params(*args, **kwargs)
 
 
+class SelectionExpr(Stream):
+
+    selection_expr = param.Parameter(default=None, constant=True)
+    bbox = param.Dict(default=None, constant=True)
+
+    def __init__(self, source, **params):
+        from .element import Element
+        from .core.spaces import DynamicMap
+        from .plotting.util import initialize_dynamic
+
+        if isinstance(source, DynamicMap):
+            initialize_dynamic(source)
+
+        if isinstance(source, Element) or (
+                isinstance(source, DynamicMap) and
+                issubclass(source.type, Element)
+        ):
+            self._source_streams = []
+            super(SelectionExpr, self).__init__(source=source, **params)
+            self._register_chart(source)
+        else:
+            raise ValueError("""
+The source of SelectionExpr must be an instance of an Element subclass,
+or a DynamicMap that returns such an instance
+            Received value of type {typ}: {val}""".format(
+            typ=type(source), val=source
+        ))
+
+    def _register_chart(self, hvobj):
+        from .core.spaces import DynamicMap
+
+        if isinstance(hvobj, DynamicMap):
+            element_type = hvobj.type
+        else:
+            element_type = hvobj
+
+        selection_streams = element_type._selection_streams
+
+        def _set_expr(**params):
+            if isinstance(hvobj, DynamicMap):
+                element = hvobj.values()[-1]
+            else:
+                element = hvobj
+            selection_expr, bbox = \
+                element._get_selection_expr_for_stream_value(**params);
+
+            self.event(selection_expr=selection_expr, bbox=bbox)
+
+        for stream_type in selection_streams:
+            stream = stream_type(source=hvobj)
+            self._source_streams.append(stream)
+
+            stream.add_subscriber(_set_expr)
+
+    def _unregister_chart(self):
+        for stream in self._source_streams:
+            stream.source = None
+            stream.clear()
+        self._source_streams.clear()
+
+    @property
+    def source(self):
+        return Stream.source.fget(self)
+
+    @source.setter
+    def source(self, value):
+        self._unregister_chart()
+        Stream.source.fset(self, value)
+
+    def __del__(self):
+        self._unregister_chart()
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions

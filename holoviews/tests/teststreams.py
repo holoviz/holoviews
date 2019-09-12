@@ -7,10 +7,11 @@ from unittest import SkipTest
 import param
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import LooseVersion, pd
-from holoviews.element import Points
+from holoviews.element import Points, Scatter, Curve, Histogram
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
-from holoviews.util import Dynamic
+from holoviews.util import Dynamic, extension
+from holoviews.util.transform import dim
 
 from .utils import LoggingComparisonTestCase
 
@@ -898,3 +899,215 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         buff = Buffer(data)
         buff.clear()
         self.assertEqual(buff.data, data.iloc[:0, :].reset_index())
+
+
+class TestExprSelectionStream(ComparisonTestCase):
+
+    def setUp(self):
+        extension("bokeh")
+
+    def test_selection_expr_stream_scatter_points(self):
+        for element_type in [Scatter, Points, Curve]:
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10]))
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream._source_streams), 1)
+            self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream._source_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x') >= 1) & (dim('x') <= 3) &
+                     (dim('y') >= 1) & (dim('y') <= 4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3), 'y': (1, 4)}
+            )
+
+    def test_selection_expr_stream_invert_axes(self):
+        for element_type in [Scatter, Points, Curve]:
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream._source_streams), 1)
+            self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream._source_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('y') >= 1) & (dim('y') <= 3) &
+                     (dim('x') >= 1) & (dim('x') <= 4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'y': (1, 3), 'x': (1, 4)}
+            )
+
+    def test_selection_expr_stream_invert_xaxis_yaxis(self):
+        for element_type in [Scatter, Points, Curve]:
+
+            # Create SelectionExpr on element
+            element = element_type(([1, 2, 3], [1, 5, 10])).opts(
+                invert_xaxis=True,
+                invert_yaxis=True,
+            )
+            expr_stream = SelectionExpr(element)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream._source_streams), 1)
+            self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream._source_streams[0].event(bounds=(3, 4, 1, 1))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x') >= 1) & (dim('x') <= 3) &
+                     (dim('y') >= 1) & (dim('y') <= 4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3), 'y': (1, 4)}
+            )
+
+    def test_selection_expr_stream_hist(self):
+        # Create SelectionExpr on element
+        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7]))
+        expr_stream = SelectionExpr(hist)
+
+        # Check stream properties
+        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+        self.assertIsNone(expr_stream.bbox)
+        self.assertIsNone(expr_stream.selection_expr)
+
+        # Simulate interactive update by triggering source stream.
+        # Select second and forth bar.
+        expr_stream._source_streams[0].event(bounds=(1.5, 2.5, 4.6, 6))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+
+        # Select third, forth, and fifth bar.  Make sure there is special
+        # handling when last bar is selected to include values exactly on the
+        # upper edge in the selection
+        expr_stream._source_streams[0].event(bounds=(2.5, -10, 8, 10))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
+                 (dim('x') == hist.edges[-1]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+
+    def test_selection_expr_stream_hist_invert_axes(self):
+        # Create SelectionExpr on element
+        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
+            invert_axes=True
+        )
+        expr_stream = SelectionExpr(hist)
+
+        # Check stream properties
+        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+        self.assertIsNone(expr_stream.bbox)
+        self.assertIsNone(expr_stream.selection_expr)
+
+        # Simulate interactive update by triggering source stream.
+        # Select second and forth bar.
+        expr_stream._source_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+
+        # Select third, forth, and fifth bar.  Make sure there is special
+        # handling when last bar is selected to include values exactly on the
+        # upper edge in the selection
+        expr_stream._source_streams[0].event(bounds=(-10, 2.5, 10, 8))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
+                 (dim('x') == hist.edges[-1]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+
+    def test_selection_expr_stream_hist_invert_xaxis_yaxis(self):
+        # Create SelectionExpr on element
+        hist = Histogram(([1, 2, 3, 4, 5], [1, 5, 2, 3, 7])).opts(
+                invert_xaxis=True,
+                invert_yaxis=True,
+        )
+        expr_stream = SelectionExpr(hist)
+
+        # Check stream properties
+        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+        self.assertIsNone(expr_stream.bbox)
+        self.assertIsNone(expr_stream.selection_expr)
+
+        # Simulate interactive update by triggering source stream.
+        # Select second and forth bar.
+        expr_stream._source_streams[0].event(bounds=(4.6, 6, 1.5, 2.5))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+
+        # Select third, forth, and fifth bar.  Make sure there is special
+        # handling when last bar is selected to include values exactly on the
+        # upper edge in the selection
+        expr_stream._source_streams[0].event(bounds=(8, 10, 2.5, -10))
+        self.assertEqual(
+            repr(expr_stream.selection_expr),
+            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
+                 (dim('x') == hist.edges[-1]))
+        )
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+
+    def test_selection_expr_stream_dynamic_map(self):
+        for element_type in [Scatter, Points, Curve]:
+            # Create SelectionExpr on element
+            dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
+            expr_stream = SelectionExpr(dmap)
+
+            # Check stream properties
+            self.assertEqual(len(expr_stream._source_streams), 1)
+            self.assertIsInstance(expr_stream._source_streams[0], BoundsXY)
+            self.assertIsNone(expr_stream.bbox)
+            self.assertIsNone(expr_stream.selection_expr)
+
+            # Simulate interactive update by triggering source stream
+            expr_stream._source_streams[0].event(bounds=(1, 1, 3, 4))
+
+            # Check SelectionExpr values
+            self.assertEqual(
+                repr(expr_stream.selection_expr),
+                repr((dim('x') >= 1) & (dim('x') <= 3) &
+                     (dim('y') >= 1) & (dim('y') <= 4))
+            )
+            self.assertEqual(
+                expr_stream.bbox,
+                {'x': (1, 3), 'y': (1, 4)}
+            )

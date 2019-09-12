@@ -26,6 +26,11 @@ class Element(ViewableElement, Composable, Overlayable):
 
     __abstract = True
 
+    _selection_streams = ()
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        return None, None
+
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
