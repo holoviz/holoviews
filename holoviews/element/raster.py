@@ -283,8 +283,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             if not xdensity: xdensity = 1
             if not ydensity: ydensity = 1
         elif isinstance(data, np.ndarray) and data.ndim < self._ndim:
-            raise ValueError('%s type expects %d-D array received %d-D'
-                             'array.' % (self._ndim, data.ndim))
+            raise ValueError('%s type expects %d-D array received %d-D '
+                             'array.' % (type(self).__name__, self._ndim, data.ndim))
 
         if rtol is not None:
             params['rtol'] = rtol
