@@ -51,6 +51,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         both 'pan' and 'box_zoom' are drag tools, so if both are
         listed only the last one will be active.""")
 
+    align = param.ObjectSelector(default=None, objects=['start', 'center', 'end'], doc="""
+        Alignment (vertical or horizontal) of the plot in a layout.""")
+
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
@@ -503,6 +506,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.callbacks.append(PlotSizeCallback(self, [stream], None))
 
         plot_props = {
+            'align':         self.align,
             'margin':        self.margin,
             'max_width':     self.max_width,
             'max_height':    self.max_height,
