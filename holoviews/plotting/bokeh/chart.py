@@ -840,14 +840,16 @@ class BarPlot(ColorbarPlot, LegendPlot):
         xdim, ydim = element.dimensions()[:2]
 
         xvals = np.asarray(xdim.values or element.dimension_values(0, False))
-        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
-                 for x in xvals]
+        c_is_str = xvals.dtype.kind in 'SU'
 
         if gdim and not sdim:
             gvals = np.asarray(gdim.values or element.dimension_values(gdim, False))
             xvals = sorted([(x, g) for x in xvals for g in gvals])
-            is_str = gvals.dtype.kind in 'SU'
-            xvals = [(x, g if is_str else gdim.pprint_value(g)) for (x, g) in xvals]
+            g_is_str = gvals.dtype.kind in 'SU'
+            xvals = [(x if c_is_str else xdim.pprint_value(x), g if g_is_str else gdim.pprint_value(g))
+                     for (x, g) in xvals]
+        else:
+            xvals = [x if c_is_str else xdim.pprint_value(x) for x in xvals]
         coords = xvals, []
         if self.invert_axes: coords = coords[::-1]
         return coords
