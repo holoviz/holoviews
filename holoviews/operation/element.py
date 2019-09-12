@@ -797,9 +797,9 @@ class interpolate_curve(Operation):
         is_datetime = isdatetime(x)
         if is_datetime:
             dt_type = 'datetime64[ns]'
-            x = x.astype(dt_type).astype('int64')
+            x = x.astype(dt_type)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[1:])
-        xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), dvals)
+        xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x, dvals)
         if is_datetime:
             xs = xs.astype(dt_type)
         return element.clone((xs,)+dvals)
