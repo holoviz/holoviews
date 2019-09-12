@@ -631,6 +631,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 kwargs['frame_width'] = width
             if height is not None:
                 kwargs['frame_height'] = height
+            if c == 0:
+                kwargs['align'] = 'end'
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
             if c != 0 and r == 0:
