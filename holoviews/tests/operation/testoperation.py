@@ -291,10 +291,10 @@ class OperationTests(ComparisonTestCase):
         values = [0, 1, 2, 3]
         interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-pre')
         dates_interp = np.array([
-            '2017-01-01T00:00:16.364011520', '2017-01-01T00:00:16.364011520',
-            '2017-01-02T00:01:05.465745408', '2017-01-02T00:01:05.465745408',
-            '2017-01-02T23:59:37.128525824', '2017-01-02T23:59:37.128525824',
-            '2017-01-04T00:00:26.230259712'
+            '2017-01-01T00:00:00', '2017-01-01T00:00:00',
+            '2017-01-02T00:00:00', '2017-01-02T00:00:00',
+            '2017-01-03T00:00:00', '2017-01-03T00:00:00',
+            '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 1, 1, 2, 2, 3, 3]))
         self.assertEqual(interpolated, curve)
@@ -317,10 +317,10 @@ class OperationTests(ComparisonTestCase):
         values = [0, 1, 2, 3]
         interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-mid')
         dates_interp = np.array([
-            '2017-01-01T00:00:16.364011520', '2017-01-01T11:59:32.195401728',
-            '2017-01-01T11:59:32.195401728', '2017-01-02T12:00:21.297135616',
-            '2017-01-02T12:00:21.297135616', '2017-01-03T12:01:10.398869504',
-            '2017-01-03T12:01:10.398869504', '2017-01-04T00:00:26.230259712'
+            '2017-01-01T00:00:00', '2017-01-01T12:00:00',
+            '2017-01-01T12:00:00', '2017-01-02T12:00:00',
+            '2017-01-02T12:00:00', '2017-01-03T12:00:00',
+            '2017-01-03T12:00:00', '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3, 3]))
         self.assertEqual(interpolated, curve)
@@ -343,10 +343,10 @@ class OperationTests(ComparisonTestCase):
         values = [0, 1, 2, 3]
         interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-post')
         dates_interp = np.array([
-            '2017-01-01T00:00:16.364011520', '2017-01-02T00:01:05.465745408',
-            '2017-01-02T00:01:05.465745408', '2017-01-02T23:59:37.128525824',
-            '2017-01-02T23:59:37.128525824', '2017-01-04T00:00:26.230259712',
-            '2017-01-04T00:00:26.230259712'
+            '2017-01-01T00:00:00', '2017-01-02T00:00:00',
+            '2017-01-02T00:00:00', '2017-01-03T00:00:00',
+            '2017-01-03T00:00:00', '2017-01-04T00:00:00',
+            '2017-01-04T00:00:00'
         ], dtype='datetime64[ns]')
         curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
         self.assertEqual(interpolated, curve)
