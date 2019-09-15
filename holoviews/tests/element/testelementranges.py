@@ -87,3 +87,15 @@ class ErrorBarsRangeTests(ComparisonTestCase):
         r = ErrorBars(([1, 2, 3], [2, 3, 4], [0.5, 0.5, 0.5]),
                       vdims=[Dimension('y', range=(0., None)), 'yerr']).range(1)
         self.assertEqual(r, (0., 4.5))
+
+    def test_errorbars_range_horizontal(self):
+        r = ErrorBars(([1, 2, 3], [2, 3, 4], [0.5, 0.5, 0.5]),
+                      horizontal=True).range(0)
+        self.assertEqual(r, (0.5, 3.5))
+
+    def test_errorbars_range_explicit_horizontal(self):
+        r = ErrorBars(([1, 2, 3], [2, 3, 4], [0.5, 0.5, 0.5]),
+                      kdims=[Dimension('x', range=(-1, 4.))],
+                      vdims=['y', 'xerr'],
+                      horizontal=True).range(0)
+        self.assertEqual(r, (-1., 4.))
