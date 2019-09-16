@@ -193,13 +193,6 @@ class Histogram(Chart):
             # This is so that dataset contains the data needed to reconstruct
             # the element.
             self._dataset = dataset.clone()
-        elif self.dataset is None:
-            kdim = self.kdims[0].name
-            vdim = self.vdims[0].name
-            self._dataset = Dataset({
-                kdim: self.dimension_values(kdim),
-                vdim: self.dimension_values(vdim),
-            }, kdims=kdim, vdims=vdim)
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if 'dataset' in overrides:

@@ -502,24 +502,6 @@ class LabelledData(param.Parameterized):
             except DataError:
                 # Dataset not compatible with input data
                 pass
-        if self._dataset is None:
-            # Create a default Dataset to wrap input data
-            try:
-                kdims = list(params.get('kdims', []))
-                vdims = list(params.get('vdims', []))
-                dims = kdims + vdims
-                dataset = Dataset(
-                    self.data,
-                    kdims=dims if dims else None
-                )
-                if len(dataset.dimensions()) == 0:
-                    # No dimensions could be auto-detected in data
-                    raise DataError("No dimensions detected")
-                self._dataset = dataset
-            except DataError:
-                # Data not supported by any storage backend. leave _dataset as
-                # None
-                pass
 
         self._id = None
         self.id = id
@@ -544,6 +526,11 @@ class LabelledData(param.Parameterized):
 
     @property
     def dataset(self):
+        from . import Dataset, DataError
+        if self._dataset is None:
+            self._dataset = Dataset(self, _validate_vdims=False)
+            if hasattr(self, '_binned'):
+                self._dataset._binned = self._binned
         return self._dataset
 
     @property
