@@ -34,7 +34,11 @@ class ConstructorTestCase(DatasetPropertyTestCase):
 
     def test_constructor_curve(self):
         element = Curve(self.df)
-        expected = Dataset(self.df)
+        expected = Dataset(
+            self.df,
+            kdims=self.df.columns[0],
+            vdims=self.df.columns[1:].tolist(),
+        )
         self.assertEqual(element.dataset, expected)
 
 
