@@ -526,7 +526,7 @@ class LabelledData(param.Parameterized):
 
     @property
     def dataset(self):
-        from . import Dataset, DataError
+        from . import Dataset
         if self._dataset is None:
             self._dataset = Dataset(self, _validate_vdims=False)
             if hasattr(self, '_binned'):
