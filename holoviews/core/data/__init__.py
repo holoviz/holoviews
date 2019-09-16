@@ -393,8 +393,7 @@ argument to specify a selection specification""")
             selection_specs = [selection_specs]
 
         # Get reference to the dataset that selections will be applied to
-        if (self.dataset is not None
-                and self.interface == self.dataset.interface):
+        if self.interface == self.dataset.interface:
             # We can operate directly on self.dataset so select has access to
             # all of the dimensions in dataset
             dataset = self.dataset

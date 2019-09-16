@@ -229,15 +229,13 @@ class Histogram(Chart):
                 or (not selection and not selection_expr)):
             return self
 
-        if self.dataset is not None and self._operation_kwargs is not None:
+        if self._operation_kwargs is not None:
             # We have what we need to perform selection on dataset and
             # regenerate the histogram.
             selected_dataset = self.dataset.select(selection_expr, **selection)
             selected = histogram(selected_dataset, **self._operation_kwargs)
-            if selected_dataset.dataset is not None:
-                selected._dataset = selected_dataset.dataset
-            else:
-                selected._dataset = selected_dataset
+            selected._dataset = selected_dataset.dataset
+
             return selected
         else:
             # Perform selection directly on histogram
