@@ -17,7 +17,7 @@ class RollingBase(param.Parameterized):
         Whether to set the x-coordinate at the center or right edge
         of the window.""")
 
-    min_periods = param.Integer(default=None, doc="""
+    min_periods = param.Integer(default=None, allow_None=True, doc="""
        Minimum number of observations in window required to have a
        value (otherwise result is NaN).""")
 
@@ -35,7 +35,7 @@ class rolling(Operation,RollingBase):
     Applies a function over a rolling window.
     """
 
-    window_type = param.ObjectSelector(default=None,
+    window_type = param.ObjectSelector(default=None, allow_None=True,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
@@ -72,7 +72,7 @@ class resample(Operation):
     """
 
     closed = param.ObjectSelector(default=None, objects=['left', 'right'],
-        doc="Which side of bin interval is closed")
+        doc="Which side of bin interval is closed", allow_None=True)
 
     function = param.Callable(default=np.mean, doc="""
         Function for computing new values out of existing ones.""")

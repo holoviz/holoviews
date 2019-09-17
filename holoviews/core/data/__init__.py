@@ -5,16 +5,19 @@ try:
 except ImportError:
     pass
 
+import types
+import copy
 import numpy as np
 import param
+from param.parameterized import add_metaclass, ParameterizedMetaclass
 
 from .. import util
 from ..accessors import Redim
 from ..dimension import Dimension, process_dimensions
 from ..element import Element
-from ..ndmapping import OrderedDict
+from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
-from .interface import Interface, iloc, ndloc, DataError
+from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
@@ -155,6 +158,7 @@ class DataConversion(object):
         if len(kdims) == selected.ndims or not groupby:
             # Propagate dataset
             params['dataset'] = self._element.dataset
+            params['pipeline'] = self._element._pipeline
             element = new_type(selected, **params)
             return element.sort() if sort else element
         group = selected.groupby(groupby, container_type=HoloMap,
@@ -165,7 +169,52 @@ class DataConversion(object):
             return group
 
 
+class PipelineMeta(ParameterizedMetaclass):
 
+    # Public methods that should not be wrapped
+    blacklist = ['__init__', 'clone', 'execute_pipeline']
+
+    def __new__(cls, classname, bases, classdict):
+
+        for method_name in classdict:
+            method_fn = classdict[method_name]
+            if method_name in cls.blacklist or method_name.startswith('_'):
+                continue
+            elif isinstance(method_fn, types.FunctionType):
+                classdict[method_name] = cls.pipelined(method_fn)
+
+        inst = type.__new__(cls, classname, bases, classdict)
+        inst._in_method = False
+        return inst
+
+    @staticmethod
+    def pipelined(method):
+        def pipelined_fn(*a, **k):
+            inst = a[0]
+            in_method = inst._in_method
+            if not in_method:
+                inst._in_method = True
+
+            result = method(*a, **k)
+
+            if not in_method:
+                if isinstance(result, Dataset):
+                    result._pipeline = inst._pipeline + [
+                        (method, list(a[1:]), k)
+                    ]
+                elif isinstance(result, MultiDimensionalMapping):
+                    for key, element in result.items():
+                        element._pipeline = inst._pipeline + [
+                            (method, list(a[1:]), k),
+                            (getattr(type(result), '__getitem__'), [key], {})
+                        ]
+                inst._in_method = False
+            return result
+
+        return pipelined_fn
+
+
+@add_metaclass(PipelineMeta)
 class Dataset(Element):
     """
     Dataset provides a general baseclass for Element types that
@@ -201,6 +250,8 @@ class Dataset(Element):
     _kdim_reductions = {}
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
+        input_dataset = kwargs.pop('dataset', None)
+        input_pipeline = kwargs.pop('pipeline', [])
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
@@ -217,6 +268,65 @@ class Dataset(Element):
 
         self.redim = Redim(self, mode='dataset')
 
+        # Handle _pipeline property
+        self._pipeline = input_pipeline + [(
+            type(self),
+            [],
+            kwargs,  # includes kdims and vdims
+        )]
+
+        # Handle initializing the dataset property.
+        self._dataset = None
+        if input_dataset is not None:
+            self._dataset = input_dataset.clone(dataset=None, pipeline=[])
+
+        elif type(self) is Dataset:
+            self._dataset = self
+
+    @property
+    def dataset(self):
+        """
+        The Dataset that this object was created from
+        """
+        from . import Dataset
+        if self._dataset is None:
+            dataset = Dataset(self, _validate_vdims=False)
+            if hasattr(self, '_binned'):
+                dataset._binned = self._binned
+            return dataset
+        else:
+            return self._dataset
+
+    @property
+    def pipeline(self):
+        """
+        List of (function, args, kwargs) tuples that represents the sequence
+        of operations that was used to create this object, starting
+        with the Dataset stored in dataset property
+        """
+        return self._pipeline
+
+    def execute_pipeline(self, data=None):
+        """
+        Create a new object of the same type by executing the sequence of
+        operations that was used to create this object.
+
+        Args:
+            data: Input data to the pipeline. If None, defaults to the value
+            of the dataset property and the resulting object will equal the
+            this object.
+
+        Returns:
+            An object with the same type as this object
+        """
+        new_dataset = self.dataset.clone(data=data, dataset=None, pipeline=[])
+        result = new_dataset
+        for fn, a, kw in self._pipeline:
+            result = fn(result, *a, **kw)
+
+        result._pipeline = copy.copy(self._pipeline)
+        result._dataset = new_dataset
+        return result
 
     def closest(self, coords=[], **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
@@ -880,20 +990,18 @@ argument to specify a selection specification""")
             datatypes = [self.interface.datatype] + self.datatype
             overrides['datatype'] = list(util.unique_iterator(datatypes))
 
-        if 'dataset' in overrides:
-            dataset = overrides.pop('dataset')
-        else:
-            dataset = self.dataset
+        if 'dataset' not in overrides:
+            overrides['dataset'] = self.dataset
 
-        new_dataset = super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
+        if 'pipeline' not in overrides:
+            overrides['pipeline'] = self._pipeline
 
-        if dataset is not None:
-            try:
-                new_dataset._dataset = dataset.clone(data=new_dataset.data, dataset=None)
-            except DataError:
-                # New dataset doesn't have the necessary dimensions to
-                # propagate dataset. Do nothing
-                pass
+        if data is None:
+            overrides['_validate_vdims'] = False
+
+        new_dataset = super(Dataset, self).clone(
+            data, shared_data, new_type, *args, **overrides
+        )
 
         return new_dataset
 
