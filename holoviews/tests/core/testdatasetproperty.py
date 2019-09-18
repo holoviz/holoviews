@@ -620,13 +620,14 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
         # Check pipeline
         pipeline = sub_hist.pipeline
-        self.assertEqual(len(pipeline), 3)
+        self.assertEqual(len(pipeline), 4)
         self.assertIs(pipeline[0][0], Dataset)
-        self.assertIsInstance(pipeline[1][0], histogram)
-        self.assertTrue(callable(pipeline[2][0]))
-        self.assertEqual(pipeline[2][0].__name__, 'select')
-        self.assertEqual(pipeline[2][1], [])
-        self.assertEqual(pipeline[2][2], {'a': (1, None)})
+        self.assertIs(pipeline[1][0], Apply)
+        self.assertEqual(pipeline[2][0].__name__, '__call__')
+        self.assertIsInstance(pipeline[2][1][0], histogram)
+        self.assertEqual(pipeline[3][0].__name__, 'select')
+        self.assertEqual(pipeline[3][1], [])
+        self.assertEqual(pipeline[3][2], {'a': (1, None)})
 
         # Execute pipeline
         self.assertEqual(sub_hist.execute_pipeline(), sub_hist)
@@ -650,13 +651,14 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
         # Check pipeline
         pipeline = sub_hist.pipeline
-        self.assertEqual(len(pipeline), 3)
+        self.assertEqual(len(pipeline), 4)
         self.assertIs(pipeline[0][0], Dataset)
-        self.assertIsInstance(pipeline[1][0], histogram)
-        self.assertTrue(callable(pipeline[2][0]))
-        self.assertEqual(pipeline[2][0].__name__, 'select')
-        self.assertEqual(pipeline[2][1], [])
-        self.assertEqual(pipeline[2][2], {'a': (1, None), 'b': 100})
+        self.assertIs(pipeline[1][0], Apply)
+        self.assertEqual(pipeline[2][0].__name__, '__call__')
+        self.assertIsInstance(pipeline[2][1][0], histogram)
+        self.assertEqual(pipeline[3][0].__name__, 'select')
+        self.assertEqual(pipeline[3][1], [])
+        self.assertEqual(pipeline[3][2], {'a': (1, None), 'b': 100})
 
         # Execute pipeline
         self.assertEqual(sub_hist.execute_pipeline(), sub_hist)
@@ -667,10 +669,12 @@ class HistogramTestCase(DatasetPropertyTestCase):
 
         # Check pipeline
         pipeline = curve.pipeline
-        self.assertEqual(len(pipeline), 3)
+        self.assertEqual(len(pipeline), 4)
         self.assertIs(pipeline[0][0], Dataset)
-        self.assertIsInstance(pipeline[1][0], histogram)
-        self.assertIs(pipeline[2][0], Curve)
+        self.assertIs(pipeline[1][0], Apply)
+        self.assertEqual(pipeline[2][0].__name__, '__call__')
+        self.assertIsInstance(pipeline[2][1][0], histogram)
+        self.assertIs(pipeline[3][0], Curve)
 
         # Execute pipeline
         self.assertEqual(curve.execute_pipeline(), curve)
