@@ -26,6 +26,10 @@ class AccessorPipelineMeta(type):
         def pipelined_call(*a, **k):
             from .data import Dataset, MultiDimensionalMapping
             inst = a[0]
+            if not hasattr(inst._obj, '_pipeline'):
+                # Wrapped object doesn't support the pipeline property
+                return __call__(*a, **k)
+
             in_method = inst._obj._in_method
             if not in_method:
                 inst._obj._in_method = True
