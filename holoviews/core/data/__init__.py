@@ -13,7 +13,7 @@ from param.parameterized import add_metaclass, ParameterizedMetaclass
 
 from .. import util
 from ..accessors import Redim
-from ..dimension import Dimension, process_dimensions
+from ..dimension import Dimension, process_dimensions, Dimensioned
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
@@ -1006,6 +1006,13 @@ argument to specify a selection specification""")
         )
 
         return new_dataset
+
+    def options(self, *args, **kwargs):
+        # Override so that PipelineMeta finds method to wrap it with pipeline
+        # support
+        return super(Dataset, self).options(*args, **kwargs)
+
+    options.__doc__ = Dimensioned.options.__doc__
 
     @property
     def iloc(self):
