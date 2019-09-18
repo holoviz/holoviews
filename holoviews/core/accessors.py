@@ -162,7 +162,7 @@ class Apply(object):
                     mapped.append((k, new_val))
             return self._obj.clone(mapped, link=link_inputs)
 
-        
+
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a aggregate function to all ViewableElements.
 
@@ -226,7 +226,7 @@ class Redim(object):
             list: List of dimensions with replacements applied
         """
         from .dimension import Dimension
-        
+
         replaced = []
         for d in dimensions:
             if d.name in overrides:
