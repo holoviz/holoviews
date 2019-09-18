@@ -193,6 +193,7 @@ class PipelineMeta(ParameterizedMetaclass):
     def pipelined(method):
         def pipelined_fn(*args, **kwargs):
             inst = args[0]
+            inst_pipeline = copy.copy(getattr(inst, '_pipeline', None))
             in_method = inst._in_method
             if not in_method:
                 inst._in_method = True
@@ -201,12 +202,12 @@ class PipelineMeta(ParameterizedMetaclass):
 
             if not in_method:
                 if isinstance(result, Dataset):
-                    result._pipeline = inst._pipeline + [
+                    result._pipeline = inst_pipeline + [
                         (method, list(args[1:]), kwargs)
                     ]
                 elif isinstance(result, MultiDimensionalMapping):
                     for key, element in result.items():
-                        element._pipeline = inst._pipeline + [
+                        element._pipeline = inst_pipeline + [
                             (method, list(args[1:]), kwargs),
                             (getattr(type(result), '__getitem__'), [key], {})
                         ]

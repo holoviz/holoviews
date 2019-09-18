@@ -4,6 +4,7 @@ Module for accessor objects for viewable HoloViews objects.
 from __future__ import absolute_import, unicode_literals
 
 from collections import OrderedDict
+import copy
 
 import param
 from param.parameterized import add_metaclass
@@ -30,6 +31,7 @@ class AccessorPipelineMeta(type):
                 # Wrapped object doesn't support the pipeline property
                 return __call__(*args, **kwargs)
 
+            inst_pipeline = copy.copy(inst._obj. _pipeline)
             in_method = inst._obj._in_method
             if not in_method:
                 inst._obj._in_method = True
@@ -39,13 +41,13 @@ class AccessorPipelineMeta(type):
             if not in_method:
                 mode = getattr(inst, 'mode', None)
                 if isinstance(result, Dataset):
-                    result._pipeline = inst._obj._pipeline + [
+                    result._pipeline = inst_pipeline + [
                         (type(inst), [], {'mode': mode}),
                         (__call__, list(args[1:]), kwargs)
                     ]
                 elif isinstance(result, MultiDimensionalMapping):
                     for key, element in result.items():
-                        element._pipeline = inst._obj._pipeline + [
+                        element._pipeline = inst_pipeline + [
                             (type(inst), [], {'mode': mode}),
                             (__call__, list(args[1:]), kwargs),
                             (getattr(type(result), '__getitem__'), [key], {})

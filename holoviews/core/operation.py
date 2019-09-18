@@ -3,6 +3,7 @@ Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
 import param
+import copy
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
@@ -118,13 +119,16 @@ class Operation(param.ParameterizedFunction):
         kwargs = {}
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
+
+        element_pipeline = copy.copy(getattr(element, '_pipeline', None))
+
         ret = self._process(element, key)
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
         if isinstance(ret, Dataset) and isinstance(element, Dataset):
             ret._dataset = element.dataset.clone()
-            ret._pipeline = element.pipeline + [
+            ret._pipeline = element_pipeline + [
                 (self.instance(), [], dict(self.p))
             ]
         return ret
