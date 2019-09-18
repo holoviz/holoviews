@@ -13,7 +13,9 @@ from param.parameterized import add_metaclass, ParameterizedMetaclass
 
 from .. import util
 from ..accessors import Redim
-from ..dimension import Dimension, process_dimensions, Dimensioned
+from ..dimension import (
+    Dimension, process_dimensions, Dimensioned, LabelledData
+)
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
@@ -1007,12 +1009,15 @@ argument to specify a selection specification""")
 
         return new_dataset
 
+    # Overrides of superclass methods that are needed so that PipelineMeta
+    # will find them to wrap with pipeline support
     def options(self, *args, **kwargs):
-        # Override so that PipelineMeta finds method to wrap it with pipeline
-        # support
         return super(Dataset, self).options(*args, **kwargs)
-
     options.__doc__ = Dimensioned.options.__doc__
+
+    def map(self, *args, **kwargs):
+        return super(Dataset, self).map(*args, **kwargs)
+    map.__doc__ = LabelledData.map.__doc__
 
     @property
     def iloc(self):
