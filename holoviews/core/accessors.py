@@ -53,6 +53,8 @@ class AccessorPipelineMeta(type):
                 inst._obj._in_method = False
             return result
 
+        pipelined_call.__doc__ = __call__.__doc__
+
         return pipelined_call
 
 

@@ -211,6 +211,8 @@ class PipelineMeta(ParameterizedMetaclass):
                 inst._in_method = False
             return result
 
+        pipelined_fn.__doc__ = method.__doc__
+
         return pipelined_fn
 
 
