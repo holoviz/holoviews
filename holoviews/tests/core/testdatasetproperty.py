@@ -1,3 +1,4 @@
+from holoviews.core import Apply, Redim
 from holoviews.element.comparison import ComparisonTestCase
 import pandas as pd
 from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
@@ -738,3 +739,54 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Execute pipeline
         self.assertEqual(rgb.execute_pipeline(), rgb)
         self.assertEqual(rgb.execute_pipeline(self.ds2), rgb2)
+
+
+class AccessorTestCase(DatasetPropertyTestCase):
+    def test_apply_curve(self):
+        curve = self.ds.to.curve('a', 'b', groupby=[]).apply(
+            lambda c: Scatter(c.select(b=(20, None)).data)
+        )
+        curve2 = self.ds2.to.curve('a', 'b', groupby=[]).apply(
+            lambda c: Scatter(c.select(b=(20, None)).data)
+        )
+        self.assertNotEqual(curve, curve2)
+
+        # Check pipeline
+        pipeline = curve.pipeline
+        self.assertEqual(len(pipeline), 4)
+        self.assertIs(pipeline[0][0], Dataset)
+        self.assertIs(pipeline[1][0], Curve)
+        self.assertIs(pipeline[2][0], Apply)
+        self.assertEqual(pipeline[2][2], {'mode': None})
+        self.assertEqual(pipeline[3][0].__name__, '__call__')
+
+        # Execute pipeline
+        self.assertEqual(curve.execute_pipeline(), curve)
+        self.assertEqual(
+            curve.execute_pipeline(self.ds2), curve2
+        )
+
+    def test_redim_curve(self):
+        curve = self.ds.to.curve('a', 'b', groupby=[]).redim.unit(
+            a='kg', b='m'
+        )
+
+        curve2 = self.ds2.to.curve('a', 'b', groupby=[]).redim.unit(
+            a='kg', b='m'
+        )
+        self.assertNotEqual(curve, curve2)
+
+        # Check pipeline
+        pipeline = curve.pipeline
+        self.assertEqual(len(pipeline), 4)
+        self.assertIs(pipeline[0][0], Dataset)
+        self.assertIs(pipeline[1][0], Curve)
+        self.assertIs(pipeline[2][0], Redim)
+        self.assertEqual(pipeline[2][2], {'mode': 'dataset'})
+        self.assertEqual(pipeline[3][0].__name__, '__call__')
+
+        # Execute pipeline
+        self.assertEqual(curve.execute_pipeline(), curve)
+        self.assertEqual(
+            curve.execute_pipeline(self.ds2), curve2
+        )

@@ -6,11 +6,53 @@ from __future__ import absolute_import, unicode_literals
 from collections import OrderedDict
 
 import param
+from param.parameterized import add_metaclass
 
 from . import util
 from .pprint import PrettyPrinter
 
 
+class AccessorPipelineMeta(type):
+    def __new__(mcs, classname, bases, classdict):
+        if '__call__' in classdict:
+            classdict['__call__'] = mcs.pipelined(classdict['__call__'])
+
+        inst = type.__new__(mcs, classname, bases, classdict)
+        inst._in_method = False
+        return inst
+
+    @classmethod
+    def pipelined(mcs, __call__):
+        def pipelined_call(*a, **k):
+            from .data import Dataset, MultiDimensionalMapping
+            inst = a[0]
+            in_method = inst._obj._in_method
+            if not in_method:
+                inst._obj._in_method = True
+
+            result = __call__(*a, **k)
+
+            if not in_method:
+                mode = getattr(inst, 'mode', None)
+                if isinstance(result, Dataset):
+                    result._pipeline = inst._obj._pipeline + [
+                        (type(inst), [], {'mode': mode}),
+                        (__call__, list(a[1:]), k)
+                    ]
+                elif isinstance(result, MultiDimensionalMapping):
+                    for key, element in result.items():
+                        element._pipeline = inst._obj._pipeline + [
+                            (type(inst), [], {'mode': mode}),
+                            (__call__, list(a[1:]), k),
+                            (getattr(type(result), '__getitem__'), [key], {})
+                        ]
+                inst._obj._in_method = False
+            return result
+
+        return pipelined_call
+
+
+@add_metaclass(AccessorPipelineMeta)
 class Apply(object):
     """
     Utility to apply a function or operation to all viewable elements
@@ -151,7 +193,7 @@ class Apply(object):
         return self.__call__('select', **kwargs)
 
 
-
+@add_metaclass(AccessorPipelineMeta)
 class Redim(object):
     """
     Utility that supports re-dimensioning any HoloViews object via the
@@ -306,7 +348,7 @@ class Redim(object):
         return self._redim('values', specs, **ranges)
 
 
-
+@add_metaclass(AccessorPipelineMeta)
 class Opts(object):
 
     def __init__(self, obj, mode=None):
