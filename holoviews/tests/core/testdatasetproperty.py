@@ -709,13 +709,6 @@ class DatashaderTestCase(DatasetPropertyTestCase):
         # Check dataset
         self.assertEqual(img.dataset, self.ds)
 
-        # Check pipeline
-        pipeline = img.pipeline
-        self.assertEqual(len(pipeline), 3)
-        self.assertIs(pipeline[0][0], Dataset)
-        self.assertIs(pipeline[1][0], Curve)
-        self.assertIsInstance(pipeline[2][0], rasterize)
-
         # Execute pipeline
         self.assertEqual(img.execute_pipeline(), img)
         self.assertEqual(img.execute_pipeline(self.ds2), img2)
@@ -731,14 +724,6 @@ class DatashaderTestCase(DatasetPropertyTestCase):
 
         # Check dataset
         self.assertEqual(rgb.dataset, self.ds)
-
-        # Check pipeline
-        pipeline = rgb.pipeline
-        self.assertEqual(len(pipeline), 4)
-        self.assertIs(pipeline[0][0], Dataset)
-        self.assertIs(pipeline[1][0], Curve)
-        self.assertIsInstance(pipeline[2][0], datashade)
-        self.assertIsInstance(pipeline[3][0], dynspread)
 
         # Execute pipeline
         self.assertEqual(rgb.execute_pipeline(), rgb)
