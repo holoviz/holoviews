@@ -174,16 +174,16 @@ class PipelineMeta(ParameterizedMetaclass):
     # Public methods that should not be wrapped
     blacklist = ['__init__', 'clone', 'execute_pipeline']
 
-    def __new__(cls, classname, bases, classdict):
+    def __new__(mcs, classname, bases, classdict):
 
         for method_name in classdict:
             method_fn = classdict[method_name]
-            if method_name in cls.blacklist or method_name.startswith('_'):
+            if method_name in mcs.blacklist or method_name.startswith('_'):
                 continue
             elif isinstance(method_fn, types.FunctionType):
-                classdict[method_name] = cls.pipelined(method_fn)
+                classdict[method_name] = mcs.pipelined(method_fn)
 
-        inst = type.__new__(cls, classname, bases, classdict)
+        inst = type.__new__(mcs, classname, bases, classdict)
         inst._in_method = False
         return inst
 
