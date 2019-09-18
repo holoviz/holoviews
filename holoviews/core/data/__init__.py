@@ -995,14 +995,14 @@ argument to specify a selection specification""")
             datatypes = [self.interface.datatype] + self.datatype
             overrides['datatype'] = list(util.unique_iterator(datatypes))
 
-        if 'dataset' not in overrides:
-            overrides['dataset'] = self.dataset
-
-        if 'pipeline' not in overrides:
-            overrides['pipeline'] = self._pipeline
-
         if data is None:
             overrides['_validate_vdims'] = False
+
+            if 'dataset' not in overrides:
+                overrides['dataset'] = self.dataset
+
+            if 'pipeline' not in overrides:
+                overrides['pipeline'] = self._pipeline
 
         new_dataset = super(Dataset, self).clone(
             data, shared_data, new_type, *args, **overrides
