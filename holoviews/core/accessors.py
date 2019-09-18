@@ -23,31 +23,31 @@ class AccessorPipelineMeta(type):
 
     @classmethod
     def pipelined(mcs, __call__):
-        def pipelined_call(*a, **k):
+        def pipelined_call(*args, **kwargs):
             from .data import Dataset, MultiDimensionalMapping
-            inst = a[0]
+            inst = args[0]
             if not hasattr(inst._obj, '_pipeline'):
                 # Wrapped object doesn't support the pipeline property
-                return __call__(*a, **k)
+                return __call__(*args, **kwargs)
 
             in_method = inst._obj._in_method
             if not in_method:
                 inst._obj._in_method = True
 
-            result = __call__(*a, **k)
+            result = __call__(*args, **kwargs)
 
             if not in_method:
                 mode = getattr(inst, 'mode', None)
                 if isinstance(result, Dataset):
                     result._pipeline = inst._obj._pipeline + [
                         (type(inst), [], {'mode': mode}),
-                        (__call__, list(a[1:]), k)
+                        (__call__, list(args[1:]), kwargs)
                     ]
                 elif isinstance(result, MultiDimensionalMapping):
                     for key, element in result.items():
                         element._pipeline = inst._obj._pipeline + [
                             (type(inst), [], {'mode': mode}),
-                            (__call__, list(a[1:]), k),
+                            (__call__, list(args[1:]), kwargs),
                             (getattr(type(result), '__getitem__'), [key], {})
                         ]
                 inst._obj._in_method = False
