@@ -390,8 +390,10 @@ class XArrayInterface(GridInterface):
         sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
         if sampled or (all_scalar and len(indices) == len(kdims)):
+            import xarray as xr
             if all_scalar: isel = {k: [v] for k, v in isel.items()}
-            return dataset.data.isel_points(**isel).to_dataframe().reset_index()
+            selected = dataset.data.isel({k: xr.DataArray(v) for k, v in isel.items()})
+            return selected.to_dataframe().reset_index()
         else:
             return dataset.data.isel(**isel)
 
