@@ -186,7 +186,6 @@ class PipelineMeta(ParameterizedMetaclass):
                 classdict[method_name] = mcs.pipelined(method_fn)
 
         inst = type.__new__(mcs, classname, bases, classdict)
-        inst._in_method = False
         return inst
 
     @staticmethod
@@ -255,6 +254,7 @@ class Dataset(Element):
     _kdim_reductions = {}
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
+        self._in_method = False
         input_dataset = kwargs.pop('dataset', None)
         input_pipeline = kwargs.pop('pipeline', [])
         if isinstance(data, Element):
@@ -1003,6 +1003,9 @@ argument to specify a selection specification""")
 
             if 'pipeline' not in overrides:
                 overrides['pipeline'] = self._pipeline
+        elif self._in_method:
+            if 'dataset' not in overrides:
+                overrides['dataset'] = self.dataset
 
         new_dataset = super(Dataset, self).clone(
             data, shared_data, new_type, *args, **overrides

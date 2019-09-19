@@ -46,11 +46,13 @@ class Accessor(object):
 
     def __getitem__(self, index):
         from ..data import Dataset
+        self.dataset._in_method = True
         res = self._perform_getitem(self.dataset, index)
         if isinstance(res, Dataset):
             res._pipeline = self.dataset.pipeline + [
                 (getattr(type(self), '_perform_getitem'), [index], {})
             ]
+        self.dataset._in_method = False
         return res
 
     @classmethod
