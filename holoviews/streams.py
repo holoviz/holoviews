@@ -635,11 +635,7 @@ class Params(Stream):
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    watch_only = param.Boolean(default=False, doc="""
-        Whether the stream should only watch and not return the parameter
-        values in the contents method.""")
-
-    def __init__(self, parameterized=None, parameters=None, watch=True, **params):
+    def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
@@ -659,6 +655,7 @@ class Params(Stream):
                     rename.update({(o, k): v for o in owners})
             params['rename'] = rename
 
+        self._watch_only = watch_only
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
@@ -732,7 +729,7 @@ class Params(Stream):
 
     @property
     def contents(self):
-        if self.watch_only:
+        if self._watch_only:
             return {}
         filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
         return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
@@ -747,10 +744,6 @@ class ParamMethod(Params):
     change.
     """
 
-    watch_only = param.Boolean(default=True, readonly=True, doc="""
-        Whether the stream should only watch and not return the parameter
-        values in the contents method.""")
-
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
@@ -760,6 +753,7 @@ class ParamMethod(Params):
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
             parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
+        params['watch_only'] = True
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
 
 
