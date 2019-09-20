@@ -7,12 +7,14 @@ import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
+
 from collections import defaultdict
-from functools import partial
 from contextlib import contextmanager
 from distutils.version import LooseVersion as _LooseVersion
-
+from functools import partial
 from threading import Thread, Event
+from types import FunctionType
+
 import numpy as np
 import param
 
@@ -26,7 +28,7 @@ except:
 # Python3 compatibility
 if sys.version_info.major >= 3:
     import builtins as builtins   # noqa (compatibility)
-    
+
     basestring = str
     unicode = str
     long = int
@@ -38,7 +40,7 @@ if sys.version_info.major >= 3:
     LooseVersion = _LooseVersion
 else:
     import __builtin__ as builtins # noqa (compatibility)
-    
+
     basestring = basestring
     unicode = unicode
     from itertools import izip
@@ -1480,6 +1482,35 @@ def is_param_method(obj, has_deps=False):
     if parameterized and has_deps:
         return getattr(obj, "_dinfo", {}).get('dependencies')
     return parameterized
+
+
+def resolve_dependent_kwargs(kwargs):
+    """Resolves parameter dependencies in the supplied dictionary
+
+    Resolves parameter values, Parameterized instance methods and
+    parameterized functions with dependencies in the supplied
+    dictionary.
+
+    Args:
+       kwargs (dict): A dictionary of keyword arguments
+
+    Returns:
+       A new dictionary with where any parameter dependencies have been
+       resolved.
+    """
+    resolved = {}
+    for k, v in kwargs.items():
+        if is_param_method(v, has_deps=True):
+            v = v()
+        elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+            v = getattr(v.owner, v.name)
+        elif isinstance(v, FunctionType) and hasattr(v, '_dinfo'):
+            deps = v._dinfo
+            args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
+            kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
+            v = v(*args, **kwargs)
+        resolved[k] = v
+    return resolved
 
 
 @contextmanager

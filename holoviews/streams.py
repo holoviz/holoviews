@@ -637,7 +637,7 @@ class Params(Stream):
     parameters = param.List([], constant=True, doc="""
         Parameters on the parameterized to watch.""")
 
-    def __init__(self, parameterized=None, parameters=None, watch=True, **params):
+    def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
@@ -657,6 +657,7 @@ class Params(Stream):
                     rename.update({(o, k): v for o in owners})
             params['rename'] = rename
 
+        self._watch_only = watch_only
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
@@ -730,6 +731,8 @@ class Params(Stream):
 
     @property
     def contents(self):
+        if self._watch_only:
+            return {}
         filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
         return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
                 if self._rename.get((o, n), True) is not None}
@@ -752,11 +755,9 @@ class ParamMethod(Params):
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
             parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
+        params['watch_only'] = True
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
 
-    @property
-    def contents(self):
-        return {}
 
 
 

@@ -4,6 +4,7 @@ Module for accessor objects for viewable HoloViews objects.
 from __future__ import absolute_import, unicode_literals
 
 from collections import OrderedDict
+from types import FunctionType
 
 import param
 
@@ -84,24 +85,22 @@ class Apply(object):
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
-        param_methods = {p: val for p, val in kwargs.items()
-                         if util.is_param_method(val, has_deps=True)}
+
+        dependent_kws = any(
+            (isinstance(val, FunctionType) and hasattr(val, '_dinfo')) or
+            util.is_param_method(val, has_deps=True) for val in kwargs.values()
+        )
 
         if dynamic is None:
             dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
                        util.is_param_method(function, has_deps=True) or
-                       params or param_methods)
+                       params or dependent_kws)
 
         if applies and dynamic:
             return Dynamic(self._obj, operation=function, streams=streams,
                            kwargs=kwargs, link_inputs=link_inputs)
         elif applies:
-            inner_kwargs = dict(kwargs)
-            for k, v in kwargs.items():
-                if util.is_param_method(v, has_deps=True):
-                    inner_kwargs[k] = v()
-                elif k in params:
-                    inner_kwargs[k] = getattr(v.owner, v.name)
+            inner_kwargs = util.resolve_dependent_kwargs(kwargs)
             if hasattr(function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
             return function(self._obj, **inner_kwargs)
