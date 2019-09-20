@@ -50,10 +50,11 @@ class XArrayInterface(GridInterface):
                      if kd.name in array.dims][::-1]
             if not all(d in names for d in array.dims):
                 array = np.squeeze(array)
-            try:
-                array = array.transpose(*names, transpose_coords=False)
-            except:
-                array = array.transpose(*names) # Handle old xarray
+            if len(names) > 1:
+                try:
+                    array = array.transpose(*names, transpose_coords=False)
+                except:
+                    array = array.transpose(*names) # Handle old xarray
         shape = array.shape
         if gridded:
             return shape
