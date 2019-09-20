@@ -921,20 +921,6 @@ class Dynamic(param.ParameterizedFunction):
         else:
             return self.p.operation(element, **kwargs)
 
-    def _eval_kwargs(self):
-        """Evaluates any parameterized methods in the kwargs"""
-        evaled_kwargs = {}
-        for k, v in self.p.kwargs.items():
-            if util.is_param_method(v):
-                v = v()
-            elif isinstance(v, FunctionType) and hasattr(v, '_dinfo'):
-                deps = v._dinfo
-                args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
-                kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
-                v = v(*args, **kwargs)
-            evaled_kwargs[k] = v
-        return evaled_kwargs
-
     def _dynamic_operation(self, map_obj):
         """
         Generate function to dynamically apply the operation.
@@ -942,12 +928,12 @@ class Dynamic(param.ParameterizedFunction):
         """
         if not isinstance(map_obj, DynamicMap):
             def dynamic_operation(*key, **kwargs):
-                kwargs = dict(self._eval_kwargs(), **kwargs)
+                kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
                 obj = map_obj[key] if isinstance(map_obj, HoloMap) else map_obj
                 return self._process(obj, key, kwargs)
         else:
             def dynamic_operation(*key, **kwargs):
-                kwargs = dict(self._eval_kwargs(), **kwargs)
+                kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
                 if map_obj._posarg_keys and not key:
                     key = tuple(kwargs[k] for k in map_obj._posarg_keys)
                 return self._process(map_obj[key], key, kwargs)

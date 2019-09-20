@@ -132,6 +132,16 @@ class TestApplyElement(ComparisonTestCase):
         pinst.label = 'Another label'
         self.assertEqual(applied.last, self.element.relabel('Another label!'))
 
+    def test_element_apply_function_with_dependencies_non_dynamic(self):
+        pinst = ParamClass()
+
+        @param.depends(pinst.param.label)
+        def get_label(label):
+            return label + '!'
+
+        applied = self.element.apply('relabel', dynamic=False, label=get_label)
+        self.assertEqual(applied, self.element.relabel('Test!'))
+
     def test_element_apply_dynamic_with_param_method(self):
         pinst = ParamClass()
         applied = self.element.apply(lambda x, label: x.relabel(label), label=pinst.dynamic_label)
