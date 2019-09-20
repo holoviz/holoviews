@@ -536,6 +536,20 @@ def map_colors(arr, crange, cmap, hex=True):
         return arr
 
 
+def resample_palette(palette, ncolors, categorical, cmap_categorical):
+    """
+    Resample the number of colors in a palette to the selected number.
+    """
+    if len(palette) != ncolors:
+        if categorical and cmap_categorical:
+            palette = [palette[i%len(palette)] for i in range(ncolors)]
+        else:
+            lpad, rpad = -0.5, 0.49999999999
+            indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
+            palette = [palette[int(np.round(v))] for v in indexes]
+    return palette
+
+
 def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
@@ -562,6 +576,22 @@ def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
                 palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
             return palette
     return [rgb2hex(c) for c in cmap(np.linspace(0, 1, ncolors))]
+
+
+def colorcet_cmap_to_palette(cmap, ncolors=None, categorical=False):
+    from colorcet import palette
+
+    categories = ['glasbey']
+
+    ncolors = ncolors or 256
+    cmap_categorical = any(c in cmap for c in categories)
+
+    if cmap.endswith('_r'):
+        palette = list(reversed(palette[cmap[:-2]]))
+    else:
+        palette = palette[cmap]
+
+    return resample_palette(palette, ncolors, categorical, cmap_categorical)
 
 
 def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
@@ -603,14 +633,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         palette = palette(ncolors)
     if reverse: palette = palette[::-1]
 
-    if len(palette) != ncolors:
-        if categorical and cmap_categorical:
-            palette = [palette[i%len(palette)] for i in range(ncolors)]
-        else:
-            lpad, rpad = -0.5, 0.49999999999
-            indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
-            palette = [palette[int(np.round(v))] for v in indexes]
-    return palette
+    return resample_palette(palette, ncolors, categorical, cmap_categorical)
 
 
 def linear_gradient(start_hex, finish_hex, n=10):
@@ -879,16 +902,12 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         mpl_cmaps = _list_cmaps('matplotlib')
         bk_cmaps = _list_cmaps('bokeh')
         cet_cmaps = _list_cmaps('colorcet')
-        if provider=='matplotlib' or (provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)):
+        if provider == 'matplotlib' or (provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)):
             palette = mplcmap_to_palette(cmap, ncolors, categorical)
-        elif provider=='bokeh' or (provider is None and (cmap in bk_cmaps or cmap.capitalize() in bk_cmaps)):
+        elif provider == 'bokeh' or (provider is None and (cmap in bk_cmaps or cmap.capitalize() in bk_cmaps)):
             palette = bokeh_palette_to_palette(cmap, ncolors, categorical)
-        elif provider=='colorcet' or (provider is None and cmap in cet_cmaps):
-            from colorcet import palette
-            if cmap.endswith('_r'):
-                palette = list(reversed(palette[cmap[:-2]]))
-            else:
-                palette = palette[cmap]
+        elif provider == 'colorcet' or (provider is None and cmap in cet_cmaps):
+            palette = colorcet_cmap_to_palette(cmap, ncolors, categorical)
         else:
             raise ValueError("Supplied cmap %s not found among %s colormaps." %
                              (cmap,providers_checked))
