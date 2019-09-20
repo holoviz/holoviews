@@ -955,12 +955,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        level = properties.pop('level', 'glyph')
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         if isinstance(plot_method, tuple):
             # Handle alternative plot method for flipped axes
             plot_method = plot_method[int(self.invert_axes)]
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
+        renderer.level = level
         return renderer, renderer.glyph
 
 
@@ -1025,12 +1027,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     val = str(v)+'pt'
                 elif isinstance(val, np.ndarray) and val.dtype.kind in 'ifu':
                     val = [str(int(s))+'pt' for s in val]
+
             if util.isscalar(val):
                 key = val
             else:
                 # Node marker does not handle {'field': ...}
-                key = k if k == 'node_marker' else {'field': k} 
-                data[k] = val
+                col_name = '_'.join([k, str(v).replace("'", '')])
+                key = col_name if k == 'node_marker' else {'field': col_name}
+                data[col_name] = val
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
@@ -1546,9 +1550,11 @@ class CompositeElementPlot(ElementPlot):
         """
         Returns a Bokeh glyph object.
         """
+        level = properties.pop('level', 'glyph')
         properties = mpl_to_bokeh(properties)
         plot_method = '_'.join(key.split('_')[:-1])
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
+        renderer.level = level
         return renderer, renderer.glyph
 
 
