@@ -627,6 +627,15 @@ class TestStreamSource(ComparisonTestCase):
         stream = PointerX(source=points)
         self.assertIs(stream.source, points)
 
+    def test_source_empty_element_remap(self):
+        points = Points([])
+        stream = PointerX(source=points)
+        self.assertIs(stream.source, points)
+        curve = Curve([])
+        stream.source = curve
+        self.assertNotIn(points, Stream.registry)
+        self.assertIn(curve, Stream.registry)
+
     def test_source_empty_dmap(self):
         points_dmap = DynamicMap(lambda x: Points([]), kdims=['X'])
         stream = PointerX(source=points_dmap)
