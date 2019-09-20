@@ -1023,6 +1023,10 @@ argument to specify a selection specification""")
         return super(Dataset, self).map(*args, **kwargs)
     map.__doc__ = LabelledData.map.__doc__
 
+    def relabel(self, *args, **kwargs):
+        return super(Dataset, self).relabel(*args, **kwargs)
+    relabel.__doc__ = LabelledData.relabel.__doc__
+
     @property
     def iloc(self):
         """Returns iloc indexer with support for columnar indexing.
