@@ -50,10 +50,11 @@ class XArrayInterface(GridInterface):
                      if kd.name in array.dims][::-1]
             if not all(d in names for d in array.dims):
                 array = np.squeeze(array)
-            try:
-                array = array.transpose(*names, transpose_coords=False)
-            except:
-                array = array.transpose(*names) # Handle old xarray
+            if len(names) > 1:
+                try:
+                    array = array.transpose(*names, transpose_coords=False)
+                except:
+                    array = array.transpose(*names) # Handle old xarray
         shape = array.shape
         if gridded:
             return shape
@@ -218,6 +219,10 @@ class XArrayInterface(GridInterface):
         da = dask_array_module()
         if da and isinstance(dmin, da.Array):
             dmin, dmax = da.compute(dmin, dmax)
+        if isinstance(dmin, np.ndarray) and dmin.shape == ():
+            dmin = dmin[()]
+        if isinstance(dmax, np.ndarray) and dmax.shape == ():
+            dmax = dmax[()]
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
         return dmin, dmax
@@ -390,8 +395,10 @@ class XArrayInterface(GridInterface):
         sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
         if sampled or (all_scalar and len(indices) == len(kdims)):
+            import xarray as xr
             if all_scalar: isel = {k: [v] for k, v in isel.items()}
-            return dataset.data.isel_points(**isel).to_dataframe().reset_index()
+            selected = dataset.data.isel({k: xr.DataArray(v) for k, v in isel.items()})
+            return selected.to_dataframe().reset_index()
         else:
             return dataset.data.isel(**isel)
 
