@@ -218,6 +218,10 @@ class XArrayInterface(GridInterface):
         da = dask_array_module()
         if da and isinstance(dmin, da.Array):
             dmin, dmax = da.compute(dmin, dmax)
+        if isinstance(dmin, np.ndarray) and dmin.shape == ():
+            dmin = dmin[()]
+        if isinstance(dmax, np.ndarray) and dmax.shape == ():
+            dmax = dmax[()]
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
         return dmin, dmax
