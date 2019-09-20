@@ -921,6 +921,11 @@ class Dynamic(param.ParameterizedFunction):
         for k, v in self.p.kwargs.items():
             if util.is_param_method(v):
                 v = v()
+            elif isinstance(v, FunctionType) and hasattr(v, '_dinfo'):
+                deps = v._dinfo
+                args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
+                kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
+                v = v(*args, **kwargs)
             evaled_kwargs[k] = v
         return evaled_kwargs
 
