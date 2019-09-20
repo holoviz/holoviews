@@ -898,6 +898,12 @@ class Dynamic(param.ParameterizedFunction):
         for value in self.p.kwargs.values():
             if util.is_param_method(value, has_deps=True):
                 streams.append(value)
+            elif isinstance(value, FunctionType) and hasattr(value, '_dinfo'):
+                dependencies = list(value._dinfo.get('dependencies', []))
+                dependencies += list(value._dinfo.get('kwargs', {}).values())
+                params = [d for d in dependencies if isinstance(d, param.Parameter)
+                          and isinstance(d.owner, param.Parameterized)]
+                streams.append(Params(parameters=params, watch_only=True))
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
