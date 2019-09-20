@@ -109,6 +109,29 @@ class TestApplyElement(ComparisonTestCase):
         pinst.label = 'Another label'
         self.assertEqual(applied[()], self.element.relabel('Another label'))
 
+    def test_element_apply_function_with_dependencies(self):
+        pinst = ParamClass()
+
+        @param.depends(pinst.param.label)
+        def get_label(label):
+            return label + '!'
+
+        applied = self.element.apply('relabel', label=get_label)
+
+        # Check stream
+        self.assertEqual(len(applied.streams), 1)
+        stream = applied.streams[0]
+        self.assertIsInstance(stream, Params)
+        self.assertEqual(stream.parameters, [pinst.param.label])
+
+        # Check results
+        self.assertEqual(applied[()], self.element.relabel('Test!'))
+
+        # Ensure subscriber gets called
+        stream.add_subscriber(lambda **kwargs: applied[()])
+        pinst.label = 'Another label'
+        self.assertEqual(applied.last, self.element.relabel('Another label!'))
+
     def test_element_apply_dynamic_with_param_method(self):
         pinst = ParamClass()
         applied = self.element.apply(lambda x, label: x.relabel(label), label=pinst.dynamic_label)
