@@ -338,10 +338,12 @@ class Stream(param.Parameterized):
 
     @source.setter
     def source(self, source):
-        if self.source:
+        if self.source is not None:
             source_list = self.registry[self.source]
             if self in source_list:
                 source_list.remove(self)
+            if not source_list:
+                self.registry.pop(self.source)
 
         if source is None:
             self._source = None
