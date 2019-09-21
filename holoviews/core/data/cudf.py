@@ -11,9 +11,9 @@ except ImportError:
 import numpy as np
 
 from .. import util
-from ...dimension import dimension_name
+from ..dimension import dimension_name
 from ..element import Element
-from ...ndmapping import NdMapping, item_check, sorted_context
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .pandas import PandasInterface
 
@@ -126,15 +126,8 @@ class cuDFInterface(PandasInterface):
 
 
     @classmethod
-    def values(
-            cls,
-            dataset,
-            dim,
-            expanded=True,
-            flat=True,
-            compute=True,
-            keep_index=False,
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True,
+               keep_index=False):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
         if not expanded:
