@@ -26,6 +26,7 @@ class AccessorPipelineMeta(type):
     @classmethod
     def pipelined(mcs, __call__):
         def pipelined_call(*args, **kwargs):
+            from ..operation.element import method as method_op, factory
             from .data import Dataset, MultiDimensionalMapping
             inst = args[0]
             if not hasattr(inst._obj, '_pipeline'):
@@ -40,19 +41,40 @@ class AccessorPipelineMeta(type):
             result = __call__(*args, **kwargs)
 
             if not in_method:
-                mode = getattr(inst, 'mode', None)
+                init_op = factory.instance(
+                    output_type=type(inst),
+                    kwargs={'mode': getattr(inst, 'mode', None)},
+                )
+                call_op = method_op.instance(
+                    input_type=type(inst),
+                    method_name='__call__',
+                    args=list(args[1:]),
+                    kwargs=kwargs,
+                )
+
                 if isinstance(result, Dataset):
-                    result._pipeline = inst_pipeline + [
-                        (type(inst), [], {'mode': mode}),
-                        (__call__, list(args[1:]), kwargs)
-                    ]
+                    result._pipeline = inst_pipeline.instance(
+                        operations=inst_pipeline.operations + [
+                            init_op, call_op
+                        ],
+                        output_type=type(result),
+                        group=result.group
+                    )
                 elif isinstance(result, MultiDimensionalMapping):
                     for key, element in result.items():
-                        element._pipeline = inst_pipeline + [
-                            (type(inst), [], {'mode': mode}),
-                            (__call__, list(args[1:]), kwargs),
-                            (getattr(type(result), '__getitem__'), [key], {})
-                        ]
+                        getitem_op = method_op.instance(
+                            input_type=type(result),
+                            method_name='__getitem__',
+                            args=[key],
+                        )
+                        element._pipeline = inst_pipeline.instance(
+                            operations=inst_pipeline.operations + [
+                                init_op, call_op, getitem_op
+                            ],
+                            output_type=type(result),
+                            group=element.group
+                        )
+
                 inst._obj._in_method = False
             return result
 

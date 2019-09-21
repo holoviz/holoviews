@@ -120,7 +120,7 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
-        element_pipeline = copy.copy(getattr(element, '_pipeline', None))
+        element_pipeline = getattr(element, '_pipeline', None)
 
         ret = self._process(element, key)
         for hook in self._postprocess_hooks:
@@ -128,9 +128,12 @@ class Operation(param.ParameterizedFunction):
 
         if isinstance(ret, Dataset) and isinstance(element, Dataset):
             ret._dataset = element.dataset.clone()
-            ret._pipeline = element_pipeline + [
-                (self.instance(), [], dict(self.p))
-            ]
+            ret._pipeline = element_pipeline.instance(
+                operations=element_pipeline.operations + [
+                    self.instance(**self.p)
+                ],
+                group=ret.group,
+            )
         return ret
 
 

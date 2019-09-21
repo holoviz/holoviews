@@ -84,8 +84,38 @@ class factory(Operation):
         By default, if three overlaid Images elements are supplied,
         the corresponding RGB element will be returned. """)
 
+    args = param.List(default=[], doc="""
+            The list of positional argument to pass to the factory""")
+
+    kwargs = param.Dict(default={}, doc="""
+            The dict of keyword arguments to pass to the factory""")
+
     def _process(self, view, key=None):
-        return self.p.output_type(view)
+        return self.p.output_type(view, *self.p.args, **self.p.kwargs)
+
+
+class method(Operation):
+    """
+    Operation that wraps a method call
+    """
+    output_type = param.ClassSelector(class_=type, doc="""
+            The output type of the method operation""")
+
+    input_type = param.ClassSelector(class_=type, doc="""
+            The object type the method is defined on""")
+
+    method_name = param.String(default='__call__', doc="""
+            The method name""")
+
+    args = param.List(default=[], doc="""
+            The list of positional argument to pass to the method""")
+
+    kwargs = param.Dict(default={}, doc="""
+            The dict of keyword arguments to pass to the method""")
+
+    def _process(self, element, key=None):
+        fn = getattr(self.p.input_type, self.p.method_name)
+        return fn(element, *self.p.args, **self.p.kwargs)
 
 
 class chain(Operation):
@@ -112,7 +142,6 @@ class chain(Operation):
 
     group = param.String(default='Chain', doc="""
         The group assigned to the result after having applied the chain.""")
-
 
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
@@ -161,7 +190,6 @@ class transform(Operation):
         processed = (img.data if not self.p.operator
                      else self.p.operator(img.data))
         return img.clone(processed, group=self.p.group)
-
 
 
 class image_overlay(Operation):

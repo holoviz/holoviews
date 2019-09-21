@@ -183,37 +183,57 @@ class PipelineMeta(ParameterizedMetaclass):
             if method_name in mcs.blacklist or method_name.startswith('_'):
                 continue
             elif isinstance(method_fn, types.FunctionType):
-                classdict[method_name] = mcs.pipelined(method_fn)
+                classdict[method_name] = mcs.pipelined(method_fn, method_name)
 
         inst = type.__new__(mcs, classname, bases, classdict)
         return inst
 
     @staticmethod
-    def pipelined(method):
+    def pipelined(method_fn, method_name):
         def pipelined_fn(*args, **kwargs):
+            from ...operation.element import method as method_op
             inst = args[0]
             inst_pipeline = copy.copy(getattr(inst, '_pipeline', None))
             in_method = inst._in_method
             if not in_method:
                 inst._in_method = True
 
-            result = method(*args, **kwargs)
+            result = method_fn(*args, **kwargs)
+
+            op = method_op.instance(
+                input_type=type(inst),
+                method_name=method_name,
+                args=list(args[1:]),
+                kwargs=kwargs,
+            )
 
             if not in_method:
                 if isinstance(result, Dataset):
-                    result._pipeline = inst_pipeline + [
-                        (method, list(args[1:]), kwargs)
-                    ]
+                    result._pipeline = inst_pipeline.instance(
+                        operations=inst_pipeline.operations + [op],
+                        output_type=type(result),
+                        group=result.group,
+                    )
+
                 elif isinstance(result, MultiDimensionalMapping):
                     for key, element in result.items():
-                        element._pipeline = inst_pipeline + [
-                            (method, list(args[1:]), kwargs),
-                            (getattr(type(result), '__getitem__'), [key], {})
-                        ]
+                        if isinstance(element, Dataset):
+                            getitem_op = method_op.instance(
+                                input_type=type(result),
+                                method_name='__getitem__',
+                                args=[key]
+                            )
+                            element._pipeline = inst_pipeline.instance(
+                                operations=inst_pipeline.operations + [
+                                    op, getitem_op
+                                ],
+                                output_type=type(result),
+                                group=element.group
+                            )
                 inst._in_method = False
             return result
 
-        pipelined_fn.__doc__ = method.__doc__
+        pipelined_fn.__doc__ = method_fn.__doc__
 
         return pipelined_fn
 
@@ -254,9 +274,15 @@ class Dataset(Element):
     _kdim_reductions = {}
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
+        from ...operation.element import (
+            chain as chain_op, factory
+        )
         self._in_method = False
         input_dataset = kwargs.pop('dataset', None)
-        input_pipeline = kwargs.pop('pipeline', [])
+        input_pipeline = kwargs.pop(
+            'pipeline', None
+        )
+
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
@@ -274,16 +300,23 @@ class Dataset(Element):
         self.redim = Redim(self, mode='dataset')
 
         # Handle _pipeline property
-        self._pipeline = input_pipeline + [(
-            type(self),
-            [],
-            kwargs,  # includes kdims and vdims
-        )]
+        if input_pipeline is None:
+            input_pipeline = chain_op.instance()
+
+        init_op = factory.instance(
+            output_type=type(self),
+            args=[],
+            kwargs=kwargs,
+        )
+        self._pipeline = input_pipeline.instance(
+            operations=input_pipeline.operations + [init_op],
+            output_type=type(self), group=self.group
+        )
 
         # Handle initializing the dataset property.
         self._dataset = None
         if input_dataset is not None:
-            self._dataset = input_dataset.clone(dataset=None, pipeline=[])
+            self._dataset = input_dataset.clone(dataset=None, pipeline=None)
 
         elif type(self) is Dataset:
             self._dataset = self
@@ -310,28 +343,6 @@ class Dataset(Element):
         with the Dataset stored in dataset property
         """
         return self._pipeline
-
-    def execute_pipeline(self, data=None):
-        """
-        Create a new object of the same type by executing the sequence of
-        operations that was used to create this object.
-
-        Args:
-            data: Input data to the pipeline. If None, defaults to the value
-            of the dataset property and the resulting object will equal the
-            this object.
-
-        Returns:
-            An object with the same type as this object
-        """
-        new_dataset = self.dataset.clone(data=data, dataset=None, pipeline=[])
-        result = new_dataset
-        for fn, a, kw in self._pipeline:
-            result = fn(result, *a, **kw)
-
-        result._pipeline = copy.copy(self._pipeline)
-        result._dataset = new_dataset
-        return result
 
     def closest(self, coords=[], **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
