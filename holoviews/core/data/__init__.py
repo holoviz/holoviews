@@ -55,6 +55,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .cudf import cuDFInterface   # noqa (Conditional API import)
+    datatypes.append('cuDF')
+except ImportError:
+    pass
+
 if 'array' not in datatypes:
     datatypes.append('array')
 if 'multitabular' not in datatypes:
