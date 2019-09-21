@@ -338,7 +338,7 @@ class ViolinPlot(BoxWhiskerPlot):
         if self.clip:
             vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
-        kde = univariate_kde(el, dimension=vdim, **kwargs)
+        kde = univariate_kde(el, dimension=vdim.name, **kwargs)
         xs, ys = (kde.dimension_values(i) for i in range(2))
         mask = isfinite(ys) & (ys>0) # Mask out non-finite and zero values
         xs, ys = xs[mask], ys[mask]
