@@ -338,9 +338,9 @@ class Dataset(Element):
     @property
     def pipeline(self):
         """
-        List of (function, args, kwargs) tuples that represents the sequence
-        of operations that was used to create this object, starting
-        with the Dataset stored in dataset property
+        Chain operation that evaluates the sequence of operations that was
+        used to create this object, starting with the Dataset stored in
+        dataset property
         """
         return self._pipeline
 
