@@ -20,7 +20,6 @@ class AccessorPipelineMeta(type):
             classdict['__call__'] = mcs.pipelined(classdict['__call__'])
 
         inst = type.__new__(mcs, classname, bases, classdict)
-        inst._in_method = False
         return inst
 
     @classmethod
@@ -38,44 +37,47 @@ class AccessorPipelineMeta(type):
             if not in_method:
                 inst._obj._in_method = True
 
-            result = __call__(*args, **kwargs)
+            try:
+                result = __call__(*args, **kwargs)
 
-            if not in_method:
-                init_op = factory.instance(
-                    output_type=type(inst),
-                    kwargs={'mode': getattr(inst, 'mode', None)},
-                )
-                call_op = method_op.instance(
-                    input_type=type(inst),
-                    method_name='__call__',
-                    args=list(args[1:]),
-                    kwargs=kwargs,
-                )
-
-                if isinstance(result, Dataset):
-                    result._pipeline = inst_pipeline.instance(
-                        operations=inst_pipeline.operations + [
-                            init_op, call_op
-                        ],
-                        output_type=type(result),
-                        group=result.group
+                if not in_method:
+                    init_op = factory.instance(
+                        output_type=type(inst),
+                        kwargs={'mode': getattr(inst, 'mode', None)},
                     )
-                elif isinstance(result, MultiDimensionalMapping):
-                    for key, element in result.items():
-                        getitem_op = method_op.instance(
-                            input_type=type(result),
-                            method_name='__getitem__',
-                            args=[key],
-                        )
-                        element._pipeline = inst_pipeline.instance(
+                    call_op = method_op.instance(
+                        input_type=type(inst),
+                        method_name='__call__',
+                        args=list(args[1:]),
+                        kwargs=kwargs,
+                    )
+
+                    if isinstance(result, Dataset):
+                        result._pipeline = inst_pipeline.instance(
                             operations=inst_pipeline.operations + [
-                                init_op, call_op, getitem_op
+                                init_op, call_op
                             ],
                             output_type=type(result),
-                            group=element.group
+                            group=result.group
                         )
+                    elif isinstance(result, MultiDimensionalMapping):
+                        for key, element in result.items():
+                            getitem_op = method_op.instance(
+                                input_type=type(result),
+                                method_name='__getitem__',
+                                args=[key],
+                            )
+                            element._pipeline = inst_pipeline.instance(
+                                operations=inst_pipeline.operations + [
+                                    init_op, call_op, getitem_op
+                                ],
+                                output_type=type(result),
+                                group=element.group
+                            )
+            finally:
+                if not in_method:
+                    inst._obj._in_method = False
 
-                inst._obj._in_method = False
             return result
 
         pipelined_call.__doc__ = __call__.__doc__

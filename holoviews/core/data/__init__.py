@@ -198,39 +198,42 @@ class PipelineMeta(ParameterizedMetaclass):
             if not in_method:
                 inst._in_method = True
 
-            result = method_fn(*args, **kwargs)
+            try:
+                result = method_fn(*args, **kwargs)
 
-            op = method_op.instance(
-                input_type=type(inst),
-                method_name=method_name,
-                args=list(args[1:]),
-                kwargs=kwargs,
-            )
+                op = method_op.instance(
+                    input_type=type(inst),
+                    method_name=method_name,
+                    args=list(args[1:]),
+                    kwargs=kwargs,
+                )
 
-            if not in_method:
-                if isinstance(result, Dataset):
-                    result._pipeline = inst_pipeline.instance(
-                        operations=inst_pipeline.operations + [op],
-                        output_type=type(result),
-                        group=result.group,
-                    )
+                if not in_method:
+                    if isinstance(result, Dataset):
+                        result._pipeline = inst_pipeline.instance(
+                            operations=inst_pipeline.operations + [op],
+                            output_type=type(result),
+                            group=result.group,
+                        )
 
-                elif isinstance(result, MultiDimensionalMapping):
-                    for key, element in result.items():
-                        if isinstance(element, Dataset):
-                            getitem_op = method_op.instance(
-                                input_type=type(result),
-                                method_name='__getitem__',
-                                args=[key]
-                            )
-                            element._pipeline = inst_pipeline.instance(
-                                operations=inst_pipeline.operations + [
-                                    op, getitem_op
-                                ],
-                                output_type=type(result),
-                                group=element.group
-                            )
-                inst._in_method = False
+                    elif isinstance(result, MultiDimensionalMapping):
+                        for key, element in result.items():
+                            if isinstance(element, Dataset):
+                                getitem_op = method_op.instance(
+                                    input_type=type(result),
+                                    method_name='__getitem__',
+                                    args=[key]
+                                )
+                                element._pipeline = inst_pipeline.instance(
+                                    operations=inst_pipeline.operations + [
+                                        op, getitem_op
+                                    ],
+                                    output_type=type(result),
+                                    group=element.group
+                                )
+            finally:
+                if not in_method:
+                    inst._in_method = False
             return result
 
         pipelined_fn.__doc__ = method_fn.__doc__

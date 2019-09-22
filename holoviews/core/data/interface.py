@@ -47,22 +47,26 @@ class Accessor(object):
     def __getitem__(self, index):
         from ..data import Dataset
         from ...operation.element import method
-        self.dataset._in_method = True
-        res = self._perform_getitem(self.dataset, index)
-        if isinstance(res, Dataset):
-            getitem_op = method.instance(
-                input_type=type(self),
-                output_type=type(self.dataset),
-                method_name='_perform_getitem',
-                args=[index],
-            )
-            res._pipeline = self.dataset.pipeline.instance(
-                operations=self.dataset.pipeline.operations + [getitem_op],
-                group=self.dataset.group,
-                output_type=type(self.dataset)
-            )
-
-        self.dataset._in_method = False
+        in_method = self.dataset._in_method
+        if not in_method:
+            self.dataset._in_method = True
+        try:
+            res = self._perform_getitem(self.dataset, index)
+            if not in_method and isinstance(res, Dataset):
+                getitem_op = method.instance(
+                    input_type=type(self),
+                    output_type=type(self.dataset),
+                    method_name='_perform_getitem',
+                    args=[index],
+                )
+                res._pipeline = self.dataset.pipeline.instance(
+                    operations=self.dataset.pipeline.operations + [getitem_op],
+                    group=self.dataset.group,
+                    output_type=type(self.dataset)
+                )
+        finally:
+            if not in_method:
+                self.dataset._in_method = False
         return res
 
     @classmethod
