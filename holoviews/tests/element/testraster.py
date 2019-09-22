@@ -3,7 +3,7 @@ Unit tests of Raster elements
 """
 
 import numpy as np
-from holoviews.element import Raster, Image, Curve, QuadMesh
+from holoviews.element import Raster, Image, Curve, QuadMesh, RGB
 from holoviews.element.comparison import ComparisonTestCase
 
 class TestRaster(ComparisonTestCase):
@@ -31,6 +31,23 @@ class TestRaster(ComparisonTestCase):
         self.assertEqual(rrange, (np.min(arr), np.max(arr)))
 
 
+def TestRGB(ComparisonTestCase):
+
+    def setUp(ComparisonTestCase):
+        self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
+
+    def test_construct_from_array_with_alpha(self):
+        rgb = RGB(self.rgb_array)
+        self.assertEqual(len(rgb.vdims), 4)
+
+    def test_construct_from_tuple_with_alpha(self):
+        rgb = RGB(([0, 1, 2], [0, 1, 2], self.rgb_array))
+        self.assertEqual(len(rgb.vdims), 4)
+    
+    def test_construct_from_dict_with_alpha(self):
+        rgb = RGB({'x': [1, 2, 3], 'y': [1, 2, 3], ('R', 'G', 'B', 'A'): self.rgb_array})
+        self.assertEqual(len(rgb.vdims), 4)
+        
 
 class TestQuadMesh(ComparisonTestCase):
 
