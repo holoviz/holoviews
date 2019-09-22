@@ -174,7 +174,7 @@ class DataConversion(object):
 class PipelineMeta(ParameterizedMetaclass):
 
     # Public methods that should not be wrapped
-    blacklist = ['__init__', 'clone', 'execute_pipeline']
+    blacklist = ['__init__', 'clone']
 
     def __new__(mcs, classname, bases, classdict):
 
