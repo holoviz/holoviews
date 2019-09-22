@@ -201,6 +201,20 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def dtype(cls, dataset, dimension):
+        name = dataset.get_dimension(dimension, strict=True).name
+        vdim_tuple = cls.packed(dataset)
+        if name in vdim_tuple:
+            data = dataset.data[vdim_tuple][..., vdim_tuple.index(name)]
+        else:
+            data = dataset.data[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
+
+
+    @classmethod
     def shape(cls, dataset, gridded=False):
         vdim_tuple = cls.packed(dataset)
         if vdim_tuple:
