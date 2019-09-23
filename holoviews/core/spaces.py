@@ -922,9 +922,10 @@ class DynamicMap(HoloMap):
         elif not isinstance(callback, Callable):
             callback = Callable(callback)
 
-        self.param.warning('DynamicMap sampled parameter is deprecated '
-                           'and no longer needs to be specified.')
-        del params['sampled']
+        if 'sampled' in params:
+            self.param.warning('DynamicMap sampled parameter is deprecated '
+                               'and no longer needs to be specified.')
+            del params['sampled']
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
