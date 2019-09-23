@@ -168,7 +168,7 @@ class ContourPlot(PathPlot):
 
         interface = element.interface
         scalar_kwargs = {'per_geom': True} if interface.multi else {}
-        npath = len([vs for vs in data.values()][0])
+
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:

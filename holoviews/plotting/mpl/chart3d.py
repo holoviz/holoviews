@@ -2,13 +2,10 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 import param
-import matplotlib.cm as cm
 from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
-from ...core.util import basestring
-from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
 from .path import PathPlot

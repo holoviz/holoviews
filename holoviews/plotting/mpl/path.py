@@ -35,7 +35,7 @@ class PathPlot(ColorbarPlot):
         dims = element.kdims
         xdim, ydim = dims
         generic_dt_format = Dimension.type_formatters[np.datetime64]
-        paths, cvals, dims = [], [], {}
+        paths, dims = [], {}
         for path in element.split(datatype='columns'):
             xarr, yarr = path[xdim.name], path[ydim.name]
             if util.isdatetime(xarr):

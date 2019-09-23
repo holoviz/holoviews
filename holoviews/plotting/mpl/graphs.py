@@ -6,11 +6,11 @@ import numpy as np
 from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, unique_array, search_indices, is_number, isscalar
+from ...core.options import abbreviated_exception
+from ...core.util import basestring, max_range, is_number, isscalar
 from ...util.transform import dim
 from ..mixins import ChordMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..util import get_directed_graph_paths
 from .element import ColorbarPlot
 from .util import filter_styles
 
@@ -42,7 +42,6 @@ class GraphPlot(ColorbarPlot):
     def _compute_styles(self, element, ranges, style):
         elstyle = self.lookup_options(element, 'style')
         color = elstyle.kwargs.get('node_color')
-        cmap = elstyle.kwargs.get('cmap', 'tab20')
         if color and 'node_color' in style:
             style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')

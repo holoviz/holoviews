@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 import param
 
-from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
+from bokeh.models import CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -20,7 +20,7 @@ from ...element import Bars
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, SpikesMixin
-from ..util import compute_sizes, get_min_distance, get_axis_padding
+from ..util import get_min_distance, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
@@ -205,7 +205,6 @@ class VectorFieldPlot(ColorbarPlot):
         x0s, x1s = (xs + nxoff, xs - pxoff)
         y0s, y1s = (ys + nyoff, ys - pyoff)
 
-        color = None
         if self.arrow_heads:
             arrow_len = (lens/4.)
             xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
@@ -801,12 +800,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Get colors
         cdim = color_dim or group_dim
-        style_mapping = [v for k, v in style.items() if 'color' in k and
-                         (isinstance(v, dim) or v in element)]
-
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if cvals.dtype.kind in 'uif' and no_cidx:
+            if cvals.dtype.kind in 'uif':
                 cvals = categorize_array(cvals, color_dim)
 
             factors = None if cvals.dtype.kind in 'uif' else list(cvals)

@@ -8,14 +8,14 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
                           EdgesAndLinkedNodes, Patches, Bezier, ColumnDataSource)
 
 from ...core.data import Dataset
-from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, dimension_sanitizer, unique_array
+from ...core.options import abbreviated_exception
+from ...core.util import basestring, dimension_sanitizer, max_range
 from ...util.transform import dim
 from ..mixins import ChordMixin
-from ..util import process_cmap, get_directed_graph_paths
+from ..util import get_directed_graph_paths
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
-from .styles import line_properties, fill_properties, text_properties, rgba_tuple
+from .styles import line_properties, fill_properties, text_properties
 
 
 
@@ -167,7 +167,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                         dim_name += '_values'
                     path_data[dim_name] = element.dimension_values(d)
         data = {'scatter_1': point_data, self.edge_glyph: path_data, 'layout': layout}
-        mapping = {'scatter_1': point_mapping, self.edge_glyph: edge_mapping}
+        mapping = {'scatter_1': {}, self.edge_glyph: edge_mapping}
         return data, mapping, style
 
 

@@ -9,10 +9,9 @@ import numpy as np
 from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from .selection import BokehOverlaySelectionDisplay
-from ...core.dimension import Dimension, Dimensioned
+from ...core.dimension import Dimensioned
 from ...core.ndmapping import sorted_context
-from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator, isfinite)
+from ...core.util import dimension_sanitizer, wrap_tuple, isfinite
 from ...operation.stats import univariate_kde
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot

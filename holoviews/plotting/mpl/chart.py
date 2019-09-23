@@ -4,13 +4,12 @@ from itertools import product
 
 import param
 import numpy as np
-import matplotlib as mpl
 
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.dates import DateFormatter, date2num
 
-from ...core.dimension import Dimension, dimension_name
+from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, isfinite,
@@ -22,7 +21,7 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..plot import PlotSelector
 from ..mixins import AreaMixin, SpikesMixin
-from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
+from ..util import get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context
@@ -490,7 +489,6 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         plot_type = Store.registry['matplotlib'].get(type(range_item))
         if isinstance(plot_type, PlotSelector):
             plot_type = plot_type.get_plot_class(range_item)
-        opts = self.lookup_options(range_item, 'plot')
 
         # Get colormapping options
         if isinstance(range_item, (HeatMap, Raster)):
@@ -563,18 +561,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
-        self._compute_styles(element, ranges, style)
+        style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         return (ys, xs) if self.invert_axes else (xs, ys), style, {}
-
-
-    def _compute_styles(self, element, ranges, style):
-        color = style.pop('color', None)
-        cmap = style.get('cmap', None)
-        if color is not None:
-            style['color'] = color
-        style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -675,9 +665,6 @@ class VectorFieldPlot(ColorbarPlot):
             input_scale = input_scale / min_dist
 
         args = (xs, ys, magnitudes,  [0.0] * len(element))
-
-        # Compute color
-        color = style.get('color', None)
 
         # Process style
         with abbreviated_exception():
