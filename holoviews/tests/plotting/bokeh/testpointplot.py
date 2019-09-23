@@ -20,25 +20,6 @@ except:
 
 class TestPointPlot(TestBokehPlot):
 
-    def test_points_colormapping(self):
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(plot=dict(color_index=3))
-        self._test_colormapping(points, 3)
-
-    def test_points_colormapping_with_nonselection(self):
-        opts = dict(plot=dict(color_index=3),
-                    style=dict(nonselection_color='red'))
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(**opts)
-        self._test_colormapping(points, 3)
-
-    def test_points_colormapping_categorical(self):
-        points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b']).opts(plot=dict(color_index='b'))
-        plot = bokeh_renderer.get_plot(points)
-        plot.initialize_plot()
-        cmapper = plot.handles['color_mapper']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, list(points['b']))
-
     def test_points_color_selection_nonselection(self):
         opts = dict(color='green', selection_color='red', nonselection_color='blue')
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
@@ -165,7 +146,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
-        points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
+        points = Points(data, vdims=['z']).opts(plot=dict(size='z'))
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
@@ -483,33 +464,3 @@ class TestPointPlot(TestBokehPlot):
         for subplot, glyph_type, marker in zip(plot.subplots.values(), [Scatter, Scatter], markers):
             self.assertIsInstance(subplot.handles['glyph'], glyph_type)
             self.assertEqual(subplot.handles['glyph'].marker, marker)
-
-    def test_point_color_index_color_clash(self):
-        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color', color_index='color')        
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)
-
-    def test_point_color_index_color_no_clash(self):
-        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(fill_color='color', color_index='color')        
-        plot = bokeh_renderer.get_plot(points)
-        glyph = plot.handles['glyph']
-        cmapper = plot.handles['fill_color_color_mapper']
-        cmapper2 = plot.handles['color_mapper']
-        self.assertEqual(glyph.fill_color, {'field': 'fill_color', 'transform': cmapper})
-        self.assertEqual(glyph.line_color, {'field': 'color', 'transform': cmapper2})
-
-    def test_point_size_index_size_clash(self):
-        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='size').options(size='size', size_index='size')        
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'size' option "
-                   "and declare a size_index; ignoring the size_index.\n")
-        self.assertEqual(log_msg, warning)

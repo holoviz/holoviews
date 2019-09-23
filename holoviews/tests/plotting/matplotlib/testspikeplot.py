@@ -187,14 +187,3 @@ class TestSpikesPlot(TestMPLPlot):
             children = subplot.handles['artist'].get_children()
             for c in children:
                 self.assertEqual(c.get_facecolor(), color)
-
-    def test_spikes_color_index_color_clash(self):
-        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims=['y', 'color']).options(color='color', color_index='color')
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(spikes)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)
-

@@ -41,50 +41,6 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual([p.vertices for p in edges.get_paths()],
                          [p.array() for p in self.graph.edgepaths.split()])
 
-    def test_plot_graph_categorical_colored_nodes(self):
-        g = self.graph2.opts(plot=dict(color_index='Label'), style=dict(cmap='Set1'))
-        plot = mpl_renderer.get_plot(g)
-        nodes = plot.handles['nodes']
-        facecolors = np.array([[0.89411765, 0.10196078, 0.10980392, 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.],
-                               [0.6       , 0.6       , 0.6       , 1.]])
-        self.assertEqual(nodes.get_facecolors(), facecolors)
-
-    def test_plot_graph_numerically_colored_nodes(self):
-        g = self.graph3.opts(plot=dict(color_index='Weight'), style=dict(cmap='viridis'))
-        plot = mpl_renderer.get_plot(g)
-        nodes = plot.handles['nodes']
-        self.assertEqual(np.asarray(nodes.get_array()), self.weights)
-        self.assertEqual(nodes.get_clim(), (self.weights.min(), self.weights.max()))
-
-    def test_plot_graph_categorical_colored_edges(self):
-        g = self.graph3.opts(plot=dict(edge_color_index='start'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = mpl_renderer.get_plot(g)
-        edges = plot.handles['edges']
-        colors = np.array([[1., 1., 1., 1.],
-                           [0., 0., 0., 1.],
-                           [1., 1., 1., 1.],
-                           [0., 0., 0., 1.],
-                           [1., 1., 1., 1.],
-                           [0., 0., 0., 1.],
-                           [1., 1., 1., 1.],
-                           [0., 0., 0., 1.]])
-        self.assertEqual(edges.get_colors(), colors)
-
-    def test_plot_graph_numerically_colored_edges(self):
-        g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = mpl_renderer.get_plot(g)
-        edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), self.weights)
-        self.assertEqual(edges.get_clim(), (self.weights.min(), self.weights.max()))
-
     ###########################
     #    Styling mapping      #
     ###########################

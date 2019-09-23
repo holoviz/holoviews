@@ -17,7 +17,7 @@ class TestPointPlot(TestMPLPlot):
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
-        points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
+        points = Points(data, vdims=['z']).opts(plot=dict(size='z'))
         with ParamLogStream() as log:
             mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
@@ -27,22 +27,22 @@ class TestPointPlot(TestMPLPlot):
 
     def test_points_cbar_extend_both(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1,2)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
         self.assertEqual(plot.handles['cbar'].extend, 'both')
 
     def test_points_cbar_extend_min(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1, None)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
         self.assertEqual(plot.handles['cbar'].extend, 'min')
 
     def test_points_cbar_extend_max(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(None, 2)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
         self.assertEqual(plot.handles['cbar'].extend, 'max')
 
     def test_points_cbar_extend_clime(self):
         img = Points(([0, 1], [0, 3])).opts(style=dict(clim=(None, None)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
 
     def test_points_rcparams_do_not_persist(self):
@@ -298,23 +298,3 @@ class TestPointPlot(TestMPLPlot):
             style = dict(subplot.style[subplot.cyclic_index])
             style = subplot._apply_transforms(subplot.current_frame, {}, style)
             self.assertEqual(style['marker'], marker)
-
-    def test_point_color_index_color_clash(self):
-        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color', color_index='color')
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)
-
-    def test_point_size_index_size_clash(self):
-        points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='size').options(s='size', size_index='size')
-        with ParamLogStream() as log:
-            mpl_renderer.get_plot(points)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 's' option "
-                   "and declare a size_index; ignoring the size_index.\n")
-        self.assertEqual(log_msg, warning)

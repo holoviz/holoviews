@@ -247,18 +247,6 @@ class TestEditToolCallbacks(CallbackTestCase):
                             {'x': [3, 4, 5], 'y': [3, 4, 5], 'A': 2}], vdims=['A'])
         self.assertEqual(poly_draw.element, element)
 
-    def test_poly_draw_callback_with_vdims_no_color_index(self):
-        polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A']).options(color_index=None)
-        poly_draw = PolyDraw(source=polys)
-        plot = bokeh_server_renderer.get_plot(polys)
-        self.assertIsInstance(plot.callbacks[0], PolyDrawCallback)
-        callback = plot.callbacks[0]
-        data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]], 'A': [1, 2]}
-        callback.on_msg({'data': data})
-        element = Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
-                            {'x': [3, 4, 5], 'y': [3, 4, 5], 'A': 2}], vdims=['A'])
-        self.assertEqual(poly_draw.element, element)
-
     def test_box_edit_callback(self):
         boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5)])
         box_edit = BoxEdit(source=boxes)

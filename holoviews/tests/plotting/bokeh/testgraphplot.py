@@ -106,55 +106,6 @@ class TestBokehGraphPlot(TestBokehPlot):
         renderer = plot.handles['glyph_renderer']
         self.assertIs(renderer.selection_policy, None)
 
-    def test_graph_nodes_categorical_colormapped(self):
-        g = self.graph2.opts(plot=dict(color_index='Label'), style=dict(cmap='Set1'))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['color_mapper']
-        node_source = plot.handles['scatter_1_source']
-        glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, ['Output', 'Input'])
-        self.assertEqual(node_source.data['Label'], self.node_info['Label'])
-        self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
-
-    def test_graph_nodes_numerically_colormapped(self):
-        g = self.graph3.opts(plot=dict(color_index='Weight'), style=dict(cmap='viridis'))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['color_mapper']
-        node_source = plot.handles['scatter_1_source']
-        glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
-        self.assertEqual(cmapper.low, self.weights.min())
-        self.assertEqual(cmapper.high, self.weights.max())
-        self.assertEqual(node_source.data['Weight'], self.node_info2['Weight'])
-        self.assertEqual(glyph.fill_color, {'field': 'Weight', 'transform': cmapper})
-
-    def test_graph_edges_categorical_colormapped(self):
-        g = self.graph3.opts(plot=dict(edge_color_index='start'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['edge_colormapper']
-        edge_source = plot.handles['multi_line_1_source']
-        glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        factors = ['0', '1', '2', '3', '4', '5', '6', '7']
-        self.assertEqual(cmapper.factors, factors)
-        self.assertEqual(edge_source.data['start_str__'], factors)
-        self.assertEqual(glyph.line_color, {'field': 'start_str__', 'transform': cmapper})
-
-    def test_graph_edges_numerically_colormapped(self):
-        g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
-                             style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['edge_colormapper']
-        edge_source = plot.handles['multi_line_1_source']
-        glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
-        self.assertEqual(cmapper.low, self.weights.min())
-        self.assertEqual(cmapper.high, self.weights.max())
-        self.assertEqual(edge_source.data['Weight'], self.node_info2['Weight'])
-        self.assertEqual(glyph.line_color, {'field': 'Weight', 'transform': cmapper})
-
     ###########################
     #    Styling mapping      #
     ###########################

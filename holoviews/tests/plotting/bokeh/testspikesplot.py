@@ -12,11 +12,6 @@ from .testplot import TestBokehPlot, bokeh_renderer
 
 class TestSpikesPlot(TestBokehPlot):
 
-    def test_spikes_colormapping(self):
-        spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
-        color_spikes = spikes.opts(plot=dict(color_index=1))
-        self._test_colormapping(color_spikes, 1)
-
     def test_empty_spikes_plot(self):
         spikes = Spikes([], vdims=['Intensity'])
         plot = bokeh_renderer.get_plot(spikes)
@@ -226,13 +221,3 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(),  colors):
             self.assertEqual(subplot.handles['glyph'].line_color, color)
-
-    def test_spikes_color_index_color_clash(self):
-        spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).options(color='color', color_index='color')
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(spikes)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)

@@ -56,21 +56,6 @@ class TestPathPlot(TestBokehPlot):
         obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
-    def test_path_colored_and_split_with_extra_vdims(self):
-        xs = [1, 2, 3, 4]
-        ys = xs[::-1]
-        color = [0, 0.25, 0.5, 0.75]
-        other = ['A', 'B', 'C', 'D']
-        data = {'x': xs, 'y': ys, 'color': color, 'other': other}
-        path = Path([data], vdims=['color','other']).options(color_index='color', tools=['hover'])
-        plot = bokeh_renderer.get_plot(path)
-        source = plot.handles['source']
-
-        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
-        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
-        self.assertEqual(source.data['other'], np.array(['A', 'B', 'C']))
-        self.assertEqual(source.data['color'], np.array([0, 0.25, 0.5]))
-
     def test_path_colored_by_levels_single_value(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -80,7 +65,7 @@ class TestPathPlot(TestBokehPlot):
         levels = [0, 38, 73, 95, 110, 130, 156, 999]
         colors = ['#5ebaff', '#00faf4', '#ffffcc', '#ffe775', '#ffc140', '#ff8f20', '#ff6060']
         path = Path([data], vdims=['color', 'date']).options(
-            color_index='color', color_levels=levels, cmap=colors, tools=['hover'])
+            color='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
         cmapper = plot.handles['color_mapper']

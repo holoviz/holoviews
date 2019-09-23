@@ -7,7 +7,7 @@ import matplotlib
 from matplotlib import patches as patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec, basestring
+from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context

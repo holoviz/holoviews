@@ -69,13 +69,3 @@ class TestVectorFieldPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['line_width'], np.array([1, 4, 8, 1, 4, 8, 1, 4, 8]))
         self.assertEqual(glyph.line_width, {'field': 'line_width'})
-
-    def test_vectorfield_color_index_color_clash(self):
-        vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(line_color='color', color_index='color')        
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(vectorfield)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'line_color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)
