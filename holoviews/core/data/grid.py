@@ -204,7 +204,7 @@ class GridInterface(DictInterface):
     def dtype(cls, dataset, dimension):
         name = dataset.get_dimension(dimension, strict=True).name
         vdim_tuple = cls.packed(dataset)
-        if name in vdim_tuple:
+        if vdim_tuple and name in vdim_tuple:
             data = dataset.data[vdim_tuple][..., vdim_tuple.index(name)]
         else:
             data = dataset.data[name]
