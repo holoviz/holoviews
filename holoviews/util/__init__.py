@@ -98,16 +98,14 @@ class opts(param.ParameterizedFunction):
             msg = ("Positional argument signature of opts is deprecated, "
                    "use opts.defaults instead.\nFor instance, instead of "
                    "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
-            if util.config.future_deprecations:
-                self.param.warning(msg)
+            self.param.warning(msg)
             self._linemagic(args[0])
         elif len(args) == 2:
             msg = ("Double positional argument signature of opts is deprecated, "
                    "use the .options method instead.\nFor instance, instead of "
                    "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
 
-            if util.config.future_deprecations:
-                self.param.warning(msg)
+            self.param.warning(msg)
 
             self._cellmagic(args[0], args[1])
 
@@ -604,9 +602,8 @@ class output(param.ParameterizedFunction):
                 if k not in Store.output_settings.allowed:
                     raise KeyError('Invalid keyword: %s' % k)
             if 'filename' in options:
-                if util.config.future_deprecations:
-                    self.param.warning('The filename argument of output is deprecated. '
-                                       'Use hv.save instead.')
+                self.param.warning('The filename argument of output is deprecated. '
+                                   'Use hv.save instead.')
 
             def display_fn(obj, renderer):
                 try:

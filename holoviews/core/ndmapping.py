@@ -588,10 +588,9 @@ class MultiDimensionalMapping(Dimensioned):
         Deprecated method to convert an MultiDimensionalMapping of
         Elements to a Table.
         """
-        if config.future_deprecations:
-            self.param.warning("The table method is deprecated and should no "
-                               "longer be used. If using a HoloMap use "
-                               "HoloMap.collapse() instead to return a Dataset.")
+        self.param.warning("The table method is deprecated and should no "
+                           "longer be used. If using a HoloMap use "
+                           "HoloMap.collapse() instead to return a Dataset.")
 
         from .data.interface import Interface
         from ..element.tabular import Table

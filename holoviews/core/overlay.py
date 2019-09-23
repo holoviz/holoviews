@@ -262,9 +262,8 @@ class Overlay(ViewableTree, CompositeOverlay):
 
     def collapse(self, function):
         "Deprecated method to collapse layers in the Overlay."
-        if config.future_deprecations:
-            self.param.warning('Overlay.collapse is deprecated, to'
-                               'collapse multiple elements use a HoloMap.')
+        self.param.warning('Overlay.collapse is deprecated, to'
+                           'collapse multiple elements use a HoloMap.')
 
         elements = list(self)
         types = [type(el) for el in elements]

@@ -306,9 +306,8 @@ class Dimension(param.Parameterized):
 
 
     def __call__(self, spec=None, **overrides):
-        if util.config.future_deprecations:
-            self.param.warning('Dimension.__call__ method has been deprecated, '
-                               'use the clone method instead.')
+        self.param.warning('Dimension.__call__ method has been deprecated, '
+                           'use the clone method instead.')
         return self.clone(spec=spec, **overrides)
 
 
@@ -1372,9 +1371,10 @@ class ViewableTree(AttrTree, Dimensioned):
     @classmethod
     def from_values(cls, vals):
         "Deprecated method to construct tree from list of objects"
-        if util.config.future_deprecations:
-            param.main.param.warning("%s.from_values is deprecated, the %s "
-                                     "constructor may now be used directly.")
+        name = cls.__name__
+        param.main.param.warning("%s.from_values is deprecated, the %s "
+                                 "constructor may now be used directly."
+                                 % (name, name))
         return cls(items=cls._process_items(vals))
 
 
@@ -1485,10 +1485,9 @@ class ViewableTree(AttrTree, Dimensioned):
 
             ViewableTree(tree.relabel(group='Group').values())
         """
-        if util.config.future_deprecations:
-            self.param.warning('%s.regroup is deprecated, use relabel '
-                               'method with a group argument instead.'
-                               % type(self).__name__)
+        self.param.warning('%s.regroup is deprecated, use relabel '
+                           'method with a group argument instead.'
+                           % type(self).__name__)
         new_items = [el.relabel(group=group) for el in self.data.values()]
         return reduce(lambda x,y: x+y, new_items)
 
