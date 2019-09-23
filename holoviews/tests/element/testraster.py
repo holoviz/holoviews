@@ -31,9 +31,9 @@ class TestRaster(ComparisonTestCase):
         self.assertEqual(rrange, (np.min(arr), np.max(arr)))
 
 
-def TestRGB(ComparisonTestCase):
+class TestRGB(ComparisonTestCase):
 
-    def setUp(ComparisonTestCase):
+    def setUp(self):
         self.rgb_array = np.random.randint(0, 255, (3, 3, 4))
 
     def test_construct_from_array_with_alpha(self):
