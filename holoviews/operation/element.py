@@ -140,8 +140,9 @@ class chain(Operation):
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
-    group = param.String(default='Chain', doc="""
-        The group assigned to the result after having applied the chain.""")
+    group = param.String(default='', doc="""
+        The group assigned to the result after having applied the chain.
+        Defaults to the group produced by the last operation in the chain""")
 
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
@@ -153,7 +154,10 @@ class chain(Operation):
             processed = operation.process_element(processed, key,
                                                   input_ranges=self.p.input_ranges)
 
-        return processed.clone(group=self.p.group)
+        if not self.p.group:
+            return processed
+        else:
+            return processed.clone(group=self.p.group)
 
 
 class transform(Operation):

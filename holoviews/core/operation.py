@@ -132,7 +132,6 @@ class Operation(param.ParameterizedFunction):
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
                 ],
-                group=ret.group,
             )
         return ret
 

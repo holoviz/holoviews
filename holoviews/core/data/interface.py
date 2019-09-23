@@ -61,7 +61,6 @@ class Accessor(object):
                 )
                 res._pipeline = self.dataset.pipeline.instance(
                     operations=self.dataset.pipeline.operations + [getitem_op],
-                    group=self.dataset.group,
                     output_type=type(self.dataset)
                 )
         finally:

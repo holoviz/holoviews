@@ -58,7 +58,6 @@ class AccessorPipelineMeta(type):
                                 init_op, call_op
                             ],
                             output_type=type(result),
-                            group=result.group
                         )
                     elif isinstance(result, MultiDimensionalMapping):
                         for key, element in result.items():
@@ -72,7 +71,6 @@ class AccessorPipelineMeta(type):
                                     init_op, call_op, getitem_op
                                 ],
                                 output_type=type(result),
-                                group=element.group
                             )
             finally:
                 if not in_method:

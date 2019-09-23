@@ -213,7 +213,6 @@ class PipelineMeta(ParameterizedMetaclass):
                         result._pipeline = inst_pipeline.instance(
                             operations=inst_pipeline.operations + [op],
                             output_type=type(result),
-                            group=result.group,
                         )
 
                     elif isinstance(result, MultiDimensionalMapping):
@@ -229,7 +228,6 @@ class PipelineMeta(ParameterizedMetaclass):
                                         op, getitem_op
                                     ],
                                     output_type=type(result),
-                                    group=element.group
                                 )
             finally:
                 if not in_method:
@@ -313,7 +311,7 @@ class Dataset(Element):
         )
         self._pipeline = input_pipeline.instance(
             operations=input_pipeline.operations + [init_op],
-            output_type=type(self), group=self.group
+            output_type=type(self),
         )
 
         # Handle initializing the dataset property.
