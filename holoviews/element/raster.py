@@ -734,7 +734,7 @@ class RGB(Image):
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
 
         alpha = self.alpha_dimension
-        if ((isinstance(data, np.ndarray) and data.shape[-1] == 4 and len(vdims) == 3) or
+        if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
             (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
              and data[-1].shape[-1] == 4 and len(vdims) == 3) or
             (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
