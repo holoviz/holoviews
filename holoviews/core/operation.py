@@ -3,7 +3,6 @@ Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
 import param
-import copy
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
