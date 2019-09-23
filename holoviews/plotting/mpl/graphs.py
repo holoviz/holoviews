@@ -25,17 +25,6 @@ class GraphPlot(ColorbarPlot):
       Whether to draw arrows on the graph edges to indicate the
       directionality of each edge.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
-
-
-    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
-
     style_opts = ['edge_alpha', 'edge_color', 'edge_linestyle', 'edge_linewidth',
                   'node_alpha', 'node_color', 'node_edgecolors', 'node_facecolors',
                   'node_linewidth', 'node_marker', 'node_size', 'visible', 'cmap',
@@ -53,69 +42,17 @@ class GraphPlot(ColorbarPlot):
     def _compute_styles(self, element, ranges, style):
         elstyle = self.lookup_options(element, 'style')
         color = elstyle.kwargs.get('node_color')
-        cdim = element.nodes.get_dimension(self.color_index)
         cmap = elstyle.kwargs.get('cmap', 'tab20')
-        if cdim:
-            cs = element.nodes.dimension_values(self.color_index)
-            # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind == 'f':
-                style['node_c'] = cs
-            else:
-                factors = unique_array(cs)
-                cmap = color if isinstance(color, Cycle) else cmap
-                if isinstance(cmap, dict):
-                    colors = [cmap.get(f, cmap.get('NaN', {'color': self._default_nan})['color'])
-                              for f in factors]
-                else:
-                    colors = process_cmap(cmap, len(factors))
-                cs = search_indices(cs, factors)
-                style['node_facecolors'] = [colors[v%len(colors)] for v in cs]
-                style.pop('node_color', None)
-            if 'node_c' in style:
-                self._norm_kwargs(element.nodes, ranges, style, cdim)
-        elif color and 'node_color' in style:
+        if color and 'node_color' in style:
             style['node_facecolors'] = style.pop('node_color')
         style['node_edgecolors'] = style.pop('node_edgecolors', 'none')
         if is_number(style.get('node_size')):
             style['node_s'] = style.pop('node_size')**2
 
-        edge_cdim = element.get_dimension(self.edge_color_index)
-        if not edge_cdim:
-            if not isscalar(style.get('edge_color')):
-                opt = 'edge_facecolors' if self.filled else 'edge_edgecolors'
-                style[opt] = style.pop('edge_color')
-            return style
-
-        elstyle = self.lookup_options(element, 'style')
-        cycle = elstyle.kwargs.get('edge_color')
-        idx = element.get_dimension_index(edge_cdim)
-        cvals = element.dimension_values(edge_cdim)
-        if idx in [0, 1]:
-            factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'uif':
-            factors = None
-        else:
-            factors = unique_array(cvals)
-        if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
-            style['edge_c'] = cvals
-        else:
-            cvals = search_indices(cvals, factors)
-            factors = list(factors)
-            cmap = elstyle.kwargs.get('edge_cmap', 'tab20')
-            cmap = cycle if isinstance(cycle, Cycle) else cmap
-            if isinstance(cmap, dict):
-                colors = [cmap.get(f, cmap.get('NaN', {'color': self._default_nan})['color'])
-                          for f in factors]
-            else:
-                colors = process_cmap(cmap, len(factors))
-            style['edge_colors'] = [colors[v%len(colors)] for v in cvals]
-            style.pop('edge_color', None)
-        if 'edge_c' in style:
-            self._norm_kwargs(element, ranges, style, edge_cdim, prefix='edge_')
-        else:
-            style.pop('edge_cmap', None)
+        if not isscalar(style.get('edge_color')):
+            opt = 'edge_facecolors' if self.filled else 'edge_edgecolors'
+            style[opt] = style.pop('edge_color')
         return style
-
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
@@ -263,12 +200,6 @@ class ChordPlot(ChordMixin, GraphPlot):
     labels = param.ClassSelector(class_=(basestring, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
-    # Deprecated options
-
-    label_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the node labels will be drawn""")
-
     style_opts = GraphPlot.style_opts + ['text_font_size', 'label_offset']
 
     _style_groups = ['edge', 'node', 'arc']
@@ -290,14 +221,7 @@ class ChordPlot(ChordMixin, GraphPlot):
             style['arc_colors'] = style['node_facecolors']
         style['arc_linewidth'] = 10
 
-        label_dim = element.nodes.get_dimension(self.label_index)
         labels = self.labels
-        if label_dim and labels:
-            self.param.warning(
-                "Cannot declare style mapping for 'labels' option "
-                "and declare a label_index; ignoring the label_index.")
-        elif label_dim:
-            labels = label_dim
         if isinstance(labels, basestring):
             labels = element.nodes.get_dimension(labels)
 

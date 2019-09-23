@@ -491,19 +491,9 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         if isinstance(plot_type, PlotSelector):
             plot_type = plot_type.get_plot_class(range_item)
         opts = self.lookup_options(range_item, 'plot')
-        if plot_type and issubclass(plot_type, ColorbarPlot):
-            cidx = opts.options.get('color_index', None)
-            if cidx is None:
-                opts = self.lookup_options(range_item, 'style')
-                cidx = opts.kwargs.get('color', None)
-                if cidx not in range_item:
-                    cidx = None
-            cdim = None if cidx is None else range_item.get_dimension(cidx)
-        else:
-            cdim = None
 
         # Get colormapping options
-        if isinstance(range_item, (HeatMap, Raster)) or cdim:
+        if isinstance(range_item, (HeatMap, Raster)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
@@ -561,30 +551,6 @@ class PointPlot(ChartPlot, ColorbarPlot):
     show_grid = param.Boolean(default=False, doc="""
       Whether to draw grid lines at the tick positions.""")
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-        Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
-
-    scaling_method = param.ObjectSelector(default="area",
-                                          objects=["width", "area"],
-                                          doc="""
-        Deprecated in favor of size style mapping, e.g.
-        size=dim('size')**2.""")
-
-    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
-      Scaling factor which is applied to either the width or area
-      of each point, depending on the value of `scaling_method`.""")
-
-    size_fn = param.Callable(default=np.abs, doc="""
-      Function applied to size values before applying scaling,
-      to remove values lower than zero.""")
-
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax', 'norm']
@@ -604,46 +570,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
 
     def _compute_styles(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
-
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index.")
-            cdim = None
-        if cdim and cmap:
-            cs = element.dimension_values(self.color_index)
-            # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind in 'uif':
-                style['c'] = cs
-            else:
-                style['c'] = search_indices(cs, unique_array(cs))
-            self._norm_kwargs(element, ranges, style, cdim)
-        elif color is not None:
+        if color is not None:
             style['color'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
-
-        ms = style.get('s', mpl.rcParams['lines.markersize'])
-        sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 's' option and "
-                "declare a size_index; ignoring the size_index.")
-            sdim = None
-        if sdim:
-            sizes = element.dimension_values(self.size_index)
-            sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
-                                  self.scaling_method, ms)
-            if sizes is None:
-                eltype = type(element).__name__
-                self.param.warning(
-                    '%s dimension is not numeric, cannot use to '
-                    'scale %s size.' % (sdim.pprint_label, eltype))
-            else:
-                style['s'] = sizes
-        style['edgecolors'] = style.pop('edgecolors', 'none')
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -703,25 +634,6 @@ class VectorFieldPlot(ColorbarPlot):
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    # Deprecated parameters
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of dimension value transform on color option,
-        e.g. `color=dim('Magnitude')`.
-        """)
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-        Deprecated in favor of the magnitude option, e.g.
-        `magnitude=dim('Magnitude')`.
-        """)
-
-    normalize_lengths = param.Boolean(default=True, doc="""
-        Deprecated in favor of rescaling length using dimension value
-        transforms using the magnitude option, e.g.
-        `dim('Magnitude').norm()`.""")
-
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot',
@@ -734,24 +646,14 @@ class VectorFieldPlot(ColorbarPlot):
     _plot_methods = dict(single='quiver')
 
     def _get_magnitudes(self, element, style, ranges):
-        size_dim = element.get_dimension(self.size_index)
         mag_dim = self.magnitude
-        if size_dim and mag_dim:
-            self.param.warning(
-                "Cannot declare style mapping for 'magnitude' option "
-                "and declare a size_index; ignoring the size_index.")
-        elif size_dim:
-            mag_dim = size_dim
-        elif isinstance(mag_dim, basestring):
+        if isinstance(mag_dim, basestring):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
                 magnitudes = mag_dim.apply(element, flat=True)
             else:
                 magnitudes = element.dimension_values(mag_dim)
-                _, max_magnitude = ranges[dimension_name(mag_dim)]['combined']
-                if self.normalize_lengths and max_magnitude != 0:
-                    magnitudes = magnitudes / max_magnitude
         else:
             magnitudes = np.ones(len(element))
         return magnitudes
@@ -775,19 +677,7 @@ class VectorFieldPlot(ColorbarPlot):
         args = (xs, ys, magnitudes,  [0.0] * len(element))
 
         # Compute color
-        cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index.")
-            cdim = None
-        if cdim:
-            colors = element.dimension_values(self.color_index)
-            style['c'] = colors
-            cdim = element.get_dimension(self.color_index)
-            self._norm_kwargs(element, ranges, style, cdim)
-            style.pop('color', None)
 
         # Process style
         with abbreviated_exception():
@@ -837,24 +727,6 @@ class BarPlot(LegendPlot):
        Whether the bars should be stacked or grouped.""")
 
     xticks = param.Integer(0, precedence=-1)
-
-    # Deprecated parameters
-
-    color_by = param.List(default=['category'], doc="""
-       Defines how the Bar elements colored. Valid options include
-       any permutation of 'group', 'category' and 'stack'.""")
-
-    group_index = param.Integer(default=0, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=2, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
@@ -923,7 +795,7 @@ class BarPlot(LegendPlot):
     def get_extents(self, element, ranges, range_type='combined'):
         ngroups = len(self.values['group'])
         vdim = element.vdims[0].name
-        if self.stacked or self.stack_index == 1:
+        if self.stacked:
             return 0, 0, ngroups, np.NaN
         else:
             vrange = ranges[vdim]['combined']
@@ -968,7 +840,7 @@ class BarPlot(LegendPlot):
         elif element.ndims == 3:
             gdim, cdim, sdim = element.kdims
             gi, ci, si = 0, 1, 2
-        elif self.stacked or self.stack_index == 1:
+        elif self.stacked:
             gdim, cdim, sdim = element.kdims[0], None, element.kdims[1]
             gi, ci, si = 0, ndims+1, 1
         else:
@@ -980,23 +852,6 @@ class BarPlot(LegendPlot):
     def _create_bars(self, axis, element):
         # Get style and dimension information
         values = self.values
-        if self.group_index != 0:
-            self.warning('Bars group_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.category_index != 1:
-            self.warning('Bars category_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.stack_index != 2 and not (self.stack_index == 1 and not self.stacked):
-            self.warning('Bars stack_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.color_by != ['category']:
-            self.warning('Bars color_by plot option is deprecated '
-                         'and will be ignored, in future it will '
-                         'support color style mapping by dimension.')
-
         (gi, gdim), (ci, cdim), (si, sdim) = self._get_dims(element)
         indices = dict(zip(self._dimensions, (gi, ci, si)))
         color_by = ['category'] if cdim else ['stack']
@@ -1104,10 +959,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.ClassSelector(default=None, allow_None=True,
-                                      class_=(basestring, int), doc="""
-      Index of the dimension from which the color will the drawn""")
-
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
 
@@ -1160,23 +1011,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 
-        cdim = element.get_dimension(self.color_index)
-        color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
-            self.param.warning(
-                "Cannot declare style mapping for 'color' option and "
-                "declare a color_index; ignoring the color_index.")
-            cdim = None
-        if cdim:
-            style['array'] = element.dimension_values(cdim)
-            self._norm_kwargs(element, ranges, style, cdim)
-
-        if 'spike_length' in opts:
-            axis_dims =  (element.dimensions()[0], None)
-        elif len(element.dimensions()) == 1:
-            axis_dims =  (element.dimensions()[0], None)
-        else:
-            axis_dims =  (element.dimensions()[0], element.dimensions()[1])
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 

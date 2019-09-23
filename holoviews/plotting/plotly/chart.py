@@ -25,10 +25,6 @@ class ChartPlot(ElementPlot):
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     style_opts = [
         'visible',
         'marker',
@@ -50,12 +46,6 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
 
     def graph_options(self, element, ranges, style):
         opts = super(ScatterPlot, self).graph_options(element, ranges, style)
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            copts = self.get_color_opts(cdim, element, ranges, style)
-            copts['color'] = element.dimension_values(cdim)
-            opts['marker'].update(copts)
-
         # If cmap was present and applicable, it was processed by get_color_opts above.
         # Remove it now to avoid plotly validation error
         opts.get('marker', {}).pop('cmap', None)
@@ -159,20 +149,6 @@ class BarPlot(ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    # Deprecated parameters
-
-    group_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
-
     stacked = param.Boolean(default=False)
 
     style_opts = ['visible']
@@ -198,7 +174,7 @@ class BarPlot(ElementPlot):
         ydim = element.vdims[0]
 
         # Compute stack heights
-        if self.stacked or self.stack_index:
+        if self.stacked:
             ds = Dataset(element)
             pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
             neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
@@ -230,26 +206,13 @@ class BarPlot(ElementPlot):
         return (xdims, element.vdims[0])
 
     def get_data(self, element, ranges, style):
-        if self.stack_index is not None:
-            self.param.warning(
-                'Bars stack_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-        if self.category_index is not None:
-            self.param.warning(
-                'Bars category_index plot option is deprecated and '
-                'will be ignored, set stacked=True/False instead.')
-        if self.group_index not in (None, 1):
-            self.param.warning(
-                'Bars group_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass
-        elif self.stacked or self.stack_index:
+        elif self.stacked:
             stack_dim = element.get_dimension(1)
         else:
             group_dim = element.get_dimension(1)
@@ -280,7 +243,7 @@ class BarPlot(ElementPlot):
     def init_layout(self, key, element, ranges):
         layout = super(BarPlot, self).init_layout(key, element, ranges)
         stack_dim = None
-        if element.ndims > 1 and (self.stacked or self.stack_index):
+        if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
         return layout

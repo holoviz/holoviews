@@ -40,16 +40,6 @@ class SankeyPlot(GraphPlot):
     node_sort = param.Boolean(default=True, doc="""
         Sort nodes in ascending breadth.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
-
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
-
     _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
 
     _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
@@ -128,15 +118,7 @@ class SankeyPlot(GraphPlot):
         else:
             nodes = element
 
-        label_dim = nodes.get_dimension(self.label_index)
         labels = self.labels
-        if label_dim and labels:
-            if self.label_index not in [2, None]:
-                self.param.warning(
-                    "Cannot declare style mapping for 'labels' option "
-                    "and declare a label_index; ignoring the label_index.")
-        elif label_dim:
-            labels = label_dim
         if isinstance(labels, basestring):
             labels = element.nodes.get_dimension(labels)
 
@@ -215,7 +197,7 @@ class SankeyPlot(GraphPlot):
         """
         if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
-        lidx = element.nodes.get_dimension(self.label_index)
+        lidx = element.nodes.get_dimension(self.labels)
         src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
@@ -230,7 +212,7 @@ class SankeyPlot(GraphPlot):
         if range_type == 'extents':
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
-        xpad = .05 if self.label_index is None else 0.25
+        xpad = .05 if self.labels is None else 0.25
         x0, x1 = ranges[xdim.name][range_type]
         y0, y1 = ranges[ydim.name][range_type]
         xdiff = (x1-x0)

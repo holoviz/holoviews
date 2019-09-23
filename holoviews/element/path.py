@@ -234,40 +234,18 @@ class Contours(Path):
     representation where all paths are separated by NaN values.
     """
 
-    level = param.Number(default=None, doc="""
-        Optional level associated with the set of Contours.""")
-
     vdims = param.List(default=[], constant=True, doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""")
 
     group = param.String(default='Contours', constant=True)
 
-    _level_vdim = Dimension('Level') # For backward compatibility
-
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
-        if params.get('level') is not None:
-            self.param.warning(
-                "The level parameter on %s elements is deprecated, "
-                "supply the value dimension(s) as columns in the data.",
-                type(self).__name__)
-            vdims = vdims or [self._level_vdim]
-            params['vdims'] = []
-        else:
-            params['vdims'] = vdims
-        super(Contours, self).__init__(data, kdims=kdims, **params)
-        if params.get('level') is not None:
-            with disable_constant(self):
-                self.vdims = [asdim(d) for d in vdims]
-
-    def dimension_values(self, dim, expanded=True, flat=True):
-        dimension = self.get_dimension(dim, strict=True)
-        if dimension in self.vdims and self.level is not None:
-            if expanded:
-                return np.full(len(self), self.level)
-            return np.array([self.level])
-        return super(Contours, self).dimension_values(dim, expanded, flat)
+        super(Contours, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+        all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
+        if not all_scalar:
+            raise ValueError("All value dimensions on a Contours element must be scalar")
 
 
 
@@ -322,8 +300,6 @@ class Polygons(Contours):
     vdims = param.List(default=[], doc="""
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""")
-
-    _level_vdim = Dimension('Value')
 
     # Defines which key the DictInterface uses to look for holes
     _hole_key = 'holes'

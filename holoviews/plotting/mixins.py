@@ -38,8 +38,7 @@ class ChordMixin(object):
         xdim, ydim = element.nodes.kdims[:2]
         if range_type not in ('combined', 'data', 'extents'):
             return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        no_labels = (element.nodes.get_dimension(self.label_index) is None and
-                     self.labels is None)
+        no_labels = self.labels is None)
         rng = 1.1 if no_labels else 1.4
         x0, x1 = util.max_range([xdim.range, (-rng, rng)])
         y0, y1 = util.max_range([ydim.range, (-rng, rng)])

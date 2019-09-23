@@ -20,24 +20,18 @@ class PathPlot(ColorbarPlot):
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index or style.get('color'))
+        cdim = element.get_dimension(style.get('color'))
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
-        scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
-        style_mapping = any(isinstance(v, util.arraylike_types) and not (k == 'c' and scalar)
-                         for k, v in style.items())
+        style_mapping = any(True for v in style.values() if isinstance(v, util.arraylike_types))
         dims = element.kdims
         xdim, ydim = dims
         generic_dt_format = Dimension.type_formatters[np.datetime64]
@@ -53,24 +47,16 @@ class PathPlot(ColorbarPlot):
                 yarr = date2num(yarr)
                 dims[1] = ydim(value_format=DateFormatter(dt_format))
             arr = np.column_stack([xarr, yarr])
-            if not (self.color_index is not None or style_mapping):
+            if not style_mapping:
                 paths.append(arr)
                 continue
             length = len(xarr)
             for (s1, s2) in zip(range(length-1), range(1, length+1)):
-                if cdim:
-                    cvals.append(path[cdim.name])
                 paths.append(arr[s1:s2+1])
         if self.invert_axes:
             paths = [p[::-1] for p in paths]
-        if not (self.color_index or style_mapping):
-            if cdim:
-                style['array'] = style.pop('c')
-                style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
+        if not style_mapping:
             return (paths,), style, {'dimensions': dims}
-        if cdim:
-            self._norm_kwargs(element, ranges, style, cdim)
-            style['array'] = np.array(cvals)
         if 'c' in style:
             style['array'] = style.pop('c')
         if 'vmin' in style:
@@ -103,10 +89,6 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     def init_artists(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
@@ -136,33 +118,6 @@ class ContourPlot(PathPlot):
         elif isinstance(style.get('color'), np.ndarray):
             style[color_prop] = style.pop('color')
 
-        # Process deprecated color_index
-        if None not in [element.level, self.color_index]:
-            cdim = element.vdims[0]
-        elif 'array' not in style:
-            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-        else:
-            cdim = None
-
-        if cdim is None:
-            return (paths,), style, {}
-
-        if element.level is not None:
-            array = np.full(len(paths), element.level)
-        else:
-            array = element.dimension_values(cdim, expanded=False)
-            if len(paths) != len(array):
-                # If there are multi-geometries the list of scalar values
-                # will not match the list of paths and has to be expanded
-                array = np.array([v for v, sps in zip(array, subpaths)
-                                  for _ in range(len(sps))])
-
-        if array.dtype.kind not in 'uif':
-            array = util.search_indices(array, util.unique_array(array))
-        style['array'] = array
-        self._norm_kwargs(element, ranges, style, cdim)
-        style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
 
 

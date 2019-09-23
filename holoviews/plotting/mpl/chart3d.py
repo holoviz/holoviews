@@ -96,10 +96,7 @@ class Plot3D(ColorbarPlot):
         ax = self.handles['axis']
         # Get colorbar label
         if dim is None:
-            if hasattr(self, 'color_index'):
-                dim = element.get_dimension(self.color_index)
-            else:
-                dim = element.get_dimension(2)
+            dim = element.get_dimension(2)
         elif not isinstance(dim, Dimension):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
@@ -116,14 +113,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
-
     _plot_methods = dict(single='scatter')
 
     def get_data(self, element, ranges, style):
@@ -138,13 +127,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
         artist._offsets3d, style, _ = self.get_data(element, ranges, style)
-        cdim = element.get_dimension(self.color_index)
-        if cdim and 'cmap' in style:
-            clim = style['vmin'], style['vmax']
-            cmap = cm.get_cmap(style['cmap'])
-            artist._facecolor3d = map_colors(style['c'], clim, cmap, hex=False)
-        if element.get_dimension(self.size_index):
-            artist.set_sizes(style['s'])
 
 
 class Path3DPlot(Plot3D, PathPlot):
