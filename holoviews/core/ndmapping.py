@@ -12,7 +12,7 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (config, unique_iterator, sanitize_identifier, dimension_sort,
+from .util import (unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 class item_check(object):

@@ -11,7 +11,7 @@ import param
 from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import OrderedDict, config, disable_constant, isscalar
+from ..core.util import OrderedDict, disable_constant, isscalar
 from .geom import Geometry
 
 

@@ -9,7 +9,7 @@ from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import config, get_param_values
+from .util import get_param_values
 
 
 class Element(ViewableElement, Composable, Overlayable):

@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
-from .util import config, sanitize_identifier, unique_array, dimensioned_streams
+from .util import sanitize_identifier, unique_array, dimensioned_streams
 
 
 class Overlayable(object):
