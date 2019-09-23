@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout, AdjointLayout
-from .util import config, sanitize_identifier, unique_array, dimensioned_streams
+from .util import sanitize_identifier, unique_array, dimensioned_streams
 
 
 class Overlayable(object):
@@ -262,9 +262,8 @@ class Overlay(ViewableTree, CompositeOverlay):
 
     def collapse(self, function):
         "Deprecated method to collapse layers in the Overlay."
-        if config.future_deprecations:
-            self.param.warning('Overlay.collapse is deprecated, to'
-                               'collapse multiple elements use a HoloMap.')
+        self.param.warning('Overlay.collapse is deprecated, to'
+                           'collapse multiple elements use a HoloMap.')
 
         elements = list(self)
         types = [type(el) for el in elements]

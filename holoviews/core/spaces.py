@@ -144,9 +144,8 @@ class HoloMap(UniformNdMapping, Overlayable):
 
     def split_overlays(self):
         "Deprecated method to split overlays inside the HoloMap."
-        if util.config.future_deprecations:
-            self.param.warning("split_overlays is deprecated and is now "
-                               "a private method.")
+        self.param.warning("split_overlays is deprecated and is now "
+                           "a private method.")
         return self._split_overlays()
 
 
@@ -429,10 +428,9 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             A Table containing the sampled coordinates
         """
-        if util.config.future_deprecations:
-            self.param.warning('The HoloMap.sample method is deprecated, '
-                               'for equivalent functionality use '
-                               'HoloMap.apply.sample().collapse().')
+        self.param.warning('The HoloMap.sample method is deprecated, '
+                           'for equivalent functionality use '
+                           'HoloMap.apply.sample().collapse().')
 
         dims = self.last.ndims
         if isinstance(samples, tuple) or np.isscalar(samples):
@@ -498,10 +496,9 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             The Dataset after reductions have been applied.
         """
-        if util.config.future_deprecations:
-            self.param.warning('The HoloMap.reduce method is deprecated, '
-                               'for equivalent functionality use '
-                               'HoloMap.apply.reduce().collapse().')
+        self.param.warning('The HoloMap.reduce method is deprecated, '
+                           'for equivalent functionality use '
+                           'HoloMap.apply.reduce().collapse().')
 
         from ..element import Table
         reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
@@ -1158,7 +1155,7 @@ class DynamicMap(HoloMap):
         Returns:
             Cloned object
         """
-        if 'link_inputs' in overrides and util.config.future_deprecations:
+        if 'link_inputs' in overrides:
             self.param.warning(
                 'link_inputs argument to the clone method is deprecated, '
                 'use the more general link argument instead.')
@@ -1465,9 +1462,8 @@ class DynamicMap(HoloMap):
 
     def split_overlays(self):
         "Deprecated method to split overlays inside the DynamicMap."
-        if util.config.future_deprecations:
-            self.param.warning("split_overlays is deprecated and is now "
-                               "a private method.")
+        self.param.warning("split_overlays is deprecated and is now "
+                           "a private method.")
         return self._split_overlays()
 
 

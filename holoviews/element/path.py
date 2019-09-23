@@ -11,7 +11,7 @@ import param
 from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import OrderedDict, config, disable_constant, isscalar
+from ..core.util import OrderedDict, disable_constant, isscalar
 from .geom import Geometry
 
 
@@ -141,10 +141,9 @@ class Path(Geometry):
 
     @classmethod
     def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
-        if config.future_deprecations:
-            param.main.param.warning(
-                'Path.collapse_data is deprecated, collapsing may now '
-                'be performed through concatenation and aggregation.')
+        param.main.param.warning(
+            'Path.collapse_data is deprecated, collapsing may now '
+            'be performed through concatenation and aggregation.')
         if function is None:
             return [path for paths in data_list for path in paths]
         else:
