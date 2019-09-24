@@ -1,5 +1,3 @@
-from unittest import TestCase
-
 try:
     from unittest.mock import Mock
 except:
