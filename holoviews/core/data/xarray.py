@@ -217,7 +217,6 @@ class XArrayInterface(GridInterface):
     @classmethod
     def validate(cls, dataset, vdims=True):
         import xarray as xr
-        print(dataset.data)
         if isinstance(dataset.data, xr.Dataset):
             Interface.validate(dataset, vdims)
         else:
