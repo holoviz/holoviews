@@ -157,6 +157,8 @@ class RGBPlot(ElementPlot):
                 img = np.dstack([img, alpha])
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
+            if not img.flags['C_CONTIGUOUS']:
+                img = img.copy()
             img = img.view(dtype=np.uint32).reshape((N, M))
 
         # Ensure axis inversions are handled correctly

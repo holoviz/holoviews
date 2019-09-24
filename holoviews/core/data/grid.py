@@ -57,8 +57,15 @@ class GridInterface(DictInterface):
 
         ndims = len(kdims)
         dimensions = [dimension_name(d) for d in kdims+vdims]
+        vdim_tuple = tuple(dimension_name(vd) for vd in vdims)
         if isinstance(data, tuple):
-            data = {d: v for d, v in zip(dimensions, data)}
+            if (len(data) != len(dimensions) and len(data) == (ndims+1) and
+                len(data[-1].shape) == (ndims+1)):
+                value_array = data[-1]
+                data = {d: v for d, v in zip(dimensions, data[:-1])}
+                data[vdim_tuple] = value_array
+            else:
+                data = {d: v for d, v in zip(dimensions, data)}
         elif isinstance(data, list) and data == []:
             data = OrderedDict([(d, []) for d in dimensions])
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
@@ -78,7 +85,14 @@ class GridInterface(DictInterface):
             raise TypeError('GridInterface must be instantiated as a '
                             'dictionary or tuple')
 
-        for dim in kdims+vdims:
+        validate_dims = list(kdims)
+        if vdim_tuple in data:
+            if not isinstance(data[vdim_tuple], get_array_types()):
+                data[vdim_tuple] = np.array(data[vdim_tuple])
+        else:
+            validate_dims += vdims
+
+        for dim in validate_dims:
             name = dimension_name(dim)
             if name not in data:
                 raise ValueError("Values for dimension %s not found" % dim)
@@ -86,7 +100,11 @@ class GridInterface(DictInterface):
                 data[name] = np.array(data[name])
 
         kdim_names = [dimension_name(d) for d in kdims]
-        vdim_names = [dimension_name(d) for d in vdims]
+        if vdim_tuple in data:
+            vdim_names = [vdim_tuple]
+        else:
+            vdim_names = [dimension_name(d) for d in vdims]
+
         expected = tuple([len(data[kd]) for kd in kdim_names])
         irregular_shape = data[kdim_names[0]].shape if kdim_names else ()
         valid_shape = irregular_shape if len(irregular_shape) > 1 else expected[::-1]
@@ -94,6 +112,10 @@ class GridInterface(DictInterface):
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
+            if vdim_tuple in data:
+                if shape[-1] != len(vdims):
+                    raise error('The shape of the value array does not match the number of value dimensions.')
+                shape = shape[:-1]
             if (not expected and shape == (1,)) or (len(set((shape,)+shapes)) == 1 and len(shape) > 1):
                 # If empty or an irregular mesh
                 pass
@@ -154,7 +176,13 @@ class GridInterface(DictInterface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
-        Interface.validate(dataset, vdims)
+        dims = 'all' if vdims else 'key'
+        not_found = [d for d in dataset.dimensions(dims, label='name')
+                     if d not in dataset.data]
+        if not_found and tuple(not_found) not in dataset.data:
+            raise DataError("Supplied data does not contain specified "
+                            "dimensions, the following dimensions were "
+                            "not found: %s" % repr(not_found), cls)
 
 
     @classmethod
@@ -167,8 +195,32 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def packed(cls, dataset):
+        vdim_tuple = tuple(vd.name for vd in dataset.vdims)
+        return vdim_tuple if vdim_tuple in dataset.data else False
+
+
+    @classmethod
+    def dtype(cls, dataset, dimension):
+        name = dataset.get_dimension(dimension, strict=True).name
+        vdim_tuple = cls.packed(dataset)
+        if vdim_tuple and name in vdim_tuple:
+            data = dataset.data[vdim_tuple][..., vdim_tuple.index(name)]
+        else:
+            data = dataset.data[name]
+        if util.isscalar(data):
+            return np.array([data]).dtype
+        else:
+            return data.dtype
+
+
+    @classmethod
     def shape(cls, dataset, gridded=False):
-        shape = dataset.data[dataset.vdims[0].name].shape
+        vdim_tuple = cls.packed(dataset)
+        if vdim_tuple:
+            shape = dataset.data[vdim_tuple].shape[:-1]
+        else:
+            shape = dataset.data[dataset.vdims[0].name].shape
         if gridded:
             return shape
         else:
@@ -343,7 +395,11 @@ class GridInterface(DictInterface):
     ):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
-            data = dataset.data[dim.name]
+            vdim_tuple = cls.packed(dataset)
+            if vdim_tuple:
+                data = dataset.data[vdim_tuple][..., dataset.vdims.index(dim)]
+            else:
+                data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
             da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
@@ -582,13 +638,21 @@ class GridInterface(DictInterface):
                      for kdim in dataset.kdims if kdim not in kdims)
         da = dask_array_module()
         dropped = []
-        for vdim in dataset.vdims:
-            values = dataset.data[vdim.name]
-            atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
-            try:
-                data[vdim.name] = atleast_1d(function(values, axis=axes, **kwargs))
-            except TypeError:
-                dropped.append(vdim)
+        vdim_tuple = cls.packed(dataset)
+        if vdim_tuple:
+            values = dataset.data[vdim_tuple]
+            if axes:
+                data[vdim_tuple] = function(values, axis=axes, **kwargs)
+            else:
+                data[vdim_tuple] = values
+        else:
+            for vdim in dataset.vdims:
+                values = dataset.data[vdim.name]
+                atleast_1d = da.atleast_1d if is_dask(values) else np.atleast_1d
+                try:
+                    data[vdim.name] = atleast_1d(function(values, axis=axes, **kwargs))
+                except TypeError:
+                    dropped.append(vdim)
         return data, dropped
 
 

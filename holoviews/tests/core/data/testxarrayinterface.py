@@ -373,6 +373,15 @@ class RGB_XArrayInterfaceTests(RGB_ImageInterfaceTests):
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
+class RGB_PackedXArrayInterfaceTests(RGB_ImageInterfaceTests):
+
+    datatype = 'xarray'
+    data_type = xr.Dataset
+
+    def init_data(self):
+        self.rgb = RGB((self.xs, self.ys, self.rgb_array))
+        
+
 class HSV_XArrayInterfaceTest(HSV_ImageInterfaceTests):
 
     datatype = 'xarray'

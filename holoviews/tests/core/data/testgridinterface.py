@@ -606,6 +606,15 @@ class RGB_GridInterfaceTests(RGB_ImageInterfaceTests):
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
+class RGB_PackedGridInterfaceTests(RGB_ImageInterfaceTests):
+
+    datatype = 'grid'
+    data_type = OrderedDict
+
+    def init_data(self):
+        self.rgb = RGB((self.xs, self.ys, self.rgb_array))
+
+
 class HSV_GridInterfaceTests(HSV_ImageInterfaceTests):
 
     datatype = 'grid'

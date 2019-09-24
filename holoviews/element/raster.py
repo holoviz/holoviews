@@ -4,10 +4,10 @@ import numpy as np
 import colorsys
 import param
 
-from ..core import util, config
+from ..core import util, config, Dimension, Element2D, Overlay, Dataset
 from ..core.data import ImageInterface, GridInterface
 from ..core.data.interface import DataError
-from ..core import Dimension, Element2D, Overlay, Dataset
+from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
@@ -730,9 +730,14 @@ class RGB(Image):
             vdims = list(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
-        if isinstance(data, np.ndarray):
-            if data.shape[-1] == 4 and len(vdims) == 3:
-                vdims.append(self.alpha_dimension)
+
+        alpha = self.alpha_dimension
+        if ((hasattr(data, 'shape') and data.shape[-1] == 4 and len(vdims) == 3) or
+            (isinstance(data, tuple) and isinstance(data[-1], np.ndarray) and data[-1].ndim == 3
+             and data[-1].shape[-1] == 4 and len(vdims) == 3) or
+            (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
+            # Handle all forms of packed value dimensions
+            vdims.append(alpha)
         super(RGB, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
