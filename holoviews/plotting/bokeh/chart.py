@@ -510,20 +510,21 @@ class ErrorPlot(ColorbarPlot):
         if self.static_source:
             return {}, mapping, style
 
-        base = element.dimension_values(0)
-        ys = element.dimension_values(1)
-        if len(element.vdims) > 2:
-            neg, pos = (element.dimension_values(vd) for vd in element.vdims[1:3])
-            lower, upper = ys-neg, ys+pos
-        else:
-            err = element.dimension_values(2)
-            lower, upper = ys-err, ys+err
-        data = dict(base=base, lower=lower, upper=upper)
+        x_idx, y_idx = (1, 0) if element.horizontal else (0, 1)
+        base = element.dimension_values(x_idx)
+        mean = element.dimension_values(y_idx)
+        neg_error = element.dimension_values(2)
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+        lower = mean - neg_error
+        upper = mean + pos_error
 
-        if self.invert_axes:
+        if element.horizontal ^ self.invert_axes:
             mapping['dimension'] = 'width'
         else:
             mapping['dimension'] = 'height'
+
+        data = dict(base=base, lower=lower, upper=upper)
         self._categorize_data(data, ('base',), element.dimensions())
         return (data, mapping, style)
 

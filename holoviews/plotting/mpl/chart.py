@@ -157,15 +157,11 @@ class ErrorPlot(ColorbarPlot):
         style['fmt'] = 'none'
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
-        yerr = element.array(dimensions=dims[2:4])
+        err = element.array(dimensions=dims[2:4])
 
-        if self.invert_axes:
-            coords = (ys, xs)
-            err_key = 'xerr'
-        else:
-            coords = (xs, ys)
-            err_key = 'yerr'
-        style[err_key] = yerr.T if len(dims) > 3 else yerr[:, 0]
+        err_key = 'xerr' if element.horizontal ^ self.invert_axes else 'yerr'
+        coords = (ys, xs) if self.invert_axes else (xs, ys)
+        style[err_key] = err.T if len(dims) > 3 else err[:, 0]
         return coords, style, {}
 
 
@@ -176,18 +172,18 @@ class ErrorPlot(ColorbarPlot):
 
         _, style, axis_kwargs = self.get_data(element, ranges, style)
         xs, ys, neg_error = (element.dimension_values(i) for i in range(3))
-        samples = len(xs)
-        pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
-        if self.invert_axes:
-            bxs, bys = ys - neg_error, xs
-            txs, tys = ys + pos_error, xs
-            new_arrays = [np.array([[bxs[i], xs[i]], [txs[i], xs[i]]])
-                          for i in range(samples)]
+        pos_idx = 3 if len(element.dimensions()) > 3 else 2
+        pos_error = element.dimension_values(pos_idx)
+        if element.horizontal:
+            bxs, bys = xs - neg_error, ys
+            txs, tys = xs + pos_error, ys
         else:
             bxs, bys = xs, ys - neg_error
             txs, tys = xs, ys + pos_error
-            new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
-                          for i in range(samples)]
+        if self.invert_axes:
+            bxs, bys = bys, bxs
+            txs, tys = tys, txs
+        new_arrays = np.moveaxis(np.array([[bxs, bys], [txs, tys]]), 2, 0)
         verts.set_paths(new_arrays)
         if bottoms:
             bottoms.set_xdata(bxs)
