@@ -22,7 +22,7 @@ class TestPlotlyPlot(ComparisonTestCase):
         if not plotly_renderer:
             raise SkipTest("Plotly required to test plot instantiation")
         self.previous_backend = Store.current_backend
-        Store.current_backend = 'plotly'
+        Store.set_current_backend('plotly')
         self.comm_manager = plotly_renderer.comm_manager
         plotly_renderer.comm_manager = comms.CommManager
 
