@@ -13,14 +13,13 @@ from holoviews.streams import (
     Stream, Selection1D, RangeXY, BoundsXY,
 )
 
-import holoviews.plotting.plotly  # noqa (Activate backend)
-hv.Store.set_current_backend("plotly")
-
 from bokeh.document import Document
 from pyviz_comms import Comm
 
+from .testplot import TestPlotlyPlot
 
-class TestDynamicMap(TestCase):
+
+class TestDynamicMap(TestPlotlyPlot):
 
     def test_update_dynamic_map_with_stream(self):
         ys = np.arange(10)
@@ -72,7 +71,7 @@ class TestDynamicMap(TestCase):
         self.assertIs(event.new, plotly_pane.object)
 
 
-class TestInteractiveStream(TestCase):
+class TestInteractiveStream(TestPlotlyPlot):
     # Note: Testing the core logic of each interactive stream should take place in
     # testcallbacks.py. Here we are testing that that callbacks are properly
     # routed to streams

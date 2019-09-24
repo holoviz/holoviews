@@ -21,13 +21,13 @@ try:
     from holoviews.plotting.renderer import Renderer
     from panel.widgets import DiscreteSlider, Player, FloatSlider
 except:
-    pn = None
+    pn, PlotlyRenderer = None, None
 
 
 class PlotlyRendererTest(ComparisonTestCase):
-    
+
     def setUp(self):
-        if 'plotly' not in Store.renderers and pn is not None:
+        if 'plotly' not in Store.renderers and None not in (pn, PlotlyRenderer):
             raise SkipTest("Plotly and Panel required to test rendering.")
 
         self.renderer = PlotlyRenderer.instance()

@@ -1,7 +1,11 @@
 import numpy as np
 
 import PIL.Image
-import plotly.graph_objs as go
+
+try:
+    import plotly.graph_objs as go
+except:
+    go = None
 
 from holoviews.element import RGB
 
