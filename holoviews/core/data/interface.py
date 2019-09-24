@@ -40,7 +40,40 @@ class DataError(ValueError):
         super(DataError, self).__init__(msg)
 
 
-class iloc(object):
+class Accessor(object):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __getitem__(self, index):
+        from ..data import Dataset
+        from ...operation.element import method
+        in_method = self.dataset._in_method
+        if not in_method:
+            self.dataset._in_method = True
+        try:
+            res = self._perform_getitem(self.dataset, index)
+            if not in_method and isinstance(res, Dataset):
+                getitem_op = method.instance(
+                    input_type=type(self),
+                    output_type=type(self.dataset),
+                    method_name='_perform_getitem',
+                    args=[index],
+                )
+                res._pipeline = self.dataset.pipeline.instance(
+                    operations=self.dataset.pipeline.operations + [getitem_op],
+                    output_type=type(self.dataset)
+                )
+        finally:
+            if not in_method:
+                self.dataset._in_method = False
+        return res
+
+    @classmethod
+    def _perform_getitem(cls, dataset, index):
+        raise NotImplementedError()
+
+
+class iloc(Accessor):
     """
     iloc is small wrapper object that allows row, column based
     indexing into a Dataset using the ``.iloc`` property.  It supports
@@ -48,11 +81,8 @@ class iloc(object):
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.iloc`` property docstring.
     """
-
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __getitem__(self, index):
+    @classmethod
+    def _perform_getitem(cls, dataset, index):
         index = util.wrap_tuple(index)
         if len(index) == 1:
             index = (index[0], slice(None))
@@ -63,32 +93,32 @@ class iloc(object):
         rows, cols = index
         if rows is Ellipsis:
             rows = slice(None)
-        data = self.dataset.interface.iloc(self.dataset.dataset, (rows, cols))
-        kdims = self.dataset.kdims
-        vdims = self.dataset.vdims
+        data = dataset.interface.iloc(dataset.dataset, (rows, cols))
+        kdims = dataset.kdims
+        vdims = dataset.vdims
         if np.isscalar(data):
             return data
         elif cols == slice(None):
             pass
         else:
             if isinstance(cols, slice):
-                dims = self.dataset.dimensions()[index[1]]
+                dims = dataset.dimensions()[index[1]]
             elif np.isscalar(cols):
-                dims = [self.dataset.get_dimension(cols)]
+                dims = [dataset.get_dimension(cols)]
             else:
-                dims = [self.dataset.get_dimension(d) for d in cols]
+                dims = [dataset.get_dimension(d) for d in cols]
             kdims = [d for d in dims if d in kdims]
             vdims = [d for d in dims if d in vdims]
 
-        datatype = [dt for dt in self.dataset.datatype
+        datatype = [dt for dt in dataset.datatype
                     if dt in Interface.interfaces and
                     not Interface.interfaces[dt].gridded]
         if not datatype: datatype = ['dataframe', 'dictionary']
-        return self.dataset.clone(data, kdims=kdims, vdims=vdims,
-                                  datatype=datatype)
+        return dataset.clone(data, kdims=kdims, vdims=vdims,
+                             datatype=datatype)
 
 
-class ndloc(object):
+class ndloc(Accessor):
     """
     ndloc is a small wrapper object that allows ndarray-like indexing
     for gridded Datasets using the ``.ndloc`` property. It supports
@@ -96,22 +126,19 @@ class ndloc(object):
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.ndloc`` property docstring.
     """
-
-    def __init__(self, dataset):
-        self.dataset = dataset
-
-    def __getitem__(self, indices):
-        ds = self.dataset
+    @classmethod
+    def _perform_getitem(cls, dataset, indices):
+        ds = dataset
         indices = util.wrap_tuple(indices)
         if not ds.interface.gridded:
             raise IndexError('Cannot use ndloc on non nd-dimensional datastructure')
-        selected = self.dataset.interface.ndloc(ds, indices)
+        selected = dataset.interface.ndloc(ds, indices)
         if np.isscalar(selected):
             return selected
         params = {}
         if hasattr(ds, 'bounds'):
             params['bounds'] = None
-        return self.dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
+        return dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
 
 
 class Interface(param.Parameterized):

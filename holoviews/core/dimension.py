@@ -485,40 +485,7 @@ class LabelledData(param.Parameterized):
         This class also has an id instance attribute, which
         may be set to associate some custom options with the object.
         """
-        from . import Dataset, DataError
         self.data = data
-
-        # Handle initializing the dataset property.
-        self._dataset = None
-        input_dataset = params.pop('dataset', None)
-        if type(self) is Dataset:
-            self._dataset = self
-        elif input_dataset is not None:
-            # Clone dimension info from input dataset with reference to new
-            # data. This way we keep the metadata for all of the dimensions.
-            try:
-                self._dataset = input_dataset.clone(data=self.data)
-            except DataError:
-                # Dataset not compatible with input data
-                pass
-        if self._dataset is None:
-            # Create a default Dataset to wrap input data
-            try:
-                kdims = list(params.get('kdims', []))
-                vdims = list(params.get('vdims', []))
-                dims = kdims + vdims
-                dataset = Dataset(
-                    self.data,
-                    kdims=dims if dims else None
-                )
-                if len(dataset.dimensions()) == 0:
-                    # No dimensions could be auto-detected in data
-                    raise DataError("No dimensions detected")
-                self._dataset = dataset
-            except DataError:
-                # Data not supported by any storage backend. leave _dataset as
-                # None
-                pass
 
         self._id = None
         self.id = id
@@ -540,10 +507,6 @@ class LabelledData(param.Parameterized):
         elif not util.label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
-
-    @property
-    def dataset(self):
-        return self._dataset
 
     @property
     def id(self):

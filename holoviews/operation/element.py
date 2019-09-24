@@ -84,8 +84,38 @@ class factory(Operation):
         By default, if three overlaid Images elements are supplied,
         the corresponding RGB element will be returned. """)
 
+    args = param.List(default=[], doc="""
+            The list of positional argument to pass to the factory""")
+
+    kwargs = param.Dict(default={}, doc="""
+            The dict of keyword arguments to pass to the factory""")
+
     def _process(self, view, key=None):
-        return self.p.output_type(view)
+        return self.p.output_type(view, *self.p.args, **self.p.kwargs)
+
+
+class method(Operation):
+    """
+    Operation that wraps a method call
+    """
+    output_type = param.ClassSelector(class_=type, doc="""
+            The output type of the method operation""")
+
+    input_type = param.ClassSelector(class_=type, doc="""
+            The object type the method is defined on""")
+
+    method_name = param.String(default='__call__', doc="""
+            The method name""")
+
+    args = param.List(default=[], doc="""
+            The list of positional argument to pass to the method""")
+
+    kwargs = param.Dict(default={}, doc="""
+            The dict of keyword arguments to pass to the method""")
+
+    def _process(self, element, key=None):
+        fn = getattr(self.p.input_type, self.p.method_name)
+        return fn(element, *self.p.args, **self.p.kwargs)
 
 
 class chain(Operation):
@@ -110,9 +140,9 @@ class chain(Operation):
         The output type of the chain operation. Must be supplied if
         the chain is to be used as a channel operation.""")
 
-    group = param.String(default='Chain', doc="""
-        The group assigned to the result after having applied the chain.""")
-
+    group = param.String(default='', doc="""
+        The group assigned to the result after having applied the chain.
+        Defaults to the group produced by the last operation in the chain""")
 
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
@@ -124,7 +154,10 @@ class chain(Operation):
             processed = operation.process_element(processed, key,
                                                   input_ranges=self.p.input_ranges)
 
-        return processed.clone(group=self.p.group)
+        if not self.p.group:
+            return processed
+        else:
+            return processed.clone(group=self.p.group)
 
 
 class transform(Operation):
@@ -161,7 +194,6 @@ class transform(Operation):
         processed = (img.data if not self.p.operator
                      else self.p.operator(img.data))
         return img.clone(processed, group=self.p.group)
-
 
 
 class image_overlay(Operation):
@@ -656,19 +688,12 @@ class histogram(Operation):
             if self.p.normed in (True, 'integral'):
                 hist *= edges[1]-edges[0]
 
-        # Save off the kwargs needed to reproduce this Histogram later.
-        # We remove the properties that are used as instructions for how to
-        # calculate the bins, and replace those with the explicit list of bin
-        # edges.  This way, not only can we regenerate this exact histogram
-        # from the same data set, but we can also generate a histogram using
-        # a different dataset that will share the exact same bins.
-        exclusions = {'log', 'bin_range', 'num_bins'}
-        params['_operation_kwargs'] = {
-            k: v for k, v in self.p.items() if k not in exclusions
-        }
-        params['_operation_kwargs']['bins'] = list(edges)
+        # Save off the computed bin edges so that if this operation instance
+        # is used to compute another histogram, it will default to the same
+        # bin edges.
+        self.bins = list(edges)
         return Histogram((edges, hist), kdims=[element.get_dimension(selected_dim)],
-                         label=element.label, dataset=element.dataset, **params)
+                         label=element.label, **params)
 
 
 class decimate(Operation):

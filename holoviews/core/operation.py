@@ -8,7 +8,7 @@ from .element import Element
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
-from . import util
+from . import util, Dataset
 
 
 class Operation(param.ParameterizedFunction):
@@ -118,9 +118,20 @@ class Operation(param.ParameterizedFunction):
         kwargs = {}
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
+
+        element_pipeline = getattr(element, '_pipeline', None)
+
         ret = self._process(element, key)
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
+
+        if isinstance(ret, Dataset) and isinstance(element, Dataset):
+            ret._dataset = element.dataset.clone()
+            ret._pipeline = element_pipeline.instance(
+                operations=element_pipeline.operations + [
+                    self.instance(**self.p)
+                ],
+            )
         return ret
 
 

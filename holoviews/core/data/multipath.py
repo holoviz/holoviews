@@ -59,7 +59,7 @@ class MultiInterface(Interface):
             return
 
         from holoviews.element import Polygons
-        ds = cls._inner_dataset_template(dataset)
+        ds = cls._inner_dataset_template(dataset, validate_vdims=vdims)
         for d in dataset.data:
             ds.data = d
             ds.interface.validate(ds, vdims)
@@ -76,7 +76,7 @@ class MultiInterface(Interface):
 
 
     @classmethod
-    def _inner_dataset_template(cls, dataset):
+    def _inner_dataset_template(cls, dataset, validate_vdims=True):
         """
         Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
@@ -84,7 +84,8 @@ class MultiInterface(Interface):
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
         return Dataset(dataset.data[0], datatype=cls.subtypes,
-                       kdims=dataset.kdims, vdims=vdims)
+                       kdims=dataset.kdims, vdims=vdims,
+                       _validate_vdims=validate_vdims)
 
     @classmethod
     def dimension_type(cls, dataset, dim):
