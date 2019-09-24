@@ -749,7 +749,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
         filename = str(filename.absolute())
     if isinstance(filename, basestring):
         supported = [mfmt for tformats in renderer_obj.mode_formats.values()
-                     for mformats in tformats.values() for mfmt in mformats]
+                     for mfmt in tformats]
         formats = filename.split('.')
         if fmt == 'auto' and formats and formats[-1] != 'html':
             fmt = formats[-1]
