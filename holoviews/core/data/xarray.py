@@ -99,7 +99,7 @@ class XArrayInterface(GridInterface):
         if isinstance(data, xr.DataArray):
             kdim_len = len(kdim_param.default) if kdims is None else len(kdims)
             vdim_len = len(vdim_param.default) if vdims is None else len(vdims)
-            if kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
+            if vdim_len > 1 and kdim_len == len(data.dims)-1 and data.shape[-1] == vdim_len:
                 packed = True
             elif vdims:
                 vdim = vdims[0]
@@ -169,7 +169,6 @@ class XArrayInterface(GridInterface):
             if packed:
                 xr_kwargs['dims'] = list(coords)[::-1] + ['band']
                 coords['band'] = list(range(len(vdims)))
-                print(coords, xr_kwargs)
                 data = xr.DataArray(value_array, coords=coords, **xr_kwargs)
             else:
                 arrays = {}
@@ -218,8 +217,16 @@ class XArrayInterface(GridInterface):
     @classmethod
     def validate(cls, dataset, vdims=True):
         import xarray as xr
+        print(dataset.data)
         if isinstance(dataset.data, xr.Dataset):
             Interface.validate(dataset, vdims)
+        else:
+            not_found = [kd.name for kd in dataset.kdims if kd.name not in dataset.data.coords]
+            if not_found:
+                raise DataError("Supplied data does not contain specified "
+                                "dimensions, the following dimensions were "
+                                "not found: %s" % repr(not_found), cls)
+
         # Check whether irregular (i.e. multi-dimensional) coordinate
         # array dimensionality matches
         irregular = []

@@ -269,7 +269,7 @@ class Interface(param.Parameterized):
 
     @classmethod
     def isscalar(cls, dataset, dim):
-        return cls.values(dataset, dim, expanded=False) == 1
+        return len(cls.values(dataset, dim, expanded=False)) == 1
 
 
     @classmethod
