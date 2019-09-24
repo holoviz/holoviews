@@ -81,7 +81,7 @@ class Apply(object):
                                          method_name)
                 return method(*args, **kwargs)
 
-        applies = isinstance(self._obj, (ViewableElement, HoloMap))
+        applies = isinstance(self._obj, ViewableElement)
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
@@ -96,7 +96,7 @@ class Apply(object):
                        util.is_param_method(function, has_deps=True) or
                        params or dependent_kws)
 
-        if applies and dynamic:
+        if (applies or isinstance(self._obj, HoloMap)) and dynamic:
             return Dynamic(self._obj, operation=function, streams=streams,
                            kwargs=kwargs, link_inputs=link_inputs)
         elif applies:
