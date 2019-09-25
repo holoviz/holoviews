@@ -24,9 +24,10 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values)
+    datetime_types, dt_to_int, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
-                       QuadMesh, Contours, Spikes, Area, Spread)
+                       QuadMesh, Contours, Spikes, Area, Spread,
+                       Segments)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -119,23 +120,31 @@ class ResamplingOperation(LinkableOperation):
             x_range, y_range = target.range(x), target.range(y)
             height, width = target.dimension_values(2, flat=False).shape
         else:
+            if not isinstance(x, list) and x is not None:
+                x = [x]
             if x is None:
                 x_range = self.p.x_range or (-0.5, 0.5)
             elif self.p.expand or not self.p.x_range:
-                x_range = self.p.x_range or element.range(x)
+                x_range = self.p.x_range or max_range([element.range(xd) for xd in x])
             else:
                 x0, x1 = self.p.x_range
-                ex0, ex1 = element.range(x)
+                ex0, ex1 = max_range([element.range(xd) for xd in x])
                 x_range = (np.min([np.max([x0, ex0]), ex1]),
                            np.max([np.min([x1, ex1]), ex0]))
 
+            if not isinstance(y, list) and y is not None:
+                y = [y]
             if (y is None and ndim == 2):
                 y_range = self.p.y_range or default or (-0.5, 0.5)
             elif self.p.expand or not self.p.y_range:
-                y_range = self.p.y_range or (element.range(y) if default is None else default)
+                y_range = self.p.y_range or (max_range([element.range(yd) for yd in y])
+                                             if default is None else default)
             else:
                 y0, y1 = self.p.y_range
-                ey0, ey1 = element.range(y) if default is None else default
+                if default is None:
+                    ey0, ey1 = max_range([element.range(yd) for yd in y])
+                else:
+                    ey0, ey1 = default
                 y_range = (np.min([np.max([y0, ey0]), ey1]),
                            np.max([np.min([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
@@ -623,6 +632,7 @@ class spikes_aggregate(AggregationOperation):
     over the entire y_range if no value dimension is defined and 
     between zero and the y-value if one is defined.
     """
+
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
 
@@ -676,6 +686,49 @@ class spikes_aggregate(AggregationOperation):
         agg = cvs.line(df, x.name, yagg, agg_fn, axis=1)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+
+        return self.p.element_type(agg, **params)
+
+
+class segments_aggregate(AggregationOperation):
+    """
+    Aggregates Segments elements.
+    """
+
+    def _process(self, element, key=None):
+        agg_fn = self._get_aggregator(element)
+        x0d, y0d, x1d, y1d = element.kdims
+        info = self._get_sampling(element, [x0d, x1d], [y0d, y1d], ndim=1)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
+
+        df = element.interface.as_dframe(element)
+        if xtype == 'datetime':
+            df[x0d.name] = df[x0d.name].astype('datetime64[us]').astype('int64')
+            df[x1d.name] = df[x1d.name].astype('datetime64[us]').astype('int64')
+        if ytype == 'datetime':
+            df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
+            df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
+
+        if isinstance(agg_fn, (ds.count, ds.any)):
+            vdim = type(agg_fn).__name__
+        else:
+            vdim = element.get_dimension(agg_fn.column)
+
+        params = dict(get_param_values(element), kdims=[x0d, y0d], vdims=vdim,
+                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+
+        if width == 0 or height == 0:
+            return self._empty_agg(element, x0d, y0d, width, height, xs, ys, agg_fn, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        agg = cvs.line(df, [x0d.name, x1d.name], [y0d.name, y1d.name], agg_fn, axis=1)
+        if xtype == "datetime":
+            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
+        if ytype == "datetime":
+            agg[y.name] = (agg[y.name]/1e3).astype('datetime64[us]')
 
         return self.p.element_type(agg, **params)
 
@@ -1007,6 +1060,7 @@ class rasterize(AggregationOperation):
                    (Spikes, spikes_aggregate),
                    (Area, area_aggregate),
                    (Spread, spread_aggregate),
+                   (Segments, segments_aggregate),
                    (Contours, contours_rasterize),
                    (lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image))),
