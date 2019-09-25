@@ -276,7 +276,7 @@ class AggregationOperation(ResamplingOperation):
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
             name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
-            vdims = [dims[0](name)]
+            vdims = [dims[0].clone(name)]
         else:
             vdims = Dimension('Count')
         params['vdims'] = vdims

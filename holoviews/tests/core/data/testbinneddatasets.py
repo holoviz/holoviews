@@ -24,51 +24,51 @@ class Binned1DTest(ComparisonTestCase):
 
     def test_slice_all(self):
         sliced = self.dataset1d[:]
-        self.assertEqual(sliced.values, self.values)
+        self.assertEqual(sliced.dimension_values(1), self.values)
         self.assertEqual(sliced.edges, self.edges)
 
     def test_slice_exclusive_upper(self):
         "Exclusive upper boundary semantics for bin centers"
         sliced = self.dataset1d[:6.5]
-        self.assertEqual(sliced.values, np.arange(6))
+        self.assertEqual(sliced.dimension_values(1), np.arange(6))
         self.assertEqual(sliced.edges, np.arange(7))
 
     def test_slice_exclusive_upper_exceeded(self):
         "Slightly above the boundary in the previous test"
         sliced = self.dataset1d[:6.55]
-        self.assertEqual(sliced.values, np.arange(7))
+        self.assertEqual(sliced.dimension_values(1), np.arange(7))
         self.assertEqual(sliced.edges, np.arange(8))
 
     def test_slice_inclusive_lower(self):
         "Inclusive lower boundary semantics for bin centers"
         sliced = self.dataset1d[3.5:]
-        self.assertEqual(sliced.values, np.arange(3, 10))
+        self.assertEqual(sliced.dimension_values(1), np.arange(3, 10))
         self.assertEqual(sliced.edges, np.arange(3, 11))
 
     def test_slice_inclusive_lower_undershot(self):
         "Inclusive lower boundary semantics for bin centers"
         sliced = self.dataset1d[3.45:]
-        self.assertEqual(sliced.values, np.arange(3, 10))
+        self.assertEqual(sliced.dimension_values(1), np.arange(3, 10))
         self.assertEqual(sliced.edges, np.arange(3, 11))
 
     def test_slice_bounded(self):
         sliced = self.dataset1d[3.5:6.5]
-        self.assertEqual(sliced.values, np.arange(3, 6))
+        self.assertEqual(sliced.dimension_values(1), np.arange(3, 6))
         self.assertEqual(sliced.edges, np.arange(3, 7))
 
     def test_slice_lower_out_of_bounds(self):
         sliced = self.dataset1d[-3:]
-        self.assertEqual(sliced.values, self.values)
+        self.assertEqual(sliced.dimension_values(1), self.values)
         self.assertEqual(sliced.edges, self.edges)
 
     def test_slice_upper_out_of_bounds(self):
         sliced = self.dataset1d[:12]
-        self.assertEqual(sliced.values, self.values)
+        self.assertEqual(sliced.dimension_values(1), self.values)
         self.assertEqual(sliced.edges, self.edges)
 
     def test_slice_both_out_of_bounds(self):
         sliced = self.dataset1d[-3:13]
-        self.assertEqual(sliced.values, self.values)
+        self.assertEqual(sliced.dimension_values(1), self.values)
         self.assertEqual(sliced.edges, self.edges)
 
     def test_scalar_index(self):

@@ -96,7 +96,7 @@ class TestCurvePlot(TestBokehPlot):
         obj = NdOverlay({i: Curve([(dt.datetime(2016, 1, j+1), j) for j in range(31)]) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
 
     def test_curve_overlay_hover_batched(self):
@@ -104,14 +104,14 @@ class TestCurvePlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}')], 'prev')
 
     def test_curve_overlay_hover(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')], 'nearest')
 
     def test_curve_categorical_xaxis(self):

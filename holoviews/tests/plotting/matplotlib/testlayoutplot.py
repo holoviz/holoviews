@@ -28,7 +28,7 @@ class TestLayoutPlot(TestMPLPlot):
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
-        plot = mpl_renderer.get_plot(layout(plot=dict(transpose=True)))
+        plot = mpl_renderer.get_plot(layout.opts(transpose=True))
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
         nums = [1, 5, 2, 3, 4]

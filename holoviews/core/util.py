@@ -181,7 +181,7 @@ class HashableJSON(json.JSONEncoder):
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
-            return obj.to_csv().encode('utf-8')
+            return obj.to_csv(header=True).encode('utf-8')
         elif isinstance(obj, self.string_hashable):
             return str(obj)
         elif isinstance(obj, self.repr_hashable):
@@ -1188,7 +1188,7 @@ def merge_dimensions(dimensions_list):
                 dimensions.append(d)
     dvalues = {k: list(unique_iterator(itertools.chain(*vals)))
                for k, vals in dvalues.items()}
-    return [d(values=dvalues.get(d.name, [])) for d in dimensions]
+    return [d.clone(values=dvalues.get(d.name, [])) for d in dimensions]
 
 
 def dimension_sort(odict, kdims, vdims, key_index):

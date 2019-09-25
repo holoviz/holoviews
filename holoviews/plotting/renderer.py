@@ -211,7 +211,7 @@ class Renderer(Exporter):
                 obj = collate(obj)
                 initialize_dynamic(obj)
             obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
-            obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+            obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
                              **kwargs)
             plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,

@@ -313,8 +313,6 @@ class Histogram(Chart):
     @property
     def edges(self):
         "Property to access the Histogram edges provided for backward compatibility"
-        self.param.warning('Histogram.edges is deprecated in favor of '
-                           'common dimension_values method.')
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 

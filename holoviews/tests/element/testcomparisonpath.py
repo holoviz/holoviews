@@ -15,14 +15,14 @@ class PathComparisonTest(ComparisonTestCase):
         self.path2 = Path([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
                            (-0.2, 0.4),(-3, 4)])
 
-        self.contours1 = Contours([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                                   (-0.2, 0.4),(-0.3, 0.4)], level=1)
+        self.contours1 = Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
+                                   (-0.2, 0.4, 1),(-0.3, 0.4, 1)], vdims='Level')
 
-        self.contours2 = Contours([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                                   (-0.2, 0.4),(-3, 4)], level=1)
+        self.contours2 = Contours([(-0.3, 0.4, 1), (-0.3, 0.3, 1), (-0.2, 0.3, 1),
+                                   (-0.2, 0.4, 1), (-3, 4, 1)], vdims='Level')
 
-        self.contours3 = Contours([(-0.3, 0.4), (-0.3, 0.3), (-0.2, 0.3),
-                                   (-0.2, 0.4),(-0.3, 0.4)], level=2)
+        self.contours3 = Contours([(-0.3, 0.4, 2), (-0.3, 0.3, 2), (-0.2, 0.3, 2),
+                                   (-0.2, 0.4, 2), (-0.3, 0.4, 2)], vdims='Level')
 
         self.bounds1 = Bounds(0.3)
         self.bounds2 = Bounds(0.4)

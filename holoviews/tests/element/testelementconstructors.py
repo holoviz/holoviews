@@ -5,7 +5,8 @@ from holoviews import (Dimension, Dataset, Element, Annotation, Curve,
                        Path, Histogram, HeatMap, Contours, Scatter,
                        Points, Polygons, VectorField, Spikes, Area,
                        Bars, ErrorBars, BoxWhisker, Raster, Image,
-                       QuadMesh, RGB, Graph, TriMesh, Div, Tiles)
+                       QuadMesh, RGB, Graph, TriMesh, Div, Tiles,
+                       Trisurface)
 from holoviews.element.path import BaseShape
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -24,13 +25,13 @@ class ElementConstructorTest(ComparisonTestCase):
         cos_data = np.column_stack((self.xs, self.cos))
         self.curve = Curve(sine_data)
         self.path = Path([sine_data, cos_data])
-        self.histogram = Histogram(self.sin, self.hxs)
+        self.histogram = Histogram((self.hxs, self.sin))
         super(ElementConstructorTest, self).setUp()
 
     def test_empty_element_constructor(self):
         failed_elements = []
         for name, el in param.concrete_descendents(Element).items():
-            if issubclass(el, (Annotation, BaseShape, Div, Tiles)):
+            if issubclass(el, (Annotation, BaseShape, Div, Tiles, Trisurface)):
                 continue
             try:
                 el([])

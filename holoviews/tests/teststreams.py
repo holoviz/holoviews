@@ -5,6 +5,7 @@ from collections import defaultdict
 from unittest import SkipTest
 
 import param
+
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import LooseVersion, pd
 from holoviews.element import Points, Scatter, Curve, Histogram
@@ -620,7 +621,8 @@ class TestSubscribers(ComparisonTestCase):
 class TestStreamSource(ComparisonTestCase):
 
     def tearDown(self):
-        Stream.registry = defaultdict(list)
+        with param.logging_level('ERROR'):
+            Stream.registry = defaultdict(list)
 
     def test_source_empty_element(self):
         points = Points([])

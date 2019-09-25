@@ -136,7 +136,7 @@ class TestPointPlot(TestBokehPlot):
         obj = NdOverlay({i: Points((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
 
     def test_points_overlay_hover_batched(self):
@@ -144,7 +144,7 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')])
 
     def test_points_overlay_hover(self):
@@ -152,7 +152,7 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'),
                                     ('y', '@{y}')])
 

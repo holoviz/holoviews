@@ -78,7 +78,7 @@ class hex_binning(Operation):
         # Construct aggregate
         data = coords + values
         xd, yd = (element.get_dimension(i) for i in indexes)
-        xd, yd = xd(range=(x0, x1)), yd(range=(y0, y1))
+        xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
         agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
         if self.p.min_count is not None and self.p.min_count > 1:

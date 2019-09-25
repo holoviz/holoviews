@@ -503,7 +503,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
         data = [np.random.normal() for i in range(10000)]
         frequencies, edges = np.histogram(data, 20)
-        self.hist = Histogram(frequencies, edges)
+        self.hist = Histogram((edges, frequencies))
         super(TestStoreInheritance, self).setUp()
 
 
