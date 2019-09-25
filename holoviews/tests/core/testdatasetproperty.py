@@ -1,11 +1,19 @@
+from unittest import SkipTest
+
+import numpy as np
+import pandas as pd
+
+try:
+    import dask.dataframe as dd
+except:
+    dd = None
+
+from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 from holoviews.core import Apply, Redim
 from holoviews.element.comparison import ComparisonTestCase
-import pandas as pd
-from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 from holoviews.operation import histogram
 from holoviews.operation.datashader import dynspread, datashade, rasterize
-import dask.dataframe as dd
-import numpy as np
+
 
 
 class DatasetPropertyTestCase(ComparisonTestCase):
@@ -67,6 +75,7 @@ class ConstructorTestCase(DatasetPropertyTestCase):
 
 
 class ToTestCase(DatasetPropertyTestCase):
+
     def test_to_element(self):
         curve = self.ds.to(Curve, 'a', 'b', groupby=[])
         curve2 = self.ds2.to(Curve, 'a', 'b', groupby=[])
@@ -105,6 +114,8 @@ class ToTestCase(DatasetPropertyTestCase):
             self.assertEqual(curve.pipeline(curve.dataset), curve)
 
     def test_to_holomap_dask(self):
+        if dd is None:
+            raise SkipTest("Dask required to test .to with dask dataframe.")
         ddf = dd.from_pandas(self.df, npartitions=2)
         dds = Dataset(
             ddf,

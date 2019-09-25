@@ -201,18 +201,16 @@ class Renderer(Exporter):
         # Initialize DynamicMaps with first data item
         initialize_dynamic(obj)
 
-        if not isinstance(obj, Plot):
-            if not displayable(obj):
-                obj = collate(obj)
-                initialize_dynamic(obj)
-            obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
-
         if not renderer:
             renderer = self_or_cls
             if not isinstance(self_or_cls, Renderer):
                 renderer = self_or_cls.instance()
 
         if not isinstance(obj, Plot):
+            if not displayable(obj):
+                obj = collate(obj)
+                initialize_dynamic(obj)
+            obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
                              **kwargs)
@@ -245,8 +243,9 @@ class Renderer(Exporter):
         """
         Given a HoloViews Viewable return a corresponding plot state.
         """
-        plot = self_or_cls.get_plot(obj, renderer, **kwargs)
-        return plot.state
+        if not isinstance(obj, Plot):
+            obj = self_or_cls.get_plot(obj, renderer, **kwargs)
+        return obj.state
 
 
     def _validate(self, obj, fmt, **kwargs):
