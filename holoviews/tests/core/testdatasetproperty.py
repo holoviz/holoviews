@@ -12,7 +12,11 @@ from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 from holoviews.core import Apply, Redim
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation import histogram
-from holoviews.operation.datashader import dynspread, datashade, rasterize
+
+try:
+    from holoviews.operation.datashader import dynspread, datashade, rasterize
+except:
+    dynspread = datashade = rasterize = None
 
 
 
@@ -714,6 +718,11 @@ class DistributionTestCase(DatasetPropertyTestCase):
 
 
 class DatashaderTestCase(DatasetPropertyTestCase):
+
+    def setUp(self):
+        if None in (rasterize, datashade, dynspread):
+            raise SkipTest('Datashader could not be imported and cannot be tested.')
+        super(DatashaderTestCase, self).setUp()
 
     def test_rasterize_curve(self):
         img = rasterize(

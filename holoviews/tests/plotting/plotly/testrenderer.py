@@ -27,7 +27,7 @@ except:
 class PlotlyRendererTest(ComparisonTestCase):
 
     def setUp(self):
-        if 'plotly' not in Store.renderers and None not in (pn, PlotlyRenderer):
+        if 'plotly' not in Store.renderers or None in (pn, PlotlyRenderer):
             raise SkipTest("Plotly and Panel required to test rendering.")
 
         self.previous_backend = Store.current_backend

@@ -12,11 +12,14 @@ try:
 except:
     go = None
 
-from holoviews.plotting.plotly.callbacks import (
-    RangeXYCallback, RangeXCallback, RangeYCallback,
-    BoundsXYCallback, BoundsXCallback, BoundsYCallback,
-    Selection1DCallback
-)
+try:
+    from holoviews.plotting.plotly.callbacks import (
+        RangeXYCallback, RangeXCallback, RangeYCallback,
+        BoundsXYCallback, BoundsXCallback, BoundsYCallback,
+        Selection1DCallback
+    )
+except:
+    pass
 
 
 def mock_plot(trace_uid=None):
