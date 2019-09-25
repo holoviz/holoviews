@@ -37,19 +37,19 @@ class TestEllipsisCharts(ComparisonTestCase):
 
     def test_histogram_ellipsis_slice_value(self):
         frequencies, edges = np.histogram(range(20), 20)
-        sliced = hv.Histogram(frequencies, edges)[..., 'Frequency']
+        sliced = hv.Histogram((frequencies, edges))[..., 'Frequency']
         self.assertEqual(len(sliced.dimension_values(0)), 20)
 
     def test_histogram_ellipsis_slice_range(self):
         frequencies, edges = np.histogram(range(20), 20)
-        sliced = hv.Histogram(frequencies, edges)[0:5, ...]
+        sliced = hv.Histogram((edges, frequencies))[0:5, ...]
         self.assertEqual(len(sliced.dimension_values(0)), 5)
 
 
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
         with self.assertRaises(IndexError):
-            hv.Histogram(frequencies, edges)[..., 'Non-existent']
+            hv.Histogram((frequencies, edges))[..., 'Non-existent']
 
 
 class TestEllipsisTable(ComparisonTestCase):

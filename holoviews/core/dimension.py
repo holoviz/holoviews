@@ -1191,8 +1191,8 @@ class Dimensioned(LabelledData):
     def __unicode__(self):
         return unicode(PrettyPrinter.pprint(self))
 
-    def __call__(self, options=None, **kwargs):	
-        self.param.warning(	
+    def __call__(self, options=None, **kwargs):
+        self.param.warning(
             'Use of __call__ to set options will be deprecated '	
             'in the next major release (1.14.0). Use the equivalent .opts '
             'method instead.')	
@@ -1334,7 +1334,7 @@ class ViewableTree(AttrTree, Dimensioned):
     @classmethod
     def from_values(cls, vals):
         "Deprecated method to construct tree from list of objects"
-        name = cls.__name__
+        name = cls.__name__        
         param.main.param.warning("%s.from_values is deprecated, the %s "
                                  "constructor may now be used directly."
                                  % (name, name))
@@ -1455,5 +1455,23 @@ class ViewableTree(AttrTree, Dimensioned):
         return reduce(lambda x,y: x+y, new_items)
 
 
+    def relabel(self, label=None, group=None, depth=1):
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to children up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
+        """
+        return super(ViewableTree, self).relabel(label, group, depth)
+
+    
     def __len__(self):
         return len(self.data)

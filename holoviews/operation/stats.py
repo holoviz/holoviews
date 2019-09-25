@@ -78,7 +78,7 @@ class univariate_kde(Operation):
             params['label'] = element.label
             vdim = element.vdims[0]
             vdim_name = '{}_density'.format(selected_dim.name)
-            vdims = [vdim(vdim_name, label='Density') if vdim.name == 'Density' else vdim]
+            vdims = [vdim.clone(vdim_name, label='Density') if vdim.name == 'Density' else vdim]
         else:
             if self.p.dimension:
                 selected_dim = element.get_dimension(self.p.dimension)

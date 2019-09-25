@@ -57,7 +57,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         The new style introduced in #73
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
-        o = Overlay([Curve(c) for c in data])(
+        o = Overlay([Curve(c) for c in data]).opts(
             dict(plot={'Curve.Curve':{'show_grid':False}},
                  style={'Curve.Curve':{'color':'k'}}))
 
@@ -75,7 +75,7 @@ class TestStoreOptsMethod(ComparisonTestCase):
         Complete specification style.
         """
         data = [zip(range(10),range(10)), zip(range(5),range(5))]
-        o = Overlay([Curve(c) for c in data])(
+        o = Overlay([Curve(c) for c in data]).opts(
             {'Curve.Curve':{'plot':{'show_grid':True},
                             'style':{'color':'b'}}})
 

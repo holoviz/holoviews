@@ -177,7 +177,7 @@ class TestPicklerAdvanced(ComparisonTestCase):
         self.assertEqual(loaded, self.image2)
 
     def test_pickler_save_load_single_layout(self):
-        single_layout = Layout.from_values([self.image1])
+        single_layout = Layout([self.image1])
         Pickler.save(single_layout, 'test_pickler_save_load_single_layout',
                         info={'info':'example'}, key={1:2})
 

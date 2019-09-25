@@ -55,7 +55,7 @@ class TestPathPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Path': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
     def test_empty_path_plot(self):
@@ -189,15 +189,15 @@ class TestPathPlot(TestBokehPlot):
 class TestPolygonPlot(TestBokehPlot):
 
     def test_polygons_overlay_hover(self):
-        obj = NdOverlay({i: Polygons([np.random.rand(10,2)], vdims=['z'], level=0)
+        obj = NdOverlay({i: Polygons([{('x', 'y'): np.random.rand(10,2), 'z': 0}], vdims=['z'])
                          for i in range(5)}, kdims=['Test'])
         opts = {'Polygons': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
-        obj = obj(plot=opts)
+        obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
     def test_polygons_colored(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)})
         plot = bokeh_renderer.get_plot(polygons)
         for i, splot in enumerate(plot.subplots.values()):
@@ -208,7 +208,7 @@ class TestPolygonPlot(TestBokehPlot):
             self.assertEqual(source.data['Value'], np.array([i]))
 
     def test_polygons_colored_batched(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']
@@ -219,8 +219,8 @@ class TestPolygonPlot(TestBokehPlot):
         self.assertEqual(source.data['Value'], list(range(5)))
 
     def test_polygons_colored_batched_unsanitized(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)] for i in range(2)],
-                                          level=j, vdims=['some ? unescaped name'])
+        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)] for i in range(2)],
+                                          vdims=['some ? unescaped name'])
                               for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']

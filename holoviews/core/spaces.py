@@ -189,7 +189,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             keys = sorted((d, v) for k in keys for d, v in k)
             grouped =  dict([(g, [v for _, v in group])
                              for g, group in groupby(keys, lambda x: x[0])])
-            dimensions = [d(values=grouped[d.name]) for d in dimensions]
+            dimensions = [d.clone(values=grouped[d.name]) for d in dimensions]
             map_obj = None
 
         # Combine streams

@@ -14,7 +14,7 @@ class TestHeatMapPlot(TestBokehPlot):
 
     def test_heatmap_hover_ensure_kdims_sanitized(self):
         hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
-        hm = hm(plot={'tools': ['hover']})
+        hm = hm.opts(tools=['hover'])
         self._test_hover_info(hm, [('x with space', '@{x_with_space}'),
                                    ('y with $pecial symbol', '@{y_with_pecial_symbol}'),
                                    ('z', '@{z}')])
@@ -30,8 +30,7 @@ class TestHeatMapPlot(TestBokehPlot):
         self.assertEqual(hover.renderers, [plot.handles['glyph_renderer']])
 
     def test_heatmap_hover_ensure_vdims_sanitized(self):
-        hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace'])
-        hm = hm(plot={'tools': ['hover']})
+        hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace']).opts(tools=['hover'])
         self._test_hover_info(hm, [('x', '@{x}'), ('y', '@{y}'),
                                    ('z with $pace', '@{z_with_pace}')])
 

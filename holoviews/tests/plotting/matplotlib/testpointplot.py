@@ -27,22 +27,22 @@ class TestPointPlot(TestMPLPlot):
 
     def test_points_cbar_extend_both(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1,2)))
-        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
         self.assertEqual(plot.handles['cbar'].extend, 'both')
 
     def test_points_cbar_extend_min(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1, None)))
-        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
         self.assertEqual(plot.handles['cbar'].extend, 'min')
 
     def test_points_cbar_extend_max(self):
         img = Points(([0, 1], [0, 3])).redim(y=dict(range=(None, 2)))
-        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
         self.assertEqual(plot.handles['cbar'].extend, 'max')
 
     def test_points_cbar_extend_clime(self):
         img = Points(([0, 1], [0, 3])).opts(style=dict(clim=(None, None)))
-        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color_index=1))
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
 
     def test_points_rcparams_do_not_persist(self):

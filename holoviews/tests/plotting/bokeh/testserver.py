@@ -4,6 +4,8 @@ import threading
 from unittest import SkipTest
 from threading import Event
 
+import param
+
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Curve, Polygons, Path, HLine
@@ -40,13 +42,15 @@ class TestBokehServerSetup(ComparisonTestCase):
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
         self.nbcontext = Renderer.notebook_context
-        Renderer.notebook_context = False
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = False
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
-        Renderer.notebook_context = self.nbcontext
+        with param.logging_level('ERROR'):
+            Renderer.notebook_context = self.nbcontext
         state.curdoc = None
         curdoc().clear()
 

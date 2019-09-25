@@ -13,12 +13,12 @@ class TestBarPlot(TestBokehPlot):
 
     def test_bars_hover_ensure_kdims_sanitized(self):
         obj = Bars(np.random.rand(10,2), kdims=['Dim with spaces'])
-        obj = obj(plot={'tools': ['hover']})
+        obj = obj.opts(tools=['hover'])
         self._test_hover_info(obj, [('Dim with spaces', '@{Dim_with_spaces}'), ('y', '@{y}')])
 
     def test_bars_hover_ensure_vdims_sanitized(self):
         obj = Bars(np.random.rand(10,2), vdims=['Dim with spaces'])
-        obj = obj(plot={'tools': ['hover']})
+        obj = obj.opts(tools=['hover'])
         self._test_hover_info(obj, [('x', '@{x}'), ('Dim with spaces', '@{Dim_with_spaces}')])
 
     def test_bars_suppress_legend(self):
@@ -67,7 +67,7 @@ class TestBarPlot(TestBokehPlot):
     def test_bars_positive_negative_mixed(self):
         bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],
                     kdims=['Index', 'Category'], vdims=['Value'])
-        plot = bokeh_renderer.get_plot(bars.opts(plot=dict(stack_index=1)))
+        plot = bokeh_renderer.get_plot(bars.opts(stacked=True))
         source = plot.handles['source']
         self.assertEqual(list(source.data['Category']), ['1', '0', '0'])
         self.assertEqual(list(source.data['Index']), ['A', 'A', 'B'])

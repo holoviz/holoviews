@@ -59,7 +59,7 @@ class TestPathPlot(TestMPLPlot):
 class TestPolygonPlot(TestMPLPlot):
 
     def test_polygons_colored(self):
-        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+        polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)})
         plot = mpl_renderer.get_plot(polygons)
         for j, splot in enumerate(plot.subplots.values()):

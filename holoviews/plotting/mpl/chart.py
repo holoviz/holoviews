@@ -85,7 +85,7 @@ class CurvePlot(ChartPlot):
         if isdatetime(xs):
             dimtype = element.get_dimension_type(0)
             dt_format = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
-            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+            dims[0] = dims[0].clone(value_format=DateFormatter(dt_format))
         coords = (ys, xs) if self.invert_axes else (xs, ys)
         return coords, style, {'dimensions': dims}
 
@@ -332,7 +332,7 @@ class HistogramPlot(ColorbarPlot):
         edges, hvals, widths, lims, is_datetime = self._process_hist(hist)
         if is_datetime and not dims[0].value_format:
             dt_format = Dimension.type_formatters[np.datetime64]
-            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+            dims[0] = dims[0].clone(value_format=DateFormatter(dt_format))
 
         style = self.style[self.cyclic_index]
         if self.invert_axes:
@@ -1194,7 +1194,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                         Dimension.type_formatters[np.datetime64]
                     )
                     vs = date2num(vs)
-                    dims[i] = dims[i](value_format=DateFormatter(dt_format))
+                    dims[i] = dims[i].clone(value_format=DateFormatter(dt_format))
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 

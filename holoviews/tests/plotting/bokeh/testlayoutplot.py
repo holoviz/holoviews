@@ -119,7 +119,7 @@ class TestLayoutPlot(TestBokehPlot):
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
-        plot = bokeh_renderer.get_plot(layout(plot=dict(transpose=True)))
+        plot = bokeh_renderer.get_plot(layout.opts(transpose=True))
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
