@@ -59,7 +59,6 @@ class VLinePlot(AnnotationPlot):
             return [axis.axvline(position, **opts)]
 
 
-
 class HLinePlot(AnnotationPlot):
     "Draw a horizontal line on the axis"
 
@@ -71,6 +70,34 @@ class HLinePlot(AnnotationPlot):
             return [axis.axvline(position, **opts)]
         else:
             return [axis.axhline(position, **opts)]
+
+
+class VSpanPlot(AnnotationPlot):
+    "Draw a vertical span on the axis"
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        "Draw a vertical span on the axis"
+        if self.invert_axes:
+            return [axis.axvspan(*positions, **opts)]
+        else:
+            return [axis.axhspan(*positions, **opts)]
+
+
+class HSpanPlot(AnnotationPlot):
+    "Draw a horizontal span on the axis"
+
+    style_opts = ['alpha', 'color', 'facecolor', 'edgecolor',
+                  'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, positions, opts):
+        "Draw a horizontal span on the axis"
+        if self.invert_axes:
+            return [axis.axhspan(*positions, **opts)]
+        else:
+            return [axis.axvspan(*positions, **opts)]
 
 
 class TextPlot(AnnotationPlot):

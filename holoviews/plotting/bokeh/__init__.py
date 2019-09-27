@@ -9,7 +9,7 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
-                        ErrorBars, Text, HLine, VLine, Spline, Spikes,
+                        ErrorBars, Text, HLine, VLine, HSpan, VSpan, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
@@ -27,7 +27,7 @@ try:
 except:
     DFrame = None
 
-from .annotation import (TextPlot, LineAnnotationPlot, SplinePlot,
+from .annotation import (TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot,
                          ArrowPlot, DivPlot, LabelsPlot)
 from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
@@ -97,6 +97,8 @@ associations = {Overlay: OverlayPlot,
                 # Annotations
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
+                HSpan: BoxAnnotationPlot,
+                VSpan: BoxAnnotationPlot,
                 Text: TextPlot,
                 Labels: LabelsPlot,
                 Spline: SplinePlot,
@@ -199,6 +201,8 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VSpan = Options('style', color=Cycle(), alpha=0.5)
+options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)
 options.Labels = Options('style', text_align='center', text_baseline='middle')
 

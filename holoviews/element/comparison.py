@@ -134,6 +134,8 @@ class Comparison(ComparisonInterface):
         # Annotations
         cls.equality_type_funcs[VLine] =       cls.compare_vline
         cls.equality_type_funcs[HLine] =       cls.compare_hline
+        cls.equality_type_funcs[VSpan] =       cls.compare_vspan
+        cls.equality_type_funcs[HSpan] =       cls.compare_hspan
         cls.equality_type_funcs[Spline] =      cls.compare_spline
         cls.equality_type_funcs[Arrow] =       cls.compare_arrow
         cls.equality_type_funcs[Text] =        cls.compare_text
@@ -447,6 +449,14 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_vline(cls, el1, el2, msg='VLine'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_vspan(cls, el1, el2, msg='VSpan'):
+        cls.compare_annotation(el1, el2, msg=msg)
+
+    @classmethod
+    def compare_hspan(cls, el1, el2, msg='HSpan'):
         cls.compare_annotation(el1, el2, msg=msg)
 
     @classmethod

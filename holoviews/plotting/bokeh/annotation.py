@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import Span, Arrow, Div as BkDiv
+from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -18,7 +18,7 @@ except:
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer, basestring
-from ...element import HLine, VLine
+from ...element import HLine, VLine, HSpan, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .styles import text_properties, line_properties
@@ -166,6 +166,50 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         ranges[dim]['soft'] = loc, loc
         return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
 
+
+
+class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
+
+    style_opts = line_properties + ['level', 'visible']
+
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    _plot_methods = dict(single='BoxAnnotation')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        kwd_dim1 = 'left' if isinstance(element, HSpan) else 'bottom'
+        kwd_dim2 = 'right' if isinstance(element, HSpan) else 'top'
+        if self.invert_axes:
+            kwd_dim1 = 'bottom' if kwd_dim1 == 'left' else 'left'
+            kwd_dim2 = 'top' if kwd_dim2 == 'right' else 'right'
+
+        locs = element.data
+        if isinstance(locs, datetime_types):
+            locs = [date_to_integer(loc) for loc in locs]
+        mapping[kwd_dim1] = locs[0]
+        mapping[kwd_dim2] = locs[1]
+        return (data, mapping, style)
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
+        plot.renderers.append(box)
+        return None, box
+
+    def get_extents(self, element, ranges=None, range_type='combined'):
+        locs = element.data
+        if isinstance(element, HSpan):
+            dim = 'x'
+        elif isinstance(element, VSpan):
+            dim = 'y'
+        if self.invert_axes:
+            dim = 'x' if dim == 'y' else 'x'
+        ranges[dim]['soft'] = locs
+        return super(BoxAnnotationPlot, self).get_extents(element, ranges, range_type)
 
 
 class SplinePlot(ElementPlot, AnnotationPlot):
