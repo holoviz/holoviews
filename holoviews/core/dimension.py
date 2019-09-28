@@ -395,7 +395,7 @@ class Dimension(param.Parameterized):
         return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
 
-    def pprint_value(self, value):
+    def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
 
         Args:
@@ -409,20 +409,25 @@ class Dimension(param.Parameterized):
                      else self.type_formatters.get(own_type))
         if formatter:
             if callable(formatter):
-                return formatter(value)
+                formatted_value = formatter(value)
             elif isinstance(formatter, basestring):
                 if isinstance(value, (dt.datetime, dt.date)):
-                    return value.strftime(formatter)
+                    formatted_value = value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
-                    return util.dt64_to_dt(value).strftime(formatter)
+                    formatted_value = util.dt64_to_dt(value).strftime(formatter)
                 elif re.findall(r"\{(\w+)\}", formatter):
-                    return formatter.format(value)
+                    formatted_value = formatter.format(value)
                 else:
-                    return formatter % value
-        return unicode(bytes_to_unicode(value))
+                    formatted_value = formatter % value
+        else:
+            formatted_value = unicode(bytes_to_unicode(value))
+
+        if print_unit and self.unit is not None:
+            formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
+        return formatted_value
 
     def pprint_value_string(self, value):
-        """Pretty print the dimension value and unit.
+        """Pretty print the dimension value and unit with title_format
 
         Args:
             value: Dimension value to format

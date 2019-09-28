@@ -104,13 +104,11 @@ class SankeyPlot(GraphPlot):
             else:
                 label = ''
             if self.show_values:
-                value = value_dim.pprint_value(node['value'])
+                value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
                     label = '%s - %s' % (label, value)
                 else:
                     label = value
-            if value_dim.unit:
-                label += ' %s' % value_dim.unit
             if label:
                 x = x1+(x1-x0)/4. if self.label_position == 'right' else x0-(x1-x0)/4.
                 text_labels.append((label, (x, (y0+y1)/2.)))
