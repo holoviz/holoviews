@@ -24,10 +24,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             return options
 
         layer_alpha = 1.0 if visible else 0.0
-        layer_element = element.options(
-            tools=['box_select'],
-            **self._get_color_kwarg(layer_color),
-            **alpha_opts(layer_alpha)
-        )
+        merged_opts = dict(self._get_color_kwarg(layer_color), **alpha_opts(layer_alpha))
+        layer_element = element.options(tools=['box_select'], **merged_opts)
 
         return layer_element
