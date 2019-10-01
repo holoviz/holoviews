@@ -102,7 +102,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
             xdim, ydim = dims[xidx], dims[yidx]
             data[xdim] = element.dimension_values(xidx)
             data[ydim] = element.dimension_values(yidx)
-            self._categorize_data(data, (xdim, ydim), element.dimensions())
+            self._categorize_data(data, dims[:2], element.dimensions())
 
         cdata, cmapping = self._get_color_data(element, ranges, style)
         data.update(cdata)
