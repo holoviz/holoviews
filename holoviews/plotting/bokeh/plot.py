@@ -10,6 +10,7 @@ from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
+from ...selection import NoOpSelectionDisplay
 from ...core import (
     OrderedDict, Store, AdjointLayout, NdLayout, Layout, Empty,
     GridSpace, HoloMap, Element
@@ -76,6 +77,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
     )
 
     backend = 'bokeh'
+
+    selection_display = NoOpSelectionDisplay()
 
     @property
     def id(self):

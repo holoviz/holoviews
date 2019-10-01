@@ -6,6 +6,7 @@ import numpy as np
 from plotly import colors
 from plotly.figure_factory._trisurf import trisurf as trisurface
 
+from .selection import PlotlyOverlaySelectionDisplay
 from ...core.options import SkipRendering
 from .element import ElementPlot, ColorbarPlot
 from .chart import ScatterPlot, CurvePlot
@@ -57,6 +58,12 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 class Scatter3DPlot(Chart3DPlot, ScatterPlot):
 
     trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
+
+    style_opts = [
+        'visible', 'marker', 'color', 'cmap', 'alpha', 'opacity', 'size', 'sizemin'
+    ]
+
+    selection_display = PlotlyOverlaySelectionDisplay()
 
 
 class Path3DPlot(Chart3DPlot, CurvePlot):

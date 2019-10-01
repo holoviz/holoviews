@@ -17,6 +17,7 @@ import param
 from panel.io.notebook import push
 from panel.io.state import state
 
+from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.element import Element, Element3D
@@ -946,6 +947,8 @@ class GenericElementPlot(DimensionedPlot):
     # Elements on an OverlayPlot. Enabled by default in v1.7.
     _propagate_options = []
     v17_option_propagation = True
+
+    _selection_display = NoOpSelectionDisplay()
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,

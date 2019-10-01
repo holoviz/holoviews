@@ -8,6 +8,8 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
+from ...plotting.bokeh.selection import BokehOverlaySelectionDisplay
+from ...selection import NoOpSelectionDisplay
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
@@ -57,6 +59,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -396,6 +400,8 @@ class HistogramPlot(ColorbarPlot):
 
     _nonvectorized_styles = ['line_dash', 'visible']
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
             mapping = dict(top='right', bottom='left', left=0, right='top')
@@ -504,6 +510,10 @@ class ErrorPlot(ColorbarPlot):
     _mapping = dict(base="base", upper="upper", lower="lower")
 
     _plot_methods = dict(single=Whisker)
+
+    # selection_display should be changed to BokehOverlaySelectionDisplay
+    # when #3950 is fixed
+    selection_display = NoOpSelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
@@ -664,6 +674,8 @@ class SpikesPlot(ColorbarPlot):
 
     _plot_methods = dict(single='segment')
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     def get_extents(self, element, ranges, range_type='combined'):
         if len(element.dimensions()) > 1:
             ydim = element.get_dimension(1)
@@ -778,6 +790,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     # Declare that y-range should auto-range if not bounded
     _y_range_type = Range1d
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def get_extents(self, element, ranges, range_type='combined'):
         """
