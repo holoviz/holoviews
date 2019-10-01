@@ -631,7 +631,11 @@ def renderer(name):
     """
     try:
         if name not in Store.renderers:
+            if Store.current_backend:
+                prev_backend = Store.current_backend
             extension(name)
+            if prev_backend:
+                Store.set_current_backend(prev_backend)
         return Store.renderers[name]
     except ImportError:
         msg = ('Could not find a {name!r} renderer, available renderers are: {available}.')
