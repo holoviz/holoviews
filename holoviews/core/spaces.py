@@ -1671,8 +1671,11 @@ class DynamicMap(HoloMap):
                         inner_vals = [(d.name, k) for d, k in inner_dims]
                         return self.select(**dict(outer_vals+inner_vals)).last
                     if inner_kdims or self.streams:
-                        group = self.clone(callback=partial(inner_fn, outer_vals),
-                                           kdims=inner_kdims)
+                        callback = Callable(partial(inner_fn, outer_vals),
+                                            inputs=[self])
+                        group = self.clone(
+                            callback=callback, kdims=inner_kdims
+                        )
                     else:
                         group = inner_fn(outer_vals, ())
                     groups.append((outer, group))
