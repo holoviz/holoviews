@@ -520,8 +520,10 @@ class Renderer(Exporter):
             plot, fmt = self_or_cls._validate(obj, fmt)
 
         if isinstance(plot, Viewable):
-            from bokeh.resources import CDN, INLINE
-            if resources.lower() == 'cdn':
+            from bokeh.resources import CDN, INLINE, Resources
+            if isinstance(resources, Resources):
+                pass
+            elif resources.lower() == 'cdn':
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
