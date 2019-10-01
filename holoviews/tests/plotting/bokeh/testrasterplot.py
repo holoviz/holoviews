@@ -30,7 +30,7 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(source.data['x'][0], 0)
         self.assertEqual(source.data['y'][0], 3)
         self.assertEqual(source.data['dw'][0], 2)
-        self.assertEqual(source.data['dh'][0], -3)
+        self.assertEqual(source.data['dh'][0], 3)
 
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
@@ -54,7 +54,7 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(cdata['x'], [0.5])
         self.assertEqual(cdata['y'], [-0.5])
         self.assertEqual(cdata['dh'], [1.0])
-        self.assertEqual(cdata['dw'], [-1.0])
+        self.assertEqual(cdata['dw'], [1.0])
         self.assertEqual(cdata['image'][0], arr[::-1, ::-1])
 
     def test_image_invert_yaxis(self):
@@ -67,7 +67,7 @@ class TestRasterPlot(TestBokehPlot):
         cdata = plot.handles['source'].data
         self.assertEqual(cdata['x'], [-0.5])
         self.assertEqual(cdata['y'], [0.5])
-        self.assertEqual(cdata['dh'], [-1.0])
+        self.assertEqual(cdata['dh'], [1.0])
         self.assertEqual(cdata['dw'], [1.0])
         self.assertEqual(cdata['image'][0], arr)
 
@@ -81,7 +81,7 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(cdata['x'], [0.5])
         self.assertEqual(cdata['y'], [-0.5])
         self.assertEqual(cdata['dh'], [1.0])
-        self.assertEqual(cdata['dw'], [-1.0])
+        self.assertEqual(cdata['dw'], [1.0])
 
     def test_rgb_invert_yaxis(self):
         rgb = RGB(np.random.rand(10, 10, 3)).opts(plot=dict(invert_yaxis=True))
@@ -92,5 +92,5 @@ class TestRasterPlot(TestBokehPlot):
         cdata = plot.handles['source'].data
         self.assertEqual(cdata['x'], [-0.5])
         self.assertEqual(cdata['y'], [0.5])
-        self.assertEqual(cdata['dh'], [-1.0])
+        self.assertEqual(cdata['dh'], [1.0])
         self.assertEqual(cdata['dw'], [1.0])
