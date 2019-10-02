@@ -100,7 +100,6 @@ class BokehRenderer(Renderer):
         logger.disabled = True
 
         if fmt == 'gif':
-            from PIL import Image
             from bokeh.io.export import get_screenshot_as_png, create_webdriver
             webdriver = create_webdriver()
 
@@ -110,6 +109,7 @@ class BokehRenderer(Renderer):
                 plot.update(i)
                 img = get_screenshot_as_png(plot.state, webdriver)
                 frames.append(img)
+            webdriver.close()
 
             bio = BytesIO()
             duration = (1./self.fps)*1000

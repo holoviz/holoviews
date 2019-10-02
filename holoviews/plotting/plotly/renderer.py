@@ -2,6 +2,8 @@ from __future__ import absolute_import, division, unicode_literals
 
 import base64
 
+from io import BytesIO
+
 import param
 import panel as pn
 
@@ -45,8 +47,15 @@ class PlotlyRenderer(Renderer):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['scrubber','widgets', 'gif',
+                                            None, 'auto'], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
+
+
     mode_formats = {'fig': ['html', 'png', 'svg'],
-                    'holomap': ['widgets', 'scrubber', 'auto']}
+                    'holomap': ['widgets', 'scrubber', 'gif', 'auto']}
 
     widgets = ['scrubber', 'widgets']
 
@@ -75,27 +84,55 @@ class PlotlyRenderer(Renderer):
 
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
-        # Wrapping plot.state in go.Figure here performs validation
-        # and applies any default theme.
-        figure = go.Figure(plot.state)
-
-        if fmt in ('png', 'svg'):
+        if fmt == 'gif':
             import plotly.io as pio
+
+            from PIL import Image
+            from plotly.io.orca import ensure_server, shutdown_server, status
+
+            running = status.state == 'running'
+            if not running:
+                ensure_server()
+
+            nframes = len(plot)
+            frames = []
+            for i in range(nframes):
+                plot.update(i)
+                img_bytes = BytesIO()
+                figure = go.Figure(self.get_plot_state(plot))
+                img = pio.to_image(figure, 'png', validate=False)
+                img_bytes.write(img)
+                frames.append(Image.open(img_bytes))
+
+            if not running:
+                shutdown_server()
+
+            bio = BytesIO()
+            duration = (1./self.fps)*1000
+            frames[0].save(bio, format='GIF', append_images=frames[1:],
+                           save_all=True, duration=duration, loop=0)
+            bio.seek(0)
+            data = bio.read()
+        elif fmt in ('png', 'svg'):
+            import plotly.io as pio
+
+            # Wrapping plot.state in go.Figure here performs validation
+            # and applies any default theme.
+            figure = go.Figure(self.get_plot_state(plot))
             data = pio.to_image(figure, fmt)
 
             if fmt == 'svg':
                 data = data.decode('utf-8')
-
-            if as_script:
-                b64 = base64.b64encode(data).decode("utf-8")
-                (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-                src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-                div = tag.format(src=src, mime_type=mime_type, css='')
-                return div
-            else:
-                return data
         else:
             raise ValueError("Unsupported format: {fmt}".format(fmt=fmt))
+
+        if as_script:
+            b64 = base64.b64encode(data).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            div = tag.format(src=src, mime_type=mime_type, css='')
+            return div
+        return data
 
 
     @classmethod
