@@ -911,7 +911,9 @@ def find_range(values, soft_range=[]):
             values = np.concatenate([values, soft_range])
         if values.dtype.kind == 'M':
             return values.min(), values.max()
-        return np.nanmin(values), np.nanmax(values)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+            return np.nanmin(values), np.nanmax(values)
     except:
         try:
             values = sorted(values)

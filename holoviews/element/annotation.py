@@ -89,7 +89,7 @@ class VLine(Annotation):
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
        The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
@@ -112,7 +112,7 @@ class VLine(Annotation):
         if index == 0:
             return np.array([self.data])
         elif index == 1:
-            return np.array([])
+            return np.array([np.nan])
         else:
             return super(VLine, self).dimension_values(dimension)
 
@@ -122,8 +122,8 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
-       The y-position of the VLine which make be numeric or a timestamp.""")
+    y = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+       The y-position of the HLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
 
@@ -143,11 +143,84 @@ class HLine(Annotation):
         """
         index = self.get_dimension_index(dimension)
         if index == 0:
-            return np.array([])
+            return np.array([np.nan])
         elif index == 1:
             return np.array([self.data])
         else:
             return super(HLine, self).dimension_values(dimension)
+
+
+
+class VSpan(Annotation):
+    """Vertical span annotation at the given position."""
+
+    group = param.String(default='VSpan', constant=True)
+
+    x1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+       The start x-position of the VSpan which must be numeric or a timestamp.""")
+
+    x2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+       The end x-position of the VSpan which must be numeric or a timestamp.""")
+
+    __pos_params = ['x1', 'x2']
+
+    def __init__(self, x1, x2, **params):
+        super(VSpan, self).__init__([x1, x2], **params)
+
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return np.array(self.data)
+        elif index == 1:
+            return np.array([np.nan, np.nan])
+        else:
+            return super(VSpan, self).dimension_values(dimension)
+
+
+class HSpan(Annotation):
+    """Horziontal span annotation at the given position."""
+
+    group = param.String(default='HSpan', constant=True)
+
+    y1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+       The start y-position of the VSpan which must be numeric or a timestamp.""")
+
+    y2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+       The end y-position of the VSpan which must be numeric or a timestamp.""")
+
+    __pos_params = ['y1', 'y2']
+
+    def __init__(self, y1, y2, **params):
+        super(HSpan, self).__init__([y1, y2], **params)
+
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        """Return the values along the requested dimension.
+
+        Args:
+            dimension: The dimension to return values for
+            expanded (bool, optional): Whether to expand values
+            flat (bool, optional): Whether to flatten array
+
+        Returns:
+            NumPy array of values along the requested dimension
+        """
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return np.array([np.nan, np.nan])
+        elif index == 1:
+            return np.array(self.data)
+        else:
+            return super(HSpan, self).dimension_values(dimension)
 
 
 

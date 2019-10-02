@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import Span, Arrow, Div as BkDiv
+from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -18,10 +18,10 @@ except:
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer, basestring
-from ...element import HLine, VLine
+from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
-from .styles import text_properties, line_properties
+from .styles import text_properties, line_properties, fill_properties
 from .plot import BokehPlot
 from .util import date_to_integer
 
@@ -166,6 +166,39 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         ranges[dim]['soft'] = loc, loc
         return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
 
+
+
+class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
+
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + fill_properties + ['level', 'visible']
+
+    _plot_methods = dict(single='BoxAnnotation')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
+        kwd_dim2 = 'right' if isinstance(element, VSpan) else 'top'
+        if self.invert_axes:
+            kwd_dim1 = 'bottom' if kwd_dim1 == 'left' else 'left'
+            kwd_dim2 = 'top' if kwd_dim2 == 'right' else 'right'
+
+        locs = element.data
+        if isinstance(locs, datetime_types):
+            locs = [date_to_integer(loc) for loc in locs]
+        mapping[kwd_dim1] = locs[0]
+        mapping[kwd_dim2] = locs[1]
+        return (data, mapping, style)
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
+        plot.renderers.append(box)
+        return None, box
 
 
 class SplinePlot(ElementPlot, AnnotationPlot):
