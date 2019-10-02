@@ -38,7 +38,7 @@ class BokehRenderer(Renderer):
 
     holomap = param.ObjectSelector(default='auto',
                                    objects=['widgets', 'scrubber',
-                                            None, 'auto'], doc="""
+                                            None, 'gif', 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -51,7 +51,7 @@ class BokehRenderer(Renderer):
 
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': ['html', 'auto', 'png'],
-                    'holomap': ['widgets', 'scrubber', 'auto', None]}
+                    'holomap': ['widgets', 'scrubber', 'gif', 'auto', None]}
 
     _loaded = False
     _render_with_panel = True
@@ -99,19 +99,38 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
 
-        if fmt == 'png':
+        if fmt == 'gif':
+            from PIL import Image
+            from bokeh.io.export import get_screenshot_as_png, create_webdriver
+            webdriver = create_webdriver()
+
+            nframes = len(plot)
+            frames = []
+            for i in range(nframes):
+                plot.update(i)
+                img = get_screenshot_as_png(plot.state, webdriver)
+                frames.append(img)
+
+            bio = BytesIO()
+            duration = (1./self.fps)*1000
+            frames[0].save(bio, format='GIF', append_images=frames[1:],
+                           save_all=True, duration=duration, loop=0)
+            bio.seek(0)
+            data = bio.read()
+        elif fmt == 'png':
             from bokeh.io.export import get_screenshot_as_png
             img = get_screenshot_as_png(plot.state, None)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             data = imgByteArr.getvalue()
-            if as_script:
-                b64 = base64.b64encode(data).decode("utf-8")
-                (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
-                src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-                div = tag.format(src=src, mime_type=mime_type, css='')
         else:
             div = render_mimebundle(plot.state, doc, plot.comm)[0]['text/html']
+
+        if as_script and fmt in ['png', 'gif']:
+            b64 = base64.b64encode(data).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            div = tag.format(src=src, mime_type=mime_type, css='')
 
         plot.document = doc
         if as_script:
