@@ -1,6 +1,8 @@
 import numpy as np
 
-from holoviews.element import HLine, VLine, Text, Labels, Arrow, HSpan, VSpan
+from holoviews.element import (
+    HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope
+)
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -74,6 +76,25 @@ class TestHVSpanPlot(TestBokehPlot):
         self.assertEqual(span.right, 1.5)
         self.assertEqual(span.bottom, None)
         self.assertEqual(span.top, None)
+
+
+
+class TestSlopePlot(TestBokehPlot):
+
+    def test_slope(self):
+        hspan = Slope(2, 10)
+        plot = bokeh_renderer.get_plot(hspan)
+        slope = plot.handles['glyph']
+        self.assertEqual(slope.gradient, 2)
+        self.assertEqual(slope.y_intercept, 10)
+
+    def test_slope_invert_axes(self):
+        hspan = Slope(2, 10).opts(invert_axes=True)
+        plot = bokeh_renderer.get_plot(hspan)
+        slope = plot.handles['glyph']
+        self.assertEqual(slope.gradient, 0.5)
+        self.assertEqual(slope.y_intercept, -5)
+        
 
 
 class TestTextPlot(TestBokehPlot):
