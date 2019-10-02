@@ -72,8 +72,10 @@ Store.register({Points: ScatterPlot,
                 Box: PathShapePlot,
                 Bounds: PathShapePlot,
                 Ellipse: PathShapePlot,
-                HLine: HLinePlot,
-                VLine: VLinePlot,
+                HLine: HVLinePlot,
+                VLine: HVLinePlot,
+                HSpan: HVSpanPlot,
+                VSpan: HVSpanPlot,
 
                 # Container Plots
                 Overlay: OverlayPlot,
@@ -111,3 +113,6 @@ options.HeatMap = Options('style', cmap='RdBu_r')
 # 3D
 options.Scatter3D = Options('style', color=Cycle(), size=6)
 
+# Annotations
+options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)

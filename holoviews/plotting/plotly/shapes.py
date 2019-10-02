@@ -1,5 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import param
+
+from ...element import HLine, VLine, HSpan, VSpan
 from .element import ElementPlot
 
 
@@ -8,8 +11,6 @@ class ShapePlot(ElementPlot):
     # The plotly shape type ("line", "rect", etc.)
     _shape_type = None
     style_opts = ['opacity', 'fillcolor', 'line_color', 'line_width', 'line_dash']
-
-    apply_ranges = False
 
     def init_graph(self, datum, options, index=0):
         shape = dict(type=self._shape_type, **dict(datum, **options))
@@ -31,7 +32,6 @@ class ShapePlot(ElementPlot):
 
 class PathShapePlot(ShapePlot):
     _shape_type = 'path'
-    apply_ranges = True
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -45,26 +45,36 @@ class PathShapePlot(ShapePlot):
         return [dict(path=path, xref='x', yref='y')]
 
 
+class HVLinePlot(ShapePlot):
 
-class HLinePlot(ShapePlot):
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+    
     _shape_type = 'line'
 
     def get_data(self, element, ranges, style):
-        if self.invert_axes:
-            x = element.y
+        if ((isinstance(element, HLine) and self.invert_axes) or
+            (isinstance(element, VLine) and not self.invert_axes)):
+            x = element.data
             return [dict(x0=x, x1=x, y0=0, y1=1, xref='x', yref="paper")]
         else:
-            y = element.y
+            y = element.data
             return [dict(x0=0.0, x1=1.0, y0=y, y1=y, xref="paper", yref='y')]
 
 
-class VLinePlot(ShapePlot):
-    _shape_type = 'line'
+class HVSpanPlot(ShapePlot):
+    
+    apply_ranges = param.Boolean(default=False, doc="""
+        Whether to include the annotation in axis range calculations.""")
+
+    _shape_type = 'rect'
 
     def get_data(self, element, ranges, style):
-        if self.invert_axes:
-            y = element.x
-            return [dict(x0=0.0, x1=1.0, y0=y, y1=y, xref="paper", yref='y')]
+        
+        if ((isinstance(element, HSpan) and self.invert_axes) or
+            (isinstance(element, VSpan) and not self.invert_axes)):
+            x0, x1 = element.data
+            return [dict(x0=x0, x1=x1, y0=0, y1=1, xref='x', yref="paper")]
         else:
-            x = element.x
-            return [dict(x0=x, x1=x, y0=0, y1=1, xref='x', yref="paper")]
+            y0, y1 = element.data
+            return [dict(x0=0.0, x1=1.0, y0=y0, y1=y1, xref="paper", yref='y')]
