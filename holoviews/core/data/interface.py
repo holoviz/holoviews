@@ -466,3 +466,11 @@ class Interface(param.Parameterized):
         coords = cls.values(dataset, dataset.kdims[0])
         splits = np.where(np.isnan(coords.astype('float')))[0]
         return [[[]]*(len(splits)+1)]
+
+    @classmethod
+    def as_dframe(cls, dataset):
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
+        if it already a dataframe type.
+        """
+        return dataset.dframe()

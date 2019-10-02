@@ -97,7 +97,6 @@ class Scatter(Chart2dSelectionExpr, Chart):
     location along the x-axis while the first value dimension
     represents the location of the point along the y-axis.
     """
-
     group = param.String(default='Scatter', constant=True)
 
 
