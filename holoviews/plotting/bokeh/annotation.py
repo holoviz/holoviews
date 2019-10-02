@@ -21,7 +21,7 @@ from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine, VLine, HSpan, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
-from .styles import text_properties, line_properties
+from .styles import text_properties, line_properties, fill_properties
 from .plot import BokehPlot
 from .util import date_to_integer
 
@@ -170,17 +170,17 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = line_properties + ['level', 'visible']
-
     apply_ranges = param.Boolean(default=False, doc="""
         Whether to include the annotation in axis range calculations.""")
+
+    style_opts = line_properties + fill_properties + ['level', 'visible']
 
     _plot_methods = dict(single='BoxAnnotation')
 
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
-        kwd_dim1 = 'left' if isinstance(element, HSpan) else 'bottom'
-        kwd_dim2 = 'right' if isinstance(element, HSpan) else 'top'
+        kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
+        kwd_dim2 = 'right' if isinstance(element, VSpan) else 'top'
         if self.invert_axes:
             kwd_dim1 = 'bottom' if kwd_dim1 == 'left' else 'left'
             kwd_dim2 = 'top' if kwd_dim2 == 'right' else 'right'
@@ -199,17 +199,6 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
         return None, box
-
-    def get_extents(self, element, ranges=None, range_type='combined'):
-        locs = element.data
-        if isinstance(element, HSpan):
-            dim = 'x'
-        elif isinstance(element, VSpan):
-            dim = 'y'
-        if self.invert_axes:
-            dim = 'x' if dim == 'y' else 'x'
-        ranges[dim]['soft'] = locs
-        return super(BoxAnnotationPlot, self).get_extents(element, ranges, range_type)
 
 
 class SplinePlot(ElementPlot, AnnotationPlot):

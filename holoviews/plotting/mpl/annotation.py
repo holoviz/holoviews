@@ -81,9 +81,9 @@ class VSpanPlot(AnnotationPlot):
     def draw_annotation(self, axis, positions, opts):
         "Draw a vertical span on the axis"
         if self.invert_axes:
-            return [axis.axvspan(*positions, **opts)]
-        else:
             return [axis.axhspan(*positions, **opts)]
+        else:
+            return [axis.axvspan(*positions, **opts)]
 
 
 class HSpanPlot(AnnotationPlot):
@@ -95,9 +95,9 @@ class HSpanPlot(AnnotationPlot):
     def draw_annotation(self, axis, positions, opts):
         "Draw a horizontal span on the axis"
         if self.invert_axes:
-            return [axis.axhspan(*positions, **opts)]
-        else:
             return [axis.axvspan(*positions, **opts)]
+        else:
+            return [axis.axhspan(*positions, **opts)]
 
 
 class TextPlot(AnnotationPlot):
