@@ -261,6 +261,9 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
+        if 'fontsize' in textopts:
+            self.param.warning('Arrow textsize style option is deprecated, '
+                               'use textsize option instead.')
         if 'textsize' in textopts:
             textopts['fontsize'] = textopts.pop('textsize')
         return [axis.annotate(text, xy=(x, y), textcoords='offset points',
