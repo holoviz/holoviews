@@ -5,7 +5,7 @@ from unittest import SkipTest
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
-                       Spread, Area)
+                       Spread, Area, Segments)
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -283,6 +283,58 @@ class DatashaderAggregateTests(ComparisonTestCase):
             [0, 0, 1, 0, 0]
         ])
         expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_segments_aggregate_count(self):
+        segments = Segments([(0, 1, 4, 1), (1, 0, 1, 4)])
+        agg = rasterize(segments, width=4, height=4, dynamic=False)
+        xs = [0.5, 1.5, 2.5, 3.5]
+        ys = [0.5, 1.5, 2.5, 3.5]
+        arr = np.array([
+            [0, 1, 0, 0],
+            [1, 2, 1, 1],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_segments_aggregate_sum(self):
+        segments = Segments([(0, 1, 4, 1, 2), (1, 0, 1, 4, 4)], vdims=['value'])
+        agg = rasterize(segments, width=4, height=4, dynamic=False,
+                        aggregator='sum')
+        xs = [0.5, 1.5, 2.5, 3.5]
+        ys = [0.5, 1.5, 2.5, 3.5]
+        na = np.nan
+        arr = np.array([
+            [na, 4, na, na],
+            [2 , 6, 2 , 2 ],
+            [na, 4, na, na],
+            [na, 4, na, na]
+        ])
+        expected = Image((xs, ys, arr), vdims='value')
+        self.assertEqual(agg, expected)
+
+    def test_segments_aggregate_dt_count(self):
+        segments = Segments([
+            (0, dt.datetime(2016, 1, 2), 4, dt.datetime(2016, 1, 2)),
+            (1, dt.datetime(2016, 1, 1), 1, dt.datetime(2016, 1, 5))
+        ])
+        agg = rasterize(segments, width=4, height=4, dynamic=False)
+        xs = [0.5, 1.5, 2.5, 3.5]
+        ys = [
+            np.datetime64('2016-01-01T12:00:00'), np.datetime64('2016-01-02T12:00:00'),
+            np.datetime64('2016-01-03T12:00:00'), np.datetime64('2016-01-04T12:00:00')
+        ]
+        arr = np.array([
+            [0, 1, 0, 0],
+            [1, 2, 1, 1],
+            [0, 1, 0, 0],
+            [0, 1, 0, 0]
+        ])
+        bounds = (0.0, np.datetime64('2016-01-01T00:00:00'),
+                  4.0, np.datetime64('2016-01-05T00:00:00'))
+        expected = Image((xs, ys, arr), bounds=bounds, vdims='count')
         self.assertEqual(agg, expected)
 
     def test_area_aggregate_simple_count(self):
