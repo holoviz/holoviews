@@ -13,7 +13,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments)
+                        Tiles, Segments, Slope)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import LooseVersion, VersionError
 
@@ -27,8 +27,10 @@ try:
 except:
     DFrame = None
 
-from .annotation import (TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot,
-                         ArrowPlot, DivPlot, LabelsPlot)
+from .annotation import (
+    TextPlot, LineAnnotationPlot, BoxAnnotationPlot, SplinePlot, ArrowPlot,
+    DivPlot, LabelsPlot, SlopePlot
+)
 from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
@@ -100,6 +102,7 @@ associations = {Overlay: OverlayPlot,
                 VLine: LineAnnotationPlot,
                 HSpan: BoxAnnotationPlot,
                 VSpan: BoxAnnotationPlot,
+                Slope: SlopePlot,
                 Text: TextPlot,
                 Labels: LabelsPlot,
                 Spline: SplinePlot,
@@ -202,6 +205,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.Slope = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VSpan = Options('style', color=Cycle(), alpha=0.5)
 options.HSpan = Options('style', color=Cycle(), alpha=0.5)
 options.Arrow = Options('style', arrow_size=10)

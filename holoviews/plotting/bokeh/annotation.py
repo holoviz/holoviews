@@ -4,7 +4,8 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv
+from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv, Slope
+
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -199,6 +200,37 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
         return None, box
+
+
+class SlopePlot(ElementPlot, AnnotationPlot):
+
+    style_opts = line_properties + ['level']
+
+    _plot_methods = dict(single='Slope')
+
+    def get_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        gradient, intercept = element.data
+        if self.invert_axes:
+            if gradient == 0:
+                gradient = np.inf, np.inf
+            else:
+                gradient, intercept = 1/gradient, -(intercept/gradient)
+        mapping['gradient'] = gradient
+        mapping['y_intercept'] = intercept
+        return (data, mapping, style)
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        slope = Slope(level=properties.get('level', 'glyph'), **mapping)
+        plot.add_layout(slope)
+        return None, slope
+
+    def get_extents(self, element, ranges=None, range_type='combined'):
+        return None, None, None, None
+
 
 
 class SplinePlot(ElementPlot, AnnotationPlot):

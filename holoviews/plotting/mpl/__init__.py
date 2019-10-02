@@ -174,6 +174,7 @@ Store.register({Curve: CurvePlot,
                 HLine: HLinePlot,
                 VSpan: VSpanPlot,
                 HSpan: HSpanPlot,
+                Slope: SlopePlot,
                 Arrow: ArrowPlot,
                 Spline: SplinePlot,
                 Text: TextPlot,
@@ -262,6 +263,7 @@ options.GridMatrix = Options('plot', fig_size=160, shared_xaxis=True,
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
+options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 if config.style_17:

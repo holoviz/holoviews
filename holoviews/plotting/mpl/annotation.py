@@ -5,11 +5,44 @@ import numpy as np
 import matplotlib
 
 from matplotlib import patches as patches
+from matplotlib.lines import Line2D
 
 from ...core.util import match_spec, basestring
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
+
+
+class ABLine2D(Line2D):
+
+    """
+    Draw a line based on its slope and y-intercept. Additional arguments are
+    passed to the <matplotlib.lines.Line2D> constructor.
+    """
+
+    def __init__(self, slope, intercept, *args, **kwargs):
+        ax = kwargs['axes']
+
+        # init the line, add it to the axes
+        super(ABLine2D, self).__init__([], [], *args, **kwargs)
+        self._slope = slope
+        self._intercept = intercept
+        ax.add_line(self)
+
+        # cache the renderer, draw the line for the first time
+        ax.figure.canvas.draw()
+        self._update_lim(None)
+
+        # connect to axis callbacks
+        self.axes.callbacks.connect('xlim_changed', self._update_lim)
+        self.axes.callbacks.connect('ylim_changed', self._update_lim)
+
+    def _update_lim(self, event):
+        """ called whenever axis x/y limits change """
+        x = np.array(self.axes.get_xbound())
+        y = (self._slope * x) + self._intercept
+        self.set_data(x, y)
+        self.axes.draw_artist(self)
 
 
 class AnnotationPlot(ElementPlot):
@@ -98,6 +131,22 @@ class HSpanPlot(AnnotationPlot):
             return [axis.axvspan(*positions, **opts)]
         else:
             return [axis.axhspan(*positions, **opts)]
+
+
+class SlopePlot(AnnotationPlot):
+
+    style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
+
+    def draw_annotation(self, axis, position, opts):
+        "Draw a horizontal line on the axis"
+        gradient, intercept = position
+        if self.invert_axes:
+            if gradient == 0:
+                gradient = np.inf, np.inf
+            else:
+                gradient, intercept = 1/gradient, -(intercept/gradient)
+        artist = ABLine2D(*position, axes=axis, **opts)
+        return [artist]
 
 
 class TextPlot(AnnotationPlot):
