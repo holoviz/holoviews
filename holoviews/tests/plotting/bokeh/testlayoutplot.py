@@ -297,3 +297,14 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertIn('aname: ' + T, p.handles['title'].text, p.handles['title'].text)
         p.cleanup()
         self.assertEqual(stream._subscribers, [])
+
+    def test_layout_shared_axes_disabled(self):
+        from holoviews.plotting.bokeh import CurvePlot
+        layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
+        plot = bokeh_renderer.get_plot(layout)
+        cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
+        self.assertFalse(cp1.handles['y_range'] is cp2.handles['y_range'])
+        self.assertEqual(cp1.handles['y_range'].start, 1)
+        self.assertEqual(cp1.handles['y_range'].end, 3)
+        self.assertEqual(cp2.handles['y_range'].start, 10)
+        self.assertEqual(cp2.handles['y_range'].end, 30)

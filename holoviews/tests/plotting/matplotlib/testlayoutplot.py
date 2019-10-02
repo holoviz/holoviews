@@ -47,3 +47,11 @@ class TestLayoutPlot(TestMPLPlot):
         self.assertIn('test: 1', plot.handles['title'].get_text())
         plot.cleanup()
         self.assertEqual(stream._subscribers, [])
+
+    def test_layout_shared_axes_disabled(self):
+        from holoviews.plotting.mpl import CurvePlot
+        layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
+        plot = mpl_renderer.get_plot(layout)
+        cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
+        self.assertTrue(cp1.handles['axis'].get_ylim(), (1, 3))
+        self.assertTrue(cp2.handles['axis'].get_ylim(), (10, 30))

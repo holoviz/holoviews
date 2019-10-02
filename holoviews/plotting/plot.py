@@ -374,6 +374,7 @@ class DimensionedPlot(Plot):
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
+            axiswise = not getattr(self, 'shared_axes', not axiswise)
             elements = []
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
