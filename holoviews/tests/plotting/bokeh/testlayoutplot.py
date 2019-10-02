@@ -292,7 +292,7 @@ class TestLayoutPlot(TestBokehPlot):
         from holoviews.plotting.bokeh import CurvePlot
         layout = (Curve([1, 2, 3]) + Curve([10, 20, 30])).opts(shared_axes=False)
         plot = bokeh_renderer.get_plot(layout)
-        cp1, cp2 = plot.traverse(lambda x: x, [CurvePlot])
+        cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
         self.assertFalse(cp1.handles['y_range'] is cp2.handles['y_range'])
         self.assertEqual(cp1.handles['y_range'].start, 1)
         self.assertEqual(cp1.handles['y_range'].end, 3)
