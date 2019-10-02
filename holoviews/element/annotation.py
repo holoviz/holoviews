@@ -157,6 +157,8 @@ class Slope(Annotation):
 
     y_intercept = param.Number(default=0)
 
+    __pos_params = ['slope', 'intercept']
+
     def __init__(self, slope, y_intercept, kdims=None, vdims=None, **params):
         super(Slope, self).__init__(
             (slope, y_intercept), slope=slope, y_intercept=y_intercept,
@@ -182,23 +184,6 @@ class Slope(Annotation):
         gradient=par[0][0]
         y_intercept=par[0][1]
         return cls(gradient, y_intercept, **kwargs)
-
-
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
-        """Clones the object, overriding data and parameters.
-
-        Args:
-            data: New data replacing the existing data
-            shared_data (bool, optional): Whether to use existing data
-            new_type (optional): Type to cast object to
-            *args: Additional arguments to pass to constructor
-            **overrides: New keyword arguments to pass to constructor
-
-        Returns:
-            Cloned Slope
-        """
-        return Element2D.clone(self, (self.slope, self.y_intercept), shared_data, new_type,
-                               *args, **overrides)
 
 
 
