@@ -18,7 +18,7 @@ except:
 from bokeh.transform import dodge
 
 from ...core.util import datetime_types, dimension_sanitizer, basestring
-from ...element import HLine, VLine, HSpan, VSpan
+from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .styles import text_properties, line_properties, fill_properties
