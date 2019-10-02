@@ -725,10 +725,13 @@ class segments_aggregate(AggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         agg = cvs.line(df, [x0d.name, x1d.name], [y0d.name, y1d.name], agg_fn, axis=1)
+        xdim, ydim = list(agg.dims)[:2][::-1]
         if xtype == "datetime":
-            agg[x0d.name] = (agg[x0d.name]/1e3).astype('datetime64[us]')
+            agg[xdim] = (agg[xdim]/1e3).astype('datetime64[us]')
         if ytype == "datetime":
-            agg[y0d.name] = (agg[y0d.name]/1e3).astype('datetime64[us]')
+            agg[ydim] = (agg[ydim]/1e3).astype('datetime64[us]')
+
+        params['kdims'] = [xdim, ydim]
 
         return self.p.element_type(agg, **params)
 
