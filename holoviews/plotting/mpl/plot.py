@@ -257,6 +257,10 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
     subplots to form a Layout.
     """
 
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
+
     def _link_dimensioned_streams(self):
         """
         Should perform any linking required to update titles when dimensioned

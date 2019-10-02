@@ -61,6 +61,10 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     shared_axes = param.Boolean(default=True, doc="""
             Whether axes should be shared across plots""")
 
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
+
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
@@ -282,6 +286,10 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     hspacing = param.Number(default=15, bounds=(0, None))
 
     vspacing = param.Number(default=15, bounds=(0, None))
+
+    shared_axes = param.Boolean(default=True, doc="""
+        Whether axes ranges should be shared across the layout, if
+        disabled switches axiswise normalization option on globally.""")
 
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
