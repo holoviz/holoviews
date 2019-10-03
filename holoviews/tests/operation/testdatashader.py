@@ -626,14 +626,14 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     def test_rasterize_quadmesh(self):
         qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
-        image = Image(np.array([[2., 3., np.NaN], [0, 1, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+        image = Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
                       bounds=(-.5, -.5, 1.5, 1.5))
         self.assertEqual(img, image)
 
     def test_rasterize_quadmesh_string_aggregator(self):
         qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator='mean')
-        image = Image(np.array([[2., 3., np.NaN], [0, 1, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+        image = Image(np.array([[2, 3, 3], [2, 3, 3], [0, 1, 1]]),
                       bounds=(-.5, -.5, 1.5, 1.5))
         self.assertEqual(img, image)
 
