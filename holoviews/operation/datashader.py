@@ -27,7 +27,7 @@ from ..core.util import (
     datetime_types, dt_to_int, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
-                       Segments)
+                       Segments, Scatter, Points)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -829,12 +829,12 @@ class regrid(AggregationOperation):
             if isinstance(y0, datetime_types):
                 y0, y1 = dt_to_int(y0, 'ns'), dt_to_int(y1, 'ns')
             exspan, eyspan = (x1-x0), (y1-y0)
-            if np.isfinite(exspan) and exspan > 0:
-                width = min([int((xspan/exspan) * len(coords[0])), width])
+            if np.isfinite(exspan) and exspan > 0 and xspan > 0:
+                width = max([min([int((xspan/exspan) * len(coords[0])), width]), 1])
             else:
                 width = 0
-            if np.isfinite(eyspan) and eyspan > 0:
-                height = min([int((yspan/eyspan) * len(coords[1])), height])
+            if np.isfinite(eyspan) and eyspan > 0 and yspan > 0:
+                height = max([min([int((yspan/eyspan) * len(coords[1])), height]), 1])
             else:
                 height = 0
             xunit = float(xspan)/width if width else 0
@@ -847,8 +847,10 @@ class regrid(AggregationOperation):
 
         params = dict(bounds=(x0, y0, x1, y1))
         if width == 0 or height == 0:
-            if width == 0: params['xdensity'] = 1
-            if height == 0: params['ydensity'] = 1
+            if width == 0:
+                params['xdensity'] = 1
+            if height == 0:
+                params['ydensity'] = 1
             return element.clone((xs, ys, np.zeros((height, width))), **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
@@ -1057,17 +1059,18 @@ class rasterize(AggregationOperation):
                    (TriMesh, trimesh_rasterize),
                    (QuadMesh, quadmesh_rasterize),
                    (lambda x: (isinstance(x, NdOverlay) and
-                               issubclass(x.type, Dataset)
-                               and not issubclass(x.type, Image)),
+                               issubclass(x.type, (Scatter, Points, Curve, Path))),
                     aggregate),
                    (Spikes, spikes_aggregate),
                    (Area, area_aggregate),
                    (Spread, spread_aggregate),
                    (Segments, segments_aggregate),
                    (Contours, contours_rasterize),
-                   (lambda x: (isinstance(x, Dataset) and
-                               (not isinstance(x, Image))),
-                    aggregate)]
+                   (Graph, aggregate),
+                   (Scatter, aggregate),
+                   (Points, aggregate),
+                   (Curve, aggregate),
+                   (Path, aggregate)]
 
     def _process(self, element, key=None):
         for predicate, transform in self._transforms:

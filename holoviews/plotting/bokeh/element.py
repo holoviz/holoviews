@@ -497,12 +497,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             # Sync the plot size on dynamic plots to support accurate
             # scaling of dimension ranges
             plot_size = [s for s in self.streams if isinstance(s, PlotSize)]
+            callbacks = [c for c in self.callbacks if isinstance(c, PlotSizeCallback)]
             if plot_size:
                 stream = plot_size[0]
-                stream.add_subscriber(self._update_size)
+            elif callbacks:
+                stream = callbacks[0].streams[0]
             else:
-                stream = PlotSize(subscribers=[self._update_size])
+                stream = PlotSize()
                 self.callbacks.append(PlotSizeCallback(self, [stream], None))
+            stream.add_subscriber(self._update_size)
 
         plot_props = {
             'align':         self.align,
