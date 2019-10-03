@@ -1010,6 +1010,9 @@ argument to specify a selection specification""")
         if data is None:
             overrides['_validate_vdims'] = False
 
+            # Allows datatype conversions
+            data = self
+
             if 'dataset' not in overrides:
                 overrides['dataset'] = self.dataset
 
