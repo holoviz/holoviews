@@ -1066,6 +1066,7 @@ class rasterize(AggregationOperation):
                    (Spread, spread_aggregate),
                    (Segments, segments_aggregate),
                    (Contours, contours_rasterize),
+                   (Graph, aggregate),
                    (Scatter, aggregate),
                    (Points, aggregate),
                    (Curve, aggregate),
