@@ -990,13 +990,17 @@ argument to specify a selection specification""")
         return self._conversion_interface(self)
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link=True,
+              *args, **overrides):
         """Clones the object, overriding data and parameters.
 
         Args:
             data: New data replacing the existing data
             shared_data (bool, optional): Whether to use existing data
             new_type (optional): Type to cast object to
+            link (bool, optional): Whether clone should be linked
+                Determines whether Streams and Links attached to
+                original object will be inherited.
             *args: Additional arguments to pass to constructor
             **overrides: New keyword arguments to pass to constructor
 
@@ -1011,7 +1015,10 @@ argument to specify a selection specification""")
             overrides['_validate_vdims'] = False
 
             # Allows datatype conversions
-            data = self
+            if shared_data:
+                data = self
+                if link:
+                    overrides['plot_id'] = self._plot_id
 
             if 'dataset' not in overrides:
                 overrides['dataset'] = self.dataset
