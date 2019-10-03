@@ -40,7 +40,7 @@ class ArrayInterface(Interface):
             dict_data = sorted(data.items())
             dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                             for k, v in dict_data))
-            data = np.column_stack(dataset)
+            data = np.column_stack(list(dataset))
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
             if len(set(d.dtype.kind for d in data)) > 1:
