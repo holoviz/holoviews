@@ -72,7 +72,7 @@ def single_frame_plot(obj):
     """
     Returns plot, renderer and format for single frame export.
     """
-    obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
+    obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
 
     backend = Store.current_backend
     renderer = Store.renderers[backend]
@@ -208,7 +208,8 @@ def map_display(vmap, max_frames):
 
 @display_hook
 def layout_display(layout, max_frames):
-    if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
+    if isinstance(layout, AdjointLayout):
+        layout = Layout(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     nframes = len(unique_dimkeys(layout)[1])

@@ -84,7 +84,7 @@ def collate(obj):
             expanded = []
             for el in obj.values():
                 if isinstance(el, HoloMap) and not displayable(el):
-                    collated_layout = Layout.from_values(el.collate())
+                    collated_layout = Layout(el.collate())
                     expanded.extend(collated_layout.values())
             return Layout(expanded)
         except:
@@ -261,7 +261,8 @@ def get_plot_frame(map_obj, key_map, cached=False):
     Returns:
         The item in the mapping corresponding to the supplied key.
     """
-    if map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame':
+    if (map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame' and
+        not isinstance(map_obj, DynamicMap)):
         # Special handling for static plots
         return map_obj.last
     key = tuple(key_map[kd.name] for kd in map_obj.kdims if kd.name in key_map)
