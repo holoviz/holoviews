@@ -1017,7 +1017,36 @@ class quadmesh_rasterize(trimesh_rasterize):
     """
 
     def _precompute(self, element, agg):
-        return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
+        if ds_version <= '0.7.0':
+            return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
+
+    def _process(self, element, key=None):
+        if ds_version <= '0.7.0':
+            return super(quadmesh_rasterize, self)._process(element, key)
+
+        if element.interface.datatype != 'xarray':
+            element = element.clone(datatype=['xarray'])
+        data = element.data
+
+        x, y = element.kdims
+        agg_fn = self._get_aggregator(element)
+        info = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+
+        bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
+        params = dict(get_param_values(element), datatype=['xarray'],
+                      bounds=bounds)
+
+        if width == 0 or height == 0:
+            return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        vdim = getattr(agg_fn, 'column', element.vdims[0].name)
+        agg = cvs.quadmesh(data[vdim], x.name, y.name, agg_fn)
+
+        return Image(agg, **params)
 
 
 
