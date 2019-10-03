@@ -829,11 +829,11 @@ class regrid(AggregationOperation):
             if isinstance(y0, datetime_types):
                 y0, y1 = dt_to_int(y0, 'ns'), dt_to_int(y1, 'ns')
             exspan, eyspan = (x1-x0), (y1-y0)
-            if np.isfinite(exspan) and exspan > 0:
+            if np.isfinite(exspan) and exspan > 0 and xspan > 0:
                 width = max([min([int((xspan/exspan) * len(coords[0])), width]), 1])
             else:
                 width = 0
-            if np.isfinite(eyspan) and eyspan > 0:
+            if np.isfinite(eyspan) and eyspan > 0 and yspan > 0:
                 height = max([min([int((yspan/eyspan) * len(coords[1])), height]), 1])
             else:
                 height = 0
@@ -847,8 +847,10 @@ class regrid(AggregationOperation):
 
         params = dict(bounds=(x0, y0, x1, y1))
         if width == 0 or height == 0:
-            if width == 0: params['xdensity'] = 1
-            if height == 0: params['ydensity'] = 1
+            if width == 0:
+                params['xdensity'] = 1
+            if height == 0:
+                params['ydensity'] = 1
             return element.clone((xs, ys, np.zeros((height, width))), **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
