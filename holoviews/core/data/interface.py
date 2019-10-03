@@ -7,7 +7,7 @@ import numpy as np
 
 from .. import util
 from ..element import Element
-from ..ndmapping import OrderedDict, NdMapping
+from ..ndmapping import NdMapping
 
 
 def get_array_types():
