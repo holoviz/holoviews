@@ -27,7 +27,7 @@ from ..core.util import (
     datetime_types, dt_to_int, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
-                       Segments)
+                       Segments, Scatter, Points)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -1057,17 +1057,17 @@ class rasterize(AggregationOperation):
                    (TriMesh, trimesh_rasterize),
                    (QuadMesh, quadmesh_rasterize),
                    (lambda x: (isinstance(x, NdOverlay) and
-                               issubclass(x.type, Dataset)
-                               and not issubclass(x.type, Image)),
+                               issubclass(x.type, (Scatter, Points, Curve, Path))),
                     aggregate),
                    (Spikes, spikes_aggregate),
                    (Area, area_aggregate),
                    (Spread, spread_aggregate),
                    (Segments, segments_aggregate),
                    (Contours, contours_rasterize),
-                   (lambda x: (isinstance(x, Dataset) and
-                               (not isinstance(x, Image))),
-                    aggregate)]
+                   (Scatter, aggregate),
+                   (Points, aggregate),
+                   (Curve, aggregate),
+                   (Path, aggregate)]
 
     def _process(self, element, key=None):
         for predicate, transform in self._transforms:
