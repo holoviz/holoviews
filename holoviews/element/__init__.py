@@ -43,6 +43,8 @@ class ElementConversion(DataConversion):
                                 'if no value dimensions are defined ')
         if groupby:
             reindexed = self._element.reindex(groupby, [dim])
+            kwargs['kdims'] = dim
+            kwargs['vdims'] = None
             return reindexed.groupby(groupby, HoloMap, Distribution, **kwargs)
         else:
             element = self._element
