@@ -830,11 +830,11 @@ class regrid(AggregationOperation):
                 y0, y1 = dt_to_int(y0, 'ns'), dt_to_int(y1, 'ns')
             exspan, eyspan = (x1-x0), (y1-y0)
             if np.isfinite(exspan) and exspan > 0:
-                width = min([int((xspan/exspan) * len(coords[0])), width])
+                width = max([min([int((xspan/exspan) * len(coords[0])), width]), 1])
             else:
                 width = 0
             if np.isfinite(eyspan) and eyspan > 0:
-                height = min([int((yspan/eyspan) * len(coords[1])), height])
+                height = max([min([int((yspan/eyspan) * len(coords[1])), height]), 1])
             else:
                 height = 0
             xunit = float(xspan)/width if width else 0
