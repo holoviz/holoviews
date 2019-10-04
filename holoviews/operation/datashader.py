@@ -21,7 +21,7 @@ except:
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay)
-from ..core.data import PandasInterface, XArrayInterface
+from ..core.data import PandasInterface, XArrayInterface, DaskInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
@@ -117,16 +117,34 @@ class ResamplingOperation(LinkableOperation):
 
     def _get_sampling(self, element, x, y):
         target = self.p.target
+        if not isinstance(x, list) and x is not None:
+            x = [x]
+        if not isinstance(y, list) and y is not None:
+            y = [y]
+
         if target:
-            x_range, y_range = target.range(x), target.range(y)
+            x0, y0, x1, y1 = target.bounds.lbrt()
+            x_range, y_range = (x0, x1), (y0, y1)
             height, width = target.dimension_values(2, flat=False).shape
         else:
-            if x is None or y is None:
+            if x is None:
                 x_range = self.p.x_range or (-0.5, 0.5)
                 y_range = self.p.y_range or (-0.5, 0.5)
             else:
-                if self.p.expand or not self.p.x_range:
-                    x_range = self.p.x_range or element.range(x)
+                x0, x1 = self.p.x_range
+                ex0, ex1 = max_range([element.range(xd) for xd in x])
+                x_range = (np.min([np.max([x0, ex0]), ex1]),
+                           np.max([np.min([x1, ex1]), ex0]))
+
+            if (y is None and ndim == 2):
+                y_range = self.p.y_range or default or (-0.5, 0.5)
+            elif self.p.expand or not self.p.y_range:
+                y_range = self.p.y_range or (max_range([element.range(yd) for yd in y])
+                                             if default is None else default)
+            else:
+                y0, y1 = self.p.y_range
+                if default is None:
+                    ey0, ey1 = max_range([element.range(yd) for yd in y])
                 else:
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
@@ -149,7 +167,7 @@ class ResamplingOperation(LinkableOperation):
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
             xstart, xend = 0, 0
-            if element.get_dimension_type(x) in datetime_types:
+            if x and element.get_dimension_type(x[0]) in datetime_types:
                 xtype = 'datetime'
         x_range = (xstart, xend)
 
@@ -159,7 +177,7 @@ class ResamplingOperation(LinkableOperation):
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             ystart, yend = 0, 0
-            if element.get_dimension_type(y) in datetime_types:
+            if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
         y_range = (ystart, yend)
 
@@ -343,28 +361,105 @@ class aggregate(AggregationOperation):
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
-    def _aggregate_ndoverlay(self, element, agg_fn):
-        """
-        Optimized aggregation for NdOverlay objects by aggregating each
-        Element in an NdOverlay individually avoiding having to concatenate
-        items in the NdOverlay. Works by summing sum and count aggregates and
-        applying appropriate masking for NaN values. Mean aggregation
-        is also supported by dividing sum and count aggregates. count_cat
-        aggregates are grouped by the categorical dimension and a separate
-        aggregate for each category is generated.
-        """
-        # Compute overall bounds
-        x, y = element.last.dimensions()[0:2]
-        info = self._get_sampling(element, x, y)
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+    def _process(self, element, key=None):
+        agg_fn = self._get_aggregator(element)
+        category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+
+        if overlay_aggregate.applies(element, agg_fn):
+            params = dict(
+                {p: v for p, v in self.get_param_values() if p != 'name'},
+                dynamic=False, **{p: v for p, v in self.p.items()
+                                  if p not in ('name', 'dynamic')})
+            return overlay_aggregate(element, **params)
+
+        if element._plot_id in self._precomputed:
+            x, y, data, glyph = self._precomputed[element._plot_id]
+        else:
+            x, y, data, glyph = self.get_agg_data(element, category)
+
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = x, y, data, glyph
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
+        ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
+
+        params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
+
+        if x is None or y is None or width == 0 or height == 0:
+            return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
+        elif not getattr(data, 'interface', None) is DaskInterface and not len(data):
+            empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
+            xarray = xr.DataArray(np.full((height, width), empty_val),
+                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
+            return self.p.element_type(xarray, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        dfdata = PandasInterface.as_dframe(data)
+        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
+        if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
+            agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
-            x_range = tuple((np.array(x_range)/1e3).astype('datetime64[us]'))
+            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
         if ytype == 'datetime':
-            y_range = tuple((np.array(y_range)/1e3).astype('datetime64[us]'))
+            agg[y.name] = (agg[y.name]/1e3).astype('datetime64[us]')
+
+        if agg.ndim == 2:
+            # Replacing x and y coordinates to avoid numerical precision issues
+            eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
+            return self.p.element_type(eldata, **params)
+        else:
+            layers = {}
+            for c in agg.coords[agg_fn.column].data:
+                cagg = agg.sel(**{agg_fn.column: c})
+                eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
+                layers[c] = self.p.element_type(eldata, **params)
+            return NdOverlay(layers, kdims=[data.get_dimension(agg_fn.column)])
+
+
+
+class overlay_aggregate(aggregate):
+    """
+    Optimized aggregation for NdOverlay objects by aggregating each
+    Element in an NdOverlay individually avoiding having to concatenate
+    items in the NdOverlay. Works by summing sum and count aggregates and
+    applying appropriate masking for NaN values. Mean aggregation
+    is also supported by dividing sum and count aggregates. count_cat
+    aggregates are grouped by the categorical dimension and a separate
+    aggregate for each category is generated.
+    """
+
+    @classmethod
+    def applies(cls, element, agg_fn):
+        return (isinstance(element, NdOverlay) and
+                ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
+                  (agg_fn.column is None or agg_fn.column not in element.kdims)) or
+                 (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
+
+
+    def _process(self, element, key=None):
+        agg_fn = self._get_aggregator(element)
+
+        if not self.applies(element, agg_fn):
+            raise ValueError('overlay_aggregate only handles aggregation '
+                             'of NdOverlay types with count, sum or mean '
+                             'reduction.')
+
+        # Compute overall bounds
+        dims = element.last.dimensions()[0:2]
+        ndims = len(dims)
+        if ndims == 1:
+            x, y = dims[0], None
+        else:
+            x, y = dims
+
+        info = self._get_sampling(element, x, y, ndims)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
         agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
                            if k in aggregate.param},
-                          x_range=x_range, y_range=y_range)
-        bbox = BoundingBox(points=[(x_range[0], y_range[0]), (x_range[1], y_range[1])])
+                          x_range=(x0, x1), y_range=(y0, y1))
+        bbox = (x0, y0, x1, y1)
 
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
@@ -424,94 +519,6 @@ class aggregate(AggregationOperation):
             agg.data[column].values[mask] = np.NaN
 
         return agg.clone(bounds=bbox)
-
-
-    def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
-        category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
-
-        if (isinstance(element, NdOverlay) and
-            ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and
-              (agg_fn.column is None or agg_fn.column not in element.kdims)) or
-             (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims))):
-            return self._aggregate_ndoverlay(element, agg_fn)
-
-        if element._plot_id in self._precomputed:
-            x, y, data, glyph = self._precomputed[element._plot_id]
-        else:
-            x, y, data, glyph = self.get_agg_data(element, category)
-
-        if self.p.precompute:
-            self._precomputed[element._plot_id] = x, y, data, glyph
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
-
-        (x0, x1), (y0, y1) = x_range, y_range
-        if xtype == 'datetime':
-            x0, x1 = (np.array([x0, x1])/1e3).astype('datetime64[us]')
-            xs = (xs/1e3).astype('datetime64[us]')
-        if ytype == 'datetime':
-            y0, y1 = (np.array([y0, y1])/1e3).astype('datetime64[us]')
-            ys = (ys/1e3).astype('datetime64[us]')
-        bounds = (x0, y0, x1, y1)
-        params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], bounds=bounds)
-
-        column = agg_fn.column if agg_fn else None
-        if column:
-            dims = [d for d in element.dimensions('ranges') if d == column]
-            if not dims:
-                raise ValueError("Aggregation column %s not found on %s element. "
-                                 "Ensure the aggregator references an existing "
-                                 "dimension." % (column,element))
-            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
-            vdims = [dims[0](name)]
-        else:
-            vdims = Dimension('Count')
-        params['vdims'] = vdims
-
-        if x is None or y is None or width == 0 or height == 0:
-            x = x.name if x else 'x'
-            y = y.name if x else 'y'
-            xarray = xr.DataArray(np.full((height, width), np.NaN),
-                                  dims=[y, x], coords={x: xs, y: ys})
-            if width == 0:
-                params['xdensity'] = 1
-            if height == 0:
-                params['ydensity'] = 1
-            el = self.p.element_type(xarray, **params)
-            if isinstance(agg_fn, ds.count_cat):
-                vals = element.dimension_values(agg_fn.column, expanded=False)
-                dim = element.get_dimension(agg_fn.column)
-                return NdOverlay({v: el for v in vals}, dim)
-            return el
-        elif not len(data):
-            xarray = xr.DataArray(np.full((height, width), np.NaN),
-                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
-            return self.p.element_type(xarray, **params)
-
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
-
-        dfdata = PandasInterface.as_dframe(data)
-        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
-        if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
-            agg = agg.rename({'x_axis': x, 'y_axis': y})
-        if xtype == 'datetime':
-            agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
-        if ytype == 'datetime':
-            agg[y.name] = (agg[y.name]/1e3).astype('datetime64[us]')
-
-        if agg.ndim == 2:
-            # Replacing x and y coordinates to avoid numerical precision issues
-            eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
-            return self.p.element_type(eldata, **params)
-        else:
-            layers = {}
-            for c in agg.coords[column].data:
-                cagg = agg.sel(**{column: c})
-                eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
-                layers[c] = self.p.element_type(eldata, **dict(params, vdims=vdims))
-            return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
 
