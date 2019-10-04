@@ -1,11 +1,17 @@
-from unittest import skip, SkipTest
+from unittest import SkipTest, skip, skipIf
 
 import holoviews as hv
-from holoviews.operation.datashader import datashade, dynspread
+import pandas as pd
+
 from holoviews.selection import link_selections
 from holoviews.element.comparison import ComparisonTestCase
 
-import pandas as pd
+try:
+    from holoviews.operation.datashader import datashade, dynspread
+except:
+    datashade = None
+
+ds_skip = skipIf(datashade is None, "Datashader not available")
 
 
 class TestLinkSelections(ComparisonTestCase):
@@ -184,6 +190,7 @@ class TestLinkSelections(ComparisonTestCase):
     def test_overlay_scatter_errorbars_dynamic(self):
         self.test_overlay_scatter_errorbars(dynamic=True)
 
+    @ds_skip
     def test_datashade_selection(self):
         scatter = hv.Scatter(self.data, kdims='x', vdims='y')
         layout = scatter + dynspread(datashade(scatter))
