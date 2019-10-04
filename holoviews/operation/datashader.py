@@ -21,7 +21,7 @@ except:
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay)
-from ..core.data import PandasInterface, XArrayInterface
+from ..core.data import PandasInterface, XArrayInterface, DaskInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values, max_range)
@@ -115,13 +115,16 @@ class ResamplingOperation(LinkableOperation):
 
     def _get_sampling(self, element, x, y, ndim=2, default=None):
         target = self.p.target
+        if not isinstance(x, list) and x is not None:
+            x = [x]
+        if not isinstance(y, list) and y is not None:
+            y = [y]
 
         if target:
-            x_range, y_range = target.range(x), target.range(y)
+            x0, y0, x1, y1 = target.bounds.lbrt()
+            x_range, y_range = (x0, x1), (y0, y1)
             height, width = target.dimension_values(2, flat=False).shape
         else:
-            if not isinstance(x, list) and x is not None:
-                x = [x]
             if x is None:
                 x_range = self.p.x_range or (-0.5, 0.5)
             elif self.p.expand or not self.p.x_range:
@@ -132,8 +135,6 @@ class ResamplingOperation(LinkableOperation):
                 x_range = (np.min([np.max([x0, ex0]), ex1]),
                            np.max([np.min([x1, ex1]), ex0]))
 
-            if not isinstance(y, list) and y is not None:
-                y = [y]
             if (y is None and ndim == 2):
                 y_range = self.p.y_range or default or (-0.5, 0.5)
             elif self.p.expand or not self.p.y_range:
@@ -156,7 +157,7 @@ class ResamplingOperation(LinkableOperation):
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
             xstart, xend = 0, 0
-            if element.get_dimension_type(x) in datetime_types:
+            if x and element.get_dimension_type(x[0]) in datetime_types:
                 xtype = 'datetime'
 
         ytype = 'numeric'
@@ -165,7 +166,7 @@ class ResamplingOperation(LinkableOperation):
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             ystart, yend = 0, 0
-            if element.get_dimension_type(y) in datetime_types:
+            if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
 
         # Compute highest allowed sampling density
@@ -418,7 +419,7 @@ class aggregate(AggregationOperation):
 
         if x is None or y is None or width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
-        elif not len(data):
+        elif not getattr(data, 'interface', None) is DaskInterface and not len(data):
             empty_val = 0 if isinstance(agg_fn, ds.count) else np.NaN
             xarray = xr.DataArray(np.full((height, width), empty_val),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
