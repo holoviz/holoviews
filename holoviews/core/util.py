@@ -1485,6 +1485,10 @@ def resolve_dependent_kwargs(kwargs):
     """
     resolved = {}
     for k, v in kwargs.items():
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+            if isinstance(v, Widget):
+                v = v.param.value
         if is_param_method(v, has_deps=True):
             v = v()
         elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
