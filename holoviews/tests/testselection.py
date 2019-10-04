@@ -3,6 +3,7 @@ from unittest import SkipTest, skip, skipIf
 import holoviews as hv
 import pandas as pd
 
+from holoviews.core.options import Store
 from holoviews.selection import link_selections
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -295,8 +296,16 @@ class TestLinkSelections(ComparisonTestCase):
 # Backend implementations
 class TestLinkSelectionsPlotly(TestLinkSelections):
     def setUp(self):
+        try:
+            import holoviews.plotting.plotly # noqa
+        except:
+            raise SkipTest("Plotly selection tests require plotly.")
         super(TestLinkSelectionsPlotly, self).setUp()
-        hv.extension('plotly')
+        self._backend = Store.current_backend
+        Store.set_current_backend('plotly')
+
+    def tearDown(self):
+        Store.current_backend = self._backend
 
     def element_color(self, element):
         if isinstance(element, hv.Table):
@@ -315,8 +324,16 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
 
 class TestLinkSelectionsBokeh(TestLinkSelections):
     def setUp(self):
+        try:
+            import holoviews.plotting.bokeh # noqa
+        except:
+            raise SkipTest("Bokeh selection tests require bokeh.")
         super(TestLinkSelectionsBokeh, self).setUp()
-        hv.extension('bokeh')
+        self._backend = Store.current_backend
+        Store.set_current_backend('bokeh')
+
+    def tearDown(self):
+        Store.current_backend = self._backend
 
     def element_color(self, element):
         color = element.opts.get('style').kwargs['color']
