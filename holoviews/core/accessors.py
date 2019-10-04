@@ -65,6 +65,8 @@ class Apply(object):
                                  'and setting dynamic=False is only '
                                  'possible if key dimensions define '
                                  'a discrete parameter space.')
+            if not len(samples):
+                return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
                 function, streams, link_inputs, dynamic, **kwargs)
 
@@ -92,11 +94,13 @@ class Apply(object):
         )
 
         if dynamic is None:
-            dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
-                       util.is_param_method(function, has_deps=True) or
-                       params or dependent_kws)
+            is_dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
+                          util.is_param_method(function, has_deps=True) or
+                          params or dependent_kws)
+        else:
+            is_dynamic = dynamic
 
-        if (applies or isinstance(self._obj, HoloMap)) and dynamic:
+        if (applies or isinstance(self._obj, HoloMap)) and is_dynamic:
             return Dynamic(self._obj, operation=function, streams=streams,
                            kwargs=kwargs, link_inputs=link_inputs)
         elif applies:
