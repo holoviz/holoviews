@@ -7,7 +7,7 @@ import numpy as np
 
 from .. import util
 from ..element import Element
-from ..ndmapping import OrderedDict, NdMapping
+from ..ndmapping import NdMapping
 
 
 def get_array_types():
@@ -225,14 +225,19 @@ class Interface(param.Parameterized):
                 if not datatype:
                     datatype = eltype.datatype
 
-            if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
+            interface = data.interface
+            if interface.datatype in datatype and interface.datatype in eltype.datatype:
                 data = data.data
-            elif data.interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
-                gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
-                                       for kd in data.kdims])
+            elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
+                new_data = []
+                for kd in data.kdims:
+                    irregular = interface.irregular(data, kd)
+                    coords = data.dimension_values(kd.name, expanded=irregular,
+                                                   flat=not irregular)
+                    new_data.append(coords)
                 for vd in data.vdims:
-                    gridded[vd.name] = data.dimension_values(vd, flat=False)
-                data = tuple(gridded.values())
+                    new_data.append(interface.values(data, vd, flat=False, compute=False))
+                data = tuple(new_data)
             else:
                 data = tuple(data.columns().values())
         elif isinstance(data, Element):
