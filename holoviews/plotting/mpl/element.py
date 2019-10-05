@@ -10,6 +10,7 @@ import matplotlib.colors as mpl_colors
 
 from matplotlib import ticker
 from matplotlib.dates import date2num
+from matplotlib.image import AxesImage
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
@@ -1054,6 +1055,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
+            handle = tuple(h for h in handle if not isinstance(h, AxesImage))
+            if not handle:
+                continue
             if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
                 used_labels.append(label)
