@@ -452,7 +452,14 @@ class Opts(object):
 
 
     def _base_opts(self, *args, **kwargs):
-        apply_groups, options, new_kwargs = util.deprecated_opts_signature(args, kwargs)
+        from .options import Options
+
+        new_args = []
+        for arg in args:
+            if isinstance(arg, Options) and arg.key is None:
+                arg = arg(key=type(self._obj).__name__)
+            new_args.append(arg)
+        apply_groups, options, new_kwargs = util.deprecated_opts_signature(new_args, kwargs)
 
         # By default do not clone in .opts method
         clone = kwargs.get('clone', None)
@@ -463,4 +470,4 @@ class Opts(object):
             return opts.apply_groups(self._obj, **dict(kwargs, **new_kwargs))
 
         kwargs['clone'] = False if clone is None else clone
-        return self._obj.options(*args, **kwargs)
+        return self._obj.options(*new_args, **kwargs)
