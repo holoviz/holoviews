@@ -311,8 +311,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = BoundingBox(points=((l, b), (r, t)))
 
         data_bounds = None
-        if self.interface is ImageInterface and not isinstance(data, np.ndarray):
+        if self.interface is ImageInterface and not isinstance(data, (np.ndarray, Image)):
             data_bounds = self.bounds.lbrt()
+
         l, b, r, t = bounds.lbrt()
         xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
         ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
