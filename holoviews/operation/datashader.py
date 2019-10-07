@@ -11,6 +11,7 @@ import datashader as ds
 import datashader.reductions as rd
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
+
 from param.parameterized import bothmethod
 
 try:
@@ -20,7 +21,7 @@ except:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset, Overlay)
+                    CompositeOverlay, Dataset, Overlay, OrderedDict)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
@@ -1205,6 +1206,16 @@ class shade(LinkableOperation):
 
 
     @classmethod
+    def uint32_to_uint8_xr(cls, img):
+        """
+        Cast uint32 xarray DataArray to 4 uint8 channels.
+        """
+        new_array = img.values.view(dtype=np.uint8).reshape(img.shape + (4,))
+        coords = OrderedDict(list(img.coords.items())+[('band', [0, 1, 2, 3])])
+        return xr.DataArray(new_array, coords=coords, dims=img.dims+('band',))
+
+
+    @classmethod
     def rgb2hex(cls, rgb):
         """
         Convert RGB(A) tuple to hex.
@@ -1278,10 +1289,6 @@ class shade(LinkableOperation):
         elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
-        for d in kdims:
-            if array[d.name].dtype.kind == 'M':
-                array[d.name] = array[d.name].astype('datetime64[us]').astype('int64')
-
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
             if np.isnan(array.data).all():
@@ -1293,7 +1300,7 @@ class shade(LinkableOperation):
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],
                       xdensity=xdensity, ydensity=ydensity)
-        return RGB(self.uint32_to_uint8(img.data), **params)
+        return RGB(self.uint32_to_uint8_xr(img), **params)
 
 
 
