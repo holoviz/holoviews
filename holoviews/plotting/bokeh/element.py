@@ -36,7 +36,7 @@ from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
     rgba_tuple, text_properties, validate)
 from .util import (
-    TOOL_TYPES, date_to_integer, decode_bytes, get_tab_title,
+    TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter)
@@ -1021,7 +1021,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
-            numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMm'
+            numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
             if ('color' in k and isinstance(val, util.arraylike_types) and
                 (numeric or not validate('color', val))):
                 kwargs = {}
@@ -1031,12 +1031,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         factors = ranges[range_key]['factors']
                     else:
                         factors = util.unique_array(val)
+                    if isinstance(val, util.arraylike_types) and val.dtype.kind == 'b':
+                        factors = factors.astype(str)
                     kwargs['factors'] = factors
                 cmapper = self._get_colormapper(v, element, ranges,
                                                 dict(style), name=k+'_color_mapper',
                                                 group=group, **kwargs)
                 categorical = isinstance(cmapper, CategoricalColorMapper)
-                if categorical and val.dtype.kind in 'ifMu':
+                if categorical and val.dtype.kind in 'ifMub':
                     if v.dimension in element:
                         formatter = element.get_dimension(v.dimension).pprint_value
                     else:
@@ -1046,7 +1048,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     field = k
                 if categorical and getattr(self, 'show_legend', False):
-                    new_style['legend'] = field
+                    legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+                    new_style[legend_prop] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -1096,7 +1099,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 legend = element.label
             if legend and self.overlaid:
-                properties['legend'] = value(legend)
+                legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
+                properties[legend_prop] = value(legend)
         return properties
 
 
@@ -1123,7 +1127,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        legend = merged.pop('legend', None)
+        legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
+        legend = merged.pop(legend_prop, None)
         columns = list(source.data.keys())
         glyph_updates = []
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
@@ -1752,7 +1757,8 @@ class ColorbarPlot(ElementPlot):
 
         data[field] = cdata
         if factors is not None and self.show_legend:
-            mapping['legend'] = {'field': field}
+            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+            mapping[legend_prop] = {'field': field}
         mapping[name] = {'field': field, 'transform': mapper}
 
         return data, mapping

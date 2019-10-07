@@ -300,7 +300,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                     continue
                 properties[k] = p
             mappings.update(mapping.pop(key, {}))
-        properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}
+        properties = {p: v for p, v in properties.items()
+                      if p != 'source' and 'legend' not in p}
         properties.update(mappings)
 
         # Initialize graph layout
