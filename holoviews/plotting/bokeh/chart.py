@@ -22,7 +22,7 @@ from ..util import compute_sizes, get_min_distance, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
-from .util import categorize_array
+from .util import bokeh_version, categorize_array
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -543,7 +543,7 @@ class ErrorPlot(ColorbarPlot):
         """
         Returns a Bokeh glyph object.
         """
-        properties.pop('legend', None)
+        properties = {k: v for k, v in properties.items() if 'legend' not in k}
         for prop in ['color', 'alpha']:
             if prop not in properties:
                 continue
@@ -914,13 +914,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Enable legend if colormapper is categorical
         cmapper = cmapping['color']['transform']
+        legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
         if ('color' in cmapping and self.show_legend and
             isinstance(cmapper, CategoricalColorMapper)):
-            mapping['legend'] = cdim.name
+            mapping[legend_prop] = cdim.name
 
         if not (self.stacked or self.stack_index) and ds.ndims > 1:
-            cmapping.pop('legend', None)
-            mapping.pop('legend', None)
+            cmapping.pop(legend_prop, None)
+            mapping.pop(legend_prop, None)
 
         # Merge data and mappings
         mapping.update(cmapping)
