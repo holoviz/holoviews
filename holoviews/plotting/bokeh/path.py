@@ -244,7 +244,8 @@ class ContourPlot(PathPlot):
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         if self.show_legend:
-            mapping['legend'] = dim_name
+            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+            mapping[legend_prop] = dim_name
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):

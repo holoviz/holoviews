@@ -251,7 +251,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         """
         Returns a Bokeh glyph object.
         """
-        properties.pop('legend', None)
+        properties = {k: v for k, v in properties.items() if 'legend' not in k}
         if key == 'arrow':
             properties.pop('source')
             arrow_end = mapping.pop('arrow_end')

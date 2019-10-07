@@ -17,7 +17,7 @@ from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
 from .styles import fill_properties, line_properties
-from .util import decode_bytes
+from .util import bokeh_version, decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -95,7 +95,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _glyph_properties(self, plot, element, source, ranges, style, group=None):
         properties = dict(style, source=source)
         if self.show_legend and not element.kdims and self.overlaid:
-            properties['legend'] = element.label
+            legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
+            properties[legend_prop] = element.label
         return properties
 
     def _apply_transforms(self, element, data, ranges, style, group=None):
@@ -281,7 +282,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = list(unique_iterator(factors))
 
         if self.show_legend:
-            vbar_map['legend'] = cdim.name
+            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+            vbar_map[legend_prop] = cdim.name
 
         return data, mapping, style
 
