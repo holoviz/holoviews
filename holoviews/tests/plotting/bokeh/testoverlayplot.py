@@ -209,7 +209,7 @@ class TestLegends(TestBokehPlot):
     def test_overlay_legend(self):
         overlay = Curve(range(10), label='A') * Curve(range(10), label='B')
         plot = bokeh_renderer.get_plot(overlay)
-        legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
+        legend_labels = [l.label for l in plot.state.legend[0].items]
         self.assertEqual(legend_labels, ['A', 'B'])
 
     def test_dynamic_subplot_remapping(self):
@@ -220,7 +220,7 @@ class TestLegends(TestBokehPlot):
         plot = bokeh_renderer.get_plot(dmap)
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': '1'}, {'value': '2'}])
+        self.assertEqual(legend_labels, ['1', '2'])
         colors = Cycle().values
         for i, (subplot, color) in enumerate(zip(plot.subplots.values(), colors[3:])):
             self.assertEqual(subplot.handles['glyph'].line_color, color)
@@ -232,25 +232,25 @@ class TestLegends(TestBokehPlot):
                         for i in range(3)})
         plot = bokeh_renderer.get_plot(hmap)
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['C', 'B'])
         plot.update((1,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'D'}])
+        self.assertEqual(legend_labels, ['B', 'D'])
         plot.update((2,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'B'}, {'value': 'E'}])
+        self.assertEqual(legend_labels, ['B', 'E'])
 
     def test_holomap_legend_updates_varying_lengths(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})
         plot = bokeh_renderer.get_plot(hmap)
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}])
+        self.assertEqual(legend_labels, ['A'])
         plot.update((2,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['A', 'B'])
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}, {'value': 'C'}])
+        self.assertEqual(legend_labels, ['A', 'B', 'C'])
 
     def test_dynamicmap_legend_updates(self):
         hmap = HoloMap({i: Curve([1, 2, 3], label=chr(65+i+2)) * Curve([1, 2, 3], label='B')
@@ -258,26 +258,26 @@ class TestLegends(TestBokehPlot):
         dmap = Dynamic(hmap)
         plot = bokeh_renderer.get_plot(dmap)
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'C'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['C', 'B'])
         plot.update((1,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'D'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['D', 'B'])
         plot.update((2,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'E'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['E', 'B'])
 
     def test_dynamicmap_legend_updates_add_dynamic_plots(self):
         hmap = HoloMap({i: Overlay([Curve([1, 2, j], label=chr(65+j)) for j in range(i)]) for i in range(1, 4)})
         dmap = Dynamic(hmap)
         plot = bokeh_renderer.get_plot(dmap)
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}])
+        self.assertEqual(legend_labels, ['A'])
         plot.update((2,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}])
+        self.assertEqual(legend_labels, ['A', 'B'])
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
-        self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}, {'value': 'C'}])
+        self.assertEqual(legend_labels, ['A', 'B', 'C'])
 
     def test_dynamicmap_ndoverlay_shrink_number_of_items(self):
         selected = Stream.define('selected', items=3)()
