@@ -906,7 +906,7 @@ class Dynamic(param.ParameterizedFunction):
                 streams.append(value)
             elif isinstance(value, FunctionType) and hasattr(value, '_dinfo'):
                 dependencies = list(value._dinfo.get('dependencies', []))
-                dependencies += list(value._dinfo.get('kwargs', {}).values())
+                dependencies += list(value._dinfo.get('kw', {}).values())
                 params = [d for d in dependencies if isinstance(d, param.Parameter)
                           and isinstance(d.owner, param.Parameterized)]
                 streams.append(Params(parameters=params, watch_only=True))
