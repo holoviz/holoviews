@@ -1049,7 +1049,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     field = k
                 if categorical and getattr(self, 'show_legend', False):
                     legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-                    new_style[legend_prop] = field
+                    new_style[legend_prop] = {'field': field}
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -1170,7 +1170,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for leg in self.state.legend:
                 for item in leg.items:
                     if renderer in item.renderers:
-                        item.label = legend
+                        item.label = legend if isinstance(legend, dict) else {'value': legend}
 
         for glyph, update in glyph_updates:
             glyph.update(**update)
