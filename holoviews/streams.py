@@ -717,7 +717,7 @@ class Params(Stream):
     @property
     def hashkey(self):
         hashkey = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
-        hashkey = {self._rename.get((o, n), n): v for (o, n), v in hashkey.items()
+        hashkey = {' '.join([o.name, self._rename.get((o, n), n)]): v for (o, n), v in hashkey.items()
                    if self._rename.get((o, n), True) is not None}
         hashkey['_memoize_key'] = self._memoize_counter
         return hashkey
