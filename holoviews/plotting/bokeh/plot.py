@@ -178,10 +178,23 @@ class BokehPlot(DimensionedPlot):
 
     def refresh(self, **kwargs):
         if self.renderer.mode == 'server' and curdoc() is not self.document:
+            self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
+                                 for s in p.streams if s._triggering]
             # If we do not have the Document lock, schedule refresh as callback
             self.document.add_next_tick_callback(self.refresh)
-        else:
+            return
+        
+        for s in self._triggering:
+            s._triggering = True
+        try:
             super(BokehPlot, self).refresh(**kwargs)
+        except Exception as e:
+            raise e
+        finally:
+            # Reset triggering state
+            for s in self._triggering:
+                s._triggering = False
+            self._triggering = []
 
     def push(self):
         """

@@ -245,6 +245,7 @@ class DimensionedPlot(Plot):
         self.comm = comm
         self._force = False
         self._updated = False # Whether the plot should be marked as updated
+        self._triggering = []
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
