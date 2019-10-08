@@ -14,6 +14,29 @@ function_types = (
     MethodType, np.ufunc)
 
 
+def _maybe_map(numpy_fn):
+    def fn(values, *args, **kwargs):
+        series_like = hasattr(values, 'index')
+        map_fn = (getattr(values, 'map_partitions', None) or
+                  getattr(values, 'map_blocks', None))
+        if map_fn:
+            if series_like:
+                return map_fn(
+                    lambda s: type(s)(numpy_fn(s, *args, **kwargs),
+                                      index=s.index))
+            else:
+                return map_fn(lambda s: numpy_fn(s, *args, **kwargs))
+        else:
+            if series_like:
+                return type(values)(
+                    numpy_fn(values, *args, **kwargs),
+                    index=values.index,
+                )
+            else:
+                return numpy_fn(values, *args, **kwargs)
+    return fn
+
+
 def norm(values, min=None, max=None):
     """Unity-based normalization to scale data into 0-1 range.
 
@@ -48,6 +71,7 @@ def lognorm(values, min=None, max=None):
     return (np.log(values) - min) / (max-min)
 
 
+@_maybe_map
 def bin(values, bins, labels=None):
     """Bins data into declared bins
 
@@ -77,6 +101,7 @@ def bin(values, bins, labels=None):
     return binned
 
 
+@_maybe_map
 def categorize(values, categories, default=None):
     """Maps discrete values to supplied categories.
 
@@ -103,38 +128,17 @@ def categorize(values, categories, default=None):
         else:
             cat = categories.get(c, default)
         cats.append(cat)
-    return np.asarray(cats)
-
-
-def _maybe_map(numpy_fn):
-    def fn(values, *args, **kwargs):
-        series_like = hasattr(values, 'index')
-        dask_like = hasattr(values, 'map_partitions')
-        if dask_like:
-            if series_like:
-                return values.map_partitions(
-                    lambda s: type(s)(
-                        numpy_fn(s, *args, **kwargs),
-                        index=s.index
-                    )
-                )
-            else:
-                return values.map_partitions(
-                    lambda s: numpy_fn(s, *args, **kwargs)
-                )
-        else:
-            if series_like:
-                return type(values)(
-                    numpy_fn(values, *args, **kwargs),
-                    index=values.index,
-                )
-            else:
-                return numpy_fn(values, *args, **kwargs)
-    return fn
+    result = np.asarray(cats)
+    # Convert unicode to object type like pandas does
+    if result.dtype.kind == 'U':
+        result = result.astype('object')
+    return result
 
 
 digitize = _maybe_map(np.digitize)
 isin = _maybe_map(np.isin)
+astype = _maybe_map(np.asarray)
+round_ = _maybe_map(np.round)
 
 
 class dim(object):
@@ -153,7 +157,7 @@ class dim(object):
         operator.or_: '|', operator.pow: '**', operator.rshift: '>>',
         operator.sub: '-', operator.truediv: '/'}
 
-    _builtin_funcs = {abs: 'abs', round: 'round'}
+    _builtin_funcs = {abs: 'abs', round_: 'round'}
 
     _custom_funcs = {
         norm: 'norm',
@@ -162,12 +166,14 @@ class dim(object):
         categorize: 'categorize',
         digitize: 'digitize',
         isin: 'isin',
+        astype: 'astype',
+        round_: 'round',
     }
 
     _numpy_funcs = {
-        np.any: 'any', np.all: 'all', np.asarray: 'astype',
+        np.any: 'any', np.all: 'all',
         np.cumprod: 'cumprod', np.cumsum: 'cumsum', np.max: 'max',
-        np.mean: 'mean', np.min: 'min', np.round: 'round',
+        np.mean: 'mean', np.min: 'min',
         np.sum: 'sum', np.std: 'std', np.var: 'var', np.log: 'log',
         np.log10: 'log10'}
 
@@ -212,7 +218,7 @@ class dim(object):
     def __abs__(self):            return dim(self, abs)
     def __round__(self, ndigits=None):
         args = () if ndigits is None else (ndigits,)
-        return dim(self, round, *args)
+        return dim(self, round_, *args)
 
     # Unary operators
     def __neg__(self): return dim(self, operator.neg)
@@ -266,13 +272,11 @@ class dim(object):
 
     def any(self, *args, **kwargs):      return dim(self, np.any, *args, **kwargs)
     def all(self, *args, **kwargs):      return dim(self, np.all, *args, **kwargs)
-    def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
     def cumprod(self, *args, **kwargs):  return dim(self, np.cumprod,  *args, **kwargs)
     def cumsum(self, *args, **kwargs):   return dim(self, np.cumsum,  *args, **kwargs)
     def max(self, *args, **kwargs):      return dim(self, np.max, *args, **kwargs)
     def mean(self, *args, **kwargs):     return dim(self, np.mean, *args, **kwargs)
     def min(self, *args, **kwargs):      return dim(self, np.min, *args, **kwargs)
-    def round(self, decimals=0): return dim(self, np.round, decimals=decimals)
     def sum(self, *args, **kwargs):      return dim(self, np.sum, *args, **kwargs)
     def std(self, *args, **kwargs):      return dim(self, np.std, *args, **kwargs)
     def var(self, *args, **kwargs):      return dim(self, np.var, *args, **kwargs)
@@ -280,6 +284,8 @@ class dim(object):
     def log10(self, *args, **kwargs):    return dim(self, np.log10, *args, **kwargs)
 
     ## Custom functions
+    def astype(self, dtype): return dim(self, astype, dtype=dtype)
+    def round(self, decimals=0): return dim(self, round_, decimals=decimals)
     def digitize(self, *args, **kwargs): return dim(self, digitize,  *args, **kwargs)
     def isin(self, *args, **kwargs):     return dim(self, isin,  *args, **kwargs)
 
