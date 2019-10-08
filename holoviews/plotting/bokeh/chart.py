@@ -917,7 +917,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
         if ('color' in cmapping and self.show_legend and
             isinstance(cmapper, CategoricalColorMapper)):
-            mapping[legend_prop] = {'field': cdim.name}
+            mapping[legend_prop] = cdim.name
 
         if not (self.stacked or self.stack_index) and ds.ndims > 1:
             cmapping.pop(legend_prop, None)

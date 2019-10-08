@@ -1049,7 +1049,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     field = k
                 if categorical and getattr(self, 'show_legend', False):
                     legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-                    new_style[legend_prop] = {'field': field}
+                    new_style[legend_prop] = field
                 key = {'field': field, 'transform': cmapper}
             new_style[k] = key
 
@@ -1127,8 +1127,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
-        legend = merged.pop(legend_prop, None)
+        legend_props = ('legend_field', 'legend_label') if bokeh_version >= '1.3.5' else ('legend',)
+        for lp in legend_props:
+            legend = merged.pop(lp, None)
+            if legend is not None:
+                break
         columns = list(source.data.keys())
         glyph_updates = []
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
@@ -1170,7 +1173,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             for leg in self.state.legend:
                 for item in leg.items:
                     if renderer in item.renderers:
-                        item.label = legend if isinstance(legend, dict) else {'value': legend}
+                        if isinstance(legend, dict):
+                            label = legend
+                        elif lp != 'legend':
+                            prop = 'value' if 'label' in lp else 'field'
+                            label = {prop: legend}
+                        elif isinstance(item.label, dict):
+                            label = {list(item.label)[0]: legend}
+                        else:
+                            label = {'value': legend}
+                        item.label = label
 
         for glyph, update in glyph_updates:
             glyph.update(**update)
@@ -1758,7 +1770,7 @@ class ColorbarPlot(ElementPlot):
         data[field] = cdata
         if factors is not None and self.show_legend:
             legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            mapping[legend_prop] = {'field': field}
+            mapping[legend_prop] = field
         mapping[name] = {'field': field, 'transform': mapper}
 
         return data, mapping

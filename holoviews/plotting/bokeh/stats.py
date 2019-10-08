@@ -288,7 +288,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         if self.show_legend:
             legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            vbar_map[legend_prop] = {'field': cdim.name}
+            vbar_map[legend_prop] = cdim.name
 
         return data, mapping, style
 
