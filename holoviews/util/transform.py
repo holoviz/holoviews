@@ -106,6 +106,36 @@ def categorize(values, categories, default=None):
     return np.asarray(cats)
 
 
+def _maybe_map(numpy_fn):
+    def fn(values, *args, **kwargs):
+        series_like = hasattr(values, 'index')
+        dask_like = hasattr(values, 'map_partitions')
+        if dask_like:
+            if series_like:
+                return values.map_partitions(
+                    lambda s: type(s)(
+                        numpy_fn(s, *args, **kwargs),
+                        index=s.index
+                    )
+                )
+            else:
+                return values.map_partitions(
+                    lambda s: numpy_fn(s, *args, **kwargs)
+                )
+        else:
+            if series_like:
+                return type(values)(
+                    numpy_fn(values, *args, **kwargs),
+                    index=values.index,
+                )
+            else:
+                return numpy_fn(values, *args, **kwargs)
+    return fn
+
+
+digitize = _maybe_map(np.digitize)
+isin = _maybe_map(np.isin)
+
 
 class dim(object):
     """
@@ -125,7 +155,14 @@ class dim(object):
 
     _builtin_funcs = {abs: 'abs', round: 'round'}
 
-    _custom_funcs = {norm: 'norm', lognorm: 'lognorm', bin: 'bin', categorize: 'categorize'}
+    _custom_funcs = {
+        norm: 'norm',
+        lognorm: 'lognorm',
+        bin: 'bin',
+        categorize: 'categorize',
+        digitize: 'digitize',
+        isin: 'isin',
+    }
 
     _numpy_funcs = {
         np.any: 'any', np.all: 'all', np.asarray: 'astype',
@@ -232,8 +269,6 @@ class dim(object):
     def astype(self, dtype):     return dim(self, np.asarray, dtype=dtype)
     def cumprod(self, *args, **kwargs):  return dim(self, np.cumprod,  *args, **kwargs)
     def cumsum(self, *args, **kwargs):   return dim(self, np.cumsum,  *args, **kwargs)
-    def digitize(self, *args, **kwargs): return dim(self, np.digitize,  *args, **kwargs)
-    def isin(self, *args, **kwargs):     return dim(self, np.isin,  *args, **kwargs)
     def max(self, *args, **kwargs):      return dim(self, np.max, *args, **kwargs)
     def mean(self, *args, **kwargs):     return dim(self, np.mean, *args, **kwargs)
     def min(self, *args, **kwargs):      return dim(self, np.min, *args, **kwargs)
@@ -245,6 +280,8 @@ class dim(object):
     def log10(self, *args, **kwargs):    return dim(self, np.log10, *args, **kwargs)
 
     ## Custom functions
+    def digitize(self, *args, **kwargs): return dim(self, digitize,  *args, **kwargs)
+    def isin(self, *args, **kwargs):     return dim(self, isin,  *args, **kwargs)
 
     def bin(self, bins, labels=None):
         """Bins continuous values.
