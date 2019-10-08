@@ -1100,7 +1100,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 legend = element.label
             if legend and self.overlaid:
                 legend_prop = 'legend_label' if bokeh_version >= '1.3.5' else 'legend'
-                properties[legend_prop] = value(legend)
+                properties[legend_prop] = legend
         return properties
 
 
