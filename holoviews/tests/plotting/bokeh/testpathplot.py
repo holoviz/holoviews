@@ -181,7 +181,8 @@ class TestPathPlot(TestBokehPlot):
         path = Path(data, vdims="cat").opts(color="cat", cmap=dict(zip(levels, colors)), line_width=4, show_legend=True)
         plot = bokeh_renderer.get_plot(path)
         item = plot.state.legend[0].items[0]
-        self.assertEqual(item.label, 'color_str__')
+        legend = {'field': 'color_str__'}
+        self.assertEqual(item.label, legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
         
