@@ -34,7 +34,7 @@ def norm(values, min=None, max=None):
 def lognorm(values, min=None, max=None):
     """Unity-based normalization on log scale.
        Apply the same transformation as matplotlib.colors.LogNorm
-    
+
     Args:
         values: Array of values to be normalized
         min (float, optional): Lower bound of normalization range
@@ -375,7 +375,15 @@ class dim(object):
             fn_args = [data]
             for arg in args:
                 if isinstance(arg, dim):
-                    arg = arg.apply(dataset, flat, expanded, ranges, all_values)
+                    arg = arg.apply(
+                        dataset,
+                        flat,
+                        expanded,
+                        ranges,
+                        all_values,
+                        keep_index,
+                        compute,
+                    )
                 fn_args.append(arg)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
             eldim = dataset.get_dimension(dimension)
