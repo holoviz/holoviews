@@ -26,7 +26,6 @@ from ..core.sheetcoords import BoundingBox
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, get_param_values, max_range)
-    datetime_types, dt_to_int, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
                        Scatter, Points)
