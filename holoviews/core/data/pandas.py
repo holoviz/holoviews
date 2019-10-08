@@ -121,7 +121,14 @@ class PandasInterface(Interface):
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if not cls.expanded(data):
+                min_dims = (kdim_param.bounds[0] or 0) + (vdim_param.bounds[0] or 0)
+                if any(d.ndim > 1 for d in data):
+                    raise ValueError('PandasInterface cannot interpret multi-dimensional arrays.')
+                elif len(data) < min_dims:
+                    raise DataError('Data contains fewer columns than the %s element expects. Expected '
+                                    'at least %d columns but found only %d columns.' %
+                                    (eltype.__name__, min_dims, len(data)))
+                elif not cls.expanded(data):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame(dict(zip(columns, data)), columns=columns)
             elif ((isinstance(data, dict) and any(c not in data for c in columns)) or
