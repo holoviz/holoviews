@@ -7,7 +7,7 @@ from unittest import SkipTest
 import param
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.util import LooseVersion, pd
-from holoviews.element import Points
+from holoviews.element import Points, Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
 from holoviews.util import Dynamic
