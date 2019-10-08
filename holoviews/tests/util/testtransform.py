@@ -5,6 +5,9 @@ Unit tests for dim transforms
 from __future__ import division
 
 import numpy as np
+import pandas as pd
+import dask.dataframe as dd
+import dask.array as da
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
@@ -21,6 +24,47 @@ class TestDimTransforms(ComparisonTestCase):
         self.dataset = Dataset(
             (self.linear_ints, self.linear_floats, self.negative, self.repeating),
             ['int', 'float', 'negative', 'categories']
+        )
+
+        ddf = dd.from_pandas(self.dataset.data, npartitions=2)
+        self.dataset_dask = self.dataset.clone(data=ddf)
+
+    # Assertion helpers
+
+    def check_apply(self, expr, expected):
+        # Check using dataset backed by pandas DataFrame
+        # keep_index=False
+        np.testing.assert_equal(
+            expr.apply(self.dataset),
+            expected.values
+        )
+        # keep_index=True
+        pd.testing.assert_series_equal(
+            expr.apply(self.dataset, keep_index=True),
+            expected
+        )
+
+        # Check using dataset backed by Dask DataFrame
+        expected_dask = dd.from_pandas(expected, npartitions=2)
+
+        # keep_index=False, compute=False
+        da.assert_eq(
+            expr.apply(self.dataset_dask, compute=False), expected_dask.values
+        )
+        # keep_index=True, compute=False
+        dd.assert_eq(
+            expr.apply(self.dataset_dask, keep_index=True, compute=False),
+            expected_dask
+        )
+        # keep_index=False, compute=True
+        np.testing.assert_equal(
+            expr.apply(self.dataset_dask, compute=True),
+            expected_dask.values.compute()
+        )
+        # keep_index=True, compute=True
+        pd.testing.assert_series_equal(
+            expr.apply(self.dataset_dask, keep_index=True, compute=True),
+            expected_dask.compute()
         )
 
     # Unary operators
@@ -94,7 +138,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_min_transform(self):
         self.assertEqual(dim('float').min().apply(self.dataset),
                          self.linear_floats.min())
-    
+
     def test_round_transform(self):
         self.assertEqual(dim('float').round().apply(self.dataset),
                          self.linear_floats.round())
@@ -106,7 +150,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_std_transform(self):
         self.assertEqual(dim('float').std().apply(self.dataset),
                          self.linear_floats.std())
-        
+
     def test_var_transform(self):
         self.assertEqual(dim('float').var().apply(self.dataset),
                          self.linear_floats.var())
@@ -148,12 +192,16 @@ class TestDimTransforms(ComparisonTestCase):
     # Numpy functions
 
     def test_digitize(self):
-        self.assertEqual(dim('int').digitize([1, 5, 10]).apply(self.dataset),
-                         np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3]))
+        expr = dim('int').digitize([1, 5, 10])
+        expected = pd.Series(np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3]))
+        self.check_apply(expr, expected)
 
     def test_isin(self):
-        self.assertEqual(dim('int').digitize([1, 5, 10]).isin([1, 3]).apply(self.dataset),
-                         np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype='bool'))
+        expr = dim('int').digitize([1, 5, 10]).isin([1, 3])
+        expected = pd.Series(
+            np.array([1, 1, 1, 1, 0, 0, 0, 0, 0, 1], dtype='bool')
+        )
+        self.check_apply(expr, expected)
 
     # Complex expressions
 
