@@ -269,7 +269,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Set axis formatter based on dimension formatter.
         """
         if isinstance(dim, list): dim = dim[0]
-        if formatter is not None:
+        if formatter is not None or dim is None:
             pass
         elif dim.value_format:
             formatter = dim.value_format
