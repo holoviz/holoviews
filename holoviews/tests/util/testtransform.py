@@ -169,8 +169,8 @@ class TestDimTransforms(ComparisonTestCase):
         self.check_apply(expr, np.sin(self.linear_floats))
 
     def test_astype_transform(self):
-        expr = dim('int').astype(str)
-        self.check_apply(expr, self.linear_ints.astype(str))
+        expr = dim('int').astype('float64')
+        self.check_apply(expr, self.linear_ints.astype('float64'))
 
     def test_cumsum_transform(self):
         expr = dim('float').cumsum()

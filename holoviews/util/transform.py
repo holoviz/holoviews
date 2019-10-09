@@ -130,7 +130,7 @@ def categorize(values, categories, default=None):
         cats.append(cat)
     result = np.asarray(cats)
     # Convert unicode to object type like pandas does
-    if result.dtype.kind == 'U':
+    if result.dtype.kind in ['U', 'S']:
         result = result.astype('object')
     return result
 
