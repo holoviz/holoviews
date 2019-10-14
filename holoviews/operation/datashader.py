@@ -234,8 +234,8 @@ class AggregationOperation(ResamplingOperation):
         if isinstance(agg, basestring):
             if agg not in self._agg_methods:
                 agg_methods = sorted(self._agg_methods)
-                raise ValueError('Aggregation method %r is not known; '
-                                 'aggregator must be one of: %r' %
+                raise ValueError("Aggregation method '%r' is not known; "
+                                 "aggregator must be one of: %r" %
                                  (agg, agg_methods))
             agg = self._agg_methods[agg]()
 
@@ -252,10 +252,10 @@ class AggregationOperation(ResamplingOperation):
             elif isinstance(element, NdOverlay):
                 field = element.kdims[0].name
             else:
-                raise ValueError('Could not determine dimension to apply '
-                                 '%s operation to. Declare the dimension '
-                                 'to aggregate as part of the datashader '
-                                 'aggregator.' % type(self).__name__)
+                raise ValueError("Could not determine dimension to apply "
+                                 "'%s' operation to. Declare the dimension "
+                                 "to aggregate as part of the datashader "
+                                 "aggregator." % type(self).__name__)
             agg = type(agg)(field)
         return agg
 
@@ -283,7 +283,7 @@ class AggregationOperation(ResamplingOperation):
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
             if not dims:
-                raise ValueError("Aggregation column %s not found on %s element. "
+                raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
             name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
@@ -1352,8 +1352,8 @@ class stack(Operation):
         imgs = []
         for rgb in overlay:
             if not isinstance(rgb, RGB):
-                raise TypeError('stack operation expect RGB type elements, '
-                                'not %s name.' % type(rgb).__name__)
+                raise TypeError("The stack operation expects elements of type RGB, "
+                                "not '%s'." % type(rgb).__name__)
             rgb = rgb.rgb
             dims = [kd.name for kd in rgb.kdims][::-1]
             coords = {kd.name: rgb.dimension_values(kd, False)
@@ -1363,7 +1363,7 @@ class stack(Operation):
         try:
             imgs = xr.align(*imgs, join='exact')
         except ValueError:
-            raise ValueError('RGB inputs to stack operation could not be aligned, '
+            raise ValueError('RGB inputs to the stack operation could not be aligned; '
                              'ensure they share the same grid sampling.')
 
         stacked = tf.stack(*imgs, how=self.p.compositor)
