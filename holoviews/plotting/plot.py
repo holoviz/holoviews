@@ -1258,16 +1258,16 @@ class GenericElementPlot(DimensionedPlot):
             else:
                 dim_title = ''
 
-            custom_title = (self.title != self.param.params('title').default)
-            if custom_title and self.title_format:
-                self.warning('Both title and title_format set. Using title_format parameter')
+        custom_title = (self.title != self.param.params('title').default)
+        if custom_title and self.title_format:
+            self.warning('Both title and title_format set. Using title_format parameter')
 
-            title = self.title if custom_title or self.title_format is None else self.title_format
-            title_format = util.bytes_to_unicode(title)
-            title = title_format.format(label=util.bytes_to_unicode(label),
-                                        group=util.bytes_to_unicode(group),
-                                        type=type_name,
-                                        dimensions=dim_title)
+        title = self.title if custom_title or self.title_format is None else self.title_format
+        title_format = util.bytes_to_unicode(title)
+        title = title_format.format(label=util.bytes_to_unicode(label),
+                                    group=util.bytes_to_unicode(group),
+                                    type=type_name,
+                                    dimensions=dim_title)
         return title.strip(' \n')
 
 
