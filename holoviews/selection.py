@@ -5,12 +5,12 @@ import param
 
 from param.parameterized import bothmethod
 
-from . import Overlay
-from .core import OperationCallable
-from .streams import SelectionExpr, Stream
+from .core import OperationCallable, Overlay
 from .core.element import Element, Layout
-from .util import Dynamic, DynamicMap
 from .core.options import Store
+from .streams import SelectionExpr, Stream
+from .operation.element import function
+from .util import Dynamic, DynamicMap
 from .plotting.util import initialize_dynamic, linear_gradient
 
 _Cmap = Stream.define('Cmap', cmap=[])
@@ -79,11 +79,13 @@ class _base_link_selections(param.ParameterizedFunction):
         if isinstance(hvobj, DynamicMap):
             initialize_dynamic(hvobj)
 
-            if (isinstance(hvobj.callback, OperationCallable) and
-                    len(hvobj.callback.inputs) == 1):
-
+            if len(hvobj.callback.inputs) == 1 and hvobj.callback.operation:
                 child_hvobj = hvobj.callback.inputs[0]
-                next_op = hvobj.callback.operation
+                if isinstance(hvobj.callback, OperationCallable):
+                    next_op = hvobj.callback.operation
+                else:
+                    fn = hvobj.callback.operation
+                    next_op = function.instance(fn=fn)
                 new_operations = (next_op,) + operations
 
                 # Recurse on child with added operation

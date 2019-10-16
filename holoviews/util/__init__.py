@@ -933,24 +933,29 @@ class Dynamic(param.ParameterizedFunction):
         Generate function to dynamically apply the operation.
         Wraps an existing HoloMap or DynamicMap.
         """
-        if not isinstance(map_obj, DynamicMap):
-            def dynamic_operation(*key, **kwargs):
-                kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
-                obj = map_obj[key] if isinstance(map_obj, HoloMap) else map_obj
-                return self._process(obj, key, kwargs)
-        else:
-            def dynamic_operation(*key, **kwargs):
-                kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
-                if map_obj._posarg_keys and not key:
-                    key = tuple(kwargs[k] for k in map_obj._posarg_keys)
-                return self._process(map_obj[key], key, kwargs)
+        def resolve(key):
+            if not isinstance(map_obj, HoloMap):
+                return map_obj
+            elif isinstance(map_obj, DynamicMap) and map_obj._posarg_keys and not key:
+                key = tuple(kwargs[k] for k in map_obj._posarg_keys)
+            return map_obj[key]
+
+        def apply(element, *key, **kwargs):
+            kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
+            return self._process(element, key, kwargs)
+
+        def dynamic_operation(*key, **kwargs):
+            obj = resolve(key)
+            return apply(obj, *key, **kwargs)
+
         if isinstance(self.p.operation, Operation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
                                      link_inputs=self.p.link_inputs,
                                      operation=self.p.operation)
         else:
             return Callable(dynamic_operation, inputs=[map_obj],
-                            link_inputs=self.p.link_inputs)
+                            link_inputs=self.p.link_inputs,
+                            operation=apply)
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):
