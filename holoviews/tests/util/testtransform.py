@@ -6,8 +6,12 @@ from __future__ import division
 
 import numpy as np
 import pandas as pd
-import dask.dataframe as dd
-import dask.array as da
+
+try:
+    import dask.dataframe as dd
+    import dask.array as da
+except:
+    da, dd = None, None
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
@@ -28,6 +32,9 @@ class TestDimTransforms(ComparisonTestCase):
             ['int', 'float', 'negative', 'categories']
         )
 
+        if dd is None:
+            return
+
         ddf = dd.from_pandas(self.dataset.data, npartitions=2)
         self.dataset_dask = self.dataset.clone(data=ddf)
 
@@ -42,6 +49,9 @@ class TestDimTransforms(ComparisonTestCase):
             self.assertEqual(
                 expr.apply(self.dataset, keep_index=True), expected
             )
+
+            if dd is None:
+                return
 
             # Dask input
             self.assertEqual(
@@ -68,7 +78,7 @@ class TestDimTransforms(ComparisonTestCase):
             check_names=False
         )
 
-        if skip_dask:
+        if skip_dask or dd is None:
             return
 
         # Check using dataset backed by Dask DataFrame
