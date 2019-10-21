@@ -933,19 +933,19 @@ class Dynamic(param.ParameterizedFunction):
         Generate function to dynamically apply the operation.
         Wraps an existing HoloMap or DynamicMap.
         """
-        def resolve(key):
+        def resolve(key, kwargs):
             if not isinstance(map_obj, HoloMap):
-                return map_obj
+                return key, map_obj
             elif isinstance(map_obj, DynamicMap) and map_obj._posarg_keys and not key:
                 key = tuple(kwargs[k] for k in map_obj._posarg_keys)
-            return map_obj[key]
+            return key, map_obj[key]
 
         def apply(element, *key, **kwargs):
             kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
             return self._process(element, key, kwargs)
 
         def dynamic_operation(*key, **kwargs):
-            obj = resolve(key)
+            key, obj = resolve(key, kwargs)
             return apply(obj, *key, **kwargs)
 
         if isinstance(self.p.operation, Operation):

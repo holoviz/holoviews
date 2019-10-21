@@ -102,7 +102,7 @@ class function(Operation):
     input_type = param.ClassSelector(class_=type, doc="""
         The object type the method is defined on""")
 
-    fn = param.Callable(default=lambda el, *args, **kwargs: x, doc="""
+    fn = param.Callable(default=lambda el, *args, **kwargs: el, doc="""
         The function to apply.""")
 
     args = param.List(default=[], doc="""
