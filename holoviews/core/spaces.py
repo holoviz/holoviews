@@ -640,6 +640,11 @@ class Callable(param.Parameterized):
          based on the call arguments and any streams attached to the
          inputs.""")
 
+    operation = param.Callable(default=None, doc="""
+         The function being applied by the Callable. May be used
+         to record the transform(s) being applied inside the
+         callback function.""")
+
     stream_mapping = param.Dict(default={}, constant=True, doc="""
          Defines how streams should be mapped to objects returned by
          the Callable, e.g. when it returns a Layout.""")

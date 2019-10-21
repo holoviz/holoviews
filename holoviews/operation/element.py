@@ -85,33 +85,55 @@ class factory(Operation):
         the corresponding RGB element will be returned. """)
 
     args = param.List(default=[], doc="""
-            The list of positional argument to pass to the factory""")
+        The list of positional argument to pass to the factory""")
 
     kwargs = param.Dict(default={}, doc="""
-            The dict of keyword arguments to pass to the factory""")
+        The dict of keyword arguments to pass to the factory""")
 
     def _process(self, view, key=None):
         return self.p.output_type(view, *self.p.args, **self.p.kwargs)
+
+
+class function(Operation):
+
+    output_type = param.ClassSelector(class_=type, doc="""
+        The output type of the method operation""")
+
+    input_type = param.ClassSelector(class_=type, doc="""
+        The object type the method is defined on""")
+
+    fn = param.Callable(default=lambda el, *args, **kwargs: el, doc="""
+        The function to apply.""")
+
+    args = param.List(default=[], doc="""
+        The list of positional argument to pass to the method""")
+
+    kwargs = param.Dict(default={}, doc="""
+        The dict of keyword arguments to pass to the method""")
+
+    def _process(self, element, key=None):
+        return self.p.fn(element, *self.p.args, **self.p.kwargs)
 
 
 class method(Operation):
     """
     Operation that wraps a method call
     """
+
     output_type = param.ClassSelector(class_=type, doc="""
-            The output type of the method operation""")
+        The output type of the method operation""")
 
     input_type = param.ClassSelector(class_=type, doc="""
-            The object type the method is defined on""")
+        The object type the method is defined on""")
 
     method_name = param.String(default='__call__', doc="""
-            The method name""")
+        The method name""")
 
     args = param.List(default=[], doc="""
-            The list of positional argument to pass to the method""")
+        The list of positional argument to pass to the method""")
 
     kwargs = param.Dict(default={}, doc="""
-            The dict of keyword arguments to pass to the method""")
+        The dict of keyword arguments to pass to the method""")
 
     def _process(self, element, key=None):
         fn = getattr(self.p.input_type, self.p.method_name)
