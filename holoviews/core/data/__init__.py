@@ -279,6 +279,7 @@ class Dataset(Element):
             chain as chain_op, factory
         )
         self._in_method = False
+        input_data = data
         input_dataset = kwargs.pop('dataset', None)
         input_pipeline = kwargs.pop(
             'pipeline', None
@@ -318,7 +319,8 @@ class Dataset(Element):
         self._dataset = None
         if input_dataset is not None:
             self._dataset = input_dataset.clone(dataset=None, pipeline=None)
-
+        elif isinstance(input_data, Dataset):
+            self._dataset = input_data._dataset
         elif type(self) is Dataset:
             self._dataset = self
 
