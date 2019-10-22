@@ -487,13 +487,16 @@ class DimensionedPlot(Plot):
 
 
     def _format_title(self, key, dimensions=True, separator='\n'):
+        if self.title_format and util.config.future_deprecations:
+            self.param.warning('title_format is deprecated. Use title')
+
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
         )
 
         custom_title = (self.title != self.param.params('title').default)
         if custom_title and self.title_format:
-            self.warning('Both title and title_format set. Using title parameter')
+            self.warning('Both title and title_format set. Using title')
         title_str = (
             self.title if custom_title or self.title_format is None
             else self.title_format
