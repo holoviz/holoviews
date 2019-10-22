@@ -488,7 +488,7 @@ class DimensionedPlot(Plot):
 
     def _format_title(self, key, dimensions=True, separator='\n'):
         if self.title_format and util.config.future_deprecations:
-            self.param.warning('title_format is deprecated. Use title')
+            self.param.warning('title_format is deprecated. Please use title instead')
 
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
