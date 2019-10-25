@@ -631,7 +631,7 @@ class spread_aggregate(area_aggregate):
 class spikes_aggregate(AggregationOperation):
     """
     Aggregates Spikes elements by drawing individual line segments
-    over the entire y_range if no value dimension is defined and 
+    over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
     """
 
@@ -639,7 +639,7 @@ class spikes_aggregate(AggregationOperation):
         agg_fn = self._get_aggregator(element)
 
         if element.vdims:
-            x, y = element.dimensions()
+            x, y = element.dimensions()[:2]
             if not self.p.y_range:
                 y0, y1 = element.range(1)
                 if y0 >= 0:
@@ -650,9 +650,12 @@ class spikes_aggregate(AggregationOperation):
                     default = (y0, y1)
             else:
                 default = None
+
+            rename_dict = {'x': x.name, 'y': y.name}
         else:
             x, y = element.kdims[0], None
             default = (0, 1)
+            rename_dict = {'x': x.name}
         info = self._get_sampling(element, x, y, ndim=1, default=default)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
@@ -685,7 +688,7 @@ class spikes_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1)
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1).rename(rename_dict)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
 
