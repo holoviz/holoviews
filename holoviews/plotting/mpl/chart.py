@@ -1139,14 +1139,31 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
+    def _get_axis_dims(self, element):
+        if 'spike_length' in self.lookup_options(element, 'plot').options:
+            return  [element.dimensions()[0], None, None]
+        return super(SpikesPlot, self)._get_axis_dims(element)
+
     def get_extents(self, element, ranges, range_type='combined'):
+        opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1:
             ydim = element.get_dimension(1)
             s0, s1 = ranges[ydim.name]['soft']
             s0 = min(s0, 0) if isfinite(s0) else 0
             s1 = max(s1, 0) if isfinite(s1) else 0
             ranges[ydim.name]['soft'] = (s0, s1)
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
+
+        proxy_dim = None
+        if 'spike_length' in opts:
+            proxy_dim = Dimension('proxy_dim')
+            proxy_range = (self.position, self.position + opts['spike_length'])
+            ranges['proxy_dim'] = {'data':    proxy_range,
+                                  'hard':     (np.nan, np.nan),
+                                  'soft':     (np.nan, np.nan),
+                                  'combined': proxy_range}
+
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type,
+                                                         ydim=proxy_dim)
         if len(element.dimensions()) == 1 and range_type != 'hard':
             if self.batched:
                 bs, ts = [], []
@@ -1167,9 +1184,10 @@ class SpikesPlot(PathPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
+        opts = self.lookup_options(element, 'plot').options
 
         pos = self.position
-        if ndims > 1:
+        if ndims > 1 and 'spike_length' not in opts:
             data = element.columns([0, 1])
             xs, ys = data[dimensions[0]], data[dimensions[1]]
             data = [[(x, pos), (x, pos+y)] for x, y in zip(xs, ys)]
