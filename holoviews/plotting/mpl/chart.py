@@ -1139,11 +1139,6 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
-    def _get_axis_dims(self, element):
-        if 'spike_length' in self.lookup_options(element, 'plot').options:
-            return  [element.dimensions()[0], None, None]
-        return super(SpikesPlot, self)._get_axis_dims(element)
-
     def get_extents(self, element, ranges, range_type='combined'):
         opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1:
@@ -1227,9 +1222,16 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             style['array'] = element.dimension_values(cdim)
             self._norm_kwargs(element, ranges, style, cdim)
 
+        if 'spike_length' in self.lookup_options(element, 'plot').options:
+            axis_dims =  (element.dimensions()[0], None)
+        elif len(element.dimensions()) == 1:
+            axis_dims =  (element.dimensions()[0], None)
+        else:
+            axis_dims =  (element.dimensions()[0], element.dimensions()[1])
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        return (clean_spikes,), style, {'dimensions': dims}
+
+        return (clean_spikes,), style, {'dimensions': axis_dims}
 
 
     def update_handles(self, key, axis, element, ranges, style):
