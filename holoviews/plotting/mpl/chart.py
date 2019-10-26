@@ -1222,7 +1222,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             style['array'] = element.dimension_values(cdim)
             self._norm_kwargs(element, ranges, style, cdim)
 
-        if 'spike_length' in self.lookup_options(element, 'plot').options:
+        if 'spike_length' in opts:
             axis_dims =  (element.dimensions()[0], None)
         elif len(element.dimensions()) == 1:
             axis_dims =  (element.dimensions()[0], None)
