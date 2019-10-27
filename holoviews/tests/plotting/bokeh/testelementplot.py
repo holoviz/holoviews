@@ -8,6 +8,7 @@ from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
+from holoviews.util import render
 
 from .testplot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
@@ -100,6 +101,17 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(yaxis.minor_tick_line_color, None)
         self.assertEqual(yaxis.major_tick_line_color, None)
         self.assertTrue(yaxis in plot.state.right)
+
+    def test_element_title_format(self):
+        title_str = ('Label: {label}, group: {group}, '
+                     'dims: {dimensions}, type: {type}')
+        e = Scatter(
+            [],
+            label='the_label',
+            group='the_group',
+        ).opts(title=title_str)
+        title = 'Label: the_label, group: the_group, dims: , type: Scatter'
+        self.assertEqual(render(e).title.text, title)
 
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).options(xformatter='%d')
