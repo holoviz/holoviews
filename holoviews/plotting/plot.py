@@ -486,6 +486,42 @@ class DimensionedPlot(Plot):
         return util.bytes_to_unicode(separator.join(g for g in groups if g))
 
 
+    def _format_title(self, key, dimensions=True, separator='\n'):
+        if self.title_format and util.config.future_deprecations:
+            self.param.warning('title_format is deprecated. Please use title instead')
+
+        label, group, type_name, dim_title = self._format_title_components(
+            key, dimensions=True, separator='\n'
+        )
+
+        custom_title = (self.title != self.param.params('title').default)
+        if custom_title and self.title_format:
+            self.warning('Both title and title_format set. Using title')
+        title_str = (
+            self.title if custom_title or self.title_format is None
+            else self.title_format
+        )
+
+        title = util.bytes_to_unicode(title_str).format(
+            label=util.bytes_to_unicode(label),
+            group=util.bytes_to_unicode(group),
+            type=type_name,
+            dimensions=dim_title
+        )
+        return title.strip(' \n')
+
+
+    def _format_title_components(self, key, dimensions=True, separator='\n'):
+        """
+        Determine components of title as used by _format_title method.
+
+        To be overridden in child classes.
+
+        Return signature: (label, group, type_name, dim_title)
+        """
+        return (self.label, self.group, type(self).__name__, '')
+
+
     def _fontsize(self, key, label='fontsize', common=True):
         if not self.fontsize: return {}
 
@@ -1242,33 +1278,19 @@ class GenericElementPlot(DimensionedPlot):
         return xlabel, ylabel, zlabel
 
 
-    def _format_title(self, key, dimensions=True, separator='\n'):
+    def _format_title_components(self, key, dimensions=True, separator='\n'):
         frame = self._get_frame(key)
         if frame is None: return None
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
 
-        if self.layout_dimensions:
+        if self.layout_dimensions or dimensions:
             dim_title = self._frame_title(key, separator=separator)
-            title = dim_title
         else:
-            if dimensions:
-                dim_title = self._frame_title(key, separator=separator)
-            else:
-                dim_title = ''
+            dim_title = ''
 
-            custom_title = (self.title != self.param.params('title').default)
-            if custom_title and self.title_format:
-                self.warning('Both title and title_format set. Using title_format parameter')
-
-            title = self.title if custom_title or self.title_format is None else self.title_format
-            title_format = util.bytes_to_unicode(title)
-            title = title_format.format(label=util.bytes_to_unicode(label),
-                                        group=util.bytes_to_unicode(group),
-                                        type=type_name,
-                                        dimensions=dim_title)
-        return title.strip(' \n')
+        return (label, group, type_name, dim_title)
 
 
     def update_frame(self, key, ranges=None):
@@ -1655,24 +1677,13 @@ class GenericCompositePlot(DimensionedPlot):
         return layout_frame
 
 
-    def _format_title(self, key, dimensions=True, separator='\n'):
+    def _format_title_components(self, key, dimensions=True, separator='\n'):
         dim_title = self._frame_title(key, 3, separator) if dimensions else ''
         layout = self.layout
         type_name = type(self.layout).__name__
         group = util.bytes_to_unicode(layout.group if layout.group != type_name else '')
         label = util.bytes_to_unicode(layout.label)
-
-
-        custom_title = (self.title != self.param.params('title').default)
-        if custom_title and self.title_format:
-            self.warning('Both title and title_format set. Using title parameter')
-        title_str = self.title if custom_title or self.title_format is None else self.title_format
-
-        title = util.bytes_to_unicode(title_str).format(label=label,
-                                                        group=group,
-                                                        type=type_name,
-                                                        dimensions=dim_title)
-        return title.strip(' \n')
+        return (label, group, type_name, dim_title)
 
 
 class GenericLayoutPlot(GenericCompositePlot):
