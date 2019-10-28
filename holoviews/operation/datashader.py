@@ -634,8 +634,9 @@ class spikes_aggregate(AggregationOperation):
     over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
     """
-    spike_length = param.Number(default=0.5, doc="""
-      The length of each spike.""")
+    spike_length = param.Number(default=None, allow_None=True, doc="""
+      If numeric, specifies the length of each spike, overriding the
+      vdims values (if present).""")
 
     offset = param.Number(default=0., doc="""
       The offset of the lower end of each spike.""")
@@ -643,9 +644,26 @@ class spikes_aggregate(AggregationOperation):
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
         x, y = element.kdims[0], None
-        default = (float(self.p.offset),
-                   float(self.p.offset+self.p.spike_length))
-        rename_dict = {'x': x.name}
+
+        spike_length = 0.5 if self.p.spike_length is None else self.p.spike_length
+        if element.vdims and self.p.spike_length is None:
+            x, y = element.dimensions()
+            rename_dict = {'x': x.name, 'y':y.name}
+            if not self.p.y_range:
+                y0, y1 = element.range(1)
+                if y0 >= 0:
+                    default = (0, y1)
+                elif y1 <= 0:
+                    default = (y0, 0)
+                else:
+                    default = (y0, y1)
+            else:
+                default = None
+        else:
+             x, y = element.kdims[0], None
+             default = (float(self.p.offset),
+                        float(self.p.offset + spike_length))
+             rename_dict = {'x': x.name}
         info = self._get_sampling(element, x, y, ndim=1, default=default)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
@@ -658,7 +676,7 @@ class spikes_aggregate(AggregationOperation):
             yagg = ['y0', 'y1']
             height = 1
         else:
-            df = element.dframe([x, y])
+            df = element.dframe([x, y]).copy()
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
