@@ -212,7 +212,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)])
         agg = rasterize(spikes, width=5, dynamic=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
-                  np.datetime64('2016-01-03T00:00:00.000000'), 1)
+                  np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
         self.assertEqual(agg, expected)
 
@@ -221,7 +221,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         datatype=['dask'])
         agg = rasterize(spikes, width=5, dynamic=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
-                  np.datetime64('2016-01-03T00:00:00.000000'), 1)
+                  np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
         self.assertEqual(agg, expected)
 
