@@ -23,7 +23,7 @@ from ..core import util, traversal
 from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor, SkipRendering
+from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
@@ -262,22 +262,7 @@ class Plot(param.Parameterized):
 
     @classmethod
     def lookup_options(cls, obj, group):
-        plot_class = None
-        try:
-            plot_class = Store.renderers[cls.backend].plotting_class(obj)
-            style_opts = plot_class.style_opts
-        except SkipRendering:
-            style_opts = None
-
-        node = Store.lookup_options(cls.backend, obj, group)
-        if group == 'style' and style_opts is not None:
-            return node.filtered(style_opts)
-        elif group == 'plot' and plot_class:
-            return node.filtered(list(plot_class.params().keys()))
-        else:
-            return node
-
-
+        return lookup_options(obj, group, cls.backend)
 
 class PlotSelector(object):
     """
