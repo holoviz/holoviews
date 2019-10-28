@@ -722,6 +722,11 @@ class SpikesPlot(ColorbarPlot):
         data = {}
         pos = self.position
         opts = self.lookup_options(element, 'plot').options
+
+        if len(element.dimensions()) > 1 and 'spike_length' not in opts:
+            self.param.warning("Height mapping Spikes using the first vdim is "
+                               "now deprecated. Use Segments.common_baseline "
+                               "classmethod instead.")
         if len(element) == 0 or self.static_source:
             data = {'x': [], 'y0': [], 'y1': []}
         else:
