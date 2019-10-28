@@ -198,14 +198,14 @@ class DatashaderAggregateTests(ComparisonTestCase):
         spikes = Spikes([1, 2, 3])
         agg = rasterize(spikes, width=5, dynamic=False)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
-                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 1))
+                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         self.assertEqual(agg, expected)
 
     def test_spikes_aggregate_count_dask(self):
         spikes = Spikes([1, 2, 3], datatype=['dask'])
         agg = rasterize(spikes, width=5, dynamic=False)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
-                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 1))
+                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         self.assertEqual(agg, expected)
 
     def test_spikes_aggregate_dt_count(self):
