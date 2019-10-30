@@ -855,6 +855,9 @@ argument to specify a selection specification""")
         """
         if function is not None and dim_transform is not None:
             raise ValueError('Can only specify at most one of function or dim_transform')
+
+        if dimensions is None: dimensions = self.kdims
+        elif not isinstance(dimensions, list): dimensions = [dimensions]
         if function is None:
             # Handle dim transforms
             faceted = self.clone().groupby(dimensions)
@@ -874,8 +877,6 @@ argument to specify a selection specification""")
                 )
         else:
             # Handle functions
-            if dimensions is None: dimensions = self.kdims
-            elif not isinstance(dimensions, list): dimensions = [dimensions]
             kdims = [self.get_dimension(d, strict=True) for d in dimensions]
             if not len(self):
                 if spreadfn:
