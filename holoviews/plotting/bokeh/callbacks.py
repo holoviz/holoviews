@@ -976,14 +976,17 @@ class GlyphDrawCallback(CDSCallback):
         cds.js_on_change('data', cb)
 
 
-class PointDrawCallback(CDSCallback):
+class PointDrawCallback(GlyphDrawCallback):
 
     def initialize(self, plot_id=None):
+        plot = self.plot
         stream = self.streams[0]
         renderers = [self.plot.handles['glyph_renderer']]
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
+        if stream.styles:
+            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'x')
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
                                    empty_value=stream.empty_value,
                                    renderers=renderers, **kwargs)
