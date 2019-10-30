@@ -345,6 +345,12 @@ class PandasInterface(Interface):
             data.insert(dim_pos, dimension.name, values)
         return data
 
+    @classmethod
+    def drop_dimensions(cls, dataset, dimensions, keep_kdims=None, keep_vdims=None):
+        ds_new = dataset.data.drop(columns=[
+            d.name for d in dimensions
+        ])
+        return ds_new, keep_kdims, keep_vdims
 
     @classmethod
     def as_dframe(cls, dataset):

@@ -600,5 +600,37 @@ class XArrayInterface(GridInterface):
                            dims=tuple(d.name for d in dataset.kdims[::-1]))
         return dataset.data.assign(**{dim: arr})
 
+    @classmethod
+    def drop_dimensions(cls, dataset, dimensions, keep_kdims=None, keep_vdims=None):
+        data = dataset.data.copy()
+        dropped_dependent = False
+        dependent_dimensions = set()
+        for v in data:
+            dependent_dimensions = (
+                dependent_dimensions
+                .union(set(data[v].dims))
+            )
+
+        for d in dimensions:
+            if d in dataset.kdims:
+                if d in dependent_dimensions:
+                    cls.param.warning(
+                        'Along with "%s", you are dropping dependent dimensions'
+                        %d
+                    )
+                    dropped_dependent = True
+                data = data.drop_dims(d)
+            elif d in dataset.vdims:
+                data = data.drop(d)
+
+        if dropped_dependent:
+            keep_kdims = [
+                d for d in dataset.kdims if d.name in data
+            ]
+            keep_vdims = [
+                d for d in dataset.vdims if d.name in data
+            ]
+        return data, keep_kdims, keep_vdims
+
 
 Interface.register(XArrayInterface)
