@@ -988,12 +988,13 @@ argument to specify a selection specification""")
             )
 
         # dropping dimensions will also take care of potentially arising
-        # duplicate data points
+        # duplicate data points if drop_duplicate_data is True
         if drop:
             new_dim_names = [Dimension(d).name for d in new_dimensions.keys()]
             ds_new = ds_new.drop_dimensions(
                 [d for d in ds_new.dimensions()
-                 if d.name not in new_dim_names]
+                 if d.name not in new_dim_names],
+                drop_duplicate_data=drop_duplicate_data,
             )
 
         return ds_new

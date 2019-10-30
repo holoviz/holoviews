@@ -715,14 +715,17 @@ class LabelledData(param.Parameterized):
         else:
             return map_fn(self) if applies else self
 
-    def transform(self, *args, **kwargs):
-        """ Transforms the contents according to a dimension transform.
+    def transform(self, *args, drop=False, drop_duplicate_data=True, **kwargs):
+        """Transforms the contents according to a dimension transform.
 
         Applies a dimension transform to each child of this dimensioned container.
 
         Args:
             output_signature (list of str): Specify output arguments
             dim_transform (holoviews.util.transform.dim object)
+            drop (bool): Whether to drop all variables not part of output
+            drop_duplicate_data (bool): Whether to drop duplicate data (if
+                non-output variables are dropped, see argument `bool`)
             kwargs: Specify new dimensions in the form new_dim=dim_transform
                 to assign the output directly
 
@@ -730,8 +733,13 @@ class LabelledData(param.Parameterized):
             Container where each child has new dimensions
         """
         new_self = self.clone()
-        for k, e in enumerate(self.traverse(depth=1)):
-            new_self[k] = e.transform(*args, **kwargs)
+        for key, el in self.items():
+            new_self[key] = el.transform(
+                *args,
+                drop=drop,
+                drop_duplicate_data=drop_duplicate_data,
+                **kwargs,
+            )
 
         return new_self
 
