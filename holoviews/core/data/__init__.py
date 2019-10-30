@@ -965,14 +965,14 @@ argument to specify a selection specification""")
                 for dim_name, dim_transform in kwargs.items()
             ])
         elif dim_transform is not None:
-            # ineffectively repeating the same dim transform for now
             if len(output_signature)==1:
                 new_dimensions = OrderedDict([
                     (output_signature[0], dim_transform.apply(self))
                 ])
             else:
+                dim_transform_output = dim_transform.apply(self)
                 new_dimensions = OrderedDict([
-                    (dim_name, dim_transform.apply(self)[k])
+                    (dim_name, dim_transform_output[k])
                     for k, dim_name in enumerate(output_signature)
                 ])
         else:
