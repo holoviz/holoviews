@@ -715,6 +715,26 @@ class LabelledData(param.Parameterized):
         else:
             return map_fn(self) if applies else self
 
+    def transform(self, *args, **kwargs):
+        """ Transforms the contents according to a dimension transform.
+
+        Applies a dimension transform to each child of this dimensioned container.
+
+        Args:
+            output_signature (list of str): Specify output arguments
+            dim_transform (holoviews.util.transform.dim object)
+            kwargs: Specify new dimensions in the form new_dim=dim_transform
+                to assign the output directly
+
+        Returns:
+            Container where each child has new dimensions
+        """
+        new_self = self.clone()
+        for k, e in enumerate(self.traverse(depth=1)):
+            new_self[k] = e.transform(*args, **kwargs)
+
+        return new_self
+
 
     def __getstate__(self):
         "Ensures pickles save options applied to this objects."
