@@ -927,14 +927,21 @@ argument to specify a selection specification""")
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
 
-    def transform(self, output_signature=None, dim_transform=None, **kwargs):
+    def transform(
+        self,
+        output_signature=None,
+        dim_transform=None,
+        drop=False,
+        **kwargs
+    ):
         """
         Transforms the Dataset according to a dimension transform.
 
         Args:
-            kwargs: Specify new dimensions in the form new_dim=dim_transform to assign the output directly
             output_signature: Specify output arguments as a list of strings
             dim_transform: a holoviews.util.transform.dim object
+            drop (bool): Whether to drop all variables not part of output
+            kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
             Transformed dataset with new dimensions
@@ -966,6 +973,14 @@ argument to specify a selection specification""")
                 dim_val=dim_val,
                 vdim=True,
             )
+
+        if drop:
+            new_dim_names = [Dimension(d).name for d in new_dimensions.keys()]
+            ds_new = ds_new.drop_dimensions(
+                [d for d in ds_new.dimensions()
+                 if d.name not in new_dim_names]
+            )
+
         return ds_new
 
     def __len__(self):
