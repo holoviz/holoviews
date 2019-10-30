@@ -911,6 +911,47 @@ argument to specify a selection specification""")
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
 
+    def transform(self, output_signature=None, dim_transform=None, **kwargs):
+        """
+        Transforms the Dataset according to a dimension transform.
+
+        Args:
+            kwargs: Specify new dimensions in the form new_dim=dim_transform to assign the output directly
+            output_signature: Specify output arguments as a list of strings
+            dim_transform: a holoviews.util.transform.dim object
+
+        Returns:
+            Transformed dataset with new dimensions
+        """
+        if output_signature is None:
+            new_dimensions = OrderedDict([
+                (dim_name, dim_transform.apply(self))
+                for dim_name, dim_transform in kwargs.items()
+            ])
+        elif dim_transform is not None:
+            # ineffectively repeating the same dim transform for now
+            if len(output_signature)==1:
+                new_dimensions = OrderedDict([
+                    (output_signature[0], dim_transform.apply(self))
+                ])
+            else:
+                new_dimensions = OrderedDict([
+                    (dim_name, dim_transform.apply(self)[k])
+                    for k, dim_name in enumerate(output_signature)
+                ])
+        else:
+            raise ValueError('Need either kwargs or both output_signature and dim_transform')
+
+        ds_new = self.clone()
+        for dim_name, dim_val in new_dimensions.items():
+            ds_new = ds_new.add_dimension(
+                dimension=dim_name,
+                dim_pos=None,
+                dim_val=dim_val,
+                vdim=True,
+            )
+        return ds_new
+
     def __len__(self):
         "Number of values in the Dataset."
         return self.interface.length(self)
