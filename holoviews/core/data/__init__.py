@@ -860,7 +860,7 @@ argument to specify a selection specification""")
         elif not isinstance(dimensions, list): dimensions = [dimensions]
         if function is None:
             # Handle dim transforms
-            faceted = self.clone().groupby(dimensions)
+            faceted = self.clone(new_type=Dataset).groupby(dimensions)
             drop_args = dict(drop=True, drop_duplicate_data=True)
             if dim_transform is None:
                 # If both function and dim_transform are None,
@@ -873,7 +873,7 @@ argument to specify a selection specification""")
                         dim_transform=dim_transform, signature=dim_transform_signature,
                         **drop_args,
                     )
-                    .collapse()
+                    .collapse().clone(new_type=type(self))
                 )
         else:
             # Handle functions
