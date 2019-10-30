@@ -826,11 +826,17 @@ argument to specify a selection specification""")
         return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
+    def aggregate(
+        self, dimensions=None,
+        function=None, spreadfn=None,
+        dim_transform=None, dim_transform_signature=None,
+        **kwargs,
+    ):
         """Aggregates data on the supplied dimensions.
 
         Aggregates over the supplied key dimensions with the defined
-        function.
+        function or dim_transform. If neither is given explicitly, we can assign
+        aggregated variables in the form var_name=dim_transform.
 
         Args:
             dimensions: Dimension(s) to aggregate on
@@ -839,56 +845,78 @@ argument to specify a selection specification""")
             spreadfn: Secondary reduction to compute value spread
                 Useful for computing a confidence interval, spread, or
                 standard deviation.
-            **kwargs: Keyword arguments passed to the aggregation function
+            dim_transform: holoviews.utils.transform.dim object
+            dim_transform_signature: list of str specifying output arguments
+            **kwargs: Keyword arguments either passed to the aggregation function
+                or to create new names for the transformed variables
 
         Returns:
             Returns the aggregated Dataset
         """
+        if function is not None and dim_transform is not None:
+            raise ValueError('Can only specify at most one of function or dim_transform')
         if function is None:
-            raise ValueError("The aggregate method requires a function to be specified")
-        if dimensions is None: dimensions = self.kdims
-        elif not isinstance(dimensions, list): dimensions = [dimensions]
-        kdims = [self.get_dimension(d, strict=True) for d in dimensions]
-        if not len(self):
-            if spreadfn:
-                spread_name = spreadfn.__name__
-                vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
+            # Handle dim transforms
+            faceted = self.clone().groupby(dimensions)
+            drop_args = dict(drop=True, drop_duplicate_data=True)
+            if dim_transform is None:
+                # If both function and dim_transform are None,
+                # we assume that kwargs must hold dim_transform assignments
+                return faceted.transform(**drop_args, **kwargs).collapse()
             else:
-                vdims = self.vdims
-            return self.clone([], kdims=kdims, vdims=vdims)
-
-        vdims = self.vdims
-        aggregated, dropped = self.interface.aggregate(self, kdims, function, **kwargs)
-        aggregated = self.interface.unpack_scalar(self, aggregated)
-        vdims = [vd for vd in vdims if vd not in dropped]
-
-        ndims = len(dimensions)
-        min_d, max_d = self.param.objects('existing')['kdims'].bounds
-        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
-
-        if spreadfn:
-            error, _ = self.interface.aggregate(self, dimensions, spreadfn)
-            spread_name = spreadfn.__name__
-            ndims = len(vdims)
-            error = self.clone(error, kdims=kdims, new_type=Dataset)
-            combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
-            for i, d in enumerate(vdims):
-                dim = d.clone('_'.join([d.name, spread_name]))
-                dvals = error.dimension_values(d, flat=False)
-                combined = combined.add_dimension(dim, ndims+i, dvals, True)
-            return combined.clone(new_type=Dataset if generic_type else type(self))
-
-        if np.isscalar(aggregated):
-            return aggregated
+                return (
+                    faceted
+                    .transform(
+                        dim_transform=dim_transform, signature=dim_transform_signature,
+                        **drop_args,
+                    )
+                    .collapse()
+                )
         else:
-            try:
-                # Should be checking the dimensions declared on the element are compatible
-                return self.clone(aggregated, kdims=kdims, vdims=vdims)
-            except:
-                datatype = self.param.objects('existing')['datatype'].default
-                return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=Dataset if generic_type else None,
-                                  datatype=datatype)
+            # Handle functions
+            if dimensions is None: dimensions = self.kdims
+            elif not isinstance(dimensions, list): dimensions = [dimensions]
+            kdims = [self.get_dimension(d, strict=True) for d in dimensions]
+            if not len(self):
+                if spreadfn:
+                    spread_name = spreadfn.__name__
+                    vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
+                else:
+                    vdims = self.vdims
+                return self.clone([], kdims=kdims, vdims=vdims)
+
+            vdims = self.vdims
+            aggregated, dropped = self.interface.aggregate(self, kdims, function, **kwargs)
+            aggregated = self.interface.unpack_scalar(self, aggregated)
+            vdims = [vd for vd in vdims if vd not in dropped]
+
+            ndims = len(dimensions)
+            min_d, max_d = self.param.objects('existing')['kdims'].bounds
+            generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
+
+            if spreadfn:
+                error, _ = self.interface.aggregate(self, dimensions, spreadfn)
+                spread_name = spreadfn.__name__
+                ndims = len(vdims)
+                error = self.clone(error, kdims=kdims, new_type=Dataset)
+                combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
+                for i, d in enumerate(vdims):
+                    dim = d.clone('_'.join([d.name, spread_name]))
+                    dvals = error.dimension_values(d, flat=False)
+                    combined = combined.add_dimension(dim, ndims+i, dvals, True)
+                return combined.clone(new_type=Dataset if generic_type else type(self))
+
+            if np.isscalar(aggregated):
+                return aggregated
+            else:
+                try:
+                    # Should be checking the dimensions declared on the element are compatible
+                    return self.clone(aggregated, kdims=kdims, vdims=vdims)
+                except:
+                    datatype = self.param.objects('existing')['datatype'].default
+                    return self.clone(aggregated, kdims=kdims, vdims=vdims,
+                                      new_type=Dataset if generic_type else None,
+                                      datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
@@ -942,41 +970,44 @@ argument to specify a selection specification""")
 
     def transform(
         self,
-        output_signature=None,
+        signature=None,
         dim_transform=None,
         drop=False,
+        drop_duplicate_data=True,
         **kwargs
     ):
         """
         Transforms the Dataset according to a dimension transform.
 
         Args:
-            output_signature: Specify output arguments as a list of strings
+            signature: Specify output arguments as a list of strings
             dim_transform: a holoviews.util.transform.dim object
             drop (bool): Whether to drop all variables not part of output
+            drop_duplicate_data (bool): Whether to drop duplicate data (if
+                non-output variables are dropped, see argument `bool`)
             kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
             Transformed dataset with new dimensions
         """
-        if output_signature is None:
+        if signature is None:
             new_dimensions = OrderedDict([
                 (dim_name, dim_transform.apply(self))
                 for dim_name, dim_transform in kwargs.items()
             ])
         elif dim_transform is not None:
-            if len(output_signature)==1:
+            if len(signature)==1:
                 new_dimensions = OrderedDict([
-                    (output_signature[0], dim_transform.apply(self))
+                    (signature[0], dim_transform.apply(self))
                 ])
             else:
                 dim_transform_output = dim_transform.apply(self)
                 new_dimensions = OrderedDict([
                     (dim_name, dim_transform_output[k])
-                    for k, dim_name in enumerate(output_signature)
+                    for k, dim_name in enumerate(signature)
                 ])
         else:
-            raise ValueError('Need either kwargs or both output_signature and dim_transform')
+            raise ValueError('Need either kwargs or both signature and dim_transform')
 
         ds_new = self.clone()
         for dim_name, dim_val in new_dimensions.items():
