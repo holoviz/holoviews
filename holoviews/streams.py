@@ -1070,7 +1070,7 @@ class PointDraw(CDSStream):
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
 
-     styles: dict
+    styles: dict
     A dictionary specifying lists of styles to cycle over whenever
     a new Point glyph is drawn.
     """
