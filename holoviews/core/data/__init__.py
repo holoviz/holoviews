@@ -446,13 +446,13 @@ class Dataset(Element):
 
         Requires the dimension name or object, the desired position in
         the key dimensions and a key value scalar or array of values,
-        matching the length o shape of the Dataset.
+        matching the length or shape of the Dataset.
 
         Args:
             dimension: Dimension or dimension spec to add
-            dim_pos (int) Integer index to insert dimension at
+            dim_pos (int, None) Integer index to insert dimension at. Default: last
             dim_val (scalar or ndarray): Dimension value(s) to add
-            vdim: Disabled, this type does not have value dimensions
+            vdim: (bool) Whether to insert as vdim, otherwise as kdim
             **kwargs: Keyword arguments passed to the cloned element
 
         Returns:
@@ -466,11 +466,14 @@ class Dataset(Element):
 
         if vdim:
             dims = self.vdims[:]
+            if dim_pos is None:
+                dim_pos = len(self.kdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(vdims=dims)
-            dim_pos += self.ndims
         else:
             dims = self.kdims[:]
+            if dim_pos is None:
+                dim_pos = len(self.vdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
