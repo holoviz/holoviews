@@ -484,7 +484,15 @@ class Dataset(Element):
             data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
 
-    def drop_dimensions(self, dimensions):
+    def drop_dimensions(self, dimensions, drop_duplicate_data=True):
+        """
+        Drop dimensions from a Dataset.
+
+        Args:
+            dimensions (list of str or Dimension): Dimensions to be dropped
+            drop_duplicate_data: Whether to remove duplicate data after dropping
+                dimensions
+        """
         dimensions = [Dimension(drop_dim) for drop_dim in dimensions]
         keep_kdims = [
             keep_dim
@@ -498,8 +506,13 @@ class Dataset(Element):
         ]
         # if the backend requires handling of e.g. dependent variables, we can
         # modify keep_*dims in each interface's implementation
-        data, keep_kdims, keep_vdims = self.interface.drop_dimensions(self, dimensions, keep_kdims, keep_vdims)
-        return self.clone(data=data, kdims=keep_kdims, vdims=keep_vdims)
+        data, keep_kdims, keep_vdims = self.interface.drop_dimensions(
+            self, dimensions, keep_kdims, keep_vdims,
+            drop_duplicate_data=drop_duplicate_data,
+        )
+        return self.clone(
+            data=data, kdims=keep_kdims, vdims=keep_vdims,
+        )
 
     def select(self, selection_expr=None, selection_specs=None, **selection):
         """Applies selection by dimension name

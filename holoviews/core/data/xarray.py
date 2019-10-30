@@ -601,35 +601,55 @@ class XArrayInterface(GridInterface):
         return dataset.data.assign(**{dim: arr})
 
     @classmethod
-    def drop_dimensions(cls, dataset, dimensions, keep_kdims=None, keep_vdims=None):
+    def drop_dimensions(
+        cls, dataset, dimensions, keep_kdims=None, keep_vdims=None,
+        drop_duplicate_data=True,
+    ):
+        """
+        Drop dimensions from an xarray dataset.
+
+        Note:
+            xarray automatically takes care of removing duplicate data that may
+            arise from removing key dimensions.
+        """
         data = dataset.data.copy()
-        dropped_dependent = False
-        dependent_dimensions = set()
-        for v in data:
-            dependent_dimensions = (
-                dependent_dimensions
-                .union(set(data[v].dims))
-            )
+        dim_names = [d.name for d in dimensions]
 
-        for d in dimensions:
-            if d in dataset.kdims:
-                if d in dependent_dimensions:
+        # replace constant values by non-dimensional array
+        import xarray as xr
+        for d in keep_vdims:
+            val = np.unique(data[d.name])
+            if len(val) == 1:
+                data[d.name] = xr.DataArray(val[0], dims=[])
+
+        # utility to get the set of dimension names that are
+        # linked to variables in the data
+        def dependent_dimension_names(data):
+            dims = set()
+            for v in data:
+                dims = dims.union(set(data[v].dims))
+            return dims
+
+        # first drop vdims
+        for d in dataset.vdims:
+            if d in dim_names:
+                data = data.drop(d.name)
+        # now, some of the kdims may have become obsolete
+        for d in dataset.kdims:
+            if d in dim_names:
+                if d.name in dependent_dimension_names(data):
                     cls.param.warning(
-                        'Along with "%s", you are dropping dependent dimensions'
-                        %d
+                        'Not dropping "%s" as it has dependent dimensions' %d
                     )
-                    dropped_dependent = True
-                data = data.drop_dims(d)
-            elif d in dataset.vdims:
-                data = data.drop(d)
+                else:
+                    data = data.drop_dims(d.name)
 
-        if dropped_dependent:
-            keep_kdims = [
-                d for d in dataset.kdims if d.name in data
-            ]
-            keep_vdims = [
-                d for d in dataset.vdims if d.name in data
-            ]
+        keep_kdims = [
+            d for d in dataset.kdims if d.name in data
+        ]
+        keep_vdims = [
+            d for d in dataset.vdims if d.name in data
+        ]
         return data, keep_kdims, keep_vdims
 
 
