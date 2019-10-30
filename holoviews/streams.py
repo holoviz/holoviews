@@ -1069,12 +1069,17 @@ class PointDraw(CDSStream):
     num_objects: int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
+
+    styles: dict
+    A dictionary specifying lists of styles to cycle over whenever
+    a new Point glyph is drawn.
     """
 
-    def __init__(self, empty_value=None, drag=True, num_objects=0, **params):
+    def __init__(self, empty_value=None, drag=True, num_objects=0, styles={}, **params):
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
+        self.styles = styles
         super(PointDraw, self).__init__(**params)
 
     @property
