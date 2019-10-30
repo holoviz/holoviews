@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
+import types
 
 import param
 import numpy as np
@@ -8,6 +9,7 @@ try:
 except:
     cartesian_to_axial = None
 
+from ...util.transform import dim as dim_transform
 from ...core import Dimension, Operation
 from ...core.options import Compositor
 from ...core.util import basestring, isfinite
@@ -26,7 +28,10 @@ class hex_binning(Operation):
     useable.
     """
 
-    aggregator = param.Callable(default=np.size)
+    aggregator = param.ClassSelector(default=np.size, class_=(dim, types.FunctionType),
+    doc="""
+    Aggregation function or dimension transform used to compute bin values.
+    Defaults to np.size to count the number of values in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
@@ -80,7 +85,17 @@ class hex_binning(Operation):
         xd, yd = (element.get_dimension(i) for i in indexes)
         xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
-        agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
+        if isinstance(aggregator, dim_transform):
+            agg_args = dict(
+                dim_transform=aggregator,
+                dim_transform_signature=['_Transformed'],
+            )
+        else:
+            agg_args = dict(function=aggregator)
+        agg = (
+            element.clone(data, kdims=kdims, vdims=vdims)
+            .aggregate(**agg_args)
+        )
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
         return agg
@@ -95,10 +110,10 @@ Compositor.register(compositor)
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.Callable(default=np.size, doc="""
-      Aggregation function used to compute bin values. Any NumPy
-      reduction is allowed, defaulting to np.size to count the number
-      of values in each bin.""")
+    aggregator = param.ClassSelector(default=np.size, class_=(dim, types.FunctionType),
+    doc="""
+    Aggregation function or dimension transform used to compute bin values.
+    Defaults to np.size to count the number of values in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
