@@ -630,7 +630,7 @@ class LabelledData(param.Parameterized):
         return identifier_match
 
 
-    def traverse(self, fn=None, specs=None, full_breadth=True):
+    def traverse(self, fn=None, specs=None, full_breadth=True, depth=None):
         """Traverses object returning matching items
 
         Traverses the set of children of the object, collecting the
@@ -646,6 +646,8 @@ class LabelledData(param.Parameterized):
             full_breadth: Whether to traverse all objects
                 Whether to traverse the full set of objects on each
                 container or only the first.
+            depth (1 or None): Whether to traverse only the first level,
+                (excluding the parent level), or all
 
         Returns:
             list: List of objects that matched
@@ -668,8 +670,13 @@ class LabelledData(param.Parameterized):
             for el in self:
                 if el is None:
                     continue
-                accumulator += el.traverse(fn, specs, full_breadth)
+                if depth is None:
+                    accumulator += el.traverse(fn, specs, full_breadth)
+                elif depth == 1:
+                    accumulator.append(el)
                 if not full_breadth: break
+        if depth == 1:
+            accumulator = accumulator[1:]
         return accumulator
 
 
