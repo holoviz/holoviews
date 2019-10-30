@@ -997,6 +997,8 @@ argument to specify a selection specification""")
                 for dim_name, dim_transform in kwargs.items()
             ])
         elif dim_transform is not None:
+            if isinstance(signature, (str, Dimension)):
+                signature = [signature]
             if len(signature)==1:
                 new_dimensions = OrderedDict([
                     (signature[0], dim_transform.apply(self))
