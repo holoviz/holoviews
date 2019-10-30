@@ -987,6 +987,8 @@ argument to specify a selection specification""")
                 vdim=True,
             )
 
+        # dropping dimensions will also take care of potentially arising
+        # duplicate data points
         if drop:
             new_dim_names = [Dimension(d).name for d in new_dimensions.keys()]
             ds_new = ds_new.drop_dimensions(
