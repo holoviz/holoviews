@@ -33,6 +33,11 @@ class hex_binning(Operation):
     Aggregation function or dimension transform used to compute bin values.
     Defaults to np.size to count the number of values in each bin.""")
 
+    aggregator_signature = param.List(default=None, class_=str, doc="""
+    Names for output variables of aggregator. Can be referenced in dim
+    transforms on the element. Only respected when aggregator is itself a dim
+    transform.""")
+
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
     invert_axes = param.Boolean(default=False)
@@ -86,9 +91,12 @@ class hex_binning(Operation):
         xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
         if isinstance(aggregator, dim_transform):
+            signature = self.p.aggregator_signature
+            if signature is None:
+                signature = vdims[:1]
             agg_args = dict(
                 dim_transform=aggregator,
-                dim_transform_signature=['_Transformed'],
+                dim_transform_signature=signature,
             )
         else:
             agg_args = dict(function=aggregator)
@@ -114,6 +122,11 @@ class HexTilesPlot(ColorbarPlot):
     doc="""
     Aggregation function or dimension transform used to compute bin values.
     Defaults to np.size to count the number of values in each bin.""")
+
+    aggregator_signature = param.List(default=None, class_=str, doc="""
+    Names for output variables of aggregator. Can be referenced in dim
+    transforms on the element. Only respected when aggregator is itself a dim
+    transform.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
