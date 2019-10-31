@@ -461,9 +461,6 @@ class Dataset(Element):
         if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
 
-        if dimension.name in self.kdims:
-            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
-
         if vdim:
             dims = self.vdims[:]
             if dim_pos is None:
@@ -479,9 +476,13 @@ class Dataset(Element):
 
         if issubclass(self.interface, ArrayInterface) and np.asarray(dim_val).dtype != self.data.dtype:
             element = self.clone(datatype=[default_datatype])
-            data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         else:
-            data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
+            element = self.clone()
+
+        if dimension.name in element.dimensions():
+            # self.param.warning('Overwriting existing "{dim}" dimension'.format(dim=dimension.name))
+            element = element.drop_dimensions([dimension.name])
+        data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
 
     def drop_dimensions(self, dimensions, drop_duplicate_data=True):
