@@ -341,8 +341,6 @@ class PandasInterface(Interface):
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = dataset.data.copy()
-        if vdim:
-            dim_pos += len(dataset.kdims)
         if dimension.name not in data:
             data.insert(dim_pos, dimension.name, values)
         return data

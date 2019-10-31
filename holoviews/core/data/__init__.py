@@ -464,13 +464,13 @@ class Dataset(Element):
         if vdim:
             dims = self.vdims[:]
             if dim_pos is None:
-                dim_pos = len(self.kdims)
+                dim_pos = len(self.vdims) + len(self.kdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(vdims=dims)
         else:
             dims = self.kdims[:]
             if dim_pos is None:
-                dim_pos = len(self.vdims)
+                dim_pos = len(self.kdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
