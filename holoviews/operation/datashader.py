@@ -674,7 +674,7 @@ class spikes_aggregate(AggregationOperation):
             df['y0']  = float(self.p.offset)
             df['y1']  = float(self.p.offset + spike_length)
             yagg = ['y0', 'y1']
-            height = 1
+            if not self.p.expand: height = 1
         else:
             df = element.dframe([x, y]).copy()
             df['y0'] = np.array(0, df.dtypes[y.name])
