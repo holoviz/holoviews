@@ -298,8 +298,9 @@ class MultiDimensionalMapping(Dimensioned):
         group_type = group_type if group_type else type(self)
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         with item_check(False):
+            sort = kwargs.pop('sort', True)
             return util.ndmapping_groupby(self, dimensions, container_type,
-                                          group_type, sort=True, **kwargs)
+                                          group_type, sort=sort, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -486,7 +487,6 @@ class MultiDimensionalMapping(Dimensioned):
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
-        print(info_str)
 
 
     def update(self, other):
