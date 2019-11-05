@@ -99,7 +99,7 @@ class AnnotationManager(param.Parameterized):
         """
         if isinstance(layer, Annotator):
             layer.param.watch(lambda event: self.param.trigger('layers'), 'element')
-        elif isinstance(layer, Element):
+        elif not isinstance(layer, Element):
             raise ValueError('Annotator layer must be a Annotator subclass '
                              'or a HoloViews/GeoViews element.')
         self.layers.append(layer)
@@ -125,7 +125,8 @@ class Annotator(param.Parameterized):
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
 
-    opts = param.Dict(default={}, doc="""
+    opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                               'padding': 0.1}, doc="""
         Opts to apply to the element.""")
 
     table_transforms = param.HookList(default=[], doc="""
@@ -140,9 +141,8 @@ class Annotator(param.Parameterized):
     # include snapshot, restore and clear tools
     _tools = []
 
-    _draw_stream = None
-
-    _stream_kwargs = {}
+    # Allows patching on custom behavior
+    _extra_opts = {}
 
     @property
     def _element_type(self):
@@ -154,7 +154,7 @@ class Annotator(param.Parameterized):
 
     @param.depends('element')
     def _get_plot(self):
-        return self.element.options(responsive=True, min_height=600)
+        return self.element
 
     def __init__(self, element=None, **params):
         super(Annotator, self).__init__(**params)
@@ -165,7 +165,7 @@ class Annotator(param.Parameterized):
         self.plot = ParamMethod(self._get_plot)
         self._layout = Row(self.plot, self.editor, sizing_mode='stretch_width')
 
-    @param.depends('element', watch=True)
+    @param.depends('annotations', 'element', 'num_objects', 'opts', 'table_opts', watch=True)
     @preprocess
     def _initialize(self, element=None):
         """
@@ -188,8 +188,11 @@ class Annotator(param.Parameterized):
         """
         element = self.element
         for transform in self.table_transforms:
-            element = transform(self, element)
+            element = transform(element)
         return element
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        return self._layout._repr_mimebundle_(include, exclude)
 
     def _init_element(self, element):
         """
@@ -200,9 +203,6 @@ class Annotator(param.Parameterized):
         """
         Subclasses should implement this method.
         """
-
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        return self._layout._repr_mimebundle_(include, exclude)
 
     @property
     def selected(self):
@@ -231,6 +231,8 @@ class PathAnnotator(Annotator):
 
     vertex_style = param.Dict(default={'nonselection_alpha': 0.5}, doc="""
         Options to apply to vertices during drawing and editing.""")
+
+    _vertex_table_link = VertexTableLink
 
     def _init_element(self, element=None):
         if element is None or not isinstance(element, self._element_type):
@@ -264,6 +266,7 @@ class PathAnnotator(Annotator):
         # Add options to element
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, color_index=None, **self.opts)
+        opts.update(self._extra_opts)
         self.element = element.options(**opts)
 
     def _init_table(self):
@@ -281,11 +284,11 @@ class PathAnnotator(Annotator):
 
         table_data = self._table_data()
         self._table = Table(table_data, list(self.annotations), []).opts(**self.table_opts)
-        self._poly_link = DataLink(self.element, self._table)
+        self._link = DataLink(self.element, self._table)
         self._vertex_table = Table(
             [], self.element.kdims, list(self.vertex_annotations)
         ).opts(**self.table_opts)
-        self._vertex_link = VertexTableLink(self.element, self._vertex_table)
+        self._vertex_link = self._vertex_table_link(self.element, self._vertex_table)
         self._tables = [
             ('%s' % name, self._table),
             ('%s Vertices' % name, self._vertex_table)
@@ -329,7 +332,7 @@ class PointAnnotator(Annotator):
         Points element to edit and annotate.""")
 
     # Link between Points and Table
-    _point_table_link = lambda self, source, target: DataLink(source=source, target=target)
+    _point_table_link = DataLink
 
     def _init_element(self, element):
         if element is None or not isinstance(element, self._element_type):
@@ -345,6 +348,7 @@ class PointAnnotator(Annotator):
         # Add options
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, **self.opts)
+        opts.update(self._extra_opts)
         self.element = element.options(**opts)
 
     def _init_table(self):
