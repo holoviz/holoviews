@@ -213,7 +213,7 @@ class Annotator(param.Parameterized):
 
 class PathAnnotator(Annotator):
     """
-    PathAnnotator allows drawing and editing Paths and associating
+    Annotator which allows drawing and editing Paths and associating
     values with each path and each vertex of a path using a table.
     """
 
@@ -311,7 +311,7 @@ class PathAnnotator(Annotator):
 
 class PolyAnnotator(PathAnnotator):
     """
-    PolyAnnotator allows drawing and editing Polygons and associating
+    Annotator which allows drawing and editing Polygons and associating
     values with each polygon and each vertex of a Polygon using a table.
     """
 
@@ -321,7 +321,7 @@ class PolyAnnotator(PathAnnotator):
 
 class PointAnnotator(Annotator):
     """
-    PolyAnnotator allows drawing and editing Points and associating
+    Annotator which allows drawing and editing Points and associating
     values with each point using a table.
     """
 
