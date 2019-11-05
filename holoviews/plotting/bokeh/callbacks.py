@@ -1351,7 +1351,134 @@ class DataLinkCallback(LinkCallback):
             callback.initialize(plot_id=root_model.ref['id'])
 
 
+class SelectionLinkCallback(LinkCallback):
+
+    source_model = 'selected'
+    target_model = 'selected'
+
+    on_source_changes = ['indices']
+    on_target_changes = ['indices']
+
+    source_code = """
+    target_selected.indices = source_selected.indices
+    """
+
+    target_code = """
+    source_selected.indices = target_selected.indices
+    """
+
+
+class VertexTableLinkCallback(LinkCallback):
+
+    source_model = 'cds'
+    target_model = 'cds'
+
+    on_source_changes = ['selected', 'data', 'patching']
+    on_target_changes = ['data', 'patching']
+
+    source_code = """
+    var index = source_cds.selected.indices[0];
+    if (index == undefined) {
+      var xs_column = [];
+      var ys_column = [];
+    } else {
+      var xs_column = source_cds.data['xs'][index];
+      var ys_column = source_cds.data['ys'][index];
+    }
+    if (xs_column == undefined) {
+      var xs_column = [];
+      var ys_column = [];
+    }
+    var xs = []
+    var ys = []
+    var empty = []
+    for (i = 0; i < xs_column.length; i++) {
+      xs.push(xs_column[i])
+      ys.push(ys_column[i])
+      empty.push(null)
+    }
+    [x, y] = vertex_columns
+    target_cds.data[x] = xs
+    target_cds.data[y] = ys
+    var length = xs.length
+    for (var col in target_cds.data) {
+      if (vertex_columns.indexOf(col) != -1) { continue; }
+      else if (col in source_cds.data) {
+        var path = source_cds.data[col][index];
+        if ((path == undefined)) {
+          data = empty;
+        } else if (path.length == length) {
+          data = source_cds.data[col][index];
+        } else {
+          data = empty;
+        }
+      } else {
+        data = empty;
+      }
+      target_cds.data[col] = data;
+    }
+    target_cds.change.emit()
+    target_cds.data = target_cds.data
+    """
+
+    target_code = """
+    if (!source_cds.selected.indices.length) { return }
+    [x, y] = vertex_columns
+    xs_column = target_cds.data[x]
+    ys_column = target_cds.data[y]
+    var xs = []
+    var ys = []
+    var points = []
+    for (i = 0; i < xs_column.length; i++) {
+      xs.push(xs_column[i])
+      ys.push(ys_column[i])
+      points.push(i)
+    }
+    index = source_cds.selected.indices[0]
+    const xpaths = source_cds.data['xs']
+    const ypaths = source_cds.data['ys']
+    var length = source_cds.data['xs'].length
+    for (var col in target_cds.data) {
+      if ((col == x) || (col == y)) { continue; }
+      if (!(col in source_cds.data)) {
+        var empty = []
+        for (i = 0; i < length; i++)
+          empty.push([])
+        source_cds.data[col] = empty
+      }
+      source_cds.data[col][index] = target_cds.data[col]
+      for (const p of points) {a
+        for (let pindex = 0; pindex < xpaths.length; pindex++) {
+          if (pindex == index) { continue }
+          const xs = xpaths[pindex]
+          const ys = ypaths[pindex]
+          const column = source_cds.data[col][pindex]
+          if (column.length != xs.length) {
+            for (let ind = 0; ind < xs.length; ind++) {
+              column.push(null)
+            }
+          }
+          for (let ind = 0; ind < xs.length; ind++) {
+            if ((xs[ind] == xpaths[index][p]) && (ys[ind] == ypaths[index][p])) {
+              column[ind] = target_cds.data[col][p]
+              xs[ind] = xs[p];
+              ys[ind] = ys[p];
+            }
+          }
+        }
+      }
+    }
+    xpaths[index] = xs;
+    ypaths[index] = ys;
+    source_cds.change.emit()
+    source_cds.properties.data.change.emit();
+    source_cds.data = source_cds.data
+    """
+
+
 callbacks = Link._callbacks['bokeh']
 
 callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
+callbacks[PointTableSelectionLink] = SelectionLinkCallback
+callbacks[VertexTableLink] = VertexTableLinkCallback

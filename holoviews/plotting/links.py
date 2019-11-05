@@ -109,3 +109,28 @@ class DataLink(Link):
     """
 
     _requires_target = True
+
+
+class SelectionLink(Link):
+    """
+    Links the selection between a two glyph renderers.
+    """
+
+    _requires_target = True
+
+
+class VertexTableLink(Link):
+    """
+    Defines a Link between a Path type and a Table which will
+    display the vertices of selected path.
+    """
+
+    vertex_columns = param.List(default=[])
+
+    _requires_target = True
+
+    def __init__(self, source, target, **params):
+        if 'vertex_columns' not in params:
+            dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
+            params['vertex_columns'] = dimensions
+        super(VertexTableLink, self).__init__(source, target, **params)
