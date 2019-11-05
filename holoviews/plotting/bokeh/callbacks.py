@@ -1316,7 +1316,7 @@ class DataLinkCallback(LinkCallback):
 
         src_len = [len(v) for v in src_cds.data.values()]
         tgt_len = [len(v) for v in tgt_cds.data.values()]
-        if src_len[0] != tgt_len[0]:
+        if src_len and tgt_len and (src_len[0] != tgt_len[0]):
             raise Exception('DataLink source data length must match target '
                             'data length, found source length of %d and '
                             'target length of %d.' % (src_len[0], tgt_len[0]))
