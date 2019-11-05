@@ -19,7 +19,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink, SelectionLink
+from ..links import Link, RangeToolLink, DataLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -1480,5 +1480,5 @@ callbacks = Link._callbacks['bokeh']
 
 callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
-callbacks[PointTableSelectionLink] = SelectionLinkCallback
+callbacks[SelectionLink] = SelectionLinkCallback
 callbacks[VertexTableLink] = VertexTableLinkCallback

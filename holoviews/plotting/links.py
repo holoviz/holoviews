@@ -1,7 +1,12 @@
+from __future__ import absolute_import
+
 import weakref
+
 from collections import defaultdict
 
 import param
+
+from ..core.util import dimension_sanitizer
 
 
 class Link(param.Parameterized):
