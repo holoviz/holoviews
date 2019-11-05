@@ -1080,6 +1080,9 @@ class PointDraw(CDSStream):
     styles: dict
         A dictionary specifying lists of styles to cycle over whenever
         a new Point glyph is drawn.
+
+    tooltip: str
+        An optional tooltip to override the default
     """
 
     def __init__(self, empty_value=None, drag=True, num_objects=0, styles={},
