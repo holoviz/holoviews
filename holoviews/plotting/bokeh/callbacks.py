@@ -997,6 +997,8 @@ class PointDrawCallback(GlyphDrawCallback):
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
         if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'x')
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
@@ -1029,6 +1031,8 @@ class PolyDrawCallback(GlyphDrawCallback):
             kwargs['vertex_renderer'] = r1
         if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=stream.empty_value,
                                  renderers=[plot.handles['glyph_renderer']],
@@ -1059,10 +1063,13 @@ class FreehandDrawCallback(PolyDrawCallback):
         stream = self.streams[0]
         if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
         poly_tool = FreehandDrawTool(
             empty_value=stream.empty_value,
             num_objects=stream.num_objects,
             renderers=[plot.handles['glyph_renderer']],
+            **kwargs
         )
         plot.state.tools.append(poly_tool)
         self._update_cds_vdims()
@@ -1082,6 +1089,8 @@ class BoxEditCallback(GlyphDrawCallback):
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
@@ -1132,10 +1141,15 @@ class PolyEditCallback(PolyDrawCallback):
         if all(s.shared for s in self.streams):
             tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
             vertex_tool = tools[0] if tools else None
+
+        stream = self.streams[0]
+        kwargs = {}
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
         if vertex_tool is None:
-            vertex_style = dict({'size': 10}, **self.streams[0].vertex_style)
+            vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
-            vertex_tool = PolyEditTool(vertex_renderer=r1)
+            vertex_tool = PolyEditTool(vertex_renderer=r1, **kwargs)
             plot.state.tools.append(vertex_tool)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
         self._update_cds_vdims()

@@ -217,6 +217,9 @@ class PathAnnotator(Annotator):
     values with each path and each vertex of a path using a table.
     """
 
+    edit_vertices = param.Boolean(default=True, doc="""
+        Whether to add tool to edit vertices.""")
+
     element = param.ClassSelector(class_=Path, doc="""
         Path element to edit and annotate.""")
 
@@ -264,13 +267,17 @@ class PathAnnotator(Annotator):
         self.element = element.options(**opts)
 
     def _init_table(self):
+        name = param_name(self.name)
         self._stream = PolyDraw(
             source=self.element, data={}, num_objects=self.num_objects,
-            show_vertices=self.show_vertices, vertex_style=self.vertex_style
+            show_vertices=self.show_vertices, tooltip='%s Tool' % name,
+            vertex_style=self.vertex_style
         )
-        self._vertex_stream = PolyEdit(
-            source=self.element, vertex_style=self.vertex_style,
-        )
+        if self.edit_vertices:
+            self._vertex_stream = PolyEdit(
+                source=self.element, tooltip='%s Edit Tool' % name,
+                vertex_style=self.vertex_style,
+            )
 
         table_data = self._table_data()
         self._table = Table(table_data, list(self.annotations), []).opts(**self.table_opts)
@@ -280,8 +287,8 @@ class PathAnnotator(Annotator):
         ).opts(**self.table_opts)
         self._vertex_link = VertexTableLink(self.element, self._vertex_table)
         self._tables = [
-            ('%s' % param_name(self.name), self._table),
-            ('%s Vertices' % param_name(self.name), self._vertex_table)
+            ('%s' % name, self._table),
+            ('%s Vertices' % name, self._vertex_table)
         ]
 
     def _update_element(self):
@@ -341,14 +348,16 @@ class PointAnnotator(Annotator):
         self.element = element.options(**opts)
 
     def _init_table(self):
+        name = param_name(self.name)
         self._stream = PointDraw(
-            source=self.element, data={}, num_objects=self.num_objects
+            source=self.element, data={}, num_objects=self.num_objects,
+            tooltip='%s Tool' % name
         )
         table_data = self._table_data()
         self._table = Table(table_data).opts(**self.table_opts)
         self._point_link = self._point_table_link(self.element, self._table)
         self._point_selection_link = SelectionLink(self.element, self._table)
-        self._tables = [('%s' % param_name(self.name), self._table)]
+        self._tables = [('%s' % name, self._table)]
 
     @property
     def selected(self):
