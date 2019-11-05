@@ -227,7 +227,7 @@ class Contours(Path):
                 self.vdims = [asdim(d) for d in vdims]
         else:
             all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
-            if not all_scalar:
+            if not all_scalar and not (not self.interface.multi and len(self) == 0):
                 raise ValueError("All value dimensions on a Contours element must be scalar")
 
     def dimension_values(self, dim, expanded=True, flat=True):

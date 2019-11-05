@@ -236,7 +236,10 @@ class PathAnnotator(Annotator):
 
     def _init_element(self, element=None):
         if element is None or not isinstance(element, self._element_type):
-            element = self._element_type(element)
+            datatype = list(self._element_type.datatype)
+            datatype.remove('multitabular')
+            datatype.append('multitabular')
+            element = self._element_type(element, datatype=datatype)
 
         # Add annotation columns to poly data
         validate = []
@@ -244,13 +247,13 @@ class PathAnnotator(Annotator):
             if col in element:
                 validate.append(col)
                 continue
-            init = self.annotations[col] if isinstance(self.annotations, dict) else ''
+            init = self.annotations[col]() if isinstance(self.annotations, dict) else ''
             element = element.add_dimension(col, 0, init, True)
         for col in self.vertex_annotations:
             if col in element:
                 continue
             elif isinstance(self.vertex_annotations, dict):
-                init = self.vertex_annotations[col]
+                init = self.vertex_annotations[col]()
             else:
                 init = ''
             element = element.add_dimension(col, 0, init, True)
