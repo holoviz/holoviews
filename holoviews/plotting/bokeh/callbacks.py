@@ -19,7 +19,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink
+from ..links import Link, RangeToolLink, DataLink, SelectionLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -51,13 +51,19 @@ class MessageCallback(object):
 
     _callbacks = {}
 
+    _transforms = []
+
+    def _transform(self, msg):
+        for transform in self._transforms:
+            msg = transform(msg, self)
+        return msg
+
     def _process_msg(self, msg):
         """
         Subclassable method to preprocess JSON message in callback
         before passing to stream.
         """
-        return msg
-
+        return self._transform(msg)
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -587,7 +593,7 @@ class PointerXYCallback(Callback):
             else:
                 msg['y'] = y
 
-        return msg
+        return self._transform(msg)
 
 
 class PointerXCallback(PointerXYCallback):
@@ -649,7 +655,7 @@ class DrawCallback(PointerXYCallback):
         event = msg.pop('event')
         if event == 'panend':
             self.stroke_count += 1
-        return dict(msg, stroke_count=self.stroke_count)
+        return self._transform(dict(msg, stroke_count=self.stroke_count))
 
 
 class TapCallback(PointerXYCallback):
@@ -771,7 +777,8 @@ class RangeXYCallback(Callback):
             if self.plot.invert_yaxis:
                 y0, y1 = y1, y0
             data['y_range'] = (y0, y1)
-        return data
+        return self._transform(data)
+
 
 
 class RangeXCallback(RangeXYCallback):
@@ -808,7 +815,7 @@ class PlotSizeCallback(Callback):
 
     def _process_msg(self, msg):
         if msg.get('width') and msg.get('height'):
-            return msg
+            return self._transform(data)
         else:
             return {}
 
@@ -834,7 +841,8 @@ class BoundsCallback(Callback):
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 msg['y0'] = convert_timestamp(msg['y0'])
                 msg['y1'] = convert_timestamp(msg['y1'])
-            return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+            msg = {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+            return self._transform(msg)
         else:
             return {}
 
@@ -855,7 +863,8 @@ class BoundsXCallback(Callback):
             if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
                 msg['x0'] = convert_timestamp(msg['x0'])
                 msg['x1'] = convert_timestamp(msg['x1'])
-            return {'boundsx': (msg['x0'], msg['x1'])}
+            msg = {'boundsx': (msg['x0'], msg['x1'])}
+            return self._transform(msg)
         else:
             return {}
 
@@ -876,7 +885,8 @@ class BoundsYCallback(Callback):
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 msg['y0'] = convert_timestamp(msg['y0'])
                 msg['y1'] = convert_timestamp(msg['y1'])
-            return {'boundsy': (msg['y0'], msg['y1'])}
+            msg = {'boundsy': (msg['y0'], msg['y1'])}
+            return self._transform(msg)
         else:
             return {}
 
@@ -892,7 +902,8 @@ class Selection1DCallback(Callback):
 
     def _process_msg(self, msg):
         if 'index' in msg:
-            return {'index': [int(v) for v in msg['index']]}
+            msg = {'index': [int(v) for v in msg['index']]}
+            return self._transform(msg)
         else:
             return {}
 
@@ -906,7 +917,8 @@ class ResetCallback(Callback):
     on_events = ['reset']
 
     def _process_msg(self, msg):
-        return {'resetting': True}
+        msg = {'resetting': True}
+        return self._transform(msg)
 
 
 class CDSCallback(Callback):
@@ -943,7 +955,7 @@ class CDSCallback(Callback):
                     new_values.append(vals)
                 values = new_values
             msg['data'][col] = values
-        return msg
+        return self._transform(msg)
 
 
 class GlyphDrawCallback(CDSCallback):
@@ -1108,7 +1120,8 @@ class BoxEditCallback(GlyphDrawCallback):
             x1s.append(x+w/2.)
             y0s.append(y-h/2.)
             y1s.append(y+h/2.)
-        return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
+        data = {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
+        return self._transform(msg)
 
 
 class PolyEditCallback(PolyDrawCallback):
