@@ -1149,7 +1149,8 @@ class PolyDraw(CDSStream):
         lookup = {'xs': x.name, 'ys': y.name}
         data = [{lookup.get(c, c): data[c][i] for c in self.data}
                 for i in range(len(data[cols[0]]))]
-        return source.clone(data, id=None)
+        datatype = source.datatype if source.interface.multi else ['multitabular']
+        return source.clone(data, datatype=datatype, id=None)
 
     @property
     def dynamic(self):
