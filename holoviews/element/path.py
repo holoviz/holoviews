@@ -124,7 +124,9 @@ class Path(Geometry):
         to select a subset of paths.
         """
         if not self.interface.multi:
-            if datatype == 'array':
+            if not len(self):
+                return []
+            elif datatype == 'array':
                 obj = self.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = self.dframe(**kwargs)
