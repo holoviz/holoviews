@@ -118,7 +118,7 @@ class DataLink(Link):
 
 class SelectionLink(Link):
     """
-    Links the selection between a two glyph renderers.
+    Links the selection between two glyph renderers.
     """
 
     _requires_target = True
@@ -126,7 +126,7 @@ class SelectionLink(Link):
 
 class VertexTableLink(Link):
     """
-    Defines a Link between a Path type and a Table which will
+    Defines a Link between a Path type and a Table that will
     display the vertices of selected path.
     """
 
