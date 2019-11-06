@@ -582,15 +582,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
-            if self.interface.datatype == 'image':
-                l, b, r, t = self.bounds.lbrt()
-                return (b, t) if idx else (l, r)
-            low, high = super(Image, self).range(dim, data_range)
-            density = self.ydensity if idx else self.xdensity
-            halfd = (1./density)/2.
-            if isinstance(low, util.datetime_types):
-                halfd = np.timedelta64(int(round(halfd)), self._time_unit)
-            return (low-halfd, high+halfd)
+            l, b, r, t = self.bounds.lbrt()
+            return (b, t) if idx else (l, r)
         else:
             return super(Image, self).range(dim, data_range, dimension_range)
 
