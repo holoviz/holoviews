@@ -1155,7 +1155,9 @@ class GenericElementPlot(DimensionedPlot):
         if not self.overlaid and not self.batched:
             xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
             mx0, mx1 = get_minimum_span(x0, x1, xspan)
-            trigger = []
+
+            # If auto-padding is enabled ensure RangeXY dependent plots
+            # are recomputed before initial render
             if x0 != mx0 or x1 != mx1:
                 for stream in self.streams:
                     if isinstance(stream, (RangeX, RangeXY)):
@@ -1171,6 +1173,7 @@ class GenericElementPlot(DimensionedPlot):
                         if stream not in self._trigger:
                             self._trigger.append(stream)
                 y0, y1 = my0, my1
+
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
