@@ -178,7 +178,7 @@ class Annotator(param.Parameterized):
         self.editor[:] = self._tables
         self._stream.add_subscriber(self._update_element)
 
-    def _update_element(self, data):
+    def _update_element(self, data=None):
         with param.discard_events(self):
             self.element = self._stream.element
 
@@ -285,8 +285,11 @@ class PathAnnotator(Annotator):
                 vertex_style=self.vertex_style,
             )
 
-        table_data = self._table_data()
-        self._table = Table(table_data, list(self.annotations), []).opts(**self.table_opts)
+        annotations = list(self.annotations)
+        table_data = self._table_data().split()
+        table_data = {a: [d.dimension_values(a, expanded=False)[0] for d in table_data]
+                      for a in annotations}
+        self._table = Table(table_data, annotations, []).opts(**self.table_opts)
         self._link = DataLink(self.element, self._table)
         self._vertex_table = Table(
             [], self.element.kdims, list(self.vertex_annotations)
@@ -297,7 +300,7 @@ class PathAnnotator(Annotator):
             ('%s Vertices' % name, self._vertex_table)
         ]
 
-    def _update_element(self):
+    def _update_element(self, data=None):
         element = self._poly_stream.element
         if (element.interface.datatype == 'multitabular' and
             element.data and isinstance(element.data[0], dict)):
@@ -333,6 +336,10 @@ class PointAnnotator(Annotator):
 
     element = param.ClassSelector(class_=Points, doc="""
         Points element to edit and annotate.""")
+
+    opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                               'padding': 0.1, 'size': 10}, doc="""
+        Opts to apply to the element.""")
 
     # Link between Points and Table
     _point_table_link = DataLink

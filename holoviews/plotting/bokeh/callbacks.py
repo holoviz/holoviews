@@ -815,7 +815,7 @@ class PlotSizeCallback(Callback):
 
     def _process_msg(self, msg):
         if msg.get('width') and msg.get('height'):
-            return self._transform(data)
+            return self._transform(msg)
         else:
             return {}
 
