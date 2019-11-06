@@ -17,6 +17,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap, Dataset,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph, Path
+from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
@@ -511,6 +512,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         with abbreviated_exception():
             handles = self.init_artists(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
+
+        trigger = self._trigger
+        self._trigger = []
+        Stream.trigger(trigger)
 
         return self._finalize_axis(self.keys[-1], element=element, ranges=ranges,
                                    **axis_kwargs)

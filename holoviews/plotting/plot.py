@@ -28,7 +28,7 @@ from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
 from ..element import Table, Graph, Contours
-from ..streams import Stream
+from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -63,6 +63,7 @@ class Plot(param.Parameterized):
         self._root = None
         self._pane = None
         self._triggering = []
+        self._trigger = []
         self.set_root(root)
 
 
@@ -1153,9 +1154,27 @@ class GenericElementPlot(DimensionedPlot):
 
         if not self.overlaid and not self.batched:
             xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
-            x0, x1 = get_minimum_span(x0, x1, xspan)
-            y0, y1 = get_minimum_span(y0, y1, yspan)
-            z0, z1 = get_minimum_span(z0, z1, zspan)
+            mx0, mx1 = get_minimum_span(x0, x1, xspan)
+
+            # If auto-padding is enabled ensure RangeXY dependent plots
+            # are recomputed before initial render
+            if x0 != mx0 or x1 != mx1:
+                for stream in self.streams:
+                    if isinstance(stream, (RangeX, RangeXY)):
+                        stream.update(x_range=(mx0, mx1))
+                        if stream not in self._trigger:
+                            self._trigger.append(stream)
+                x0, x1 = mx0, mx1
+            my0, my1 = get_minimum_span(y0, y1, yspan)
+            if y0 != my0 or y1 != my1:
+                for stream in self.streams:
+                    if isinstance(stream, (RangeY, RangeXY)):
+                        stream.update(y_range=(my0, my1))
+                        if stream not in self._trigger:
+                            self._trigger.append(stream)
+                y0, y1 = my0, my1
+
+            mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':

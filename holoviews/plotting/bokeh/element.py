@@ -26,7 +26,7 @@ from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField, Path, Contours, Tiles
-from ...streams import Buffer, PlotSize
+from ...streams import Stream, Buffer, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
@@ -1290,6 +1290,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._execute_hooks(element)
 
         self.drawn = True
+
+        trigger = self._trigger
+        self._trigger = []
+        Stream.trigger(trigger)
 
         return plot
 
