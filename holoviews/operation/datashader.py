@@ -160,9 +160,7 @@ class ResamplingOperation(LinkableOperation):
             xstart, xend = 0, 0
             if x and element.get_dimension_type(x[0]) in datetime_types:
                 xtype = 'datetime'
-        elif xstart == xend:
-            xstart,xend = xstart-1,xstart+1
-                
+
         ytype = 'numeric'
         if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
             ystart, yend = dt_to_int(ystart, 'ns'), dt_to_int(yend, 'ns')
@@ -171,8 +169,6 @@ class ResamplingOperation(LinkableOperation):
             ystart, yend = 0, 0
             if y and element.get_dimension_type(y[0]) in datetime_types:
                 ytype = 'datetime'
-        elif ystart == yend:
-            ystart,yend = ystart-1,ystart+1
 
         # Compute highest allowed sampling density
         xspan = xend - xstart
