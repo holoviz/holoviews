@@ -8,6 +8,7 @@ import re
 from ...core import util
 from ...core.element import Element
 from ...core.spaces import DynamicMap
+from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dim_range_key, dynamic_update
@@ -116,6 +117,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Get element key and ranges for frame
         fig = self.generate_plot(self.keys[-1], ranges)
         self.drawn = True
+
+        trigger = self._trigger
+        self._trigger = []
+        Stream.trigger(trigger)
+
         return fig
 
 
