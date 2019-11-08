@@ -133,9 +133,9 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def test_idxmapping_groupby_unsorted(self):
         data = [(('B', 2), 1), (('C', 2), 2), (('A', 1), 3)]
         grouped = NdMapping(data, sort=False, kdims=['X', 'Y']).groupby('Y')
-        self.assertEquals(grouped.keys(), [1, 2])
-        self.assertEquals(grouped.values()[0].keys(), ['A'])
-        self.assertEquals(grouped.last.keys(), ['B', 'C'])
+        self.assertEquals(grouped.keys(), [2, 1])
+        self.assertEquals(grouped.values()[0].keys(), ['B', 'C'])
+        self.assertEquals(grouped.last.keys(), ['A'])
 
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
