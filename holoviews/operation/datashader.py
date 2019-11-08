@@ -72,11 +72,11 @@ class ResamplingOperation(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
-    x_range  = param.NumericTuple(default=None, length=2, doc="""
+    x_range  = param.Tuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
        if set to None.""")
 
-    y_range  = param.NumericTuple(default=None, length=2, doc="""
+    y_range  = param.Tuple(default=None, length=2, doc="""
        The y-axis range as a tuple of min and max y value. Auto-ranges
        if set to None.""")
 
