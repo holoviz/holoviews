@@ -96,8 +96,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def __init__(self, initial_items=None, kdims=None, **params):
         if isinstance(initial_items, MultiDimensionalMapping):
-            params = dict(util.get_param_values(initial_items),
-                          **dict({'sort': self.sort}, **params))
+            params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **dict(params))
