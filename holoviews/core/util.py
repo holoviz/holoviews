@@ -1771,7 +1771,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
         # TODO: Look at sort here
         kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), sort=sort, **kwargs)
         groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
-                   for k, group in df.groupby(level=[d.name for d in dimensions]))
+                   for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:
             selects = list(get_unique_keys(ndmapping, dimensions))
