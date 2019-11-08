@@ -216,16 +216,17 @@ def split_dmap_overlay(obj, depth=0):
     """
     layers = []
     if isinstance(obj, DynamicMap):
-        if issubclass(obj.type, NdOverlay) and not depth:
-            for v in obj.last.values():
-                layers.append(obj)
-        elif issubclass(obj.type, Overlay):
-            if obj.callback.inputs and is_dynamic_overlay(obj):
-                for inp in obj.callback.inputs:
-                    layers += split_dmap_overlay(inp, depth+1)
-            else:
+        if obj.type is not None:
+            if issubclass(obj.type, NdOverlay) and not depth:
                 for v in obj.last.values():
                     layers.append(obj)
+            elif issubclass(obj.type, Overlay):
+                if obj.callback.inputs and is_dynamic_overlay(obj):
+                    for inp in obj.callback.inputs:
+                        layers += split_dmap_overlay(inp, depth+1)
+                else:
+                    for v in obj.last.values():
+                        layers.append(obj)
         else:
             layers.append(obj)
         return layers
@@ -699,7 +700,7 @@ def _list_cmaps(provider=None, records=False):
             from colorcet import palette_n, glasbey_hv
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
-            cmaps += info('colorcet', cet_maps) 
+            cmaps += info('colorcet', cet_maps)
             cmaps += info('colorcet', [p+'_r' for p in cet_maps])
         except:
             pass
