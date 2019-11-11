@@ -668,15 +668,16 @@ class spikes_aggregate(AggregationOperation):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
+        value_cols = [] if agg_fn.column is None else [agg_fn.column]
         if y is None:
-            df = element.dframe([x]).copy()
+            df = element.dframe([x]+value_cols).copy()
             y = Dimension('y')
             df['y0']  = float(self.p.offset)
             df['y1']  = float(self.p.offset + spike_length)
             yagg = ['y0', 'y1']
             if not self.p.expand: height = 1
         else:
-            df = element.dframe([x, y]).copy()
+            df = element.dframe([x, y]+value_cols).copy()
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
