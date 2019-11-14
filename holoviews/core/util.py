@@ -1768,14 +1768,16 @@ class ndmapping_groupby(param.ParameterizedFunction):
         multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
         df = pd.DataFrame(list(map(wrap_tuple, ndmapping.values())), index=multi_index)
 
-        kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
+        # TODO: Look at sort here
+        kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), sort=sort, **kwargs)
         groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
-                   for k, group in df.groupby(level=[d.name for d in dimensions]))
+                   for k, group in df.groupby(level=[d.name for d in dimensions], sort=sort))
 
         if sort:
             selects = list(get_unique_keys(ndmapping, dimensions))
             groups = sorted(groups, key=lambda x: selects.index(x[0]))
-        return container_type(groups, kdims=dimensions)
+
+        return container_type(groups, kdims=dimensions, sort=sort)
 
     @param.parameterized.bothmethod
     def groupby_python(self_or_cls, ndmapping, dimensions, container_type,
