@@ -352,7 +352,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot_ranges = {}
         # Try finding shared ranges in other plots in the same Layout
-        if plots and self.shared_axes:
+        norm_opts = self.lookup_options(el, 'norm').options
+        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
             plot_ranges = self._merge_ranges(plots, xspecs, yspecs)
 
         # Get the Element that determines the range and get_extents
