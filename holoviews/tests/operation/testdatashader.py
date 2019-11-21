@@ -196,21 +196,21 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
     def test_spikes_aggregate_count(self):
         spikes = Spikes([1, 2, 3])
-        agg = rasterize(spikes, width=5, dynamic=False)
+        agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
                          xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         self.assertEqual(agg, expected)
 
     def test_spikes_aggregate_count_dask(self):
         spikes = Spikes([1, 2, 3], datatype=['dask'])
-        agg = rasterize(spikes, width=5, dynamic=False)
+        agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
                          xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 0.5))
         self.assertEqual(agg, expected)
 
     def test_spikes_aggregate_dt_count(self):
         spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)])
-        agg = rasterize(spikes, width=5, dynamic=False)
+        agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
                   np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
@@ -219,7 +219,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_spikes_aggregate_dt_count_dask(self):
         spikes = Spikes([dt.datetime(2016, 1, 1),  dt.datetime(2016, 1, 2), dt.datetime(2016, 1, 3)],
                         datatype=['dask'])
-        agg = rasterize(spikes, width=5, dynamic=False)
+        agg = rasterize(spikes, width=5, dynamic=False, expand=False)
         bounds = (np.datetime64('2016-01-01T00:00:00.000000'), 0,
                   np.datetime64('2016-01-03T00:00:00.000000'), 0.5)
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
