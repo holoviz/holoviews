@@ -15,6 +15,23 @@ Version 1.12
 ~~~~~~~~~~~~
 
 
+Version 1.12.7
+**************
+
+This a very minor hotfix release fixing an important bug related to
+axiswise normalization between plots.
+
+Enhancements:
+
+* Add styles attribute to PointDraw stream for consistency with other
+  drawing streams
+  (`#3819 <https://github.com/holoviz/holoviews/issues/3819>`_)
+
+Bug fixes:
+
+* Fixed shared_axes/axiswise regression
+  (`#4097 <https://github.com/holoviz/holoviews/pull/4097>`_)
+
 
 Version 1.12.6
 **************
