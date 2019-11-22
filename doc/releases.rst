@@ -19,7 +19,8 @@ Version 1.12.7
 **************
 
 This a very minor hotfix release fixing an important bug related to
-axiswise normalization between plots.
+axiswise normalization between plots. Many thanks to @srp3003 and
+@philippjfr for contributing to this release.
 
 Enhancements:
 
