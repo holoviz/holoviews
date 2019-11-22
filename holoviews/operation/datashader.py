@@ -646,7 +646,7 @@ class spikes_aggregate(AggregationOperation):
         x, y = element.kdims[0], None
 
         spike_length = 0.5 if self.p.spike_length is None else self.p.spike_length
-        if element.vdims and spike_length is None:
+        if element.vdims and self.p.spike_length is None:
             x, y = element.dimensions()[:2]
             rename_dict = {'x': x.name, 'y':y.name}
             if not self.p.y_range:
