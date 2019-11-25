@@ -47,6 +47,7 @@ class LinkableOperation(Operation):
         interactive, e.g. when trying to display an interactive plot a
         second time.""")
 
+    _allow_extra_keywords=True
 
 class ResamplingOperation(LinkableOperation):
     """
@@ -110,7 +111,8 @@ class ResamplingOperation(LinkableOperation):
 
     @bothmethod
     def instance(self_or_cls,**params):
-        inst = super(ResamplingOperation, self_or_cls).instance(**params)
+        inst = super(ResamplingOperation, self_or_cls).instance(**
+                                        {k:v for k,v in params.items() if k in self_or_cls.param})
         inst._precomputed = {}
         return inst
 
@@ -1128,15 +1130,29 @@ class rasterize(AggregationOperation):
                    (Path, aggregate)]
 
     def _process(self, element, key=None):
+        # Potentially needs traverse to find element types first?
+        all_allowed_kws = set()
+        all_supplied_kws = set()
         for predicate, transform in self._transforms:
-            op_params = dict({k: v for k, v in self.p.items()
+            op_params = dict({k: v for k, v in (list(self.p.items())+list(self.p.extra_keywords().items()))
                               if k in transform.param
                               and not (v is None and k == 'aggregator')},
                              dynamic=False)
-            op = transform.instance(**op_params)
+            extended_kws = dict(op_params, **self.p.extra_keywords())
+            all_supplied_kws |= set(extended_kws)
+            allowed = transform.param.params()
+            all_allowed_kws |= set(allowed)
+            # Collect union set of consumed. Versus union of available.
+            op = transform.instance(**{k:v for k,v in extended_kws.items()
+                                       if k in allowed})
             op._precomputed = self._precomputed
             element = element.map(op, predicate)
             self._precomputed = op._precomputed
+
+        unused_params = list(all_supplied_kws - all_allowed_kws)
+        if unused_params:
+            self.warning('Parameters %s not consumed by any element rasterizer.'
+                         % ', '.join(unused_params))
         return element
 
 

@@ -68,6 +68,7 @@ class Operation(param.ParameterizedFunction):
     # and processed element
     _preprocess_hooks = []
     _postprocess_hooks = []
+    _allow_extra_keywords=False
 
     @classmethod
     def search(cls, element, pattern):
@@ -150,7 +151,9 @@ class Operation(param.ParameterizedFunction):
         The process_element method allows a single element to be
         operated on given an externally supplied key.
         """
-        self.p = param.ParamOverrides(self, params)
+        # Should have a way to merge into paramoverrides.
+        # self.p = param.ParamOverrides(self, params,
+        #                               allow_extra_keywords=self._allow_extra_keywords)
         return self._apply(element, key)
 
 
@@ -161,7 +164,8 @@ class Operation(param.ParameterizedFunction):
                 params[k] = v()
             elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
                 params[k] = getattr(v.owner, v.name)
-        self.p = param.ParamOverrides(self, params)
+        self.p = param.ParamOverrides(self, params,
+                                      allow_extra_keywords=self._allow_extra_keywords)
         if not self.p.dynamic:
             kwargs['dynamic'] = False
             if isinstance(element, HoloMap):
