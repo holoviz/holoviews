@@ -1,3 +1,101 @@
+Version 1.12.7
+==============
+
+This a very minor hotfix release fixing an important bug related to
+axiswise normalization between plots. Many thanks to @srp3003 and
+@philippjfr for contributing to this release.
+
+Enhancements:
+
+- Add styles attribute to PointDraw stream for consistency with other
+  drawing streams
+  ([#3819](https://github.com/holoviz/holoviews/issues/3819))
+
+Bug fixes:
+
+- Fixed shared_axes/axiswise regression
+  ([#4097](https://github.com/holoviz/holoviews/pull/4097))
+
+
+Version 1.12.6
+==============
+
+This is a minor release containing a large number of bug fixes thanks
+to the contributions from @joelostblom, @ahuang11, @chbrandt,
+@randomstuff, @jbednar and @philippjfr. It also contains a number of
+enhancements. This is the last planned release in the 1.12.x series.
+
+Enhancements:
+
+- Ensured that shared_axes option on layout plots is respected across backends
+  ([#3410](https://github.com/pyviz/holoviews/issues/3410))
+- Allow plotting partially irregular (curvilinear) mesh
+  ([#3952](https://github.com/pyviz/holoviews/issues/3952))
+- Add support for dependent functions in dynamic operations
+  ([#3975](https://github.com/pyviz/holoviews/issues/3975),
+   [#3980](https://github.com/pyviz/holoviews/issues/3980))
+- Add support for fast QuadMesh rasterization with datashader >= 0.8
+  ([#4020](https://github.com/pyviz/holoviews/issues/4020))
+- Allow passing Panel widgets as operation parameter
+  ([#4028](https://github.com/pyviz/holoviews/issues/4028))
+
+Bug fixes:
+
+- Fixed issue rounding datetimes in Curve step interpolation
+  ([#3958](https://github.com/pyviz/holoviews/issues/3958))
+- Fix resampling of categorical colorcet colormaps
+  ([#3977](https://github.com/pyviz/holoviews/issues/3977))
+- Ensure that changing the Stream source deletes the old source
+  ([#3978](https://github.com/pyviz/holoviews/issues/3978))
+- Ensure missing hover tool does not break plot
+  ([#3981](https://github.com/pyviz/holoviews/issues/3981))
+- Ensure .apply work correctly on HoloMaps
+  ([#3989](https://github.com/pyviz/holoviews/issues/3989),
+   [#4025](https://github.com/pyviz/holoviews/issues/4025))
+- Ensure Grid axes are always aligned in bokeh
+  ([#3916](https://github.com/pyviz/holoviews/issues/3916))
+- Fix hover tool on Image and Raster plots with inverted axis
+  ([#4010](https://github.com/pyviz/holoviews/issues/4010))
+- Ensure that DynamicMaps are still linked to streams after groupby
+  ([#4012](https://github.com/pyviz/holoviews/issues/4012))
+- Using hv.renderer no longer switches backends
+  ([#4013](https://github.com/pyviz/holoviews/issues/4013))
+- Ensure that Points/Scatter categorizes data correctly when axes are inverted 
+  ([#4014](https://github.com/pyviz/holoviews/issues/4014))
+- Fixed error creating legend for matplotlib Image artists
+  ([#4031](https://github.com/pyviz/holoviews/issues/4031))
+- Ensure that unqualified Options objects are supported
+  ([#4032](https://github.com/pyviz/holoviews/issues/4032))
+- Fix bounds check when constructing Image with ImageInterface
+  ([#4035](https://github.com/pyviz/holoviews/issues/4035))
+- Ensure elements cannot be constructed with wrong number of columns 
+  ([#4040](https://github.com/pyviz/holoviews/issues/4040))
+- Ensure streaming data works on bokeh server
+  ([#4041](https://github.com/pyviz/holoviews/issues/4041)) 
+
+Compatibility:
+
+- Ensure HoloViews is fully compatible with xarray 0.13.0
+  ([#3973](https://github.com/pyviz/holoviews/issues/3973))
+- Ensure that deprecated matplotlib 3.1 rcparams do not warn
+  ([#4042](https://github.com/pyviz/holoviews/issues/4042))
+- Ensure compatibility with new legend options in bokeh 1.4.0
+  ([#4036](https://github.com/pyviz/holoviews/issues/4036))
+
+Version 1.12.5
+==============
+
+This is a very minor bug fix release ensuring compatibility with recent
+releases of dask.
+
+Compatibility:
+
+- Ensure that HoloViews can be imported when dask is installed but
+  dask.dataframe is not.
+  ([#3900](https://github.com/pyviz/holoviews/issues/3900))
+- Fix for rendering Scatter3D with matplotlib 3.1
+  ([#3898](https://github.com/pyviz/holoviews/issues/3898))
+
 Version 1.12.4
 ==============
 
