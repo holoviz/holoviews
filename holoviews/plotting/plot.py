@@ -14,7 +14,6 @@ from collections import Counter, defaultdict
 import numpy as np
 import param
 
-from panel.callbacks import PeriodicCallback
 from panel.io.notebook import push
 from panel.io.state import state
 
@@ -198,9 +197,7 @@ class Plot(param.Parameterized):
                                      for s in p.streams if s._triggering]
                 if self.document.session_context:
                     self.document.add_next_tick_callback(self.refresh)
-                else:
-                    PeriodicCallback(callback=self.refresh, count=1, period=10).start()
-                return
+                    return
 
         # Ensure that server based tick callbacks maintain stream triggering state
         for s in self._triggering:
