@@ -326,8 +326,11 @@ class ServerCallback(MessageCallback):
         """
         self._queue.append((attr, old, new))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_change, 50)
-            self._active = True
+            if self.plot.document.session_context:
+                self.plot.document.add_timeout_callback(self.process_on_change, 50)
+                self._active = True
+            else:
+                self.process_on_change()
 
 
     def on_event(self, event):
@@ -337,8 +340,11 @@ class ServerCallback(MessageCallback):
         """
         self._queue.append((event))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_event, 50)
-            self._active = True
+            if self.plot.document.session_context:
+                self.plot.document.add_timeout_callback(self.process_on_event, 50)
+                self._active = True
+            else:
+                self.process_on_event()
 
 
     def process_on_event(self):
@@ -360,7 +366,9 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_event, 50)
+
+        if self.plot.document.session_context:
+            self.plot.document.add_timeout_callback(self.process_on_event, 50)
 
 
     def process_on_change(self):
@@ -381,7 +389,9 @@ class ServerCallback(MessageCallback):
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_change, 50)
+
+        if self.plot.document.session_context:
+            self.plot.document.add_timeout_callback(self.process_on_change, 50)
 
 
     def set_server_callback(self, handle):
