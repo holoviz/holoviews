@@ -159,7 +159,6 @@ class Operation(param.ParameterizedFunction):
             self.p.update(params)
             self.p._check_params(params)
         else:
-        # Should have a way to merge into paramoverrides.
             self.p = param.ParamOverrides(self, params,
                                           allow_extra_keywords=self._allow_extra_keywords)
         return self._apply(element, key)
