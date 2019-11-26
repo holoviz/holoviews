@@ -151,9 +151,17 @@ class Operation(param.ParameterizedFunction):
         The process_element method allows a single element to be
         operated on given an externally supplied key.
         """
+        if hasattr(self, 'p'):
+            if self._allow_extra_keywords:
+                extras = self.p._extract_extra_keywords(params)
+                self.p._extra_keywords.update(extras)
+                params = {k: v for k, v in params.items() if k not in self.p._extra_keywords}
+            self.p.update(params)
+            self.p._check_params(params)
+        else:
         # Should have a way to merge into paramoverrides.
-        # self.p = param.ParamOverrides(self, params,
-        #                               allow_extra_keywords=self._allow_extra_keywords)
+            self.p = param.ParamOverrides(self, params,
+                                          allow_extra_keywords=self._allow_extra_keywords)
         return self._apply(element, key)
 
 
