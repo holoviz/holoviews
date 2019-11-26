@@ -1134,7 +1134,7 @@ class rasterize(AggregationOperation):
         all_allowed_kws = set()
         all_supplied_kws = set()
         for predicate, transform in self._transforms:
-            op_params = dict({k: v for k, v in (list(self.p.items())+list(self.p.extra_keywords().items()))
+            op_params = dict({k: v for k, v in self.p.items()
                               if k in transform.param
                               and not (v is None and k == 'aggregator')},
                              dynamic=False)
