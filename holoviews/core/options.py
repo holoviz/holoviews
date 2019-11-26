@@ -80,6 +80,10 @@ def cleanup_custom_options(id, weakref=None):
                         'memory' % (e, id))
 
 def lookup_options(obj, group, backend):
+    """
+    Given a HoloViews object, a plot option group (e.g 'style') and
+    backend, return the corresponding Options object.
+    """
     plot_class = None
     try:
         plot_class = Store.renderers[backend].plotting_class(obj)
