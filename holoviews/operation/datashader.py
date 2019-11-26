@@ -72,11 +72,11 @@ class ResamplingOperation(LinkableOperation):
     width = param.Integer(default=400, doc="""
        The width of the output image in pixels.""")
 
-    x_range  = param.NumericTuple(default=None, length=2, doc="""
+    x_range  = param.Tuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
        if set to None.""")
 
-    y_range  = param.NumericTuple(default=None, length=2, doc="""
+    y_range  = param.Tuple(default=None, length=2, doc="""
        The y-axis range as a tuple of min and max y value. Auto-ranges
        if set to None.""")
 
@@ -631,15 +631,24 @@ class spread_aggregate(area_aggregate):
 class spikes_aggregate(AggregationOperation):
     """
     Aggregates Spikes elements by drawing individual line segments
-    over the entire y_range if no value dimension is defined and 
+    over the entire y_range if no value dimension is defined and
     between zero and the y-value if one is defined.
     """
+    spike_length = param.Number(default=None, allow_None=True, doc="""
+      If numeric, specifies the length of each spike, overriding the
+      vdims values (if present).""")
+
+    offset = param.Number(default=0., doc="""
+      The offset of the lower end of each spike.""")
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
+        x, y = element.kdims[0], None
 
-        if element.vdims:
-            x, y = element.dimensions()
+        spike_length = 0.5 if self.p.spike_length is None else self.p.spike_length
+        if element.vdims and self.p.spike_length is None:
+            x, y = element.dimensions()[:2]
+            rename_dict = {'x': x.name, 'y':y.name}
             if not self.p.y_range:
                 y0, y1 = element.range(1)
                 if y0 >= 0:
@@ -651,21 +660,24 @@ class spikes_aggregate(AggregationOperation):
             else:
                 default = None
         else:
-            x, y = element.kdims[0], None
-            default = (0, 1)
+             x, y = element.kdims[0], None
+             default = (float(self.p.offset),
+                        float(self.p.offset + spike_length))
+             rename_dict = {'x': x.name}
         info = self._get_sampling(element, x, y, ndim=1, default=default)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), (xs, ys) = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
 
+        value_cols = [] if agg_fn.column is None else [agg_fn.column]
         if y is None:
-            df = element.dframe([x])
-            y = 'y'
-            df['y0'] = y_range[0]
-            df['y1'] = y_range[1]
+            df = element.dframe([x]+value_cols).copy()
+            y = Dimension('y')
+            df['y0']  = float(self.p.offset)
+            df['y1']  = float(self.p.offset + spike_length)
             yagg = ['y0', 'y1']
-            height = 1
+            if not self.p.expand: height = 1
         else:
-            df = element.dframe([x, y])
+            df = element.dframe([x, y]+value_cols).copy()
             df['y0'] = np.array(0, df.dtypes[y.name])
             yagg = ['y0', y.name]
         if xtype == 'datetime':
@@ -685,7 +697,7 @@ class spikes_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1)
+        agg = cvs.line(df, x.name, yagg, agg_fn, axis=1).rename(rename_dict)
         if xtype == "datetime":
             agg[x.name] = (agg[x.name]/1e3).astype('datetime64[us]')
 

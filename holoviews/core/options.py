@@ -79,6 +79,26 @@ def cleanup_custom_options(id, weakref=None):
                         'an unreferenced orphan tree may persist in '
                         'memory' % (e, id))
 
+def lookup_options(obj, group, backend):
+    """
+    Given a HoloViews object, a plot option group (e.g 'style') and
+    backend, return the corresponding Options object.
+    """
+    plot_class = None
+    try:
+        plot_class = Store.renderers[backend].plotting_class(obj)
+        style_opts = plot_class.style_opts
+    except SkipRendering:
+        style_opts = None
+
+    node = Store.lookup_options(backend, obj, group)
+    if group == 'style' and style_opts is not None:
+        return node.filtered(style_opts)
+    elif group == 'plot' and plot_class:
+        return node.filtered(list(plot_class.params().keys()))
+    else:
+        return node
+
 
 class SkipRendering(Exception):
     """

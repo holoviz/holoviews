@@ -10,7 +10,7 @@ from bokeh.transform import jitter
 
 from ...plotting.bokeh.selection import BokehOverlaySelectionDisplay
 from ...selection import NoOpSelectionDisplay
-from ...core.data import Dataset
+from ...core.data import Dataset, Dimension
 from ...core.dimension import dimension_name
 from ...core.util import (
     OrderedDict, max_range, basestring, dimension_sanitizer,
@@ -676,14 +676,29 @@ class SpikesPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
+    def _get_axis_dims(self, element):
+        if 'spike_length' in self.lookup_options(element, 'plot').options:
+            return  [element.dimensions()[0], None, None]
+        return super(SpikesPlot, self)._get_axis_dims(element)
+
     def get_extents(self, element, ranges, range_type='combined'):
-        if len(element.dimensions()) > 1:
+        opts = self.lookup_options(element, 'plot').options
+        if len(element.dimensions()) > 1 and 'spike_length' not in opts:
             ydim = element.get_dimension(1)
             s0, s1 = ranges[ydim.name]['soft']
             s0 = min(s0, 0) if isfinite(s0) else 0
             s1 = max(s1, 0) if isfinite(s1) else 0
             ranges[ydim.name]['soft'] = (s0, s1)
-        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type)
+        proxy_dim = None
+        if 'spike_length' in opts:
+            proxy_dim = Dimension('proxy_dim')
+            proxy_range = (self.position, self.position + opts['spike_length'])
+            ranges['proxy_dim'] = {'data':    proxy_range,
+                                  'hard':     (np.nan, np.nan),
+                                  'soft':     (np.nan, np.nan),
+                                  'combined': proxy_range}
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges, range_type,
+                                                         ydim=proxy_dim)
         if len(element.dimensions()) == 1 and range_type != 'hard':
             if self.batched:
                 bs, ts = [], []
@@ -706,12 +721,14 @@ class SpikesPlot(ColorbarPlot):
 
         data = {}
         pos = self.position
+
+        opts = self.lookup_options(element, 'plot').options
         if len(element) == 0 or self.static_source:
             data = {'x': [], 'y0': [], 'y1': []}
         else:
             data['x'] = element.dimension_values(0)
             data['y0'] = np.full(len(element), pos)
-            if len(dims) > 1:
+            if len(dims) > 1 and 'spike_length' not in opts:
                 data['y1'] = element.dimension_values(1)+pos
             else:
                 data['y1'] = data['y0']+self.spike_length
