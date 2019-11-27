@@ -1135,16 +1135,14 @@ class rasterize(AggregationOperation):
         all_supplied_kws = set()
         for predicate, transform in self._transforms:
             op_params = dict({k: v for k, v in self.p.items()
-                              if k in transform.param
-                              and not (v is None and k == 'aggregator')},
+                              if not (v is None and k == 'aggregator')},
                              dynamic=False)
             extended_kws = dict(op_params, **self.p.extra_keywords())
             all_supplied_kws |= set(extended_kws)
-            allowed = transform.param.params()
-            all_allowed_kws |= set(allowed)
+            all_allowed_kws |= set(transform.param)
             # Collect union set of consumed. Versus union of available.
             op = transform.instance(**{k:v for k,v in extended_kws.items()
-                                       if k in allowed})
+                                       if k in transform.param})
             op._precomputed = self._precomputed
             element = element.map(op, predicate)
             self._precomputed = op._precomputed
