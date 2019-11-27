@@ -225,6 +225,12 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count', bounds=bounds)
         self.assertEqual(agg, expected)
 
+    def test_spikes_aggregate_spike_length(self):
+        spikes = Spikes([1, 2, 3])
+        agg = rasterize(spikes, width=5, dynamic=False, expand=False, spike_length=7)
+        expected = Image(np.array([[2, 0, 2, 0, 2]]), vdims='count',
+                         xdensity=2.5, ydensity=1, bounds=(1, 0, 3, 7.0))
+        self.assertEqual(agg, expected)
     def test_spikes_aggregate_with_height_count(self):
         spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
         agg = rasterize(spikes, width=5, height=5, y_range=(0, 1), dynamic=False)
@@ -239,6 +245,43 @@ class DatashaderAggregateTests(ComparisonTestCase):
         ])
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
+
+    def test_spikes_aggregate_with_height_count_override(self):
+        spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y')
+        agg = rasterize(spikes, width=5, height=5, y_range=(0, 1),
+                        spike_length=0.3, dynamic=False)
+        xs = [1.2, 1.6, 2.0, 2.4, 2.8]
+        ys = [0.1, 0.3, 0.5, 0.7, 0.9]
+        arr = np.array([[1, 0, 1, 0, 1],
+                        [1, 0, 1, 0, 1],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0],
+                        [0, 0, 0, 0, 0]])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_rasterize_regrid_and_spikes_overlay(self):
+        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
+        spikes = Spikes([(0.5, 0.2), (1.5, 0.8), ], vdims='y')
+
+        expected_regrid = Image(([0.25, 0.75, 1.25, 1.75],
+                                 [0.25, 0.75, 1.25, 1.75],
+                                 [[0, 0, 1, 1],
+                                  [0, 0, 1, 1],
+                                  [2, 2, 3, 3],
+                                  [2, 2, 3, 3]]))
+        spikes_arr = np.array([[0, 1, 0, 1],
+                               [0, 1, 0, 1],
+                               [0, 0, 0, 0],
+                               [0, 0, 0, 0]])
+        expected_spikes = Image(([0.25, 0.75, 1.25, 1.75],
+                                 [0.25, 0.75, 1.25, 1.75], spikes_arr), vdims='count')
+        overlay = img * spikes
+        agg = rasterize(overlay, width=4, height=4, x_range=(0, 2), y_range=(0, 2),
+                        spike_length=0.5, upsample=True, dynamic=False)
+        self.assertEqual(agg.Image.I, expected_regrid)
+        self.assertEqual(agg.Spikes.I, expected_spikes)
+
 
     def test_spikes_aggregate_with_height_count_dask(self):
         spikes = Spikes([(1, 0.2), (2, 0.8), (3, 0.4)], vdims='y', datatype=['dask'])
