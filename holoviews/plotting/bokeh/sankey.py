@@ -36,6 +36,9 @@ class SankeyPlot(GraphPlot):
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
 
+    node_sort = param.Boolean(default=True, doc="""
+        Sort nodes in ascending breadth.""")
+
     # Deprecated options
 
     color_index = param.ClassSelector(default=2, class_=(basestring, int),

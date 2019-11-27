@@ -33,6 +33,9 @@ class _layout_sankey(Operation):
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
 
+    node_sort = param.Boolean(default=True, doc="""
+        Sort nodes in ascending breadth.""")
+
     def _process(self, element, key=None):
         nodes, edges, graph = self.layout(element, **self.p)
         params = get_param_values(element)
@@ -251,7 +254,8 @@ class _layout_sankey(Operation):
         def resolveCollisions():
             for nodes in node_map.values():
                 y = y0
-                nodes.sort(key=cmp_to_key(self.ascendingBreadth))
+                if self.p.node_sort:
+                    nodes.sort(key=cmp_to_key(self.ascendingBreadth))
                 for node in nodes:
                     dy = y-node['y0']
                     if dy > 0:
