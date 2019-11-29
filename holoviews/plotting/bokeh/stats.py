@@ -358,7 +358,7 @@ class ViolinPlot(BoxWhiskerPlot):
                         len(bin_cats), ', '.join(bin_cats)))
             kdes = univariate_kde(el, dimension=vdim.name, groupby=vdims[1], **kwargs)
         else:
-            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)] * 2
+            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)]
 
         xs = []
         ys = []
