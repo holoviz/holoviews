@@ -342,18 +342,52 @@ class ViolinPlot(BoxWhiskerPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='violin_fill_color')
 
     def _kde_data(self, el, key, **kwargs):
-        vdim = el.vdims[0]
-        values = el.dimension_values(vdim)
+        vdims = el.vdims
+        vdim = vdims[0]
         if self.clip:
             vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
-        kde = univariate_kde(el, dimension=vdim.name, **kwargs)
-        xs, ys = (kde.dimension_values(i) for i in range(2))
-        mask = isfinite(ys) & (ys>0) # Mask out non-finite and zero values
-        xs, ys = xs[mask], ys[mask]
-        ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
-        ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
-        xs = np.concatenate([xs, xs[::-1]])
+
+        if len(vdims) > 1:
+            all_cats = el.dimension_values(vdims[1])
+            bin_cats = np.unique(all_cats)
+            if len(bin_cats) > 2:
+                raise ValueError(
+                    'The number of categories for split violin plots cannot be '
+                    'greater than 2! Found {0} categories: {1}'.format(
+                        len(bin_cats), ', '.join(bin_cats)))
+            kdes = univariate_kde(el, dimension=vdim.name, groupby=vdims[1], **kwargs)
+        else:
+            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)] * 2
+
+        xs = []
+        ys = []
+        for i, kde in enumerate(kdes):
+            _xs, _ys = (kde.dimension_values(i) for i in range(2))
+            mask = isfinite(_ys) & (_ys>0) # Mask out non-finite and zero values
+            _xs, _ys = _xs[mask], _ys[mask]
+
+            # will do this logical portion down there marked "here!"
+            if i == 0 and len(kdes) == 2:
+                _ys *= -1
+            elif len(kdes) == 2:
+                _ys = _ys[::-1]
+                _xs = _xs[::-1]
+
+            xs += list(_xs)
+            ys += list(_ys)
+
+        xs = np.array(xs)
+        ys = np.array(ys)
+        # this scales the width
+        ys = (ys/ys.max())*(self.violin_width/2./len(kdes)) if len(ys) else []
+
+        if len(kdes) == 1:  # doing the above "here"!
+            ys = [key+(sign*y,) for sign, vs in ((-1, _ys), (1, _ys[::-1])) for y in vs]
+            xs = np.concatenate([_xs, _xs[::-1]])
+        else:
+           ys = [key + (y,) for y in ys]
+
         kde =  {'ys': xs, 'xs': ys}
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}

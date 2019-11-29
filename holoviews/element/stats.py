@@ -206,6 +206,7 @@ class Violin(BoxWhisker):
 
     group = param.String(default='Violin', constant=True)
 
+    vdims = param.List(default=[Dimension('y')], bounds=(1,2))
 
 class HexTiles(Dataset, Element2D):
     """
