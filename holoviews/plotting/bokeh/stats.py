@@ -318,6 +318,9 @@ class ViolinPlot(BoxWhiskerPlot):
     violin_width = param.Number(default=0.8, doc="""
        Relative width of the violin""")
 
+    split = param.Boolean(default=False, doc="""
+       Whether the violin plots should be split or grouped.""")
+
     # Deprecated options
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
@@ -341,22 +344,23 @@ class ViolinPlot(BoxWhiskerPlot):
 
     selection_display = BokehOverlaySelectionDisplay(color_prop='violin_fill_color')
 
-    def _kde_data(self, el, key, **kwargs):
+    def _kde_data(self, el, key, split_key, **kwargs):
         vdims = el.vdims
         vdim = vdims[0]
         if self.clip:
             vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
 
-        if len(vdims) > 1:
-            all_cats = el.dimension_values(vdims[1])
+        if split_key is not None:
+            el = el.clone(kdims=el.kdims + [split_key])
+            all_cats = el.dimension_values(split_key)
             bin_cats = np.unique(all_cats)
             if len(bin_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
                     'greater than 2! Found {0} categories: {1}'.format(
                         len(bin_cats), ', '.join(bin_cats)))
-            kdes = univariate_kde(el, dimension=vdim.name, groupby=vdims[1], **kwargs)
+            kdes = univariate_kde(el, dimension=vdim.name, groupby=split_key, **kwargs)
         else:
             kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)]
 
@@ -427,11 +431,14 @@ class ViolinPlot(BoxWhiskerPlot):
 
 
     def get_data(self, element, ranges, style):
+        kdims = element.kdims
+        split_key = kdims.pop(-1) if self.split and len(kdims) > 1 else None
+
         if element.kdims:
             with sorted_context(False):
-                groups = element.groupby(element.kdims).data
+                groups = element.groupby(kdims).data
         else:
-            groups = dict([((element.label,), element)])
+             groups = dict([((element.label,), element)])
 
         # Define glyph-data mapping
         if self.invert_axes:
@@ -460,7 +467,7 @@ class ViolinPlot(BoxWhiskerPlot):
         patches_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(4))
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
-            kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
+            kde, segs, bars, scatter = self._kde_data(g, key, split_key, **kwargs)
             for k, v in segs.items():
                 seg_data[k] += v
             for k, v in bars.items():
@@ -484,4 +491,9 @@ class ViolinPlot(BoxWhiskerPlot):
             data['scatter_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
                               for k, v in scatter_data.items()}
             mapping['scatter_1'] = scatter_map
+
+        # if split_key is not None:
+        #     legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+        #     kde_map[legend_prop] = split_key
+
         return data, mapping, style
