@@ -206,6 +206,7 @@ class Violin(BoxWhisker):
 
     group = param.String(default='Violin', constant=True)
 
+
 class HexTiles(Dataset, Element2D):
     """
     HexTiles is a statistical element with a visual representation

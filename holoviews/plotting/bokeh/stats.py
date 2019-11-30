@@ -361,8 +361,10 @@ class ViolinPlot(BoxWhiskerPlot):
                     'greater than 2! Found {0} categories: {1}'.format(
                         len(bin_cats), ', '.join(bin_cats)))
             kdes = univariate_kde(el, dimension=vdim.name, groupby=split_key, **kwargs)
+            scale = 4
         else:
-            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)]
+            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)] * 2
+            scale = 2
 
         xs = []
         ys = []
@@ -371,10 +373,9 @@ class ViolinPlot(BoxWhiskerPlot):
             mask = isfinite(_ys) & (_ys>0) # Mask out non-finite and zero values
             _xs, _ys = _xs[mask], _ys[mask]
 
-            # will do this logical portion down there marked "here!"
-            if i == 0 and len(kdes) == 2:
+            if i == 0:
                 _ys *= -1
-            elif len(kdes) == 2:
+            else:
                 _ys = _ys[::-1]
                 _xs = _xs[::-1]
 
@@ -383,14 +384,10 @@ class ViolinPlot(BoxWhiskerPlot):
 
         xs = np.array(xs)
         ys = np.array(ys)
-        # this scales the width
-        ys = (ys/ys.max())*(self.violin_width/2./len(kdes)) if len(ys) else []
 
-        if len(kdes) == 1:  # doing the above "here"!
-            ys = [key+(sign*y,) for sign, vs in ((-1, _ys), (1, _ys[::-1])) for y in vs]
-            xs = np.concatenate([_xs, _xs[::-1]])
-        else:
-           ys = [key + (y,) for y in ys]
+        # this scales the width
+        ys = (ys/ys.max())*(self.violin_width/scale) if len(ys) else []
+        ys = [key + (y,) for y in ys]
 
         kde =  {'ys': xs, 'xs': ys}
 
@@ -438,7 +435,7 @@ class ViolinPlot(BoxWhiskerPlot):
             with sorted_context(False):
                 groups = element.groupby(kdims).data
         else:
-             groups = dict([((element.label,), element)])
+            groups = dict([((element.label,), element)])
 
         # Define glyph-data mapping
         if self.invert_axes:
