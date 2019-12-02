@@ -390,3 +390,43 @@ class PointAnnotator(Annotator):
     @property
     def selected(self):
         return self.object.iloc[self._point_selection.index]
+
+
+class BoxAnnotator(Annotator):
+
+    object = param.ClassSelector(class_=Path, doc="""
+        Points element to edit and annotate.""")
+
+    def _init_element(self, element):
+        if element is None or not isinstance(element, self._element_type):
+            element = self._element_type(element)
+
+        # Add annotations
+        for col in self.annotations:
+            if col in element:
+                continue
+            init = self.annotations[col] if isinstance(self.annotations, dict) else None
+            element = element.add_dimension(col, 0, init, True)
+
+        # Add options
+        tools = [tool() for tool in self._tools]
+        opts = dict(tools=tools, **self.opts)
+        opts.update(self._extra_opts)
+        self.object = element.options(**opts)
+
+    def _init_table(self):
+        name = param_name(self.name)
+        self._stream = BoxEdit(
+            source=self.object, data={}, num_objects=self.num_objects,
+            tooltip='%s Tool' % name
+        )
+        table_data = self._table_data()
+        self._table = Table(table_data, [], self.annotations).opts(**self.table_opts)
+        self._point_link = DataLink(self.object, self._table)
+        self._tables = [('%s' % name, self._table)]
+
+    @property
+    def selected(self):
+        index = self._selection.index
+        data = [p for i, p in enumerate(self._stream.element.split()) if i in index]
+        return self.output.clone(data)
