@@ -1,15 +1,18 @@
 from __future__ import absolute_import
 
+import sys
+
 import param
 
 from panel.param import ParamMethod
+from panel.pane import PaneBase
 from panel.layout import Row, Tabs
 from panel.util import param_name
 
 from .core import Element, Overlay
 from .element import Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, SelectionLink
-from .streams import PolyDraw, PolyEdit, Selection1D, PointDraw
+from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
 
 
 def preprocess(function, current=[]):
@@ -107,7 +110,7 @@ class AnnotationManager(param.Parameterized):
 
 
 
-class Annotator(param.Parameterized):
+class Annotator(PaneBase):
     """
     An Annotator allows drawing, editing and annotating a specific
     type of element. Each Annotator consists of the `plot` to draw and
@@ -119,7 +122,7 @@ class Annotator(param.Parameterized):
     annotations = param.ClassSelector(default=[], class_=(dict, list), doc="""
         Annotations to associate with each object.""")
 
-    element = param.ClassSelector(class_=Element, doc="""
+    object = param.ClassSelector(class_=Element, doc="""
         The Element to edit and annotate.""")
 
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
@@ -144,57 +147,68 @@ class Annotator(param.Parameterized):
     # Allows patching on custom behavior
     _extra_opts = {}
 
+    priority = 0.7
+
+    @classmethod
+    def applies(cls, obj):
+        if 'holoviews' not in sys.modules:
+            return False
+        return isinstance(obj, cls.param.object.class_)
+
+    def select(self, selector=None):
+        return self.layout.select(selector)
+
     @property
     def _element_type(self):
-        return self.param.element.class_
+        return self.param.object.class_
 
     @property
-    def _element_name(self):
+    def _object_name(self):
         return self._element_type.__name__
 
-    @param.depends('element')
-    def _get_plot(self):
-        return self.element
-
-    def __init__(self, element=None, **params):
-        super(Annotator, self).__init__(**params)
+    def __init__(self, object=None, **params):
+        super(Annotator, self).__init__(object, **params)
         self._tables = []
         self.editor = Tabs()
         self._selection = Selection1D()
-        self._initialize(element)
+        self._initialize(object)
         self.plot = ParamMethod(self._get_plot)
-        self._layout = Row(self.plot, self.editor, sizing_mode='stretch_width')
+        self.layout[:] = [self.plot, self.editor]
 
-    @param.depends('annotations', 'element', 'num_objects', 'opts', 'table_opts', watch=True)
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        return self.layout._get_model(doc, root, parent, comm)
+
+    @param.depends('annotations', 'object', 'num_objects', 'opts', 'table_opts', watch=True)
     @preprocess
-    def _initialize(self, element=None):
+    def _initialize(self, object=None):
         """
-        Initializes the element ready for annotation.
+        Initializes the object ready for annotation.
         """
-        element = self.element if element is None else element
-        self._init_element(element)
+        object = self.object if object is None else object
+        self._init_element(object)
         self._init_table()
-        self._selection.source = self.element
+        self._selection.source = self.object
         self.editor[:] = self._tables
         self._stream.add_subscriber(self._update_element)
 
+    @param.depends('object')
+    def _get_plot(self):
+        return self.object
+
     def _update_element(self, data=None):
         with param.discard_events(self):
-            self.element = self._stream.element
+            self.object = self._stream.element
 
     def _table_data(self):
         """
         Returns data used to initialize the table.
         """
-        element = self.element
+        object = self.object
         for transform in self.table_transforms:
-            element = transform(element)
-        return element
+            object = transform(object)
+        return object
 
-    def _repr_mimebundle_(self, include=None, exclude=None):
-        return self._layout._repr_mimebundle_(include, exclude)
-
-    def _init_element(self, element):
+    def _init_element(self, object):
         """
         Subclasses should implement this method.
         """
@@ -207,7 +221,7 @@ class Annotator(param.Parameterized):
     @property
     def selected(self):
         """
-        Subclasses should return a new element containing currently selected objects.
+        Subclasses should return a new object containing currently selected objects.
         """
 
 
@@ -220,8 +234,8 @@ class PathAnnotator(Annotator):
     edit_vertices = param.Boolean(default=True, doc="""
         Whether to add tool to edit vertices.""")
 
-    element = param.ClassSelector(class_=Path, doc="""
-        Path element to edit and annotate.""")
+    object = param.ClassSelector(class_=Path, doc="""
+        Path object to edit and annotate.""")
 
     show_vertices = param.Boolean(default=True, doc="""
         Whether to show vertices when drawing the Path.""")
@@ -270,18 +284,18 @@ class PathAnnotator(Annotator):
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, color_index=None, **self.opts)
         opts.update(self._extra_opts)
-        self.element = element.options(**opts)
+        self.object = element.options(**opts)
 
     def _init_table(self):
         name = param_name(self.name)
         self._stream = PolyDraw(
-            source=self.element, data={}, num_objects=self.num_objects,
+            source=self.object, data={}, num_objects=self.num_objects,
             show_vertices=self.show_vertices, tooltip='%s Tool' % name,
             vertex_style=self.vertex_style
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
-                source=self.element, tooltip='%s Edit Tool' % name,
+                source=self.object, tooltip='%s Edit Tool' % name,
                 vertex_style=self.vertex_style,
             )
 
@@ -290,11 +304,11 @@ class PathAnnotator(Annotator):
         table_data = {a: [d.dimension_values(a, expanded=False)[0] for d in table_data]
                       for a in annotations}
         self._table = Table(table_data, annotations, []).opts(**self.table_opts)
-        self._link = DataLink(self.element, self._table)
+        self._link = DataLink(self.object, self._table)
         self._vertex_table = Table(
-            [], self.element.kdims, list(self.vertex_annotations)
+            [], self.object.kdims, list(self.vertex_annotations)
         ).opts(**self.table_opts)
-        self._vertex_link = self._vertex_table_link(self.element, self._vertex_table)
+        self._vertex_link = self._vertex_table_link(self.object, self._vertex_table)
         self._tables = [
             ('%s' % name, self._table),
             ('%s Vertices' % name, self._vertex_table)
@@ -309,7 +323,7 @@ class PathAnnotator(Annotator):
                     if len(path[col]):
                         path[col] = path[col][0]
         with param.discard_events(self):
-            self.element = element
+            self.object = element
 
     @property
     def selected(self):
@@ -324,7 +338,7 @@ class PolyAnnotator(PathAnnotator):
     values with each polygon and each vertex of a Polygon using a table.
     """
 
-    element = param.ClassSelector(class_=Polygons, doc="""
+    object = param.ClassSelector(class_=Polygons, doc="""
          Polygon element to edit and annotate.""")
 
 
@@ -334,7 +348,7 @@ class PointAnnotator(Annotator):
     values with each point using a table.
     """
 
-    element = param.ClassSelector(class_=Points, doc="""
+    object = param.ClassSelector(class_=Points, doc="""
         Points element to edit and annotate.""")
 
     opts = param.Dict(default={'responsive': True, 'min_height': 400,
@@ -344,35 +358,35 @@ class PointAnnotator(Annotator):
     # Link between Points and Table
     _point_table_link = DataLink
 
-    def _init_element(self, element):
-        if element is None or not isinstance(element, self._element_type):
-            element = self._element_type(element)
+    def _init_element(self, object):
+        if object is None or not isinstance(object, self._element_type):
+            object = self._element_type(object)
 
         # Add annotations
         for col in self.annotations:
-            if col in element:
+            if col in object:
                 continue
             init = self.annotations[col] if isinstance(self.annotations, dict) else None
-            element = element.add_dimension(col, 0, init, True)
+            object = object.add_dimension(col, 0, init, True)
 
         # Add options
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, **self.opts)
         opts.update(self._extra_opts)
-        self.element = element.options(**opts)
+        self.object = object.options(**opts)
 
     def _init_table(self):
         name = param_name(self.name)
         self._stream = PointDraw(
-            source=self.element, data={}, num_objects=self.num_objects,
+            source=self.object, data={}, num_objects=self.num_objects,
             tooltip='%s Tool' % name
         )
         table_data = self._table_data()
         self._table = Table(table_data).opts(**self.table_opts)
-        self._point_link = self._point_table_link(self.element, self._table)
-        self._point_selection_link = SelectionLink(self.element, self._table)
+        self._point_link = self._point_table_link(self.object, self._table)
+        self._point_selection_link = SelectionLink(self.object, self._table)
         self._tables = [('%s' % name, self._table)]
 
     @property
     def selected(self):
-        return self.element.iloc[self._point_selection.index]
+        return self.object.iloc[self._point_selection.index]
