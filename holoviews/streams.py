@@ -1259,14 +1259,16 @@ class BoxEdit(CDSStream):
         if not data:
             return source.clone([])
         paths = []
-        for (x0, x1, y0, y1) in zip(data['x0'], data['x1'], data['y0'], data['y1']):
+        for i, (x0, x1, y0, y1) in enumerate(zip(data['x0'], data['x1'], data['y0'], data['y1'])):
             xs = [x0, x0, x1, x1]
             ys = [y0, y1, y1, y0]
             if isinstance(source, Polygons):
                 xs.append(x0)
                 ys.append(y0)
-            paths.append(np.column_stack((xs, ys)))
-        return source.clone(paths)
+            vals = [data[vd.name][i] for vd in source.vdims]
+            paths.append((xs, ys, *vals))
+        datatype = source.datatype if source.interface.multi else ['multitabular']
+        return source.clone(paths, datatype=datatype, id=None)
 
     @property
     def dynamic(self):

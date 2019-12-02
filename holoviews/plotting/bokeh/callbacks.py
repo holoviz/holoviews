@@ -1080,12 +1080,13 @@ class FreehandDrawCallback(PolyDrawCallback):
 
 class BoxEditCallback(GlyphDrawCallback):
 
-    attributes = {'data': 'rect_source.data'}
-    models = ['rect_source']
+    attributes = {'data': 'cds.data'}
+    models = ['cds']
 
     def initialize(self, plot_id=None):
         plot = self.plot
-        data = plot.handles['cds'].data
+        cds = plot.handles['cds']
+        data = cds.data
         element = self.plot.current_frame
         stream = self.streams[0]
         kwargs = {}
@@ -1103,11 +1104,10 @@ class BoxEditCallback(GlyphDrawCallback):
             heights.append(y1-y0)
         data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
         data.update({vd.name: element.dimension_values(vd, expanded=False) for vd in element.vdims})
-        rect_source = ColumnDataSource(data=data)
+        cds.data.update(data)
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
-        r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
-        plot.handles['rect_source'] = rect_source
+        r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
         if stream.styles:
             self._create_style_callback(rect_source, r1.glyph, 'x')
         box_tool = BoxEditTool(renderers=[r1], **kwargs)
@@ -1126,12 +1126,17 @@ class BoxEditCallback(GlyphDrawCallback):
             return {}
         data = data['data']
         x0s, x1s, y0s, y1s = [], [], [], []
-        for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
+        for (x, y, w, h) in zip(data['x'], data['y'], data['width'], data['height']):
             x0s.append(x-w/2.)
             x1s.append(x+w/2.)
             y0s.append(y-h/2.)
             y1s.append(y+h/2.)
-        data = {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
+        values = {}
+        for col in data:
+            if col in ('x', 'y', 'width', 'height'):
+                continue
+            values[col] = data[col]
+        msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
         return self._transform(msg)
 
 
