@@ -292,6 +292,120 @@ class TestLinkSelections(ComparisonTestCase):
             current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]]
         )
 
+    def test_crossfilter_scatter_histogram(self, dynamic=False):
+        scatter = hv.Scatter(self.data, kdims='x', vdims='y')
+        hist = scatter.hist('x', adjoin=False, normed=False, num_bins=5)
+        lnk_sel = link_selections.instance(mode="crossfilter")
+        linked = lnk_sel(scatter + hist)
+        current_obj = linked[()]
+
+        # Check initial base scatter
+        self.check_base_scatter_like(
+            current_obj[0][()].Scatter.I,
+            lnk_sel
+        )
+
+        # Check initial selection overlay scatter
+        self.check_overlay_scatter_like(
+            current_obj[0][()].Scatter.II,
+            lnk_sel,
+            self.data
+        )
+
+        # Initial region bounds all None
+        self.assertEqual(
+            list(current_obj[0][()].Bounds.I.data[0]['x']),
+            [None] * 5
+        )
+
+        # Check initial base histogram
+        base_hist = current_obj[1][()].Histogram.I
+        self.assertEqual(
+            self.element_color(base_hist), lnk_sel.unselected_color
+        )
+        self.assertTrue(self.element_visible(base_hist))
+        self.assertEqual(base_hist.data, hist.data)
+
+        # No selection region
+        region_hist = current_obj[1][()].Histogram.II
+        self.assertEqual(region_hist.data, hist.pipeline(hist.dataset.iloc[:0]).data)
+
+        # Check initial selection overlay Histogram
+        selection_hist = current_obj[1][()].Histogram.III
+        self.assertEqual(
+            self.element_color(selection_hist), lnk_sel.selected_color
+        )
+        self.assertFalse(self.element_visible(selection_hist))
+        self.assertEqual(selection_hist.data, hist.data)
+
+        # Perform selection of second and third point in scatter
+        scatter_boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
+        self.assertIsInstance(scatter_boundsxy, hv.streams.BoundsXY)
+        scatter_boundsxy.event(bounds=(1, 1, 4, 4))
+
+        # Perform selection of first two bars in histogram
+        hist_boundsxy = lnk_sel._selection_expr_streams[1]._source_streams[0]
+        self.assertIsInstance(hist_boundsxy, hv.streams.BoundsXY)
+        hist_boundsxy.event(bounds=(0, 0, 2.5, 2))
+
+        # Get current object
+        current_obj = linked[()]
+
+        # Check base scatter unchanged
+        self.check_base_scatter_like(
+            current_obj[0][()].Scatter.I,
+            lnk_sel
+        )
+
+        # Check initial selection overlay scatter contains only second point
+        self.check_overlay_scatter_like(
+            current_obj[0][()].Scatter.II,
+            lnk_sel,
+            self.data.iloc[[1]]
+        )
+
+        # Check scatter region bounds
+        region_bounds = current_obj[0][()].Bounds.I
+        self.assertEqual(
+            list(region_bounds.data[0]['x']),
+            [1, 1, 4, 4, 1]
+        )
+        self.assertEqual(
+            list(region_bounds.data[0]['y']),
+            [1, 4, 4, 1, 1]
+        )
+        self.assertEqual(
+            self.element_color(region_bounds),
+            lnk_sel._region_color
+        )
+
+        # Check initial base histogram unchanged
+        base_hist = current_obj[1][()].Histogram.I
+        self.assertEqual(
+            self.element_color(base_hist), lnk_sel.unselected_color
+        )
+        self.assertTrue(self.element_visible(base_hist))
+        self.assertEqual(base_hist.data, hist.data)
+
+        # Check selection region covers first and second bar
+        region_hist = current_obj[1][()].Histogram.II
+        self.assertEqual(
+            self.element_color(region_hist), lnk_sel._region_color
+        )
+        self.assertEqual(
+            region_hist.data, hist.pipeline(hist.dataset.iloc[[0, 1]]).data
+        )
+
+        # Check selection overlay covers only second bar
+        selection_hist = current_obj[1][()].Histogram.III
+        self.assertEqual(
+            self.element_color(selection_hist), lnk_sel.selected_color
+        )
+        self.assertTrue(self.element_visible(selection_hist))
+        self.assertEqual(
+            selection_hist.data, hist.pipeline(hist.dataset.iloc[[1]]).data
+        )
+
 
 # Backend implementations
 class TestLinkSelectionsPlotly(TestLinkSelections):
@@ -310,6 +424,8 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
     def element_color(self, element):
         if isinstance(element, hv.Table):
             color = element.opts.get('style').kwargs['fill']
+        elif isinstance(element, hv.Bounds):
+            color = element.opts.get('style').kwargs['line_color']
         else:
             color = element.opts.get('style').kwargs['color']
 

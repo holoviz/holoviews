@@ -57,6 +57,7 @@ class Chart2dSelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
+        from ..element import Bounds
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
@@ -85,9 +86,9 @@ class Chart2dSelectionExpr(object):
                     (dim(xdim) >= x0) & (dim(xdim) <= x1) &
                     (dim(ydim) >= y0) & (dim(ydim) <= y1)
             )
-
-            return selection_expr, bbox
-        return None, None
+            region_element = Bounds(kwargs['bounds'])
+            return selection_expr, bbox, region_element
+        return None, None, Bounds((None, None, None, None))
 
 
 class Scatter(Chart2dSelectionExpr, Chart):
@@ -267,7 +268,7 @@ class Histogram(Chart):
 
             selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
             if not selected_bins:
-                return None, None
+                return None, None, self.pipeline(self.dataset.iloc[:0])
 
             selection_expr = (
                 dim(xdim).digitize(edges).isin(selected_bins)
@@ -284,9 +285,10 @@ class Histogram(Chart):
                 ),
             }
 
-            return selection_expr, bbox
+            region = self.pipeline(self.dataset.select(selection_expr))
+            return selection_expr, bbox, region
 
-        return None, None
+        return None, None, self.pipeline(self.dataset.iloc[:0])
 
     def __setstate__(self, state):
         """

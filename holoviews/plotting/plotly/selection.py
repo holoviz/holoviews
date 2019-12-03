@@ -24,3 +24,19 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         layer_element = element.options(visible=visible, **merged_opts)
 
         return layer_element
+
+    def _style_region_element(self, region_element, region_color):
+        backend_options = Store.options(backend="plotly")
+        style_options = backend_options[(type(region_element).name,)]['style']
+        allowed_keywords = style_options.allowed_keywords
+        options = {}
+
+        if "color" in allowed_keywords:
+            options["color"] = region_color
+        elif "line_color" in allowed_keywords:
+            options["line_color"] = region_color
+
+        if "selectedpoints" in allowed_keywords:
+            options["selectedpoints"] = False
+
+        return region_element.options(**options)

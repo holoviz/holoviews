@@ -28,3 +28,16 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
         layer_element = element.options(tools=['box_select'], **merged_opts)
 
         return layer_element
+
+    def _style_region_element(self, region_element, region_color):
+        backend_options = Store.options(backend="bokeh")
+        element_name = type(region_element).name
+        style_options = backend_options[(element_name,)]['style']
+        options = {}
+        for opt_name in style_options.allowed_keywords:
+            if 'alpha' in opt_name:
+                options[opt_name] = 1.0
+        options["color"] = region_color
+        if element_name != "Histogram":
+            options["line_width"] = 2
+        return region_element.options(**options)

@@ -764,6 +764,7 @@ class SelectionExpr(Stream):
 
     selection_expr = param.Parameter(default=None, constant=True)
     bbox = param.Dict(default=None, constant=True)
+    region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, **params):
         from .element import Element
@@ -803,10 +804,14 @@ or a DynamicMap that returns such an instance
                 element = hvobj.values()[-1]
             else:
                 element = hvobj
-            selection_expr, bbox = \
-                element._get_selection_expr_for_stream_value(**params);
+            selection_expr, bbox, region_element = \
+                element._get_selection_expr_for_stream_value(**params)
 
-            self.event(selection_expr=selection_expr, bbox=bbox)
+            self.event(
+                selection_expr=selection_expr,
+                bbox=bbox,
+                region_element=region_element,
+            )
 
         for stream_type in selection_streams:
             stream = stream_type(source=hvobj)

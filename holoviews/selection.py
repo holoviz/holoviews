@@ -8,7 +8,7 @@ from param.parameterized import bothmethod
 from .core import OperationCallable, Overlay
 from .core.element import Element, Layout
 from .core.options import Store
-from .streams import SelectionExpr, Stream
+from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import Dynamic, DynamicMap
 from .plotting.util import initialize_dynamic, linear_gradient
@@ -17,9 +17,13 @@ _Cmap = Stream.define('Cmap', cmap=[])
 _Alpha = Stream.define('Alpha', alpha=1.0)
 _Exprs = Stream.define('Exprs', exprs=[])
 _Colors = Stream.define('Colors', colors=[])
+_RegionElement = Stream.define("RegionElement", region_element=None)
+_RegionColor = Stream.define("RegionColor", region_color=None)
+
 
 _SelectionStreams = namedtuple(
-    'SelectionStreams', 'colors_stream exprs_stream cmap_streams alpha_streams'
+    'SelectionStreams',
+    'colors_stream region_color_stream exprs_stream cmap_streams alpha_streams'
 )
 
 
@@ -41,9 +45,14 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Init private properties
         inst._selection_expr_streams = []
+        inst._reset_streams = []
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
+
+        # Init dict of region streams
+        inst._region_streams = {}
+        inst._region_color_stream = None
 
         return inst
 
@@ -52,11 +61,23 @@ class _base_link_selections(param.ParameterizedFunction):
         Register an Element of DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
         """
+        # Create stream that produces element that displays region of selection
+        if self.mode == "crossfilter" and getattr(hvobj, "_selection_streams", ()):
+            self._region_streams[hvobj] = _RegionElement()
+
+        # Create SelectionExpr stream
         expr_stream = SelectionExpr(source=hvobj)
         expr_stream.add_subscriber(
             lambda **kwargs: self._expr_stream_updated(hvobj, **kwargs)
         )
         self._selection_expr_streams.append(expr_stream)
+
+        # Create PlotReset stream
+        reset_stream = PlotReset(source=hvobj)
+        reset_stream.add_subscriber(
+            lambda **kwargs: setattr(self, 'selection_expr', None)
+        )
+        self._reset_streams.append(reset_stream)
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
@@ -103,10 +124,10 @@ class _base_link_selections(param.ParameterizedFunction):
                 return new_hvobj
             elif issubclass(hvobj.type, Element):
                 self._register(hvobj)
-
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display.build_selection(
-                    self._selection_streams, hvobj, operations
+                    self._selection_streams, hvobj, operations,
+                    self._region_streams.get(hvobj, None),
                 )
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
@@ -117,11 +138,11 @@ class _base_link_selections(param.ParameterizedFunction):
 
             # Register hvobj to receive selection expression callbacks
             self._register(element)
-
             chart = Store.registry[Store.current_backend][type(element)]
             try:
                 return chart.selection_display.build_selection(
-                    self._selection_streams, element, operations
+                    self._selection_streams, element, operations,
+                    self._region_streams.get(element, None),
                 )
             except AttributeError:
                 # In case chart doesn't have selection_display defined
@@ -145,6 +166,10 @@ class _base_link_selections(param.ParameterizedFunction):
             # Unsupported object
             return hvobj
 
+    @property
+    def _region_color(self):
+        return None
+
     @classmethod
     def _build_selection_streams(cls, inst):
         """
@@ -153,7 +178,7 @@ class _base_link_selections(param.ParameterizedFunction):
         """
         raise NotImplementedError()
 
-    def _expr_stream_updated(self, hvobj, selection_expr, bbox):
+    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         """
         Called when one of the registered HoloViews objects produces a new
         selection expression.  Subclasses should override this method, and
@@ -172,6 +197,18 @@ class link_selections(_base_link_selections):
     selection_expr = param.Parameter(default=None)
     unselected_color = param.Color(default="#99a6b2")  # LightSlateGray - 65%
     selected_color = param.Color(default="#DC143C")  # Crimson
+    mode = param.Selector(['overwrite', 'crossfilter'], default='overwrite')
+
+    @bothmethod
+    def instance(self_or_cls, **params):
+        inst = super(link_selections, self_or_cls).instance(**params)
+
+        # Initialize private properties
+        inst._obj_selections = {}
+        inst._obj_regions = {}
+        inst._reset_regions = True
+
+        return inst
 
     @classmethod
     def _build_selection_streams(cls, inst):
@@ -179,6 +216,9 @@ class link_selections(_base_link_selections):
         colors_stream = _Colors(
             colors=[inst.unselected_color, inst.selected_color]
         )
+
+        # Region color stream
+        region_color_stream = _RegionColor(region_color=inst._region_color)
 
         # Cmap streams
         cmap_streams = [
@@ -192,6 +232,7 @@ class link_selections(_base_link_selections):
             )
             cmap_streams[0].event(cmap=inst.unselected_cmap)
             cmap_streams[1].event(cmap=inst.selected_cmap)
+            region_color_stream.event(region_color=inst._region_color)
 
         inst.param.watch(
             update_colors,
@@ -203,6 +244,12 @@ class link_selections(_base_link_selections):
 
         def update_exprs(*_):
             exprs_stream.event(exprs=[True, inst.selection_expr])
+            # Reset regions
+            if inst._reset_regions:
+                for k, v in inst._region_streams.items():
+                    inst._region_streams[k].event(region_element=None)
+                inst._obj_selections.clear()
+                inst._obj_regions.clear()
 
         inst.param.watch(
             update_exprs,
@@ -222,6 +269,7 @@ class link_selections(_base_link_selections):
 
         return _SelectionStreams(
             colors_stream=colors_stream,
+            region_color_stream=region_color_stream,
             exprs_stream=exprs_stream,
             alpha_streams=alpha_streams,
             cmap_streams=cmap_streams,
@@ -242,15 +290,49 @@ class link_selections(_base_link_selections):
         return _color_to_cmap(self.selected_color)
 
     @property
+    def _region_color(self):
+        """
+        Color used to mark the selected region
+        """
+        return linear_gradient("#ffffff", self.selected_color, 9)[2]
+
+    @property
     def _selected_alpha(self):
         if self.selection_expr:
             return 255
         else:
             return 0
 
-    def _expr_stream_updated(self, hvobj, selection_expr, bbox):
+    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
+            if self.mode == "overwrite":
+                self._obj_selections.clear()
+                self._obj_regions.clear()
+
+                # clear other region streams
+                for k, v in self._region_streams.items():
+                    if k is not hvobj:
+                        self._region_streams[k].event(region_element=None)
+
+            # save off new selection
+            self._obj_selections[hvobj] = selection_expr
+            self._obj_regions[hvobj] = region_element
+
+            # build combined selection
+            selection_exprs = list(self._obj_selections.values())
+            selection_expr = selection_exprs[0]
+            for expr in selection_exprs[1:]:
+                selection_expr = selection_expr & expr
+
+            # Set _reset_regions to False so that plot regions aren't automatically
+            # cleared when self.selection_expr is set.
+            self._reset_regions = False
             self.selection_expr = selection_expr
+            self._reset_regions = True
+
+            # update this region stream
+            if self._region_streams.get(hvobj, None) is not None:
+                self._region_streams[hvobj].event(region_element=region_element)
 
 
 class SelectionDisplay(object):
@@ -260,7 +342,9 @@ class SelectionDisplay(object):
     element) into a HoloViews object that represents the current selection
     state.
     """
-    def build_selection(self, selection_streams, hvobj, operations):
+    def build_selection(
+            self, selection_streams, hvobj, operations, region_stream=None
+    ):
         raise NotImplementedError()
 
 
@@ -269,7 +353,9 @@ class NoOpSelectionDisplay(SelectionDisplay):
     Selection display class that returns input element unchanged. For use with
     elements that don't support displaying selections.
     """
-    def build_selection(self, selection_streams, hvobj, operations):
+    def build_selection(
+            self, selection_streams, hvobj, operations, region_stream=None
+    ):
         return hvobj
 
 
@@ -285,7 +371,12 @@ class OverlaySelectionDisplay(SelectionDisplay):
     def _get_color_kwarg(self, color):
         return {self.color_prop: [color] if self.is_cmap else color}
 
-    def build_selection(self, selection_streams, hvobj, operations):
+    def build_selection(
+            self, selection_streams, hvobj, operations, region_stream=None
+    ):
+        from holoviews import opts
+        from .element import Histogram
+
         layers = []
         num_layers = len(selection_streams.colors_stream.colors)
         if not num_layers:
@@ -341,8 +432,30 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         # build overlay
         result = layers[0]
+
+        # Add region overlay
+        if region_stream is not None:
+            def update_region(element, region_element, region_color, **_):
+                if region_element is None:
+                    return element._get_selection_expr_for_stream_value()[2]
+                else:
+                    return self._style_region_element(region_element, region_color)
+
+            result *= Dynamic(
+                hvobj,
+                operation=update_region,
+                streams=[region_stream, selection_streams.region_color_stream]
+            )
+
+            if Store.current_backend == "bokeh" and isinstance(hvobj, Histogram):
+                # It seems that the selected alpha doesn't always take for Bokeh
+                # Histograms unless it's applied on the overlay
+                result.opts(opts.Histogram(selection_alpha=1.0))
+
+        # Add remaining layers
         for layer in layers[1:]:
             result *= layer
+
         return result
 
     def _build_layer_callback(self, layer_number):
@@ -358,6 +471,9 @@ class OverlaySelectionDisplay(SelectionDisplay):
     def _build_element_layer(
             self, element, layer_color, selection_expr=True
     ):
+        raise NotImplementedError()
+
+    def _style_region_element(self, region_element, region_color):
         raise NotImplementedError()
 
     @staticmethod
@@ -385,7 +501,9 @@ class ColorListSelectionDisplay(SelectionDisplay):
     def __init__(self, color_prop='color'):
         self.color_prop = color_prop
 
-    def build_selection(self, selection_streams, hvobj, operations):
+    def build_selection(
+            self, selection_streams, hvobj, operations, region_stream=None
+    ):
         def _build_selection(el, colors, exprs, **_):
 
             selection_exprs = exprs[1:]
