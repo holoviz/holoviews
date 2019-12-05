@@ -1001,8 +1001,6 @@ class PointDrawCallback(GlyphDrawCallback):
             kwargs['custom_tooltip'] = stream.tooltip
         if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'x')
-        if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
                                    empty_value=stream.empty_value,
                                    renderers=renderers, **kwargs)
