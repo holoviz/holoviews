@@ -6,16 +6,15 @@ from collections import OrderedDict
 
 import param
 
-from panel.param import ParamMethod
-from panel.pane import PaneBase, HoloViews
-from panel.layout import ListPanel, Row, Tabs
+from panel.pane import PaneBase
+from panel.layout import Row, Tabs
 from panel.util import param_name
 
 from .core import DynamicMap, Element, Layout, Overlay
 from .core.util import isscalar
 from .element import Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
+from .streams import PolyDraw, PolyEdit, Selection1D, PointDraw
 
 
 def preprocess(function, current=[]):
