@@ -11,7 +11,6 @@ from .core.options import Store
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import Dynamic, DynamicMap
-from .plotting.util import initialize_dynamic, linear_gradient
 
 _Cmap = Stream.define('Cmap', cmap=[])
 _Alpha = Stream.define('Alpha', alpha=1.0)
@@ -97,6 +96,7 @@ class _base_link_selections(param.ParameterizedFunction):
         Transform an input HoloViews object into a dynamic object with linked
         selections enabled.
         """
+        from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
             initialize_dynamic(hvobj)
 
@@ -294,6 +294,7 @@ class link_selections(_base_link_selections):
         """
         Color used to mark the selected region
         """
+        from .plotting.util import linear_gradient
         return linear_gradient("#ffffff", self.selected_color, 9)[2]
 
     @property
@@ -570,6 +571,7 @@ def _color_to_cmap(color):
     """
     Create a light to dark cmap list from a base color
     """
+    from .plotting.util import linear_gradient
     # Lighten start color by interpolating toward white
     start_color = linear_gradient("#ffffff", color, 7)[2]
 

@@ -3,6 +3,7 @@ from unittest import SkipTest, skip, skipIf
 import holoviews as hv
 import pandas as pd
 
+from holoviews.core.util import unicode, basestring
 from holoviews.core.options import Store
 from holoviews.selection import link_selections
 from holoviews.element.comparison import ComparisonTestCase
@@ -429,7 +430,7 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
         else:
             color = element.opts.get('style').kwargs['color']
 
-        if isinstance(color, str):
+        if isinstance(color, (basestring, unicode)):
             return color
         else:
             return list(color)
@@ -454,7 +455,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     def element_color(self, element):
         color = element.opts.get('style').kwargs['color']
 
-        if isinstance(color, str):
+        if isinstance(color, (basestring, unicode)):
             return color
         else:
             return list(color)
