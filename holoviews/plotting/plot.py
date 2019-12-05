@@ -195,14 +195,14 @@ class Plot(param.Parameterized):
                 # If we do not have the Document lock, schedule refresh as callback
                 self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
                                      for s in p.streams if s._triggering]
-                self.document.add_next_tick_callback(self.refresh)
-                return
+                if self.document.session_context:
+                    self.document.add_next_tick_callback(self.refresh)
+                    return
 
         # Ensure that server based tick callbacks maintain stream triggering state
         for s in self._triggering:
             s._triggering = True
         try:
-
             traverse_setter(self, '_force', True)
             key = self.current_key if self.current_key else self.keys[0]
             dim_streams = [stream for stream in self.streams

@@ -9,6 +9,7 @@ from bokeh.models import (
     Range1d, DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
     FreehandDrawTool, PointDrawTool
 )
+from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
@@ -326,8 +327,11 @@ class ServerCallback(MessageCallback):
         """
         self._queue.append((attr, old, new))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_change, 50)
             self._active = True
+            if self.plot.document.session_context:
+                self.plot.document.add_timeout_callback(self.process_on_change, 50)
+            else:
+                PeriodicCallback(callback=self.process_on_change, period=50, count=1).start()
 
 
     def on_event(self, event):
@@ -337,8 +341,11 @@ class ServerCallback(MessageCallback):
         """
         self._queue.append((event))
         if not self._active and self.plot.document:
-            self.plot.document.add_timeout_callback(self.process_on_event, 50)
             self._active = True
+            if self.plot.document.session_context:
+                self.plot.document.add_timeout_callback(self.process_on_event, 50)
+            else:
+                PeriodicCallback(callback=self.process_on_event, period=50, count=1).start()
 
 
     def process_on_event(self):
@@ -360,7 +367,11 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_event, 50)
+
+        if self.plot.document.session_context:
+            self.plot.document.add_timeout_callback(self.process_on_event, 50)
+        else:
+            PeriodicCallback(callback=self.process_on_event, period=50, count=1).start()
 
 
     def process_on_change(self):
@@ -381,7 +392,11 @@ class ServerCallback(MessageCallback):
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         self.on_msg(msg)
-        self.plot.document.add_timeout_callback(self.process_on_change, 50)
+
+        if self.plot.document.session_context:
+            self.plot.document.add_timeout_callback(self.process_on_change, 50)
+        else:
+            PeriodicCallback(callback=self.process_on_change, period=100, count=1).start()
 
 
     def set_server_callback(self, handle):
