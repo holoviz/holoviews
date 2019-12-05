@@ -57,10 +57,6 @@ class annotate(param.ParameterizedFunction):
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
 
-    opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                               'padding': 0.1}, doc="""
-        Opts to apply to the element.""")
-
     show_vertices = param.Boolean(default=True, doc="""
         Whether to show vertices when drawing the Path.""")
 
@@ -146,15 +142,16 @@ class Annotator(PaneBase):
     annotations = param.ClassSelector(default=[], class_=(dict, list), doc="""
         Annotations to associate with each object.""")
 
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1}, doc="""
+        Opts to apply to the element.""")
+
     object = param.ClassSelector(class_=Element, doc="""
         The Element to edit and annotate.""")
 
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
 
-    opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                               'padding': 0.1}, doc="""
-        Opts to apply to the element.""")
 
     table_transforms = param.HookList(default=[], doc="""
         Transform(s) to apply to element when converting data to Table.
@@ -357,7 +354,7 @@ class PathAnnotator(Annotator):
 
         # Add options to element
         tools = [tool() for tool in self._tools]
-        opts = dict(tools=tools, color_index=None, **self.opts)
+        opts = dict(tools=tools, color_index=None, **self.default_opts)
         opts.update(self._extra_opts)
         return element.options(**opts)
 
@@ -445,7 +442,7 @@ class PointAnnotator(Annotator):
 
         # Add options
         tools = [tool() for tool in self._tools]
-        opts = dict(tools=tools, **self.opts)
+        opts = dict(tools=tools, **self.default_opts)
         opts.update(self._extra_opts)
         return object.options(**opts)
 
