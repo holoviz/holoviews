@@ -436,7 +436,7 @@ class PointAnnotator(Annotator):
         for col in self.annotations:
             if col in object:
                 continue
-            init = self.annotations[col] if isinstance(self.annotations, dict) else None
+            init = self.annotations[col]() if isinstance(self.annotations, dict) else None
             object = object.add_dimension(col, 0, init, True)
 
         # Add options
