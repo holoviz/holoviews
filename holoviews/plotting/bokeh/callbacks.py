@@ -1468,9 +1468,9 @@ class VertexTableLinkCallback(LinkCallback):
         source_cds.data[col] = empty
       }
       source_cds.data[col][index] = target_cds.data[col]
-      for (const p of points) {a
+      for (const p of points) {
         for (let pindex = 0; pindex < xpaths.length; pindex++) {
-          if (pindex == index) { continue }
+          if (pindex != index) { continue }
           const xs = xpaths[pindex]
           const ys = ypaths[pindex]
           const column = source_cds.data[col][pindex]
