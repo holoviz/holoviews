@@ -116,7 +116,7 @@ class annotate(param.ParameterizedFunction):
         return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
 
     def __call__(self, element, **params):
-        for eltype, annotator_type in self._annotators_types.items():
+        for eltype, annotator_type in self._annotator_types.items():
             if isinstance(element, eltype):
                 break
             else:
@@ -206,7 +206,7 @@ class Annotator(PaneBase):
         self.param.watch(self._update, self._triggers)
         self.layout[:] = [self.plot, self.editor]
 
-    @param.depends('annotations', 'object', 'opts')
+    @param.depends('annotations', 'object', 'default_opts')
     def _get_plot(self):
         return self._process_element(self.object)
 
@@ -448,7 +448,7 @@ class PointAnnotator(Annotator):
 
 
 # Register Annotators
-annotate.update([
+annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator)
