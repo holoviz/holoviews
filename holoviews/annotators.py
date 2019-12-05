@@ -11,7 +11,7 @@ from panel.pane import PaneBase, HoloViews
 from panel.layout import ListPanel, Row, Tabs
 from panel.util import param_name
 
-from .core import Element, Overlay, DynamicMap
+from .core import DynamicMap, Element, Layout, Overlay
 from .core.util import isscalar
 from .element import Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, SelectionLink
@@ -46,26 +46,81 @@ class annotate(param.ParameterizedFunction):
     data may be accessed using the element and selected properties.
     """
 
-    annotator = param.Parameter()
+    annotator = param.Parameter(doc="""The current Annotator instance.""")
+
+    annotations = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        Annotations to associate with each object.""")
+
+    edit_vertices = param.Boolean(default=True, doc="""
+        Whether to add tool to edit vertices.""")
+
+    num_objects = param.Integer(default=None, bounds=(0, None), doc="""
+        The maximum number of objects to draw.""")
+
+    opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                               'padding': 0.1}, doc="""
+        Opts to apply to the element.""")
+
+    show_vertices = param.Boolean(default=True, doc="""
+        Whether to show vertices when drawing the Path.""")
+
+    table_transforms = param.HookList(default=[], doc="""
+        Transform(s) to apply to element when converting data to Table.
+        The functions should accept the Annotator and the transformed
+        element as input.""")
+
+    table_opts = param.Dict(default={'editable': True, 'width': 400}, doc="""
+        Opts to apply to the editor table(s).""")
+
+    vertex_annotations = param.ClassSelector(default=[], class_=(dict, list), doc="""
+        Columns to annotate the Polygons with.""")
+
+    vertex_style = param.Dict(default={'nonselection_alpha': 0.5}, doc="""
+        Options to apply to vertices during drawing and editing.""")
+
+    _annotator_types = OrderedDict()
 
     @property
-    def _annotators(self):
-        return OrderedDict([
-            (Polygons, PolyAnnotator),
-            (Path, PathAnnotator),
-            (Points, PointAnnotator),
-        ])
-
-    @property
-    def element(self):
+    def annotated(self):
         return self.annotator.object
 
     @property
     def selected(self):
         return self.annotator.selected
 
+    @classmethod
+    def compose(cls, *annotators):
+        """Composes multiple annotator layouts and elements
+
+        The composed Layout will contain all the elements in the
+        supplied annotators and an overlay of all editor tables.
+
+        Args:
+            annotators: Annotator layouts or elements to compose
+
+        Returns:
+            A new layout consisting of the overlaid plots and tables
+        """
+        layers = []
+        tables = []
+        for annotator in annotators:
+            if isinstance(annotator, Layout):
+                l, ts = annotator
+                layers.append(l)
+                tables += ts
+            elif isinstance(annotator, annotate):
+                layers.append(annotator.plot)
+                tables += [t[0].object for t in annotator.editor]
+            elif isinstance(annotator, Element):
+                layers.append(annotator)
+            else:
+                raise ValueError("Cannot compose %s type with annotators." %
+                                 type(annotator).__name__)
+        tables = Overlay(tables, group='Annotator').opts(tabs=True)
+        return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
+
     def __call__(self, element, **params):
-        for eltype, annotator_type in self._annotators.items():
+        for eltype, annotator_type in self._annotators_types.items():
             if isinstance(element, eltype):
                 break
             else:
@@ -73,10 +128,9 @@ class annotate(param.ParameterizedFunction):
         if annotator_type is None:
             raise ValueError('Annotation of %s element types is not '
                              'supported.' % type(element).__name__)
-        annotator = annotator_type(element, **params)
-        self.set_param(annotator=annotator)
-        tables = Overlay([t[0].object for t in annotator.editor]).opts(tabs=True)
-        return (annotator.plot + tables).opts(sizing_mode='stretch_width')
+        self.annotator = annotator_type(element, **params)
+        tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator').opts(tabs=True)
+        return (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
 
 
 
@@ -122,7 +176,7 @@ class Annotator(PaneBase):
 
     # Links between plot and table
     _link_type = DataLink
-    _selection_link_type = None
+    _selection_link_type = SelectionLink
 
     priority = 0.7
 
@@ -193,7 +247,18 @@ class Annotator(PaneBase):
         return self.layout.select(selector)
 
     @classmethod
-    def merge(cls, *annotators):
+    def compose(cls, *annotators):
+        """Composes multiple Annotator instances and elements
+
+        The composed Panel will contain all the elements in the
+        supplied Annotators and Tabs containing all editors.
+
+        Args:
+            annotators: Annotator objects or elements to compose
+
+        Returns:
+            A new Panel consisting of the overlaid plots and tables
+        """
         layers, tables = [], []
         for a in annotators:
             if isinstance(a, Annotator):
@@ -324,7 +389,7 @@ class PathAnnotator(Annotator):
         self._table = Table(table_data, annotations, [], label=name).opts(
             show_title=False, **self.table_opts)
         self._vertex_table = Table(
-            [], table.kdims, list(self.vertex_annotations, label='%s Vertices' % name)
+            [], table.kdims, list(self.vertex_annotations), label='%s Vertices' % name
         ).opts(show_title=False, **self.table_opts)
         self._update_links()
         self._table_row[:] = [self._table]
@@ -360,8 +425,6 @@ class PointAnnotator(Annotator):
                                'padding': 0.1, 'size': 10}, doc="""
         Opts to apply to the element.""")
 
-    _selection_link_type = SelectionLink
-
     def _init_stream(self):
         name = param_name(self.name)
         self._stream = PointDraw(
@@ -387,37 +450,9 @@ class PointAnnotator(Annotator):
         return object.options(**opts)
 
 
-class BoxAnnotator(Annotator):
-
-    object = param.ClassSelector(class_=Path, doc="""
-        Points element to edit and annotate.""")
-
-    def _init_stream(self):
-        name = param_name(self.name)
-        self._stream = BoxEdit(
-            source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name
-        )
-
-    def _process_element(self, element):
-        if element is None or not isinstance(element, self._element_type):
-            element = self._element_type(element)
-
-        # Add annotations
-        for col in self.annotations:
-            if col in element:
-                continue
-            init = self.annotations[col] if isinstance(self.annotations, dict) else None
-            element = element.add_dimension(col, 0, init, True)
-
-        # Add options
-        tools = [tool() for tool in self._tools]
-        opts = dict(tools=tools, **self.opts)
-        opts.update(self._extra_opts)
-        return element.options(**opts)
-
-    @property
-    def selected(self):
-        index = self._selection.index
-        data = [p for i, p in enumerate(self._stream.element.split()) if i in index]
-        return self.output.clone(data)
+# Register Annotators
+annotate.update([
+    (Polygons, PolyAnnotator),
+    (Path, PathAnnotator),
+    (Points, PointAnnotator)
+])
