@@ -1,11 +1,6 @@
-from unittest import SkipTest
-
-import pyviz_comms as comms
-
-from holoviews import Overlay, Store
+from holoviews import Overlay
 from holoviews.annotators import annotate, PointAnnotator, PathAnnotator
 from holoviews.element import Points, Path, Table
-from holoviews.element.comparison import ComparisonTestCase
 
 from holoviews.tests.plotting.bokeh.testplot import TestBokehPlot
 
@@ -30,12 +25,12 @@ class Test_annotate(TestBokehPlot):
 
     def test_annotated_property(self):
         annotator = annotate.instance()
-        layout = annotator(Points([]), annotations=['Label'])
+        annotator(Points([]), annotations=['Label'])
         self.assertIn('Label', annotator.annotated)
     
     def test_selected_property(self):
         annotator = annotate.instance()
-        layout = annotator(Points([(1, 2), (2, 3)]), annotations=['Label'])
+        annotator(Points([(1, 2), (2, 3)]), annotations=['Label'])
         annotator.annotator._selection.update(index=[1])
         self.assertEqual(annotator.selected, Points([(2, 3, '')], vdims='Label'))
 

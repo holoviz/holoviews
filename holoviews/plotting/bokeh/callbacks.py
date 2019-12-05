@@ -5,8 +5,8 @@ from collections import defaultdict
 import param
 import numpy as np
 from bokeh.models import (
-    CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, ToolbarBox,
-    Range1d, DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
+    CustomJS, FactorRange, DatetimeAxis, ToolbarBox, Range1d,
+    DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
     FreehandDrawTool, PointDrawTool
 )
 from pyviz_comms import JS_CALLBACK
@@ -1065,6 +1065,7 @@ class FreehandDrawCallback(PolyDrawCallback):
         stream = self.streams[0]
         if stream.styles:
             self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
+        kwargs = {}
         if stream.tooltip:
             kwargs['custom_tooltip'] = stream.tooltip
         poly_tool = FreehandDrawTool(
@@ -1109,7 +1110,7 @@ class BoxEditCallback(GlyphDrawCallback):
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
         if stream.styles:
-            self._create_style_callback(rect_source, r1.glyph, 'x')
+            self._create_style_callback(cds, r1.glyph, 'x')
         box_tool = BoxEditTool(renderers=[r1], **kwargs)
         plot.state.tools.append(box_tool)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
