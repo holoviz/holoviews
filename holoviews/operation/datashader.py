@@ -1268,10 +1268,10 @@ class geometry_rasterize(AggregationOperation):
         x0, x1 = x_range
         y0, y1 = y_range
 
+        params = self._get_agg_params(element, xdim, ydim, agg_fn, (x0, y0, x1, y1))
+
         if width == 0 or height == 0:
             return self._empty_agg(element, xdim, ydim, width, height, xs, ys, agg_fn, **params)
-
-        params = self._get_agg_params(element, xdim, ydim, agg_fn, (x0, y0, x1, y1))
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
@@ -1282,7 +1282,6 @@ class geometry_rasterize(AggregationOperation):
         if isinstance(agg_fn, ds.count_cat):
             data[agg_fn.column] = data[agg_fn.column].astype('category')
         col = element.interface.geo_column(element.data)
-        geoms = data[col]
 
         if isinstance(element, Polygons) :
             agg = cvs.polygons(data, geometry=col, agg=agg_fn)

@@ -130,7 +130,9 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def has_holes(cls, dataset):
-        from spatialpandas.geometry import MultiPolygonDtype, PolygonDtype
+        from spatialpandas.geometry import (
+            MultiPolygonDtype, PolygonDtype, Polygon, MultiPolygon
+        )
         col = cls.geo_column(dataset.data)
         series = dataset.data[col]
         if isinstance(series.dtype, (MultiPolygonDtype, PolygonDtype)):
@@ -146,7 +148,6 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def holes(cls, dataset):
-        from spatialpandas.geometry import MultiPolygonDtype, PolygonDtype
         holes = []
         if not len(dataset.data):
             return holes
@@ -278,20 +279,20 @@ class SpatialPandasInterface(MultiInterface):
             return vals.min(), vals.max()
 
     @classmethod
-    def aggregate(cls, columns, dimensions, function, **kwargs):
-        raise NotImplementedError
-
-    @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
         return PandasInterface.groupby(columns, dimensions, container_type, group_type, **kwargs)
 
     @classmethod
-    def reindex(cls, dataset, kdims=None, vdims=None):
-        return dataset.data
+    def aggregate(cls, columns, dimensions, function, **kwargs):
+        raise NotImplementedError
 
     @classmethod
     def sample(cls, columns, samples=[]):
         raise NotImplementedError
+
+    @classmethod
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        return dataset.data
 
     @classmethod
     def shape(cls, dataset):
