@@ -57,7 +57,6 @@ class TestPointAnnotator(TestBokehPlot):
         annotator.object = Points([(1, 2)])
         self.assertIn('Label', annotator.object)
         expected = Table([(1, 2, '')], ['x', 'y'], vdims=['Label'], label='PointAnnotator')
-        print(annotator._table.label, expected.label)
         self.assertEqual(annotator._table, expected)
         self.assertIs(annotator._link.target, annotator._table)
 
