@@ -1303,7 +1303,8 @@ class rasterize(AggregationOperation):
                    (Points, aggregate),
                    (Curve, aggregate),
                    (Path, aggregate),
-                   (type(None), shade)]
+                   (type(None), shade) # To handles parameters of datashade 
+    ]
 
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
