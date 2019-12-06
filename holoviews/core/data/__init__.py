@@ -25,15 +25,16 @@ from .dictionary import DictInterface
 from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
+from .spatialpandas import SpatialPandasInterface # noqa (API import)
 
 default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid']
+datatypes = ['spatialpandas', 'dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     default_datatype = 'dataframe'
-    datatypes = ['dataframe', 'dictionary', 'grid']
+    datatypes = ['spatialpandas', 'dataframe', 'dictionary', 'grid']
     DFColumns = PandasInterface
 except ImportError:
     pd = None

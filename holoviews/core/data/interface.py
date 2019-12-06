@@ -229,6 +229,8 @@ class Interface(param.Parameterized):
             interface = data.interface
             if interface.datatype in datatype and interface.datatype in eltype.datatype:
                 data = data.data
+            elif hasattr(data.interface, 'split'):
+                data = [d for d in data.interface.split(data, None, None, 'columns')]
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
                 for kd in data.kdims:

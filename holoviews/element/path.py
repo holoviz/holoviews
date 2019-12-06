@@ -56,7 +56,8 @@ class Path(Geometry):
     group = param.String(default="Path", constant=True)
 
     datatype = param.ObjectSelector(default=[
-        'multitabular', 'dataframe', 'dictionary', 'dask', 'array'])
+        'spatialpandas', 'multitabular', 'dataframe', 'dictionary',
+        'dask', 'array'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
