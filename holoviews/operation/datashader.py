@@ -1080,81 +1080,6 @@ class quadmesh_rasterize(trimesh_rasterize):
 
 
 
-class rasterize(AggregationOperation):
-    """
-    Rasterize is a high-level operation that will rasterize any
-    Element or combination of Elements, aggregating them with the supplied
-    aggregator and interpolation method.
-
-    The default aggregation method depends on the type of Element but
-    usually defaults to the count of samples in each bin. Other
-    aggregators can be supplied implementing mean, max, min and other
-    reduction operations.
-
-    The bins of the aggregate are defined by the width and height and
-    the x_range and y_range. If x_sampling or y_sampling are supplied
-    the operation will ensure that a bin is no smaller than the minimum
-    sampling distance by reducing the width and height when zoomed in
-    beyond the minimum sampling distance.
-
-    By default, the PlotSize and RangeXY streams are applied when this
-    operation is used dynamically, which means that the width, height,
-    x_range and y_range will automatically be set to match the inner
-    dimensions of the linked plot and the ranges of the axes.
-    """
-
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
-                                     default=None)
-
-    interpolation = param.ObjectSelector(
-        default='bilinear', objects=['linear', 'nearest', 'bilinear', None, False], doc="""
-        The interpolation method to apply during rasterization.
-        Defaults to linear interpolation and None and False are aliases
-        of each other.""")
-
-    _transforms = [(Image, regrid),
-                   (TriMesh, trimesh_rasterize),
-                   (QuadMesh, quadmesh_rasterize),
-                   (lambda x: (isinstance(x, NdOverlay) and
-                               issubclass(x.type, (Scatter, Points, Curve, Path))),
-                    aggregate),
-                   (Spikes, spikes_aggregate),
-                   (Area, area_aggregate),
-                   (Spread, spread_aggregate),
-                   (Segments, segments_aggregate),
-                   (Contours, contours_rasterize),
-                   (Graph, aggregate),
-                   (Scatter, aggregate),
-                   (Points, aggregate),
-                   (Curve, aggregate),
-                   (Path, aggregate)]
-
-    def _process(self, element, key=None):
-        # Potentially needs traverse to find element types first?
-        all_allowed_kws = set()
-        all_supplied_kws = set()
-        for predicate, transform in self._transforms:
-            op_params = dict({k: v for k, v in self.p.items()
-                              if not (v is None and k == 'aggregator')},
-                             dynamic=False)
-            extended_kws = dict(op_params, **self.p.extra_keywords())
-            all_supplied_kws |= set(extended_kws)
-            all_allowed_kws |= set(transform.param)
-            # Collect union set of consumed. Versus union of available.
-            op = transform.instance(**{k:v for k,v in extended_kws.items()
-                                       if k in transform.param})
-            op._precomputed = self._precomputed
-            element = element.map(op, predicate)
-            self._precomputed = op._precomputed
-
-        unused_params = list(all_supplied_kws - all_allowed_kws)
-        if unused_params:
-            self.warning('Parameters %s not consumed by any element rasterizer.'
-                         % ', '.join(unused_params))
-        return element
-
-
-
 class shade(LinkableOperation):
     """
     shade applies a normalization function followed by colormapping to
@@ -1327,6 +1252,83 @@ class shade(LinkableOperation):
                       bounds=bounds, vdims=RGB.vdims[:],
                       xdensity=xdensity, ydensity=ydensity)
         return RGB(self.uint32_to_uint8_xr(img), **params)
+
+
+
+class rasterize(AggregationOperation):
+    """
+    Rasterize is a high-level operation that will rasterize any
+    Element or combination of Elements, aggregating them with the supplied
+    aggregator and interpolation method.
+
+    The default aggregation method depends on the type of Element but
+    usually defaults to the count of samples in each bin. Other
+    aggregators can be supplied implementing mean, max, min and other
+    reduction operations.
+
+    The bins of the aggregate are defined by the width and height and
+    the x_range and y_range. If x_sampling or y_sampling are supplied
+    the operation will ensure that a bin is no smaller than the minimum
+    sampling distance by reducing the width and height when zoomed in
+    beyond the minimum sampling distance.
+
+    By default, the PlotSize and RangeXY streams are applied when this
+    operation is used dynamically, which means that the width, height,
+    x_range and y_range will automatically be set to match the inner
+    dimensions of the linked plot and the ranges of the axes.
+    """
+
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+                                     default=None)
+
+    interpolation = param.ObjectSelector(
+        default='bilinear', objects=['linear', 'nearest', 'bilinear', None, False], doc="""
+        The interpolation method to apply during rasterization.
+        Defaults to linear interpolation and None and False are aliases
+        of each other.""")
+
+    _transforms = [(Image, regrid),
+                   (TriMesh, trimesh_rasterize),
+                   (QuadMesh, quadmesh_rasterize),
+                   (lambda x: (isinstance(x, NdOverlay) and
+                               issubclass(x.type, (Scatter, Points, Curve, Path))),
+                    aggregate),
+                   (Spikes, spikes_aggregate),
+                   (Area, area_aggregate),
+                   (Spread, spread_aggregate),
+                   (Segments, segments_aggregate),
+                   (Contours, contours_rasterize),
+                   (Graph, aggregate),
+                   (Scatter, aggregate),
+                   (Points, aggregate),
+                   (Curve, aggregate),
+                   (Path, aggregate),
+                   (type(None), shade) # To handles parameters of datashade 
+    ]
+
+    def _process(self, element, key=None):
+        # Potentially needs traverse to find element types first?
+        all_allowed_kws = set()
+        all_supplied_kws = set()
+        for predicate, transform in self._transforms:
+            op_params = dict({k: v for k, v in self.p.items()
+                              if not (v is None and k == 'aggregator')},
+                             dynamic=False)
+            extended_kws = dict(op_params, **self.p.extra_keywords())
+            all_supplied_kws |= set(extended_kws)
+            all_allowed_kws |= set(transform.param)
+            # Collect union set of consumed. Versus union of available.
+            op = transform.instance(**{k:v for k,v in extended_kws.items()
+                                       if k in transform.param})
+            op._precomputed = self._precomputed
+            element = element.map(op, predicate)
+            self._precomputed = op._precomputed
+
+        unused_params = list(all_supplied_kws - all_allowed_kws)
+        if unused_params:
+            self.warning('Parameters %s not consumed by any element rasterizer.'
+                         % ', '.join(unused_params))
+        return element
 
 
 
