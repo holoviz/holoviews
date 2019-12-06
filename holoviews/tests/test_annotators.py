@@ -27,7 +27,7 @@ class Test_annotate(TestBokehPlot):
         annotator = annotate.instance()
         annotator(Points([]), annotations=['Label'])
         self.assertIn('Label', annotator.annotated)
-    
+
     def test_selected_property(self):
         annotator = annotate.instance()
         annotator(Points([(1, 2), (2, 3)]), annotations=['Label'])
@@ -57,15 +57,16 @@ class TestPointAnnotator(TestBokehPlot):
         annotator.object = Points([(1, 2)])
         self.assertIn('Label', annotator.object)
         expected = Table([(1, 2, '')], ['x', 'y'], vdims=['Label'], label='PointAnnotator')
+        print(annotator._table.label, expected.label)
         self.assertEqual(annotator._table, expected)
         self.assertIs(annotator._link.target, annotator._table)
 
     def test_stream_update(self):
         annotator = PointAnnotator(Points([(1, 2)]), annotations=['Label'])
         annotator._stream.event(data={'x': [1], 'y': [2], 'Label': ['A']})
-        self.assertEqual(annotator.object, Points([(1, 2, 'A')], vdims=['Label'])) 
-        
-        
+        self.assertEqual(annotator.object, Points([(1, 2, 'A')], vdims=['Label']))
+
+
 
 class TestPathAnnotator(TestBokehPlot):
 
