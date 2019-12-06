@@ -151,7 +151,6 @@ class Annotator(PaneBase):
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
 
-
     table_transforms = param.HookList(default=[], doc="""
         Transform(s) to apply to element when converting data to Table.
         The functions should accept the Annotator and the transformed
