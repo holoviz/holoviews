@@ -1127,7 +1127,8 @@ class rasterize(AggregationOperation):
                    (Scatter, aggregate),
                    (Points, aggregate),
                    (Curve, aggregate),
-                   (Path, aggregate)]
+                   (Path, aggregate),
+                   (type(None), shade)]
 
     def _process(self, element, key=None):
         # Potentially needs traverse to find element types first?
