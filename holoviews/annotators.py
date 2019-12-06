@@ -10,7 +10,7 @@ from panel.pane import PaneBase
 from panel.layout import Row, Tabs
 from panel.util import param_name
 
-from .core import DynamicMap, Element, Layout, Overlay
+from .core import DynamicMap, Element, Layout, Overlay, Store
 from .core.util import isscalar
 from .element import Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, SelectionLink
@@ -77,11 +77,15 @@ class annotate(param.ParameterizedFunction):
 
     @property
     def annotated(self):
-        return self.annotator.object
+        annotated = self.annotator.object
+        if Store.current_backend == 'bokeh':
+            return annotated.opts(clone=True, tools=['hover'])
 
     @property
     def selected(self):
-        return self.annotator.selected
+        selected = self.annotator.selected
+        if Store.current_backend == 'bokeh':
+            return selected.opts(clone=True, tools=['hover'])
 
     @classmethod
     def compose(cls, *annotators):
