@@ -121,7 +121,6 @@ class cuDFInterface(PandasInterface):
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
-
     @classmethod
     def range(cls, dataset, dimension):
         column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
@@ -239,7 +238,8 @@ class cuDFInterface(PandasInterface):
             selection_mask = cls.select_mask(dataset, selection)
 
         indexed = cls.indexed(dataset, selection)
-        df = df[selection_mask]
+        if selection_mask is not None:
+            df = df[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
@@ -266,14 +266,18 @@ class cuDFInterface(PandasInterface):
         vdims = dataset.dimensions('value', label='name')
         reindexed = data[cols+vdims]
         agg = function.__name__
-        if agg in ('amin', 'amax'):
-            agg = agg[1:]
-        if not hasattr(data, agg):
-            raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
         if len(dimensions):
+            agg_map = {'amin': 'min', 'amax': 'max'}
+            agg = agg_map.get(agg, agg)
             grouped = reindexed.groupby(cols, sort=False)
+            if not hasattr(grouped, agg):
+                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
             df = getattr(grouped, agg)().reset_index()
         else:
+            agg_map = {'amin': 'min', 'amax': 'max', 'size': 'count'}
+            agg = agg_map.get(agg, agg)
+            if not hasattr(reindexed, agg):
+                raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
             agg = getattr(reindexed, agg)()
             data = dict(((col, [v]) for col, v in zip(agg.index, agg.to_array())))
             df = util.pd.DataFrame(data, columns=list(agg.index))

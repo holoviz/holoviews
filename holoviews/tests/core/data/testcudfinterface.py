@@ -41,4 +41,5 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_sort_string_ht(self):
         raise SkipTest("Not supported")
 
-
+    def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
+        raise SkipTest("cuDF does not support variance aggregation")
