@@ -264,8 +264,8 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        raise NotImplementedError('Sorting is not supported by cudf DataFrames.')
-
+        dataset.param.warning("cuDF DataFrames do not yet support sorting.")
+        return dataset.data
 
     @classmethod
     def dframe(cls, dataset, dimensions):
