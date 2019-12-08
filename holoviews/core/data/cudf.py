@@ -159,6 +159,9 @@ class cuDFInterface(PandasInterface):
             group_kwargs['kdims'] = kdims
         group_kwargs.update(kwargs)
 
+        # Propagate dataset
+        group_kwargs['dataset'] = dataset.dataset
+
         # Find all the keys along supplied dimensions
         keys = product(*(dataset.data[dimensions[0]].unique() for d in dimensions))
 
