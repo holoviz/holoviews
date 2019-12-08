@@ -8,6 +8,8 @@ try:
 except ImportError:
     pass
 
+from itertools import product
+
 import numpy as np
 
 from .. import util
@@ -155,14 +157,14 @@ class cuDFInterface(PandasInterface):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        indices = [dataset.get_dimension_index(d) for d in dimensions]
-        keys = (tuple(dataset.iloc[i, d] for d in indices)
-                for i in range(len(dataset)))
+        keys = product(*(dataset.data[dimensions[0]].unique() for d in dimensions))
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             group_data = dataset.select(**dict(zip(dimensions, unique_key)))
+            if not len(group_data):
+                continue
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
