@@ -57,15 +57,20 @@ class cuDFInterface(PandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import cudf
+        import pandas as pd
 
         element_params = eltype.param.objects()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
-        ncols = len(data.columns)
 
-        if isinstance(data, cudf.Series):
+        if isinstance(data, (cudf.Series, pd.Series)):
             data = data.to_frame()
 
+        if not isinstance(data, cudf.DataFrame):
+            data, _, _ = PandasInterface.init(eltype, data, kdims, vdims)
+            data = cudf.from_pandas(data)
+
+        ncols = len(data.columns)
         index_names = [data.index.name]
         if index_names == [None]:
             index_names = ['index']
@@ -117,7 +122,7 @@ class cuDFInterface(PandasInterface):
                                 'with the same name. '% d, cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
-    
+
 
     @classmethod
     def range(cls, dataset, dimension):
@@ -171,7 +176,8 @@ class cuDFInterface(PandasInterface):
 
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
-                return container_type(grouped_data, kdims=dimensions)
+                kdims = [dataset.get_dimension(d) for d in dimensions]
+                return container_type(grouped_data, kdims=kdims)
         else:
             return container_type(grouped_data)
 
@@ -203,12 +209,16 @@ class cuDFInterface(PandasInterface):
                         new_masks.append(sel.start <= arr)
                     if sel.stop is not None:
                         new_masks.append(arr < sel.stop)
+                if not new_masks:
+                    continue
                 new_mask = new_masks[0]
                 for imask in new_masks[1:]:
                     new_mask &= imask
             elif isinstance(sel, (set, list)):
                 for v in sel:
                     new_masks.append(arr==v)
+                if not new_masks:
+                    continue
                 new_mask = new_masks[0]
                 for imask in new_masks[1:]:
                     new_mask |= imask
@@ -244,6 +254,14 @@ class cuDFInterface(PandasInterface):
 
 
     @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        data = dataset.data.copy()
+        if dimension.name not in data:
+            data[dimension.name] = values
+        return data
+
+
+    @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         data = dataset.data
         cols = [d.name for d in dataset.kdims if d in dimensions]
@@ -267,6 +285,38 @@ class cuDFInterface(PandasInterface):
             if vd not in df.columns:
                 dropped.append(vd)
         return df, dropped
+
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        import cudf
+
+        rows, cols = index
+        scalar = False
+        columns = list(dataset.data.columns)
+        if isinstance(cols, slice):
+            cols = [d.name for d in dataset.dimensions()][cols]
+        elif np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols).name]
+        else:
+            cols = [dataset.get_dimension(d).name for d in index[1]]
+        col_index = [columns.index(c) for c in cols]
+        if np.isscalar(rows):
+            rows = [rows]
+
+        if scalar:
+            return dataset.data[cols[0]].iloc[rows[0]]
+        result = dataset.data.iloc[rows, col_index]
+
+        # cuDF does not handle single rows and cols indexing correctly
+        # as of cudf=0.10.0 so we have to convert Series back to DataFrame
+        if isinstance(result, cudf.Series):
+            if len(cols) == 1:
+                result = result.to_frame(cols[0])
+            else:
+                result = result.to_frame().T
+        return result
 
 
     @classmethod
