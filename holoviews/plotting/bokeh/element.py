@@ -35,6 +35,7 @@ from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
     rgba_tuple, text_properties, validate)
+from .tabular import TablePlot
 from .util import (
     TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
@@ -2095,6 +2096,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             raise SkipRendering('All Overlays empty, cannot initialize plot.')
         dkey, element = nonempty[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
+
+        self.tabs = self.tabs or any(isinstance(sp, TablePlot) for sp in self.subplots.values())
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
@@ -2125,7 +2128,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._merge_tools(subplot)
 
         if self.tabs:
-            self.handles['plot'] = Tabs(tabs=panels)
+            self.handles['plot'] = Tabs(
+                tabs=panels, width=self.width, height=self.height,
+                min_width=self.min_width, min_height=self.min_height,
+                max_width=self.max_width, max_height=self.max_height,
+                sizing_mode='fixed'
+            )
         elif not self.overlaid:
             self._process_legend()
             self._set_active_tools(plot)

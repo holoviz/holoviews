@@ -264,8 +264,11 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(boxes)
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
-        source = plot.handles['rect_source']
-        self.assertEqual(source.data, {'x': [0], 'y': [0], 'width': [1], 'height': [1]})
+        source = plot.handles['cds']
+        self.assertEqual(source.data['x'], [0])
+        self.assertEqual(source.data['y'], [0])
+        self.assertEqual(source.data['width'], [1])
+        self.assertEqual(source.data['height'], [1])
         data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
         callback.on_msg({'data': data})
         element = Polygons([Box(0, 0, (0.5, 2)), Box(1, 1, (2, 0.5))])
@@ -275,7 +278,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         boxes = Polygons([Box(0, 0, 1)])
         BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
-        self.assertEqual(plot.handles['rect_source']._callbacks,
+        self.assertEqual(plot.handles['cds']._callbacks,
                          {'data': [plot.callbacks[0].on_change]})
 
     def test_box_edit_callback_initialized_js(self):
@@ -283,7 +286,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         BoxEdit(source=boxes)
         plot = bokeh_renderer.get_plot(boxes)
         cb = plot.callbacks[0].callbacks[0]
-        self.assertEqual(plot.handles['rect_source'].js_property_callbacks,
+        self.assertEqual(plot.handles['cds'].js_property_callbacks,
                          {'change:data': [cb], 'patching': [cb]})
 
     def test_poly_edit_callback(self):
