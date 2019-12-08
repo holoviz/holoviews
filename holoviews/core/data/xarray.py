@@ -13,6 +13,13 @@ from .grid import GridInterface
 from .interface import Interface, DataError, dask_array_module
 
 
+def is_cupy(array):
+    if 'cupy' not in sys.modules:
+        return False
+    from cupy import ndarray
+    return isinstance(array, ndarray) 
+
+
 class XArrayInterface(GridInterface):
 
     types = ()
@@ -359,6 +366,9 @@ class XArrayInterface(GridInterface):
             da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
+            if is_cupy(data):
+                import cupy
+                data = cupy.asnumpy(data)
             data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                     virtual_coords=virtual_coords)
             return data.T.flatten() if flat else data

@@ -22,7 +22,7 @@ except:
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay, OrderedDict)
-from ..core.data import PandasInterface, XArrayInterface, DaskInterface
+from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, isfinite, get_param_values, max_range)
@@ -387,14 +387,14 @@ class aggregate(AggregationOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
-        is_dask = isinstance(df, dd.DataFrame)
-        if any((not is_dask and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
+        is_custom = isinstance(df, dd.DataFrame) or cuDFInterface.applies(df)
+        if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
                df[d.name].dtype.kind == 'M' for d in (x, y)):
             df = df.copy()
 
         for d in (x, y):
             vals = df[d.name]
-            if not is_dask and len(vals) and isinstance(vals.values[0], cftime_types):
+            if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
             elif df[d.name].dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
