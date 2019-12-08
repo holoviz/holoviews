@@ -174,6 +174,13 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def concat_fn(cls, dataframes, **kwargs):
+        if util.pandas_version >= '0.23.0':
+            kwargs['sort'] = False
+        return pd.concat(dataframes, **kwargs)
+
+        
+    @classmethod
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
         for key, ds in datasets:
@@ -181,8 +188,7 @@ class PandasInterface(Interface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        kwargs = dict(sort=False) if util.pandas_version >= '0.23.0' else {}
-        return pd.concat(dataframes, **kwargs)
+        return cls.concat_fn(dataframes)
 
 
     @classmethod

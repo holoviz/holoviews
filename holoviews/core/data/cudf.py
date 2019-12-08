@@ -117,6 +117,7 @@ class cuDFInterface(PandasInterface):
                                 'with the same name. '% d, cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
+    
 
     @classmethod
     def range(cls, dataset, dimension):
@@ -234,6 +235,12 @@ class cuDFInterface(PandasInterface):
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
+
+
+    @classmethod
+    def concat_fn(cls, dataframes, **kwargs):
+        import cudf
+        return cudf.concat(dataframes, **kwargs)
 
 
     @classmethod

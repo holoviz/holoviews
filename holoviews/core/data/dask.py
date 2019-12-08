@@ -270,15 +270,8 @@ class DaskInterface(PandasInterface):
         return data
 
     @classmethod
-    def concat(cls, datasets, dimensions, vdims):
-        import dask.dataframe as dd
-        dataframes = []
-        for key, ds in datasets:
-            data = ds.data.copy()
-            for d, k in zip(dimensions, key):
-                data[d.name] = k
-            dataframes.append(data)
-        return dd.concat(dataframes)
+    def concat_fn(cls, dataframe, **kwargs):
+        return dd.concat(dataframes, **kwargs)
 
     @classmethod
     def dframe(cls, dataset, dimensions):
