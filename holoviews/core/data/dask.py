@@ -270,7 +270,8 @@ class DaskInterface(PandasInterface):
         return data
 
     @classmethod
-    def concat_fn(cls, dataframe, **kwargs):
+    def concat_fn(cls, dataframes, **kwargs):
+        import dask.dataframe as dd
         return dd.concat(dataframes, **kwargs)
 
     @classmethod
