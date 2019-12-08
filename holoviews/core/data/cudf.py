@@ -32,9 +32,7 @@ class cuDFInterface(PandasInterface):
 
     1) Sorting is not supported and any attempt at sorting will
        be ignored with an warning.
-    2) cuDF does not easily support adding a new column to an existing
-       dataframe unless it is a scalar, add_dimension will therefore
-       error when supplied a non-scalar value.
+    2) Aggregation and groupby do not have a consistent sort order.
     3) Not all functions can be easily applied to a dask dataframe so
        some functions applied with aggregate and reduce will not work.
     """
