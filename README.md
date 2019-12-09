@@ -1,7 +1,7 @@
 [![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
 [![Conda](https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg)](https://anaconda.org/pyviz/holoviews)
 [![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/pyviz/holoviews)
-[![BuildStatus](https://travis-ci.org/pyviz/holoviews.svg?branch=master)](https://travis-ci.org/pyviz/holoviews)
+[![BuildStatus](https://travis-ci.org/holoviz/holoviews.svg?branch=master)](https://travis-ci.org/holoviz/holoviews)
 [![Coveralls](https://img.shields.io/coveralls/pyviz/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/pyviz/pyviz?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pyviz/holoviews/master?filepath=examples)
@@ -55,7 +55,7 @@ Installation
 ============
 
 HoloViews works with 
-[Python 2.7 and Python 3](https://travis-ci.org/pyviz/holoviews)
+[Python 2.7 and Python 3](https://travis-ci.org/holoviz/holoviews)
 on Linux, Windows, or Mac, and provides optional extensions for working with the 
 [Jupyter/IPython Notebook](http://jupyter.org).
 
