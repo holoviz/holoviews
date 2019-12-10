@@ -159,14 +159,14 @@ class SpatialPandasInterface(MultiInterface):
         )
         col = cls.geo_column(dataset.data)
         series = dataset.data[col]
-        if isinstance(series.dtype, (MultiPolygonDtype, PolygonDtype)):
+        if not isinstance(series.dtype, (MultiPolygonDtype, PolygonDtype)):
             return False
         for geom in series:
-            if isinstance(geom, Polygon) and geom.interiors:
+            if isinstance(geom, Polygon) and len(geom.data) > 1:
                 return True
             elif isinstance(geom, MultiPolygon):
-                for g in geom:
-                    if isinstance(g, Polygon) and g.interiors:
+                for p in geom.data:
+                    if len(p) > 1:
                         return True
         return False
 
@@ -465,6 +465,7 @@ class SpatialPandasInterface(MultiInterface):
         d = {(xdim.name, ydim.name): arr}
         d.update({dim.name: row[dim.name] for dim in value_dims})
         ds = dataset.clone(d, datatype=['dictionary'])
+        holes = cls.holes(dataset) if cls.has_holes(dataset) else None
         for i, row in dataset.data.iterrows():
             geom = row[col]
             arr = geom_to_array(geom, geom_type=geom_type)
@@ -477,6 +478,8 @@ class SpatialPandasInterface(MultiInterface):
                 obj = ds.dframe(**kwargs)
             elif datatype == 'columns':
                 obj = ds.columns(**kwargs)
+                if holes is not None:
+                    obj['holes'] = holes[i]
             elif datatype is None:
                 obj = ds.clone()
             else:
