@@ -76,6 +76,16 @@ class MultiInterface(Interface):
 
 
     @classmethod
+    def geom_type(cls, eltype):
+        from holoviews.element import Polygons, Path, Points
+        if issubclass(eltype, Polygons):
+            return 'Polygon'
+        elif issubclass(eltype, Path):
+            return 'Line'
+        else:
+            return 'Point'
+
+    @classmethod
     def _inner_dataset_template(cls, dataset, validate_vdims=True):
         """
         Returns a Dataset template used as a wrapper around the data
@@ -114,7 +124,6 @@ class MultiInterface(Interface):
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
         return util.max_range(ranges)
-
 
     @classmethod
     def has_holes(cls, dataset):
@@ -174,7 +183,10 @@ class MultiInterface(Interface):
         """
         Allows selecting paths with usual NumPy slicing index.
         """
-        return [s[0] for s in np.array([{0: p} for p in dataset.data])[selection]]
+        selection = np.array([{0: p} for p in dataset.data])[selection]
+        if isinstance(selection, dict):
+            return [selection[0]]
+        return [s[0] for s in selection]
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
@@ -234,6 +246,8 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
+        elif cls.geom_type(type(dataset)) != 'Point':
+            return (len(dataset.data), len(dataset.dimensions()))
 
         rows, cols = 0, 0
         ds = cls._inner_dataset_template(dataset)
@@ -241,7 +255,7 @@ class MultiInterface(Interface):
             ds.data = d
             r, cols = ds.interface.shape(ds)
             rows += r
-        return rows+len(dataset.data)-1, cols
+        return rows, cols
 
     @classmethod
     def length(cls, dataset):
@@ -252,12 +266,14 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return 0
+        elif cls.geom_type(type(dataset)) != 'Point':
+            return len(dataset.data)
         length = 0
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             length += ds.interface.length(ds)
-        return length+len(dataset.data)-1
+        return length
 
     @classmethod
     def dtype(cls, dataset, dimension):
@@ -282,15 +298,8 @@ class MultiInterface(Interface):
         return new_data
 
     @classmethod
-    def values(
-            cls,
-            dataset,
-            dimension,
-            expanded=True,
-            flat=True,
-            compute=True,
-            keep_index=False,
-    ):
+    def values(cls, dataset, dimension, expanded=True, flat=True,
+               compute=True, keep_index=False):
         """
         Returns a single concatenated array of all subpaths separated
         by NaN values. If expanded keyword is False an array of arrays
@@ -300,6 +309,7 @@ class MultiInterface(Interface):
             return np.array([])
         values = []
         ds = cls._inner_dataset_template(dataset)
+        is_points = cls.geom_type(type(dataset)) == 'Point'
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(
@@ -309,15 +319,20 @@ class MultiInterface(Interface):
                 continue
             elif expanded:
                 values.append(dvals)
-                values.append([np.NaN])
+                if not is_points:
+                    values.append([np.NaN])
             else:
                 values.append(dvals)
         if not values:
             return np.array([])
         elif expanded:
-            return np.concatenate(values[:-1])
+            if not is_points:
+                values = values[:-1]
+            return np.concatenate(values) if values else np.array()
         else:
-            return np.concatenate(values)
+            array = np.empty(len(values), dtype=object)
+            array[:] = values
+            return array
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
@@ -371,6 +386,55 @@ class MultiInterface(Interface):
             new_data.append(ds.interface.add_dimension(ds, dimension, dim_pos, v, vdim))
         return new_data
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        if isinstance(cols, slice):
+            dims = [d for d in dataset.dimensions()][cols]
+        elif np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            dims = [dataset.get_dimension(cols)]
+        else:
+            dims = [dataset.get_dimension(d).name for d in cols]
+
+        template = cls._inner_dataset_template(dataset)
+        if cls.geom_type(type(dataset)) != 'Point':
+            geoms = cls.select_paths(dataset, rows)
+            new_data = []
+            for d in geoms:
+                template.data = d
+                new_data.append(template.iloc[:, cols])
+            return new_data
+
+        count = 0
+        new_data = []
+        for d in dataset.data:
+            template.data = d
+            length = len(template)
+            if np.isscalar(rows):
+                if (count+length) > rows >= count:
+                    data = template.iloc[rows-count, cols]
+                    return data if scalar else [data.data]
+            elif isinstance(rows, slice):
+                if rows.start is not None and rows.start > (count+length):
+                    continue
+                elif rows.stop is not None and rows.stop < count:
+                    break
+                start = None if rows.start is None else max(rows.start - count, 0)
+                stop = None if rows.stop is None else min(rows.stop - count, length)
+                if rows.step is not None:
+                    dataset.param.warning(".iloc step slicing currently not supported for"
+                                          "the multi-tabular data format.")
+                slc = slice(start, stop)
+                new_data.append(template.iloc[slc, cols].data)
+            else:
+                sub_rows = [r-count for r in rows if 0 <= (r-count) < (count+length)]
+                new = template.iloc[sub_rows, cols]
+                if len(new):
+                    new_data.append(new.data)
+            count += length
+        return new_data
 
 
 Interface.register(MultiInterface)
