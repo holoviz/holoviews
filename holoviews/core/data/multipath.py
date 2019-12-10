@@ -308,6 +308,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return np.array([])
         values = []
+        is_scalar = True 
         ds = cls._inner_dataset_template(dataset)
         is_points = cls.geom_type(type(dataset)) == 'Point'
         for d in dataset.data:
@@ -315,6 +316,8 @@ class MultiInterface(Interface):
             dvals = ds.interface.values(
                 ds, dimension, expanded, flat, compute, keep_index
             )
+            if len(dvals) > 1:
+                is_scalar = False
             if not len(dvals):
                 continue
             elif expanded:
@@ -325,8 +328,8 @@ class MultiInterface(Interface):
                 values.append(dvals)
         if not values:
             return np.array([])
-        elif expanded:
-            if not is_points:
+        elif expanded or is_scalar:
+            if not is_points and expanded:
                 values = values[:-1]
             return np.concatenate(values) if values else np.array()
         else:
