@@ -77,12 +77,12 @@ class MultiInterface(Interface):
 
     @classmethod
     def geom_type(cls, eltype):
-        from holoviews.element import Polygons, Path
+        from holoviews.element import Polygons, Path, Points
         if issubclass(eltype, Polygons):
             return 'Polygon'
         elif issubclass(eltype, Path):
             return 'Line'
-        else:
+        elif issubclass(eltype, Points):
             return 'Point'
 
     @classmethod
@@ -147,21 +147,30 @@ class MultiInterface(Interface):
             holes += ds.interface.holes(ds)
         return holes
 
-
     @classmethod
-    def isscalar(cls, dataset, dim):
+    def isscalar(cls, dataset, dim, per_geom=False):
         """
         Tests if dimension is scalar in each subpath.
         """
         if not dataset.data:
             return True
+        geom_type = cls.geom_type(type(dataset))
         ds = cls._inner_dataset_template(dataset)
-        isscalar = []
+        combined = []
         for d in dataset.data:
             ds.data = d
-            isscalar.append(ds.interface.isscalar(ds, dim))
-        return all(isscalar)
-
+            values = ds.interface.values(ds, dim)
+            unique = list(util.unique_iterator(values))
+            if len(unique) > 1:
+                return False
+            elif per_geom and geom_type != 'Point':
+                continue
+            unique = unique[0]
+            if unique not in combined:
+                if combined:
+                    return False
+                combined.append(unique)
+        return True
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -209,9 +218,9 @@ class MultiInterface(Interface):
         # Find all the keys along supplied dimensions
         values = []
         for d in dimensions:
-            if not cls.isscalar(dataset, d):
+            if not cls.isscalar(dataset, d, True):
                 raise ValueError('MultiInterface can only apply groupby '
-                                 'on scalar dimensions, %s dimension'
+                                 'on scalar dimensions, %s dimension '
                                  'is not scalar' % d)
             vals = cls.values(dataset, d, False, True)
             values.append(vals)
@@ -285,6 +294,15 @@ class MultiInterface(Interface):
     @classmethod
     def nonzero(cls, dataset):
         return bool(dataset.data)
+
+    @classmethod
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        new_data = []
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            new_data.append(ds.reindex(kdims, vdims))
+        return new_data
 
     @classmethod
     def redim(cls, dataset, dimensions):

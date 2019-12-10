@@ -229,7 +229,7 @@ class Interface(param.Parameterized):
             interface = data.interface
             if interface.datatype in datatype and interface.datatype in eltype.datatype:
                 data = data.data
-            elif hasattr(data.interface, 'split'):
+            elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
                 data = [d for d in data.interface.split(data, None, None, 'columns')]
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
@@ -241,6 +241,8 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
+            elif 'dataframe' in datatype and util.pd:
+                data = data.dframe()
             else:
                 data = tuple(data.columns().values())
         elif isinstance(data, Element):

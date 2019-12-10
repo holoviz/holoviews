@@ -230,37 +230,37 @@ class GeomTests(ComparisonTestCase):
 
     def test_multi_array_iloc_index_row(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.iloc[1], Dataset([(2, 0)], ['x', 'y']))
+        self.assertEqual(mds.iloc[1], Points([(2, 0)], ['x', 'y']))
 
     def test_multi_array_iloc_slice_rows(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.iloc[2:4], Dataset([(3, 0), (2, 1)], ['x', 'y']))
+        self.assertEqual(mds.iloc[2:4], Points([(3, 0), (2, 1)], ['x', 'y']))
 
     def test_multi_array_iloc_slice_rows_no_start(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.iloc[:4], Dataset([(1, 0), (2, 0), (3, 0), (2, 1)], ['x', 'y']))
+        self.assertEqual(mds.iloc[:4], Points([(1, 0), (2, 0), (3, 0), (2, 1)], ['x', 'y']))
 
     def test_multi_array_iloc_slice_rows_no_stop(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.iloc[2:], Dataset([(3, 0), (2, 1), (3, 1), (4, 1)], ['x', 'y']))
+        self.assertEqual(mds.iloc[2:], Points([(3, 0), (2, 1), (3, 1), (4, 1)], ['x', 'y']))
 
     def test_multi_array_iloc_index_rows(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.iloc[[1, 3, 4]], Dataset([(2, 0), (2, 1), (3, 1)], ['x', 'y']))
+        self.assertEqual(mds.iloc[[1, 3, 4]], Points([(2, 0), (2, 1), (3, 1)], ['x', 'y']))
 
     def test_multi_array_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[3, 0], 2)
         self.assertEqual(mds.iloc[3, 1], 1)

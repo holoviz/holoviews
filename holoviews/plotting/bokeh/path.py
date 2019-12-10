@@ -175,13 +175,15 @@ class ContourPlot(PathPlot):
         if 'hover' not in self.handles or self.static_source:
             return
 
+        interface = element.interface
+        scalar_kwargs = {'per_geom': True} if interface.multi else {}
         npath = len([vs for vs in data.values()][0])
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 if element.level is not None:
                     data[dim] = np.full(npath, element.level)
-                elif element.interface.isscalar(element, d):
+                elif interface.isscalar(element, d, **scalar_kwargs):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
