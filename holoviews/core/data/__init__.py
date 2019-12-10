@@ -28,13 +28,13 @@ from .image import ImageInterface             # noqa (API import)
 from .spatialpandas import SpatialPandasInterface # noqa (API import)
 
 default_datatype = 'dictionary'
-datatypes = ['spatialpandas', 'dictionary', 'grid']
+datatypes = ['dictionary', 'grid', 'spatialpandas']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     default_datatype = 'dataframe'
-    datatypes = ['spatialpandas', 'dataframe', 'dictionary', 'grid']
+    datatypes = ['dataframe', 'dictionary', 'spatialpandas', 'grid']
     DFColumns = PandasInterface
 except ImportError:
     pd = None
