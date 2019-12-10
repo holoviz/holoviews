@@ -392,7 +392,7 @@ class MultiInterface(Interface):
     @classmethod
     def iloc(cls, dataset, index):
         rows, cols = index
-        scalar = False
+        scalar = np.isscalar(cols) and np.isscalar(rows)
 
         template = cls._inner_dataset_template(dataset)
         if cls.geom_type(type(dataset)) != 'Point':
