@@ -332,7 +332,8 @@ class Dataset(Element):
         """
         from . import Dataset
         if self._dataset is None:
-            dataset = Dataset(self, _validate_vdims=False, datatype=self.datatype)
+            datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
+            dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
             return dataset
