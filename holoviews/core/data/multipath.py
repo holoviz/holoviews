@@ -77,7 +77,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def geom_type(cls, eltype):
-        from holoviews.element import Polygons, Path, Points
+        from holoviews.element import Polygons, Path
         if issubclass(eltype, Polygons):
             return 'Polygon'
         elif issubclass(eltype, Path):
@@ -393,13 +393,6 @@ class MultiInterface(Interface):
     def iloc(cls, dataset, index):
         rows, cols = index
         scalar = False
-        if isinstance(cols, slice):
-            dims = [d for d in dataset.dimensions()][cols]
-        elif np.isscalar(cols):
-            scalar = np.isscalar(rows)
-            dims = [dataset.get_dimension(cols)]
-        else:
-            dims = [dataset.get_dimension(d).name for d in cols]
 
         template = cls._inner_dataset_template(dataset)
         if cls.geom_type(type(dataset)) != 'Point':
