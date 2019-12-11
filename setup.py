@@ -27,6 +27,9 @@ extras_require['examples'] = extras_require['recommended'] + [
     'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
     'cftime', 'netcdf4', 'bzip2', 'dask', 'scipy']
 
+if sys.version_info.major > 2:
+    extras_require['examples'].append('spatialpandas')
+
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
     'cyordereddict', 'pscript==0.7.1']
