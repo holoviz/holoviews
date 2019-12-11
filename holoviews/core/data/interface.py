@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 
+import sys
 import warnings
 
+import six
 import param
 import numpy as np
 
@@ -273,16 +275,17 @@ class Interface(param.Parameterized):
             except DataError:
                 raise
             except Exception as e:
-                if interface in head:
-                    priority_errors.append((interface, e))
+                if interface in head or len(prioritized) == 1:
+                    priority_errors.append((interface, e, True))
         else:
             error = ("None of the available storage backends were able "
                      "to support the supplied data format.")
             if priority_errors:
-                intfc, e = priority_errors[0]
+                intfc, e, _ = priority_errors[0]
                 priority_error = ("%s raised following error:\n\n %s"
                                   % (intfc.__name__, e))
                 error = ' '.join([error, priority_error])
+                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
