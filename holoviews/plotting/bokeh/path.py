@@ -183,7 +183,7 @@ class ContourPlot(PathPlot):
             if dim not in data:
                 if element.level is not None:
                     data[dim] = np.full(npath, element.level)
-                elif interface.isscalar(element, d, **scalar_kwargs):
+                elif interface.isunique(element, d, **scalar_kwargs):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])

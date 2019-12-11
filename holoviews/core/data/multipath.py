@@ -148,6 +148,17 @@ class MultiInterface(Interface):
         return holes
 
     @classmethod
+    def isunique(cls, dataset, dim, per_geom=False):
+        """
+        Compatibility method introduced for v1.13.0 to smooth
+        over addition of per_geom kwarg for isscalar method.
+        """
+        try:
+            return cls.isscalar(dataset, dim, per_geom)
+        except TypeError:
+            return cls.isscalar(dataset, dim)
+
+    @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
         """
         Tests if dimension is scalar in each subpath.

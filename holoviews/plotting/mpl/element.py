@@ -830,7 +830,7 @@ class ColorbarPlot(ElementPlot):
                     isinstance(element, Dataset) and
                     element.interface.multi and
                     (getattr(element, 'level', None) is not None or
-                    element.interface.isscalar(element, vdim.name, True))
+                    element.interface.isunique(element, vdim.name, True))
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
 
