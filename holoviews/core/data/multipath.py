@@ -24,7 +24,7 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
+    subtypes = ['spatialpandas', 'dictionary', 'dataframe', 'array', 'dask']
 
     multi = True
 
