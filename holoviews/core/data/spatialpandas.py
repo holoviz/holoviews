@@ -633,7 +633,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         splits = np.where(np.isnan(geom[:, :2].astype('float')).sum(axis=1))[0]
         paths = np.split(geom, splits+1) if len(splits) else [geom]
         holes = path.pop('holes', None)
-        if holes and len(holes) != len(paths):
+        if holes is not None and len(holes) != len(paths):
             raise DataError('Polygons with holes containing multi-geometries '
                             'must declare a list of holes for each geometry.',
                             SpatialPandasInterface)
@@ -649,7 +649,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
             else:
                 subparts = parts
             subparts.append(p[:, :2])
-            if poly and holes:
+            if poly and holes is not None:
                 subparts += [np.array(h) for h in holes[i]]
 
         for c, v in path.items():
