@@ -399,7 +399,6 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
-        from spatialpandas.geometry import Point, MultiPoint
         dimension = dataset.get_dimension(dimension)
         geom_dims = dataset.interface.geom_dims(dataset)
         data = dataset.data
@@ -602,7 +601,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
     """
     from spatialpandas import GeoSeries, GeoDataFrame
     from spatialpandas.geometry import (
-        Point, Line, Polygon, Ring, MultiPolygon, MultiLine, LineArray,
+        Point, Line, Polygon, MultiPolygon, MultiLine, LineArray,
         PolygonArray, MultiPoint, PointArray, MultiLineArray,
         MultiPolygonArray, MultiPointArray
     )
@@ -723,7 +722,9 @@ def from_multi(eltype, data, kdims, vdims):
 
 
 def from_shapely(data):
+    from spatialpandas import GeoDataFrame, GeoSeries
     from shapely.geometry.base import BaseGeometry
+
     if not data:
         pass
     elif all(isinstance(d, BaseGeometry) for d in data):
