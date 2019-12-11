@@ -84,8 +84,8 @@ class TestPolygonPlot(TestMPLPlot):
         self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
 
     def test_multi_polygon_hole_plot(self):
-        xs = [1, 2, 3, np.nan, 6, 7, 3]
-        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        xs = [1, 2, 3, np.nan, 3, 7, 6]
+        ys = [2, 0, 7, np.nan, 2, 5, 7]
         holes = [
             [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
             []
@@ -103,7 +103,7 @@ class TestPolygonPlot(TestMPLPlot):
         )
         self.assertEqual(path.codes, np.array([1, 2, 2, 79, 1, 2, 2, 79, 1, 2, 2, 79]))
         path2 = paths[1]
-        self.assertEqual(path2.vertices, np.array([(6, 7), (7, 5), (3, 2), (6, 7)]))
+        self.assertEqual(path2.vertices, np.array([(3, 2), (7, 5), (6, 7), (3, 2)]))
         self.assertEqual(path2.codes, np.array([1, 2, 2, 79]))
 
     def test_polygons_color_op(self):

@@ -105,7 +105,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 values = path.dimension_values(vd)[:-1]
                 vd_name = util.dimension_sanitizer(vd.name)
                 vals[vd_name].append(values)
-                if values.dtype.kind == 'M':
+                if values.dtype.kind == 'M' or (len(values) and isinstance(values[0], util.datetime_types)):
                     vals[vd_name+'_dt_strings'].append([vd.pprint_value(v) for v in values])
         values = {d: np.concatenate(vs) if len(vs) else [] for d, vs in vals.items()}
         if self.invert_axes:
@@ -187,8 +187,10 @@ class ContourPlot(PathPlot):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
-            elif isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
-                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
+            values = data[dim]
+            if ((isinstance(values, np.ndarray) and values.dtype.kind == 'M') or
+                  (len(values) and isinstance(values[0], util.datetime_types))):
+                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)

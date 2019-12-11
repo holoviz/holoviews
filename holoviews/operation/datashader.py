@@ -1283,7 +1283,7 @@ class geometry_rasterize(AggregationOperation):
             data[agg_fn.column] = data[agg_fn.column].astype('category')
         col = element.interface.geo_column(element.data)
 
-        if isinstance(element, Polygons) :
+        if isinstance(element, Polygons):
             agg = cvs.polygons(data, geometry=col, agg=agg_fn)
         elif isinstance(element, Path):
             agg = cvs.line(data, geometry=col, agg=agg_fn)

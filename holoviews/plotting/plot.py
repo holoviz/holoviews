@@ -702,10 +702,11 @@ class DimensionedPlot(Plot):
                             values = el.nodes.dimension_values(2, expanded=False)
                         else:
                             values = el.dimension_values(el_dim, expanded=False)
-                        if values.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in values):
-                            values = np.concatenate(values)
                     elif isinstance(el, Graph) and el_dim in el.nodes:
                         values = el.nodes.dimension_values(el_dim, expanded=False)
+                    if values.dtype.kind == 'O' and all(isinstance(v, (np.ndarray))
+                                                        for v in values):
+                        values = np.concatenate(values)
                     factors = util.unique_array(values)
                     group_ranges[el_dim.name]['factors'].append(factors)
 

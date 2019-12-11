@@ -414,6 +414,7 @@ class SpatialPandasInterface(MultiInterface):
                 arrays = []
                 for i, geom in enumerate(data[col]):
                     length = geom_length(geom)
+                    val = column.iloc[i]
                     arrays.append(np.full(length, column.iloc[i]))
                 return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
         elif not len(data):
@@ -693,7 +694,8 @@ def from_multi(eltype, data, kdims, vdims):
     xname, yname = (kd.name for kd in kdims[:2])
     for d in data:
         types.append(type(d))
-        if isinstance(d, (dict, GeoDataFrame)):
+        if isinstance(d, dict):
+            d = {k: v if isscalar(v) else np.asarray(v) for k, v in d.items()}
             new_data.append(d)
             continue
         new_el = eltype(d, kdims, vdims)
@@ -734,7 +736,7 @@ def from_shapely(data):
         new_data = {col: [] for col in data[0]}
         for d in data:
             for col, val in d.items():
-                new_data[col] = val
+                new_data[col] = val if isscalar(val) else np.asarray(val)
         new_data['geometry'] = GeoSeries(new_data['geometry'])
         data = GeoDataFrame(new_data)
     return data
