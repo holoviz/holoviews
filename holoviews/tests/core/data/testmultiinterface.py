@@ -7,7 +7,7 @@ from unittest import SkipTest
 import numpy as np
 from holoviews.core.data import Dataset, MultiInterface
 from holoviews.core.data.interface import DataError
-from holoviews.element import Path, Points
+from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -178,7 +178,7 @@ class GeomTests(ComparisonTestCase):
     def test_multi_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
-        with self.assertRaises(DataError):
+        with self.assertRaises(ValueError):
             Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
 
     def test_multi_split(self):
@@ -228,42 +228,119 @@ class GeomTests(ComparisonTestCase):
         with self.assertRaises(ValueError):
             mds.groupby('x')
 
-    def test_multi_array_iloc_index_row(self):
+    def test_multi_array_points_iloc_index_row(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[1], Points([(2, 0)], ['x', 'y']))
 
-    def test_multi_array_iloc_slice_rows(self):
+    def test_multi_array_points_iloc_slice_rows(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[2:4], Points([(3, 0), (2, 1)], ['x', 'y']))
 
-    def test_multi_array_iloc_slice_rows_no_start(self):
+    def test_multi_array_points_iloc_slice_rows_no_start(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[:4], Points([(1, 0), (2, 0), (3, 0), (2, 1)], ['x', 'y']))
 
-    def test_multi_array_iloc_slice_rows_no_stop(self):
+    def test_multi_array_points_iloc_slice_rows_no_stop(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[2:], Points([(3, 0), (2, 1), (3, 1), (4, 1)], ['x', 'y']))
 
-    def test_multi_array_iloc_index_rows(self):
+    def test_multi_array_points_iloc_index_rows(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[[1, 3, 4]], Points([(2, 0), (2, 1), (3, 1)], ['x', 'y']))
 
-    def test_multi_array_iloc_index_rows_index_cols(self):
+    def test_multi_array_points_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Points(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.iloc[3, 0], 2)
         self.assertEqual(mds.iloc[3, 1], 1)
+
+    def test_multi_polygon_iloc_index_row(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertEqual(poly.iloc[0], expected)
+
+    def test_multi_polygon_iloc_index_rows(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                         {'x': xs, 'y': ys, 'z': 3}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                             {'x': xs, 'y': ys, 'holes': holes, 'z': 3}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertEqual(poly.iloc[[0, 2]], expected)
+        
+    def test_multi_polygon_iloc_slice_rows(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                         {'x': xs, 'y': ys, 'z': 3}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                             {'x': xs, 'y': ys, 'holes': holes, 'z': 3}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertEqual(poly.iloc[1:3], expected)
+
+    def test_polygon_get_holes(self):
+        xs = [1, 2, 3]
+        ys = [2, 0, 7]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]]
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        holes = [
+            [[np.array(holes[0][0]), np.array(holes[0][1])]],
+            [[]]
+        ]
+        self.assertEqual(poly.holes(), holes)
+
+    def test_multi_polygon_get_holes(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        holes = [
+            [[np.array(holes[0][0]), np.array(holes[0][1])], []],
+            [[], []]
+        ]
+        self.assertEqual(poly.holes(), holes)
 
 
 class MultiInterfaceTest(GeomTests):
