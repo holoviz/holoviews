@@ -148,8 +148,8 @@ class SpatialPandasInterface(MultiInterface):
         geom_dims = cls.geom_dims(dataset)
         if any(s in geom_dims for s in selection):
             xdim, ydim = cls.geom_dims(dataset)
-            xsel = selection.pop(xdim.name, None)
-            ysel = selection.pop(ydim.name, None)
+            selection.pop(xdim.name, None)
+            selection.pop(ydim.name, None)
             df = dataset.data
         else:
             df = dataset.data
@@ -566,19 +566,18 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
     """
     from spatialpandas import GeoSeries, GeoDataFrame
     from spatialpandas.geometry import (
-        Point, Line, Polygon, MultiPolygon, MultiLine, LineArray,
-        PolygonArray, MultiPoint, PointArray, MultiLineArray,
-        MultiPolygonArray, MultiPointArray
+        Point, Line, Polygon, LineArray, PolygonArray, PointArray,
+        MultiLineArray, MultiPolygonArray, MultiPointArray
     )
     poly = any('holes' in d for d in data) or geom == 'Polygon'
     if poly:
-        single_type, multi_type = Polygon, MultiPolygon
+        geom_type = Polygon
         single_array, multi_array = PolygonArray, MultiPolygonArray
     elif geom == 'Line':
-        single_type, multi_type = Line, MultiLine,
+        geom_type = Line
         single_array, multi_array = LineArray, MultiLineArray
     else:
-        single_type, multi_type = Point, MultiPoint
+        geom_type = Point
         single_array, multi_array = PointArray, MultiPointArray
 
     array_type = None
@@ -606,7 +605,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
 
         geom_arrays.append(split_geoms)
         hole_arrays.append(split_holes)
-        if single_type is Point:
+        if geom_type is Point:
             if len(splits) > 1 or any(len(g) > 1 for g in split_geoms):
                 array_type = multi_array
             elif array_type is None:
@@ -622,7 +621,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         for i, g in enumerate(arrays):
             if i != (len(arrays)-1):
                 g = g[:-1]
-            if len(g) < (3 if poly else 2) and single_type is not Point:
+            if len(g) < (3 if poly else 2) and geom_type is not Point:
                 continue
             if poly:
                 parts.append([])

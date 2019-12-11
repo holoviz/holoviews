@@ -384,9 +384,8 @@ class GeomTests(ComparisonTestCase):
                             ['x', 'y'], 'z', datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.select(z=(2, 4)), expected)
-
     
-    def test_select_from_multi_polygons_with_slice(self):
+    def test_select_from_multi_polygons_with_list(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
         holes = [

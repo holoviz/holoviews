@@ -8,7 +8,7 @@ quickly draw common shapes.
 import numpy as np
 
 import param
-from ..core import Element2D, Dataset
+from ..core import Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
 from ..core.util import OrderedDict, disable_constant, isscalar
