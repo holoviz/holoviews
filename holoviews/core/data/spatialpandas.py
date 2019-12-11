@@ -108,14 +108,13 @@ class SpatialPandasInterface(MultiInterface):
                              "dimensions, the following dimensions were "
                              "not found: %s" % repr(not_found), cls)
 
-
     @classmethod
     def dtype(cls, dataset, dimension):
-        name = dataset.get_dimension(dimension, strict=True).name
-        if name not in dataset.data:
-            return np.dtype('float') # Geometry dimension
-        return dataset.data[name].dtype
-
+        dim = dataset.get_dimension(dimension, strict=True)
+        if dim in cls.geom_dims(dataset):
+            col = cls.geo_column(dataset.data)
+            return dataset.data[col].values.numpy_dtype
+        return dataset.data[dim.name].dtype
 
     @classmethod
     def has_holes(cls, dataset):
@@ -146,8 +145,12 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        if cls.geom_dims(dataset):
-            df = cls.shape_mask(dataset, selection)
+        geom_dims = cls.geom_dims(dataset)
+        if any(s in geom_dims for s in selection):
+            xdim, ydim = cls.geom_dims(dataset)
+            xsel = selection.pop(xdim.name, None)
+            ysel = selection.pop(ydim.name, None)
+            df = dataset.data
         else:
             df = dataset.data
         if not selection:
@@ -159,44 +162,6 @@ class SpatialPandasInterface(MultiInterface):
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
-
-    @classmethod
-    def shape_mask(cls, dataset, selection):
-        xdim, ydim = cls.geom_dims(dataset)
-        xsel = selection.pop(xdim.name, None)
-        ysel = selection.pop(ydim.name, None)
-        if xsel is None and ysel is None:
-            return dataset.data
-
-        from shapely.geometry import box
-
-        if xsel is None:
-            x0, x1 = cls.range(dataset, xdim)
-        elif isinstance(xsel, slice):
-            x0, x1 = xsel.start, xsel.stop
-        elif isinstance(xsel, tuple):
-            x0, x1 = xsel
-        else:
-            raise ValueError("Only slicing is supported on geometries, %s "
-                             "selection is of type %s."
-                             % (xdim, type(xsel).__name__))
-
-        if ysel is None:
-            y0, y1 = cls.range(dataset, ydim)
-        elif isinstance(ysel, slice):
-            y0, y1 = ysel.start, ysel.stop
-        elif isinstance(ysel, tuple):
-            y0, y1 = ysel
-        else:
-            raise ValueError("Only slicing is supported on geometries, %s "
-                             "selection is of type %s."
-                             % (ydim, type(ysel).__name__))
-
-        bounds = box(x0, y0, x1, y1)
-        col = cls.geo_column(dataset.data)
-        df = dataset.data.copy()
-        df[col] = df[col].intersection(bounds)
-        return df[df[col].area > 0]
 
     @classmethod
     def select_mask(cls, dataset, selection):
@@ -616,12 +581,13 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         single_type, multi_type = Point, MultiPoint
         single_array, multi_array = PointArray, MultiPointArray
 
-    converted = defaultdict(list)
-    for path in data:
-        path = dict(path)
-        if xdim not in path or ydim not in path:
+    array_type = None
+    hole_arrays, geom_arrays = [], []
+    for geom in data:
+        geom = dict(geom)
+        if xdim not in geom or ydim not in geom:
             raise ValueError('Could not find geometry dimensions')
-        xs, ys = path.pop(xdim), path.pop(ydim)
+        xs, ys = geom.pop(xdim), geom.pop(ydim)
         xscalar, yscalar = isscalar(xs), isscalar(ys)
         if xscalar and yscalar:
             xs, ys = np.array([xs]), np.array([ys])
@@ -629,47 +595,55 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
             xs = np.full_like(ys, xs)
         elif yscalar:
             ys = np.full_like(xs, ys)
-        geom = np.column_stack([xs, ys])
-        splits = np.where(np.isnan(geom[:, :2].astype('float')).sum(axis=1))[0]
-        paths = np.split(geom, splits+1) if len(splits) else [geom]
-        holes = path.pop('holes', None)
-        if holes is not None and len(holes) != len(paths):
+        geom_array = np.column_stack([xs, ys])
+        splits = np.where(np.isnan(geom_array[:, :2].astype('float')).sum(axis=1))[0]
+        split_geoms = np.split(geom_array, splits+1) if len(splits) else [geom_array]
+        split_holes = geom.pop('holes', None)
+        if split_holes is not None and len(split_holes) != len(split_geoms):
             raise DataError('Polygons with holes containing multi-geometries '
                             'must declare a list of holes for each geometry.',
                             SpatialPandasInterface)
+
+        geom_arrays.append(split_geoms)
+        hole_arrays.append(split_holes)
+        if single_type is Point:
+            if len(splits) > 1 or any(len(g) > 1 for g in split_geoms):
+                array_type = multi_array
+            elif array_type is None:
+                array_type = single_array
+        elif len(splits):
+            array_type = multi_array
+        elif array_type is None:
+            array_type = single_array
+
+    converted = defaultdict(list)
+    for geom, arrays, holes in zip(data, geom_arrays, hole_arrays):
         parts = []
-        for i, p in enumerate(paths):
-            if i != (len(paths)-1):
-                p = p[:-1]
-            if len(p) < (3 if poly else 2) and single_type is not Point:
+        for i, g in enumerate(arrays):
+            if i != (len(arrays)-1):
+                g = g[:-1]
+            if len(g) < (3 if poly else 2) and single_type is not Point:
                 continue
             if poly:
                 parts.append([])
                 subparts = parts[-1]
             else:
                 subparts = parts
-            subparts.append(p[:, :2])
+            subparts.append(g[:, :2])
             if poly and holes is not None:
                 subparts += [np.array(h) for h in holes[i]]
 
-        for c, v in path.items():
+        for c, v in geom.items():
             converted[c].append(v)
 
-        if single_type is Point:
-            if sum(len(p) for p in parts) > 1:
-                parts = np.concatenate([sp.flatten() for sp in parts])
-                array_type = multi_array
-            else:
-                parts = parts[0].flatten()
-                array_type = single_array
-        elif len(parts) > 1:
+        if array_type is PointArray:
+            parts = parts[0].flatten()
+        elif array_type is MultiPointArray:
+            parts = np.concatenate([sp.flatten() for sp in parts])
+        elif array_type is multi_array:
             parts = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
-            geom = multi_type(parts)
-            array_type = multi_array
         else:
             parts = [np.asarray(sp).flatten() for sp in parts[0]] if poly else parts[0].flatten()
-            geom = single_type(parts)
-            array_type = single_array
         converted['geometry'].append(parts)
 
     if converted:

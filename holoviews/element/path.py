@@ -102,21 +102,13 @@ class Path(Geometry):
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
-        if not all(isinstance(k, slice) for k in key):
+        if not all(isinstance(k, slice) for k in key[:2]):
             raise KeyError("%s only support slice indexing" %
                              self.__class__.__name__)
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
         return self.clone(extents=(xstart, ystart, xstop, ystop))
-
-
-    def select(self, *args, **kwargs):
-        """
-        Bypasses selection on data and sets extents based on selection.
-        """
-        return super(Element2D, self).select(*args, **kwargs)
-
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """

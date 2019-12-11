@@ -277,6 +277,7 @@ class GeomTests(ComparisonTestCase):
                         ['x', 'y'], 'z', datatype=[self.datatype])
         expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1}],
                             ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.iloc[0], expected)
 
     def test_multi_polygon_iloc_index_rows(self):
@@ -293,6 +294,7 @@ class GeomTests(ComparisonTestCase):
         expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
                              {'x': xs, 'y': ys, 'holes': holes, 'z': 3}],
                             ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.iloc[[0, 2]], expected)
         
     def test_multi_polygon_iloc_slice_rows(self):
@@ -309,6 +311,7 @@ class GeomTests(ComparisonTestCase):
         expected = Polygons([{'x': xs[::-1], 'y': ys[::-1], 'z': 2},
                              {'x': xs, 'y': ys, 'holes': holes, 'z': 3}],
                             ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.iloc[1:3], expected)
 
     def test_polygon_get_holes(self):
@@ -324,6 +327,7 @@ class GeomTests(ComparisonTestCase):
             [[np.array(holes[0][0]), np.array(holes[0][1])]],
             [[]]
         ]
+        self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.holes(), holes)
 
     def test_multi_polygon_get_holes(self):
@@ -340,7 +344,64 @@ class GeomTests(ComparisonTestCase):
             [[np.array(holes[0][0]), np.array(holes[0][1])], []],
             [[], []]
         ]
+        self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.holes(), holes)
+
+    def test_polygon_dtype(self):
+        poly = Polygons([{'x': [1, 2, 3], 'y': [2, 0, 7]}])
+        self.assertIs(poly.interface, self.interface)
+        self.assertEqual(poly.interface.dtype(poly, 'x'),
+                         'int64')
+
+    def test_select_from_multi_polygons_with_scalar(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
+        self.assertEqual(poly.select(z=2), expected)
+
+    def test_select_from_multi_polygons_with_slice(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                         {'x': xs[:3], 'y': ys[:3], 'z': 3}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                             {'x': xs[:4], 'y': ys[:4], 'z': 3}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
+        self.assertEqual(poly.select(z=(2, 4)), expected)
+
+    
+    def test_select_from_multi_polygons_with_slice(self):
+        xs = [1, 2, 3, np.nan, 6, 7, 3]
+        ys = [2, 0, 7, np.nan, 7, 5, 2]
+        holes = [
+            [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],
+            []
+        ]
+        poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                         {'x': xs[::-1], 'y': ys[::-1], 'z': 2},
+                         {'x': xs[:3], 'y': ys[:3], 'z': 3}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
+                             {'x': xs[:4], 'y': ys[:4], 'z': 3}],
+                            ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertIs(poly.interface, self.interface)
+        self.assertEqual(poly.select(z=[1, 3]), expected)
 
 
 class MultiInterfaceTest(GeomTests):
