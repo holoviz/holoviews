@@ -66,6 +66,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - conda install -c pyviz spatialpandas
         - doit env_capture
       script:
         - doit test_all_recommended
@@ -74,6 +75,11 @@ jobs:
 
     - <<: *default
       env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
+	  install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
+        - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - doit env_capture
 
     # - &regression_test
     #   <<: *default
