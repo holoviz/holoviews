@@ -414,7 +414,6 @@ class SpatialPandasInterface(MultiInterface):
                 arrays = []
                 for i, geom in enumerate(data[col]):
                     length = geom_length(geom)
-                    val = column.iloc[i]
                     arrays.append(np.full(length, column.iloc[i]))
                 return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
         elif not len(data):
@@ -658,7 +657,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
 
         if single_type is Point:
             if sum(len(p) for p in parts) > 1:
-                parts = np.concatenate([p.flatten() for p in parts])
+                parts = np.concatenate([sp.flatten() for sp in parts])
                 array_type = multi_array
             else:
                 parts = parts[0].flatten()

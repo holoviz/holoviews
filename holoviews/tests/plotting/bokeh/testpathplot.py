@@ -1,11 +1,9 @@
 import datetime as dt
-from unittest import SkipTest
 
 import numpy as np
 from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
-from holoviews.plotting.bokeh.util import bokeh_version
 from holoviews.streams import PolyDraw
 
 from .testplot import TestBokehPlot, bokeh_renderer
