@@ -663,7 +663,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
                 parts = parts[0].flatten()
                 array_type = single_array
         elif len(parts) > 1:
-            parts = [[p.flatten() for p in sp] if poly else sp.flatten() for sp in parts]
+            parts = [[ssp.flatten() for ssp in sp] if poly else sp.flatten() for sp in parts]
             geom = multi_type(parts)
             array_type = multi_array
         else:
