@@ -1260,6 +1260,15 @@ class geometry_rasterize(AggregationOperation):
     Rasterizes geometries by converting them to spatialpandas.
     """
 
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
+
+    def _get_aggregator(self, element, add_field=True):
+        agg = self.p.aggregator
+        if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+            return ds.count()
+        return super(geometry_rasterize, self)._get_aggregator(element, add_field)
+
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
         xdim, ydim = element.kdims

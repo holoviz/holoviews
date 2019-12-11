@@ -199,11 +199,11 @@ class MultiInterface(Interface):
         return data
 
     @classmethod
-    def select_paths(cls, dataset, selection):
+    def select_paths(cls, dataset, index):
         """
         Allows selecting paths with usual NumPy slicing index.
         """
-        selection = np.array([{0: p} for p in dataset.data])[selection]
+        selection = np.array([{0: p} for p in dataset.data])[index]
         if isinstance(selection, dict):
             return [selection[0]]
         return [s[0] for s in selection]
