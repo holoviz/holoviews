@@ -75,7 +75,7 @@ jobs:
 
     - <<: *default
       env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
-	  install:
+      install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
