@@ -194,7 +194,12 @@ class MultiInterface(Interface):
         data = []
         for d in dataset.data:
             ds.data = d
-            sel = ds.interface.select(ds, **selection)
+            selection_mask = ds.interface.select_mask(ds, selection)
+            sel = ds.interface.select(ds, selection_mask)
+            if ((not len(sel) and not isinstance(sel, dict)) or
+                any(False if util.isscalar(v) else len(v) == 0
+                    for k, v in sel.items() if k != 'holes')):
+                continue
             data.append(sel)
         return data
 
@@ -355,6 +360,7 @@ class MultiInterface(Interface):
                     values.append([np.NaN])
             else:
                 values.append(dvals)
+
         if not values:
             return np.array([])
         elif expanded or is_scalar:

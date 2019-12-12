@@ -310,9 +310,18 @@ class DictInterface(Interface):
     def select(cls, dataset, selection_mask=None, **selection):
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+        empty = not selection_mask.sum()
+        dimensions = dataset.dimensions()
+        if empty:
+            return {d.name: np.array([], dtype=cls.dtype(dataset, d))
+                    for d in dimensions}
         indexed = cls.indexed(dataset, selection)
-        data = OrderedDict((k, v if isscalar(v) else v[selection_mask])
-                           for k, v in dataset.data.items())
+        data = OrderedDict()
+        for k, v in dataset.data.items():
+            if k not in dimensions or isscalar(v):
+                data[k] = v
+            else:
+                data[k] = v[selection_mask]
         if indexed and len(list(data.values())[0]) == 1 and len(dataset.vdims) == 1:
             value = data[dataset.vdims[0].name]
             return value if isscalar(value) else value[0]

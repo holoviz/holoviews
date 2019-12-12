@@ -380,7 +380,7 @@ class GeomTests(ComparisonTestCase):
                          {'x': xs[:3], 'y': ys[:3], 'z': 3}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
         expected = Polygons([{'x': xs[::-1], 'y': ys[::-1], 'z': 2},
-                             {'x': xs[:4], 'y': ys[:4], 'z': 3}],
+                             {'x': xs[:3], 'y': ys[:3], 'z': 3}],
                             ['x', 'y'], 'z', datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.select(z=(2, 4)), expected)
@@ -397,7 +397,7 @@ class GeomTests(ComparisonTestCase):
                          {'x': xs[:3], 'y': ys[:3], 'z': 3}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
         expected = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'z': 1},
-                             {'x': xs[:4], 'y': ys[:4], 'z': 3}],
+                             {'x': xs[:3], 'y': ys[:3], 'z': 3}],
                             ['x', 'y'], 'z', datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.select(z=[1, 3]), expected)
