@@ -188,17 +188,22 @@ class MultiInterface(Interface):
         """
         Applies selectiong on all the subpaths.
         """
-        if not dataset.data:
-            return []
+        if cls.geom_type(type(dataset)):
+            xdim, ydim = dataset.kdims[:2]
+            selection.pop(xdim.name, None)
+            selection.pop(ydim.name, None)
+        if not selection or not dataset.data:
+            return dataset.data
         ds = cls._inner_dataset_template(dataset)
         data = []
         for d in dataset.data:
             ds.data = d
             selection_mask = ds.interface.select_mask(ds, selection)
             sel = ds.interface.select(ds, selection_mask)
-            if ((not len(sel) and not isinstance(sel, dict)) or
-                any(False if util.isscalar(v) else len(v) == 0
-                    for k, v in sel.items() if k != 'holes')):
+            is_dict = isinstance(sel, dict)
+            if ((not len(sel) and not is_dict) or
+                (is_dict and any(False if util.isscalar(v) else len(v) == 0
+                                 for k, v in sel.items() if k != 'holes'))):
                 continue
             data.append(sel)
         return data

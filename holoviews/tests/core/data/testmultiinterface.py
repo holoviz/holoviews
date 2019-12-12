@@ -20,6 +20,7 @@ try:
 except:
     dd = None
 
+
 class GeomTests(ComparisonTestCase):
     """
     Test of the MultiInterface.
@@ -348,7 +349,7 @@ class GeomTests(ComparisonTestCase):
         self.assertEqual(poly.holes(), holes)
 
     def test_polygon_dtype(self):
-        poly = Polygons([{'x': [1, 2, 3], 'y': [2, 0, 7]}])
+        poly = Polygons([{'x': [1, 2, 3], 'y': [2, 0, 7]}], datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.interface.dtype(poly, 'x'),
                          'int64')

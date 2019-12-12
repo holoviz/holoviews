@@ -145,14 +145,10 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        geom_dims = cls.geom_dims(dataset)
-        if any(s in geom_dims for s in selection):
-            xdim, ydim = cls.geom_dims(dataset)
-            selection.pop(xdim.name, None)
-            selection.pop(ydim.name, None)
-            df = dataset.data
-        else:
-            df = dataset.data
+        xdim, ydim = cls.geom_dims(dataset)
+        selection.pop(xdim.name, None)
+        selection.pop(ydim.name, None)
+        df = dataset.data
         if not selection:
             return df
         elif selection_mask is None:
