@@ -188,11 +188,7 @@ class MultiInterface(Interface):
         """
         Applies selectiong on all the subpaths.
         """
-        if cls.geom_type(type(dataset)):
-            xdim, ydim = dataset.kdims[:2]
-            selection.pop(xdim.name, None)
-            selection.pop(ydim.name, None)
-        if not selection or not dataset.data:
+        if not dataset.data:
             return dataset.data
         ds = cls._inner_dataset_template(dataset)
         data = []

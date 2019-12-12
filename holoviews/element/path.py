@@ -102,13 +102,65 @@ class Path(Geometry):
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
         elif len(key) == 0: return self.clone()
-        if not all(isinstance(k, slice) for k in key[:2]):
+        if not all(isinstance(k, slice) for k in key):
             raise KeyError("%s only support slice indexing" %
                              self.__class__.__name__)
         xkey, ykey = key
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
         return self.clone(extents=(xstart, ystart, xstop, ystop))
+
+
+    def select(self, selection_expr=None, selection_specs=None, **selection):
+        """Applies selection by dimension name
+
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        * predicate expression: A holoviews.dim expression, e.g.:
+
+            from holoviews import dim
+            ds.select(selection_expr=dim('x') % 2 == 0)
+
+        Args:
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
+        """
+        xdim, ydim = self.kdims
+        selection.pop(xdim.name, None)
+        selection.pop(ydim.name, None)
+        return super(Path, self).select(selection_expr, selection_specs,
+                                        **selection)
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """
