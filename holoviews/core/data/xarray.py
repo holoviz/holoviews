@@ -389,7 +389,7 @@ class XArrayInterface(GridInterface):
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         reduce_dims = [d.name for d in dataset.kdims if d not in dimensions]
-        return dataset.data.reduce(function, dim=reduce_dims), []
+        return dataset.data.reduce(function, dim=reduce_dims, **kwargs), []
 
 
     @classmethod
