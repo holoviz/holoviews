@@ -50,7 +50,6 @@ class SpatialPandasInterface(MultiInterface):
         import pandas as pd
         from spatialpandas import GeoDataFrame, GeoSeries
 
-
         if kdims is None:
             kdims = eltype.kdims
 
@@ -214,7 +213,7 @@ class SpatialPandasInterface(MultiInterface):
         Tests if dimension is scalar in each subpath.
         """
         dim = dataset.get_dimension(dim)
-        geom_type = cls.geom_type(type(dataset))
+        geom_type = cls.geom_type(dataset)
         if (dim in cls.geom_dims(dataset)):
             return False
         elif per_geom and geom_type != 'Point':
@@ -266,7 +265,7 @@ class SpatialPandasInterface(MultiInterface):
         from spatialpandas.geometry import MultiPointDtype, Point
         col_name = cls.geo_column(dataset.data)
         column = dataset.data[col_name]
-        geom_type = cls.geom_type(type(dataset))
+        geom_type = cls.geom_type(dataset)
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
             return PandasInterface.length(dataset)
         length = 0
@@ -318,45 +317,52 @@ class SpatialPandasInterface(MultiInterface):
             columns.index(geom_col) if c in geom_dims else columns.index(c) for c in cols
         ]))
 
-        if np.isscalar(rows):
-            rows = [rows]
+        if not isinstance(dataset.data[geom_col].dtype, MultiPointDtype):
+            if scalar:
+                return dataset.data.iloc[rows[0], cols[0]]
+            elif isscalar(rows):
+                rows = [rows]
+            return dataset.data.iloc[rows, cols]
 
-        if isinstance(dataset.data[geom_col].dtype, MultiPointDtype):
-            geoms = dataset.data[geom_col]
-            count = 0
-            new_geoms = []
-            for geom in geoms:
-                length = int(len(geom.buffer_values)/2)
-                if np.isscalar(rows):
-                    if (count+length) > rows >= count:
-                        data = geom.buffer_values[rows-count]
-                        new_geoms.append(type(geom)(data))
-                        break
-                elif isinstance(rows, slice):
-                    if rows.start is not None and rows.start > (count+length):
-                        continue
-                    elif rows.stop is not None and rows.stop < count:
-                        break
-                    start = None if rows.start is None else max(rows.start - count, 0)*2
-                    stop = None if rows.stop is None else min(rows.stop - count, length)*2
-                    if rows.step is not None:
-                        dataset.param.warning(".iloc step slicing currently not supported for"
-                                              "the multi-tabular data format.")
-                    slc = slice(start, stop)
-                    new_geoms.append(type(geom)(geom.buffer_values[slc]))
-                else:
-                    sub_rows = [v for r in rows for v in ((r-count)*2, (r-count)*2+1)
-                                if 0 <= (r-count) < (count+length)]
-                    new_geoms.append(type(geom)(geom.buffer_values[np.array(sub_rows, dtype=int)]))
-                count += length
+        geoms = dataset.data[geom_col]
+        count = 0
+        new_geoms, indexes = [], []
+        for i, geom in enumerate(geoms):
+            length = int(len(geom.buffer_values)/2)
+            if np.isscalar(rows):
+                if count <= rows < (count+length):
+                    idx = (rows-count)*2
+                    data = geom.buffer_values[idx:idx+2]
+                    new_geoms.append(type(geom)(data))
+                    indexes.append(i)
+                    break
+            elif isinstance(rows, slice):
+                if rows.start is not None and rows.start > (count+length):
+                    continue
+                elif rows.stop is not None and rows.stop < count:
+                    break
+                start = None if rows.start is None else max(rows.start - count, 0)*2
+                stop = None if rows.stop is None else min(rows.stop - count, length)*2
+                if rows.step is not None:
+                    dataset.param.warning(".iloc step slicing currently not supported for"
+                                          "the multi-tabular data format.")
+                sliced = geom.buffer_values[start:stop]
+                if len(sliced):
+                    indexes.append(i)
+                    new_geoms.append(type(geom)(sliced))
+            else:
+                sub_rows = [v for r in rows for v in ((r-count)*2, (r-count)*2+1)
+                            if count <= r < (count+length)]
+                if sub_rows:
+                    indexes.append(i)
+                    idxs = np.array(sub_rows, dtype=int)
+                    new_geoms.append(type(geom)(geom.buffer_values[idxs]))
+            count += length
 
-            new = dataset.data.copy()
-            new[geom_col] = GeoSeries(new_geoms)
-            return new
+        new = dataset.data.iloc[indexes].copy()
+        new[geom_col] = GeoSeries(new_geoms)
+        return new
 
-        if scalar:
-            return dataset.data.iloc[rows[0], cols[0]]
-        return dataset.data.iloc[rows, cols]
 
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
@@ -380,7 +386,7 @@ class SpatialPandasInterface(MultiInterface):
         elif not len(data):
             return np.array([])
 
-        geom_type = cls.geom_type(type(dataset))
+        geom_type = cls.geom_type(dataset)
         index = geom_dims.index(dimension)
         return geom_array_to_array(data[col].values, index, expanded, geom_type)
 
@@ -394,7 +400,7 @@ class SpatialPandasInterface(MultiInterface):
                       if dim not in (xdim, ydim)]
         row = dataset.data.iloc[0]
         col = cls.geo_column(dataset.data)
-        geom_type = cls.geom_type(type(dataset))
+        geom_type = cls.geom_type(dataset)
         arr = geom_to_array(row[col], geom_type=geom_type)
         d = {(xdim.name, ydim.name): arr}
         d.update({dim.name: row[dim.name] for dim in value_dims})
@@ -497,7 +503,9 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
             arrays = arrays[:-1]
         return np.concatenate(arrays) if arrays else np.array([])
     else:
-        return arrays
+        array = np.empty(len(arrays), dtype=object)
+        array[:] = arrays
+        return array
 
 
 def geom_length(geom):
@@ -555,7 +563,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         data: List of dictionaries representing individual geometries
         xdim: Name of x-coordinates column
         ydim: Name of y-coordinates column
-        ring: Whether the data represents a closed ring
+        geom: The type of geometry
 
     Returns:
         A spatialpandas.GeoDataFrame version of the data
@@ -704,7 +712,7 @@ def from_shapely(data):
         new_data = {col: [] for col in data[0]}
         for d in data:
             for col, val in d.items():
-                new_data[col] = val if isscalar(val) else np.asarray(val)
+                new_data[col].append(val if isscalar(val) or isinstance(val, BaseGeometry) else np.asarray(val))
         new_data['geometry'] = GeoSeries(new_data['geometry'])
         data = GeoDataFrame(new_data)
     return data

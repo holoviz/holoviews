@@ -76,8 +76,18 @@ class MultiInterface(Interface):
 
 
     @classmethod
-    def geom_type(cls, eltype):
+    def geom_type(cls, dataset):
         from holoviews.element import Polygons, Path, Points
+        if isinstance(dataset, type):
+            eltype = dataset
+        else:
+            eltype = type(dataset)
+            if isinstance(dataset.data, list):
+                ds = cls._inner_dataset_template(dataset)
+                if hasattr(ds.interface, 'geom_type'):
+                    geom_type = ds.interface.geom_type(ds)
+                    if geom_type is not None:
+                        return geom_type
         if issubclass(eltype, Polygons):
             return 'Polygon'
         elif issubclass(eltype, Path):
@@ -165,7 +175,7 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return True
-        geom_type = cls.geom_type(type(dataset))
+        geom_type = cls.geom_type(dataset)
         ds = cls._inner_dataset_template(dataset)
         combined = []
         for d in dataset.data:
@@ -272,7 +282,7 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
-        elif cls.geom_type(type(dataset)) != 'Point':
+        elif cls.geom_type(dataset) != 'Point':
             return (len(dataset.data), len(dataset.dimensions()))
 
         rows, cols = 0, 0
@@ -292,7 +302,7 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return 0
-        elif cls.geom_type(type(dataset)) != 'Point':
+        elif cls.geom_type(dataset) != 'Point':
             return len(dataset.data)
         length = 0
         ds = cls._inner_dataset_template(dataset)
@@ -345,7 +355,7 @@ class MultiInterface(Interface):
         values = []
         is_scalar = True 
         ds = cls._inner_dataset_template(dataset)
-        is_points = cls.geom_type(type(dataset)) == 'Point'
+        is_points = cls.geom_type(dataset) == 'Point'
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(
@@ -431,7 +441,7 @@ class MultiInterface(Interface):
         scalar = np.isscalar(cols) and np.isscalar(rows)
 
         template = cls._inner_dataset_template(dataset)
-        if cls.geom_type(type(dataset)) != 'Point':
+        if cls.geom_type(dataset) != 'Point':
             geoms = cls.select_paths(dataset, rows)
             new_data = []
             for d in geoms:
