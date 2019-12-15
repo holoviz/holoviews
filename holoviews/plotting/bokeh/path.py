@@ -58,15 +58,18 @@ class PathPlot(LegendPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring) and validate('color', color) == False:
+        if isinstance(color, util.basestring) and not validate('color', color):
             cdim = element.get_dimension(color)
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
-        style_mapping = any(
-            s for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            (isinstance(v, util.basestring) and v in element) or isinstance(v, dim))
+        scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
+        style_mapping = {
+            (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
+            ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
+            not (v == color and s == 'color')}
         mapping = dict(self._mapping)
-        if not cdim and not style_mapping and 'hover' not in self.handles:
+
+        if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
             if self.static_source:
                 data = {}
             else:
@@ -90,7 +93,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
         xpaths, ypaths = [], []
         for path in element.split():
             if cdim:
-                cvals = path.dimension_values(cdim)
+                scalar = path.interface.isunique(path, cdim, per_geom=True)
+                cvals = path.dimension_values(cdim, not scalar)
                 vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
