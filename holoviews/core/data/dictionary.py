@@ -409,7 +409,16 @@ class DictInterface(Interface):
         from holoviews.element import Polygons
         key = Polygons._hole_key
         if key in dataset.data:
-            return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
+            holes = []
+            for hs in dataset.data[key]:
+                subholes = []
+                for h in hs:
+                    hole = np.asarray(h)
+                    if (hole[0, :] != hole[-1, :]).all():
+                        hole = np.concatenate([hole, hole[:1]])
+                    subholes.append(hole)
+                holes.append(subholes)
+            return [holes]
         else:
             return super(DictInterface, cls).holes(dataset)
 

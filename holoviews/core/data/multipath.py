@@ -24,7 +24,7 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['spatialpandas', 'dictionary', 'dataframe', 'array', 'dask']
+    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
 
     multi = True
 
@@ -354,13 +354,18 @@ class MultiInterface(Interface):
         values, scalars = [], []
         all_scalar = True
         ds = cls._inner_dataset_template(dataset)
-        is_points = cls.geom_type(dataset) == 'Point'
+        geom_type = cls.geom_type(dataset)
+        is_points = geom_type == 'Point'
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(
                 ds, dimension, expanded, flat, compute, keep_index
             )
             scalar = len(dvals) == 1
+            if geom_type == 'Polygon':
+                gvals = ds.array([0, 1])
+                if not scalar and (gvals[0] != gvals[-1]).all():
+                    dvals = np.concatenate([dvals, dvals[:1]])
             all_scalar &= scalar
             scalars.append(scalar)
             if not len(dvals):

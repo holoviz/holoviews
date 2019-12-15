@@ -39,21 +39,21 @@ class SpatialPandasTest(GeomTests):
             raise SkipTest('SpatialPandasInterface requires spatialpandas, skipping tests')
         super(GeomTests, self).setUp()
 
-    def test_multi_dict_groupby(self):
+    def test_dict_groupby(self):
         arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         with self.assertRaises(DataError):
             mds.groupby('y')
 
-    def test_multi_array_groupby(self):
+    def test_array_groupby(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         with self.assertRaises(DataError):
             mds.groupby('y')
 
-    def test_multi_array_points_iloc_index_rows_index_cols(self):
+    def test_array_points_iloc_index_rows_index_cols(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
@@ -195,8 +195,8 @@ class SpatialPandasTest(GeomTests):
         self.assertIsInstance(poly.data.geometry.dtype, PolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
-        expected = Polygons([{'x': xs, 'y': ys, 'z': 0},
-                             {'x': xs, 'y': ys, 'z': 1}],
+        expected = Polygons([{'x': xs+[1], 'y': ys+[2], 'z': 0},
+                             {'x': xs+[1], 'y': ys+[2], 'z': 1}],
                             ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
     
@@ -213,10 +213,10 @@ class SpatialPandasTest(GeomTests):
         self.assertIsInstance(poly.data.geometry.dtype, MultiPolygonDtype)
         roundtrip = poly.clone(datatype=['multitabular'])
         self.assertEqual(roundtrip.interface.datatype, 'multitabular')
-        expected = Polygons([{'x': [1, 2, 3, np.nan, 3, 7, 6],
-                              'y': [2, 0, 7, np.nan, 2, 5, 7], 'holes': holes, 'z': 1},
-                             {'x': [3, 7, 6, np.nan, 1, 2, 3],
-                              'y': [2, 5, 7, np.nan, 2, 0, 7], 'z': 2}],
+        expected = Polygons([{'x': [1, 2, 3, 1, np.nan, 3, 7, 6, 3],
+                              'y': [2, 0, 7, 2, np.nan, 2, 5, 7, 2], 'holes': holes, 'z': 1},
+                             {'x': [3, 7, 6, 3, np.nan, 1, 2, 3, 1],
+                              'y': [2, 5, 7, 2, np.nan, 2, 0, 7, 2], 'z': 2}],
                             ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
     

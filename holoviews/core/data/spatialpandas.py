@@ -213,7 +213,6 @@ class SpatialPandasInterface(MultiInterface):
         Tests if dimension is scalar in each subpath.
         """
         dim = dataset.get_dimension(dim)
-        geom_type = cls.geom_type(dataset)
         if (dim in cls.geom_dims(dataset)):
             return False
         elif per_geom:
@@ -380,51 +379,18 @@ class SpatialPandasInterface(MultiInterface):
         geom_dims = dataset.interface.geom_dims(dataset)
         data = dataset.data
         isgeom = (dimension in geom_dims)
-        col = cls.geo_column(dataset.data)
+        geom_col = cls.geo_column(dataset.data)
         is_points = cls.geom_type(dataset) == 'Point'
         if isgeom and keep_index:
-            return data[col]
+            return data[geom_col]
         elif not isgeom:
-            column = data[dimension.name]
-            if keep_index:
-                return column
-            else:
-                all_scalar = True
-                arrays, scalars = [], []
-                for i, geom in enumerate(data[col]):
-                    length = geom_length(geom)
-                    val = column.iloc[i]
-                    scalar = isscalar(val)
-                    if scalar:
-                        val = np.array([val])
-                    if not scalar and len(unique_array(val)) == 1:
-                        val = val[:1]
-                        scalar = True
-                    all_scalar &= scalar
-                    scalars.append(scalar)
-                    if not expanded or not scalar:
-                        arrays.append(val)
-                    elif scalar:
-                        arrays.append(np.full(length, val))
-                    if expanded and not is_points and not i == (len(data[col])-1):
-                        arrays.append(np.array([np.NaN]))
-
-                if not len(data):
-                    return np.array([])
-                if expanded:
-                    return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
-                elif (all_scalar and arrays):
-                    return np.array([a[0] for a in arrays])
-                else:
-                    array = np.empty(len(arrays), dtype=object)
-                    array[:] = [a[0] if s else a for s, a in zip(scalars, arrays)]
-                    return array
+            return get_value_array(data, dimension, expanded, keep_index, geom_col, is_points)
         elif not len(data):
             return np.array([])
 
         geom_type = cls.geom_type(dataset)
         index = geom_dims.index(dimension)
-        return geom_array_to_array(data[col].values, index, expanded, geom_type)
+        return geom_array_to_array(data[geom_col].values, index, expanded, geom_type)
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
@@ -475,6 +441,7 @@ class SpatialPandasInterface(MultiInterface):
         return objs
 
 
+
 def geom_to_array(geom, index=None, multi=False, geom_type=None):
     """Converts spatialpandas geometry to an array.
 
@@ -496,6 +463,8 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
     elif isinstance(geom, (Polygon, Line, Ring)):
         exterior = geom.data[0] if isinstance(geom, Polygon) else geom.data
         arr = np.array(exterior.as_py()).reshape(-1, 2)
+        if isinstance(geom, (Polygon, Ring)) and (arr[0] != arr[-1]).all():
+            arr = np.concatenate([arr, arr[:1]])
         arrays = [arr if index is None else arr[:, index]]
     elif isinstance(geom, MultiPoint):
         if index is None:
@@ -507,6 +476,8 @@ def geom_to_array(geom, index=None, multi=False, geom_type=None):
         for g in geom.data:
             exterior = g[0] if isinstance(geom, MultiPolygon) else g
             arr = np.array(exterior.as_py()).reshape(-1, 2)
+            if isinstance(geom, MultiPolygon) and (arr[0] != arr[-1]).all():
+                arr = np.concatenate([arr, arr[:1]])
             arrays.append(arr if index is None else arr[:, index])
             if geom_type != 'Point':
                 arrays.append([[np.nan, np.nan]] if index is None else [np.nan])
@@ -554,17 +525,67 @@ def geom_array_to_array(geom_array, index, expand=False, geom_type=None):
 
 
 def geom_length(geom):
-    from spatialpandas.geometry import Polygon, MultiPolygon, MultiLine
+    from spatialpandas.geometry import Polygon, Ring, MultiPolygon, MultiLine
     if isinstance(geom, Polygon):
-        return len(geom.data[0])//2
+        offset = 0
+        exterior = geom.data[0]
+        if exterior[0] != exterior[-2] or exterior[1] != exterior[-1]:
+            offset = 1
+        return len(exterior)//2 + offset
     elif isinstance(geom, (MultiPolygon, MultiLine)):
         length = 0
         for g in geom.data:
-            exterior = g if isinstance(geom, MultiLine) else g[0]
-            length += (len(exterior)//2 + 1)
+            offset = 0
+            if isinstance(geom, MultiLine):
+                exterior = g
+            else:
+                exterior = g[0]
+                if exterior[0] != exterior[-2] or exterior[1] != exterior[-1]:
+                    offset = 1
+            length += (len(exterior)//2 + 1) + offset
         return length-1 if length else 0
     else:
-        return len(geom.buffer_values)//2
+        offset = 0
+        exterior = geom.buffer_values
+        if isinstance(geom, Ring) and (exterior[0] != exterior[-2] or exterior[1] != exterior[-1]):
+            offset = 1
+        return len(exterior)//2
+
+
+def get_value_array(data, dimension, expanded, keep_index, geom_col, is_points, geom_length=geom_length):
+    column = data[dimension.name]
+    if keep_index:
+        return column
+    all_scalar = True
+    arrays, scalars = [], []
+    for i, geom in enumerate(data[geom_col]):
+        length = geom_length(geom)
+        val = column.iloc[i]
+        scalar = isscalar(val)
+        if scalar:
+            val = np.array([val])
+        if not scalar and len(unique_array(val)) == 1:
+            val = val[:1]
+            scalar = True
+        all_scalar &= scalar
+        scalars.append(scalar)
+        if not expanded or not scalar:
+            arrays.append(val)
+        elif scalar:
+            arrays.append(np.full(length, val))
+        if expanded and not is_points and not i == (len(data[geom_col])-1):
+            arrays.append(np.array([np.NaN]))
+
+    if not len(data):
+        return np.array([])
+    if expanded:
+        return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+    elif (all_scalar and arrays):
+        return np.array([a[0] for a in arrays])
+    else:
+        array = np.empty(len(arrays), dtype=object)
+        array[:] = [a[0] if s else a for s, a in zip(scalars, arrays)]
+        return array
 
 
 def geom_to_holes(geom):
@@ -582,7 +603,10 @@ def geom_to_holes(geom):
         for i, hole in enumerate(geom.data):
             if i == 0:
                 continue
-            holes.append(np.array(hole.as_py()).reshape(-1, 2))
+            hole = np.array(hole.as_py()).reshape(-1, 2)
+            if (hole[0] != hole[-1]).all():
+                hole = np.concatenate([hole, hole[:1]])
+            holes.append(hole)
         return [holes]
     elif isinstance(geom, MultiPolygon):
         holes = []
@@ -592,6 +616,8 @@ def geom_to_holes(geom):
                 if i == 0:
                     continue
                 arr = np.array(hole.as_py()).reshape(-1, 2)
+                if (arr[0] != arr[-1]).all():
+                    arr = np.concatenate([arr, arr[:1]])
                 poly_holes.append(arr)
             holes.append(poly_holes)
         return holes
@@ -707,32 +733,38 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
     return GeoDataFrame(converted, columns=['geometry']+columns)
 
 
+def to_geom_dict(eltype, data, kdims, vdims, interface=None):
+    xname, yname = (kd.name for kd in kdims[:2])
+    if isinstance(data, dict):
+        data = {k: v if isscalar(v) else np.asarray(v) for k, v in data.items()}
+        return data
+    new_el = eltype(data, kdims, vdims)
+    if new_el.interface is interface:
+        return new_el.data
+    new_dict = {}
+    for d in new_el.dimensions():
+        if d in (xname, yname):
+            scalar = False
+        else:
+            scalar = new_el.interface.isscalar(new_el, d)
+        vals = new_el.dimension_values(d, not scalar)
+        new_dict[d.name] = vals[0] if scalar else vals
+    return new_dict
+
+
 def from_multi(eltype, data, kdims, vdims):
     from spatialpandas import GeoDataFrame
 
+    xname, yname = (kd.name for kd in kdims[:2])
+
     new_data = []
     types = []
-    xname, yname = (kd.name for kd in kdims[:2])
     for d in data:
         types.append(type(d))
-        if isinstance(d, dict):
-            d = {k: v if isscalar(v) else np.asarray(v) for k, v in d.items()}
-            new_data.append(d)
-            continue
-        new_el = eltype(d, kdims, vdims)
-        if new_el.interface is SpatialPandasInterface:
-            types[-1] = GeoDataFrame
-            new_data.append(new_el.data)
-            continue
-        new_dict = {}
-        for d in new_el.dimensions():
-            if d in (xname, yname):
-                scalar = False
-            else:
-                scalar = new_el.interface.isscalar(new_el, d)
-            vals = new_el.dimension_values(d, not scalar)
-            new_dict[d.name] = vals[0] if scalar else vals
+        new_dict = to_geom_dict(eltype, d, kdims, vdims, SpatialPandasInterface)
         new_data.append(new_dict)
+        if not isinstance(new_data[-1], dict):
+            types[-1] = type(new_data[-1])
     if len(set(types)) > 1:
         raise DataError('Mixed types not supported')
     if new_data and types[0] is GeoDataFrame:
