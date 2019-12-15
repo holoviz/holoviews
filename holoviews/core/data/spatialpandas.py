@@ -8,7 +8,7 @@ from collections import defaultdict
 import numpy as np
 
 from ..dimension import dimension_name
-from ..util import isscalar, unique_iterator, pd
+from ..util import isscalar, unique_iterator, pd, unique_array
 from .interface import DataError, Interface
 from .multipath import MultiInterface
 from .pandas import PandasInterface
@@ -216,8 +216,9 @@ class SpatialPandasInterface(MultiInterface):
         geom_type = cls.geom_type(dataset)
         if (dim in cls.geom_dims(dataset)):
             return False
-        elif per_geom and geom_type != 'Point':
-            return all(isscalar(v) for v in dataset.data[dim.name])
+        elif per_geom:
+            return all(isscalar(v) or len(list(unique_array(v))) == 1
+                       for v in dataset.data[dim.name])
         dim = dataset.get_dimension(dim)
         return len(dataset.data[dim.name].unique()) == 1
 
@@ -261,15 +262,24 @@ class SpatialPandasInterface(MultiInterface):
         return (cls.length(dataset), len(dataset.dimensions()))
 
     @classmethod
+    def sort(cls, dataset, by=[], reverse=False):
+        geo_dims = cls.geom_dims(dataset)
+        if any(d in geo_dims for d in by):
+            raise DataError("SpatialPandasInterface does not allow sorting "
+                            "by geometry dimension.", cls)
+        return PandasInterface.sort(dataset, by, reverse)
+
+    @classmethod
     def length(cls, dataset):
         from spatialpandas.geometry import MultiPointDtype, Point
         col_name = cls.geo_column(dataset.data)
         column = dataset.data[col_name]
         geom_type = cls.geom_type(dataset)
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
+            print(dataset.data)
             return PandasInterface.length(dataset)
         length = 0
-        for geom in column:
+        for i, geom in enumerate(column):
             if isinstance(geom, Point):
                 length += 1
             else:
@@ -371,18 +381,44 @@ class SpatialPandasInterface(MultiInterface):
         data = dataset.data
         isgeom = (dimension in geom_dims)
         col = cls.geo_column(dataset.data)
+        is_points = cls.geom_type(dataset) == 'Point'
         if isgeom and keep_index:
             return data[col]
         elif not isgeom:
             column = data[dimension.name]
-            if not expanded or keep_index or not len(data):
-                return column if keep_index else column.values
+            if keep_index:
+                return column
             else:
-                arrays = []
+                all_scalar = True
+                arrays, scalars = [], []
                 for i, geom in enumerate(data[col]):
                     length = geom_length(geom)
-                    arrays.append(np.full(length, column.iloc[i]))
-                return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+                    val = column.iloc[i]
+                    scalar = isscalar(val)
+                    if scalar:
+                        val = np.array([val])
+                    if not scalar and len(unique_array(val)) == 1:
+                        val = val[:1]
+                        scalar = True
+                    all_scalar &= scalar
+                    scalars.append(scalar)
+                    if not expanded or not scalar:
+                        arrays.append(val)
+                    elif scalar:
+                        arrays.append(np.full(length, val))
+                    if expanded and not is_points and not i == (len(data[col])-1):
+                        arrays.append(np.array([np.NaN]))
+
+                if not len(data):
+                    return np.array([])
+                if expanded:
+                    return np.concatenate(arrays) if len(arrays) > 1 else arrays[0]
+                elif (all_scalar and arrays):
+                    return np.array([a[0] for a in arrays])
+                else:
+                    array = np.empty(len(arrays), dtype=object)
+                    array[:] = [a[0] if s else a for s, a in zip(scalars, arrays)]
+                    return array
         elif not len(data):
             return np.array([])
 
@@ -392,6 +428,8 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
+        from spatialpandas import GeoDataFrame, GeoSeries
+
         objs = []
         if not len(dataset.data):
             return []
@@ -401,19 +439,28 @@ class SpatialPandasInterface(MultiInterface):
         row = dataset.data.iloc[0]
         col = cls.geo_column(dataset.data)
         geom_type = cls.geom_type(dataset)
-        arr = geom_to_array(row[col], geom_type=geom_type)
-        d = {(xdim.name, ydim.name): arr}
-        d.update({dim.name: row[dim.name] for dim in value_dims})
-        ds = dataset.clone(d, datatype=['dictionary'])
+        if datatype is not None:
+            arr = geom_to_array(row[col], geom_type=geom_type)
+            d = {(xdim.name, ydim.name): arr}
+            d.update({dim.name: row[dim.name] for dim in value_dims})
+            ds = dataset.clone(d, datatype=['dictionary'])
+
         holes = cls.holes(dataset) if cls.has_holes(dataset) else None
         for i, row in dataset.data.iterrows():
+            if datatype is None:
+                gdf = GeoDataFrame({c: GeoSeries([row[c]]) if c == 'geometry' else [row[c]]
+                                    for c in dataset.data.columns})
+                objs.append(dataset.clone(gdf))
+                continue
+
             geom = row[col]
             arr = geom_to_array(geom, geom_type=geom_type)
             d = {xdim.name: arr[:, 0], ydim.name: arr[:, 1]}
             d.update({dim.name: row[dim.name] for dim in value_dims})
+            if holes is not None:
+                d['holes'] = holes[i]
+
             if datatype == 'columns':
-                if holes is not None:
-                    d['holes'] = holes[i]
                 objs.append(d)
                 continue
 
@@ -422,8 +469,6 @@ class SpatialPandasInterface(MultiInterface):
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
-            elif datatype is None:
-                obj = ds.clone()
             else:
                 raise ValueError("%s datatype not support" % datatype)
             objs.append(obj)

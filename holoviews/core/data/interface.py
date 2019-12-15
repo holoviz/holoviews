@@ -311,6 +311,16 @@ class Interface(param.Parameterized):
     def isscalar(cls, dataset, dim):
         return len(cls.values(dataset, dim, expanded=False)) == 1
 
+    @classmethod
+    def isunique(cls, dataset, dim, per_geom=False):
+        """
+        Compatibility method introduced for v1.13.0 to smooth
+        over addition of per_geom kwarg for isscalar method.
+        """
+        try:
+            return cls.isscalar(dataset, dim, per_geom)
+        except TypeError:
+            return cls.isscalar(dataset, dim)
 
     @classmethod
     def dtype(cls, dataset, dimension):

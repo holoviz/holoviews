@@ -158,17 +158,6 @@ class MultiInterface(Interface):
         return holes
 
     @classmethod
-    def isunique(cls, dataset, dim, per_geom=False):
-        """
-        Compatibility method introduced for v1.13.0 to smooth
-        over addition of per_geom kwarg for isscalar method.
-        """
-        try:
-            return cls.isscalar(dataset, dim, per_geom)
-        except TypeError:
-            return cls.isscalar(dataset, dim)
-
-    @classmethod
     def isscalar(cls, dataset, dim, per_geom=False):
         """
         Tests if dimension is scalar in each subpath.
@@ -319,6 +308,16 @@ class MultiInterface(Interface):
         return ds.interface.dtype(ds, dimension)
 
     @classmethod
+    def sort(cls, dataset, by=[], reverse=False):
+        by = [dataset.get_dimension(d).name for d in by]
+        if len(by) == 1:
+            sorting = cls.values(dataset, by[0], False).argsort()
+        else:
+            arrays = [dataset.dimension_values(d, False) for d in by]
+            sorting = util.arglexsort(arrays)
+        return [dataset.data[s] for s in sorting]
+
+    @classmethod
     def nonzero(cls, dataset):
         return bool(dataset.data)
 
@@ -352,8 +351,8 @@ class MultiInterface(Interface):
         """
         if not dataset.data:
             return np.array([])
-        values = []
-        is_scalar = True 
+        values, scalars = [], []
+        all_scalar = True
         ds = cls._inner_dataset_template(dataset)
         is_points = cls.geom_type(dataset) == 'Point'
         for d in dataset.data:
@@ -361,8 +360,9 @@ class MultiInterface(Interface):
             dvals = ds.interface.values(
                 ds, dimension, expanded, flat, compute, keep_index
             )
-            if len(dvals) > 1:
-                is_scalar = False
+            scalar = len(dvals) == 1
+            all_scalar &= scalar
+            scalars.append(scalar)
             if not len(dvals):
                 continue
             elif expanded:
@@ -374,13 +374,13 @@ class MultiInterface(Interface):
 
         if not values:
             return np.array([])
-        elif expanded or is_scalar:
+        elif expanded or all_scalar:
             if not is_points and expanded:
                 values = values[:-1]
             return np.concatenate(values) if values else np.array()
         else:
             array = np.empty(len(values), dtype=object)
-            array[:] = values
+            array[:] = [a[0] if s else a for s, a in zip(scalars, values)]
             return array
 
     @classmethod

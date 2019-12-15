@@ -36,60 +36,57 @@ class GeomTests(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['array']))
+        for i, array in enumerate(mds.split(datatype='array')):
+            self.assertEqual(array, arrays[i])
 
     def test_multi_dict_dataset(self):
-        arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        dicts = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
+        mds = Path(dicts, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dictionary']))
+        for i, cols in enumerate(mds.split(datatype='columns')):
+            self.assertEqual(cols, dicts[i])
 
     def test_multi_df_dataset(self):
         if not pd:
             raise SkipTest('Pandas not available')
-        arrays = [pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]), columns=['x', 'y'])
+        dfs = [pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]), columns=['x', 'y'])
                   for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Path(dfs, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dataframe']))
+        for i, ds in enumerate(mds.split(datatype='dataframe')):
+            self.assertEqual(ds, dfs[i])
 
     def test_multi_dask_df_dataset(self):
         if not dd:
             raise SkipTest('Dask not available')
-        arrays = [dd.from_pandas(pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]),
+        dfs = [dd.from_pandas(pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]),
                                               columns=['x', 'y']), npartitions=2)
                   for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
+        mds = Path(dfs, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dask']))
+        for i, ds in enumerate(mds.split(datatype='dataframe')):
+            self.assertEqual(Path(ds, datatype=['dataframe']), Path(dfs[i], kdims=['x', 'y'], datatype=['dask']))
 
     def test_multi_array_dataset_add_dimension_scalar(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).add_dimension('A', 0, 'Scalar', True)
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path({('x', 'y'): arrays[i], 'A': 'Scalar'}, ['x', 'y'],
-                                      'A', datatype=['dictionary']))
+        self.assertEqual(mds, Path([{('x', 'y'): arrays[i], 'A': 'Scalar'} for i in range(2)], ['x', 'y'],
+                                   'A', datatype=['multitabular']))
 
     def test_multi_dict_dataset_add_dimension_scalar(self):
         arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).add_dimension('A', 0, 'Scalar', True)
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(dict(arrays[i], A='Scalar'), ['x', 'y'],
-                                      'A', datatype=['dictionary']))
+        self.assertEqual(mds, Path([dict(arrays[i], A='Scalar') for i in range(2)], ['x', 'y'],
+                                   'A', datatype=['multitabular']))
 
     def test_multi_dict_dataset_add_dimension_values(self):
         arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).add_dimension('A', 0, [0,1], True)
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(dict(arrays[i], A=i), ['x', 'y'],
-                                      'A', datatype=['dictionary']))
+        self.assertEqual(mds, Path([dict(arrays[i], A=i) for i in range(2)], ['x', 'y'],
+                                   'A', datatype=['multitabular']))
 
     def test_multi_array_length(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
@@ -163,12 +160,82 @@ class GeomTests(ComparisonTestCase):
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.dimension_values(2, expanded=False), np.array([0, 1]))
 
+    def test_scalar_value_isscalar_per_geom(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 0},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 1}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertTrue(path.interface.isscalar(path, 'value', per_geom=True))
+
+    def test_unique_values_isscalar_per_geom(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.full(5, 0)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertTrue(path.interface.isscalar(path, 'value', per_geom=True))
+
+    def test_scalar_and_unique_values_isscalar_per_geom(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 0},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertTrue(path.interface.isscalar(path, 'value', per_geom=True))
+
+    def test_varying_values_not_isscalar_per_geom(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.arange(5)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertFalse(path.interface.isscalar(path, 'value', per_geom=True))
+
+    def test_varying_values_and_scalar_not_isscalar_per_geom(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.arange(5)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 1}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertFalse(path.interface.isscalar(path, 'value', per_geom=True))
+
+    def test_scalar_value_dimension_values_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 0},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 1}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertEqual(path.dimension_values('value'), np.array([0, 0, 0, 0, 0, np.nan, 1, 1, 1, 1, 1]))
+
+    def test_scalar_value_dimension_values_not_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 0},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 1}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertEqual(path.dimension_values('value', expanded=False),
+                         np.array([0, 1]))
+
+    def test_unique_value_dimension_values_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.full(5, 0)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertEqual(path.dimension_values('value'), np.array([0, 0, 0, 0, 0, np.nan, 1, 1, 1, 1, 1]))
+
+    def test_unique_value_dimension_values_not_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.full(5, 0)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertEqual(path.dimension_values('value', expanded=False),
+                         np.array([0, 1]))
+    
+    def test_varying_value_dimension_values_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.arange(5)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        self.assertEqual(path.dimension_values('value'), np.array([0, 1, 2, 3, 4, np.nan, 1, 1, 1, 1, 1]))
+
+    def test_varying_value_dimension_values_not_expanded(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': np.arange(5)},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': np.full(5, 1)}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        values = path.dimension_values('value', expanded=False)
+        self.assertEqual(values[0], np.array([0, 1, 2, 3, 4]))
+        self.assertEqual(values[1], 1)
+        self.assertIsInstance(values[1], np.int_)
+
     def test_multi_array_redim(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).redim(x='x2')
         self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split()):
-            self.assertEqual(ds, Path(arrays[i], kdims=['x2', 'y']))
+        self.assertEqual(mds, Path([arrays[i] for i in range(2)], ['x2', 'y']))
 
     def test_multi_mixed_interface_raises(self):
         arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}
@@ -182,7 +249,7 @@ class GeomTests(ComparisonTestCase):
         with self.assertRaises(ValueError):
             Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
 
-    def test_multi_split(self):
+    def test_multi_split_into_arrays(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
@@ -402,6 +469,15 @@ class GeomTests(ComparisonTestCase):
                             ['x', 'y'], 'z', datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.select(z=[1, 3]), expected)
+
+    def test_sort_by_value(self):
+        path = Path([{'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 1},
+                     {'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 0}], vdims='value')
+        self.assertIs(path.interface, self.interface)
+        sorted = Path([{'x': [5, 4, 3, 2, 1], 'y': [2, 2, 1, 1, 0], 'value': 0},
+                     {'x': [1, 2, 3, 4, 5], 'y': [0, 0, 1, 1, 2], 'value': 1}], vdims='value')
+        self.assertEqual(path.sort('value'), sorted)
+
 
 
 class MultiInterfaceTest(GeomTests):
