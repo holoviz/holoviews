@@ -487,8 +487,6 @@ class Comparison(ComparisonInterface):
         paths2 = el2.split()
         if len(paths1) != len(paths2):
             raise cls.failureException("%s objects do not have a matching number of paths." % msg)
-        for p1, p2 in zip(paths1, paths2):
-            cls.compare_dataset(p1, p2, '%s data' % msg)
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):
@@ -518,9 +516,10 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
-        if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length." % msg)
         dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
+        if el1.shape[0] != el2.shape[0]:
+            raise AssertionError("%s not of matching length, %d vs %d."
+                                 % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
                 cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)
