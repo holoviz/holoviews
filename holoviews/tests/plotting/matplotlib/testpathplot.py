@@ -20,7 +20,7 @@ class TestPathPlot(TestMPLPlot):
             color='color', color_levels=levels, cmap=colors)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([998, 999, 998]))
+        self.assertEqual(artist.get_array(), np.array(color))
         self.assertEqual(artist.get_clim(), (994, 999))
 
     def test_path_continuously_varying_alpha_op(self):
@@ -40,7 +40,7 @@ class TestPathPlot(TestMPLPlot):
         path = Path([data], vdims='line_width').options(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 7, 3])
+        self.assertEqual(artist.get_linewidths(), line_width)
 
     def test_path_continuously_varying_line_width_op_update(self):
         xs = [1, 2, 3, 4]
@@ -51,9 +51,9 @@ class TestPathPlot(TestMPLPlot):
         }).options(linewidth='line_width')
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_linewidths(), [1, 7, 3])
+        self.assertEqual(artist.get_linewidths(), [1, 7, 3, 2])
         plot.update((1,))
-        self.assertEqual(artist.get_linewidths(), [3, 8, 2])
+        self.assertEqual(artist.get_linewidths(), [3, 8, 2, 3])
 
 
 class TestPolygonPlot(TestMPLPlot):
