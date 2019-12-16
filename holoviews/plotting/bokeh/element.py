@@ -986,7 +986,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if not element.interface.multi:
                     element = element.clone([element.data], datatype=type(element).datatype)
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
-                                      for el in element.split(datatype='multi')])
+                                      for el in element.split()])
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 

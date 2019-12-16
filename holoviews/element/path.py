@@ -55,9 +55,7 @@ class Path(Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=[
-        'spatialpandas', 'multitabular', 'dataframe', 'dictionary',
-        'dask', 'array'])
+    datatype = param.ObjectSelector(default=['multitabular', 'spatialpandas'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -81,20 +79,7 @@ class Path(Geometry):
                     paths.append(path.data)
             data = paths
 
-        datatype = params.pop('datatype', self.datatype)
-
-        # Ensure that a list of tuples of scalars and any other non-list
-        # type is interpreted as a single path
-        if (not isinstance(data, (list, Dataset)) or
-            (isinstance(data, list) and not len(data) == 0 and all(
-                isinstance(d, tuple) and all(isscalar(v) for v in d)
-                for d in data))):
-            datatype = [dt for dt in datatype if dt != 'multitabular']
-        elif isinstance(data, list) and 'multitabular' not in datatype:
-            datatype = datatype + ['multitabular']
-
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
-                                   datatype=datatype, **params)
+        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
     def __getitem__(self, key):
@@ -183,8 +168,6 @@ class Path(Geometry):
             elif datatype == 'columns':
                 obj = self.columns(**kwargs)
             elif datatype is None:
-                obj = self
-            elif datatype == 'multi':
                 obj = self.clone([self.data])
             else:
                 raise ValueError("%s datatype not support" % datatype)

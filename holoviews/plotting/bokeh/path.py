@@ -95,7 +95,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
             vals[dim_name] = []
 
         xpaths, ypaths = [], []
-        for path in element.split(datatype='multi'):
+        for path in element.split():
             if cdim and self.color_index is not None:
                 scalar = path.interface.isunique(path, cdim, per_geom=True)
                 cvals = path.dimension_values(cdim, not scalar)

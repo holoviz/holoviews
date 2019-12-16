@@ -31,7 +31,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        from ...element import Polygons
+        from ...element import Polygons, Path
 
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
@@ -39,8 +39,17 @@ class MultiInterface(Interface):
             dims['kdims'] = kdims
         if vdims is not None:
             dims['vdims'] = vdims
-        if not isinstance(data, list):
-            raise ValueError('MultiInterface data must be a list tabular data types.')
+
+        if (isinstance(data, list) and len(data) and
+            all(isinstance(d, tuple) and all(util.isscalar(v) for v in d) for d in data)):
+            data = [data]
+        elif not isinstance(data, list):
+            interface  = [Interface.interfaces.get(st).applies(data)
+                          for st in cls.subtypes if st in Interface.interfaces]
+            if (interface or isinstance(data, tuple)) and issubclass(eltype, Path):
+                data = [data]
+            else:
+                raise ValueError('MultiInterface data must be a list of tabular data types.')
         prev_interface, prev_dims = None, None
         for d in data:
             datatype = cls.subtypes
@@ -416,14 +425,9 @@ class MultiInterface(Interface):
         regular tabular interfaces.
         """
         objs = []
-        if datatype in ('multi', None):
+        if datatype is None:
             for d in dataset.data[start: end]:
-                if datatype is None:
-                    datatypes = cls.subtypes
-                else:
-                    d = [d]
-                    datatypes = dataset.datatype
-                objs.append(dataset.clone(d, datatype=datatypes))
+                objs.append(dataset.clone([d]))
             return objs
         elif not dataset.data:
             return objs
