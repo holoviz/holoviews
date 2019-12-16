@@ -56,14 +56,6 @@ class TestPathPlot(TestBokehPlot):
         obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
-    def test_empty_path_plot(self):
-        path = Path([], vdims=['Intensity']).opts(plot=dict(color_index=2))
-        plot = bokeh_renderer.get_plot(path)
-        source = plot.handles['source']
-        self.assertEqual(len(source.data['xs']), 0)
-        self.assertEqual(len(source.data['ys']), 0)
-        self.assertEqual(len(source.data['Intensity']), 0)
-
     def test_path_colored_and_split_with_extra_vdims(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -78,19 +70,6 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
         self.assertEqual(source.data['other'], np.array(['A', 'B', 'C']))
         self.assertEqual(source.data['color'], np.array([0, 0.25, 0.5]))
-
-    def test_path_colored_and_split_on_single_value(self):
-        xs = [1, 2, 3, 4]
-        ys = xs[::-1]
-        color = [1, 1, 1, 1]
-        data = {'x': xs, 'y': ys, 'color': color}
-        path = Path([data], vdims=['color']).options(color_index='color')
-        plot = bokeh_renderer.get_plot(path)
-        source = plot.handles['source']
-
-        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
-        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
-        self.assertEqual(source.data['color'], np.array([1, 1, 1]))
 
     def test_path_colored_by_levels_single_value(self):
         xs = [1, 2, 3, 4]
@@ -240,10 +219,10 @@ class TestPolygonPlot(TestBokehPlot):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
-        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3]), np.array([1.5, 2, 1.6]),
-                                              np.array([2.1, 2.5, 2.3])]]])
-        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
-                                              np.array([4.5, 5, 3.5])]]])
+        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3, 1]), np.array([1.5, 2, 1.6, 1.5]),
+                                              np.array([2.1, 2.5, 2.3, 2.1])]]])
+        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7, 2]), np.array([2, 3, 1.6, 2]),
+                                              np.array([4.5, 5, 3.5, 4.5])]]])
 
     def test_multi_polygon_hole_plot(self):
         xs = [1, 2, 3, np.nan, 3, 7, 6]
@@ -255,10 +234,10 @@ class TestPolygonPlot(TestBokehPlot):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes}])
         plot = bokeh_renderer.get_plot(poly)
         source = plot.handles['source']
-        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3]), np.array([1.5, 2, 1.6]),
-                                               np.array([2.1, 2.5, 2.3])], [np.array([3, 7, 6])]]])
-        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7]), np.array([2, 3, 1.6]),
-                                               np.array([4.5, 5, 3.5])], [np.array([2, 5, 7])]]])
+        self.assertEqual(source.data['xs'], [[[np.array([1, 2, 3, 1]), np.array([1.5, 2, 1.6, 1.5]),
+                                               np.array([2.1, 2.5, 2.3, 2.1])], [np.array([3, 7, 6, 3])]]])
+        self.assertEqual(source.data['ys'], [[[np.array([2, 0, 7, 2]), np.array([2, 3, 1.6, 2]),
+                                               np.array([4.5, 5, 3.5, 4.5])], [np.array([2, 5, 7, 2])]]])
 
     def test_polygons_hover_color_op(self):
         polygons = Polygons([

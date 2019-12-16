@@ -984,7 +984,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif isinstance(element, Path) and not isinstance(element, Contours):
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
-                                      for el in element.split()])
+                                      for el in element.split()])[:-1]
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 

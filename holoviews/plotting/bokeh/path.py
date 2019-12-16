@@ -248,7 +248,7 @@ class ContourPlot(PathPlot):
         if cdim.name in ranges and 'factors' in ranges[cdim.name]:
             factors = ranges[cdim.name]['factors']
         else:
-            factors = util.unique_array(values) if values.dtype.kind in 'SUO' else None
+            factors = util.unique_array(np.concatenate(values)) if values.dtype.kind in 'SUO' else None
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         if self.show_legend:

@@ -863,8 +863,7 @@ def multi_polygons_data(element):
     representation. Multi-polygons split by nans are expanded and the
     correct list of holes is assigned to each sub-polygon.
     """
-    paths = element.split(datatype='array', dimensions=element.kdims)
-    xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+    xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
     holes = element.holes()
     xsh, ysh = [], []
     for x, y, multi_hole in zip(xs, ys, holes):
