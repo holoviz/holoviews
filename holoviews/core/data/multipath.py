@@ -15,9 +15,8 @@ class MultiInterface(Interface):
     be split into individual datasets.
 
     The interface makes the data appear a list of tabular datasets as
-    a single dataset. The length, shape and values methods therefore
-    make the data appear like a single array of concatenated subpaths,
-    separated by NaN values.
+    a single dataset. The interface may be used to represent geometries
+    so the behavior depends on the type of geometry being represented.
     """
 
     types = ()
@@ -26,10 +25,14 @@ class MultiInterface(Interface):
 
     subtypes = ['dictionary', 'dataframe', 'array', 'dask']
 
+    geom_types = ['Polygon', 'Ring', 'Line', 'Point']
+
     multi = True
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
+        from ...element import Polygons
+
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
         if kdims is not None:
@@ -40,8 +43,20 @@ class MultiInterface(Interface):
             raise ValueError('MultiInterface data must be a list tabular data types.')
         prev_interface, prev_dims = None, None
         for d in data:
+            datatype = cls.subtypes
+            if isinstance(d, dict):
+                if Polygons._hole_key in d:
+                    datatype = [dt for dt in datatype
+                                if hasattr(Interface.interfaces.get(dt), 'has_holes')]
+                geom_type = d.get('geom_type')
+                if geom_type is not None and geom_type not in cls.geom_types:
+                    raise DataError("Geometry type '%s' not recognized, "
+                                    "must be one of %s." % (geom_type, cls.geom_types))
+                else:
+                    datatype = [dt for dt in datatype
+                                if hasattr(Interface.interfaces.get(dt), 'geom_type')]
             d, interface, dims, _ = Interface.initialize(eltype, d, kdims, vdims,
-                                                         datatype=cls.subtypes)
+                                                         datatype=datatype)
             if prev_interface:
                 if prev_interface != interface:
                     raise DataError('MultiInterface subpaths must all have matching datatype.', cls)
@@ -187,6 +202,7 @@ class MultiInterface(Interface):
         """
         Applies selectiong on all the subpaths.
         """
+        from ...element import Polygons
         if not dataset.data:
             return dataset.data
         ds = cls._inner_dataset_template(dataset)
@@ -198,7 +214,7 @@ class MultiInterface(Interface):
             is_dict = isinstance(sel, dict)
             if ((not len(sel) and not is_dict) or
                 (is_dict and any(False if util.isscalar(v) else len(v) == 0
-                                 for k, v in sel.items() if k != 'holes'))):
+                                 for k, v in sel.items() if k != Polygons._hole_key))):
                 continue
             data.append(sel)
         return data
@@ -363,7 +379,12 @@ class MultiInterface(Interface):
                 ds, dimension, True, flat, compute, keep_index
             )
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
-            if geom_type == 'Polygon' and (not scalar or expanded):
+            if hasattr(ds.interface, 'geom_type'):
+                gt = ds.interface.geom_type(ds)
+            if gt is None:
+                gt = geom_type
+            if (gt in ('Polygon', 'Ring') and (not scalar or expanded)
+                and not geom_type == 'Points'):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             elif scalar and not expanded:
@@ -411,10 +432,16 @@ class MultiInterface(Interface):
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
             elif datatype == 'columns':
+                if hasattr(ds.interface, 'geom_type'):
+                    gt = ds.interface.geom_type(ds)
+                if gt is None:
+                    gt = geom_type
                 if ds.interface.datatype == 'dictionary' and geom_type != 'Polygon':
                     obj = dict(ds.data)
                 else:
                     obj = ds.columns(**kwargs)
+                if gt is not None:
+                    obj['geom_type'] = gt
             else:
                 raise ValueError("%s datatype not support" % datatype)
             objs.append(obj)

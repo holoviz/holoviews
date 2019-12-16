@@ -4,11 +4,15 @@ Tests for the Dataset Element types.
 
 from unittest import SkipTest
 
+import logging
+
 import numpy as np
+
 from holoviews.core.data import Dataset, MultiInterface
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
+from param import get_logger
 
 try:
     import pandas as pd
@@ -44,7 +48,7 @@ class GeomTests(ComparisonTestCase):
         mds = Path(dicts, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         for i, cols in enumerate(mds.split(datatype='columns')):
-            self.assertEqual(dict(cols), dicts[i])
+            self.assertEqual(dict(cols), dict(dicts[i], geom_type='Line'))
 
     def test_df_dataset(self):
         if not pd:
@@ -55,17 +59,6 @@ class GeomTests(ComparisonTestCase):
         self.assertIs(mds.interface, self.interface)
         for i, ds in enumerate(mds.split(datatype='dataframe')):
             self.assertEqual(ds, dfs[i])
-
-    def test_dask_df_dataset(self):
-        if not dd:
-            raise SkipTest('Dask not available')
-        dfs = [dd.from_pandas(pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]),
-                                              columns=['x', 'y']), npartitions=2)
-                  for i in range(2)]
-        mds = Path(dfs, kdims=['x', 'y'], datatype=[self.datatype])
-        self.assertIs(mds.interface, self.interface)
-        for i, ds in enumerate(mds.split(datatype='dataframe')):
-            self.assertEqual(Path(ds, datatype=['dataframe']), Path(dfs[i], kdims=['x', 'y'], datatype=['dask']))
 
     def test_array_dataset_add_dimension_scalar(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
@@ -250,12 +243,6 @@ class GeomTests(ComparisonTestCase):
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).redim(x='x2')
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds, Path([arrays[i] for i in range(2)], ['x2', 'y']))
-
-    def test_mixed_interface_raises(self):
-        arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}
-                  for i in range(2) for j in range(2)]
-        with self.assertRaises(DataError):
-            Path(arrays, kdims=['x', 'y'], datatype=[self.datatype])
 
     def test_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
@@ -506,14 +493,35 @@ class GeomTests(ComparisonTestCase):
         self.assertEqual(path.sort('value'), sorted)
 
 
+class MultiBaseInterfaceTest(GeomTests):
 
-class MultiInterfaceTest(GeomTests):
+    datatype = 'multitabular'
+    interface = MultiInterface
+    subtype = None
+
+    __test__ = False
+
+    def setUp(self):
+        logger = get_logger()
+        self._log_level = logger.level
+        get_logger().setLevel(logging.ERROR)
+        self._subtypes = MultiInterface.subtypes
+        MultiInterface.subtypes = [self.subtype]
+        super(MultiBaseInterfaceTest, self).setUp()
+
+    def tearDown(self):
+        MultiInterface.subtypes = self._subtypes
+        get_logger().setLevel(self._log_level)
+        super(MultiBaseInterfaceTest, self).tearDown()
+
+
+class MultiDictInterfaceTest(MultiBaseInterfaceTest):
     """
     Test of the MultiInterface.
     """
 
     datatype = 'multitabular'
-
     interface = MultiInterface
+    subtype = 'dictionary'
 
     __test__ = True

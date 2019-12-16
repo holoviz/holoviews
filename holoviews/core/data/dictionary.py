@@ -398,6 +398,11 @@ class DictInterface(Interface):
             return arr if isscalar(arr) else arr[0]
         return new_data
 
+
+    @classmethod
+    def geom_type(cls, dataset):
+        return dataset.data.get('geom_type')
+
     @classmethod
     def has_holes(cls, dataset):
         from holoviews.element import Polygons

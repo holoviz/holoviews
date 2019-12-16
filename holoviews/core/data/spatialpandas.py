@@ -275,7 +275,6 @@ class SpatialPandasInterface(MultiInterface):
         column = dataset.data[col_name]
         geom_type = cls.geom_type(dataset)
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
-            print(dataset.data)
             return PandasInterface.length(dataset)
         length = 0
         for i, geom in enumerate(column):
@@ -395,6 +394,7 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
         from spatialpandas import GeoDataFrame, GeoSeries
+        from ...element import Polygons
 
         objs = []
         if not len(dataset.data):
@@ -420,13 +420,14 @@ class SpatialPandasInterface(MultiInterface):
                 continue
 
             geom = row[col]
-            arr = geom_to_array(geom, geom_type=geom_type)
+            gt = geom_type or get_geom_type(dataset.data, col)
+            arr = geom_to_array(geom, geom_type=gt)
             d = {xdim.name: arr[:, 0], ydim.name: arr[:, 1]}
             d.update({dim.name: row[dim.name] for dim in value_dims})
-            if holes is not None:
-                d['holes'] = holes[i]
-
             if datatype == 'columns':
+                if holes is not None:
+                    d[Polygons._hole_key] = holes[i]
+                d['geom_type'] = gt
                 objs.append(d)
                 continue
 
@@ -440,6 +441,32 @@ class SpatialPandasInterface(MultiInterface):
             objs.append(obj)
         return objs
 
+
+
+def get_geom_type(gdf, col):
+    """Return the HoloViews geometry type string for the geometry column.
+
+    Args:
+        gdf: The GeoDataFrame to get the geometry from
+        col: The geometry column
+
+    Returns:
+        A string representing the type of geometry
+    """
+    from spatialpandas.geometry import (
+        PointDtype, MultiPointDtype, LineDtype, MultiLineDtype,
+        PolygonDtype, MultiPolygonDtype, RingDtype
+    )
+
+    column = dataset[col]
+    if isinstance(column.dtype, (PointDtype, MultiPointDtype)):
+        return 'Point'
+    elif isinstance(column.dtype, (LineDtype, MultiLineDtype)):
+        return 'Line'
+    elif isinstance(column.dtype, (PolygonDtype, MultiPolygonDtype)):
+        return 'Polygon'
+    elif isinstance(column.dtype, RingDtype):
+        return 'Ring'
 
 
 def geom_to_array(geom, index=None, multi=False, geom_type=None):
@@ -653,16 +680,20 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
     """
     from spatialpandas import GeoSeries, GeoDataFrame
     from spatialpandas.geometry import (
-        Point, Line, Polygon, LineArray, PolygonArray, PointArray,
-        MultiLineArray, MultiPolygonArray, MultiPointArray
+        Point, Line, Polygon, Ring, LineArray, PolygonArray, PointArray,
+        MultiLineArray, MultiPolygonArray, MultiPointArray, RingArray
     )
-    poly = any('holes' in d for d in data) or geom == 'Polygon'
+    from ...element import Polygons
+    poly = any(Polygons._hole_key in d for d in data) or geom == 'Polygon'
     if poly:
         geom_type = Polygon
         single_array, multi_array = PolygonArray, MultiPolygonArray
     elif geom == 'Line':
         geom_type = Line
         single_array, multi_array = LineArray, MultiLineArray
+    elif geom == 'Ring':
+        geom_type = Ring
+        single_array, multi_array = RingArray, MultiLineArray
     else:
         geom_type = Point
         single_array, multi_array = PointArray, MultiPointArray
@@ -684,7 +715,7 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         geom_array = np.column_stack([xs, ys])
         splits = np.where(np.isnan(geom_array[:, :2].astype('float')).sum(axis=1))[0]
         split_geoms = np.split(geom_array, splits+1) if len(splits) else [geom_array]
-        split_holes = geom.pop('holes', None)
+        split_holes = geom.pop(Polygons._hole_key, None)
         if split_holes is not None and len(split_holes) != len(split_geoms):
             raise DataError('Polygons with holes containing multi-geometries '
                             'must declare a list of holes for each geometry.',
@@ -791,11 +822,12 @@ def from_multi(eltype, data, kdims, vdims):
 
     xname, yname = (kd.name for kd in kdims[:2])
 
-    new_data = []
-    types = []
+    new_data, types, geom_types = [], [], []
     for d in data:
         types.append(type(d))
         new_dict = to_geom_dict(eltype, d, kdims, vdims, SpatialPandasInterface)
+        if 'geom_type' in new_dict and new_dict['geom_type'] not in geom_types:
+            geom_types.append(new_dict['geom_type'])
         new_data.append(new_dict)
         if not isinstance(new_data[-1], dict):
             types[-1] = type(new_data[-1])
@@ -805,7 +837,10 @@ def from_multi(eltype, data, kdims, vdims):
         data = pd.concat(new_data)
     else:
         columns = [d.name for d in kdims+vdims if d not in (xname, yname)]
-        geom = SpatialPandasInterface.geom_type(eltype)
+        if len(geom_types) == 1:
+            geom = geom_types[0]
+        else:
+            geom = SpatialPandasInterface.geom_type(eltype)
         data = to_spatialpandas(new_data, xname, yname, columns, geom)
     return data
 
