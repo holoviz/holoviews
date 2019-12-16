@@ -31,6 +31,10 @@ class PathPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index or style.get('color'))
+
+        if not element.interface.multi:
+            element = element.clone([element.data], datatype=type(element).datatype)
+
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 
@@ -124,6 +128,9 @@ class ContourPlot(PathPlot):
             paths = element.split(datatype='array', dimensions=element.kdims)
             if self.invert_axes:
                 paths = [p[:, ::-1] for p in paths]
+
+        if not element.interface.multi:
+            element = element.clone([element.data], datatype=type(element).datatype)
 
         # Process style transform
         with abbreviated_exception():

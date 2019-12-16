@@ -526,20 +526,20 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
-    
     @sp_skip
     def test_polygon_rasterize_mean_agg(self):
         poly = Polygons([
-            {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4}
+            {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4},
+            {'x': [0, 0, 1], 'y': [0, 1, 1], 'z': 3.6}
         ], vdims='z')
         agg = rasterize(poly, width=4, height=4, dynamic=False, aggregator='mean')
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
         arr = np.array([
-            [np.nan, np.nan, nan, np.nan],
+            [np.nan, np.nan, np.nan, np.nan],
             [np.nan, 2.4,    2.4,    2.4],
             [np.nan, 3.6,    2.4,    2.4],
-            [np.nan, 3.6,    2.4, np.nan]
+            [np.nan, 3.6,    2.4,    np.nan]
         ])
         expected = Image((xs, ys, arr), vdims='z')
         self.assertEqual(agg, expected)

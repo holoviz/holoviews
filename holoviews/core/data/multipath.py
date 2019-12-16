@@ -379,11 +379,11 @@ class MultiInterface(Interface):
                 ds, dimension, True, flat, compute, keep_index
             )
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
-            if hasattr(ds.interface, 'geom_type'):
-                gt = ds.interface.geom_type(ds)
+            gt = ds.interface.geom_type(ds) if hasattr(ds.interface, 'geom_type') else None
             if gt is None:
                 gt = geom_type
-            if (gt in ('Polygon', 'Ring') and not scalar and
+
+            if (gt in ('Polygon', 'Ring') and (not scalar or expanded) and
                 not geom_type == 'Points'):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
@@ -416,9 +416,14 @@ class MultiInterface(Interface):
         regular tabular interfaces.
         """
         objs = []
-        if datatype is None:
+        if datatype in ('multi', None):
             for d in dataset.data[start: end]:
-                objs.append(dataset.clone(d, datatype=cls.subtypes))
+                if datatype is None:
+                    datatypes = cls.subtypes
+                else:
+                    d = [d]
+                    datatypes = dataset.datatype
+                objs.append(dataset.clone(d, datatype=datatypes))
             return objs
         elif not dataset.data:
             return objs

@@ -413,7 +413,7 @@ class SpatialPandasInterface(MultiInterface):
 
         holes = cls.holes(dataset) if cls.has_holes(dataset) else None
         for i, row in dataset.data.iterrows():
-            if datatype is None:
+            if datatype in (None, 'multi'):
                 gdf = GeoDataFrame({c: GeoSeries([row[c]]) if c == 'geometry' else [row[c]]
                                     for c in dataset.data.columns})
                 objs.append(dataset.clone(gdf))

@@ -518,7 +518,7 @@ class Comparison(ComparisonInterface):
         cls.compare_dimensioned(el1, el2)
         dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
         if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length, %d vs %d."
+            raise AssertionError("%s not of matching length, %d vs. %d."
                                  % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:

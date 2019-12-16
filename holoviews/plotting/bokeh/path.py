@@ -62,6 +62,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
             cdim = element.get_dimension(color)
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
+
+        if not element.interface.multi:
+            element = element.clone([element.data], datatype=type(element).datatype)
+
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
@@ -84,15 +88,15 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim:
+        if cdim and self.color_index is not None:
             dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
             vals[dim_name] = []
 
         xpaths, ypaths = [], []
-        for path in element.split():
-            if cdim:
+        for path in element.split(datatype='multi'):
+            if cdim and self.color_index is not None:
                 scalar = path.interface.isunique(path, cdim, per_geom=True)
                 cvals = path.dimension_values(cdim, not scalar)
                 vals[dim_name].append(cvals[:-1])
@@ -210,15 +214,17 @@ class ContourPlot(PathPlot):
         else:
             has_holes = self._has_holes
 
+        if not element.interface.multi:
+            element = element.clone([element.data], datatype=type(element).datatype)
+
         if self.static_source:
             data = dict()
             xs = self.handles['cds'].data['xs']
         else:
-            if has_holes and bokeh_version >= '1.0':
+            if has_holes:
                 xs, ys = multi_polygons_data(element)
             else:
-                paths = element.split(datatype='array', dimensions=element.kdims)
-                xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+                xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
             if self.invert_axes:
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)

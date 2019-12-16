@@ -71,8 +71,8 @@ class PathTests(ComparisonTestCase):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
         subpaths = path.split()
         self.assertEqual(len(subpaths), 2)
-        self.assertEqual(subpaths[0], Path([(0, 1), (1, 2)]))
-        self.assertEqual(subpaths[1], Path([(2, 3), (3, 4)]))
+        self.assertEqual(subpaths[0], Path([[(0, 1), (1, 2)]]))
+        self.assertEqual(subpaths[1], Path([[(2, 3), (3, 4)]]))
 
     def test_single_path_split(self):
         path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))

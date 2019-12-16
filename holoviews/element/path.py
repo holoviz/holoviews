@@ -184,6 +184,8 @@ class Path(Geometry):
                 obj = self.columns(**kwargs)
             elif datatype is None:
                 obj = self
+            elif datatype == 'multi':
+                obj = self.clone([self.data])
             else:
                 raise ValueError("%s datatype not support" % datatype)
             return [obj]
