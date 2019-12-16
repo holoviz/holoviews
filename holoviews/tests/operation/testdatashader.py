@@ -1,11 +1,11 @@
 import datetime as dt
 
-from unittest import SkipTest
+from unittest import SkipTest, skipIf
 
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
-                       Spread, Area, Segments)
+                       Spread, Area, Segments, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -18,6 +18,14 @@ try:
     )
 except:
     raise SkipTest('Datashader not available')
+
+try:
+    import spatialpandas
+except:
+    spatialpandas = None
+
+sp_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
+
 
 
 class DatashaderAggregateTests(ComparisonTestCase):
@@ -452,6 +460,109 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
+    @sp_skip
+    def test_line_rasterize(self):
+        path = Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
+        agg = rasterize(path, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.125, 0.375, 0.625, 0.875]
+        arr = np.array([
+            [2, 0, 0, 1],
+            [1, 1, 0, 1],
+            [1, 1, 1, 0],
+            [1, 0, 1, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='Count')
+        self.assertEqual(agg, expected)
+
+    @sp_skip
+    def test_multi_line_rasterize(self):
+        path = Path([{'x': [0, 1, 2, np.nan, 0, 0], 'y': [0, 1, 0, np.nan, 0, 1]}],
+                    datatype=['spatialpandas'])
+        agg = rasterize(path, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.125, 0.375, 0.625, 0.875]
+        arr = np.array([
+            [2, 0, 0, 1],
+            [1, 1, 0, 1],
+            [1, 1, 1, 0],
+            [1, 0, 1, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='Count')
+        self.assertEqual(agg, expected)
+
+    @sp_skip
+    def test_ring_rasterize(self):
+        path = Path([{'x': [0, 1, 2], 'y': [0, 1, 0], 'geom_type': 'Ring'}], datatype=['spatialpandas'])
+        agg = rasterize(path, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.125, 0.375, 0.625, 0.875]
+        arr = np.array([
+            [2, 1, 1, 1],
+            [0, 1, 0, 1],
+            [0, 1, 1, 0],
+            [0, 0, 1, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='Count')
+        self.assertEqual(agg, expected)
+
+    @sp_skip
+    def test_polygon_rasterize(self):
+        poly = Polygons([
+            {'x': [0, 1, 2], 'y': [0, 1, 0],
+             'holes': [[[(1.6, 0.2), (1, 0.8), (0.4, 0.2)]]]}
+        ])
+        agg = rasterize(poly, width=6, height=6, dynamic=False)
+        xs = [0.166667, 0.5, 0.833333, 1.166667, 1.5, 1.833333]
+        ys = [0.083333, 0.25, 0.416667, 0.583333, 0.75, 0.916667]
+        arr = np.array([
+            [0, 0, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 1],
+            [0, 0, 1, 0, 1, 0],
+            [0, 0, 0, 0, 1, 0],
+            [0, 0, 0, 1, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='Count')
+        self.assertEqual(agg, expected)
+
+    
+    @sp_skip
+    def test_polygon_rasterize_mean_agg(self):
+        poly = Polygons([
+            {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4}
+        ], vdims='z')
+        agg = rasterize(poly, width=4, height=4, dynamic=False, aggregator='mean')
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.125, 0.375, 0.625, 0.875]
+        arr = np.array([
+            [np.nan, np.nan, nan, np.nan],
+            [np.nan, 2.4,    2.4,    2.4],
+            [np.nan, 3.6,    2.4,    2.4],
+            [np.nan, 3.6,    2.4, np.nan]
+        ])
+        expected = Image((xs, ys, arr), vdims='z')
+        self.assertEqual(agg, expected)
+
+    @sp_skip
+    def test_multi_poly_rasterize(self):
+        poly = Polygons([{'x': [0, 1, 2, np.nan, 0, 0, 1],
+                          'y': [0, 1, 0, np.nan, 0, 1, 1]}],
+                        datatype=['spatialpandas'])
+        agg = rasterize(poly, width=4, height=4, dynamic=False)
+        xs = [0.25, 0.75, 1.25, 1.75]
+        ys = [0.125, 0.375, 0.625, 0.875]
+        arr = np.array([
+            [0, 0, 0, 0],
+            [0, 1, 1, 1],
+            [0, 1, 1, 1],
+            [0, 1, 1, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='Count')
+        self.assertEqual(agg, expected)
+
+
+    
 
 
 class DatashaderShadeTests(ComparisonTestCase):
