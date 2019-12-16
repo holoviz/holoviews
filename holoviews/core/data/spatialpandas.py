@@ -458,7 +458,7 @@ def get_geom_type(gdf, col):
         PolygonDtype, MultiPolygonDtype, RingDtype
     )
 
-    column = dataset[col]
+    column = gdf[col]
     if isinstance(column.dtype, (PointDtype, MultiPointDtype)):
         return 'Point'
     elif isinstance(column.dtype, (LineDtype, MultiLineDtype)):

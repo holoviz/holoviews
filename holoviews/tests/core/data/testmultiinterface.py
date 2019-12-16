@@ -9,7 +9,6 @@ import logging
 import numpy as np
 
 from holoviews.core.data import Dataset, MultiInterface
-from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from param import get_logger
