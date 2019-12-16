@@ -433,15 +433,9 @@ class MultiInterface(Interface):
             return objs
 
         geom_type = cls.geom_type(dataset)
-        if datatype is None:
-            ds = cls._inner_dataset_template(dataset)
-        else:
-            ds = dataset.clone([])
+        ds = dataset.clone([])
         for d in dataset.data[start:end]:
-            if datatype is None:
-                ds.data = d
-            else:
-                ds.data = [d]
+            ds.data = [d]
             if datatype == 'array':
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
@@ -451,11 +445,14 @@ class MultiInterface(Interface):
                     gt = ds.interface.geom_type(ds)
                 if gt is None:
                     gt = geom_type
-                if (ds.interface.datatype == 'dictionary' and
-                    geom_type not in ('Polygon', 'Ring')):
-                    obj = dict(ds.data)
+                if isinstance(ds.data[0], dict):
+                    obj = dict(ds.data[0])
+                    if (geom_type in ('Polygon', 'Ring')):
+                        xd, yd = ds.kdims
+                        obj[xd.name] = ds.interface.values(ds, xd)
+                        obj[yd.name] = ds.interface.values(ds, yd)
                 else:
-                    obj = ds.columns(**kwargs)
+                    obj = ds.columns()
                 if gt is not None:
                     obj['geom_type'] = gt
             else:
