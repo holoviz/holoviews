@@ -157,10 +157,15 @@ class Path(Geometry):
             or a scalar if a single value was selected
         """
         xdim, ydim = self.kdims
-        selection.pop(xdim.name, None)
-        selection.pop(ydim.name, None)
-        return super(Path, self).select(selection_expr, selection_specs,
-                                        **selection)
+        x_range = selection.pop(xdim.name, None)
+        y_range = selection.pop(ydim.name, None)
+        sel = super(Path, self).select(selection_expr, selection_specs,
+                                       **selection)
+        if x_range is None and y_range is None:
+            return sel
+        x_range = x_range if isinstance(x_range, slice) else slice(None)
+        y_range = y_range if isinstance(y_range, slice) else slice(None)
+        return sel[x_range, y_range]
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """
