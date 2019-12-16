@@ -713,13 +713,20 @@ def to_spatialpandas(data, xdim, ydim, columns=[], geom='point'):
         elif yscalar:
             ys = np.full_like(xs, ys)
         geom_array = np.column_stack([xs, ys])
+
+        if geom_type in (Polygon, Ring):
+            geom_array = ensure_ring(geom_array)
+
         splits = np.where(np.isnan(geom_array[:, :2].astype('float')).sum(axis=1))[0]
         split_geoms = np.split(geom_array, splits+1) if len(splits) else [geom_array]
         split_holes = geom.pop(Polygons._hole_key, None)
-        if split_holes is not None and len(split_holes) != len(split_geoms):
-            raise DataError('Polygons with holes containing multi-geometries '
-                            'must declare a list of holes for each geometry.',
-                            SpatialPandasInterface)
+        if split_holes is not None:
+            if len(split_holes) != len(split_geoms):
+                raise DataError('Polygons with holes containing multi-geometries '
+                                'must declare a list of holes for each geometry.',
+                                SpatialPandasInterface)
+            else:
+                split_holes = [[ensure_ring(np.asarray(h)) for h in hs] for hs in split_holes]
 
         geom_arrays.append(split_geoms)
         hole_arrays.append(split_holes)

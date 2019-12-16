@@ -383,8 +383,8 @@ class MultiInterface(Interface):
                 gt = ds.interface.geom_type(ds)
             if gt is None:
                 gt = geom_type
-            if (gt in ('Polygon', 'Ring') and (not scalar or expanded)
-                and not geom_type == 'Points'):
+            if (gt in ('Polygon', 'Ring') and not scalar and
+                not geom_type == 'Points'):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
             elif scalar and not expanded:
@@ -424,9 +424,15 @@ class MultiInterface(Interface):
             return objs
 
         geom_type = cls.geom_type(dataset)
-        ds = cls._inner_dataset_template(dataset)
+        if datatype is None:
+            ds = cls._inner_dataset_template(dataset)
+        else:
+            ds = dataset.clone([])
         for d in dataset.data[start:end]:
-            ds.data = d
+            if datatype is None:
+                ds.data = d
+            else:
+                ds.data = [d]
             if datatype == 'array':
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
@@ -436,7 +442,8 @@ class MultiInterface(Interface):
                     gt = ds.interface.geom_type(ds)
                 if gt is None:
                     gt = geom_type
-                if ds.interface.datatype == 'dictionary' and geom_type != 'Polygon':
+                if (ds.interface.datatype == 'dictionary' and
+                    geom_type not in ('Polygon', 'Ring')):
                     obj = dict(ds.data)
                 else:
                     obj = ds.columns(**kwargs)
@@ -536,7 +543,7 @@ def ensure_ring(geom, values=None):
     ends = list(breaks-1) + [len(geom)-1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts])
     unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
-                     if (s!=e).all()]))
+                     if (s!=e).any()]))
     if not unpacked:
         return values
     inserts, inds = unpacked
