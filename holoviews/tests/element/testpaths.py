@@ -69,7 +69,7 @@ class PathTests(ComparisonTestCase):
 
     def test_multi_path_list_split(self):
         path = Path([[(0, 1), (1, 2)], [(2, 3), (3, 4)]])
-        subpaths = path.split()
+        subpaths = path.split(datatype='multi')
         self.assertEqual(len(subpaths), 2)
         self.assertEqual(subpaths[0], Path([[(0, 1), (1, 2)]]))
         self.assertEqual(subpaths[1], Path([[(2, 3), (3, 4)]]))
