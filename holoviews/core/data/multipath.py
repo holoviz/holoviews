@@ -356,33 +356,33 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
         geom_type = cls.geom_type(dataset)
         is_points = geom_type == 'Point'
+        is_geom = dimension in dataset.kdims
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(
-                ds, dimension, expanded, flat, compute, keep_index
+                ds, dimension, True, flat, compute, keep_index
             )
-            scalar = len(dvals) == 1
-            if geom_type == 'Polygon':
+            scalar = len(util.unique_array(dvals)) == 1 and not is_geom
+            if geom_type == 'Polygon' and (not scalar or expanded):
                 gvals = ds.array([0, 1])
-                if not scalar and (gvals[0] != gvals[-1]).all():
-                    dvals = np.concatenate([dvals, dvals[:1]])
+                dvals = ensure_ring(gvals, dvals)
+            elif scalar and not expanded:
+                dvals = dvals[:1]
             all_scalar &= scalar
+
             scalars.append(scalar)
             if not len(dvals):
                 continue
-            elif expanded:
-                values.append(dvals)
-                if not is_points:
-                    values.append([np.NaN])
-            else:
-                values.append(dvals)
+            values.append(dvals)
+            if not is_points and expanded:
+                values.append([np.NaN])
 
         if not values:
             return np.array([])
-        elif expanded or all_scalar:
+        elif expanded or (all_scalar and not is_geom):
             if not is_points and expanded:
                 values = values[:-1]
-            return np.concatenate(values) if values else np.array()
+            return np.concatenate(values) if values else np.array([])
         else:
             array = np.empty(len(values), dtype=object)
             array[:] = [a[0] if s else a for s, a in zip(scalars, values)]
@@ -401,15 +401,17 @@ class MultiInterface(Interface):
             return objs
         elif not dataset.data:
             return objs
+
+        geom_type = cls.geom_type(dataset)
         ds = cls._inner_dataset_template(dataset)
-        for d in dataset.data:
+        for d in dataset.data[start:end]:
             ds.data = d
             if datatype == 'array':
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
             elif datatype == 'columns':
-                if ds.interface.datatype == 'dictionary':
+                if ds.interface.datatype == 'dictionary' and geom_type != 'Polygon':
                     obj = dict(ds.data)
                 else:
                     obj = ds.columns(**kwargs)
@@ -482,6 +484,36 @@ class MultiInterface(Interface):
                     new_data.append(new.data)
             count += length
         return new_data
+
+
+def ensure_ring(geom, values=None):
+    """Ensure the (multi-)geometry forms a ring.
+
+    Checks the start- and end-point of each geometry to ensure they
+    form a ring, if not the start point is inserted at the end point.
+    If a values array is provided (which must match the geometry in
+    length) then the insertion will occur on the values instead,
+    ensuring that they will match the ring geometry.
+
+    Args:
+        geom: 2-D array of geometry coordinates
+        values: Optional array of values
+
+    Returns:
+        Array where values have been inserted and ring closing indexes
+    """
+    if values is None:
+        values = geom
+    breaks = np.where(np.isnan(geom).sum(axis=1))[0]
+    starts = [0] + list(breaks+1)
+    ends = list(breaks-1) + [len(geom)-1]
+    zipped = zip(geom[starts], geom[ends], ends, values[starts])
+    unpacked = tuple(zip(*[(v, i+1) for s, e, i, v in zipped
+                     if (s!=e).all()]))
+    if not unpacked:
+        return values
+    inserts, inds = unpacked
+    return np.insert(values, list(inds), list(inserts), axis=0)
 
 
 Interface.register(MultiInterface)

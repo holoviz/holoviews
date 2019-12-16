@@ -108,8 +108,12 @@ class GeomTests(ComparisonTestCase):
     def test_empty_range(self):
         mds = Path([], kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds.range(0), (np.nan, np.nan))
-        self.assertEqual(mds.range(1), (np.nan, np.nan))
+        x0, x1 = mds.range(0)
+        self.assertFalse(np.isfinite(x0))
+        self.assertFalse(np.isfinite(x0))
+        y0, y1 = mds.range(1)
+        self.assertFalse(np.isfinite(y0))
+        self.assertFalse(np.isfinite(y1))
 
     def test_array_range(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
@@ -276,28 +280,12 @@ class GeomTests(ComparisonTestCase):
         self.assertIs(mds.interface, self.interface)
         self.assertEqual(mds.dimension_values(0), np.array([]))
 
-    def test_dict_groupby(self):
-        arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
-        self.assertIs(mds.interface, self.interface)
-        for i, (k, ds) in enumerate(mds.groupby('y').items()):
-            self.assertEqual(k, arrays[i]['y'])
-            self.assertEqual(ds, Dataset([arrays[i]], kdims=['x']))
-
     def test_dict_groupby_non_scalar(self):
         arrays = [{'x': np.arange(i, i+2), 'y': i} for i in range(2)]
         mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
         self.assertIs(mds.interface, self.interface)
         with self.assertRaises(ValueError):
             mds.groupby('x')
-
-    def test_array_groupby(self):
-        arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
-        mds = Dataset(arrays, kdims=['x', 'y'], datatype=[self.datatype])
-        self.assertIs(mds.interface, self.interface)
-        for i, (k, ds) in enumerate(mds.groupby('y').items()):
-            self.assertEqual(k, arrays[i][0, 1])
-            self.assertEqual(ds, Dataset([arrays[i]], kdims=['x']))
 
     def test_array_groupby_non_scalar(self):
         arrays = [np.array([(1+i, i), (2+i, i), (3+i, i)]) for i in range(2)]
@@ -397,19 +385,28 @@ class GeomTests(ComparisonTestCase):
         ys = [2, 0, 7]
         poly = Polygons([{'x': xs, 'y': ys, 'z': 1}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertEqual(poly.dimension_values(0), np.array([1, 2, 3, 1])) 
+        self.assertEqual(poly.dimension_values(0), np.array([1, 2, 3, 1]))
         self.assertEqual(poly.dimension_values(1), np.array([2, 0, 7, 2]))
         self.assertEqual(poly.dimension_values(2), np.array([1, 1, 1, 1]))
 
-    def test_multi_polygon_expanded_values(self):
+    def test_polygons_expanded_values(self):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
         poly = Polygons([{'x': xs, 'y': ys, 'z': 1},
                          {'x': xs, 'y': ys, 'z': 2}],
                         ['x', 'y'], 'z', datatype=[self.datatype])
-        self.assertEqual(poly.dimension_values(0), np.array([1, 2, 3, 1, np.nan, 1, 2, 3, 1])) 
+        self.assertEqual(poly.dimension_values(0), np.array([1, 2, 3, 1, np.nan, 1, 2, 3, 1]))
         self.assertEqual(poly.dimension_values(1), np.array([2, 0, 7, 2, np.nan, 2, 0, 7, 2]))
         self.assertEqual(poly.dimension_values(2), np.array([1, 1, 1, 1, np.nan, 2, 2, 2, 2]))
+
+    def test_multi_polygon_expanded_values(self):
+        xs = [1, 2, 3, np.nan, 1, 2, 3]
+        ys = [2, 0, 7, np.nan, 2, 0, 7]
+        poly = Polygons([{'x': xs, 'y': ys, 'z': 1}],
+                        ['x', 'y'], 'z', datatype=[self.datatype])
+        self.assertEqual(poly.dimension_values(0), np.array([1, 2, 3, 1, np.nan, 1, 2, 3, 1]))
+        self.assertEqual(poly.dimension_values(1), np.array([2, 0, 7, 2, np.nan, 2, 0, 7, 2]))
+        self.assertEqual(poly.dimension_values(2), np.array([1, 1, 1, 1, 1, 1, 1, 1, 1]))
 
     def test_polygon_get_holes(self):
         xs = [1, 2, 3]
