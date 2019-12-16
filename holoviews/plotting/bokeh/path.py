@@ -63,9 +63,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
 
-        if not element.interface.multi:
-            element = element.clone([element.data], datatype=type(element).datatype)
-
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and

@@ -983,8 +983,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif isinstance(element, Path) and not isinstance(element, Contours):
-                if not element.interface.multi:
-                    element = element.clone([element.data], datatype=type(element).datatype)
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
             else:
