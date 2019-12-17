@@ -43,8 +43,10 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
     def test_aggregate_zero_range_points(self):
         p = Points([(0, 0), (1, 1)])
-        agg = rasterize(p, x_range=(0, 0), y_range=(0, 1), expand=False, dynamic=False)
-        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1), xdensity=1, vdims=['Count'])
+        agg = rasterize(p, x_range=(0, 0), y_range=(0, 1), expand=False, dynamic=False,
+                        width=2, height=2)
+        img = Image(([], [0.25, 0.75], np.zeros((2, 0))), bounds=(0, 0, 0, 1),
+                    xdensity=1, vdims=['Count'])
         self.assertEqual(agg, img)
 
     def test_aggregate_points_target(self):
@@ -76,7 +78,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_points_categorical_zero_range(self):
         points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
         img = aggregate(points, dynamic=False,  x_range=(0, 0), y_range=(0, 1),
-                        aggregator=ds.count_cat('z'))
+                        aggregator=ds.count_cat('z'), height=2)
         xs, ys = [], [0.25, 0.75]
         params = dict(bounds=(0, 0, 0, 1), xdensity=1)
         expected = NdOverlay({'A': Image((xs, ys, np.zeros((2, 0))), vdims='z Count', **params),
@@ -157,7 +159,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
     def test_aggregate_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
-        img = rasterize(Curve(df), dynamic=False)
+        img = rasterize(Curve(df), dynamic=False, width=3)
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
         ys = np.array([])
@@ -516,12 +518,12 @@ class DatashaderAggregateTests(ComparisonTestCase):
         xs = [0.166667, 0.5, 0.833333, 1.166667, 1.5, 1.833333]
         ys = [0.083333, 0.25, 0.416667, 0.583333, 0.75, 0.916667]
         arr = np.array([
+            [1, 1, 1, 1, 1, 1],
             [0, 0, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 1],
-            [0, 0, 1, 0, 1, 0],
-            [0, 0, 0, 0, 1, 0],
-            [0, 0, 0, 1, 0, 0]
+            [0, 1, 0, 0, 1, 0],
+            [0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0]
         ])
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
@@ -536,11 +538,10 @@ class DatashaderAggregateTests(ComparisonTestCase):
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
         arr = np.array([
-            [np.nan, np.nan, np.nan, np.nan],
-            [np.nan, 2.4,    2.4,    2.4],
-            [np.nan, 3.6,    2.4,    2.4],
-            [np.nan, 3.6,    2.4,    np.nan]
-        ])
+            [ 2.4,  2.4,  2.4,    2.4],
+            [ 3.6,  2.4,  2.4,    np.nan],
+            [ 3.6,  2.4,  2.4,    np.nan],
+            [ 3.6,  3.6,  np.nan, np.nan]])
         expected = Image((xs, ys, arr), vdims='z')
         self.assertEqual(agg, expected)
 
@@ -553,16 +554,15 @@ class DatashaderAggregateTests(ComparisonTestCase):
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
         arr = np.array([
-            [0, 0, 0, 0],
-            [0, 1, 1, 1],
-            [0, 1, 1, 1],
-            [0, 1, 1, 0]
+            [1, 1, 1, 1],
+            [1, 1, 1, 0],
+            [1, 1, 1, 0],
+            [1, 1, 0, 0]
         ])
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
 
-    
 
 
 class DatashaderShadeTests(ComparisonTestCase):
@@ -599,7 +599,7 @@ class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_dt_xaxis_constant_yaxis(self):
         df = pd.DataFrame({'y': np.ones(100)}, index=pd.date_range('1980-01-01', periods=100, freq='1T'))
-        rgb = shade(rasterize(Curve(df), dynamic=False))
+        rgb = shade(rasterize(Curve(df), dynamic=False, width=3))
         xs = np.array(['1980-01-01T00:16:30.000000', '1980-01-01T00:49:30.000000',
                        '1980-01-01T01:22:30.000000'], dtype='datetime64[us]')
         ys = np.array([])
