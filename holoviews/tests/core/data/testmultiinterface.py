@@ -63,8 +63,8 @@ class GeomTests(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=[self.datatype]).add_dimension('A', 0, 'Scalar', True)
         self.assertIs(mds.interface, self.interface)
-        self.assertEqual(mds, Path([{('x', 'y'): arrays[i], 'A': 'Scalar'} for i in range(2)], ['x', 'y'],
-                                   'A', datatype=['multitabular']))
+        self.assertEqual(mds, Path([{('x', 'y'): arrays[i], 'A': 'Scalar'} for i in range(2)],
+                                   ['x', 'y'], 'A'))
 
     def test_dict_dataset_add_dimension_scalar(self):
         arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]

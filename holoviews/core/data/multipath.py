@@ -215,6 +215,9 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         ds = cls._inner_dataset_template(dataset)
+        skipped = (Polygons._hole_key,)
+        if hasattr(ds.interface, 'geo_column'):
+            skipped += (ds.interface.geo_column(ds),)
         data = []
         for d in dataset.data:
             ds.data = d
@@ -223,7 +226,7 @@ class MultiInterface(Interface):
             is_dict = isinstance(sel, dict)
             if ((not len(sel) and not is_dict) or
                 (is_dict and any(False if util.isscalar(v) else len(v) == 0
-                                 for k, v in sel.items() if k != Polygons._hole_key))):
+                                 for k, v in sel.items() if k not in skipped))):
                 continue
             data.append(sel)
         return data
@@ -381,7 +384,7 @@ class MultiInterface(Interface):
         ds = cls._inner_dataset_template(dataset)
         geom_type = cls.geom_type(dataset)
         is_points = geom_type == 'Point'
-        is_geom = dimension in dataset.kdims
+        is_geom = dimension in dataset.kdims[:2]
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(
@@ -389,6 +392,7 @@ class MultiInterface(Interface):
             )
             scalar = len(util.unique_array(dvals)) == 1 and not is_geom
             gt = ds.interface.geom_type(ds) if hasattr(ds.interface, 'geom_type') else None
+
             if gt is None:
                 gt = geom_type
 
@@ -396,7 +400,7 @@ class MultiInterface(Interface):
                 not geom_type == 'Points'):
                 gvals = ds.array([0, 1])
                 dvals = ensure_ring(gvals, dvals)
-            elif scalar and not expanded:
+            if scalar and not expanded:
                 dvals = dvals[:1]
             all_scalar &= scalar
 
@@ -447,8 +451,9 @@ class MultiInterface(Interface):
                     gt = geom_type
                 if isinstance(ds.data[0], dict):
                     obj = dict(ds.data[0])
-                    if (geom_type in ('Polygon', 'Ring')):
-                        xd, yd = ds.kdims
+                    xd, yd = ds.kdims
+                    if (geom_type in ('Polygon', 'Ring') or
+                        xd not in obj or yd not in obj):
                         obj[xd.name] = ds.interface.values(ds, xd)
                         obj[yd.name] = ds.interface.values(ds, yd)
                 else:

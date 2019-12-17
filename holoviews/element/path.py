@@ -141,7 +141,7 @@ class Path(Geometry):
             Returns an Dimensioned object containing the selected data
             or a scalar if a single value was selected
         """
-        xdim, ydim = self.kdims
+        xdim, ydim = self.kdims[:2]
         x_range = selection.pop(xdim.name, None)
         y_range = selection.pop(ydim.name, None)
         sel = super(Path, self).select(selection_expr, selection_specs,
