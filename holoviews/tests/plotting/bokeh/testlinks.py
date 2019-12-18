@@ -72,8 +72,10 @@ class TestLinkCallbacks(TestBokehPlot):
         plot = bokeh_renderer.get_plot(layout)
         cds = list(plot.state.select({'type': ColumnDataSource}))
         self.assertEqual(len(cds), 1)
-        merged_data = {'xs': [[[arr1[:, 0]]], [[arr2[:, 0]]]],
-                       'ys': [[[arr1[:, 1]]], [[arr2[:, 1]]]],
+        merged_data = {'xs': [[[np.concatenate([arr1[:, 0], arr1[:1, 0]])]],
+                              [[np.concatenate([arr2[:, 0], arr2[:1, 0]])]]],
+                       'ys': [[[np.concatenate([arr1[:, 1], arr1[:1, 1]])]],
+                              [[np.concatenate([arr2[:, 1], arr2[:1, 1]])]]],
                        'A': np.array(['A', 'B']), 'B': np.array([1, 2])}
         for k, v in cds[0].data.items():
             self.assertEqual(v, merged_data[k])

@@ -572,7 +572,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif type(element) is Path:
-                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
+                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
             else:
                 val = v.apply(element, ranges)
@@ -830,7 +830,7 @@ class ColorbarPlot(ElementPlot):
                     isinstance(element, Dataset) and
                     element.interface.multi and
                     (getattr(element, 'level', None) is not None or
-                     element.interface.isscalar(element, vdim.name))
+                    element.interface.isunique(element, vdim.name, True))
                 )
                 values = np.asarray(element.dimension_values(vdim, expanded=expanded))
 

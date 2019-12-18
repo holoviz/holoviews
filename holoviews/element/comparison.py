@@ -518,9 +518,16 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
+        tabular = not (el1.interface.gridded and el2.interface.gridded)
+        dimension_data = [(d, el1.dimension_values(d, expanded=tabular),
+                           el2.dimension_values(d, expanded=tabular))
+                          for d in el1.kdims]
+        dimension_data += [(d, el1.dimension_values(d, flat=tabular),
+                            el2.dimension_values(d, flat=tabular))
+                            for d in el1.vdims]
         if el1.shape[0] != el2.shape[0]:
-            raise AssertionError("%s not of matching length." % msg)
-        dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
+            raise AssertionError("%s not of matching length, %d vs. %d."
+                                 % (msg, el1.shape[0], el2.shape[0]))
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
                 cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)

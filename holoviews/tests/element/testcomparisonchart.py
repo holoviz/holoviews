@@ -22,7 +22,7 @@ class CurveComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.curve1, self.curve2)
         except AssertionError as e:
-            if not str(e).startswith("Curve not of matching length."):
+            if not str(e).startswith("Curve not of matching length, 100 vs. 101"):
                 raise self.failureException("Curve mismatch error not raised.")
 
 
@@ -124,7 +124,7 @@ class ScatterComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.scatter1, self.scatter2)
         except  AssertionError as e:
-            if not str(e).startswith("Scatter not of matching length."):
+            if not str(e).startswith("Scatter not of matching length, 20 vs. 21."):
                 raise self.failureException("Scatter data mismatch error not raised.")
 
     def test_scatter_unequal_data_values(self):
@@ -159,7 +159,7 @@ class PointsComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.points1, self.points2)
         except  AssertionError as e:
-            if not str(e).startswith("Points not of matching length."):
+            if not str(e).startswith("Points not of matching length, 20 vs. 21."):
                 raise self.failureException("Points count mismatch error not raised.")
 
     def test_points_unequal_data_values(self):

@@ -33,19 +33,13 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
 
     @pd_skip
     def test_dataset_dataframe_init_hm(self):
-        "Tests support for homogeneous DataFrames"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaises(Exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
     @pd_skip
     def test_dataset_dataframe_init_hm_alias(self):
-        "Tests support for homogeneous DataFrames"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaises(Exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 

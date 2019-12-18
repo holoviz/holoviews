@@ -8,10 +8,10 @@ quickly draw common shapes.
 import numpy as np
 
 import param
-from ..core import Element2D, Dataset
+from ..core import Dataset
 from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
-from ..core.util import OrderedDict, disable_constant, isscalar
+from ..core.util import OrderedDict, disable_constant
 from .geom import Geometry
 
 
@@ -55,8 +55,7 @@ class Path(Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=[
-        'multitabular', 'dataframe', 'dictionary', 'dask', 'array'])
+    datatype = param.ObjectSelector(default=['multitabular', 'spatialpandas'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -80,20 +79,7 @@ class Path(Geometry):
                     paths.append(path.data)
             data = paths
 
-        datatype = params.pop('datatype', self.datatype)
-
-        # Ensure that a list of tuples of scalars and any other non-list
-        # type is interpreted as a single path
-        if (not isinstance(data, (list, Dataset)) or
-            (isinstance(data, list) and not len(data) == 0 and all(
-                isinstance(d, tuple) and all(isscalar(v) for v in d)
-                for d in data))):
-            datatype = [dt for dt in datatype if dt != 'multitabular']
-        elif isinstance(data, list) and 'multitabular' not in datatype:
-            datatype = datatype + ['multitabular']
-
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims,
-                                   datatype=datatype, **params)
+        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
     def __getitem__(self, key):
@@ -110,12 +96,61 @@ class Path(Geometry):
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
 
-    def select(self, *args, **kwargs):
-        """
-        Bypasses selection on data and sets extents based on selection.
-        """
-        return super(Element2D, self).select(*args, **kwargs)
+    def select(self, selection_expr=None, selection_specs=None, **selection):
+        """Applies selection by dimension name
 
+        Applies a selection along the dimensions of the object using
+        keyword arguments. The selection may be narrowed to certain
+        objects using selection_specs. For container objects the
+        selection will be applied to all children as well.
+
+        Selections may select a specific value, slice or set of values:
+
+        * value: Scalar values will select rows along with an exact
+                 match, e.g.:
+
+            ds.select(x=3)
+
+        * slice: Slices may be declared as tuples of the upper and
+                 lower bound, e.g.:
+
+            ds.select(x=(0, 3))
+
+        * values: A list of values may be selected using a list or
+                  set, e.g.:
+
+            ds.select(x=[0, 1, 2])
+
+        * predicate expression: A holoviews.dim expression, e.g.:
+
+            from holoviews import dim
+            ds.select(selection_expr=dim('x') % 2 == 0)
+
+        Args:
+            selection_expr: holoviews.dim predicate expression
+                specifying selection.
+            selection_specs: List of specs to match on
+                A list of types, functions, or type[.group][.label]
+                strings specifying which objects to apply the
+                selection on.
+            **selection: Dictionary declaring selections by dimension
+                Selections can be scalar values, tuple ranges, lists
+                of discrete values and boolean arrays
+
+        Returns:
+            Returns an Dimensioned object containing the selected data
+            or a scalar if a single value was selected
+        """
+        xdim, ydim = self.kdims[:2]
+        x_range = selection.pop(xdim.name, None)
+        y_range = selection.pop(ydim.name, None)
+        sel = super(Path, self).select(selection_expr, selection_specs,
+                                       **selection)
+        if x_range is None and y_range is None:
+            return sel
+        x_range = x_range if isinstance(x_range, slice) else slice(None)
+        y_range = y_range if isinstance(y_range, slice) else slice(None)
+        return sel[x_range, y_range]
 
     def split(self, start=None, end=None, datatype=None, **kwargs):
         """
@@ -130,10 +165,10 @@ class Path(Geometry):
                 obj = self.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = self.dframe(**kwargs)
-            elif datatype == 'columns':
+            elif datatype in ('columns', 'dictionary'):
                 obj = self.columns(**kwargs)
             elif datatype is None:
-                obj = self
+                obj = self.clone([self.data])
             else:
                 raise ValueError("%s datatype not support" % datatype)
             return [obj]
@@ -225,10 +260,6 @@ class Contours(Path):
         if params.get('level') is not None:
             with disable_constant(self):
                 self.vdims = [asdim(d) for d in vdims]
-        else:
-            all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
-            if not all_scalar and not (not self.interface.multi and len(self) == 0):
-                raise ValueError("All value dimensions on a Contours element must be scalar")
 
     def dimension_values(self, dim, expanded=True, flat=True):
         dimension = self.get_dimension(dim, strict=True)

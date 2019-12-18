@@ -58,15 +58,19 @@ class PathPlot(LegendPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring) and validate('color', color) == False:
+        if isinstance(color, util.basestring) and not validate('color', color):
             cdim = element.get_dimension(color)
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
-        style_mapping = any(
-            s for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            (isinstance(v, util.basestring) and v in element) or isinstance(v, dim))
+
+        scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
+        style_mapping = {
+            (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
+            ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
+            not (v == color and s == 'color')}
         mapping = dict(self._mapping)
-        if not cdim and not style_mapping and 'hover' not in self.handles:
+
+        if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
             if self.static_source:
                 data = {}
             else:
@@ -81,7 +85,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim:
+        if cdim and self.color_index is not None:
             dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
             mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
@@ -89,8 +93,9 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
         xpaths, ypaths = [], []
         for path in element.split():
-            if cdim:
-                cvals = path.dimension_values(cdim)
+            if cdim and self.color_index is not None:
+                scalar = path.interface.isunique(path, cdim, per_geom=True)
+                cvals = path.dimension_values(cdim, not scalar)
                 vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
@@ -105,7 +110,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 values = path.dimension_values(vd)[:-1]
                 vd_name = util.dimension_sanitizer(vd.name)
                 vals[vd_name].append(values)
-                if values.dtype.kind == 'M':
+                if values.dtype.kind == 'M' or (len(values) and isinstance(values[0], util.datetime_types)):
                     vals[vd_name+'_dt_strings'].append([vd.pprint_value(v) for v in values])
         values = {d: np.concatenate(vs) if len(vs) else [] for d, vs in vals.items()}
         if self.invert_axes:
@@ -175,18 +180,22 @@ class ContourPlot(PathPlot):
         if 'hover' not in self.handles or self.static_source:
             return
 
+        interface = element.interface
+        scalar_kwargs = {'per_geom': True} if interface.multi else {}
         npath = len([vs for vs in data.values()][0])
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 if element.level is not None:
                     data[dim] = np.full(npath, element.level)
-                elif element.interface.isscalar(element, d):
+                elif interface.isunique(element, d, **scalar_kwargs):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
-            elif isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
-                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
+            values = data[dim]
+            if ((isinstance(values, np.ndarray) and values.dtype.kind == 'M') or
+                  (len(values) and isinstance(values[0], util.datetime_types))):
+                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
@@ -202,15 +211,17 @@ class ContourPlot(PathPlot):
         else:
             has_holes = self._has_holes
 
+        if not element.interface.multi:
+            element = element.clone([element.data], datatype=type(element).datatype)
+
         if self.static_source:
             data = dict()
             xs = self.handles['cds'].data['xs']
         else:
-            if has_holes and bokeh_version >= '1.0':
+            if has_holes:
                 xs, ys = multi_polygons_data(element)
             else:
-                paths = element.split(datatype='array', dimensions=element.kdims)
-                xs, ys = ([path[:, idx] for path in paths] for idx in (0, 1))
+                xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
             if self.invert_axes:
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
@@ -240,7 +251,7 @@ class ContourPlot(PathPlot):
         if cdim.name in ranges and 'factors' in ranges[cdim.name]:
             factors = ranges[cdim.name]['factors']
         else:
-            factors = util.unique_array(values) if values.dtype.kind in 'SUO' else None
+            factors = util.unique_array(np.concatenate(values)) if values.dtype.kind in 'SUO' else None
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         if self.show_legend:

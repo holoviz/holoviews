@@ -25,15 +25,16 @@ from .dictionary import DictInterface
 from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
+from .spatialpandas import SpatialPandasInterface # noqa (API import)
 
 default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid']
+datatypes = ['dictionary', 'grid', 'spatialpandas']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     default_datatype = 'dataframe'
-    datatypes = ['dataframe', 'dictionary', 'grid']
+    datatypes = ['dataframe', 'dictionary', 'spatialpandas', 'grid']
     DFColumns = PandasInterface
 except ImportError:
     pd = None
@@ -331,7 +332,8 @@ class Dataset(Element):
         """
         from . import Dataset
         if self._dataset is None:
-            dataset = Dataset(self, _validate_vdims=False)
+            datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
+            dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
             return dataset

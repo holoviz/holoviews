@@ -399,7 +399,8 @@ class dim(object):
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
-                            (dataset.interface.multi and dataset.interface.isscalar(dataset, dimension)))
+                            (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
+
         if isinstance(dataset, Graph):
             if dimension in dataset.kdims and all_values:
                 dimension = dataset.nodes.kdims[2]

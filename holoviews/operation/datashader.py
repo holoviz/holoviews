@@ -28,7 +28,7 @@ from ..core.util import (
     datetime_types, dt_to_int, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
-                       Segments, Scatter, Points)
+                       Segments, Scatter, Points, Polygons)
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -1255,6 +1255,61 @@ class shade(LinkableOperation):
 
 
 
+class geometry_rasterize(AggregationOperation):
+    """
+    Rasterizes geometries by converting them to spatialpandas.
+    """
+
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
+
+    def _get_aggregator(self, element, add_field=True):
+        agg = self.p.aggregator
+        if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+            return ds.count()
+        return super(geometry_rasterize, self)._get_aggregator(element, add_field)
+
+    def _process(self, element, key=None):
+        agg_fn = self._get_aggregator(element)
+        xdim, ydim = element.kdims
+        info = self._get_sampling(element, xdim, ydim)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
+        x0, x1 = x_range
+        y0, y1 = y_range
+
+        params = self._get_agg_params(element, xdim, ydim, agg_fn, (x0, y0, x1, y1))
+
+        if width == 0 or height == 0:
+            return self._empty_agg(element, xdim, ydim, width, height, xs, ys, agg_fn, **params)
+
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        if element.interface.datatype != 'spatialpandas':
+            element = element.clone(datatype=['spatialpandas'])
+        data = element.data
+        if isinstance(agg_fn, ds.count_cat):
+            data[agg_fn.column] = data[agg_fn.column].astype('category')
+        col = element.interface.geo_column(element.data)
+
+        if isinstance(element, Polygons):
+            agg = cvs.polygons(data, geometry=col, agg=agg_fn)
+        elif isinstance(element, Path):
+            agg = cvs.line(data, geometry=col, agg=agg_fn)
+        elif isinstance(element, Points):
+            agg = cvs.points(data, geometry=col, agg=agg_fn)
+
+        if agg.ndim == 2:
+            return self.p.element_type(agg, **params)
+        else:
+            layers = {}
+            for c in agg.coords[agg_fn.column].data:
+                cagg = agg.sel(**{agg_fn.column: c})
+                layers[c] = self.p.element_type(cagg, **params)
+            return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
+
+
+
 class rasterize(AggregationOperation):
     """
     Rasterize is a high-level operation that will rasterize any
@@ -1288,6 +1343,10 @@ class rasterize(AggregationOperation):
         of each other.""")
 
     _transforms = [(Image, regrid),
+                   (Polygons, geometry_rasterize),
+                   (lambda x: (isinstance(x, Path) and
+                               x.interface.datatype == 'spatialpandas'),
+                    geometry_rasterize),
                    (TriMesh, trimesh_rasterize),
                    (QuadMesh, quadmesh_rasterize),
                    (lambda x: (isinstance(x, NdOverlay) and

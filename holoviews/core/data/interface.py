@@ -1,7 +1,9 @@
 from __future__ import absolute_import
 
+import sys
 import warnings
 
+import six
 import param
 import numpy as np
 
@@ -229,6 +231,8 @@ class Interface(param.Parameterized):
             interface = data.interface
             if interface.datatype in datatype and interface.datatype in eltype.datatype:
                 data = data.data
+            elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
+                data = [d for d in data.interface.split(data, None, None, 'columns')]
             elif interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 new_data = []
                 for kd in data.kdims:
@@ -239,6 +243,8 @@ class Interface(param.Parameterized):
                 for vd in data.vdims:
                     new_data.append(interface.values(data, vd, flat=False, compute=False))
                 data = tuple(new_data)
+            elif 'dataframe' in datatype and util.pd:
+                data = data.dframe()
             else:
                 data = tuple(data.columns().values())
         elif isinstance(data, Element):
@@ -269,16 +275,17 @@ class Interface(param.Parameterized):
             except DataError:
                 raise
             except Exception as e:
-                if interface in head:
-                    priority_errors.append((interface, e))
+                if interface in head or len(prioritized) == 1:
+                    priority_errors.append((interface, e, True))
         else:
             error = ("None of the available storage backends were able "
                      "to support the supplied data format.")
             if priority_errors:
-                intfc, e = priority_errors[0]
+                intfc, e, _ = priority_errors[0]
                 priority_error = ("%s raised following error:\n\n %s"
                                   % (intfc.__name__, e))
                 error = ' '.join([error, priority_error])
+                raise six.reraise(DataError, DataError(error, intfc), sys.exc_info()[2])
             raise DataError(error)
 
         return data, interface, dims, extra_kws
@@ -304,6 +311,16 @@ class Interface(param.Parameterized):
     def isscalar(cls, dataset, dim):
         return len(cls.values(dataset, dim, expanded=False)) == 1
 
+    @classmethod
+    def isunique(cls, dataset, dim, per_geom=False):
+        """
+        Compatibility method introduced for v1.13.0 to smooth
+        over addition of per_geom kwarg for isscalar method.
+        """
+        try:
+            return cls.isscalar(dataset, dim, per_geom)
+        except TypeError:
+            return cls.isscalar(dataset, dim)
 
     @classmethod
     def dtype(cls, dataset, dimension):

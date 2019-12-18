@@ -310,9 +310,18 @@ class DictInterface(Interface):
     def select(cls, dataset, selection_mask=None, **selection):
         if selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
+        empty = not selection_mask.sum()
+        dimensions = dataset.dimensions()
+        if empty:
+            return {d.name: np.array([], dtype=cls.dtype(dataset, d))
+                    for d in dimensions}
         indexed = cls.indexed(dataset, selection)
-        data = OrderedDict((k, v if isscalar(v) else v[selection_mask])
-                           for k, v in dataset.data.items())
+        data = OrderedDict()
+        for k, v in dataset.data.items():
+            if k not in dimensions or isscalar(v):
+                data[k] = v
+            else:
+                data[k] = v[selection_mask]
         if indexed and len(list(data.values())[0]) == 1 and len(dataset.vdims) == 1:
             value = data[dataset.vdims[0].name]
             return value if isscalar(value) else value[0]
@@ -389,6 +398,11 @@ class DictInterface(Interface):
             return arr if isscalar(arr) else arr[0]
         return new_data
 
+
+    @classmethod
+    def geom_type(cls, dataset):
+        return dataset.data.get('geom_type')
+
     @classmethod
     def has_holes(cls, dataset):
         from holoviews.element import Polygons
@@ -400,7 +414,16 @@ class DictInterface(Interface):
         from holoviews.element import Polygons
         key = Polygons._hole_key
         if key in dataset.data:
-            return [[[np.asarray(h) for h in hs] for hs in dataset.data[key]]]
+            holes = []
+            for hs in dataset.data[key]:
+                subholes = []
+                for h in hs:
+                    hole = np.asarray(h)
+                    if (hole[0, :] != hole[-1, :]).all():
+                        hole = np.concatenate([hole, hole[:1]])
+                    subholes.append(hole)
+                holes.append(subholes)
+            return [holes]
         else:
             return super(DictInterface, cls).holes(dataset)
 

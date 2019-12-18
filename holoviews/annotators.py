@@ -383,7 +383,7 @@ class PathAnnotator(Annotator):
         table = self.object
         for transform in self.table_transforms:
             table = transform(table)
-        table_data = {a: [d.dimension_values(a, expanded=False)[0] for d in table.split()]
+        table_data = {a: list(table.dimension_values(a, expanded=False))
                       for a in annotations}
         self._table = Table(table_data, annotations, [], label=name).opts(
             show_title=False, **self.table_opts)

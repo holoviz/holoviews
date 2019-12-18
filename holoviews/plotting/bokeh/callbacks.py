@@ -1061,8 +1061,10 @@ class PolyDrawCallback(GlyphDrawCallback):
         # ensuring the element can be reconstituted in entirety
         element = self.plot.current_frame
         cds = self.plot.handles['cds']
+        interface = element.interface
+        scalar_kwargs = {'per_geom': True} if interface.multi else {}
         for d in element.vdims:
-            scalar = element.interface.isscalar(element, d)
+            scalar = element.interface.isunique(element, d, **scalar_kwargs)
             dim = dimension_sanitizer(d.name)
             if dim not in cds.data:
                 if scalar:

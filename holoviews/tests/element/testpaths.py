@@ -53,7 +53,6 @@ class PathTests(ComparisonTestCase):
 
     def test_single_path_list_constructor(self):
         path = Path([(0, 1), (1, 2), (2, 3), (3, 4)])
-        self.assertFalse(path.interface.multi)
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, 2, 3]))
         self.assertEqual(path.dimension_values(1), np.array([
@@ -61,7 +60,6 @@ class PathTests(ComparisonTestCase):
 
     def test_single_path_tuple_constructor(self):
         path = Path(([0, 1, 2, 3], [1, 2, 3, 4]))
-        self.assertFalse(path.interface.multi)
         self.assertEqual(path.dimension_values(0), np.array([
             0, 1, 2, 3]))
         self.assertEqual(path.dimension_values(1), np.array([

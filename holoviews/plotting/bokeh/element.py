@@ -983,7 +983,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
             elif isinstance(element, Path) and not isinstance(element, Contours):
-                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)[:-1]
+                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
@@ -1006,6 +1006,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 elif data and len(val) != len(list(data.values())[0]):
                     if isinstance(element, VectorField):
                         val = np.tile(val, 3)
+                    elif isinstance(element, Path) and not isinstance(element, Contours):
+                        val = val[:-1]
                     else:
                         continue
 
@@ -1089,6 +1091,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if ((line_style is not None and (validate(s, line_style) and not hover)) or
                         (line_style is None and not supports_fill)):
                         new_style[line_key] = val
+
         return new_style
 
 
