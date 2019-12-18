@@ -315,8 +315,8 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Initial region bounds all None
         self.assertEqual(
-            list(current_obj[0][()].Bounds.I.data[0]['x']),
-            [None] * 5
+            list(current_obj[0][()].Curve.I.data['x']),
+            []
         )
 
         # Check initial base histogram
@@ -366,14 +366,14 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check scatter region bounds
-        region_bounds = current_obj[0][()].Bounds.I
+        region_bounds = current_obj[0][()].Curve.I
         self.assertEqual(
-            list(region_bounds.data[0]['x']),
-            [1, 1, 4, 4, 1]
+            list(region_bounds.data['x']),
+            [1, 4, 4, 1, 1]
         )
         self.assertEqual(
-            list(region_bounds.data[0]['y']),
-            [1, 4, 4, 1, 1]
+            list(region_bounds.data['y']),
+            [1, 1, 4, 4, 1]
         )
         self.assertEqual(
             self.element_color(region_bounds),

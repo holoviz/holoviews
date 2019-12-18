@@ -336,7 +336,12 @@ class link_selections(_base_link_selections):
 
             # Update region
             if self.show_regions:
-                region_element = hvobj._merge_regions(
+                if isinstance(hvobj, DynamicMap):
+                    el_type = hvobj.type
+                else:
+                    el_type = hvobj
+
+                region_element = el_type._merge_regions(
                     self._obj_regions.get(hvobj, None), region_element, self.element_op
                 )
                 self._obj_regions[hvobj] = region_element
