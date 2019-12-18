@@ -57,7 +57,6 @@ class Chart2dSelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-        from ..element import Bounds
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
@@ -86,9 +85,27 @@ class Chart2dSelectionExpr(object):
                     (dim(xdim) >= x0) & (dim(xdim) <= x1) &
                     (dim(ydim) >= y0) & (dim(ydim) <= y1)
             )
-            region_element = Bounds(kwargs['bounds'])
+            # region_element = Bounds(kwargs['bounds'])
+            x0, y0, x1, y1 = kwargs['bounds']
+            region_element = Curve(([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0]))
             return selection_expr, bbox, region_element
-        return None, None, Bounds((None, None, None, None))
+        return None, None, Curve(([], []))
+
+    @staticmethod
+    def _merge_regions(region1, region2, operation):
+        if region1 is None or operation == "overwrite":
+            return region2
+
+        x = region1.kdims[0]
+        y = region1.vdims[0]
+        return region1.clone((
+            np.concatenate([
+                region1.dimension_values(x), [np.nan], region2.dimension_values(x)
+            ]),
+            np.concatenate([
+                region1.dimension_values(y), [np.nan], region2.dimension_values(y)
+            ])
+        ))
 
 
 class Scatter(Chart2dSelectionExpr, Chart):
@@ -116,12 +133,12 @@ class ErrorBars(Chart2dSelectionExpr, Chart):
     """
     ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the
-    location along the x-axis and the first value dimension 
-    corresponds to the location along the y-axis and one or two 
-    extra value dimensions corresponding to the symmetric or 
+    location along the x-axis and the first value dimension
+    corresponds to the location along the y-axis and one or two
+    extra value dimensions corresponding to the symmetric or
     asymetric errors either along x-axis or y-axis. If two value
-    dimensions are given, then the last value dimension will be 
-    taken as symmetric errors. If three value dimensions are given 
+    dimensions are given, then the last value dimension will be
+    taken as symmetric errors. If three value dimensions are given
     then the last two value dimensions will be taken as negative and
     positive errors. By default the errors are defined along y-axis.
     A parameter `horizontal`, when set `True`, will define the errors
@@ -289,6 +306,34 @@ class Histogram(Chart):
             return selection_expr, bbox, region
 
         return None, None, self.pipeline(self.dataset.iloc[:0])
+
+    @staticmethod
+    def _merge_regions(region1, region2, operation):
+        if region1 is None:
+            if operation == 'difference':
+                return Histogram(
+                    (region2.dimension_values(0),
+                     np.zeros_like(region2.dimension_values(0)))
+                )
+            else:
+                return region2
+
+        if operation == 'overwrite':
+            return region2
+        elif operation == 'difference':
+            y = region1.dimension_values(1).copy()
+            y[region2.dimension_values(1) > 0] = 0
+            return Histogram((region1.dimension_values(0), y))
+        elif operation == 'intersect':
+            op = np.min
+        elif operation == 'union':
+            op = np.max
+
+        return Histogram((
+            region1.dimension_values(0),
+            op(np.stack([region1.dimension_values(1),
+                         region2.dimension_values(1)], axis=1), axis=1)
+        ))
 
     def __setstate__(self, state):
         """

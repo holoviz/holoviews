@@ -36,7 +36,7 @@ class GeometrySelectionExpr(object):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-        from ..element import Bounds
+        from ..element import Curve
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
@@ -63,9 +63,28 @@ class GeometrySelectionExpr(object):
                     (dim(xdim) >= x0) & (dim(xdim) <= x1) &
                     (dim(ydim) >= y0) & (dim(ydim) <= y1)
             )
-            region_element = Bounds(kwargs['bounds'])
+
+            # region_element = Bounds(kwargs['bounds'])
+            x0, y0, x1, y1 = kwargs['bounds']
+            region_element = Curve(([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0]))
             return selection_expr, bbox, region_element
-        return None, None, Bounds((None, None, None, None))
+        return None, None, Curve(([], []))
+
+    @staticmethod
+    def _merge_regions(region1, region2, operation):
+        if region1 is None or operation == "overwrite":
+            return region2
+
+        x = region1.kdims[0]
+        y = region1.vdims[0]
+        return region1.clone((
+            np.concatenate([
+                region1.dimension_values(x), [np.nan], region2.dimension_values(x)
+            ]),
+            np.concatenate([
+                region1.dimension_values(y), [np.nan], region2.dimension_values(y)
+            ])
+        ))
 
 
 class Points(GeometrySelectionExpr, Geometry):

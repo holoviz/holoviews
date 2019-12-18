@@ -61,7 +61,7 @@ class _base_link_selections(param.ParameterizedFunction):
         selection expressions in response to user interaction events
         """
         # Create stream that produces element that displays region of selection
-        if self.mode == "crossfilter" and getattr(hvobj, "_selection_streams", ()):
+        if getattr(hvobj, "_selection_streams", ()):
             self._region_streams[hvobj] = _RegionElement()
 
         # Create SelectionExpr stream
@@ -197,7 +197,13 @@ class link_selections(_base_link_selections):
     selection_expr = param.Parameter(default=None)
     unselected_color = param.Color(default="#99a6b2")  # LightSlateGray - 65%
     selected_color = param.Color(default="#DC143C")  # Crimson
-    mode = param.Selector(['overwrite', 'crossfilter'], default='overwrite')
+    cross_element_op = param.Selector(
+        ['overwrite', 'intersect'], default='intersect'
+    )
+    element_op = param.Selector(
+        ['overwrite', 'intersect', 'union', 'difference'], default='overwrite'
+    )
+    show_regions = param.Boolean(default=True)
 
     @bothmethod
     def instance(self_or_cls, **params):
@@ -306,18 +312,36 @@ class link_selections(_base_link_selections):
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
-            if self.mode == "overwrite":
-                self._obj_selections.clear()
-                self._obj_regions.clear()
-
-                # clear other region streams
+            if self.cross_element_op == "overwrite":
+                # clear other regions and selections
                 for k, v in self._region_streams.items():
                     if k is not hvobj:
                         self._region_streams[k].event(region_element=None)
+                        self._obj_regions.pop(k, None)
+                        self._obj_selections.pop(k, None)
 
-            # save off new selection
-            self._obj_selections[hvobj] = selection_expr
-            self._obj_regions[hvobj] = region_element
+            # Update selection expression
+            if hvobj not in self._obj_selections or self.element_op == "overwrite":
+                if self.element_op == "difference":
+                    self._obj_selections[hvobj] = ~selection_expr
+                else:
+                    self._obj_selections[hvobj] = selection_expr
+            else:
+                if self.element_op == "intersect":
+                    self._obj_selections[hvobj] &= selection_expr
+                elif self.element_op == "union":
+                    self._obj_selections[hvobj] |= selection_expr
+                else:  # difference
+                    self._obj_selections[hvobj] &= ~selection_expr
+
+            # Update region
+            if self.show_regions:
+                region_element = hvobj._merge_regions(
+                    self._obj_regions.get(hvobj, None), region_element, self.element_op
+                )
+                self._obj_regions[hvobj] = region_element
+            else:
+                region_element = None
 
             # build combined selection
             selection_exprs = list(self._obj_selections.values())
