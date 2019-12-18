@@ -236,6 +236,7 @@ class dim(object):
     # Unary operators
     def __neg__(self): return dim(self, operator.neg)
     def __not__(self): return dim(self, operator.not_)
+    def __invert__(self): return dim(self, operator.inv)
     def __pos__(self): return dim(self, operator.pos)
 
     # Binary operators

@@ -27,9 +27,11 @@ class TestDimTransforms(ComparisonTestCase):
         self.repeating = pd.Series(
             ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C', 'A']
         )
+        self.booleans = self.repeating == 'A'
         self.dataset = Dataset(
-            (self.linear_ints, self.linear_floats, self.negative, self.repeating),
-            ['int', 'float', 'negative', 'categories']
+            (self.linear_ints, self.linear_floats,
+             self.negative, self.repeating, self.booleans),
+            ['int', 'float', 'negative', 'categories', 'booleans']
         )
 
         if dd is None:
@@ -115,6 +117,10 @@ class TestDimTransforms(ComparisonTestCase):
     def test_neg_transform(self):
         expr = -dim('negative')
         self.check_apply(expr, self.linear_floats)
+
+    def test_inv_transform(self):
+        expr = ~dim('booleans')
+        self.check_apply(expr, ~self.booleans)
 
     # Binary operators
 
