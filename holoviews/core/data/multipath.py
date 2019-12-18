@@ -444,7 +444,7 @@ class MultiInterface(Interface):
                 obj = ds.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
-            elif datatype == 'columns':
+            elif datatype in ('columns', 'dictionary'):
                 if hasattr(ds.interface, 'geom_type'):
                     gt = ds.interface.geom_type(ds)
                 if gt is None:

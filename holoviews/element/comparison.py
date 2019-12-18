@@ -487,6 +487,8 @@ class Comparison(ComparisonInterface):
         paths2 = el2.split()
         if len(paths1) != len(paths2):
             raise cls.failureException("%s objects do not have a matching number of paths." % msg)
+        for p1, p2 in zip(paths1, paths2):
+            cls.compare_dataset(p1, p2, '%s data' % msg)
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):

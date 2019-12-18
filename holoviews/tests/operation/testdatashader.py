@@ -24,7 +24,7 @@ try:
 except:
     spatialpandas = None
 
-sp_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
+spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
 
 
 
@@ -462,7 +462,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_line_rasterize(self):
         path = Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
@@ -477,7 +477,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_multi_line_rasterize(self):
         path = Path([{'x': [0, 1, 2, np.nan, 0, 0], 'y': [0, 1, 0, np.nan, 0, 1]}],
                     datatype=['spatialpandas'])
@@ -493,7 +493,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_ring_rasterize(self):
         path = Path([{'x': [0, 1, 2], 'y': [0, 1, 0], 'geom_type': 'Ring'}], datatype=['spatialpandas'])
         agg = rasterize(path, width=4, height=4, dynamic=False)
@@ -508,7 +508,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_polygon_rasterize(self):
         poly = Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0],
@@ -528,7 +528,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='Count')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_polygon_rasterize_mean_agg(self):
         poly = Polygons([
             {'x': [0, 1, 2], 'y': [0, 1, 0], 'z': 2.4},
@@ -545,7 +545,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='z')
         self.assertEqual(agg, expected)
 
-    @sp_skip
+    @spatialpandas_skip
     def test_multi_poly_rasterize(self):
         poly = Polygons([{'x': [0, 1, 2, np.nan, 0, 0, 1],
                           'y': [0, 1, 0, np.nan, 0, 1, 1]}],

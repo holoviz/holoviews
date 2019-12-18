@@ -165,7 +165,7 @@ class Path(Geometry):
                 obj = self.array(**kwargs)
             elif datatype == 'dataframe':
                 obj = self.dframe(**kwargs)
-            elif datatype == 'columns':
+            elif datatype in ('columns', 'dictionary'):
                 obj = self.columns(**kwargs)
             elif datatype is None:
                 obj = self.clone([self.data])

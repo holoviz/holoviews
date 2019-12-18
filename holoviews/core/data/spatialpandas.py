@@ -371,7 +371,6 @@ class SpatialPandasInterface(MultiInterface):
         new[geom_col] = GeoSeries(new_geoms)
         return new
 
-
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
         dimension = dataset.get_dimension(dimension)
@@ -424,7 +423,7 @@ class SpatialPandasInterface(MultiInterface):
             arr = geom_to_array(geom, geom_type=gt)
             d = {xdim.name: arr[:, 0], ydim.name: arr[:, 1]}
             d.update({dim.name: row[dim.name] for dim in value_dims})
-            if datatype == 'columns':
+            if datatype in ('dictionary', 'columns'):
                 if holes is not None:
                     d[Polygons._hole_key] = holes[i]
                 d['geom_type'] = gt
