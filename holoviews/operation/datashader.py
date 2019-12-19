@@ -87,8 +87,8 @@ class ResamplingOperation(LinkableOperation):
     y_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y axis.""")
 
-    target = param.ClassSelector(class_=Image, doc="""
-        A target Image which defines the desired x_range, y_range,
+    target = param.ClassSelector(class_=Dataset, doc="""
+        A target Dataset which defines the desired x_range, y_range,
         width and height.
     """)
 
