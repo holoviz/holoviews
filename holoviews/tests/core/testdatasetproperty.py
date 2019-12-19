@@ -171,6 +171,11 @@ class CloneTestCase(DatasetPropertyTestCase):
         self.assertEqual(ds_clone.dataset, self.ds2)
         self.assertEqual(len(ds_clone.pipeline.operations), 1)
 
+    def test_clone_dataset_kwarg_none(self):
+        # Setting dataset=None prevents propagation of dataset to cloned object
+        ds_clone = self.ds.clone(dataset=None)
+        self.assertIs(ds_clone, ds_clone.dataset)
+
 
 class ReindexTestCase(DatasetPropertyTestCase):
     def test_reindex_dataset(self):
