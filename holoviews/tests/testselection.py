@@ -1,5 +1,5 @@
 from unittest import SkipTest, skip, skipIf
-
+import numpy as np
 import holoviews as hv
 import pandas as pd
 
@@ -48,25 +48,27 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertTrue(self.element_visible(base_scatter))
         self.assertEqual(base_scatter.data, data)
 
-    def check_overlay_scatter_like(self, overlay_scatter, lnk_sel, data):
+    def check_overlay_scatter_like(
+            self, overlay_scatter, lnk_sel, data, visible
+    ):
         self.assertEqual(
             self.element_color(overlay_scatter),
             lnk_sel.selected_color
         )
         self.assertEqual(
             self.element_visible(overlay_scatter),
-            len(data) != len(self.data)
+            visible
         )
 
         self.assertEqual(overlay_scatter.data, data)
 
-    def test_scatter_selection(self, dynamic=False):
+    def test_scatter_selection(self, dynamic=False, show_regions=True):
         scatter = hv.Scatter(self.data, kdims='x', vdims='y')
         if dynamic:
             # Convert scatter to DynamicMap that returns the element
             scatter = hv.util.Dynamic(scatter)
 
-        lnk_sel = link_selections.instance()
+        lnk_sel = link_selections.instance(show_regions=show_regions)
         linked = lnk_sel(scatter)
         current_obj = linked[()]
 
@@ -77,7 +79,9 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.Scatter.I, lnk_sel)
 
         # Check selection layer
-        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel, self.data)
+        self.check_overlay_scatter_like(
+            current_obj.Scatter.II, lnk_sel, self.data, visible=False
+        )
 
         # Perform selection of second and third point
         boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
@@ -89,7 +93,23 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.Scatter.I, lnk_sel)
 
         # Check selection layer
-        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel, self.data.iloc[1:])
+        self.check_overlay_scatter_like(
+            current_obj.Scatter.II, lnk_sel, self.data.iloc[1:], visible=True
+        )
+
+        if show_regions:
+            self.assertEqual(
+                current_obj.Curve.I,
+                hv.Curve(([0, 5, 5, 0, 0], [1, 1, 5, 5, 1]))
+            )
+        else:
+            self.assertEqual(
+                current_obj.Curve.I,
+                hv.Curve(([], []))
+            )
+
+    def test_scatter_selection_hide_region(self):
+        self.test_scatter_selection(show_regions=False)
 
     def test_scatter_selection_dynamic(self):
         self.test_scatter_selection(dynamic=True)
@@ -112,7 +132,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_overlay_scatter_like(
             current_obj[0][()].Scatter.II,
             lnk_sel,
-            self.data
+            self.data,
+            visible=False,
         )
 
         # Check initial table
@@ -136,7 +157,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_overlay_scatter_like(
             current_obj[0][()].Scatter.II,
             lnk_sel,
-            self.data.iloc[[0, 2]]
+            self.data.iloc[[0, 2]],
+            visible=True,
         )
 
         # Check selected table
@@ -166,10 +188,10 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check initial selection layers
         self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data
+            current_obj.Scatter.II, lnk_sel, self.data, visible=False
         )
         self.check_overlay_scatter_like(
-            current_obj.ErrorBars.II, lnk_sel, self.data
+            current_obj.ErrorBars.II, lnk_sel, self.data, visible=False
         )
 
         # Select first and third point
@@ -183,10 +205,10 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check selected layers
         self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]]
+            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
         )
         self.check_overlay_scatter_like(
-            current_obj.ErrorBars.II, lnk_sel, self.data.iloc[[0, 2]]
+            current_obj.ErrorBars.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
         )
 
     def test_overlay_scatter_errorbars_dynamic(self):
@@ -206,7 +228,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check selection layer
         self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II, lnk_sel, self.data
+            current_obj[0][()].Scatter.II, lnk_sel, self.data, visible=False
         )
 
         # Check RGB base layer
@@ -236,7 +258,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check scatter selection layer
         self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II, lnk_sel, self.data.iloc[1:]
+            current_obj[0][()].Scatter.II, lnk_sel, self.data.iloc[1:], visible=True
         )
 
         # Check that base RGB layer is unchanged
@@ -276,7 +298,7 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check selection layer
         self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0]]
+            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0]], visible=True
         )
 
         # Now stream third point to the DynamicMap
@@ -290,13 +312,30 @@ class TestLinkSelections(ComparisonTestCase):
 
         # Check selection layer
         self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]]
+            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
         )
 
-    def test_crossfilter_scatter_histogram(self, dynamic=False):
+    def do_crossfilter_scatter_histogram(
+            self, element_op, cross_element_op,
+            selected1, selected2, selected3, selected4,
+            scatter_region1, scatter_region2, scatter_region3, scatter_region4,
+            hist_region2, hist_region3, hist_region4, show_regions=True, dynamic=False
+    ):
         scatter = hv.Scatter(self.data, kdims='x', vdims='y')
         hist = scatter.hist('x', adjoin=False, normed=False, num_bins=5)
-        lnk_sel = link_selections.instance(mode="crossfilter")
+
+        if dynamic:
+            # Convert scatter to DynamicMap that returns the element
+            hist_orig = hist
+            scatter = hv.util.Dynamic(scatter)
+        else:
+            hist_orig = hist
+
+        lnk_sel = link_selections.instance(
+            element_op=element_op,
+            cross_element_op=cross_element_op,
+            show_regions=show_regions,
+        )
         linked = lnk_sel(scatter + hist)
         current_obj = linked[()]
 
@@ -310,7 +349,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_overlay_scatter_like(
             current_obj[0][()].Scatter.II,
             lnk_sel,
-            self.data
+            self.data,
+            visible=False,
         )
 
         # Initial region bounds all None
@@ -325,11 +365,11 @@ class TestLinkSelections(ComparisonTestCase):
             self.element_color(base_hist), lnk_sel.unselected_color
         )
         self.assertTrue(self.element_visible(base_hist))
-        self.assertEqual(base_hist.data, hist.data)
+        self.assertEqual(base_hist.data, hist_orig.data)
 
         # No selection region
         region_hist = current_obj[1][()].Histogram.II
-        self.assertEqual(region_hist.data, hist.pipeline(hist.dataset.iloc[:0]).data)
+        self.assertEqual(region_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[:0]).data)
 
         # Check initial selection overlay Histogram
         selection_hist = current_obj[1][()].Histogram.III
@@ -337,17 +377,12 @@ class TestLinkSelections(ComparisonTestCase):
             self.element_color(selection_hist), lnk_sel.selected_color
         )
         self.assertFalse(self.element_visible(selection_hist))
-        self.assertEqual(selection_hist.data, hist.data)
+        self.assertEqual(selection_hist.data, hist_orig.data)
 
-        # Perform selection of second and third point in scatter
+        # (1) Perform selection on scatter of points [1, 2]
         scatter_boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
         self.assertIsInstance(scatter_boundsxy, hv.streams.BoundsXY)
         scatter_boundsxy.event(bounds=(1, 1, 4, 4))
-
-        # Perform selection of first two bars in histogram
-        hist_boundsxy = lnk_sel._selection_expr_streams[1]._source_streams[0]
-        self.assertIsInstance(hist_boundsxy, hv.streams.BoundsXY)
-        hist_boundsxy.event(bounds=(0, 0, 2.5, 2))
 
         # Get current object
         current_obj = linked[()]
@@ -358,54 +393,308 @@ class TestLinkSelections(ComparisonTestCase):
             lnk_sel
         )
 
-        # Check initial selection overlay scatter contains only second point
+        # Check scatter selection overlay
         self.check_overlay_scatter_like(
             current_obj[0][()].Scatter.II,
             lnk_sel,
-            self.data.iloc[[1]]
+            self.data.iloc[selected1],
+            visible=True,
         )
 
         # Check scatter region bounds
         region_bounds = current_obj[0][()].Curve.I
         self.assertEqual(
             list(region_bounds.data['x']),
-            [1, 4, 4, 1, 1]
+            scatter_region1[0]
         )
         self.assertEqual(
             list(region_bounds.data['y']),
-            [1, 1, 4, 4, 1]
+            scatter_region1[1]
         )
+        if show_regions:
+            self.assertEqual(
+                self.element_color(region_bounds),
+                lnk_sel._region_color
+            )
+
+        # Check histogram bars selected
+        selection_hist = current_obj[1][()].Histogram.III
         self.assertEqual(
-            self.element_color(region_bounds),
-            lnk_sel._region_color
+            selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected1]).data
         )
 
-        # Check initial base histogram unchanged
+        # (2) Perform selection on histogram bars [0, 1]
+        hist_boundsxy = lnk_sel._selection_expr_streams[1]._source_streams[0]
+        self.assertIsInstance(hist_boundsxy, hv.streams.BoundsXY)
+        hist_boundsxy.event(bounds=(0, 0, 2.5, 2))
+
+        # Check scatter selection overlay
+        self.check_overlay_scatter_like(
+            current_obj[0][()].Scatter.II,
+            lnk_sel,
+            self.data.iloc[selected2],
+            visible=True,
+        )
+
+        region_bounds = current_obj[0][()].Curve.I
+        self.assertEqual(
+            list(region_bounds.data['x']),
+            scatter_region2[0]
+        )
+        self.assertEqual(
+            list(region_bounds.data['y']),
+            scatter_region2[1]
+        )
+
+        # Check base histogram unchanged
         base_hist = current_obj[1][()].Histogram.I
         self.assertEqual(
             self.element_color(base_hist), lnk_sel.unselected_color
         )
         self.assertTrue(self.element_visible(base_hist))
-        self.assertEqual(base_hist.data, hist.data)
+        self.assertEqual(base_hist.data, hist_orig.data)
 
         # Check selection region covers first and second bar
         region_hist = current_obj[1][()].Histogram.II
+        if show_regions:
+            self.assertEqual(
+                self.element_color(region_hist), lnk_sel._region_color
+            )
         self.assertEqual(
-            self.element_color(region_hist), lnk_sel._region_color
-        )
-        self.assertEqual(
-            region_hist.data, hist.pipeline(hist.dataset.iloc[[0, 1]]).data
+            region_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[hist_region2]).data
         )
 
-        # Check selection overlay covers only second bar
+        # Check histogram selection overlay
         selection_hist = current_obj[1][()].Histogram.III
         self.assertEqual(
             self.element_color(selection_hist), lnk_sel.selected_color
         )
         self.assertTrue(self.element_visible(selection_hist))
         self.assertEqual(
-            selection_hist.data, hist.pipeline(hist.dataset.iloc[[1]]).data
+            selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected2]).data
         )
+
+        # (3) Perform selection on scatter points [0, 2]
+        scatter_boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
+        self.assertIsInstance(scatter_boundsxy, hv.streams.BoundsXY)
+        scatter_boundsxy.event(bounds=(0, 0, 4, 2.5))
+
+        # Check selection overlay scatter contains only second point
+        self.check_overlay_scatter_like(
+            current_obj[0][()].Scatter.II,
+            lnk_sel,
+            self.data.iloc[selected3],
+            visible=True,
+        )
+
+        # Check scatter region bounds
+        region_bounds = current_obj[0][()].Curve.I
+        self.assertEqual(
+            list(region_bounds.data['x']),
+            scatter_region3[0]
+        )
+        self.assertEqual(
+            list(region_bounds.data['y']),
+            scatter_region3[1]
+        )
+
+        # Check second and third histogram bars selected
+        selection_hist = current_obj[1][()].Histogram.III
+        self.assertEqual(
+            selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected3]).data
+        )
+
+        # Check selection region covers first and second bar
+        region_hist = current_obj[1][()].Histogram.II
+        self.assertEqual(
+            region_hist.data,
+            hist_orig.pipeline(hist_orig.dataset.iloc[hist_region3]).data
+        )
+
+        # (4) Perform selection of bars [1, 2]
+        hist_boundsxy = lnk_sel._selection_expr_streams[1]._source_streams[0]
+        self.assertIsInstance(hist_boundsxy, hv.streams.BoundsXY)
+        hist_boundsxy.event(bounds=(1.5, 0, 3.5, 2))
+
+        # Check scatter selection overlay
+        self.check_overlay_scatter_like(
+            current_obj[0][()].Scatter.II,
+            lnk_sel,
+            self.data.iloc[selected4],
+            visible=True,
+        )
+
+        # Check scatter region bounds
+        region_bounds = current_obj[0][()].Curve.I
+        self.assertEqual(
+            list(region_bounds.data['x']),
+            scatter_region4[0]
+        )
+        self.assertEqual(
+            list(region_bounds.data['y']),
+            scatter_region4[1]
+        )
+
+        # Check bar selection region
+        region_hist = current_obj[1][()].Histogram.II
+        if show_regions:
+            self.assertEqual(
+                self.element_color(region_hist), lnk_sel._region_color
+            )
+        self.assertEqual(
+            region_hist.data,
+            hist_orig.pipeline(hist_orig.dataset.iloc[hist_region4]).data
+        )
+
+        # Check bar selection overlay
+        selection_hist = current_obj[1][()].Histogram.III
+        self.assertEqual(
+            self.element_color(selection_hist), lnk_sel.selected_color
+        )
+        self.assertTrue(self.element_visible(selection_hist))
+        self.assertEqual(
+            selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data
+        )
+
+    #  cross_element_op="overwrite"
+    def test_scatter_histogram_overwrite_overwrite(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="overwrite", cross_element_op="overwrite",
+            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([], []),
+            scatter_region3=([0, 4, 4, 0, 0], [0, 0, 2.5, 2.5, 0]),
+            scatter_region4=([], []),
+            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_overwrite_overwrite_dynamic(self):
+        self.test_scatter_histogram_overwrite_overwrite(dynamic=True)
+
+    def test_scatter_histogram_intersect_overwrite(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="intersect", cross_element_op="overwrite",
+            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([], []),
+            scatter_region3=([0, 4, 4, 0, 0], [0, 0, 2.5, 2.5, 0]),
+            scatter_region4=([], []),
+            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_intersect_overwrite_dynamic(self):
+        self.test_scatter_histogram_intersect_overwrite(dynamic=True)
+
+    def test_scatter_histogram_union_overwrite(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="union", cross_element_op="overwrite",
+            selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([], []),
+            scatter_region3=([0, 4, 4, 0, 0], [0, 0, 2.5, 2.5, 0]),
+            scatter_region4=([], []),
+            hist_region2=[0, 1], hist_region3=[], hist_region4=[1, 2],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_union_overwrite_dynamic(self):
+        self.test_scatter_histogram_union_overwrite(dynamic=True)
+
+    #  cross_element_op="intersect"
+    def test_scatter_histogram_overwrite_intersect(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="overwrite", cross_element_op="intersect",
+            selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region3=([0, 4, 4, 0, 0], [0, 0, 2.5, 2.5, 0]),
+            scatter_region4=([0, 4, 4, 0, 0], [0, 0, 2.5, 2.5, 0]),
+            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[1, 2],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_overwrite_intersect_dynamic(self):
+        self.test_scatter_histogram_overwrite_intersect(dynamic=True)
+
+    def test_scatter_histogram_overwrite_intersect_hide_region(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="overwrite", cross_element_op="intersect",
+            selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
+            scatter_region1=([], []),
+            scatter_region2=([], []),
+            scatter_region3=([], []),
+            scatter_region4=([], []),
+            hist_region2=[], hist_region3=[], hist_region4=[],
+            show_regions=False, dynamic=dynamic
+        )
+
+    def test_scatter_histogram_overwrite_intersect_hide_region_dynamic(self):
+        self.test_scatter_histogram_overwrite_intersect_hide_region(dynamic=True)
+
+    def test_scatter_histogram_intersect_intersect(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="intersect", cross_element_op="intersect",
+            selected1=[1, 2], selected2=[1], selected3=[], selected4=[],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region3=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            scatter_region4=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[1],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_intersect_intersect_dynamic(self):
+        self.test_scatter_histogram_intersect_intersect(dynamic=True)
+
+    def test_scatter_histogram_union_intersect(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="union", cross_element_op="intersect",
+            selected1=[1, 2], selected2=[1], selected3=[0, 1], selected4=[0, 1, 2],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region3=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            scatter_region4=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            hist_region2=[0, 1], hist_region3=[0, 1], hist_region4=[0, 1, 2],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_union_intersect_dynamic(self):
+        self.test_scatter_histogram_union_intersect(dynamic=True)
+
+    def test_scatter_histogram_difference_intersect(self, dynamic=False):
+        self.do_crossfilter_scatter_histogram(
+            element_op="difference", cross_element_op="intersect",
+            selected1=[0], selected2=[], selected3=[], selected4=[],
+            scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
+            scatter_region3=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            scatter_region4=(
+                [1, 4, 4, 1, 1, np.nan, 0, 4, 4, 0, 0],
+                [1, 1, 4, 4, 1, np.nan, 0, 0, 2.5, 2.5, 0],
+            ),
+            hist_region2=[], hist_region3=[], hist_region4=[],
+            dynamic=dynamic
+        )
+
+    def test_scatter_histogram_difference_intersect_dynamic(self):
+        self.test_scatter_histogram_difference_intersect(dynamic=True)
 
 
 # Backend implementations
