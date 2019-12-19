@@ -70,6 +70,10 @@ class Operation(param.ParameterizedFunction):
     _postprocess_hooks = []
     _allow_extra_keywords=False
 
+    # Flag indicating whether to automatically propagate the .dataset property from
+    # the input of the operation to the result
+    _propagate_dataset = True
+
     @classmethod
     def search(cls, element, pattern):
         """
@@ -126,7 +130,8 @@ class Operation(param.ParameterizedFunction):
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
-        if isinstance(ret, Dataset) and isinstance(element, Dataset):
+        if (self._propagate_dataset and
+                isinstance(ret, Dataset) and isinstance(element, Dataset)):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [

@@ -11,7 +11,7 @@ except:
 from holoviews import Dataset, Curve, Dimension, Scatter, Distribution
 from holoviews.core import Apply, Redim
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.operation import histogram
+from holoviews.operation import histogram, function
 
 try:
     from holoviews.operation.datashader import dynspread, datashade, rasterize
@@ -826,3 +826,21 @@ class AccessorTestCase(DatasetPropertyTestCase):
         self.assertEqual(
             curve.pipeline(self.ds2), curve2
         )
+
+
+class OperationTestCase(DatasetPropertyTestCase):
+    def test_propagate_dataset(self):
+        op = function.instance(
+            fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None)
+        )
+        new_ds = op(self.ds)
+        self.assertEqual(new_ds.dataset, self.ds)
+
+    def test_do_not_propagate_dataset(self):
+        op = function.instance(
+            fn=lambda ds: ds.iloc[:5].clone(dataset=None, pipeline=None)
+        )
+        # Disable dataset propagation
+        op._propagate_dataset = False
+        new_ds = op(self.ds)
+        self.assertEqual(new_ds.dataset, new_ds)
