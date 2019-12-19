@@ -221,7 +221,8 @@ class ContourPlot(PathPlot):
             if has_holes:
                 xs, ys = multi_polygons_data(element)
             else:
-                xs, ys = (element.dimension_values(kd, expanded=False) for kd in element.kdims)
+                xs, ys = (list(element.dimension_values(kd, expanded=False))
+                          for kd in element.kdims)
             if self.invert_axes:
                 xs, ys = ys, xs
             data = dict(xs=xs, ys=ys)
