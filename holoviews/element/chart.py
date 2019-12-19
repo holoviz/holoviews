@@ -311,10 +311,10 @@ class Histogram(Chart):
     def _merge_regions(region1, region2, operation):
         if region1 is None:
             if operation == 'difference':
-                return Histogram(
-                    (region2.dimension_values(0),
-                     np.zeros_like(region2.dimension_values(0)))
-                )
+                return region2.clone(data=(
+                    (region2.edges,
+                     np.zeros_like(region2.dimension_values(1)))
+                ))
             else:
                 return region2
 
@@ -323,14 +323,14 @@ class Histogram(Chart):
         elif operation == 'difference':
             y = region1.dimension_values(1).copy()
             y[region2.dimension_values(1) > 0] = 0
-            return Histogram((region1.dimension_values(0), y))
+            return region1.clone(data=(region1.edges, y))
         elif operation == 'intersect':
             op = np.min
         elif operation == 'union':
             op = np.max
 
-        return Histogram((
-            region1.dimension_values(0),
+        return region1.clone(data=(
+            region1.edges,
             op(np.stack([region1.dimension_values(1),
                          region2.dimension_values(1)], axis=1), axis=1)
         ))
