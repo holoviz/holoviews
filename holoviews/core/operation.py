@@ -130,8 +130,8 @@ class Operation(param.ParameterizedFunction):
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
-        if (self._propagate_dataset and
-                isinstance(ret, Dataset) and isinstance(element, Dataset)):
+        if (self._propagate_dataset and isinstance(ret, Dataset)
+                and isinstance(element, Dataset)):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
