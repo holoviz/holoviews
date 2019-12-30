@@ -196,7 +196,7 @@ class _base_link_selections(param.ParameterizedFunction):
 class link_selections(_base_link_selections):
     selection_expr = param.Parameter(default=None)
     unselected_color = param.Color(default="#99a6b2")  # LightSlateGray - 65%
-    selected_color = param.Color(default="#DC143C")  # Crimson
+    selected_color = param.Color(default=None, allow_None=True)
     cross_element_op = param.Selector(
         ['overwrite', 'intersect'], default='intersect'
     )
@@ -229,7 +229,7 @@ class link_selections(_base_link_selections):
         # Cmap streams
         cmap_streams = [
             _Cmap(cmap=inst.unselected_cmap),
-            _Cmap(cmap=inst.selected_cmap),
+            None if inst.selected_cmap is None else _Cmap(cmap=inst.selected_cmap),
         ]
 
         def update_colors(*_):
@@ -237,7 +237,8 @@ class link_selections(_base_link_selections):
                 colors=[inst.unselected_color, inst.selected_color]
             )
             cmap_streams[0].event(cmap=inst.unselected_cmap)
-            cmap_streams[1].event(cmap=inst.selected_cmap)
+            if cmap_streams[1] is not None:
+                cmap_streams[1].eve6nt(cmap=inst.selected_cmap)
             region_color_stream.event(region_color=inst._region_color)
 
         inst.param.watch(
@@ -293,7 +294,7 @@ class link_selections(_base_link_selections):
         """
         The datashader colormap for selected data
         """
-        return _color_to_cmap(self.selected_color)
+        return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
     @property
     def _region_color(self):
@@ -301,7 +302,12 @@ class link_selections(_base_link_selections):
         Color used to mark the selected region
         """
         from .plotting.util import linear_gradient
-        return linear_gradient("#ffffff", self.selected_color, 9)[2]
+        if self.selected_color is None:
+            # Darken unselected color
+            return linear_gradient(self.unselected_color, "#000000", 5)[2]
+        else:
+            # Lighten selected color
+            return linear_gradient("#ffffff", self.selected_color, 9)[2]
 
     @property
     def _selected_alpha(self):
@@ -450,9 +456,9 @@ class OverlaySelectionDisplay(SelectionDisplay):
         for op in operations:
             for layer_number in range(num_layers):
                 streams = copy.copy(op.streams)
-
-                if 'cmap' in op.param:
-                    streams += [selection_streams.cmap_streams[layer_number]]
+                cmap_stream = selection_streams.cmap_streams[layer_number]
+                if 'cmap' in op.param and cmap_stream is not None:
+                    streams += [cmap_stream]
 
                 if 'alpha' in op.param:
                     streams += [selection_streams.alpha_streams[layer_number]]

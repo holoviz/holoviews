@@ -24,8 +24,22 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             return options
 
         layer_alpha = 1.0 if visible else 0.0
-        merged_opts = dict(self._get_color_kwarg(layer_color), **alpha_opts(layer_alpha))
-        layer_element = element.options(tools=['box_select'], **merged_opts)
+        merged_opts = alpha_opts(layer_alpha)
+        if layer_color is not None:
+            # set color
+            merged_opts.update(self._get_color_kwarg(layer_color))
+        else:
+            # Keep current color (including color from cycle)
+            current_color = element.opts.get(group="style")[0].get(
+                self.color_prop, None
+            )
+            if current_color:
+                merged_opts.update({self.color_prop: current_color})
+
+        layer_element = element.options(
+            tools=['box_select'],
+            **merged_opts
+        )
 
         return layer_element
 

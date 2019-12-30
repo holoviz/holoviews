@@ -20,7 +20,19 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         else:
             shared_opts = dict()
 
-        merged_opts = dict(self._get_color_kwarg(layer_color), **shared_opts)
+        merged_opts = dict(shared_opts)
+
+        if layer_color is not None:
+            # set color
+            merged_opts.update(self._get_color_kwarg(layer_color))
+        else:
+            # Keep current color (including color from cycle)
+            current_color = element.opts.get(group="style")[0].get(
+                self.color_prop, None
+            )
+            if current_color:
+                merged_opts.update({self.color_prop: current_color})
+
         layer_element = element.options(visible=visible, **merged_opts)
 
         return layer_element
