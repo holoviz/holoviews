@@ -12,7 +12,11 @@ from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import Dynamic, DynamicMap
 
-_Cmap = Stream.define('Cmap', cmap=[])
+
+class _Cmap(Stream):
+    cmap = param.Parameter(default=None, allow_None=True)
+
+
 _Exprs = Stream.define('Exprs', exprs=[])
 _Colors = Stream.define('Colors', colors=[])
 _RegionElement = Stream.define("RegionElement", region_element=None)
@@ -228,7 +232,7 @@ class link_selections(_base_link_selections):
         # Cmap streams
         cmap_streams = [
             _Cmap(cmap=inst.unselected_cmap),
-            None if inst.selected_cmap is None else _Cmap(cmap=inst.selected_cmap),
+            _Cmap(cmap=inst.selected_cmap),
         ]
 
         def update_colors(*_):
@@ -437,8 +441,20 @@ class OverlaySelectionDisplay(SelectionDisplay):
             for layer_number in range(num_layers):
                 streams = copy.copy(op.streams)
                 cmap_stream = selection_streams.cmap_streams[layer_number]
-                if 'cmap' in op.param and cmap_stream is not None:
-                    streams += [cmap_stream]
+                if 'cmap' in op.param:
+                    if layer_number == 0 or op.cmap is None:
+                        streams += [cmap_stream]
+                    else:
+                        # Want to default to current cmap
+                        default_cmap = op.cmap
+                        cmap_stream_default = _Cmap(cmap=op.cmap)
+                        cmap_stream.add_subscriber(
+                            lambda cmap, default_cmap=default_cmap:
+                                cmap_stream_default.event(
+                                    cmap=cmap if cmap else default_cmap
+                                )
+                        )
+                        streams += [cmap_stream_default]
 
                 new_op = op.instance(streams=streams)
                 layers[layer_number] = new_op(layers[layer_number])
