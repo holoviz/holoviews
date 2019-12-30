@@ -237,7 +237,7 @@ class link_selections(_base_link_selections):
             )
             cmap_streams[0].event(cmap=inst.unselected_cmap)
             if cmap_streams[1] is not None:
-                cmap_streams[1].eve6nt(cmap=inst.selected_cmap)
+                cmap_streams[1].event(cmap=inst.selected_cmap)
             region_color_stream.event(region_color=inst._region_color)
 
         inst.param.watch(
