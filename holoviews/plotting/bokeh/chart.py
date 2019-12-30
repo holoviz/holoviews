@@ -405,7 +405,7 @@ class HistogramPlot(ColorbarPlot):
 
     _nonvectorized_styles = ['line_dash', 'visible']
 
-    selection_display = BokehOverlaySelectionDisplay()
+    selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:

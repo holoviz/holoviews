@@ -27,11 +27,10 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             merged_opts.update(self._get_color_kwarg(layer_color))
         else:
             # Keep current color (including color from cycle)
-            current_color = element.opts.get(group="style")[0].get(
-                self.color_prop, None
-            )
-            if current_color:
-                merged_opts.update({self.color_prop: current_color})
+            for color_prop in self.color_props:
+                current_color = element.opts.get(group="style")[0].get(color_prop, None)
+                if current_color:
+                    merged_opts.update({color_prop: current_color})
 
         layer_element = element.options(**merged_opts)
 

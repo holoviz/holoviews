@@ -377,11 +377,15 @@ class OverlaySelectionDisplay(SelectionDisplay):
     colored subsets on top of the original element in an Overlay container.
     """
     def __init__(self, color_prop='color', is_cmap=False):
-        self.color_prop = color_prop
+        if not isinstance(color_prop, (list, tuple)):
+            self.color_props = [color_prop]
+        else:
+            self.color_props = color_prop
         self.is_cmap = is_cmap
 
     def _get_color_kwarg(self, color):
-        return {self.color_prop: [color] if self.is_cmap else color}
+        return {color_prop: [color] if self.is_cmap else color
+                for color_prop in self.color_props}
 
     def build_selection(
             self, selection_streams, hvobj, operations, region_stream=None
@@ -506,7 +510,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
     vectorized color list.
     """
     def __init__(self, color_prop='color'):
-        self.color_prop = color_prop
+        self.color_props = [color_prop]
 
     def build_selection(
             self, selection_streams, hvobj, operations, region_stream=None
@@ -540,7 +544,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             colors = clrs[color_inds]
 
-            return el.options(**{self.color_prop: colors})
+            return el.options(**{color_prop: colors for color_prop in self.color_props})
 
         sel_streams = [selection_streams.colors_stream,
                        selection_streams.exprs_stream]

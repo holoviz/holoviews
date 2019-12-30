@@ -30,11 +30,10 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             merged_opts.update(self._get_color_kwarg(layer_color))
         else:
             # Keep current color (including color from cycle)
-            current_color = element.opts.get(group="style")[0].get(
-                self.color_prop, None
-            )
-            if current_color:
-                merged_opts.update({self.color_prop: current_color})
+            for color_prop in self.color_props:
+                current_color = element.opts.get(group="style")[0].get(color_prop, None)
+                if current_color:
+                    merged_opts.update({color_prop: current_color})
 
         layer_element = element.options(
             tools=['box_select'],
@@ -54,4 +53,6 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
         options["color"] = region_color
         if element_name != "Histogram":
             options["line_width"] = 2
+        else:
+            options["fill_color"] = region_color
         return region_element.options(**options)
