@@ -34,9 +34,6 @@ class TestLinkSelections(ComparisonTestCase):
     def element_color(self, element):
         raise NotImplementedError
 
-    def element_visible(self, element):
-        raise NotImplementedError
-
     def check_base_scatter_like(self, base_scatter, lnk_sel, data=None):
         if data is None:
             data = self.data
@@ -45,19 +42,20 @@ class TestLinkSelections(ComparisonTestCase):
             self.element_color(base_scatter),
             lnk_sel.unselected_color
         )
-        self.assertTrue(self.element_visible(base_scatter))
         self.assertEqual(base_scatter.data, data)
 
-    def check_overlay_scatter_like(
-            self, overlay_scatter, lnk_sel, data, visible
-    ):
+    @staticmethod
+    def expected_selection_color(element, lnk_sel):
+        if lnk_sel.selected_color is not None:
+            expected_color = lnk_sel.selected_color
+        else:
+            expected_color = element.opts.get(group='style')[0].get('color')
+        return expected_color
+
+    def check_overlay_scatter_like(self, overlay_scatter, lnk_sel, data):
         self.assertEqual(
             self.element_color(overlay_scatter),
-            lnk_sel.selected_color
-        )
-        self.assertEqual(
-            self.element_visible(overlay_scatter),
-            visible
+            self.expected_selection_color(overlay_scatter, lnk_sel),
         )
 
         self.assertEqual(overlay_scatter.data, data)
@@ -79,9 +77,7 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.Scatter.I, lnk_sel)
 
         # Check selection layer
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data, visible=False
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel, self.data)
 
         # Perform selection of second and third point
         boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
@@ -93,9 +89,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.Scatter.I, lnk_sel)
 
         # Check selection layer
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[1:], visible=True
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel,
+                                        self.data.iloc[1:])
 
         if show_regions:
             self.assertEqual(
@@ -117,7 +112,7 @@ class TestLinkSelections(ComparisonTestCase):
     def test_layout_selection_scatter_table(self):
         scatter = hv.Scatter(self.data, kdims='x', vdims='y')
         table = hv.Table(self.data)
-        lnk_sel = link_selections.instance()
+        lnk_sel = link_selections.instance(selected_color="#aa0000")
         linked = lnk_sel(scatter + table)
 
         current_obj = linked[()]
@@ -129,17 +124,13 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check initial selection scatter
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data,
-            visible=False,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data)
 
         # Check initial table
         self.assertEqual(
             self.element_color(current_obj[1][()]),
-            [lnk_sel.unselected_color] * len(self.data)
+            [lnk_sel.selected_color] * len(self.data)
         )
 
         # Select first and third point
@@ -154,12 +145,8 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check selection scatter
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data.iloc[[0, 2]],
-            visible=True,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[[0, 2]])
 
         # Check selected table
         self.assertEqual(
@@ -187,12 +174,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.ErrorBars.I, lnk_sel)
 
         # Check initial selection layers
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data, visible=False
-        )
-        self.check_overlay_scatter_like(
-            current_obj.ErrorBars.II, lnk_sel, self.data, visible=False
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel, self.data)
+        self.check_overlay_scatter_like(current_obj.ErrorBars.II, lnk_sel, self.data)
 
         # Select first and third point
         boundsxy = lnk_sel._selection_expr_streams[0]._source_streams[0]
@@ -204,12 +187,10 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj.ErrorBars.I, lnk_sel)
 
         # Check selected layers
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
-        )
-        self.check_overlay_scatter_like(
-            current_obj.ErrorBars.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel,
+                                        self.data.iloc[[0, 2]])
+        self.check_overlay_scatter_like(current_obj.ErrorBars.II, lnk_sel,
+                                        self.data.iloc[[0, 2]])
 
     def test_overlay_scatter_errorbars_dynamic(self):
         self.test_overlay_scatter_errorbars(dynamic=True)
@@ -227,9 +208,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj[0][()].Scatter.I, lnk_sel)
 
         # Check selection layer
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II, lnk_sel, self.data, visible=False
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data)
 
         # Check RGB base layer
         self.assertEqual(
@@ -243,7 +223,7 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(
             current_obj[1][()].RGB.II,
             dynspread(
-                datashade(scatter, cmap=lnk_sel.selected_cmap, alpha=0)
+                datashade(scatter, cmap=lnk_sel.selected_cmap, alpha=255)
             )[()]
         )
 
@@ -257,9 +237,8 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_base_scatter_like(current_obj[0][()].Scatter.I, lnk_sel)
 
         # Check scatter selection layer
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II, lnk_sel, self.data.iloc[1:], visible=True
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[1:])
 
         # Check that base RGB layer is unchanged
         self.assertEqual(
@@ -297,9 +276,8 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check selection layer
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0]], visible=True
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel,
+                                        self.data.iloc[[0]])
 
         # Now stream third point to the DynamicMap
         buffer.send(self.data.iloc[[2]])
@@ -311,9 +289,8 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check selection layer
-        self.check_overlay_scatter_like(
-            current_obj.Scatter.II, lnk_sel, self.data.iloc[[0, 2]], visible=True
-        )
+        self.check_overlay_scatter_like(current_obj.Scatter.II, lnk_sel,
+                                        self.data.iloc[[0, 2]])
 
     def do_crossfilter_scatter_histogram(
             self, element_op, cross_element_op,
@@ -346,12 +323,8 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check initial selection overlay scatter
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data,
-            visible=False,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data)
 
         # Initial region bounds all None
         self.assertEqual(
@@ -364,7 +337,6 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(
             self.element_color(base_hist), lnk_sel.unselected_color
         )
-        self.assertTrue(self.element_visible(base_hist))
         self.assertEqual(base_hist.data, hist_orig.data)
 
         # No selection region
@@ -374,9 +346,9 @@ class TestLinkSelections(ComparisonTestCase):
         # Check initial selection overlay Histogram
         selection_hist = current_obj[1][()].Histogram.III
         self.assertEqual(
-            self.element_color(selection_hist), lnk_sel.selected_color
+            self.element_color(selection_hist),
+            self.expected_selection_color(selection_hist, lnk_sel)
         )
-        self.assertFalse(self.element_visible(selection_hist))
         self.assertEqual(selection_hist.data, hist_orig.data)
 
         # (1) Perform selection on scatter of points [1, 2]
@@ -394,12 +366,8 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Check scatter selection overlay
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data.iloc[selected1],
-            visible=True,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[selected1])
 
         # Check scatter region bounds
         region_bounds = current_obj[0][()].Curve.I
@@ -429,12 +397,8 @@ class TestLinkSelections(ComparisonTestCase):
         hist_boundsxy.event(bounds=(0, 0, 2.5, 2))
 
         # Check scatter selection overlay
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data.iloc[selected2],
-            visible=True,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[selected2])
 
         region_bounds = current_obj[0][()].Curve.I
         self.assertEqual(
@@ -451,7 +415,6 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(
             self.element_color(base_hist), lnk_sel.unselected_color
         )
-        self.assertTrue(self.element_visible(base_hist))
         self.assertEqual(base_hist.data, hist_orig.data)
 
         # Check selection region covers first and second bar
@@ -467,9 +430,9 @@ class TestLinkSelections(ComparisonTestCase):
         # Check histogram selection overlay
         selection_hist = current_obj[1][()].Histogram.III
         self.assertEqual(
-            self.element_color(selection_hist), lnk_sel.selected_color
+            self.element_color(selection_hist),
+            self.expected_selection_color(selection_hist, lnk_sel)
         )
-        self.assertTrue(self.element_visible(selection_hist))
         self.assertEqual(
             selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected2]).data
         )
@@ -480,12 +443,8 @@ class TestLinkSelections(ComparisonTestCase):
         scatter_boundsxy.event(bounds=(0, 0, 4, 2.5))
 
         # Check selection overlay scatter contains only second point
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data.iloc[selected3],
-            visible=True,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[selected3])
 
         # Check scatter region bounds
         region_bounds = current_obj[0][()].Curve.I
@@ -517,12 +476,8 @@ class TestLinkSelections(ComparisonTestCase):
         hist_boundsxy.event(bounds=(1.5, 0, 3.5, 2))
 
         # Check scatter selection overlay
-        self.check_overlay_scatter_like(
-            current_obj[0][()].Scatter.II,
-            lnk_sel,
-            self.data.iloc[selected4],
-            visible=True,
-        )
+        self.check_overlay_scatter_like(current_obj[0][()].Scatter.II, lnk_sel,
+                                        self.data.iloc[selected4])
 
         # Check scatter region bounds
         region_bounds = current_obj[0][()].Curve.I
@@ -549,9 +504,9 @@ class TestLinkSelections(ComparisonTestCase):
         # Check bar selection overlay
         selection_hist = current_obj[1][()].Histogram.III
         self.assertEqual(
-            self.element_color(selection_hist), lnk_sel.selected_color
+            self.element_color(selection_hist),
+            self.expected_selection_color(selection_hist, lnk_sel)
         )
-        self.assertTrue(self.element_visible(selection_hist))
         self.assertEqual(
             selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data
         )
@@ -724,9 +679,6 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
         else:
             return list(color)
 
-    def element_visible(self, element):
-        return element.opts.get('style').kwargs['visible']
-
 
 class TestLinkSelectionsBokeh(TestLinkSelections):
     def setUp(self):
@@ -748,9 +700,6 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
             return color
         else:
             return list(color)
-
-    def element_visible(self, element):
-        return element.opts.get('style').kwargs['alpha'] > 0
 
     @skip("Coloring Bokeh table not yet supported")
     def test_layout_selection_scatter_table(self):
