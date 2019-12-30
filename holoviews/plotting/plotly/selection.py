@@ -10,7 +10,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
     def _build_element_layer(
             self, element, layer_color, selection_expr=True
     ):
-        element, visible = self._select(element, selection_expr)
+        element = self._select(element, selection_expr)
 
         backend_options = Store.options(backend='plotly')
         style_options = backend_options[(type(element).name,)]['style']
@@ -33,7 +33,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             if current_color:
                 merged_opts.update({self.color_prop: current_color})
 
-        layer_element = element.options(visible=visible, **merged_opts)
+        layer_element = element.options(**merged_opts)
 
         return layer_element
 

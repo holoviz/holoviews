@@ -9,7 +9,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
     def _build_element_layer(
             self, element, layer_color, selection_expr=True
     ):
-        element, visible = self._select(element, selection_expr)
+        element = self._select(element, selection_expr)
 
         backend_options = Store.options(backend='bokeh')
         style_options = backend_options[(type(element).name,)]['style']
@@ -23,7 +23,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
             return options
 
-        layer_alpha = 1.0 if visible else 0.0
+        layer_alpha = 1.0
         merged_opts = alpha_opts(layer_alpha)
         if layer_color is not None:
             # set color

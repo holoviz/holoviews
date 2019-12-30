@@ -13,7 +13,6 @@ from .operation.element import function
 from .util import Dynamic, DynamicMap
 
 _Cmap = Stream.define('Cmap', cmap=[])
-_Alpha = Stream.define('Alpha', alpha=1.0)
 _Exprs = Stream.define('Exprs', exprs=[])
 _Colors = Stream.define('Colors', colors=[])
 _RegionElement = Stream.define("RegionElement", region_element=None)
@@ -22,7 +21,7 @@ _RegionColor = Stream.define("RegionColor", region_color=None)
 
 _SelectionStreams = namedtuple(
     'SelectionStreams',
-    'colors_stream region_color_stream exprs_stream cmap_streams alpha_streams'
+    'colors_stream region_color_stream exprs_stream cmap_streams '
 )
 
 
@@ -263,22 +262,10 @@ class link_selections(_base_link_selections):
             parameter_names=['selection_expr']
         )
 
-        # Alpha streams
-        alpha_streams = [
-            _Alpha(alpha=255),
-            _Alpha(alpha=inst._selected_alpha),
-        ]
-
-        def update_alphas(*_):
-            alpha_streams[1].event(alpha=inst._selected_alpha)
-
-        inst.param.watch(update_alphas, parameter_names=['selection_expr'])
-
         return _SelectionStreams(
             colors_stream=colors_stream,
             region_color_stream=region_color_stream,
             exprs_stream=exprs_stream,
-            alpha_streams=alpha_streams,
             cmap_streams=cmap_streams,
         )
 
@@ -302,19 +289,8 @@ class link_selections(_base_link_selections):
         Color used to mark the selected region
         """
         from .plotting.util import linear_gradient
-        if self.selected_color is None:
-            # Darken unselected color
-            return linear_gradient(self.unselected_color, "#000000", 5)[2]
-        else:
-            # Lighten selected color
-            return linear_gradient("#ffffff", self.selected_color, 9)[2]
-
-    @property
-    def _selected_alpha(self):
-        if self.selection_expr:
-            return 255
-        else:
-            return 0
+        # Darken unselected color
+        return linear_gradient(self.unselected_color, "#000000", 5)[2]
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
@@ -460,9 +436,6 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 if 'cmap' in op.param and cmap_stream is not None:
                     streams += [cmap_stream]
 
-                if 'alpha' in op.param:
-                    streams += [selection_streams.alpha_streams[layer_number]]
-
                 new_op = op.instance(streams=streams)
                 layers[layer_number] = new_op(layers[layer_number])
 
@@ -523,10 +496,8 @@ class OverlaySelectionDisplay(SelectionDisplay):
             except Exception as e:
                 print(e)
                 raise
-            visible = True
-        else:
-            visible = bool(selection_expr)
-        return element, visible
+
+        return element
 
 
 class ColorListSelectionDisplay(SelectionDisplay):
@@ -541,29 +512,33 @@ class ColorListSelectionDisplay(SelectionDisplay):
             self, selection_streams, hvobj, operations, region_stream=None
     ):
         def _build_selection(el, colors, exprs, **_):
-
+            from .plotting.util import linear_gradient
             selection_exprs = exprs[1:]
             unselected_color = colors[0]
-            selected_colors = colors[1:]
 
+            # Use darker version of unselected_color if not selected color proveded
+            backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
+            selected_colors = [
+                c or backup_clr for c in colors[1:]
+            ]
             n = len(el.dimension_values(0))
 
-            if not any(selection_exprs):
-                colors = [unselected_color] * n
-            else:
-                clrs = np.array(
-                    [unselected_color] + list(selected_colors))
+            clrs = np.array(
+                [unselected_color] + list(selected_colors))
 
-                color_inds = np.zeros(n, dtype='int8')
+            color_inds = np.zeros(n, dtype='int8')
 
-                for i, expr, color in zip(
-                        range(1, len(clrs)),
-                        selection_exprs,
-                        selected_colors
-                ):
+            for i, expr, color in zip(
+                    range(1, len(clrs)),
+                    selection_exprs,
+                    selected_colors
+            ):
+                if not expr:
+                    color_inds[:] = i
+                else:
                     color_inds[expr.apply(el)] = i
 
-                colors = clrs[color_inds]
+            colors = clrs[color_inds]
 
             return el.options(**{self.color_prop: colors})
 
