@@ -5,12 +5,12 @@ import param
 
 from param.parameterized import bothmethod
 
-from .core import OperationCallable, Overlay
+from .core import OperationCallable, Overlay, Operation
 from .core.element import Element, Layout
 from .core.options import Store
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
-from .util import Dynamic, DynamicMap
+from .util import Dynamic, DynamicMap, opts
 
 
 class _Cmap(Stream):
@@ -27,6 +27,34 @@ _SelectionStreams = namedtuple(
     'SelectionStreams',
     'colors_stream region_color_stream exprs_stream cmap_streams '
 )
+
+
+class _CmapStyle(Operation):
+    cmap = param.Parameter(default=None, allow_None=True)
+    disable_colorbar = param.Boolean(default=False)
+
+    def _process(self, element, key=None):
+        cmap = self.p.cmap
+        if cmap:
+            cmap_opts = []
+            def traverse_fn(hvobj):
+                backend_options = Store.options()
+                try:
+                    style_options = backend_options[(type(hvobj).name,)]['style']
+                    opts_cls = getattr(opts, type(hvobj).name)
+                    opts_kwargs = {}
+                    if "cmap" in style_options.allowed_keywords:
+                        opts_kwargs['cmap'] = cmap
+                        if self.p.disable_colorbar:
+                            opts_kwargs['colorbar'] = False
+                    cmap_opts.append(opts_cls(**opts_kwargs))
+                except (KeyError, AttributeError):
+                    pass
+
+            element.traverse(traverse_fn)
+            return element.options(*cmap_opts)
+        else:
+            return element
 
 
 class _base_link_selections(param.ParameterizedFunction):
@@ -441,23 +469,42 @@ class OverlaySelectionDisplay(SelectionDisplay):
             for layer_number in range(num_layers):
                 streams = copy.copy(op.streams)
                 cmap_stream = selection_streams.cmap_streams[layer_number]
+
+                # Handle cmap as an operation parameter
                 if 'cmap' in op.param:
                     if layer_number == 0 or op.cmap is None:
                         streams += [cmap_stream]
                     else:
                         # Want to default to current cmap
                         default_cmap = op.cmap
-                        cmap_stream_default = _Cmap(cmap=op.cmap)
-                        cmap_stream.add_subscriber(
-                            lambda cmap, default_cmap=default_cmap:
-                                cmap_stream_default.event(
-                                    cmap=cmap if cmap else default_cmap
-                                )
+                        cmap_stream_default = _Cmap(
+                            cmap=cmap_stream.cmap if cmap_stream.cmap else default_cmap
                         )
-                        streams += [cmap_stream_default]
 
+                        def update_cmap(
+                                cmap,
+                                default_cmap=default_cmap,
+                                cmap_stream_default=cmap_stream_default
+                        ):
+                            cmap_stream_default.event(
+                                cmap=cmap if cmap else default_cmap
+                            )
+
+                        cmap_stream.add_subscriber(update_cmap)
+                        streams += [cmap_stream_default]
                 new_op = op.instance(streams=streams)
                 layers[layer_number] = new_op(layers[layer_number])
+
+        # Handle cmap as a style option (e.g. in Image)
+        for layer_number in range(len(layers)):
+            layer = layers[layer_number]
+
+            cmap_stream = selection_streams.cmap_streams[layer_number]
+            layers[layer_number] = _CmapStyle(
+                layer,
+                disable_colorbar=layer_number == 0,
+                streams=[cmap_stream]
+            )
 
         # build overlay
         result = layers[0]
@@ -607,4 +654,4 @@ def _color_to_cmap(color):
 
     # Darken end color by interpolating toward black
     end_color = linear_gradient(color, "#000000", 7)[2]
-    return [start_color, end_color]
+    return linear_gradient(start_color, end_color, 64)
