@@ -170,7 +170,7 @@ class Operation(param.ParameterizedFunction):
 
 
     def __call__(self, element, **kwargs):
-        params = dict(self.get_param_values(), **kwargs)
+        params = dict(kwargs)
         for k, v in kwargs.items():
             if util.is_param_method(v, has_deps=True):
                 params[k] = v()
