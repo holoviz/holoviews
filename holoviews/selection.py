@@ -506,10 +506,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 streams=[cmap_stream]
             )
 
-        # build overlay
-        result = layers[0]
-
-        # Add region overlay
+        # Build region layer
         if region_stream is not None:
             def update_region(element, region_element, region_color, **_):
                 if region_element is None:
@@ -517,20 +514,26 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 else:
                     return self._style_region_element(region_element, region_color)
 
-            result *= Dynamic(
+            region = Dynamic(
                 hvobj,
                 operation=update_region,
                 streams=[region_stream, selection_streams.region_color_stream]
             )
 
-            if Store.current_backend == "bokeh" and isinstance(hvobj, Histogram):
-                # It seems that the selected alpha doesn't always take for Bokeh
-                # Histograms unless it's applied on the overlay
-                result.opts(opts.Histogram(selection_alpha=1.0))
+            if isinstance(hvobj, Histogram):
+                layers.insert(1, region)
+            else:
+                layers.append(region)
 
         # Add remaining layers
+        result = layers[0]
         for layer in layers[1:]:
             result *= layer
+
+        if Store.current_backend == "bokeh" and isinstance(hvobj, Histogram):
+            # It seems that the selected alpha doesn't always take for Bokeh
+            # Histograms unless it's applied on the overlay
+            result.opts(opts.Histogram(selection_alpha=1.0))
 
         return result
 
