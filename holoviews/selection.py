@@ -226,7 +226,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
 class link_selections(_base_link_selections):
     selection_expr = param.Parameter(default=None)
-    unselected_color = param.Color(default="#99a6b2")  # LightSlateGray - 65%
+    unselected_color = param.Color(default="#e6e9ec")
     selected_color = param.Color(default=None, allow_None=True)
     cross_element_op = param.Selector(
         ['overwrite', 'intersect'], default='intersect'
@@ -322,7 +322,7 @@ class link_selections(_base_link_selections):
         """
         from .plotting.util import linear_gradient
         # Darken unselected color
-        return linear_gradient(self.unselected_color, "#000000", 5)[2]
+        return linear_gradient(self.unselected_color, "#000000", 6)[2]
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
