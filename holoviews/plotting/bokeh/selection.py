@@ -42,7 +42,8 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         return layer_element
 
-    def _style_region_element(self, region_element, region_color):
+    def _style_region_element(self, region_element, unselected_color):
+        from ..util import linear_gradient
         backend_options = Store.options(backend="bokeh")
         element_name = type(region_element).name
         style_options = backend_options[(element_name,)]['style']
@@ -50,9 +51,16 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
         for opt_name in style_options.allowed_keywords:
             if 'alpha' in opt_name:
                 options[opt_name] = 1.0
-        options["color"] = region_color
+
         if element_name != "Histogram":
-            options["line_width"] = 2
+            # Darken unselected color
+            region_color = linear_gradient(unselected_color, "#000000", 9)[3]
+            options["color"] = region_color
+            options["line_width"] = 1
         else:
+            # Darken unselected color slightly
+            region_color = linear_gradient(unselected_color, "#000000", 9)[1]
             options["fill_color"] = region_color
+            options["color"] = region_color
+
         return region_element.options(**options)

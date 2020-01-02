@@ -20,12 +20,11 @@ class _Cmap(Stream):
 _Exprs = Stream.define('Exprs', exprs=[])
 _Colors = Stream.define('Colors', colors=[])
 _RegionElement = Stream.define("RegionElement", region_element=None)
-_RegionColor = Stream.define("RegionColor", region_color=None)
 
 
 _SelectionStreams = namedtuple(
     'SelectionStreams',
-    'colors_stream region_color_stream exprs_stream cmap_streams '
+    'colors_stream exprs_stream cmap_streams '
 )
 
 
@@ -82,7 +81,6 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Init dict of region streams
         inst._region_streams = {}
-        inst._region_color_stream = None
 
         return inst
 
@@ -197,10 +195,6 @@ class _base_link_selections(param.ParameterizedFunction):
             # Unsupported object
             return hvobj
 
-    @property
-    def _region_color(self):
-        return None
-
     @classmethod
     def _build_selection_streams(cls, inst):
         """
@@ -254,9 +248,6 @@ class link_selections(_base_link_selections):
             colors=[inst.unselected_color, inst.selected_color]
         )
 
-        # Region color stream
-        region_color_stream = _RegionColor(region_color=inst._region_color)
-
         # Cmap streams
         cmap_streams = [
             _Cmap(cmap=inst.unselected_cmap),
@@ -270,7 +261,6 @@ class link_selections(_base_link_selections):
             cmap_streams[0].event(cmap=inst.unselected_cmap)
             if cmap_streams[1] is not None:
                 cmap_streams[1].event(cmap=inst.selected_cmap)
-            region_color_stream.event(region_color=inst._region_color)
 
         inst.param.watch(
             update_colors,
@@ -296,7 +286,6 @@ class link_selections(_base_link_selections):
 
         return _SelectionStreams(
             colors_stream=colors_stream,
-            region_color_stream=region_color_stream,
             exprs_stream=exprs_stream,
             cmap_streams=cmap_streams,
         )
@@ -314,15 +303,6 @@ class link_selections(_base_link_selections):
         The datashader colormap for selected data
         """
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
-
-    @property
-    def _region_color(self):
-        """
-        Color used to mark the selected region
-        """
-        from .plotting.util import linear_gradient
-        # Darken unselected color
-        return linear_gradient(self.unselected_color, "#000000", 6)[2]
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
@@ -508,16 +488,17 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         # Build region layer
         if region_stream is not None:
-            def update_region(element, region_element, region_color, **_):
+            def update_region(element, region_element, colors, **_):
+                unselected_color = colors[0]
                 if region_element is None:
                     return element._get_selection_expr_for_stream_value()[2]
                 else:
-                    return self._style_region_element(region_element, region_color)
+                    return self._style_region_element(region_element, unselected_color)
 
             region = Dynamic(
                 hvobj,
                 operation=update_region,
-                streams=[region_stream, selection_streams.region_color_stream]
+                streams=[region_stream, selection_streams.colors_stream]
             )
 
             if isinstance(hvobj, Histogram):
@@ -552,7 +533,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
     ):
         raise NotImplementedError()
 
-    def _style_region_element(self, region_element, region_color):
+    def _style_region_element(self, region_element, unselected_cmap):
         raise NotImplementedError()
 
     @staticmethod

@@ -36,11 +36,22 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         return layer_element
 
-    def _style_region_element(self, region_element, region_color):
+    def _style_region_element(self, region_element, unselected_color):
+        from ..util import linear_gradient
         backend_options = Store.options(backend="plotly")
+        element_name = type(region_element).name
         style_options = backend_options[(type(region_element).name,)]['style']
         allowed_keywords = style_options.allowed_keywords
         options = {}
+
+        if element_name != "Histogram":
+            # Darken unselected color
+            region_color = linear_gradient(unselected_color, "#000000", 9)[3]
+            if "line_width" in allowed_keywords:
+                options["line_width"] = 1
+        else:
+            # Darken unselected color slightly
+            region_color = linear_gradient(unselected_color, "#000000", 9)[1]
 
         if "color" in allowed_keywords:
             options["color"] = region_color

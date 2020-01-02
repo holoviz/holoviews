@@ -5,6 +5,7 @@ import pandas as pd
 
 from holoviews.core.util import unicode, basestring
 from holoviews.core.options import Store
+from holoviews.plotting.util import linear_gradient
 from holoviews.selection import link_selections
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -15,6 +16,10 @@ except:
 
 ds_skip = skipIf(datashade is None, "Datashader not available")
 
+
+unselected_color = "#e6e9ec"
+box_region_color = linear_gradient(unselected_color, "#000000", 9)[3]
+hist_region_color = linear_gradient(unselected_color, "#000000", 9)[1]
 
 class TestLinkSelections(ComparisonTestCase):
 
@@ -382,7 +387,7 @@ class TestLinkSelections(ComparisonTestCase):
         if show_regions:
             self.assertEqual(
                 self.element_color(region_bounds),
-                lnk_sel._region_color
+                box_region_color
             )
 
         # Check histogram bars selected
@@ -421,7 +426,7 @@ class TestLinkSelections(ComparisonTestCase):
         region_hist = current_obj[1][()].Histogram.II
         if show_regions:
             self.assertEqual(
-                self.element_color(region_hist), lnk_sel._region_color
+                self.element_color(region_hist), hist_region_color
             )
         self.assertEqual(
             region_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[hist_region2]).data
@@ -494,7 +499,7 @@ class TestLinkSelections(ComparisonTestCase):
         region_hist = current_obj[1][()].Histogram.II
         if show_regions:
             self.assertEqual(
-                self.element_color(region_hist), lnk_sel._region_color
+                self.element_color(region_hist), hist_region_color
             )
         self.assertEqual(
             region_hist.data,
