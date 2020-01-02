@@ -1456,8 +1456,8 @@ class RectTableLinkCallback(DataLinkCallback):
 
     target_code = """
     var x0s = target_cds.data[columns[0]]
-    var x1s = target_cds.data[columns[1]]
-    var y0s = target_cds.data[columns[2]]
+    var y0s = target_cds.data[columns[1]]
+    var x1s = target_cds.data[columns[2]]
     var y1s = target_cds.data[columns[3]]
 
     var xs = []
