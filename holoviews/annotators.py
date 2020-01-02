@@ -11,6 +11,7 @@ from panel.layout import Row, Tabs
 from panel.util import param_name
 
 from .core import DynamicMap, Element, Layout, Overlay, Store
+from .core.spaces import Callable
 from .core.util import isscalar
 from .element import Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, SelectionLink
@@ -198,7 +199,7 @@ class Annotator(PaneBase):
         self.object = self._process_element(object)
         self._table_row = Row()
         self.editor = Tabs(('%s' % param_name(self.name), self._table_row))
-        self.plot = DynamicMap(self._get_plot)
+        self.plot = DynamicMap(Callable(self._get_plot, inputs=[self.object]))
         self._tables = []
         self._init_stream()
         self._stream.add_subscriber(self._update_object, precedence=0.1)
@@ -224,7 +225,7 @@ class Annotator(PaneBase):
 
     def _update_links(self):
         if hasattr(self, '_link'): self._link.unlink()
-        self._link = DataLink(self.plot, self._table)
+        self._link = self._link_type(self.plot, self._table)
         if self._selection_link_type:
             if hasattr(self, '_selection_link'): self._selection_link.unlink()
             self._selection_link = SelectionLink(self.plot, self._table)
