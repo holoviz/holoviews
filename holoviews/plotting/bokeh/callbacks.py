@@ -1265,6 +1265,9 @@ class LinkCallback(param.Parameterized):
                 src_model.js_on_change(ch, src_cb)
             for ev in self.on_source_events:
                 src_model.js_on_event(ev, src_cb)
+            self.src_cb = src_cb
+        else:
+            self.src_cb = None
 
         if target_plot is not None and self.target_model in target_plot.handles and self.target_code:
             tgt_model = target_plot.handles[self.target_model]
@@ -1273,6 +1276,9 @@ class LinkCallback(param.Parameterized):
                 tgt_model.js_on_change(ch, tgt_cb)
             for ev in self.on_target_events:
                 tgt_model.js_on_event(ev, tgt_cb)
+            self.tgt_cb = tgt_cb
+        else:
+            self.tgt_cb = None
 
     @classmethod
     def find_links(cls, root_plot):
@@ -1442,27 +1448,31 @@ class RectTableLinkCallback(DataLinkCallback):
       y0.push(ys[i]-hh)
       y1.push(ys[i]+hh)
     }
-    target_cds.data['x0'] = x0
-    target_cds.data['y0'] = y0
-    target_cds.data['x1'] = x1
-    target_cds.data['y1'] = y1
+    target_cds.data[columns[0]] = x0
+    target_cds.data[columns[1]] = y0
+    target_cds.data[columns[2]] = x1
+    target_cds.data[columns[3]] = y1
     """
 
     target_code = """
-    var x0 = target_cds.data['x0']
-    var x1 = target_cds.data['x1']
-    var y0 = target_cds.data['y0']
-    var y1 = target_cds.data['y1']
+    var x0s = target_cds.data[columns[0]]
+    var x1s = target_cds.data[columns[1]]
+    var y0s = target_cds.data[columns[2]]
+    var y1s = target_cds.data[columns[3]]
 
     var xs = []
     var ys = []
     var ws = []
     var hs = []
-    for (i = 0; i < x0.length; i++) {
-      xs.push((x0[i]+x1[i])/2.)
-      ys.push((y0[i]+y1[i])/2.)
-      ws.push(x1[i]-x0[i])
-      hs.push(y1[i]-y0[i])
+    for (i = 0; i < x0s.length; i++) {
+      x0 = Math.min(x0s[i], x1s[i])
+      y0 = Math.min(y0s[i], y1s[i])
+      x1 = Math.max(x0s[i], x1s[i])
+      y1 = Math.max(y0s[i], y1s[i])
+      xs.push((x0+x1)/2.)
+      ys.push((y0+y1)/2.)
+      ws.push(x1-x0)
+      hs.push(y1-y0)
     }
     source_cds.data['x'] = xs
     source_cds.data['y'] = ys
@@ -1473,7 +1483,9 @@ class RectTableLinkCallback(DataLinkCallback):
     def __init__(self, root_model, link, source_plot, target_plot=None):
         DataLinkCallback.__init__(self, root_model, link, source_plot, target_plot)
         LinkCallback.__init__(self, root_model, link, source_plot, target_plot)
-
+        columns = [kd.name for kd in source_plot.current_frame.kdims]
+        self.src_cb.args['columns'] = columns
+        self.tgt_cb.args['columns'] = columns
 
 
 class VertexTableLinkCallback(LinkCallback):
