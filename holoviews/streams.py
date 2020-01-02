@@ -1251,24 +1251,17 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Polygons
+        from .element import Rects
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
         data = self.data
         if not data:
             return source.clone([])
-        paths = []
-        for i, (x0, x1, y0, y1) in enumerate(zip(data['x0'], data['x1'], data['y0'], data['y1'])):
-            xs = [x0, x0, x1, x1]
-            ys = [y0, y1, y1, y0]
-            if isinstance(source, Polygons):
-                xs.append(x0)
-                ys.append(y0)
-            vals = [data[vd.name][i] for vd in source.vdims]
-            paths.append((xs, ys)+tuple(vals))
-        datatype = source.datatype if source.interface.multi else ['multitabular']
-        return source.clone(paths, datatype=datatype, id=None)
+
+        dims = ['x0', 'y0', 'x1', 'y1']+[vd.name for vd in source.vdims]
+        data = tuple(data[d] for d in dims)
+        return source.clone(data, id=None)
 
     @property
     def dynamic(self):

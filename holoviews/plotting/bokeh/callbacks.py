@@ -1099,17 +1099,11 @@ class BoxEditCallback(GlyphDrawCallback):
     attributes = {'data': 'cds.data'}
     models = ['cds']
 
-    def initialize(self, plot_id=None):
+    def _path_initialize(self):
         plot = self.plot
         cds = plot.handles['cds']
         data = cds.data
-        element = self.plot.current_frame
-        stream = self.streams[0]
-        kwargs = {}
-        if stream.num_objects:
-            kwargs['num_objects'] = stream.num_objects
-        if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
@@ -1124,17 +1118,32 @@ class BoxEditCallback(GlyphDrawCallback):
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
-        if stream.styles:
-            self._create_style_callback(cds, r1.glyph, 'x')
-        box_tool = BoxEditTool(renderers=[r1], **kwargs)
-        plot.state.tools.append(box_tool)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        super(CDSCallback, self).initialize()
         data = self._process_msg({'data': data})['data']
         for stream in self.streams:
             stream.update(data=data)
+        return renderer
 
+    def initialize(self, plot_id=None):
+        from .path import PathPlot
+
+        element = self.plot.current_frame
+        stream = self.streams[0]
+        kwargs = {}
+        if stream.num_objects:
+            kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
+
+        renderer = self.plot.handles['glyph_renderer']
+        if isinstance(self.plot, PathPlot):
+            renderer = self._path_initialize(data)
+        if stream.styles:
+            self._create_style_callback(cds, r1.glyph, 'x')
+        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+        self.plot.state.tools.append(box_tool)
+        super(CDSCallback, self).initialize()
 
     def _process_msg(self, msg):
         data = super(BoxEditCallback, self)._process_msg(msg)
