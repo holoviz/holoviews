@@ -20,7 +20,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink, SelectionLink, VertexTableLink
+from ..links import Link, RangeToolLink, DataLink, RectTableLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -1393,6 +1393,7 @@ class DataLinkCallback(LinkCallback):
         if hasattr(renderer, 'view'):
             renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
+        target_plot.handles['cds'] = src_cds
         for callback in target_plot.callbacks:
             callback.initialize(plot_id=root_model.ref['id'])
 
@@ -1412,6 +1413,67 @@ class SelectionLinkCallback(LinkCallback):
     target_code = """
     source_selected.indices = target_selected.indices
     """
+
+class RectTableLinkCallback(DataLinkCallback):
+
+    source_model = 'cds'
+    target_model = 'cds'
+
+    source_handles = ['glyph']
+
+    on_source_changes = ['selected', 'data']
+    on_target_changes = ['patching']
+
+    source_code = """
+    var xs = source_cds.data[source_glyph.x.field]
+    var ys = source_cds.data[source_glyph.y.field]
+    var ws = source_cds.data[source_glyph.width.field]
+    var hs = source_cds.data[source_glyph.height.field]
+
+    var x0 = []
+    var x1 = []
+    var y0 = []
+    var y1 = []
+    for (i = 0; i < xs.length; i++) {
+      var hw = ws[i]/2.
+      var hh = hs[i]/2.
+      x0.push(xs[i]-hw)
+      x1.push(xs[i]+hw)
+      y0.push(ys[i]-hh)
+      y1.push(ys[i]+hh)
+    }
+    target_cds.data['x0'] = x0
+    target_cds.data['y0'] = y0
+    target_cds.data['x1'] = x1
+    target_cds.data['y1'] = y1
+    """
+
+    target_code = """
+    var x0 = target_cds.data['x0']
+    var x1 = target_cds.data['x1']
+    var y0 = target_cds.data['y0']
+    var y1 = target_cds.data['y1']
+
+    var xs = []
+    var ys = []
+    var ws = []
+    var hs = []
+    for (i = 0; i < x0.length; i++) {
+      xs.push((x0[i]+x1[i])/2.)
+      ys.push((y0[i]+y1[i])/2.)
+      ws.push(x1[i]-x0[i])
+      hs.push(y1[i]-y0[i])
+    }
+    source_cds.data['x'] = xs
+    source_cds.data['y'] = ys
+    source_cds.data['width'] = ws
+    source_cds.data['height'] = hs
+    """
+
+    def __init__(self, root_model, link, source_plot, target_plot=None):
+        DataLinkCallback.__init__(self, root_model, link, source_plot, target_plot)
+        LinkCallback.__init__(self, root_model, link, source_plot, target_plot)
+
 
 
 class VertexTableLinkCallback(LinkCallback):
@@ -1528,3 +1590,4 @@ callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
 callbacks[SelectionLink] = SelectionLinkCallback
 callbacks[VertexTableLink] = VertexTableLinkCallback
+callbacks[RectTableLink] = RectTableLinkCallback
