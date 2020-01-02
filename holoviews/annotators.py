@@ -13,9 +13,9 @@ from panel.util import param_name
 from .core import DynamicMap, Element, Layout, Overlay, Store
 from .core.spaces import Callable
 from .core.util import isscalar
-from .element import Path, Polygons, Points, Table
-from .plotting.links import VertexTableLink, DataLink, SelectionLink
-from .streams import PolyDraw, PolyEdit, Selection1D, PointDraw
+from .element import Path, Polygons, Points, Rects, Table
+from .plotting.links import VertexTableLink, DataLink, RectTableLink, SelectionLink
+from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
 
 
 def preprocess(function, current=[]):
@@ -412,22 +412,20 @@ class PolyAnnotator(PathAnnotator):
          Polygon element to edit and annotate.""")
 
 
-class PointAnnotator(Annotator):
-    """
-    Annotator which allows drawing and editing Points and associating
-    values with each point using a table.
-    """
 
-    object = param.ClassSelector(class_=Points, doc="""
-        Points element to edit and annotate.""")
+class _GeomAnnotator(Annotator):
 
-    opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                               'padding': 0.1, 'size': 10}, doc="""
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1}, doc="""
         Opts to apply to the element.""")
+
+    _stream_type = None
+
+    __abstract = True
 
     def _init_stream(self):
         name = param_name(self.name)
-        self._stream = PointDraw(
+        self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
             tooltip='%s Tool' % name
         )
@@ -450,9 +448,43 @@ class PointAnnotator(Annotator):
         return object.options(**opts)
 
 
+
+class PointAnnotator(_GeomAnnotator):
+    """
+    Annotator which allows drawing and editing Points and associating
+    values with each point using a table.
+    """
+
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1, 'size': 10}, doc="""
+        Opts to apply to the element.""")
+
+    object = param.ClassSelector(class_=Points, doc="""
+        Points element to edit and annotate.""")
+
+    _stream_type = PointDraw
+
+
+
+class BoxAnnotator(_GeomAnnotator):
+    """
+    Annotator which allows drawing and editing Rects and associating
+    values with each point using a table.
+    """
+
+    object = param.ClassSelector(class_=Rects, doc="""
+        Points element to edit and annotate.""")
+
+    _stream_type = BoxEdit
+
+    _link_type = RectTableLink
+
+
+
 # Register Annotators
 annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
-    (Points, PointAnnotator)
+    (Points, PointAnnotator),
+    (Rects, BoxAnnotator),
 ])
