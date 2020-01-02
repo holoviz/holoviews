@@ -280,10 +280,49 @@ class ContourPlot(PathPlot):
         return renderer, renderer.glyph
 
 
-
 class PolygonPlot(ContourPlot):
 
     style_opts = ['cmap', 'visible'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'
+
+
+class RectPlot(LegendPlot, ColorbarPlot):
+
+    style_opts = ['cmap', 'visible'] + line_properties + fill_properties
+    _plot_methods = dict(single='rect')
+    _batched_style_opts = line_properties + fill_properties
+    _color_style = 'fill_color'
+
+    def get_data(self, element, ranges, style):
+        x0, y0, x1, y1 = (element.dimension_values(kd) for kd in element.kdims)
+        x0, x1 = np.min([x0, x1], axis=0), np.max([x0, x1], axis=0)
+        y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
+        data = {'x': (x1+x0)/2., 'y': (y1+y0)/2., 'width': x1-x0, 'height': y1-y0}
+        if self.invert_axes:
+            mapping = {'x': 'y', 'y': 'x', 'width': 'height', 'height': 'width'}
+        else:
+            mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
+        return data, mapping, style
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        """
+        Use first two key dimensions to set names, and all four
+        to set the data range.
+        """
+        kdims = element.kdims
+        # loop over start and end points of rects
+        # simultaneously in each dimension
+        for kdim0, kdim1 in zip([kdims[i].name for i in range(2)],
+                                [kdims[i].name for i in range(2,4)]):
+            new_range = {}
+            for kdim in [kdim0, kdim1]:
+                # for good measure, update ranges for both start and end kdim
+                for r in ranges[kdim]:
+                    # combine (x0, x1) and (y0, y1) in range calculation
+                    new_range[r] = util.max_range([ranges[kd][r]
+                                                   for kd in [kdim0, kdim1]])
+            ranges[kdim0] = new_range
+            ranges[kdim1] = new_range
+        return super(RectPlot, self).get_extents(element, ranges, range_type)

@@ -126,6 +126,7 @@ Store.register({Curve: CurvePlot,
                 Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Area: AreaPlot,
+                Rects: RectanglePlot,
 
                 # General plots
                 GridSpace: GridPlot,

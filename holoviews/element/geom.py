@@ -104,3 +104,18 @@ class Segments(Geometry):
                        bounds=(4, 4), constant=True, doc="""
         Segments represent lines given by x- and y-
         coordinates in 2D space.""")
+
+
+class Rects(Geometry):
+    """
+    Rects represent a collection of rectangles in 2D space.
+    """
+
+    group = param.String(default='Rects', constant=True)
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
+                       bounds=(4, 4), constant=True, doc="""
+        Segments represent lines given by x- and y-
+        coordinates in 2D space.""")
+
