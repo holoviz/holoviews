@@ -1351,8 +1351,7 @@ class rasterize(AggregationOperation):
     interpolation = param.ObjectSelector(
         default='default', objects=['default', 'linear', 'nearest', 'bilinear', None, False], doc="""
         The interpolation method to apply during rasterization.
-        Default depends on element type, None and False are aliases
-        of each other.""")
+        Default depends on element type""")
 
     _transforms = [(Image, regrid),
                    (Polygons, geometry_rasterize),
