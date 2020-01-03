@@ -19,7 +19,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
-        ints = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
         x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')

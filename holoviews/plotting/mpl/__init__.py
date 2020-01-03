@@ -249,6 +249,9 @@ options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
+# Geometries
+options.Boxes = Options('style', edgecolor='black')
+
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')

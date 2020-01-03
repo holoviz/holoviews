@@ -198,6 +198,9 @@ options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle(), line_color='black',
                            cmap='viridis')
 
+# Geometries
+options.Boxes = Options('style', line_color='black')
+
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)
 options.Raster = Options('style', cmap=dflt_cmap)
