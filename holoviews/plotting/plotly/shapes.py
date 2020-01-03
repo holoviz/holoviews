@@ -38,6 +38,16 @@ class BoxShapePlot(GeomMixin, ShapePlot):
         x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
         return [dict(x0=x0, x1=x1, y0=y0, y1=y1, xref='x', yref='y')
                 for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s)]
+
+
+class SegmentShapePlot(GeomMixin, ShapePlot):
+    _shape_type = 'line'
+
+    def get_data(self, element, ranges, style):
+        inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
+        return [dict(x0=x0, x1=x1, y0=y0, y1=y1, xref='x', yref='y')
+                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s)]
     
 
 class PathShapePlot(ShapePlot):
