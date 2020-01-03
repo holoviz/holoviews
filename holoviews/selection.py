@@ -219,14 +219,23 @@ class _base_link_selections(param.ParameterizedFunction):
 
 
 class link_selections(_base_link_selections):
-    selection_expr = param.Parameter(default=None)
-    unselected_color = param.Color(default="#e6e9ec")
-    selected_color = param.Color(default=None, allow_None=True)
+    selection_expr = param.Parameter(default=None, doc="""
+    dim expression of the current selection or None to indicate that everything
+    is selected""")
+
+    unselected_color = param.Color(default="#e6e9ec", doc="""
+    Color of unselected data""")
+
+    selected_color = param.Color(default=None, allow_None=True, doc="""
+    Color of selected data, or None to use the original color of each element""")
+
     cross_element_op = param.Selector(
-        ['overwrite', 'intersect'], default='intersect'
+        ['overwrite', 'intersect'], default='intersect', doc="""
+        Set operation to use to combine selections across different elements"""
     )
     element_op = param.Selector(
-        ['overwrite', 'intersect', 'union', 'difference'], default='overwrite'
+        ['overwrite', 'intersect', 'union', 'difference'], default='overwrite', doc="""
+        Set operation to use to combine successive selections on the same element"""
     )
     show_regions = param.Boolean(default=True)
 
