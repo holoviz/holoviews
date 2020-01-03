@@ -20,7 +20,7 @@ from .util import clean_internal_figure_properties
 
 
 
-def _PlotlyHoloviewsPane(fig_dict):
+def _PlotlyHoloviewsPane(fig_dict, **kwargs):
     """
     Custom Plotly pane constructor for use by the HoloViews Pane.
     """
@@ -28,7 +28,7 @@ def _PlotlyHoloviewsPane(fig_dict):
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 
-    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup')
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup', **kwargs)
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
