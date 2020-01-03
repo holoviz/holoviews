@@ -141,9 +141,9 @@ class VertexTableLink(Link):
         super(VertexTableLink, self).__init__(source, target, **params)
 
 
-class RectTableLink(Link):
+class BoxTableLink(Link):
     """
-    Links a Rects element to a Table.
+    Links a Boxes element to a Table.
     """
 
     _requires_target = True

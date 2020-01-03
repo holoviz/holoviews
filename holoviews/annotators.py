@@ -13,8 +13,8 @@ from panel.util import param_name
 from .core import DynamicMap, Element, Layout, Overlay, Store
 from .core.spaces import Callable
 from .core.util import isscalar
-from .element import Path, Polygons, Points, Rects, Table
-from .plotting.links import VertexTableLink, DataLink, RectTableLink, SelectionLink
+from .element import Boxes, Path, Polygons, Points, Table
+from .plotting.links import VertexTableLink, DataLink, BoxTableLink, SelectionLink
 from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
 
 
@@ -468,16 +468,16 @@ class PointAnnotator(_GeomAnnotator):
 
 class BoxAnnotator(_GeomAnnotator):
     """
-    Annotator which allows drawing and editing Rects and associating
+    Annotator which allows drawing and editing Boxes and associating
     values with each point using a table.
     """
 
-    object = param.ClassSelector(class_=Rects, doc="""
+    object = param.ClassSelector(class_=Boxes, doc="""
         Points element to edit and annotate.""")
 
     _stream_type = BoxEdit
 
-    _link_type = RectTableLink
+    _link_type = BoxTableLink
 
 
 
@@ -486,5 +486,5 @@ annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator),
-    (Rects, BoxAnnotator),
+    (Boxes, BoxAnnotator),
 ])

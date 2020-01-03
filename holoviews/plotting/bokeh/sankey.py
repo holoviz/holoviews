@@ -70,7 +70,6 @@ class SankeyPlot(GraphPlot):
         self.handles['quad_1_source'] = scatter_renderer.data_source
         self._sync_nodes()
 
-
     def get_data(self, element, ranges, style):
         data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
         self._compute_quads(element, data, mapping)

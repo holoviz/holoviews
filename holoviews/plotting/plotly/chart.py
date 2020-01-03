@@ -8,6 +8,7 @@ from ...core.data import Dataset
 from ...core import util
 from ...element import Bars
 from ...operation import interpolate_curve
+from ..mixin import AreaMixin
 from ..util import get_axis_padding
 from .element import ElementPlot, ColorbarPlot
 
@@ -84,28 +85,13 @@ class CurvePlot(ChartPlot, ColorbarPlot):
         return super(CurvePlot, self).get_data(element, ranges, style)
 
 
-class AreaPlot(ChartPlot):
+class AreaPlot(AreaMixin, ChartPlot):
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
     _style_key = 'line'
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        vdims = element.vdims[:2]
-        vdim = vdims[0].name
-        if len(vdims) > 1:
-            new_range = {}
-            for r in ranges[vdim]:
-                new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
-            ranges[vdim] = new_range
-        else:
-            s0, s1 = ranges[vdim]['soft']
-            s0 = min(s0, 0) if util.isfinite(s0) else 0
-            s1 = max(s1, 0) if util.isfinite(s1) else 0
-            ranges[vdim]['soft'] = (s0, s1)
-        return super(AreaPlot, self).get_extents(element, ranges, range_type)
 
     def get_data(self, element, ranges, style):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')

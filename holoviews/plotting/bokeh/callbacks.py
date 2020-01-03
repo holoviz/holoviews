@@ -20,7 +20,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink, RectTableLink, SelectionLink, VertexTableLink
+from ..links import Link, BoxTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -1103,6 +1103,7 @@ class BoxEditCallback(GlyphDrawCallback):
         plot = self.plot
         cds = plot.handles['cds']
         data = cds.data
+        element = self.plot.current_frame
 
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
@@ -1123,13 +1124,14 @@ class BoxEditCallback(GlyphDrawCallback):
         data = self._process_msg({'data': data})['data']
         for stream in self.streams:
             stream.update(data=data)
-        return renderer
+        return r1
 
     def initialize(self, plot_id=None):
         from .path import PathPlot
 
-        element = self.plot.current_frame
         stream = self.streams[0]
+        cds = self.plot.handles['cds']
+
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
@@ -1138,9 +1140,9 @@ class BoxEditCallback(GlyphDrawCallback):
 
         renderer = self.plot.handles['glyph_renderer']
         if isinstance(self.plot, PathPlot):
-            renderer = self._path_initialize(data)
+            renderer = self._path_initialize()
         if stream.styles:
-            self._create_style_callback(cds, r1.glyph, 'x')
+            self._create_style_callback(cds, renderer.glyph, 'x')
         box_tool = BoxEditTool(renderers=[renderer], **kwargs)
         self.plot.state.tools.append(box_tool)
         super(CDSCallback, self).initialize()
@@ -1420,7 +1422,7 @@ class SelectionLinkCallback(LinkCallback):
     source_selected.indices = target_selected.indices
     """
 
-class RectTableLinkCallback(DataLinkCallback):
+class BoxTableLinkCallback(DataLinkCallback):
 
     source_model = 'cds'
     target_model = 'cds'
@@ -1602,4 +1604,4 @@ callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
 callbacks[SelectionLink] = SelectionLinkCallback
 callbacks[VertexTableLink] = VertexTableLinkCallback
-callbacks[RectTableLink] = RectTableLinkCallback
+callbacks[BoxTableLink] = BoxTableLinkCallback

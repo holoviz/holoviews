@@ -5,7 +5,6 @@ import numpy as np
 
 from matplotlib.collections import PatchCollection, LineCollection
 from matplotlib.dates import date2num, DateFormatter
-from matplotlib.patches import Rectangle
 
 from ...core import util
 from ...core.dimension import Dimension
@@ -187,60 +186,3 @@ class PolygonPlot(ContourPlot):
         polys = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(polys)
         return {'artist': polys}
-
-
-
-class RectanglePlot(ColorbarPlot):
-    """
-    Rectanlges are polygons in 2D space where the key dimensions represent
-    the bottom-left and top-right corner of the rectangle.
-    """
-    style_opts = PolygonPlot.style_opts
-
-    _nonvectorized_styles = ['cmap']
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        if 'c' in plot_kwargs:
-            plot_kwargs['array'] = plot_kwargs.pop('c')
-        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
-            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
-        line_segments = PatchCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
-
-    def get_data(self, element, ranges, style):
-        # Get [x0, y0, x1, y1]
-        inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
-
-        x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in element.kdims)
-        x0s, x1s = np.min([x0s, x1s], axis=0), np.max([x0s, x1s], axis=0)
-        y0s, y1s = np.min([y0s, y1s], axis=0), np.max([y0s, y1s], axis=0)
-
-        dims = element.dimensions()
-        data = [Rectangle((x0, y0), x1, y1) for (x0, y0, x1, y1)
-                in zip(x0s, y0s, x1s-x0s, y1s-y0s)]
-
-        with abbreviated_exception():
-            style = self._apply_transforms(element, ranges, style)
-        return (data,), style, {'dimensions': dims}
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        Use first two key dimensions to set names, and all four
-        to set the data range.
-        """
-        kdims = element.kdims
-        # loop over start and end points of segments
-        # simultaneously in each dimension
-        for kdim0, kdim1 in zip([kdims[i].name for i in range(2)],
-                                [kdims[i].name for i in range(2,4)]):
-            new_range = {}
-            for kdim in [kdim0, kdim1]:
-                # for good measure, update ranges for both start and end kdim
-                for r in ranges[kdim]:
-                    # combine (x0, x1) and (y0, y1) in range calculation
-                    new_range[r] = util.max_range([ranges[kd][r]
-                                                   for kd in [kdim0, kdim1]])
-            ranges[kdim0] = new_range
-            ranges[kdim1] = new_range
-        return super(RectanglePlot, self).get_extents(element, ranges, range_type)

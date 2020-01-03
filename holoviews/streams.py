@@ -1251,7 +1251,6 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Rects
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last

@@ -14,6 +14,7 @@ from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .geometry import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .heatmap import * # noqa (API import)
 from .hex_tiles import * # noqa (API import)
@@ -115,7 +116,6 @@ GridPlot = PlotSelector(grid_selector,
 
 # Register default Elements
 Store.register({Curve: CurvePlot,
-                Segments: SegmentPlot,
                 Scatter: PointPlot,
                 Bars: BarPlot,
                 Histogram: HistogramPlot,
@@ -126,7 +126,6 @@ Store.register({Curve: CurvePlot,
                 Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Area: AreaPlot,
-                Rects: RectanglePlot,
 
                 # General plots
                 GridSpace: GridPlot,
@@ -188,6 +187,10 @@ Store.register({Curve: CurvePlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+
+                # Geometry plots
+                Boxes: BoxesPlot,
+                Segments: SegmentPlot,
 
                 # Statistics elements
                 Distribution: DistributionPlot,
