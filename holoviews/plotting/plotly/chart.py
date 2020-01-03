@@ -8,7 +8,7 @@ from ...core.data import Dataset
 from ...core import util
 from ...element import Bars
 from ...operation import interpolate_curve
-from ..mixin import AreaMixin
+from ..mixins import AreaMixin
 from ..util import get_axis_padding
 from .element import ElementPlot, ColorbarPlot
 

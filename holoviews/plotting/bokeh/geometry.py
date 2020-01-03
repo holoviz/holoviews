@@ -19,19 +19,8 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
-        # Get [x0, y0, x1, y1]
-        x0idx, y0idx, x1idx, y1idx = (
-            (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
-        )
-
-        # Compute segments
-        x0s, y0s, x1s, y1s = (
-            element.dimension_values(x0idx),
-            element.dimension_values(y0idx),
-            element.dimension_values(x1idx),
-            element.dimension_values(y1idx)
-        )
-
+        ints = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         return (data, mapping, style)
@@ -46,12 +35,12 @@ class BoxesPlot(GeomMixin, LegendPlot, ColorbarPlot):
     _color_style = 'fill_color'
 
     def get_data(self, element, ranges, style):
-        x0, y0, x1, y1 = (element.dimension_values(kd) for kd in element.kdims)
+        inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        x0, y0, x1, y1 = (element.dimension_values(kd) for kd in inds)
         x0, x1 = np.min([x0, x1], axis=0), np.max([x0, x1], axis=0)
         y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
         data = {'x': (x1+x0)/2., 'y': (y1+y0)/2., 'width': x1-x0, 'height': y1-y0}
-        if self.invert_axes:
-            mapping = {'x': 'y', 'y': 'x', 'width': 'height', 'height': 'width'}
-        else:
-            mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
+        mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
         return data, mapping, style
+
+    

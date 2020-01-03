@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 
 from ...element import HLine, VLine, HSpan, VSpan
+from ..mixins import GeomMixin
 from .element import ElementPlot
 
 
@@ -29,6 +30,15 @@ class ShapePlot(ElementPlot):
         return path
 
 
+class BoxShapePlot(GeomMixin, ShapePlot):
+    _shape_type = 'rect'
+
+    def get_data(self, element, ranges, style):
+        inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
+        return [dict(x0=x0, x1=x1, y0=y0, y1=y1, xref='x', yref='y')
+                for (x0, y0, x1, y1) in zip(x0s, y0s, x1s, y1s)]
+    
 
 class PathShapePlot(ShapePlot):
     _shape_type = 'path'

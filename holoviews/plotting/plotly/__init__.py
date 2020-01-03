@@ -69,9 +69,10 @@ Store.register({Points: ScatterPlot,
                 Labels: LabelPlot,
 
                 # Shapes
-                Box: PathShapePlot,
+                Box: BoxShapePlot,
                 Bounds: PathShapePlot,
                 Ellipse: PathShapePlot,
+                Boxes: BoxShapePlot,
                 HLine: HVLinePlot,
                 VLine: HVLinePlot,
                 HSpan: HVSpanPlot,
