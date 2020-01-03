@@ -13,7 +13,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
-                        Tiles, Segments, Slope, Boxes)
+                        Tiles, Segments, Slope, Rectangles)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import LooseVersion, VersionError
 
@@ -37,7 +37,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
-from .geometry import SegmentPlot, BoxesPlot
+from .geometry import SegmentPlot, RectanglesPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
@@ -98,7 +98,7 @@ associations = {Overlay: OverlayPlot,
                 Polygons: PolygonPlot,
 
                 # Geometry
-                Boxes:    BoxesPlot,
+                Rectangles:    RectanglesPlot,
                 Segments: SegmentPlot,
 
                 # Annotations
@@ -199,7 +199,7 @@ options.Polygons = Options('style', color=Cycle(), line_color='black',
                            cmap='viridis')
 
 # Geometries
-options.Boxes = Options('style', line_color='black')
+options.Rectangles = Options('style', line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)

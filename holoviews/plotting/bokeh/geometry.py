@@ -27,7 +27,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 
-class BoxesPlot(GeomMixin, LegendPlot, ColorbarPlot):
+class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
 
     style_opts = ['cmap', 'visible'] + line_properties + fill_properties
     _plot_methods = dict(single='rect')

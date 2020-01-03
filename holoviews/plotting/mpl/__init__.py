@@ -189,7 +189,7 @@ Store.register({Curve: CurvePlot,
                 Polygons: PolygonPlot,
 
                 # Geometry plots
-                Boxes: BoxesPlot,
+                Rectangles: RectanglesPlot,
                 Segments: SegmentPlot,
 
                 # Statistics elements
@@ -250,7 +250,7 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
 # Geometries
-options.Boxes = Options('style', edgecolor='black')
+options.Rectangles = Options('style', edgecolor='black')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')

@@ -160,7 +160,7 @@ class Comparison(ComparisonInterface):
 
         # Geometries
         cls.equality_type_funcs[Segments] =    cls.compare_segments
-        cls.equality_type_funcs[Boxes] =       cls.compare_boxes
+        cls.equality_type_funcs[Rectangles] =       cls.compare_boxes
 
         # Charts
         cls.equality_type_funcs[Dataset] =      cls.compare_dataset
@@ -608,7 +608,7 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
 
     @classmethod
-    def compare_boxes(cls, el1, el2, msg='Boxes'):
+    def compare_boxes(cls, el1, el2, msg='Rectangles'):
         cls.compare_dataset(el1, el2, msg)
         
     #=========#

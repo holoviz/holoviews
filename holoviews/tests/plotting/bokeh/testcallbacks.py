@@ -5,7 +5,7 @@ import numpy as np
 
 from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Box, Curve, Table, Boxes
+from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
                                PointerXY, PointerX, PlotReset, Selection1D,
@@ -259,7 +259,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertEqual(poly_draw.element, element)
 
     def test_box_edit_callback(self):
-        boxes = Boxes([(-0.5, -0.5, 0.5, 0.5)])
+        boxes = Rectangles([(-0.5, -0.5, 0.5, 0.5)])
         box_edit = BoxEdit(source=boxes)
         plot = bokeh_server_renderer.get_plot(boxes)
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
@@ -271,7 +271,7 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertEqual(source.data['height'], [1])
         data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
         callback.on_msg({'data': data})
-        element = Boxes([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
+        element = Rectangles([(-0.25, -1, 0.25, 1), (0, 0.75, 2, 1.25)])
         self.assertEqual(box_edit.element, element)
 
     def test_box_edit_callback_legacy(self):

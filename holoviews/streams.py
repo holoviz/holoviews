@@ -1251,7 +1251,7 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Boxes, Polygons
+        from .element import Rectangles, Polygons
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -1260,7 +1260,7 @@ class BoxEdit(CDSStream):
             return source.clone([])
 
         dims = ['x0', 'y0', 'x1', 'y1']+[vd.name for vd in source.vdims]
-        if isinstance(source, Boxes):
+        if isinstance(source, Rectangles):
             data = tuple(data[d] for d in dims)
             return source.clone(data, id=None)
         paths = []

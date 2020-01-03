@@ -42,7 +42,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 
-class BoxesPlot(GeomMixin, ColorbarPlot):
+class RectanglesPlot(GeomMixin, ColorbarPlot):
     """
     Rectanlges are polygons in 2D space where the key dimensions represent
     the bottom-left and top-right corner of the rectangle.

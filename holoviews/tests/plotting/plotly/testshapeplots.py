@@ -1,4 +1,4 @@
-from holoviews.element import VLine, HLine, Bounds, Box, Boxes, Segments
+from holoviews.element import VLine, HLine, Bounds, Box, Rectangles, Segments
 
 from .testplot import TestPlotlyPlot
 
@@ -177,10 +177,10 @@ class TestBox(TestPathShape):
         self.assert_shape_element_styling(Box(0, 0, (1, 1)))
 
 
-class TestBoxes(TestPathShape):
+class TestRectangles(TestPathShape):
 
     def test_boxes_simple(self):
-        boxes = Boxes([(0, 0, 1, 1), (2, 2, 4, 3)])
+        boxes = Rectangles([(0, 0, 1, 1), (2, 2, 4, 3)])
         state = self._get_plot_state(boxes)
         shapes = state['layout']['shapes']
         self.assertEqual(len(shapes), 2)

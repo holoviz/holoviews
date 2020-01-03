@@ -20,7 +20,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, BoxTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
+from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -1422,7 +1422,7 @@ class SelectionLinkCallback(LinkCallback):
     source_selected.indices = target_selected.indices
     """
 
-class BoxTableLinkCallback(DataLinkCallback):
+class RectanglesTableLinkCallback(DataLinkCallback):
 
     source_model = 'cds'
     target_model = 'cds'
@@ -1604,4 +1604,4 @@ callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
 callbacks[SelectionLink] = SelectionLinkCallback
 callbacks[VertexTableLink] = VertexTableLinkCallback
-callbacks[BoxTableLink] = BoxTableLinkCallback
+callbacks[RectanglesTableLink] = RectanglesTableLinkCallback
