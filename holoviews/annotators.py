@@ -399,7 +399,7 @@ class PathAnnotator(Annotator):
     def selected(self):
         index = self._selection.index
         data = [p for i, p in enumerate(self._stream.element.split()) if i in index]
-        return self.element.clone(data)
+        return self.object.clone(data)
 
 
 class PolyAnnotator(PathAnnotator):

@@ -969,6 +969,8 @@ class CDSCallback(Callback):
                         vals = [v for k, v in vals]
                     new_values.append(vals)
                 values = new_values
+            elif any(isinstance(v, (int, float)) for v in values):
+                values = [np.nan if v is None else v for v in values]
             msg['data'][col] = values
         return self._transform(msg)
 

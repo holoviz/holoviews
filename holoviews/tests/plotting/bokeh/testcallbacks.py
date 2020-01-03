@@ -206,7 +206,8 @@ class TestEditToolCallbacks(CallbackTestCase):
         callback = plot.callbacks[0]
         data = {'x': [1, 2, 3], 'y': [1, 2, 3], 'A': [None, None, 1]}
         callback.on_msg({'data': data})
-        self.assertEqual(point_draw.element, Points(data, vdims=['A']))
+        processed = dict(data, A=[np.nan, np.nan, 1])
+        self.assertEqual(point_draw.element, Points(processed, vdims=['A']))
 
     def test_poly_draw_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
