@@ -69,7 +69,7 @@ Store.register({Points: ScatterPlot,
                 Labels: LabelPlot,
 
                 # Shapes
-                Box: BoxShapePlot,
+                Box: PathShapePlot,
                 Bounds: PathShapePlot,
                 Ellipse: PathShapePlot,
                 Boxes: BoxShapePlot,
