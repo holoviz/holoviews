@@ -284,7 +284,6 @@ class ContourPlot(PathPlot):
         return renderer, renderer.glyph
 
 
-
 class PolygonPlot(ContourPlot):
 
     style_opts = ['cmap', 'visible'] + line_properties + fill_properties

@@ -3,8 +3,8 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 import numpy as np
 
-from matplotlib.dates import date2num, DateFormatter
 from matplotlib.collections import PatchCollection, LineCollection
+from matplotlib.dates import date2num, DateFormatter
 
 from ...core import util
 from ...core.dimension import Dimension

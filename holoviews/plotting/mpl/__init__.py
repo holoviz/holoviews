@@ -14,6 +14,7 @@ from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .geometry import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .heatmap import * # noqa (API import)
 from .hex_tiles import * # noqa (API import)
@@ -115,7 +116,6 @@ GridPlot = PlotSelector(grid_selector,
 
 # Register default Elements
 Store.register({Curve: CurvePlot,
-                Segments: SegmentPlot,
                 Scatter: PointPlot,
                 Bars: BarPlot,
                 Histogram: HistogramPlot,
@@ -188,6 +188,10 @@ Store.register({Curve: CurvePlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
 
+                # Geometry plots
+                Rectangles: RectanglesPlot,
+                Segments: SegmentPlot,
+
                 # Statistics elements
                 Distribution: DistributionPlot,
                 Bivariate: BivariatePlot,
@@ -244,6 +248,9 @@ options.Spikes = Options('style', color='black', cmap='fire')
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
+
+# Geometries
+options.Rectangles = Options('style', edgecolor='black')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')

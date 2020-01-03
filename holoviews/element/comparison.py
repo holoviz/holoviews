@@ -158,6 +158,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Surface] =     cls.compare_surface
         cls.equality_type_funcs[HeatMap] =     cls.compare_dataset
 
+        # Geometries
+        cls.equality_type_funcs[Segments] =    cls.compare_segments
+        cls.equality_type_funcs[Rectangles] =       cls.compare_boxes
+
         # Charts
         cls.equality_type_funcs[Dataset] =      cls.compare_dataset
         cls.equality_type_funcs[Curve] =        cls.compare_curve
@@ -595,6 +599,18 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
 
 
+    #============#
+    # Geometries #
+    #============#
+
+    @classmethod
+    def compare_segments(cls, el1, el2, msg='Segments'):
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
+    def compare_boxes(cls, el1, el2, msg='Rectangles'):
+        cls.compare_dataset(el1, el2, msg)
+        
     #=========#
     # Graphs  #
     #=========#

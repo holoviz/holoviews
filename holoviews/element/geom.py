@@ -104,3 +104,19 @@ class Segments(Geometry):
                        bounds=(4, 4), constant=True, doc="""
         Segments represent lines given by x- and y-
         coordinates in 2D space.""")
+
+
+class Rectangles(Geometry):
+    """
+    Rectangles represent a collection of axis-aligned rectangles in 2D space.
+    """
+
+    group = param.String(default='Rectangles', constant=True)
+
+    kdims = param.List(default=[Dimension('x0'), Dimension('y0'),
+                                Dimension('x1'), Dimension('y1')],
+                       bounds=(4, 4), constant=True, doc="""
+        The key dimensions of the Rectangles element represent the
+        bottom-left (x0, y0) and top right (x1, y1) coordinates
+        of each box.""")
+

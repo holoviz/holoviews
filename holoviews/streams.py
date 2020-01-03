@@ -1251,13 +1251,18 @@ class BoxEdit(CDSStream):
 
     @property
     def element(self):
-        from .element import Polygons
+        from .element import Rectangles, Polygons
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
         data = self.data
         if not data:
             return source.clone([])
+
+        dims = ['x0', 'y0', 'x1', 'y1']+[vd.name for vd in source.vdims]
+        if isinstance(source, Rectangles):
+            data = tuple(data[d] for d in dims)
+            return source.clone(data, id=None)
         paths = []
         for i, (x0, x1, y0, y1) in enumerate(zip(data['x0'], data['x1'], data['y0'], data['y1'])):
             xs = [x0, x0, x1, x1]

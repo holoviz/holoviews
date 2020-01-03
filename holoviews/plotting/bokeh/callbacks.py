@@ -20,7 +20,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw)
-from ..links import Link, RangeToolLink, DataLink, SelectionLink, VertexTableLink
+from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
 
@@ -1101,17 +1101,12 @@ class BoxEditCallback(GlyphDrawCallback):
     attributes = {'data': 'cds.data'}
     models = ['cds']
 
-    def initialize(self, plot_id=None):
+    def _path_initialize(self):
         plot = self.plot
         cds = plot.handles['cds']
         data = cds.data
         element = self.plot.current_frame
-        stream = self.streams[0]
-        kwargs = {}
-        if stream.num_objects:
-            kwargs['num_objects'] = stream.num_objects
-        if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+
         xs, ys, widths, heights = [], [], [], []
         for x, y in zip(data['xs'], data['ys']):
             x0, x1 = (np.nanmin(x), np.nanmax(x))
@@ -1126,17 +1121,33 @@ class BoxEditCallback(GlyphDrawCallback):
         style = self.plot.style[self.plot.cyclic_index]
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=cds, **style)
-        if stream.styles:
-            self._create_style_callback(cds, r1.glyph, 'x')
-        box_tool = BoxEditTool(renderers=[r1], **kwargs)
-        plot.state.tools.append(box_tool)
         if plot.handles['glyph_renderer'] in self.plot.state.renderers:
             self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
-        super(CDSCallback, self).initialize()
         data = self._process_msg({'data': data})['data']
         for stream in self.streams:
             stream.update(data=data)
+        return r1
 
+    def initialize(self, plot_id=None):
+        from .path import PathPlot
+
+        stream = self.streams[0]
+        cds = self.plot.handles['cds']
+
+        kwargs = {}
+        if stream.num_objects:
+            kwargs['num_objects'] = stream.num_objects
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
+
+        renderer = self.plot.handles['glyph_renderer']
+        if isinstance(self.plot, PathPlot):
+            renderer = self._path_initialize()
+        if stream.styles:
+            self._create_style_callback(cds, renderer.glyph, 'x')
+        box_tool = BoxEditTool(renderers=[renderer], **kwargs)
+        self.plot.state.tools.append(box_tool)
+        super(CDSCallback, self).initialize()
 
     def _process_msg(self, msg):
         data = super(BoxEditCallback, self)._process_msg(msg)
@@ -1258,6 +1269,9 @@ class LinkCallback(param.Parameterized):
                 src_model.js_on_change(ch, src_cb)
             for ev in self.on_source_events:
                 src_model.js_on_event(ev, src_cb)
+            self.src_cb = src_cb
+        else:
+            self.src_cb = None
 
         if target_plot is not None and self.target_model in target_plot.handles and self.target_code:
             tgt_model = target_plot.handles[self.target_model]
@@ -1266,6 +1280,9 @@ class LinkCallback(param.Parameterized):
                 tgt_model.js_on_change(ch, tgt_cb)
             for ev in self.on_target_events:
                 tgt_model.js_on_event(ev, tgt_cb)
+            self.tgt_cb = tgt_cb
+        else:
+            self.tgt_cb = None
 
     @classmethod
     def find_links(cls, root_plot):
@@ -1386,6 +1403,7 @@ class DataLinkCallback(LinkCallback):
         if hasattr(renderer, 'view'):
             renderer.view.update(source=src_cds)
         target_plot.handles['source'] = src_cds
+        target_plot.handles['cds'] = src_cds
         for callback in target_plot.callbacks:
             callback.initialize(plot_id=root_model.ref['id'])
 
@@ -1405,6 +1423,73 @@ class SelectionLinkCallback(LinkCallback):
     target_code = """
     source_selected.indices = target_selected.indices
     """
+
+class RectanglesTableLinkCallback(DataLinkCallback):
+
+    source_model = 'cds'
+    target_model = 'cds'
+
+    source_handles = ['glyph']
+
+    on_source_changes = ['selected', 'data']
+    on_target_changes = ['patching']
+
+    source_code = """
+    var xs = source_cds.data[source_glyph.x.field]
+    var ys = source_cds.data[source_glyph.y.field]
+    var ws = source_cds.data[source_glyph.width.field]
+    var hs = source_cds.data[source_glyph.height.field]
+
+    var x0 = []
+    var x1 = []
+    var y0 = []
+    var y1 = []
+    for (i = 0; i < xs.length; i++) {
+      var hw = ws[i]/2.
+      var hh = hs[i]/2.
+      x0.push(xs[i]-hw)
+      x1.push(xs[i]+hw)
+      y0.push(ys[i]-hh)
+      y1.push(ys[i]+hh)
+    }
+    target_cds.data[columns[0]] = x0
+    target_cds.data[columns[1]] = y0
+    target_cds.data[columns[2]] = x1
+    target_cds.data[columns[3]] = y1
+    """
+
+    target_code = """
+    var x0s = target_cds.data[columns[0]]
+    var y0s = target_cds.data[columns[1]]
+    var x1s = target_cds.data[columns[2]]
+    var y1s = target_cds.data[columns[3]]
+
+    var xs = []
+    var ys = []
+    var ws = []
+    var hs = []
+    for (i = 0; i < x0s.length; i++) {
+      x0 = Math.min(x0s[i], x1s[i])
+      y0 = Math.min(y0s[i], y1s[i])
+      x1 = Math.max(x0s[i], x1s[i])
+      y1 = Math.max(y0s[i], y1s[i])
+      xs.push((x0+x1)/2.)
+      ys.push((y0+y1)/2.)
+      ws.push(x1-x0)
+      hs.push(y1-y0)
+    }
+    source_cds.data['x'] = xs
+    source_cds.data['y'] = ys
+    source_cds.data['width'] = ws
+    source_cds.data['height'] = hs
+    """
+
+    def __init__(self, root_model, link, source_plot, target_plot=None):
+        DataLinkCallback.__init__(self, root_model, link, source_plot, target_plot)
+        LinkCallback.__init__(self, root_model, link, source_plot, target_plot)
+        columns = [kd.name for kd in source_plot.current_frame.kdims]
+        self.src_cb.args['columns'] = columns
+        self.tgt_cb.args['columns'] = columns
 
 
 class VertexTableLinkCallback(LinkCallback):
@@ -1521,3 +1606,4 @@ callbacks[RangeToolLink] = RangeToolLinkCallback
 callbacks[DataLink] = DataLinkCallback
 callbacks[SelectionLink] = SelectionLinkCallback
 callbacks[VertexTableLink] = VertexTableLinkCallback
+callbacks[RectanglesTableLink] = RectanglesTableLinkCallback

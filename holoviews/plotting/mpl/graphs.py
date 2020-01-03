@@ -7,8 +7,9 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, unique_array, search_indices, max_range, is_number, isscalar
+from ...core.util import basestring, unique_array, search_indices, is_number, isscalar
 from ...util.transform import dim
+from ..mixins import ChordMixin
 from ..util import process_cmap, get_directed_graph_paths
 from .element import ColorbarPlot
 from .util import filter_styles
@@ -257,7 +258,7 @@ class TriMeshPlot(GraphPlot):
 
 
 
-class ChordPlot(GraphPlot):
+class ChordPlot(ChordMixin, GraphPlot):
 
     labels = param.ClassSelector(class_=(basestring, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
@@ -271,21 +272,6 @@ class ChordPlot(GraphPlot):
     style_opts = GraphPlot.style_opts + ['text_font_size', 'label_offset']
 
     _style_groups = ['edge', 'node', 'arc']
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        A Chord plot is always drawn on a unit circle.
-        """
-        xdim, ydim = element.nodes.kdims[:2]
-        if range_type not in ('combined', 'data'):
-            return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        no_labels = (element.nodes.get_dimension(self.label_index) is None and
-                     self.labels is None)
-        rng = 1.1 if no_labels else 1.4
-        x0, x1 = max_range([xdim.range, (-rng, rng)])
-        y0, y1 = max_range([ydim.range, (-rng, rng)])
-        return (x0, y0, x1, y1)
-
 
     def get_data(self, element, ranges, style):
         data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)

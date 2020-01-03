@@ -139,3 +139,11 @@ class VertexTableLink(Link):
             dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
             params['vertex_columns'] = dimensions
         super(VertexTableLink, self).__init__(source, target, **params)
+
+
+class RectanglesTableLink(Link):
+    """
+    Links a Rectangles element to a Table.
+    """
+
+    _requires_target = True

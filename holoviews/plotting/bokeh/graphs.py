@@ -9,9 +9,9 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import (basestring, dimension_sanitizer, unique_array,
-                          max_range)
+from ...core.util import basestring, dimension_sanitizer, unique_array
 from ...util.transform import dim
+from ..mixins import ChordMixin
 from ..util import process_cmap, get_directed_graph_paths
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot
@@ -371,7 +371,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
 
-class ChordPlot(GraphPlot):
+class ChordPlot(ChordMixin, GraphPlot):
 
     labels = param.ClassSelector(class_=(basestring, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
@@ -392,19 +392,6 @@ class ChordPlot(GraphPlot):
 
     _draw_order = ['multi_line_2', 'graph', 'text_1']
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        A Chord plot is always drawn on a unit circle.
-        """
-        xdim, ydim = element.nodes.kdims[:2]
-        if range_type not in ('combined', 'data', 'extents'):
-            return xdim.range[0], ydim.range[0], xdim.range[1], ydim.range[1]
-        no_labels = (element.nodes.get_dimension(self.label_index) is None and
-                     self.labels is None)
-        rng = 1.1 if no_labels else 1.4
-        x0, x1 = max_range([xdim.range, (-rng, rng)])
-        y0, y1 = max_range([ydim.range, (-rng, rng)])
-        return (x0, y0, x1, y1)
 
     def _sync_arcs(self):
         arc_renderer = self.handles['multi_line_2_glyph_renderer']
