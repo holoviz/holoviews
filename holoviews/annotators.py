@@ -11,7 +11,6 @@ from panel.layout import Row, Tabs
 from panel.util import param_name
 
 from .core import DynamicMap, Element, Layout, Overlay, Store
-from .core.spaces import Callable
 from .core.util import isscalar
 from .element import Rectangles, Path, Polygons, Points, Table
 from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
@@ -147,7 +146,7 @@ class Annotator(PaneBase):
         Annotations to associate with each object.""")
 
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                                       'padding': 0.1}, doc="""
+                                       'padding': 0.1, 'framewise': True}, doc="""
         Opts to apply to the element.""")
 
     object = param.ClassSelector(class_=Element, doc="""
@@ -199,7 +198,8 @@ class Annotator(PaneBase):
         self.object = self._process_element(object)
         self._table_row = Row()
         self.editor = Tabs(('%s' % param_name(self.name), self._table_row))
-        self.plot = DynamicMap(Callable(self._get_plot, inputs=[self.object]))
+        self.plot = DynamicMap(self._get_plot)
+        self.plot.callback.inputs[:] = [self.object]
         self._tables = []
         self._init_stream()
         self._stream.add_subscriber(self._update_object, precedence=0.1)
@@ -416,7 +416,7 @@ class PolyAnnotator(PathAnnotator):
 class _GeomAnnotator(Annotator):
 
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                                       'padding': 0.1}, doc="""
+                                       'padding': 0.1, 'framewise': True}, doc="""
         Opts to apply to the element.""")
 
     _stream_type = None
@@ -456,7 +456,8 @@ class PointAnnotator(_GeomAnnotator):
     """
 
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
-                                       'padding': 0.1, 'size': 10}, doc="""
+                                       'padding': 0.1, 'size': 10,
+                                       'framewise': True}, doc="""
         Opts to apply to the element.""")
 
     object = param.ClassSelector(class_=Points, doc="""
