@@ -4,10 +4,11 @@ import numpy as np
 
 from holoviews.element import Area
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class TestAreaPlot(TestBokehPlot):
+class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_area_with_nans(self):
         area = Area([1, 2, 3, np.nan, 5, 6, 7])
@@ -136,3 +137,4 @@ class TestAreaPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 3.2)
         self.assertEqual(y_range.start, 0.033483695221017122)
         self.assertEqual(y_range.end, 3.3483695221017129)
+        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')

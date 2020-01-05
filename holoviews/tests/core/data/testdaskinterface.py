@@ -11,16 +11,18 @@ except:
 from holoviews.core.data import Dataset
 from holoviews.util.transform import dim
 
-from .testpandasinterface import PandasInterfaceTests
+from .testpandasinterface import BasePandasInterfaceTests
 
 
-class DaskDatasetTest(PandasInterfaceTests):
+class DaskDatasetTest(BasePandasInterfaceTests):
     """
     Test of the pandas DaskDataset interface.
     """
 
     datatype = 'dask'
     data_type = dd.DataFrame
+
+    __test__ = True
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -36,6 +38,9 @@ class DaskDatasetTest(PandasInterfaceTests):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_vdim_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_ht(self):

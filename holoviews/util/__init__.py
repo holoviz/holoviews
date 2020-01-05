@@ -103,7 +103,7 @@ class opts(param.ParameterizedFunction):
         elif len(args) == 2:
             msg = ("Double positional argument signature of opts is deprecated, "
                    "use the .options method instead.\nFor instance, instead of "
-                   "opts('Points (size=5)', points) use points.options(opts.Points(size=5))")
+                   "opts('Points (size=5)', points) use points.opts(opts.Points(size=5))")
 
             self.param.warning(msg)
 

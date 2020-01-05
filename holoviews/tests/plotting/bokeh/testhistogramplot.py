@@ -8,10 +8,11 @@ from holoviews.operation import histogram
 
 from bokeh.models import DatetimeAxis, CategoricalColorMapper, LinearColorMapper
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class TestSideHistogramPlot(TestBokehPlot):
+class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_side_histogram_no_cmapper(self):
         points = Points(np.random.rand(100, 2))
@@ -133,6 +134,7 @@ class TestSideHistogramPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 3.8)
         self.assertEqual(y_range.start, 0.033483695221017122)
         self.assertEqual(y_range.end, 3.3483695221017129)
+        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(

@@ -17,15 +17,12 @@ from holoviews.element import Scatter, Points, Distribution
 from .base import HeterogeneousColumnTests, InterfaceTests
 
 
-class PandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
+class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     """
     Test for the PandasInterface.
     """
 
-    datatype = 'dataframe'
-    data_type = pd.DataFrame
-
-    __test__ = True
+    __test__ = False
 
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
@@ -163,3 +160,12 @@ class PandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         df = pd.DataFrame({'x': np.arange(10), 'y': np.arange(10), 'z': np.random.rand(10)})
         ds = Dataset(df.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
         self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
+
+
+
+class PandasInterfaceTests(BasePandasInterfaceTests):
+
+    datatype = 'dataframe'
+    data_type = pd.DataFrame
+
+    __test__ = True
