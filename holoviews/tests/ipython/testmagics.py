@@ -164,11 +164,11 @@ class TestCompositorMagic(ExtensionTestCase):
         super(TestCompositorMagic, self).setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.element import Image")
-        self.definitions = Compositor.definitions
-        Compositor.definitions = []
+        self.definitions = list(Compositor.definitions)
+        Compositor.definitions[:] = []
 
     def tearDown(self):
-        Compositor.definitions = self.definitions
+        Compositor.definitions[:] = self.definitions
         super(TestCompositorMagic, self).tearDown()
 
     def test_display_compositor_definition(self):
