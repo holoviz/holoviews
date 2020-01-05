@@ -14,6 +14,7 @@ from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, Pointer
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
+from ..utils import LoggingComparisonTestCase
 from .testdimensioned import CustomBackendTestCase, TestObj
 
 XY = Stream.define('XY', x=0,y=0)
@@ -901,7 +902,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         self.assertEqual((end - start) < 5, True)
 
 
-class DynamicCollate(ComparisonTestCase):
+class DynamicCollate(LoggingComparisonTestCase):
 
     def test_dynamic_collate_layout(self):
         def callback():
@@ -1050,6 +1051,7 @@ class DynamicCollate(ComparisonTestCase):
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
         with self.assertRaisesRegexp(ValueError, err):
             dmap1[4]
+        self.log_handler.assertContains('WARNING', err)
 
     def test_dynamic_collate_gridspace_with_changing_item_types_raises(self):
         def callback(i):
@@ -1062,3 +1064,4 @@ class DynamicCollate(ComparisonTestCase):
                'consistently return the same number of items of the same type.')
         with self.assertRaisesRegexp(ValueError, err):
             dmap1[3]
+        self.log_handler.assertContains('WARNING', err)

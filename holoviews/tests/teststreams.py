@@ -186,6 +186,7 @@ class TestParamValuesStream(ComparisonTestCase):
 class TestParamsStream(LoggingComparisonTestCase):
 
     def setUp(self):
+        super(TestParamsStream, self).setUp()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
