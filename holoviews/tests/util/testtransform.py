@@ -106,6 +106,12 @@ class TestDimTransforms(ComparisonTestCase):
             check_names=False
         )
 
+    # Lookup
+
+    def test_int_lookup(self):
+        expr = dim(0)
+        self.check_apply(expr, self.linear_ints)
+
     # Unary operators
 
     def test_abs_transform(self):
