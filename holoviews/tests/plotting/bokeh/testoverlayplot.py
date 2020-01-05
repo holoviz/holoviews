@@ -6,6 +6,7 @@ from holoviews.element import Curve, Points, ErrorBars, Text, VLine
 from holoviews.streams import Stream
 from holoviews.util import Dynamic
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
@@ -14,7 +15,7 @@ except:
     pass
 
 
-class TestOverlayPlot(TestBokehPlot):
+class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_overlay_apply_ranges_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).options('Curve', apply_ranges=False)
@@ -66,6 +67,7 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = Curve(range(10)) * NdOverlay()
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.subplots), 1)
+        self.log_handler.assertContains('WARNING', 'is empty and will be skipped during plotting')
 
     def test_overlay_show_frame_disabled(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(show_frame=False))

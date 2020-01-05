@@ -27,7 +27,7 @@ except:
 
 BACKENDS = ['matplotlib'] + (['bokeh'] if bokeh else [])
 
-from ..util import LoggingComparisonTestCase
+from ..utils import LoggingComparisonTestCase
 
 
 class TestOutputUtil(ComparisonTestCase):

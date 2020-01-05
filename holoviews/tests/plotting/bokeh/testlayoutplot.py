@@ -8,8 +8,6 @@ from holoviews.element import Curve, Image, Points, Histogram, Scatter
 from holoviews.streams import Stream
 from holoviews.util import render, opts
 
-from .testplot import TestBokehPlot, bokeh_renderer
-
 try:
     from bokeh.layouts import Column, Row
     from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel, Spacer, GridBox, Title
@@ -17,8 +15,12 @@ try:
 except:
     pass
 
+from ...utils import LoggingComparisonTestCase
+from .testplot import TestBokehPlot, bokeh_renderer
 
-class TestLayoutPlot(TestBokehPlot):
+
+
+class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_layout_update_visible(self):
         hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
@@ -251,6 +253,8 @@ class TestLayoutPlot(TestBokehPlot):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = bokeh_renderer.get_plot(layout)
         self.assertEqual(len(plot.subplots.values()), 2)
+        self.log_handler.assertContains('WARNING', 'skipping subplot')
+        self.log_handler.assertContains('WARNING', 'skipping subplot')
 
     def test_layout_set_toolbar_location(self):
         layout = (Curve([]) + Points([])).options(toolbar='left')
