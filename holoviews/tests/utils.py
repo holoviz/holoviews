@@ -95,6 +95,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
+        super(LoggingComparisonTestCase, self).setUp()
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
@@ -102,6 +103,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         log.addHandler(self.log_handler)
 
     def tearDown(self):
+        super(LoggingComparisonTestCase, self).tearDown()
         log = param.parameterized.get_logger()
         log.handlers = self.handlers
         messages = self.log_handler.messages
