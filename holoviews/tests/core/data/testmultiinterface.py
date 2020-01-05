@@ -431,7 +431,7 @@ class GeomTests(ComparisonTestCase):
         poly = Polygons([{'x': [1, 2, 3], 'y': [2, 0, 7]}], datatype=[self.datatype])
         self.assertIs(poly.interface, self.interface)
         self.assertEqual(poly.interface.dtype(poly, 'x'),
-                         'int64')
+                         np.dtype('int'))
 
     def test_select_from_multi_polygons_with_scalar(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
