@@ -13,6 +13,8 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
     datatype = 'array'
     data_type = np.ndarray
 
+    __test__ = True
+
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':

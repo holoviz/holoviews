@@ -1,9 +1,10 @@
 from holoviews.element import Area
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestMPLPlot, mpl_renderer
 
 
-class TestAreaPlot(TestMPLPlot):
+class TestAreaPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_area_padding_square(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).options(padding=0.1)
@@ -94,3 +95,4 @@ class TestAreaPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 3.2)
         self.assertEqual(y_range[0], 0.03348369522101712)
         self.assertEqual(y_range[1], 3.3483695221017129)
+        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')

@@ -86,6 +86,8 @@ class HomogeneousColumnTests(object):
     type (e.g numpy arrays)
     """
 
+    __test__ = False
+
     def init_column_data(self):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
@@ -294,10 +296,6 @@ class HomogeneousColumnTests(object):
     def test_dataset_index_column_ht(self):
         self.compare_arrays(self.dataset_hm['y'], self.y_ints)
 
-    def test_dataset_array_ht(self):
-        self.assertEqual(self.dataset_hm.array(),
-                         np.column_stack([self.xs, self.y_ints]))
-
     # Tabular indexing
 
     def test_dataset_iloc_slice_rows(self):
@@ -382,10 +380,6 @@ class HomogeneousColumnTests(object):
                         kdims=['x'], vdims=['y'], datatype=['dictionary'])
         self.assertEqual(sliced, table)
 
-    def test_dataset_get_array(self):
-        arr = self.dataset_hm.array()
-        self.assertEqual(arr, np.column_stack([self.xs, self.y_ints]))
-
     def test_dataset_get_array_by_dimension(self):
         arr = self.dataset_hm.array(['x'])
         self.assertEqual(arr, self.xs[:, np.newaxis])
@@ -407,6 +401,8 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
     Tests for data formats that allow dataset to have varied types
     """
+
+    __test__ = False
 
     def init_column_data(self):
         self.kdims = ['Gender', 'Age']
@@ -851,6 +847,8 @@ class ScalarColumnTests(object):
     types.
     """
 
+    __test__ = False
+
     def test_dataset_scalar_constructor(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.dimension_values('A'), np.ones(10))
@@ -908,6 +906,8 @@ class GriddedInterfaceTests(object):
     """
     Tests for the grid interfaces
     """
+
+    __test__ = False
 
     def init_grid_data(self):
         self.grid_xs = np.array([0, 1])

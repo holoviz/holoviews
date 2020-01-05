@@ -114,13 +114,11 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
 
     def init_graph(self, datum, options, index=0):
-        trisurf_kwargs = super(TriSurfacePlot, self).init_graph(
-            datum, options, index)[0]
 
         # Pop colorbar options since these aren't accepted by the trisurf
         # figure factory.
-        colorbar = trisurf_kwargs.pop('colorbar', None)
-        trisurface_traces = trisurface(**trisurf_kwargs)
+        colorbar = options.pop('colorbar', None)
+        trisurface_traces = trisurface(**dict(datum, **options))
 
         # Find colorbar to set colorbar options. Colorbar is associated with
         # a `scatter3d` scatter trace.

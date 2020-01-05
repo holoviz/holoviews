@@ -22,6 +22,7 @@ class TestQuadMeshPlot(TestMPLPlot):
         ds = Dataset((xs, ys, zs, values.T), ['x', 'y', 'z'], 'values')
         hmap = ds.to(QuadMesh).options(colorbar=True, framewise=True)
         plot = mpl_renderer.get_plot(hmap)
-        self.assertEqual(plot.handles['cbar'].get_clim(), (-0.9989549170979283, 0.9719379013633127))
+        cbar = plot.handles['cbar']
+        self.assertEqual((cbar.vmin, cbar.vmax), (-0.9989549170979283, 0.9719379013633128))
         plot.update(3)
-        self.assertEqual(plot.handles['cbar'].get_clim(), (-1.7481711049213744, 1.7008913273857973))
+        self.assertEqual((cbar.vmin, cbar.vmax), (-1.7481711049213744, 1.7008913273857975))

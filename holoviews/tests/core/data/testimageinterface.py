@@ -18,6 +18,8 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
     data_type = np.ndarray
     element = Image
 
+    __test__ = True
+
     def test_canonical_vdim(self):
         x = np.array([ 0.  ,  0.75,  1.5 ])
         y = np.array([ 1.5 ,  0.75,  0.  ])
@@ -51,14 +53,14 @@ class ImageInterfaceTests(GriddedInterfaceTests, InterfaceTests):
 
 
 
-class Image_ImageInterfaceTests(InterfaceTests):
+class BaseImageElementInterfaceTests(InterfaceTests):
     """
     Tests for ImageInterface
     """
 
-    datatype = 'image'
     element = Image
-    data_type = np.ndarray
+
+    __test__ = False
 
     def init_grid_data(self):
         self.xs = np.linspace(-9, 9, 10)
@@ -319,11 +321,19 @@ class Image_ImageInterfaceTests(InterfaceTests):
                                     vdims=['z', 'z_std']))
 
 
-
-class RGB_ImageInterfaceTests(InterfaceTests):
+class ImageElement_ImageInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'image'
+    data_type = np.ndarray
+
+    __test__ = True
+
+
+class BaseRGBElementInterfaceTests(InterfaceTests):
+
     element = RGB
+
+    __test__ = False
 
     def init_grid_data(self):
         self.xs = np.linspace(-9, 9, 10)
@@ -397,7 +407,7 @@ class RGB_ImageInterfaceTests(InterfaceTests):
                          self.rgb_array[1:5, 6:7, 0])
 
     def test_select_value_dimension_rgb(self):
-        
+
         self.assertEqual(self.rgb[..., 'R'],
                          Image(np.flipud(self.rgb_array[:, :, 0]), bounds=self.rgb.bounds,
                                vdims=[Dimension('R', range=(0, 1))], datatype=['image']))
@@ -448,11 +458,18 @@ class RGB_ImageInterfaceTests(InterfaceTests):
         self.assertEqual(reindexed, data)
 
 
-
-class HSV_ImageInterfaceTests(InterfaceTests):
+class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'image'
+
+    __test__ = True
+
+
+class BaseHSVElementInterfaceTests(InterfaceTests):
+
     element = HSV
+
+    __test__ = False
 
     def init_grid_data(self):
         self.xs = np.linspace(-9, 9, 3)
@@ -471,3 +488,9 @@ class HSV_ImageInterfaceTests(InterfaceTests):
         self.assertEqual(G[0, 0], 0)
         self.assertEqual(B[0, 0], 0)
 
+
+class HSVElement_ImageInterfaceTests(BaseHSVElementInterfaceTests):
+
+    datatype = 'image'
+
+    __test__ = True

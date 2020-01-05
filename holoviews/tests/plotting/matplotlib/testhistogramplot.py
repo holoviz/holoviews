@@ -7,10 +7,11 @@ from holoviews.element import Dataset, Histogram
 from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestMPLPlot, mpl_renderer
 
 
-class TestHistogramPlot(TestMPLPlot):
+class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_histogram_datetime64_plot(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
@@ -75,6 +76,7 @@ class TestHistogramPlot(TestMPLPlot):
         self.assertEqual(x_range[1], 3.8)
         self.assertEqual(y_range[0], 0.03348369522101712)
         self.assertEqual(y_range[1], 3.3483695221017129)
+        self.log_handler.assertContains('WARNING', 'Logarithmic axis range encountered value less than')
 
     def test_histogram_padding_datetime_square(self):
         histogram = Histogram([(np.datetime64('2016-04-0%d' % i, 'ns'), i) for i in range(1, 4)]).options(

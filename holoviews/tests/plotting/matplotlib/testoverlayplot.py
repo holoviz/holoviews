@@ -3,6 +3,7 @@ import numpy as np
 from holoviews.core import Overlay, NdOverlay, DynamicMap, HoloMap
 from holoviews.element import Curve, Scatter
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestMPLPlot, mpl_renderer
 
 try:
@@ -11,7 +12,7 @@ except:
     pass
 
 
-class TestOverlayPlot(TestMPLPlot):
+class TestOverlayPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_interleaved_overlay(self):
         """
@@ -24,6 +25,7 @@ class TestOverlayPlot(TestMPLPlot):
         overlay = Curve(range(10)) * NdOverlay()
         plot = mpl_renderer.get_plot(overlay)
         self.assertEqual(len(plot.subplots), 1)
+        self.log_handler.assertContains('WARNING', 'is empty and will be skipped during plotting')
 
     def test_overlay_update_plot_opts(self):
         hmap = HoloMap(

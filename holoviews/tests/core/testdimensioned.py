@@ -15,12 +15,14 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
     """
 
     def setUp(self):
+        super(CustomBackendTestCase, self).setUp()
         self.current_backend = Store.current_backend
         self.register_custom(TestObj, 'backend_1', ['plot_custom1'])
         self.register_custom(TestObj, 'backend_2', ['plot_custom2'])
         Store.set_current_backend('backend_1')
 
     def tearDown(self):
+        super(CustomBackendTestCase, self).tearDown()
         Store._weakrefs = {}
         Store._options.pop('backend_1')
         Store._options.pop('backend_2')

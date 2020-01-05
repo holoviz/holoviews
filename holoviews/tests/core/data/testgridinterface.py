@@ -21,15 +21,14 @@ from .base import (
     GriddedInterfaceTests, InterfaceTests, HomogeneousColumnTests, DatatypeContext
 )
 from .testimageinterface import (
-    Image_ImageInterfaceTests, RGB_ImageInterfaceTests, HSV_ImageInterfaceTests
+    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
+    BaseHSVElementInterfaceTests
 )
 
 
-class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, InterfaceTests):
+class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, InterfaceTests):
 
-    datatype = 'grid'
-    data_type = (OrderedDict, dict)
-    element = Dataset
+    __test__ = False
 
     @pd_skip
     def test_dataset_dataframe_init_hm(self):
@@ -268,6 +267,14 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
             self.assertEqual(ds, Dataset(self.dataset_grid.columns(), 'x', 'z'))
 
 
+class GridInterfaceTests(BaseGridInterfaceTests):
+
+    datatype = 'grid'
+    data_type = (OrderedDict, dict)
+    element = Dataset
+
+    __test__ = True
+
 
 class DaskGridInterfaceTests(GridInterfaceTests):
 
@@ -301,6 +308,14 @@ class DaskGridInterfaceTests(GridInterfaceTests):
         self.dataset_grid_inv = self.element(
             (self.grid_xs[::-1], self.grid_ys[::-1], self.grid_zs), ['x', 'y'], ['z']
         )
+
+    def test_dataset_array_hm(self):
+        self.assertEqual(self.dataset_hm.array(),
+                         np.column_stack([self.xs, self.y_ints.compute()]))
+
+    def test_dataset_array_hm_alias(self):
+        self.assertEqual(self.dataset_hm_alias.array(),
+                         np.column_stack([self.xs, self.y_ints.compute()]))
 
     def test_select_lazy(self):
         import dask.array as da
@@ -435,10 +450,12 @@ class DaskGridInterfaceTests(GridInterfaceTests):
 
 
 
-class Image_GridInterfaceTests(Image_ImageInterfaceTests):
+class ImageElement_GridInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'grid'
     data_type = OrderedDict
+
+    __test__ = True
 
     def init_data(self):
         self.image = Image((self.xs, self.ys, self.array))
@@ -590,29 +607,35 @@ class Image_GridInterfaceTests(Image_ImageInterfaceTests):
 
 
 
-class RGB_GridInterfaceTests(RGB_ImageInterfaceTests):
+class RGBElement_GridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
     data_type = OrderedDict
+
+    __test__ = True
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
-class RGB_PackedGridInterfaceTests(RGB_ImageInterfaceTests):
+class RGBElement_PackedGridInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'grid'
     data_type = OrderedDict
+
+    __test__ = True
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array))
 
 
-class HSV_GridInterfaceTests(HSV_ImageInterfaceTests):
+class HSVElement_GridInterfaceTests(BaseHSVElementInterfaceTests):
 
     datatype = 'grid'
     data_type = OrderedDict
+
+    __test__ = True
 
     def init_data(self):
         self.hsv = HSV((self.xs, self.ys, self.hsv_array[:, :, 0],

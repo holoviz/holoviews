@@ -27,4 +27,5 @@ before_test:
   - cmd: 'echo backend : Agg > %matplotlibrc%'
 
 test_script:
-  - "doit test_all_recommended"
+  - "doit test_flakes"
+  - "doit test_unit"

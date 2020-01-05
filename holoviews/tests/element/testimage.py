@@ -11,6 +11,7 @@ from ..utils import LoggingComparisonTestCase
 class TestImage(LoggingComparisonTestCase):
 
     def setUp(self):
+        super(TestImage, self).setUp()
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
 
     def test_image_init(self):

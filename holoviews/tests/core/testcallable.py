@@ -98,9 +98,6 @@ class TestCallableName(ComparisonTestCase):
 
 class TestSimpleCallableInvocation(LoggingComparisonTestCase):
 
-    def setUp(self):
-        super(TestSimpleCallableInvocation, self).setUp()
-
     def test_callable_fn(self):
         def callback(x): return x
         self.assertEqual(Callable(callback)(3), 3)

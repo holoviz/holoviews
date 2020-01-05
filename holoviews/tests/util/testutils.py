@@ -27,6 +27,9 @@ except:
 
 BACKENDS = ['matplotlib'] + (['bokeh'] if bokeh else [])
 
+from ..utils import LoggingComparisonTestCase
+
+
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
@@ -76,7 +79,7 @@ class TestOutputUtil(ComparisonTestCase):
         self.assertEqual(output("fig='svg'",3), 3)
 
 
-class TestOptsUtil(ComparisonTestCase):
+class TestOptsUtil(LoggingComparisonTestCase):
     """
     Mirrors the magic tests in TestOptsMagic
     """
@@ -94,7 +97,6 @@ class TestOptsUtil(ComparisonTestCase):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestOptsUtil, self).tearDown()
 
-
     def test_cell_opts_util_style(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
         self.assertEqual(mat1.id, None)
@@ -104,7 +106,7 @@ class TestOptsUtil(ComparisonTestCase):
         self.assertEqual(
              Store.lookup_options('matplotlib',
                                   mat1, 'style').options.get('cmap',None),'hot')
-
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_cell_opts_util_plot(self):
 
@@ -115,8 +117,8 @@ class TestOptsUtil(ComparisonTestCase):
         self.assertNotEqual(mat1.id, None)
         self.assertEqual(
             Store.lookup_options('matplotlib',
-                                 mat1, 'plot').options.get('show_title',True),False)
-
+                                 mat1, 'plot').options.get('show_title',True), False)
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_cell_opts_util_norm(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
@@ -127,6 +129,7 @@ class TestOptsUtil(ComparisonTestCase):
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'norm').options.get('axiswise',True), True)
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"

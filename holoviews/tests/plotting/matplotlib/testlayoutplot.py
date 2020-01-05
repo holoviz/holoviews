@@ -4,10 +4,11 @@ from holoviews.core import HoloMap, NdOverlay, DynamicMap
 from holoviews.element import Image, Curve
 from holoviews.streams import Stream
 
+from ...utils import LoggingComparisonTestCase
 from .testplot import TestMPLPlot, mpl_renderer
 
 
-class TestLayoutPlot(TestMPLPlot):
+class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
@@ -24,6 +25,8 @@ class TestLayoutPlot(TestMPLPlot):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = mpl_renderer.get_plot(layout)
         self.assertEqual(len(plot.subplots.values()), 2)
+        self.log_handler.assertContains('WARNING', 'skipping subplot')
+        self.log_handler.assertContains('WARNING', 'skipping subplot')
 
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +

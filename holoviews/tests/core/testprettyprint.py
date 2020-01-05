@@ -36,6 +36,7 @@ class PrettyPrintTest(ComparisonTestCase):
 class PrettyPrintOptionsTest(CustomBackendTestCase):
 
     def setUp(self):
+        super(PrettyPrintOptionsTest, self).setUp()
         self.current_backend = Store.current_backend
         self.pprinter = PrettyPrinter(show_options=True)
         self.register_custom(TestObj, 'backend_1', ['plot_custom1'], ['style_custom1'])

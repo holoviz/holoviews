@@ -15,18 +15,21 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element import Image, RGB, HSV, QuadMesh
 
 from .testimageinterface import (
-    Image_ImageInterfaceTests, RGB_ImageInterfaceTests, HSV_ImageInterfaceTests
+    BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
+    BaseHSVElementInterfaceTests
 )
-from .testgridinterface import GridInterfaceTests
+from .testgridinterface import BaseGridInterfaceTests
 
 
-class XArrayInterfaceTests(GridInterfaceTests):
+class XArrayInterfaceTests(BaseGridInterfaceTests):
     """
     Tests for xarray interface
     """
 
     datatype = 'xarray'
     data_type = xr.Dataset
+
+    __test__ = True
 
     def get_irregular_dataarray(self, invert_y=True):
         multiplier = -1 if invert_y else 1
@@ -296,10 +299,12 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
 
 
 
-class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
+class ImageElement_XArrayInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'xarray'
     data_type = xr.Dataset
+
+    __test__ = True
 
     def init_data(self):
         self.image = Image((self.xs, self.ys, self.array))
@@ -363,29 +368,35 @@ class Image_XArrayInterfaceTests(Image_ImageInterfaceTests):
             Image(xrarr, kdims=['x', 'y'])
 
 
-class RGB_XArrayInterfaceTests(RGB_ImageInterfaceTests):
+class RGBElement_XArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
     data_type = xr.Dataset
+
+    __test__ = True
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
-class RGB_PackedXArrayInterfaceTests(RGB_ImageInterfaceTests):
+class RGBElement_PackedXArrayInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'xarray'
     data_type = xr.Dataset
+
+    __test__ = True
 
     def init_data(self):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array))
-        
 
-class HSV_XArrayInterfaceTest(HSV_ImageInterfaceTests):
+
+class HSVElement_XArrayInterfaceTest(BaseHSVElementInterfaceTests):
 
     datatype = 'xarray'
     data_type = xr.Dataset
+
+    __test__ = True
 
     def init_data(self):
         self.hsv = HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
