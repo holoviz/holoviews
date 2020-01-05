@@ -423,6 +423,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_height, 200)
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.aspect_ratio, None)
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_height(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400)
@@ -432,6 +433,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_height, 400)
         self.assertEqual(plot.state.frame_width, 800)
         self.assertEqual(plot.state.aspect_ratio, None)
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_width_height(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400, width=400)
@@ -488,6 +490,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_height, 400)
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.aspect_scale, 2)
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_height(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400)
@@ -497,6 +500,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_height, 400)
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.aspect_scale, 2)
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_width_height(self):
         curve = Curve([0, 2, 3]).opts(data_aspect=2, height=400, width=400)
@@ -604,6 +608,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_height, 200)
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_aspect_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(aspect=2, height=400, responsive=True)
@@ -614,6 +619,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.plot_height, None)
         self.assertEqual(plot.state.plot_width, None)
         self.assertEqual(plot.state.sizing_mode, 'fixed')
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_width_height_responsive(self):
         curve = Curve([1, 2, 3]).opts(height=400, width=400, responsive=True)
@@ -678,6 +684,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.sizing_mode, 'fixed')
         self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_height_responsive(self):
         curve = Curve([0, 0.5, 1, 1.5]).opts(data_aspect=2, height=400, responsive=True)
@@ -686,6 +693,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(plot.state.frame_width, 400)
         self.assertEqual(plot.state.sizing_mode, 'fixed')
         self.log_handler.assertContains('WARNING', "responsive mode could not be enabled")
+        self.log_handler.assertContains('WARNING', "uses those values as frame_width/frame_height instead")
 
     def test_element_data_aspect_frame_width_responsive(self):
         curve = Curve([1, 2, 3]).opts(data_aspect=2, frame_width=400, responsive=True)
