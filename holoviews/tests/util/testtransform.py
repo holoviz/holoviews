@@ -270,7 +270,7 @@ class TestDimTransforms(ComparisonTestCase):
 
     def test_digitize(self):
         expr = dim('int').digitize([1, 5, 10])
-        expected = pd.Series(np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3], dtype='int'))
+        expected = pd.Series(np.array([1, 1, 1, 1, 2, 2, 2, 2, 2, 3])).astype('int64')
         self.check_apply(expr, expected)
 
     def test_isin(self):
