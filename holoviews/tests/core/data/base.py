@@ -296,10 +296,6 @@ class HomogeneousColumnTests(object):
     def test_dataset_index_column_ht(self):
         self.compare_arrays(self.dataset_hm['y'], self.y_ints)
 
-    def test_dataset_array_ht(self):
-        self.assertEqual(self.dataset_hm.array(),
-                         np.column_stack([self.xs, self.y_ints]))
-
     # Tabular indexing
 
     def test_dataset_iloc_slice_rows(self):
@@ -383,10 +379,6 @@ class HomogeneousColumnTests(object):
         table = Dataset({'x':self.xs,  'y':self.y_ints},
                         kdims=['x'], vdims=['y'], datatype=['dictionary'])
         self.assertEqual(sliced, table)
-
-    def test_dataset_get_array(self):
-        arr = self.dataset_hm.array()
-        self.assertEqual(arr, np.column_stack([self.xs, self.y_ints]))
 
     def test_dataset_get_array_by_dimension(self):
         arr = self.dataset_hm.array(['x'])

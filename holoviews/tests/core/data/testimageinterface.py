@@ -58,6 +58,8 @@ class BaseImageElementInterfaceTests(InterfaceTests):
     Tests for ImageInterface
     """
 
+    element = Image
+
     __test__ = False
 
     def init_grid_data(self):
@@ -322,13 +324,14 @@ class BaseImageElementInterfaceTests(InterfaceTests):
 class ImageElement_ImageInterfaceTests(BaseImageElementInterfaceTests):
 
     datatype = 'image'
-    element = Image
     data_type = np.ndarray
 
     __test__ = True
 
 
 class BaseRGBElementInterfaceTests(InterfaceTests):
+
+    element = RGB
 
     __test__ = False
 
@@ -458,12 +461,13 @@ class BaseRGBElementInterfaceTests(InterfaceTests):
 class RGBElement_ImageInterfaceTests(BaseRGBElementInterfaceTests):
 
     datatype = 'image'
-    element = RGB
 
     __test__ = True
 
 
 class BaseHSVElementInterfaceTests(InterfaceTests):
+
+    element = HSV
 
     __test__ = False
 
@@ -485,10 +489,8 @@ class BaseHSVElementInterfaceTests(InterfaceTests):
         self.assertEqual(B[0, 0], 0)
 
 
-
 class HSVElement_ImageInterfaceTests(BaseHSVElementInterfaceTests):
 
     datatype = 'image'
-    element = HSV
 
     __test__ = True

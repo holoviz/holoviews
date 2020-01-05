@@ -309,6 +309,14 @@ class DaskGridInterfaceTests(GridInterfaceTests):
             (self.grid_xs[::-1], self.grid_ys[::-1], self.grid_zs), ['x', 'y'], ['z']
         )
 
+    def test_dataset_array_hm(self):
+        self.assertEqual(self.dataset_hm.array(),
+                         np.column_stack([self.xs, self.y_ints.compute()]))
+
+    def test_dataset_array_hm_alias(self):
+        self.assertEqual(self.dataset_hm_alias.array(),
+                         np.column_stack([self.xs, self.y_ints.compute()]))
+
     def test_select_lazy(self):
         import dask.array as da
         arr = da.from_array(np.arange(1, 12), 3)
