@@ -86,6 +86,8 @@ class HomogeneousColumnTests(object):
     type (e.g numpy arrays)
     """
 
+    __test__ = False
+
     def init_column_data(self):
         self.xs = np.array(range(11))
         self.xs_2 = self.xs**2
@@ -407,6 +409,8 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
     Tests for data formats that allow dataset to have varied types
     """
+
+    __test__ = False
 
     def init_column_data(self):
         self.kdims = ['Gender', 'Age']
@@ -851,6 +855,8 @@ class ScalarColumnTests(object):
     types.
     """
 
+    __test__ = False
+
     def test_dataset_scalar_constructor(self):
         ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
         self.assertEqual(ds.dimension_values('A'), np.ones(10))
@@ -908,6 +914,8 @@ class GriddedInterfaceTests(object):
     """
     Tests for the grid interfaces
     """
+
+    __test__ = False
 
     def init_grid_data(self):
         self.grid_xs = np.array([0, 1])

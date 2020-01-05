@@ -25,6 +25,8 @@ class PandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     datatype = 'dataframe'
     data_type = pd.DataFrame
 
+    __test__ = True
+
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':
