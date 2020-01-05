@@ -106,7 +106,7 @@ class TestOptsUtil(LoggingComparisonTestCase):
         self.assertEqual(
              Store.lookup_options('matplotlib',
                                   mat1, 'style').options.get('cmap',None),'hot')
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature is deprecated')
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_cell_opts_util_plot(self):
 
@@ -118,7 +118,7 @@ class TestOptsUtil(LoggingComparisonTestCase):
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'plot').options.get('show_title',True), False)
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature is deprecated')
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_cell_opts_util_norm(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
@@ -129,7 +129,7 @@ class TestOptsUtil(LoggingComparisonTestCase):
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'norm').options.get('axiswise',True), True)
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature is deprecated')
+        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
 
     def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
