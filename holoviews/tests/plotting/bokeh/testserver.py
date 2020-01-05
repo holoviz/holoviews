@@ -53,6 +53,7 @@ class TestBokehServerSetup(ComparisonTestCase):
             Renderer.notebook_context = self.nbcontext
         state.curdoc = None
         curdoc().clear()
+        time.sleep(1)
 
     def test_render_server_doc_element(self):
         obj = Curve([])
