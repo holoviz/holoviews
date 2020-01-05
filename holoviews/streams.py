@@ -760,14 +760,6 @@ class ParamMethod(Params):
 
 
 
-
-# Backward compatibility
-def ParamValues(*args, **kwargs):
-    param.main.param.warning('ParamValues stream is deprecated, use Params stream instead.')
-    kwargs['watch'] = False
-    return Params(*args, **kwargs)
-
-
 class SelectionExpr(Stream):
 
     selection_expr = param.Parameter(default=None, constant=True)

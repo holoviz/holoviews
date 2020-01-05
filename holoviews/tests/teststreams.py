@@ -144,44 +144,6 @@ class TestPointerStreams(ComparisonTestCase):
             self.assertEqual(str(e), "Constant parameter 'y' cannot be modified")
 
 
-class TestParamValuesStream(ComparisonTestCase):
-
-    def setUp(self):
-
-        class Inner(param.Parameterized):
-
-            x = param.Number(default = 0)
-            y = param.Number(default = 0)
-
-        self.inner = Inner
-
-    def tearDown(self):
-        self.inner.x = 0
-        self.inner.y = 0
-
-    def test_object_contents(self):
-        obj = self.inner()
-        stream = ParamValues(obj)
-        self.assertEqual(stream.contents, {'x':0, 'y':0})
-
-    def test_class_value(self):
-        stream = ParamValues(self.inner)
-        self.assertEqual(stream.contents, {'x':0, 'y':0})
-
-    def test_object_value_update(self):
-        obj = self.inner()
-        stream = ParamValues(obj)
-        self.assertEqual(stream.contents, {'x':0, 'y':0})
-        stream.event(x=5, y=10)
-        self.assertEqual(stream.contents, {'x':5, 'y':10})
-
-    def test_class_value_update(self):
-        stream = ParamValues(self.inner)
-        self.assertEqual(stream.contents, {'x':0, 'y':0})
-        stream.event(x=5, y=10)
-        self.assertEqual(stream.contents, {'x':5, 'y':10})
-
-
 
 class TestParamsStream(LoggingComparisonTestCase):
 
