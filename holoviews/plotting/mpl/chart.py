@@ -13,8 +13,7 @@ from ...core.dimension import Dimension
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
     OrderedDict, match_spec, unique_iterator, basestring, isfinite,
-    dt_to_int, dt64_to_dt, search_indices, unique_array, isscalar,
-    isdatetime
+    dt_to_int, dt64_to_dt, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -998,6 +997,12 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
                 cols.append(vs)
             clean_spikes.append(np.column_stack(cols))
 
+        if 'spike_length' in opts:
+            axis_dims =  (element.dimensions()[0], None)
+        elif len(element.dimensions()) == 1:
+            axis_dims =  (element.dimensions()[0], None)
+        else:
+            axis_dims =  (element.dimensions()[0], element.dimensions()[1])
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
 

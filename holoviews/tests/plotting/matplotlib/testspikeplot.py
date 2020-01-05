@@ -4,7 +4,6 @@ from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Spikes
 
-from ..utils import ParamLogStream
 from .testplot import TestMPLPlot, mpl_renderer
 
 

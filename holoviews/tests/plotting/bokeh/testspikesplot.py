@@ -6,7 +6,6 @@ from holoviews.element import Spikes
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 

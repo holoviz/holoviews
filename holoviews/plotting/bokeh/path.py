@@ -12,7 +12,7 @@ from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, validate)
-from .util import bokeh_version, multi_polygons_data
+from .util import multi_polygons_data
 
 
 class PathPlot(LegendPlot, ColorbarPlot):

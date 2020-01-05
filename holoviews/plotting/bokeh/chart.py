@@ -24,7 +24,7 @@ from ..util import get_min_distance, get_axis_padding
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
-from .util import bokeh_version, categorize_array
+from .util import categorize_array
 
 
 class PointPlot(LegendPlot, ColorbarPlot):

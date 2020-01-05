@@ -4,7 +4,6 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element import VectorField
 
 from .testplot import TestMPLPlot, mpl_renderer
-from ..utils import ParamLogStream
 
 
 class TestVectorFieldPlot(TestMPLPlot):

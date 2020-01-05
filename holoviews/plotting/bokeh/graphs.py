@@ -9,7 +9,7 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
 
 from ...core.data import Dataset
 from ...core.options import abbreviated_exception
-from ...core.util import basestring, dimension_sanitizer, max_range
+from ...core.util import basestring, dimension_sanitizer
 from ...util.transform import dim
 from ..mixins import ChordMixin
 from ..util import get_directed_graph_paths

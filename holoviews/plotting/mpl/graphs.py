@@ -7,7 +7,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import abbreviated_exception
-from ...core.util import basestring, max_range, is_number, isscalar
+from ...core.util import basestring, is_number, isscalar
 from ...util.transform import dim
 from ..mixins import ChordMixin
 from ..util import get_directed_graph_paths
