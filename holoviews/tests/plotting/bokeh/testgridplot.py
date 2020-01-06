@@ -65,7 +65,7 @@ class TestGridPlot(TestBokehPlot):
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        self.assertEqual(size, (311, 305))
+        self.assertEqual(size, (318, 310))
 
     def test_grid_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)

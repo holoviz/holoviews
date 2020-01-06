@@ -1915,6 +1915,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super(OverlayPlot, self)._process_legend()
+        elif not plot.legend:
+            return
+
+        legend = plot.legend[0]
 
         options = {}
         properties = self.lookup_options(self.hmap.last, 'style')[self.cyclic_index]
@@ -1928,29 +1932,24 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 k = k[7:]
             options[k] = v
 
-        if not plot.legend:
-            return
-
-        pos = self.legend_position
         orientation = 'horizontal' if self.legend_cols else 'vertical'
         if pos in ['top', 'bottom']:
             orientation = 'horizontal'
+        options['orientation'] = orientation
+
+        if overlay is not None and overlay.kdims:
+            title = ', '.join([d.label for d in overlay.kdims])
+            options['title'] = title
 
         options.update(self._fontsize('legend', 'label_text_font_size'))
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
-        legend = plot.legend[0]
-        dimensions = overlay.kdims
-        title = ', '.join([d.label for d in dimensions])
-        if title:
-            options['title'] = title
         legend.update(**options)
 
+        pos = self.legend_position
         if pos in self.legend_specs:
             pos = self.legend_specs[pos]
         else:
             legend.location = pos
-
-        legend.orientation = orientation
 
         if 'legend_items' not in self.handles:
             self.handles['legend_items'] = []
@@ -2229,5 +2228,4 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._set_active_tools(plot)
 
         self._process_legend(element)
-
         self._execute_hooks(element)
