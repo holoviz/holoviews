@@ -8,7 +8,6 @@ try:
 except:
     pass
 
-from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 

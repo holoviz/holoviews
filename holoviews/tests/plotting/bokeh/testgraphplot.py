@@ -7,7 +7,7 @@ from holoviews.util.transform import dim
 
 try:
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, Patches)
-    from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
+    from bokeh.models.mappers import CategoricalColorMapper
 except:
     pass
 

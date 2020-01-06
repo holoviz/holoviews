@@ -27,7 +27,7 @@ from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph, Contours
+from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
