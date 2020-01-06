@@ -266,6 +266,8 @@ class SpreadPlot(AreaPlot):
         super(SpreadPlot, self).__init__(element, **params)
 
     def get_data(self, element, ranges, style):
+        with abbreviated_exception():
+            style = self._apply_transforms(element, ranges, style)
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
