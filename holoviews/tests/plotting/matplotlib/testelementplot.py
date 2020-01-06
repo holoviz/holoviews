@@ -21,6 +21,13 @@ class TestElementPlot(TestMPLPlot):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
 
+    def test_element_hooks(self):
+        def hook(plot, element):
+            plot.handles['title'].set_text('Called')
+        curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
+        plot = mpl_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['title'].get_text(), 'Called')
+
     def test_element_xlabel(self):
         element = Curve(range(10)).options(xlabel='custom x-label')
         axes = mpl_renderer.get_plot(element).handles['axis']

@@ -880,6 +880,11 @@ class GenericElementPlot(DimensionedPlot):
         0 a default_span of 2.0 will result in axis ranges spanning
         from -1 to 1.""")
 
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a plot. The
+        hook is passed the plot object and the displayed element, and
+        other plotting handles can be accessed via plot.handles.""")
+
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
 
@@ -888,6 +893,9 @@ class GenericElementPlot(DimensionedPlot):
 
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
+
+    finalize_hooks = param.HookList(default=[], doc="""
+        Deprecated; use hooks options instead.""")
 
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
@@ -1093,6 +1101,10 @@ class GenericElementPlot(DimensionedPlot):
             self.param.warning(
                 "Supply either hooks or finalize_hooks not both, "
                 "using hooks and ignoring finalize_hooks.")
+        elif self.finalize_hooks:
+            self.param.warning(
+                "The finalize_hooks option is deprecated, use the "
+                "hooks option instead.")
         hooks = self.hooks or self.finalize_hooks
         for hook in hooks:
             try:

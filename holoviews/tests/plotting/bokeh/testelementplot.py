@@ -113,6 +113,13 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         title = 'Label: the_label, group: the_group, dims: , type: Scatter'
         self.assertEqual(render(e).title.text, title)
 
+    def test_element_hooks(self):
+        def hook(plot, element):
+            plot.handles['plot'].title.text = 'Called'
+        curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.title.text, 'Called')
+
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).options(xformatter='%d')
         plot = bokeh_renderer.get_plot(curve)

@@ -108,14 +108,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     responsive = param.ObjectSelector(default=False, objects=[False, True, 'width', 'height'])
 
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
-    hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing a plot. The
-        hook is passed the plot object and the displayed element, and
-        other plotting handles can be accessed via plot.handles.""")
-
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
