@@ -25,6 +25,13 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['x'], np.arange(10))
         self.assertEqual(state['data'][0]['y'], np.arange(10, 20))
 
+    def test_element_hooks(self):
+        def hook(plot, element):
+            plot.state['layout']['title'] = 'Called'
+        curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
+        plot = plotly_renderer.get_plot(curve)
+        self.assertEqual(plot.state['layout']['title'], 'Called')
+
     ### Axis labelling ###
         
     def test_element_plot_xlabel(self):

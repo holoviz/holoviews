@@ -181,15 +181,15 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         for k in ['images', 'shapes', 'annotations']:
             layout.setdefault(k, [])
             layout[k].extend(components.get(k, []))
-
         self.handles['layout'] = layout
 
         # Create figure and return it
-        self.drawn = True
         fig = dict(data=components['traces'], layout=layout)
-
-
         self.handles['fig'] = fig
+
+        self._execute_hooks(element)
+        self.drawn = True
+
         return fig
 
 
