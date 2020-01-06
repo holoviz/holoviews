@@ -289,3 +289,10 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hm)
         self.assertIsInstance(plot.handles.get('colorbar'), ColorBar)
 
+    def test_radial_heatmap_ranges(self):
+        hm = HeatMap([(0, 0, 1), (0, 1, 2), (1, 0, 3)]).options(radial=True, colorbar=True)
+        plot = bokeh_renderer.get_plot(hm)
+        self.assertEqual(plot.handles['x_range'].start, -0.05)
+        self.assertEqual(plot.handles['x_range'].end, 1.05)
+        self.assertEqual(plot.handles['y_range'].start, -0.05)
+        self.assertEqual(plot.handles['y_range'].end, 1.05)

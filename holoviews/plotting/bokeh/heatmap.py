@@ -231,6 +231,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                   ['annular_' + p for p in fill_properties + line_properties] + \
                   ['ticks_' + p for p in text_properties] + ['cmap'])
 
+
     def __init__(self, *args, **kwargs):
         super(RadialHeatMapPlot, self).__init__(*args, **kwargs)
         self.xaxis = None
@@ -288,6 +289,10 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         lower = -self.radius_outer
         upper = 2 * self.max_radius + self.radius_outer
         return (lower, lower, upper, upper)
+
+
+    def _get_axis_dims(self, element):
+        return (None, None)
 
 
     def _axis_properties(self, *args, **kwargs):
