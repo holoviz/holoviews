@@ -1036,7 +1036,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         """
         legend_data = []
         dimensions = overlay.kdims
-        title = ', '.join([d.name for d in dimensions])
+        title = ', '.join([d.label for d in dimensions])
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue

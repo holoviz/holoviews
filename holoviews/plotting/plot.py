@@ -552,6 +552,8 @@ class DimensionedPlot(Plot):
             size = fontsize.get('minor_ticks', defaults.get('minor_ticks'))
         elif key == 'legend':
             size = defaults.get('legend')
+        elif key == 'legend_title':
+            size = defaults.get('legend_title')
         elif key == 'title':
             size = defaults.get('title')
 
