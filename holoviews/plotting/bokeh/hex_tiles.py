@@ -143,7 +143,7 @@ class HexTilesPlot(ColorbarPlot):
         scale = ysize/xsize
 
         data = {'q': q, 'r': r}
-        cdata, cmapping = self._get_color_data(element, ranges, style)
+        cdata, cmapping = self._get_color_data(element, ranges, style, element.vdims[0])
         data.update(cdata)
         mapping.update(cmapping)
         if self.min_count is not None and self.min_count <= 0:

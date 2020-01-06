@@ -753,12 +753,12 @@ class TestColorbarPlot(TestBokehPlot):
     def test_explicit_categorical_cmap_on_integer_data(self):
         explicit_mapping = OrderedDict([(0, 'blue'), (1, 'red'), (2, 'green'), (3, 'purple')])
         points = Scatter(([0, 1, 2, 3], [0, 1, 2, 3], [0, 1, 2, 3]), vdims=['y', 'Category']).options(
-            color_index='Category', cmap=explicit_mapping
+            color='Category', cmap=explicit_mapping
         )
         plot = bokeh_renderer.get_plot(points)
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles['color_color_mapper']
         cds = plot.handles['cds']
-        self.assertEqual(cds.data['Category_str__'], ['0', '1', '2', '3'])
+        self.assertEqual(cds.data['color_str__'], ['0', '1', '2', '3'])
         self.assertEqual(cmapper.factors, ['0', '1', '2', '3'])
         self.assertEqual(cmapper.palette, ['blue', 'red', 'green', 'purple'])
 

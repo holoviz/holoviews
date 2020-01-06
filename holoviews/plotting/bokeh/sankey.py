@@ -124,7 +124,7 @@ class SankeyPlot(GraphPlot):
 
         if labels is None:
             text = []
-        if isinstance(labels, dim):
+        elif isinstance(labels, dim):
             text = labels.apply(element, flat=True)
         else:
             text = element.nodes.dimension_values(labels)
@@ -195,7 +195,7 @@ class SankeyPlot(GraphPlot):
         """
         Replace edge start and end hover data with label_index data.
         """
-        if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
+        if not (self.inspection_policy == 'edges' and 'hover' in self.handles) or self.labels is None:
             return
         lidx = element.nodes.get_dimension(self.labels)
         src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]

@@ -26,13 +26,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
     _batched_style_opts = line_properties
 
     def _hover_opts(self, element):
-        cdim = element.get_dimension(self.color_index)
         if self.batched:
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
         else:
             dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
-        if cdim not in dims and cdim is not None:
-            dims.append(cdim)
         return dims, {}
 
 
@@ -77,18 +74,9 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim and self.color_index is not None:
-            dim_name = util.dimension_sanitizer(cdim.name)
-            cmapper = self._get_colormapper(cdim, element, ranges, style)
-            mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
-            vals[dim_name] = []
 
         xpaths, ypaths = [], []
         for path in element.split():
-            if cdim and self.color_index is not None:
-                scalar = path.interface.isunique(path, cdim, per_geom=True)
-                cvals = path.dimension_values(cdim, not scalar)
-                vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
             alen = len(xs)

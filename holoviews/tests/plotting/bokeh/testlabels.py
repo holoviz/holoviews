@@ -138,13 +138,3 @@ class TestLabelsPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(cds.data['text_font_size'], ['10pt', '4pt', '8pt'])
         self.assertEqual(glyph.text_font_size, {'field': 'text_font_size'})
-
-    def test_labels_color_index_color_clash(self):
-        labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(text_color='color', color_index='color')        
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(labels)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'text_color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)

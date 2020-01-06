@@ -261,33 +261,6 @@ class TestBokehTriMeshPlot(TestBokehPlot):
         layout = {str(int(z)): (x, y) for x, y, z in self.trimesh.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
 
-    def test_trimesh_edges_categorical_colormapped(self):
-        g = self.trimesh.opts(plot=dict(edge_color_index='node1'),
-                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        print(plot.handles)
-        cmapper = plot.handles['edge_colormapper']
-        edge_source = plot.handles['multi_line_1_source']
-        glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        factors = ['0', '1', '2', '3']
-        self.assertEqual(cmapper.factors, factors)
-        self.assertEqual(edge_source.data['node1_str__'], ['0', '1'])
-        self.assertEqual(glyph.line_color, {'field': 'node1_str__', 'transform': cmapper})
-
-    def test_trimesh_nodes_numerically_colormapped(self):
-        g = self.trimesh_weighted.opts(plot=dict(edge_color_index='weight'),
-                                       style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['edge_colormapper']
-        edge_source = plot.handles['multi_line_1_source']
-        glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, LinearColorMapper)
-        self.assertEqual(cmapper.low, 0)
-        self.assertEqual(cmapper.high, 1)
-        self.assertEqual(edge_source.data['weight'], np.array([0, 1]))
-        self.assertEqual(glyph.line_color, {'field': 'weight', 'transform': cmapper})
-
     ###########################
     #    Styling mapping      #
     ###########################
@@ -478,24 +451,8 @@ class TestBokehChordPlot(TestBokehPlot):
         source = plot.handles['text_1_source']
         self.assertEqual(source.data['text'], ['A', 'B', 'C'])
 
-    def test_chord_nodes_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(color_index='Label', label_index='Label'),
-                            style=dict(cmap=['#FFFFFF', '#888888', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['color_mapper']
-        source = plot.handles['scatter_1_source']
-        arc_source = plot.handles['multi_line_2_source']
-        glyph = plot.handles['scatter_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
-        self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
-        self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
-        self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
-        self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
-
     def test_chord_nodes_style_map_node_color_colormapped(self):
-        g = self.chord.opts(plot=dict(labels='Label'),
-                            style=dict(node_color='Label', cmap=['#FFFFFF', '#888888', '#000000']))
+        g = self.chord.opts(labels='Label', node_color='Label', cmap=['#FFFFFF', '#888888', '#000000'])
         plot = bokeh_renderer.get_plot(g)
         cmapper = plot.handles['node_color_color_mapper']
         source = plot.handles['scatter_1_source']
@@ -510,21 +467,8 @@ class TestBokehChordPlot(TestBokehPlot):
         self.assertEqual(glyph.fill_color, {'field': 'node_color', 'transform': cmapper})
         self.assertEqual(arc_glyph.line_color, {'field': 'node_color', 'transform': cmapper})
 
-    def test_chord_edges_categorically_colormapped(self):
-        g = self.chord.opts(plot=dict(edge_color_index='start'),
-                            style=dict(edge_cmap=['#FFFFFF', '#000000']))
-        plot = bokeh_renderer.get_plot(g)
-        cmapper = plot.handles['edge_colormapper']
-        edge_source = plot.handles['multi_line_1_source']
-        glyph = plot.handles['multi_line_1_glyph']
-        self.assertIsInstance(cmapper, CategoricalColorMapper)
-        self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
-        self.assertEqual(cmapper.factors, ['0', '1', '2'])
-        self.assertEqual(edge_source.data['start_str__'], ['0', '0', '1'])
-        self.assertEqual(glyph.line_color, {'field': 'start_str__', 'transform': cmapper})
-
     def test_chord_edge_color_style_mapping(self):
-        g = self.chord.opts(style=dict(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']))
+        g = self.chord.opts(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000'])
         plot = bokeh_renderer.get_plot(g)
         cmapper = plot.handles['edge_color_color_mapper']
         edge_source = plot.handles['multi_line_1_source']

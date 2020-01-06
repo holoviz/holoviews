@@ -116,4 +116,5 @@ class TestHexTilesPlot(TestBokehPlot):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(scale='Count')
         plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
         source = plot.handles['source']
+        print(source.data)
         self.assertEqual(source.data['scale'], np.array([0.9, 0.9, 0.9, 0.9]))

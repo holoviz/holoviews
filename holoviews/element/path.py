@@ -242,7 +242,7 @@ class Contours(Path):
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
         super(Contours, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-        all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
+        all_scalar = all(self.interface.isunique(self, vdim, per_geom=True) for vdim in self.vdims)
         if not all_scalar:
             raise ValueError("All value dimensions on a Contours element must be scalar")
 
