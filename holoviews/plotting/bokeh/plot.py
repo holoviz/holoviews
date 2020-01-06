@@ -8,7 +8,7 @@ import param
 
 from bokeh.layouts import gridplot
 from bokeh.models import (
-    ColumnDataSource, Column, Row, Div, Title, Legend, Axis
+    ColumnDataSource, Column, Row, Div, Title, Legend, Axis, ColorBar
 )
 from bokeh.models.widgets import Panel, Tabs
 
@@ -197,6 +197,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             'legend': get_default(Legend, 'label_text_font_size', theme),
             'label': get_default(Axis, 'axis_label_text_font_size', theme),
             'ticks': get_default(Axis, 'major_label_text_font_size', theme),
+            'cticks': get_default(ColorBar, 'major_label_text_font_size', theme),
+            'clabel': get_default(ColorBar, 'title_text_font_size', theme)
         }
         processed = dict(defaults)
         for k, v in defaults.items():

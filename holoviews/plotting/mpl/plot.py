@@ -188,8 +188,7 @@ class MPLPlot(DimensionedPlot):
         for k, v in sizes.items():
             if isinstance(v, str):
                 scaled[k] = base * font_scalings[v]
-        if sizes['xticks'] == sizes['yticks']:
-            scaled['ticks'] = scaled['xticks']
+        scaled['ticks'] = scaled['xticks']
         return scaled
 
 

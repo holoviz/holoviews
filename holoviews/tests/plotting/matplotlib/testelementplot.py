@@ -28,6 +28,40 @@ class TestElementPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(curve)
         self.assertEqual(plot.handles['title'].get_text(), 'Called')
 
+    def test_element_font_scaling(self):
+        curve = Curve(range(10)).options(fontscale=2, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        fig = plot.state
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 24)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 20)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
+    def test_element_font_scaling_fontsize_override_common(self):
+        curve = Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        fig = plot.state
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 28)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 28)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 28)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 20)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
+    def test_element_font_scaling_fontsize_override_specific(self):
+        curve = Curve(range(10)).options(
+            fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        fig = plot.state
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 32)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 12)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 24)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
     def test_element_xlabel(self):
         element = Curve(range(10)).options(xlabel='custom x-label')
         axes = mpl_renderer.get_plot(element).handles['axis']

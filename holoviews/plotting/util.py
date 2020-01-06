@@ -1,11 +1,11 @@
 from __future__ import unicode_literals, absolute_import, division
 
-from collections import defaultdict, namedtuple
-
 import re
 import traceback
 import warnings
 import bisect
+
+from collections import defaultdict, namedtuple
 
 import numpy as np
 import param
@@ -967,6 +967,28 @@ def dim_axis_label(dimensions, separator=', '):
     """
     if not isinstance(dimensions, list): dimensions = [dimensions]
     return separator.join([d.pprint_label for d in dimensions])
+
+
+def scale_fontsize(size, scaling):
+    """
+    Scales a numeric or string font size.
+    """
+    ext = None
+    if isinstance(size, str):
+        match = re.match(r"[-+]?\d*\.\d+|\d+", size)
+        if match:
+            value = match.group()
+            ext = size.replace(value, '')
+            size = float(value)
+        else:
+            return size
+
+    if scaling:
+        size = size * scaling
+
+    if ext is not None:
+        size = ('%.3f' % size).rstrip('0').rstrip('.') + ext
+    return size
 
 
 def attach_streams(plot, obj, precedence=1.1):

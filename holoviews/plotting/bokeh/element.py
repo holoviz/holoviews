@@ -1932,6 +1932,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 k = k[7:]
             options[k] = v
 
+        pos = self.legend_position
         orientation = 'horizontal' if self.legend_cols else 'vertical'
         if pos in ['top', 'bottom']:
             orientation = 'horizontal'
@@ -1945,7 +1946,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         options.update(self._fontsize('legend_title', 'title_text_font_size'))
         legend.update(**options)
 
-        pos = self.legend_position
         if pos in self.legend_specs:
             pos = self.legend_specs[pos]
         else:
