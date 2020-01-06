@@ -114,7 +114,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
-        self._compute_styles(element, ranges, style)
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
         if style.get('edgecolors') == 'none':

@@ -40,9 +40,9 @@ class TestPointPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
         self.assertEqual(plot.handles['cbar'].extend, 'max')
 
-    def test_points_cbar_extend_clime(self):
-        img = Points(([0, 1], [0, 3])).opts(style=dict(clim=(None, None)))
-        plot = mpl_renderer.get_plot(img.opts(colorbar=True, color='y'))
+    def test_points_cbar_extend_clim(self):
+        img = Points(([0, 1], [0, 3])).opts(colorbar=True, color='y', clim=(None, None))
+        plot = mpl_renderer.get_plot(img)
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
 
     def test_points_rcparams_do_not_persist(self):

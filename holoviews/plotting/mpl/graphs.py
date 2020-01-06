@@ -179,11 +179,9 @@ class TriMeshPlot(GraphPlot):
 
     def get_data(self, element, ranges, style):
         edge_color = style.get('edge_color')
-        if edge_color not in element.nodes:
-            edge_color = self.edge_color_index
         simplex_dim = element.get_dimension(edge_color)
         vertex_dim = element.nodes.get_dimension(edge_color)
-        if not isinstance(self.edge_color_index, int) and vertex_dim and not simplex_dim:
+        if vertex_dim and not simplex_dim:
             simplices = element.array([0, 1, 2])
             z = element.nodes.dimension_values(vertex_dim)
             z = z[simplices].mean(axis=1)
