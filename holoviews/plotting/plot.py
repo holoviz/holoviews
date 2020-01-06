@@ -6,6 +6,7 @@ of this Plot baseclass.
 from __future__ import absolute_import
 
 import threading
+import re
 import warnings
 
 from itertools import groupby, product
@@ -346,6 +347,9 @@ class DimensionedPlot(Plot):
        You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
        together using the 'labels' key.""")
 
+    fontscale = param.Number(default=None, doc="""
+       Scales the size of all fonts.""")
+
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'clabel', 'labels',
                       'xticks', 'yticks', 'zticks', 'cticks', 'ticks',
@@ -508,28 +512,76 @@ class DimensionedPlot(Plot):
         return (self.label, self.group, type(self).__name__, '')
 
 
+    def _get_fontsize_defaults(self):
+        """
+        Must returns default fontsize for the following objects:
+
+            * ticks
+            * minor_ticks
+            * label
+            * title
+            * legend
+            * legend_title
+        """
+        return {}
+
+
     def _fontsize(self, key, label='fontsize', common=True):
-        if not self.fontsize: return {}
+        if not self.fontsize and not self.fontscale: return {}
 
-        if not isinstance(self.fontsize, dict):
-            return {label:self.fontsize} if common else {}
+        if not isinstance(self.fontsize, dict) and self.fontsize is not None and common:
+            size = self.fontsize*self.fontscale if self.fontscale else self.fontsize 
+            return {label: size}
 
-        unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
+        fontsize = self.fontsize if isinstance(self.fontsize, dict) else {}
+        unknown_keys = set(fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
-            for key in unknown_keys: self.fontsize.pop(key, None)
+            for key in unknown_keys: fontsize.pop(key, None)
 
-        if key in self.fontsize:
-            return {label:self.fontsize[key]}
-        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel'] and 'labels' in self.fontsize:
-            return {label:self.fontsize['labels']}
-        elif key in ['xticks', 'yticks', 'zticks', 'cticks'] and 'ticks' in self.fontsize:
-            return {label:self.fontsize['ticks']}
-        elif key in ['minor_xticks', 'minor_yticks'] and 'minor_ticks' in self.fontsize:
-            return {label:self.fontsize['minor_ticks']}
-        else:
+        defaults = self._get_fontsize_defaults()
+        size = None
+        if key in fontsize:
+            size = fontsize[key]
+        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel']:
+            size = fontsize.get('labels', defaults.get('label'))
+        elif key in ['xticks', 'yticks', 'zticks', 'cticks']:
+            size = fontsize.get('ticks', defaults.get('ticks'))
+        elif key in ['minor_xticks', 'minor_yticks']:
+            size = fontsize.get('minor_ticks', defaults.get('minor_ticks'))
+        elif key == 'legend':
+            size = defaults.get('legend')
+        elif key == 'title':
+            size = defaults.get('title')
+
+        if size is None:
             return {}
+
+        ext = None
+        if isinstance(size, str):
+            match = re.match(r"[-+]?\d*\.\d+|\d+", size)
+            if match:
+                value = match.group()
+                if '.' in value:
+                    stype = '%.3f'
+                else:
+                    stype = '%d'
+                ext = size.replace(value, stype)
+                size = float(value)
+            else:
+                return size
+
+        print(self.fontscale)
+        if self.fontscale:
+            size = size * self.fontscale
+
+        if ext is not None:
+            size = ext % size
+        
+        print(key, size)
+            
+        return {label: size}
 
 
     def compute_ranges(self, obj, key, ranges):

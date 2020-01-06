@@ -7,7 +7,9 @@ import numpy as np
 import param
 
 from bokeh.layouts import gridplot
-from bokeh.models import (ColumnDataSource, Column, Row, Div)
+from bokeh.models import (
+    ColumnDataSource, Column, Row, Div, Title, Legend, Axis
+)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...selection import NoOpSelectionDisplay
@@ -30,7 +32,9 @@ from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (
     TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
-    empty_plot, decode_bytes, theme_attr_json, cds_column_replace)
+    empty_plot, decode_bytes, theme_attr_json, cds_column_replace,
+    get_default
+)
 
 
 class BokehPlot(DimensionedPlot, CallbackPlot):
@@ -183,6 +187,22 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         should be updated.
         """
         return []
+
+
+    def _get_fontsize_defaults(self):
+        theme = self.renderer.theme
+        defaults = {
+            'title': get_default(Title, 'text_font_size', theme),
+            'legend_title': get_default(Legend, 'title_text_font_size', theme),
+            'legend': get_default(Legend, 'label_text_font_size', theme),
+            'label': get_default(Axis, 'axis_label_text_font_size', theme),
+            'ticks': get_default(Axis, 'major_label_text_font_size', theme),
+        }
+        processed = dict(defaults)
+        for k, v in defaults.items():
+            if isinstance(v, dict) and 'value' in v:
+                processed[k] = v['value']
+        return processed
 
 
     def cleanup(self):

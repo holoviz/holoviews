@@ -1902,7 +1902,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive']
+                          'frame_height', 'responsive', 'fontscale']
 
     def _process_legend(self):
         plot = self.handles['plot']
