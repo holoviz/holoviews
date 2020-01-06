@@ -574,14 +574,11 @@ class DimensionedPlot(Plot):
             else:
                 return size
 
-        print(self.fontscale)
         if self.fontscale:
             size = size * self.fontscale
 
         if ext is not None:
             size = ext % size
-        
-        print(key, size)
             
         return {label: size}
 
