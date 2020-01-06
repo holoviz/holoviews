@@ -24,6 +24,10 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     __test__ = False
 
+    def test_duplicate_dimension_constructor(self):
+        ds = Dataset(([1, 2, 3], [1, 2, 3]), ['A', 'B'], ['A'])
+        self.assertEqual(list(ds.data.columns), ['A', 'B'])
+
     def test_dataset_empty_list_init_dtypes(self):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':

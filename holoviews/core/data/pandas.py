@@ -91,7 +91,7 @@ class PandasInterface(Interface):
             # Then use defined data type
             kdims = kdims if kdims else kdim_param.default
             vdims = vdims if vdims else vdim_param.default
-            columns = [dimension_name(d) for d in kdims+vdims]
+            columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
