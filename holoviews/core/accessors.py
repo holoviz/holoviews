@@ -3,11 +3,14 @@ Module for accessor objects for viewable HoloViews objects.
 """
 from __future__ import absolute_import, unicode_literals
 
+import copy
+import sys
+
 from collections import OrderedDict
 from types import FunctionType
-import copy
 
 import param
+
 from param.parameterized import add_metaclass
 
 from . import util
@@ -155,6 +158,11 @@ class Apply(object):
                                          'method exists on the object.' %
                                          method_name)
                 return method(*args, **kwargs)
+
+        if 'panel' in sys.modules:
+            from panel.widgets.base import Widget
+            kwargs = {k: v.param.value if isinstance(v, Widget) else v
+                      for k, v in kwargs.items()}
 
         applies = isinstance(self._obj, ViewableElement)
         params = {p: val for p, val in kwargs.items()
