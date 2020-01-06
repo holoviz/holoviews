@@ -214,6 +214,19 @@ class dim(object):
         """
         cls._custom_funcs[key] = function
 
+    @classmethod
+    def pipe(cls, func, *args, **kwargs):
+        """
+        Wrapper to give multidimensional transforms a more intuitive syntax.
+        For a custom function 'func' with signature (*args, **kwargs), call as
+        dim.pipe(func, *args, **kwargs).
+        """
+        args = list(args) # make mutable
+        for k, arg in enumerate(args):
+            if isinstance(arg, basestring):
+                args[k] = dim(arg)
+        return dim(args[0], func, *args[1:], **kwargs)
+
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
     def __round__(self, ndigits=None):
