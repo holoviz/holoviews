@@ -115,7 +115,7 @@ class annotate(param.ParameterizedFunction):
             else:
                 raise ValueError("Cannot compose %s type with annotators." %
                                  type(annotator).__name__)
-        tables = Overlay(tables, group='Annotator').opts(tabs=True)
+        tables = Overlay(tables, group='Annotator')
         return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
 
     def __call__(self, element, **params):
@@ -128,7 +128,7 @@ class annotate(param.ParameterizedFunction):
             raise ValueError('Annotation of %s element types is not '
                              'supported.' % type(element).__name__)
         self.annotator = annotator_type(element, **params)
-        tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator').opts(tabs=True)
+        tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
         return (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
 
 
