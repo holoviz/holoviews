@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from collections import OrderedDict
+from inspect import getmro
 
 import param
 
@@ -119,11 +120,11 @@ class annotate(param.ParameterizedFunction):
         return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
 
     def __call__(self, element, **params):
+        matches = []
         for eltype, annotator_type in self._annotator_types.items():
             if isinstance(element, eltype):
-                break
-            else:
-                annotator_type = None
+                matches.append((getmro(type(element)).index(eltype), annotator_type))
+        annotator_type = sorted(matches)[0][1] if matches else None
         if annotator_type is None:
             raise ValueError('Annotation of %s element types is not '
                              'supported.' % type(element).__name__)
