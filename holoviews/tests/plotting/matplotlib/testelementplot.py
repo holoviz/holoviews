@@ -31,7 +31,6 @@ class TestElementPlot(TestMPLPlot):
     def test_element_font_scaling(self):
         curve = Curve(range(10)).options(fontscale=2, title='A title')
         plot = mpl_renderer.get_plot(curve)
-        fig = plot.state
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 24)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 20)
@@ -42,7 +41,6 @@ class TestElementPlot(TestMPLPlot):
     def test_element_font_scaling_fontsize_override_common(self):
         curve = Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
         plot = mpl_renderer.get_plot(curve)
-        fig = plot.state
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 28)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 28)
@@ -54,7 +52,6 @@ class TestElementPlot(TestMPLPlot):
         curve = Curve(range(10)).options(
             fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
         plot = mpl_renderer.get_plot(curve)
-        fig = plot.state
         ax = plot.handles['axis']
         self.assertEqual(ax.title.get_fontsize(), 32)
         self.assertEqual(ax.xaxis.label.get_fontsize(), 12)

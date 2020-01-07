@@ -6,7 +6,6 @@ of this Plot baseclass.
 from __future__ import absolute_import
 
 import threading
-import re
 import warnings
 
 from itertools import groupby, product
