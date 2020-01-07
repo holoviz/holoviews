@@ -360,7 +360,8 @@ class PathAnnotator(Annotator):
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, color_index=None, **self.default_opts)
         opts.update(self._extra_opts)
-        return element.options(**opts)
+        return element.options(**{k: v for k, v in opts.items()
+                                  if k not in element.opts.get('plot').kwargs})
 
     def _update_links(self):
         super(PathAnnotator, self)._update_links()
@@ -446,7 +447,8 @@ class _GeomAnnotator(Annotator):
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, **self.default_opts)
         opts.update(self._extra_opts)
-        return object.options(**opts)
+        return object.options(**{k: v for k, v in opts.items()
+                                 if k not in object.opts.get('plot').kwargs})
 
 
 
