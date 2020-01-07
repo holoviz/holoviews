@@ -5,6 +5,7 @@ regardless of plotting package or backend.
 from __future__ import unicode_literals, absolute_import
 
 import base64
+
 from io import BytesIO
 try:
     from StringIO import StringIO
@@ -20,14 +21,13 @@ from panel.io.state import state
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
+from pyviz_comms import CommManager, JupyterCommManager
 
+from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import unbound_dimensions
-from .. import Layout, HoloMap, AdjointLayout, DynamicMap
-
 from . import Plot
-from pyviz_comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
