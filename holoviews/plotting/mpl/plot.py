@@ -9,7 +9,8 @@ import matplotlib as mpl
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 from matplotlib import pyplot as plt
-from matplotlib import gridspec, animation
+from matplotlib import gridspec, animation, rcParams
+from matplotlib.font_manager import font_scalings
 
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
@@ -172,6 +173,23 @@ class MPLPlot(DimensionedPlot):
             axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
         return fig, axis
+
+
+    def _get_fontsize_defaults(self):
+        base = rcParams['font.size']
+        sizes = {
+            "label": rcParams['axes.labelsize'],
+            "title": rcParams['axes.titlesize'],
+            "xticks": rcParams['xtick.labelsize'],
+            "yticks": rcParams['ytick.labelsize'],
+            "legend": rcParams['legend.fontsize'],
+        }
+        scaled = dict(sizes)
+        for k, v in sizes.items():
+            if isinstance(v, str):
+                scaled[k] = base * font_scalings[v]
+        scaled['ticks'] = scaled['xticks']
+        return scaled
 
 
     def _subplot_label(self, axis):

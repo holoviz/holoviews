@@ -1902,9 +1902,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'xformatter', 'yformatter', 'active_tools',
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
-                          'frame_height', 'responsive']
+                          'frame_height', 'responsive', 'fontscale']
 
-    def _process_legend(self):
+    def _process_legend(self, overlay):
         plot = self.handles['plot']
         subplots = self.traverse(lambda x: x, [lambda x: x is not self])
         legend_plots = any(p is not None for p in subplots
@@ -1915,6 +1915,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
             return super(OverlayPlot, self)._process_legend()
+        elif not plot.legend:
+            return
+
+        legend = plot.legend[0]
 
         options = {}
         properties = self.lookup_options(self.hmap.last, 'style')[self.cyclic_index]
@@ -1928,26 +1932,24 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 k = k[7:]
             options[k] = v
 
-        if not plot.legend:
-            return
-
         pos = self.legend_position
         orientation = 'horizontal' if self.legend_cols else 'vertical'
         if pos in ['top', 'bottom']:
             orientation = 'horizontal'
+        options['orientation'] = orientation
 
-        legend_fontsize = self._fontsize('legend', 'size').get('size',False)
-        legend = plot.legend[0]
+        if overlay is not None and overlay.kdims:
+            title = ', '.join([d.label for d in overlay.kdims])
+            options['title'] = title
+
+        options.update(self._fontsize('legend', 'label_text_font_size'))
+        options.update(self._fontsize('legend_title', 'title_text_font_size'))
         legend.update(**options)
-        if legend_fontsize:
-            legend.label_text_font_size = value(legend_fontsize)
 
         if pos in self.legend_specs:
             pos = self.legend_specs[pos]
         else:
             legend.location = pos
-
-        legend.orientation = orientation
 
         if 'legend_items' not in self.handles:
             self.handles['legend_items'] = []
@@ -2130,7 +2132,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 sizing_mode='fixed'
             )
         elif not self.overlaid:
-            self._process_legend()
+            self._process_legend(element)
             self._set_active_tools(plot)
         self.drawn = True
         self.handles['plots'] = plots
@@ -2218,13 +2220,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 init_kwargs['plot'] = self.handles['plot']
             self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
             if not self.overlaid and not self.tabs:
-                self._process_legend()
+                self._process_legend(element)
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             plot = self.handles['plot']
             self._update_plot(key, plot, element)
             self._set_active_tools(plot)
 
-        self._process_legend()
-
+        self._process_legend(element)
         self._execute_hooks(element)

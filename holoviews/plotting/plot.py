@@ -34,7 +34,7 @@ from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_nested_plot_frame,
                    split_dmap_overlay, get_axis_padding, get_range,
-                   get_minimum_span, get_plot_frame)
+                   get_minimum_span, get_plot_frame, scale_fontsize)
 
 
 class Plot(param.Parameterized):
@@ -346,6 +346,9 @@ class DimensionedPlot(Plot):
        You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
        together using the 'labels' key.""")
 
+    fontscale = param.Number(default=None, doc="""
+       Scales the size of all fonts.""")
+
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'clabel', 'labels',
                       'xticks', 'yticks', 'zticks', 'cticks', 'ticks',
@@ -508,28 +511,53 @@ class DimensionedPlot(Plot):
         return (self.label, self.group, type(self).__name__, '')
 
 
+    def _get_fontsize_defaults(self):
+        """
+        Should returns default fontsize for the following keywords:
+
+            * ticks
+            * minor_ticks
+            * label
+            * title
+            * legend
+            * legend_title
+
+        However may also provide more specific defaults for
+        specific axis label or ticks, e.g. clabel or xticks.
+        """
+        return {}
+
+
     def _fontsize(self, key, label='fontsize', common=True):
-        if not self.fontsize: return {}
+        if not self.fontsize and not self.fontscale:
+            return {}
+        elif not isinstance(self.fontsize, dict) and self.fontsize is not None and common:
+            return {label: scale_fontsize(self.fontsize, self.fontscale)}
 
-        if not isinstance(self.fontsize, dict):
-            return {label:self.fontsize} if common else {}
-
-        unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
+        fontsize = self.fontsize if isinstance(self.fontsize, dict) else {}
+        unknown_keys = set(fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
-            for key in unknown_keys: self.fontsize.pop(key, None)
+            for key in unknown_keys: fontsize.pop(key, None)
 
-        if key in self.fontsize:
-            return {label:self.fontsize[key]}
-        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel'] and 'labels' in self.fontsize:
-            return {label:self.fontsize['labels']}
-        elif key in ['xticks', 'yticks', 'zticks', 'cticks'] and 'ticks' in self.fontsize:
-            return {label:self.fontsize['ticks']}
-        elif key in ['minor_xticks', 'minor_yticks'] and 'minor_ticks' in self.fontsize:
-            return {label:self.fontsize['minor_ticks']}
-        else:
+        defaults = self._get_fontsize_defaults()
+        size = None
+        if key in fontsize:
+            size = fontsize[key]
+        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel']:
+            size = fontsize.get('labels', defaults.get(key, defaults.get('label')))
+        elif key in ['xticks', 'yticks', 'zticks', 'cticks']:
+            size = fontsize.get('ticks', defaults.get(key, defaults.get('ticks')))
+        elif key in ['minor_xticks', 'minor_yticks']:
+            size = fontsize.get('minor_ticks', defaults.get(key, defaults.get('minor_ticks')))
+        elif key in ('legend', 'legend_title', 'title'):
+            size = defaults.get(key)
+
+        if size is None:
             return {}
+
+        return {label: scale_fontsize(size, self.fontscale)}
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -1506,7 +1534,7 @@ class GenericOverlayPlot(GenericElementPlot):
                         fontsize=self.fontsize, streams=streams,
                         renderer=self.renderer, adjoined=self.adjoined,
                         stream_sources=self.stream_sources,
-                        projection=self.projection,
+                        projection=self.projection, fontscale=self.fontscale,
                         zorder=zorder, **passed_handles)
         return plottype(obj, **plotopts)
 

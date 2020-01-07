@@ -1017,7 +1017,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'data_aspect']
+                          'xformatter', 'yformatter', 'data_aspect', 'fontscale']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
@@ -1036,7 +1036,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         """
         legend_data = []
         dimensions = overlay.kdims
-        title = ', '.join([d.name for d in dimensions])
+        title = ', '.join([d.label for d in dimensions])
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue

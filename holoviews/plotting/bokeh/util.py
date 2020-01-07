@@ -594,6 +594,18 @@ def get_tab_title(key, frame, overlay):
     return title
 
 
+def get_default(model, name, theme=None):
+    """
+    Looks up the default value for a bokeh model property.
+    """
+    overrides = None
+    if theme is not None:
+        if isinstance(theme, str):
+            theme = built_in_themes[theme]
+        overrides = theme._for_class(model)
+    descriptor = model.lookup(name)
+    return descriptor.property.themed_default(model, name, overrides)
+
 
 def filter_batched_data(data, mapping):
     """
