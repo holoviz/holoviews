@@ -11,12 +11,15 @@ description = 'Stop plotting your data - annotate your data and let it visualize
 import holoviews
 version = release = holoviews.__version__
 
-html_theme = 'sphinx_ioam_theme'
+html_theme = 'sphinx_holoviz_theme'
 html_static_path += ['_static']
 html_theme_options = {
     'logo': 'logo.png',
     'favicon': 'favicon.ico',
-    'custom_css': 'holoviews.css'
+    'custom_css': 'holoviews.css',
+    'include_logo_text': False,
+    'second_nav': True,
+    'footer': False
 }
 nbbuild_cell_timeout = 360
 
@@ -60,6 +63,8 @@ html_context.update({
     'AUTHOR': authors,
     'VERSION': version,
     'WEBSITE_SERVER': 'https:',
+    'GOOGLE_SEARCH_ID': '006807479272082416678:p6n_f0d8taw',
+    'GOOGLE_ANALYTICS_UA': 'UA-61554933-1',
     # Links
     'LINKS': (
         ('Getting started', '/getting_started/index'),
@@ -76,6 +81,7 @@ html_context.update({
     ),
     # Social links
     'SOCIAL': (
+        ('Discourse', '//discourse.holoviz.org/c/holoviews'),
         ('Gitter', '//gitter.im/pyviz/pyviz'),
         ('Twitter', '//twitter.com/holoviews'),
         ('Github', '//github.com/pyviz/holoviews'),

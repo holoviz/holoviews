@@ -10,7 +10,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.2']
+install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.2', 'panel>=0.7.0']
 
 extras_require = {}
 
@@ -19,7 +19,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0', 'panel>=0.7.0a9']
+    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
@@ -42,14 +42,14 @@ extras_require['tests'] = [
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
 
 extras_require['basic_tests'] = extras_require['tests']+[
-    'matplotlib>=2.1', 'bokeh>=1.1.0']+extras_require['notebook']
+    'matplotlib>=2.1', 'bokeh>=1.1.0', 'pandas']+extras_require['notebook']
 
 extras_require['nbtests'] = extras_require['recommended'] + [
     'nose', 'awscli', 'deepdiff', 'nbconvert==5.3.1', 'jsonschema==2.6.0',
     'cyordereddict', 'ipython==5.4.1']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite>0.5.2', 'sphinx<2.0', 'sphinx_ioam_theme']
+    'nbsite>0.5.2', 'sphinx', 'sphinx_holoviz_theme']
 
 extras_require['build'] = ['param >=1.7.0', 'setuptools']
 
