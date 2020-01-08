@@ -54,6 +54,10 @@ class annotate(param.ParameterizedFunction):
     edit_vertices = param.Boolean(default=True, doc="""
         Whether to add tool to edit vertices.""")
 
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
+
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
 
@@ -149,6 +153,10 @@ class Annotator(PaneBase):
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
                                        'padding': 0.1, 'framewise': True}, doc="""
         Opts to apply to the element.""")
+
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
 
     object = param.ClassSelector(class_=Element, doc="""
         The Element to edit and annotate.""")
@@ -316,7 +324,7 @@ class PathAnnotator(Annotator):
         self._stream = PolyDraw(
             source=self.plot, data={}, num_objects=self.num_objects,
             show_vertices=self.show_vertices, tooltip='%s Tool' % name,
-            vertex_style=self.vertex_style
+            vertex_style=self.vertex_style, empty_value=self.empty_value
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
@@ -404,6 +412,7 @@ class PathAnnotator(Annotator):
         return self.object.clone(data)
 
 
+
 class PolyAnnotator(PathAnnotator):
     """
     Annotator which allows drawing and editing Polygons and associating
@@ -429,7 +438,7 @@ class _GeomAnnotator(Annotator):
         name = param_name(self.name)
         self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name
+            tooltip='%s Tool' % name, empty_value=self.empty_value
         )
 
     def _process_element(self, object):
