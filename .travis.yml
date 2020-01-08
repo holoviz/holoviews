@@ -88,7 +88,7 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
+      env: DESC="docs" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
       script:
         - bokeh sampledata
         - conda install -c conda-forge awscli
@@ -100,7 +100,7 @@ jobs:
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc" BUCKET="dev."
+      env: DESC="gallery" HV_REQUIREMENTS="doc" BUCKET="dev."
       script:
         - bokeh sampledata
         - conda install -c conda-forge awscli
@@ -117,14 +117,14 @@ jobs:
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" BUCKET="build."
+      env: DESC="gallery" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" BUCKET="build."
 
     - <<: *doc_build
       stage: docs
 
     - <<: *gallery_build
       stage: gallery
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc"
+      env: DESC="gallery" HV_REQUIREMENTS="doc"
       after_success:
         - aws s3 sync ./builtdocs s3://holoviews.org/
 
