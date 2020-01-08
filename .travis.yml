@@ -91,7 +91,6 @@ jobs:
       env: DESC="docs" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - nbsite build --what=html --output=builtdocs
       after_success:
@@ -103,8 +102,6 @@ jobs:
       env: DESC="gallery" HV_REQUIREMENTS="doc" BUCKET="dev."
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
-        - conda install -c conda-forge mpl_sample_data --no-deps
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
         - nbsite build --what=html --output=builtdocs
