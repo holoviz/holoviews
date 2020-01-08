@@ -19,7 +19,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
-                        FreehandDraw)
+                        FreehandDraw, CurveEdit)
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
@@ -1034,6 +1034,40 @@ class PointDrawCallback(GlyphDrawCallback):
         super(PointDrawCallback, self).initialize(plot_id)
 
 
+class CurveEditCallback(GlyphDrawCallback):
+
+    def initialize(self, plot_id=None):
+        plot = self.plot
+        stream = self.streams[0]
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
+        renderer = plot.state.scatter(glyph.x, glyph.y, source=cds,
+                                      visible=False, **stream.style)
+        renderers = [renderer]
+        kwargs = {}
+        if stream.tooltip:
+            kwargs['custom_tooltip'] = stream.tooltip
+        point_tool = PointDrawTool(
+            add=False, drag=True, renderers=renderers, **kwargs
+        )
+        code="renderer.visible = tool.active || (cds.selected.indices.length > 0)"
+        show_vertices = CustomJS(args={'renderer': renderer, 'cds': cds, 'tool': point_tool}, code=code)
+        point_tool.js_on_change('change:active', show_vertices)
+        cds.selected.js_on_change('indices', show_vertices)
+
+        self.plot.state.tools.append(point_tool)
+        source = self.plot.handles['source']
+
+        # Add any value dimensions not already in the CDS data
+        # ensuring the element can be reconstituted in entirety
+        element = self.plot.current_frame
+        for d in element.vdims:
+            dim = dimension_sanitizer(d.name)
+            if dim not in source.data:
+                source.data[dim] = element.dimension_values(d)
+        super(CurveEditCallback, self).initialize(plot_id)
+
+
 class PolyDrawCallback(GlyphDrawCallback):
 
     def initialize(self, plot_id=None):
@@ -1216,7 +1250,8 @@ callbacks[PlotReset]   = ResetCallback
 callbacks[CDSStream]   = CDSCallback
 callbacks[BoxEdit]     = BoxEditCallback
 callbacks[PointDraw]   = PointDrawCallback
-callbacks[FreehandDraw]   = FreehandDrawCallback
+callbacks[CurveEdit]   = CurveEditCallback
+callbacks[FreehandDraw]= FreehandDrawCallback
 callbacks[PolyDraw]    = PolyDrawCallback
 callbacks[PolyEdit]    = PolyEditCallback
 
@@ -1416,12 +1451,17 @@ class SelectionLinkCallback(LinkCallback):
     on_source_changes = ['indices']
     on_target_changes = ['indices']
 
+    source_handles = ['cds']
+    target_handles = ['cds']
+
     source_code = """
     target_selected.indices = source_selected.indices
+    target_cds.properties.selected.change.emit()
     """
 
     target_code = """
     source_selected.indices = target_selected.indices
+    source_cds.properties.selected.change.emit()
     """
 
 class RectanglesTableLinkCallback(DataLinkCallback):

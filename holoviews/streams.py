@@ -1050,7 +1050,7 @@ class CDSStream(LinkedStream):
 
 class PointDraw(CDSStream):
     """
-    Attaches a PointAddTool and syncs the datasource.
+    Attaches a PointDrawTool and syncs the datasource.
 
     drag: boolean
         Whether to enable dragging of polygons and paths
@@ -1061,13 +1061,6 @@ class PointDraw(CDSStream):
     num_objects: int
         The number of polygons that can be drawn before overwriting
         the oldest polygon.
-
-    styles: dict
-        A dictionary specifying lists of styles to cycle over whenever
-        a new Point glyph is drawn.
-
-    tooltip: str
-        An optional tooltip to override the default
 
     styles: dict
         A dictionary specifying lists of styles to cycle over whenever
@@ -1100,6 +1093,24 @@ class PointDraw(CDSStream):
     def dynamic(self):
         from .core.spaces import DynamicMap
         return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class CurveEdit(PointDraw):
+    """
+    Attaches a PointDraw to the plot which allows editing the Curve when selected.
+
+    style: dict
+        A dictionary specifying the style of the vertices.
+
+    tooltip: str
+        An optional tooltip to override the default
+    """
+
+    def __init__(self, style={}, tooltip=None, **params):
+        self.style = style or {'size': 10}
+        self.tooltip = tooltip
+        super(PointDraw, self).__init__(**params)
 
 
 

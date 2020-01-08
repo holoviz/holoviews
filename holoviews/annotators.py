@@ -13,9 +13,9 @@ from panel.util import param_name
 
 from .core import DynamicMap, Element, Layout, Overlay, Store
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table
+from .element import Rectangles, Path, Polygons, Points, Table, Curve
 from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
+from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
 
 
 def preprocess(function, current=[]):
@@ -53,6 +53,10 @@ class annotate(param.ParameterizedFunction):
 
     edit_vertices = param.Boolean(default=True, doc="""
         Whether to add tool to edit vertices.""")
+
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
 
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
@@ -149,6 +153,10 @@ class Annotator(PaneBase):
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
                                        'padding': 0.1, 'framewise': True}, doc="""
         Opts to apply to the element.""")
+
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
 
     object = param.ClassSelector(class_=Element, doc="""
         The Element to edit and annotate.""")
@@ -316,7 +324,7 @@ class PathAnnotator(Annotator):
         self._stream = PolyDraw(
             source=self.plot, data={}, num_objects=self.num_objects,
             show_vertices=self.show_vertices, tooltip='%s Tool' % name,
-            vertex_style=self.vertex_style
+            vertex_style=self.vertex_style, empty_value=self.empty_value
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
@@ -404,6 +412,7 @@ class PathAnnotator(Annotator):
         return self.object.clone(data)
 
 
+
 class PolyAnnotator(PathAnnotator):
     """
     Annotator which allows drawing and editing Polygons and associating
@@ -429,7 +438,7 @@ class _GeomAnnotator(Annotator):
         name = param_name(self.name)
         self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name
+            tooltip='%s Tool' % name, empty_value=self.empty_value
         )
 
     def _process_element(self, object):
@@ -441,7 +450,7 @@ class _GeomAnnotator(Annotator):
             if col in object:
                 continue
             init = self.annotations[col]() if isinstance(self.annotations, dict) else None
-            object = object.add_dimension(col, 0, init, True)
+            object = object.add_dimension(col, len(object.vdims), init, True)
 
         # Add options
         tools = [tool() for tool in self._tools]
@@ -469,8 +478,33 @@ class PointAnnotator(_GeomAnnotator):
     _stream_type = PointDraw
 
 
+class CurveAnnotator(_GeomAnnotator):
+    """
+    Annotator which allows editing a Curve element and associating values
+    with each vertex using a Table.
+    """
 
-class BoxAnnotator(_GeomAnnotator):
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1, 'framewise': True}, doc="""
+        Opts to apply to the element.""")
+
+    object = param.ClassSelector(class_=Curve, doc="""
+        Points element to edit and annotate.""")
+
+    vertex_style = param.Dict(default={'size': 10}, doc="""
+        Options to apply to vertices during drawing and editing.""")
+
+    _stream_type = CurveEdit
+
+    def _init_stream(self):
+        name = param_name(self.name)
+        self._stream = self._stream_type(
+            source=self.plot, data={}, tooltip='%s Tool' % name,
+            style=self.vertex_style
+        )
+
+
+class RectangleAnnotator(_GeomAnnotator):
     """
     Annotator which allows drawing and editing Rectangles and associating
     values with each point using a table.
@@ -490,5 +524,9 @@ annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator),
-    (Rectangles, BoxAnnotator),
+    (Curve, CurveAnnotator),
+    (Rectangles, RectangleAnnotator),
 ])
+
+# Alias: remove before 1.13.0 release
+BoxAnnotator = RectangleAnnotator
