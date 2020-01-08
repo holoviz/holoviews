@@ -17,15 +17,13 @@ html_theme_options = {
     'logo': 'logo.png',
     'favicon': 'favicon.ico',
     'custom_css': 'holoviews.css',
-    'include_logo_text': False,
+    'include_logo_text': True,
     'second_nav': True,
     'footer': False
 }
 nbbuild_cell_timeout = 360
 
 extensions += ['nbsite.gallery']
-
-templates_path = ['_templates']
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],

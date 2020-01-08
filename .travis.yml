@@ -23,7 +23,7 @@ env:
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
-    - PYTHON_VERSION=3.6
+    - PYTHON_VERSION=3.7
 
 stages:
   - test
@@ -46,9 +46,9 @@ stages:
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)*[a-z]\d*$
   - name: docs_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
   - name: gallery_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
 
 jobs:
   include:
@@ -80,49 +80,48 @@ jobs:
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
       after_success: echo "Success"
+      script:
+        - doit test_unit
 
     ########## DOCS ##########
 
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
+      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
+        - aws s3 sync --quiet ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
 
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc" BUCKET="dev."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
-        - conda install -c conda-forge mpl_sample_data --no-deps
-        - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
+        - aws s3 sync --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/
-        - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync --quiet ./builtdocs s3://${BUCKET}holoviews.org/
+        - aws s3 rm --recursive --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
       stage: docs_daily
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" BUCKET="build."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
 
     - <<: *doc_build
       stage: docs
 
     - <<: *gallery_build
       stage: gallery
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       after_success:
         - aws s3 sync ./builtdocs s3://holoviews.org/
 
