@@ -80,6 +80,8 @@ jobs:
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
       after_success: echo "Success"
+      script:
+        - doit test_unit
 
     ########## DOCS ##########
 
