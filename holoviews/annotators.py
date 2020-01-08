@@ -470,7 +470,7 @@ class PointAnnotator(_GeomAnnotator):
 
 
 
-class BoxAnnotator(_GeomAnnotator):
+class RectangleAnnotator(_GeomAnnotator):
     """
     Annotator which allows drawing and editing Rectangles and associating
     values with each point using a table.
@@ -490,5 +490,8 @@ annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator),
-    (Rectangles, BoxAnnotator),
+    (Rectangles, RectangleAnnotator),
 ])
+
+# Alias: remove before 1.13.0 release
+BoxAnnotator = RectangleAnnotator
