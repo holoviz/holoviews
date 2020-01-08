@@ -13,9 +13,9 @@ from panel.util import param_name
 
 from .core import DynamicMap, Element, Layout, Overlay, Store
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table
+from .element import Rectangles, Path, Polygons, Points, Table, Curve
 from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
+from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
 
 
 def preprocess(function, current=[]):
@@ -450,7 +450,7 @@ class _GeomAnnotator(Annotator):
             if col in object:
                 continue
             init = self.annotations[col]() if isinstance(self.annotations, dict) else None
-            object = object.add_dimension(col, 0, init, True)
+            object = object.add_dimension(col, len(object.vdims), init, True)
 
         # Add options
         tools = [tool() for tool in self._tools]
@@ -478,6 +478,31 @@ class PointAnnotator(_GeomAnnotator):
     _stream_type = PointDraw
 
 
+class CurveAnnotator(_GeomAnnotator):
+    """
+    Annotator which allows editing a Curve element and associating values
+    with each vertex using a Table.
+    """
+
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1, 'framewise': True}, doc="""
+        Opts to apply to the element.""")
+
+    object = param.ClassSelector(class_=Curve, doc="""
+        Points element to edit and annotate.""")
+
+    vertex_style = param.Dict(default={'size': 10}, doc="""
+        Options to apply to vertices during drawing and editing.""")
+
+    _stream_type = CurveEdit
+
+    def _init_stream(self):
+        name = param_name(self.name)
+        self._stream = self._stream_type(
+            source=self.plot, data={}, tooltip='%s Tool' % name,
+            style=self.vertex_style
+        )
+
 
 class RectangleAnnotator(_GeomAnnotator):
     """
@@ -499,6 +524,7 @@ annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator),
+    (Curve, CurveAnnotator),
     (Rectangles, RectangleAnnotator),
 ])
 
