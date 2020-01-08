@@ -88,7 +88,7 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
+      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
@@ -99,7 +99,7 @@ jobs:
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" HV_REQUIREMENTS="doc" BUCKET="dev."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev."
       script:
         - bokeh sampledata
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
@@ -114,7 +114,7 @@ jobs:
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" BUCKET="build."
+      env: DESC="gallery" BUCKET="build."
 
     - <<: *doc_build
       stage: docs
