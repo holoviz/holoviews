@@ -99,7 +99,7 @@ jobs:
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - bokeh sampledata
         - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
@@ -114,14 +114,14 @@ jobs:
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" BUCKET="build."
+      env: DESC="gallery" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
 
     - <<: *doc_build
       stage: docs
 
     - <<: *gallery_build
       stage: gallery
-      env: DESC="gallery" HV_REQUIREMENTS="doc"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       after_success:
         - aws s3 sync ./builtdocs s3://holoviews.org/
 
