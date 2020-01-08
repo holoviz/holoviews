@@ -346,7 +346,7 @@ class PathAnnotator(Annotator):
                 validate.append(col)
                 continue
             init = self.annotations[col]() if isinstance(self.annotations, dict) else ''
-            element = element.add_dimension(col, 0, init, True)
+            element = element.add_dimension(col, len(element.vdims), init, True)
         for col in self.vertex_annotations:
             if col in element:
                 continue
@@ -354,7 +354,7 @@ class PathAnnotator(Annotator):
                 init = self.vertex_annotations[col]()
             else:
                 init = ''
-            element = element.add_dimension(col, 0, init, True)
+            element = element.add_dimension(col, len(element.vdims), init, True)
 
         # Validate annotations
         poly_data = {c: element.dimension_values(c, expanded=False)
@@ -449,7 +449,7 @@ class _GeomAnnotator(Annotator):
         for col in self.annotations:
             if col in object:
                 continue
-            init = self.annotations[col]() if isinstance(self.annotations, dict) else None
+            init = self.annotations[col]() if isinstance(self.annotations, dict) else ''
             object = object.add_dimension(col, len(object.vdims), init, True)
 
         # Add options
