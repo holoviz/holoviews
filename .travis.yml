@@ -23,7 +23,7 @@ env:
     - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
-    - PYTHON_VERSION=3.6
+    - PYTHON_VERSION=3.7
 
 stages:
   - test
@@ -46,9 +46,9 @@ stages:
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)*[a-z]\d*$
   - name: docs_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
   - name: gallery_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
 
 jobs:
   include:
