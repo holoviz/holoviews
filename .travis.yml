@@ -114,7 +114,7 @@ jobs:
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
 
     - <<: *doc_build
       stage: docs
