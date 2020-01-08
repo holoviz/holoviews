@@ -1416,12 +1416,17 @@ class SelectionLinkCallback(LinkCallback):
     on_source_changes = ['indices']
     on_target_changes = ['indices']
 
+    source_handles = ['cds']
+    target_handles = ['cds']
+
     source_code = """
     target_selected.indices = source_selected.indices
+    target_cds.properties.selected.change.emit()
     """
 
     target_code = """
     source_selected.indices = target_selected.indices
+    source_cds.properties.selected.change.emit()
     """
 
 class RectanglesTableLinkCallback(DataLinkCallback):
