@@ -94,7 +94,7 @@ jobs:
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
+        - aws s3 sync --quiet ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
 
     - &gallery_build
       <<: *doc_build
@@ -102,12 +102,12 @@ jobs:
       env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - bokeh sampledata
-        - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
+        - aws s3 sync --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/
-        - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync --quiet ./builtdocs s3://${BUCKET}holoviews.org/
+        - aws s3 rm --recursive --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
       stage: docs_daily
