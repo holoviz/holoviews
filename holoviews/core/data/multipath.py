@@ -498,7 +498,7 @@ class MultiInterface(Interface):
             new_data = []
             for d in geoms:
                 template.data = d
-                new_data.append(template.iloc[:, cols])
+                new_data.append(template.iloc[:, cols].data)
             return new_data
 
         count = 0
