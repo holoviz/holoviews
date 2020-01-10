@@ -44,8 +44,7 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types,
-    datetime_types
+    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
