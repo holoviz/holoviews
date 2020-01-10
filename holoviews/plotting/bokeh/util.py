@@ -19,8 +19,13 @@ from bokeh.core.properties import value
 from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
-from bokeh.models.formatters import FuncTickFormatter, TickFormatter, PrintfTickFormatter
+from bokeh.models import (
+    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis
+)
+from bokeh.models.formatters import (
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+)
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -916,16 +921,16 @@ def match_dim_specs(specs1, specs2):
     return True
 
 
-def match_ax_type(range_model, range_type):
+def match_ax_type(ax, range_type):
     """
-    Ensure the range_type matches the Range model being matched.
+    Ensure the range_type matches the axis model being matched.
     """
-    print(range_model, range_type)
-    if isinstance(range_type, FactorRange):
+    if isinstance(ax[0], CategoricalAxis):
         return range_type == 'categorical'
-    elif isinstance(range_model.start, datetime_types):
+    elif isinstance(ax[0], DatetimeAxis):
         return range_type == 'datetime'
-    return True
+    else:
+        return range_type in ('auto', 'log')
 
 
 def wrap_formatter(formatter, axis):

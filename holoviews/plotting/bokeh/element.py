@@ -293,14 +293,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if plot is None:
                 continue
             if hasattr(plot, 'x_range') and plot.x_range.tags and xspecs is not None:
-                if match_dim_specs(plot.x_range.tags[0], xspecs) and match_ax_type(plot.x_range, xtype):
+                if match_dim_specs(plot.x_range.tags[0], xspecs) and match_ax_type(plot.xaxis, xtype):
                     plot_ranges['x_range'] = plot.x_range
-                if match_dim_specs(plot.x_range.tags[0], yspecs) and match_ax_type(plot.x_range, ytype):
+                if match_dim_specs(plot.x_range.tags[0], yspecs) and match_ax_type(plot.xaxis, ytype):
                     plot_ranges['y_range'] = plot.x_range
             if hasattr(plot, 'y_range') and plot.y_range.tags and yspecs is not None:
-                if match_dim_specs(plot.y_range.tags[0], yspecs) and match_ax_type(plot.y_range, ytype):
+                if match_dim_specs(plot.y_range.tags[0], yspecs) and match_ax_type(plot.yaxis, ytype):
                     plot_ranges['y_range'] = plot.y_range
-                if match_dim_specs(plot.y_range.tags[0], xspecs) and match_ax_type(plot.y_range, xtype):
+                if match_dim_specs(plot.y_range.tags[0], xspecs) and match_ax_type(plot.yaxis, xtype):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
@@ -393,7 +393,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         norm_opts = self.lookup_options(el, 'norm').options
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
             plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
-                    
+
         # Declare shared axes
         if 'x_range' in plot_ranges:
             self._shared['x'] = True
