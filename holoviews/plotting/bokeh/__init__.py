@@ -262,7 +262,7 @@ options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
 options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 options.Sankey = Options(
     'plot', xaxis=None, yaxis=None, inspection_policy='edges',
-    selection_policy='nodes', width=1000, height=600, show_frame=False
+    selection_policy='nodes', show_frame=False
 )
 options.Sankey = Options(
     'style', node_nonselection_alpha=0.2, node_size=10, edge_nonselection_alpha=0.2,

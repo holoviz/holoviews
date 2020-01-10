@@ -40,6 +40,14 @@ class SankeyPlot(GraphPlot):
     node_sort = param.Boolean(default=True, doc="""
         Sort nodes in ascending breadth.""")
 
+    width = param.Integer(default=1000, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
+
+    height = param.Integer(default=600, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
+
     # Deprecated options
 
     color_index = param.ClassSelector(default=2, class_=(basestring, int),
