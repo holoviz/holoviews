@@ -244,8 +244,8 @@ class Plot(param.Parameterized):
 
         if self.renderer.backend != 'bokeh' and child_pane is not None:
             child_pane.object = self.renderer.get_plot_state(self)
-        elif ((self.renderer.mode != 'server' or (root and 'embedded' in root.tags))
-              and self.document and self.comm):
+        elif (self.renderer.mode != 'server' and root and
+              'embedded' not in root.tags and self.document and self.comm):
             push(self.document, self.comm)
 
 
@@ -264,6 +264,8 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         return lookup_options(obj, group, cls.backend)
+
+
 
 class PlotSelector(object):
     """
