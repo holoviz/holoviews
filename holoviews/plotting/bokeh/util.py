@@ -39,7 +39,9 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types)
+    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types,
+    datetime_types
+)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -911,6 +913,18 @@ def match_dim_specs(specs1, specs2):
                 continue
             if s1 != s2:
                 return False
+    return True
+
+
+def match_ax_type(range_model, range_type):
+    """
+    Ensure the range_type matches the Range model being matched.
+    """
+    print(range_model, range_type)
+    if isinstance(range_type, FactorRange):
+        return range_type == 'categorical'
+    elif isinstance(range_model.start, datetime_types):
+        return range_type == 'datetime'
     return True
 
 

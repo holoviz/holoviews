@@ -573,7 +573,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = self.ranges if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else {k: dict(v) for k, v in ranges.items()}
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -589,9 +589,7 @@ class DimensionedPlot(Plot):
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
             framewise = framewise or self.dynamic or len(elements) == 1
-            if group in ranges and (not framewise or ranges is not self.ranges):
-                continue
-            elif not framewise: # Traverse to get all elements
+            if not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
@@ -683,6 +681,8 @@ class DimensionedPlot(Plot):
                                 drange = (np.nanmin(values), np.nanmax(values))
                         except:
                             factors = util.unique_array(values)
+                    if dim_name in ranges.get(group, {}):
+                        continue
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
                     if factors is not None:
@@ -694,6 +694,9 @@ class DimensionedPlot(Plot):
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
+                dim_name = el_dim.name
+                if dim_name in ranges.get(group, {}):
+                    continue
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
                         dtype = el.nodes.interface.dtype(el.nodes, el_dim)
@@ -713,15 +716,15 @@ class DimensionedPlot(Plot):
                 else:
                     data_range = el.range(el_dim, dimension_range=False)
 
-                if el_dim.name not in group_ranges:
-                    group_ranges[el_dim.name] = {'data': [], 'hard': [], 'soft': []}
-                group_ranges[el_dim.name]['data'].append(data_range)
-                group_ranges[el_dim.name]['hard'].append(el_dim.range)
-                group_ranges[el_dim.name]['soft'].append(el_dim.soft_range)
+                if dim_name not in group_ranges:
+                    group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                group_ranges[dim_name]['data'].append(data_range)
+                group_ranges[dim_name]['hard'].append(el_dim.range)
+                group_ranges[dim_name]['soft'].append(el_dim.soft_range)
                 if (any(isinstance(r, util.basestring) for r in data_range) or
                     el_dim.type is not None and issubclass(el_dim.type, util.basestring)):
-                    if 'factors' not in group_ranges[el_dim.name]:
-                        group_ranges[el_dim.name]['factors'] = []
+                    if 'factors' not in group_ranges[dim_name]:
+                        group_ranges[dim_name]['factors'] = []
                     if el_dim.values not in ([], None):
                         values = el_dim.values
                     elif el_dim in el:
@@ -736,10 +739,23 @@ class DimensionedPlot(Plot):
                         all(isinstance(v, (np.ndarray)) for v in values)):
                         values = np.concatenate(values)
                     factors = util.unique_array(values)
-                    group_ranges[el_dim.name]['factors'].append(factors)
+                    group_ranges[dim_name]['factors'].append(factors)
+
+        group_dim_ranges = defaultdict(dict)
+        for gdim, values in group_ranges.items():
+            matching = True
+            for t, rs in values.items():
+                if t == 'factors':
+                    continue
+                matching &= (
+                    len({'date' if isinstance(v, util.datetime_types) else 'number'
+                         for rng in rs for v in rng if util.isfinite(v)}) < 2
+                )
+            if matching:
+                group_dim_ranges[gdim] = values
 
         dim_ranges = []
-        for gdim, values in group_ranges.items():
+        for gdim, values in group_dim_ranges.items():
             hard_range = util.max_range(values['hard'], combined=False)
             soft_range = util.max_range(values['soft'])
             data_range = util.max_range(values['data'])
@@ -751,7 +767,10 @@ class DimensionedPlot(Plot):
                 dranges['factors'] = util.unique_array([
                     v for fctrs in values['factors'] for v in fctrs])
             dim_ranges.append((gdim, dranges))
-        ranges[group] = OrderedDict(dim_ranges)
+        if group not in ranges:
+            ranges[group] = OrderedDict(dim_ranges)
+        else:
+            ranges[group].update(OrderedDict(dim_ranges))
 
 
     @classmethod
