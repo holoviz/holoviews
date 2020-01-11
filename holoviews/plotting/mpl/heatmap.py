@@ -395,7 +395,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         if paths:
             groups = [g for g in self._style_groups if g != 'xmarks']
             xmark_opts = filter_styles(plot_kwargs, 'xmarks', groups, color_opts)
-            xmark_opts.pop('interpolation', None)
+            xmark_opts.pop('edgecolors', None)
             xseparators = LineCollection(paths, **xmark_opts)
             ax.add_collection(xseparators)
             artists['xseparator'] = xseparators
@@ -404,7 +404,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         if paths:
             groups = [g for g in self._style_groups if g != 'ymarks']
             ymark_opts = filter_styles(plot_kwargs, 'ymarks', groups, color_opts)
-            ymark_opts.pop('interpolation', None)
+            ymark_opts.pop('edgecolors', None)
             yseparators = PatchCollection(paths, facecolor='none',
                                           transform=ax.transAxes, **ymark_opts)
             ax.add_collection(yseparators)

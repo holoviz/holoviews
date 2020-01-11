@@ -19,42 +19,6 @@ class TestHeatMapPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(hmap)
         self.assertEqual(plot.get_extents(hmap, {}), (-.5, -22, 2.5, 74))
 
-    def test_heatmap_xmarks_int(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(xmarks=2)
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['xmarks'], (-0.5, 1.5)):
-            self.assertEqual(marker.get_xdata(), [pos, pos])
-
-    def test_heatmap_xmarks_tuple(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(xmarks=('A', 'B'))
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['xmarks'], (0, 1)):
-            self.assertEqual(marker.get_xdata(), [pos, pos])
-
-    def test_heatmap_xmarks_list(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(xmarks=[0, 1])
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['xmarks'], (0, 1)):
-            self.assertEqual(marker.get_xdata(), [pos, pos])
-
-    def test_heatmap_ymarks_int(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(ymarks=2)
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['ymarks'], (0.5, 2.5)):
-            self.assertEqual(marker.get_ydata(), [pos, pos])
-
-    def test_heatmap_ymarks_tuple(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(ymarks=('A', 'B'))
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['ymarks'], (0, 1)):
-            self.assertEqual(marker.get_ydata(), [pos, pos])
-
-    def test_heatmap_ymarks_list(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(ymarks=[0, 1])
-        plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['ymarks'], (0, 1)):
-            self.assertEqual(marker.get_ydata(), [pos, pos])
-
     def test_heatmap_invert_xaxis(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(invert_xaxis=True)
         plot = mpl_renderer.get_plot(hmap)

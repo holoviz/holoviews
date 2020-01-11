@@ -70,6 +70,9 @@ class HeatMapPlot(ColorbarPlot):
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if 'line_alpha' not in style and 'line_width' not in style:
             style['line_alpha'] = 0
+        elif 'line_color' not in style:
+            style['line_color'] = 'white'
+
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
 
