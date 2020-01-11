@@ -111,7 +111,7 @@ class HeatMapPlot(QuadMeshPlot):
         return annotations
 
 
-    def _compute_ticks(self, element, xvals, yvals):
+    def _compute_ticks(self, element, xvals, yvals, xfactors, yfactors):
         xdim, ydim = element.kdims
         if self.invert_axes:
             xdim, ydim = ydim, xdim
@@ -121,51 +121,32 @@ class HeatMapPlot(QuadMeshPlot):
         xticks = opts.get('xticks')
         if xticks is None:
             xpos = xvals[:-1] + np.diff(xvals)/2.
-            xlabels = [xdim.pprint_value(k) for k in element.gridded.dimension_values(xdim, False)]
+            if not xfactors:
+                xfactors = element.gridded.dimension_values(xdim, False)
+            xlabels = [xdim.pprint_value(k) for k in xfactors]
             xticks = list(zip(xpos, xlabels))
 
         yticks = opts.get('yticks')
         if yticks is None:
             ypos = yvals[:-1] + np.diff(yvals)/2.
-            ylabels = [ydim.pprint_value(k) for k in element.gridded.dimension_values(ydim, False)]
+            if not yfactors:
+                yfactors = element.gridded.dimension_values(ydim, False)
+            ylabels = [ydim.pprint_value(k) for k in yfactors]
             yticks = list(zip(ypos, ylabels))
         return xticks, yticks
 
 
-    def _draw_markers(self, ax, element, marks, values, axis='x'):
-        if marks is None:
+    def _draw_markers(self, ax, element, marks, values, factors, axis='x'):
+        if marks is None or self.radial:
             return
-        style = self.style[self.cyclic_index]
-        mark_opts = {k[7:]: v for k, v in style.items() if axis+'mark' in k}
-        mark_opts = {k[4:] if 'edge' in k else k: v for k, v in mark_opts.items()}
-        categories = values
-
-        if marks == True:
-            positions = values
-        elif callable(marks):
-            positions = [i for i, x in enumerate(categories) if marks(x)]
-        elif isinstance(marks, int):
-            nth_mark = np.ceil(len(categories) / marks).astype(int)
-            positions = values[::nth_mark]
-        elif isinstance(marks, tuple):
-            positions = [categories.index(m) for m in marks if m in categories]
-        else:
-            positions = marks
-
-        for m in self.handles.get(axis+'marks', []):
-            m.remove()
-
-        new_markers = []
-        for p in positions:
-            if axis == 'x':
-                line = ax.axvline(p, **mark_opts)
-            else:
-                line = ax.axhline(p, **mark_opts)
-            new_markers.append(line)
-        self.handles[axis+'marks'] = new_markers
+        self.warning('Only radial HeatMaps supports marks, to make the'
+                     'HeatMap quads more distinguishable set linewidths'
+                     'to a non-zero value.')
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
+        xfactors = plot_kwargs.pop('xfactors')
+        yfactors = plot_kwargs.pop('yfactors')
         annotations = plot_kwargs.pop('annotations', None)
         prefixes = ['annular', 'xmarks', 'ymarks']
         plot_kwargs = {k: v for k, v in plot_kwargs.items()
@@ -174,8 +155,10 @@ class HeatMapPlot(QuadMeshPlot):
 
         if self.show_values and annotations:
             self.handles['annotations'] = self._annotate_plot(ax, annotations)
-        self._draw_markers(ax, self.current_frame, self.xmarks, plot_args[0], axis='x')
-        self._draw_markers(ax, self.current_frame, self.ymarks, plot_args[1], axis='y')
+        self._draw_markers(ax, self.current_frame, self.xmarks,
+                           plot_args[0], xfactors, axis='x')
+        self._draw_markers(ax, self.current_frame, self.ymarks,
+                           plot_args[1], yfactors, axis='y')
         return {'artist': artist}
 
 
@@ -203,7 +186,12 @@ class HeatMapPlot(QuadMeshPlot):
             yvals = aggregate.dimension_values(ydim, expanded=False)
             yvals = GridInterface._infer_interval_breaks(yvals)
 
-        xticks, yticks = self._compute_ticks(element, xvals, yvals)
+        xfactors = list(ranges.get(xdim.name, {}).get('factors', []))
+        yfactors = list(ranges.get(ydim.name, {}).get('factors', []))
+        xticks, yticks = self._compute_ticks(element, xvals, yvals, xfactors, yfactors)
+
+        style['xfactors'] = xfactors
+        style['yfactors'] = yfactors
 
         if self.show_values:
             style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)

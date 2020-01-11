@@ -207,7 +207,8 @@ options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
                           xmarks_line_color="#FFFFFF", xmarks_line_width=3,
-                          ymarks_line_color="#FFFFFF", ymarks_line_width=3)
+                          ymarks_line_color="#FFFFFF", ymarks_line_width=3,
+                          line_color='white')
 
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
