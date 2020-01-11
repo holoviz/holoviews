@@ -9,7 +9,7 @@ from matplotlib.patches import Wedge, Circle
 from matplotlib.collections import LineCollection, PatchCollection
 
 from ...core.data import GridInterface
-from ...core.util import dimension_sanitizer, unique_array, is_nan
+from ...core.util import dimension_sanitizer, is_nan
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot
 from .raster import QuadMeshPlot
@@ -65,12 +65,12 @@ class HeatMapPlot(QuadMeshPlot):
             agg = element.gridded
             xtype = agg.interface.dtype(agg, 0)
             shape = agg.interface.shape(agg, gridded=True)
-            if xtype.kind in 'SUOiu':
+            if xtype.kind in 'SUO':
                 x0, x1 = (0-0.5, shape[1]-0.5)
             else:
                 x0, x1 = element.range(0)
             ytype = agg.interface.dtype(agg, 1)
-            if xtype.kind in 'SUOiu':
+            if ytype.kind in 'SUO':
                 y0, y1 = (-.5, shape[0]-0.5)
             else:
                 y0, y1 = element.range(1)
@@ -190,14 +190,14 @@ class HeatMapPlot(QuadMeshPlot):
             data = data.T[::-1, ::-1]
 
         xtype = aggregate.interface.dtype(aggregate, xdim)
-        if xtype.kind in 'SUOiu':
+        if xtype.kind in 'SUO':
             xvals = np.arange(data.shape[1]+1)-0.5
         else:
             xvals = aggregate.dimension_values(xdim, expanded=False)
             xvals = GridInterface._infer_interval_breaks(xvals)
 
         ytype = aggregate.interface.dtype(aggregate, ydim)
-        if ytype.kind in 'SUOiu':
+        if ytype.kind in 'SUO':
             yvals = np.arange(data.shape[0]+1)-0.5
         else:
             yvals = aggregate.dimension_values(ydim, expanded=False)
@@ -205,7 +205,6 @@ class HeatMapPlot(QuadMeshPlot):
 
         xticks, yticks = self._compute_ticks(element, xvals, yvals)
 
-        shape = data.shape
         if self.show_values:
             style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
         vdim = element.vdims[0]

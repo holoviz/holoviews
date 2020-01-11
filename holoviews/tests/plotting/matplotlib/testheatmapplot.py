@@ -17,7 +17,7 @@ class TestHeatMapPlot(TestMPLPlot):
     def test_heatmap_extents(self):
         hmap = HeatMap([('A', 50, 1), ('B', 2, 2), ('C', 50, 1)])
         plot = mpl_renderer.get_plot(hmap)
-        self.assertEqual(plot.get_extents(hmap, {}), (-.5, -.5, 2.5, 1.5))
+        self.assertEqual(plot.get_extents(hmap, {}), (-.5, -22, 2.5, 74))
 
     def test_heatmap_xmarks_int(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(xmarks=2)
@@ -40,7 +40,7 @@ class TestHeatMapPlot(TestMPLPlot):
     def test_heatmap_ymarks_int(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(ymarks=2)
         plot = mpl_renderer.get_plot(hmap)
-        for marker, pos in zip(plot.handles['ymarks'], (-0.5, 1.5)):
+        for marker, pos in zip(plot.handles['ymarks'], (0.5, 2.5)):
             self.assertEqual(marker.get_ydata(), [pos, pos])
 
     def test_heatmap_ymarks_tuple(self):
