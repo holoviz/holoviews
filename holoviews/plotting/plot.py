@@ -598,7 +598,7 @@ class DimensionedPlot(Plot):
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
-                self._compute_group_range(group, elements, ranges)
+                self._compute_group_range(group, elements, ranges, framewise)
         self.ranges.update(ranges)
         return ranges
 
@@ -650,7 +650,7 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges):
+    def _compute_group_range(cls, group, elements, ranges, framewise):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
@@ -666,6 +666,8 @@ class DimensionedPlot(Plot):
                     continue
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
+                    if dim_name in ranges.get(group, {}) and not framewise:
+                        continue
                     values = v.apply(el, expanded=False, all_values=True)
                     factors = None
                     if values.dtype.kind == 'M':
@@ -681,8 +683,6 @@ class DimensionedPlot(Plot):
                                 drange = (np.nanmin(values), np.nanmax(values))
                         except:
                             factors = util.unique_array(values)
-                    if dim_name in ranges.get(group, {}):
-                        continue
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
                     if factors is not None:
@@ -695,7 +695,7 @@ class DimensionedPlot(Plot):
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
                 dim_name = el_dim.name
-                if dim_name in ranges.get(group, {}):
+                if dim_name in ranges.get(group, {}) and not framewise:
                     continue
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
