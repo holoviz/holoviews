@@ -6,6 +6,7 @@ import numpy as np
 from bokeh.models import Span
 from bokeh.models.glyphs import AnnularWedge
 
+from ...core.data import GridInterface
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
@@ -54,8 +55,6 @@ class HeatMapPlot(ColorbarPlot):
                   ['ymarks_' + p for p in line_properties] +
                   ['cmap', 'color', 'dilate', 'visible'] + line_properties + fill_properties)
 
-    _categorical = True
-
     @classmethod
     def is_radial(cls, heatmap):
         heatmap = heatmap.last if isinstance(heatmap, HoloMap) else heatmap
@@ -76,19 +75,43 @@ class HeatMapPlot(ColorbarPlot):
 
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
-        xvals, yvals = (aggregate.dimension_values(x),
-                        aggregate.dimension_values(y))
+
+        xtype = aggregate.interface.dtype(aggregate, xdim)
+        widths = None
+        if xtype.kind in 'SUO':
+            xvals = aggregate.dimension_values(xdim)
+            width = 1
+        else:
+            xvals = aggregate.dimension_values(xdim, flat=False)
+            edges = GridInterface._infer_interval_breaks(xvals, axis=1)
+            widths = np.diff(edges, axis=1).T.flatten()
+            xvals = xvals.T.flatten()
+            width = 'width'
+
+        ytype = aggregate.interface.dtype(aggregate, ydim)
+        heights = None
+        if ytype.kind in 'SUO':
+            yvals = aggregate.dimension_values(ydim)
+            height = 1
+        else:
+            yvals = aggregate.dimension_values(ydim, flat=False)
+            edges = GridInterface._infer_interval_breaks(yvals, axis=0)
+            heights = np.diff(edges, axis=0).T.flatten()
+            xvals = yvals.T.flatten()
+            height = 'height'
+
         zvals = aggregate.dimension_values(2, flat=False)
+        
         if self.invert_axes:
             xdim, ydim = ydim, xdim
             zvals = zvals.T.flatten()
         else:
             zvals = zvals.T.flatten()
-        if xvals.dtype.kind not in 'SU':
-            xvals = [xdim.pprint_value(xv) for xv in xvals]
-        if yvals.dtype.kind not in 'SU':
-            yvals = [ydim.pprint_value(yv) for yv in yvals]
         data = {x: xvals, y: yvals, 'zvalues': zvals}
+        if widths is not None:
+            data['width'] = widths
+        if heights is not None:
+            data['height'] = heights
 
         if 'hover' in self.handles and not self.static_source:
             for vdim in element.vdims:
@@ -100,7 +123,7 @@ class HeatMapPlot(ColorbarPlot):
         style = {k: v for k, v in style.items() if not
                  any(g in k for g in RadialHeatMapPlot._style_groups.values())}
         return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
-                       'height': 1, 'width': 1}, style)
+                       'height': height, 'width': width}, style)
 
     def _draw_markers(self, plot, element, marks, axis='x'):
         if marks is None:
