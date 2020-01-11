@@ -12,11 +12,11 @@ from ...core.data import GridInterface
 from ...core.util import dimension_sanitizer, unique_array, is_nan
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot
-from .raster import RasterPlot
+from .raster import QuadMeshPlot
 from .util import filter_styles
 
 
-class HeatMapPlot(RasterPlot):
+class HeatMapPlot(QuadMeshPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -60,20 +60,17 @@ class HeatMapPlot(RasterPlot):
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
-    style_opts = ['alpha', 'cmap', 'clims', 'edgecolors', 'norm', 'shading',
-                  'linestyles', 'linewidths', 'hatch', 'visible']
-
     def get_extents(self, element, ranges, range_type='combined'):
         if range_type in ('data', 'combined'):
             agg = element.gridded
             xtype = agg.interface.dtype(agg, 0)
             shape = agg.interface.shape(agg, gridded=True)
-            if xtype.kind in 'SUO':
+            if xtype.kind in 'SUOiu':
                 x0, x1 = (0-0.5, shape[1]-0.5)
             else:
                 x0, x1 = element.range(0)
             ytype = agg.interface.dtype(agg, 1)
-            if xtype.kind in 'SUO':
+            if xtype.kind in 'SUOiu':
                 y0, y1 = (-.5, shape[0]-0.5)
             else:
                 y0, y1 = element.range(1)
@@ -90,6 +87,8 @@ class HeatMapPlot(RasterPlot):
                  and not (opts.get('radial') == False)) or opts.get('radial', False))
 
     def _annotate_plot(self, ax, annotations):
+        for a in self.handles.get('annotations', {}).values():
+            a.remove()
         handles = {}
         for plot_coord, text in annotations.items():
             handles[plot_coord] = ax.annotate(text, xy=plot_coord,
@@ -153,7 +152,9 @@ class HeatMapPlot(RasterPlot):
         else:
             positions = marks
 
-        prev_markers = self.handles.get(axis+'marks', [])
+        for m in self.handles.get(axis+'marks', []):
+            m.remove()
+
         new_markers = []
         for p in positions:
             if axis == 'x':
@@ -161,8 +162,6 @@ class HeatMapPlot(RasterPlot):
             else:
                 line = ax.axhline(p, **mark_opts)
             new_markers.append(line)
-        for pm in prev_markers:
-            pm.remove()
         self.handles[axis+'marks'] = new_markers
 
 
@@ -172,7 +171,6 @@ class HeatMapPlot(RasterPlot):
         plot_kwargs = {k: v for k, v in plot_kwargs.items()
                        if not any(p in k for p in prefixes)}
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
-
 
         if self.show_values and annotations:
             self.handles['annotations'] = self._annotate_plot(ax, annotations)
@@ -192,14 +190,14 @@ class HeatMapPlot(RasterPlot):
             data = data.T[::-1, ::-1]
 
         xtype = aggregate.interface.dtype(aggregate, xdim)
-        if xtype.kind in 'SUO':
+        if xtype.kind in 'SUOiu':
             xvals = np.arange(data.shape[1]+1)-0.5
         else:
             xvals = aggregate.dimension_values(xdim, expanded=False)
             xvals = GridInterface._infer_interval_breaks(xvals)
 
         ytype = aggregate.interface.dtype(aggregate, ydim)
-        if ytype.kind in 'SUO':
+        if ytype.kind in 'SUOiu':
             yvals = np.arange(data.shape[0]+1)-0.5
         else:
             yvals = aggregate.dimension_values(ydim, expanded=False)
@@ -214,39 +212,6 @@ class HeatMapPlot(RasterPlot):
         self._norm_kwargs(element, ranges, style, vdim)
         return (xvals, yvals, data), style, {'xticks': xticks, 'yticks': yticks}
 
-
-    def update_handles(self, key, axis, element, ranges, style):
-        im = self.handles['artist']
-        data, style, axis_kwargs = self.get_data(element, ranges, style)
-        im.set_data(data[0])
-        im.set_extent(style['extent'])
-        im.set_clim((style['vmin'], style['vmax']))
-        if 'norm' in style:
-            im.norm = style['norm']
-
-        colorbar = self.handles.get('cbar')
-        if colorbar and mpl_version < '3.1':
-            colorbar.set_norm(im.norm)
-            if hasattr(colorbar, 'set_array'):
-                # Compatibility with mpl < 3
-                colorbar.set_array(im.get_array())
-            colorbar.set_clim(im.get_clim())
-            colorbar.update_normal(im)
-        elif colorbar:
-            colorbar.update_normal(im)
-
-        if self.show_values:
-            annotations = self.handles['annotations']
-            for annotation in annotations.values():
-                try:
-                    annotation.remove()
-                except:
-                    pass
-            annotations = self._annotate_plot(axis, style['annotations'])
-            self.handles['annotations'] = annotations
-        self._draw_markers(axis, element, self.xmarks, axis='x')
-        self._draw_markers(axis, element, self.ymarks, axis='y')
-        return axis_kwargs
 
 
 class RadialHeatMapPlot(ColorbarPlot):
