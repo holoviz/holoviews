@@ -40,7 +40,7 @@ from .util import (
     TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter)
+    compute_layout_properties, wrap_formatter, match_ax_type)
 
 
 
@@ -282,7 +282,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
-    def _merge_ranges(self, plots, xspecs, yspecs):
+    def _merge_ranges(self, plots, xspecs, yspecs, xtype, ytype):
         """
         Given a list of other plots return axes that are shared
         with another plot by matching the dimensions specs stored
@@ -293,14 +293,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if plot is None:
                 continue
             if hasattr(plot, 'x_range') and plot.x_range.tags and xspecs is not None:
-                if match_dim_specs(plot.x_range.tags[0], xspecs):
+                if match_dim_specs(plot.x_range.tags[0], xspecs) and match_ax_type(plot.xaxis, xtype):
                     plot_ranges['x_range'] = plot.x_range
-                if match_dim_specs(plot.x_range.tags[0], yspecs):
+                if match_dim_specs(plot.x_range.tags[0], yspecs) and match_ax_type(plot.xaxis, ytype):
                     plot_ranges['y_range'] = plot.x_range
             if hasattr(plot, 'y_range') and plot.y_range.tags and yspecs is not None:
-                if match_dim_specs(plot.y_range.tags[0], yspecs):
+                if match_dim_specs(plot.y_range.tags[0], yspecs) and match_ax_type(plot.yaxis, ytype):
                     plot_ranges['y_range'] = plot.y_range
-                if match_dim_specs(plot.y_range.tags[0], xspecs):
+                if match_dim_specs(plot.y_range.tags[0], xspecs) and match_ax_type(plot.yaxis, xtype):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
@@ -342,12 +342,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             yspecs = tuple((yd.name, yd.label, yd.unit) for yd in ydims)
         else:
             yspecs = None
-
-        plot_ranges = {}
-        # Try finding shared ranges in other plots in the same Layout
-        norm_opts = self.lookup_options(el, 'norm').options
-        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
-            plot_ranges = self._merge_ranges(plots, xspecs, yspecs)
 
         # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
@@ -393,6 +387,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if ((ytype is np.object_ and issubclass(type(b), util.datetime_types))
                     or ytype in util.datetime_types):
                     y_axis_type = 'datetime'
+
+        plot_ranges = {}
+        # Try finding shared ranges in other plots in the same Layout
+        norm_opts = self.lookup_options(el, 'norm').options
+        if plots and self.shared_axes and not norm_opts.get('axiswise', False):
+            plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
 
         # Declare shared axes
         if 'x_range' in plot_ranges:

@@ -19,8 +19,13 @@ from bokeh.core.properties import value
 from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
-from bokeh.models.formatters import FuncTickFormatter, TickFormatter, PrintfTickFormatter
+from bokeh.models import (
+    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis
+)
+from bokeh.models.formatters import (
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+)
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -39,7 +44,8 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types)
+    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types
+)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -912,6 +918,18 @@ def match_dim_specs(specs1, specs2):
             if s1 != s2:
                 return False
     return True
+
+
+def match_ax_type(ax, range_type):
+    """
+    Ensure the range_type matches the axis model being matched.
+    """
+    if isinstance(ax[0], CategoricalAxis):
+        return range_type == 'categorical'
+    elif isinstance(ax[0], DatetimeAxis):
+        return range_type == 'datetime'
+    else:
+        return range_type in ('auto', 'log')
 
 
 def wrap_formatter(formatter, axis):
