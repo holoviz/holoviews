@@ -942,9 +942,6 @@ class HeatMap(Dataset, Element2D):
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
-        Range of the y-dimension includes the symmetric or assymetric
-        error.
-
         Args:
             dimension: The dimension to compute the range on.
             data_range (bool): Compute range from data values
@@ -959,7 +956,10 @@ class HeatMap(Dataset, Element2D):
         if dim in self.kdims:
             try:
                 self.gridded._binned = True
-                drange = self.gridded.range(dim, data_range, dimension_range)
+                if self.gridded is self:
+                    return super(HeatMap, self).range(dim, data_range, dimension_range)
+                else:
+                    drange = self.gridded.range(dim, data_range, dimension_range)
             except:
                 drange = None
             finally:

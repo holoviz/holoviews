@@ -97,7 +97,7 @@ class HeatMapPlot(ColorbarPlot):
             yvals = aggregate.dimension_values(ydim, flat=False)
             edges = GridInterface._infer_interval_breaks(yvals, axis=0)
             heights = np.diff(edges, axis=0).T.flatten()
-            xvals = yvals.T.flatten()
+            yvals = yvals.T.flatten()
             height = 'height'
 
         zvals = aggregate.dimension_values(2, flat=False)
