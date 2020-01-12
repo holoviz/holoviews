@@ -10,7 +10,6 @@ from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
 from .styles import line_properties, fill_properties, text_properties
-from .util import date_to_integer
 
 
 class HeatMapPlot(ColorbarPlot):
