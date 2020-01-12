@@ -11,12 +11,13 @@ from matplotlib.collections import LineCollection, PatchCollection
 from ...core.data import GridInterface
 from ...core.util import dimension_sanitizer, is_nan
 from ...core.spaces import HoloMap
+from ..mixins import HeatMapMixin
 from .element import ColorbarPlot
 from .raster import QuadMeshPlot
 from .util import filter_styles
 
 
-class HeatMapPlot(QuadMeshPlot):
+class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -59,25 +60,6 @@ class HeatMapPlot(QuadMeshPlot):
     yticks = param.Parameter(default=20, doc="""
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        if range_type in ('data', 'combined'):
-            agg = element.gridded
-            xtype = agg.interface.dtype(agg, 0)
-            shape = agg.interface.shape(agg, gridded=True)
-            if xtype.kind in 'SUO':
-                x0, x1 = (0-0.5, shape[1]-0.5)
-            else:
-                x0, x1 = element.range(0)
-            ytype = agg.interface.dtype(agg, 1)
-            if ytype.kind in 'SUO':
-                y0, y1 = (-.5, shape[0]-0.5)
-            else:
-                y0, y1 = element.range(1)
-            return (x0, y0, x1, y1)
-        else:
-            return super(HeatMapPlot, self).get_extents(element, ranges, range_type)
-
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -165,6 +147,12 @@ class HeatMapPlot(QuadMeshPlot):
     def get_data(self, element, ranges, style):
         xdim, ydim = element.kdims
         aggregate = element.gridded
+
+        if not element._unique:
+            self.warning('HeatMap element index is not unique,  ensure you '
+                         'aggregate the data before displaying it, e.g. '
+                         'using heatmap.aggregate(function=np.mean). '
+                         'Duplicate index values have been dropped.')
 
         data = aggregate.dimension_values(2, flat=False)
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))

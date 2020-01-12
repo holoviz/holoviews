@@ -10,6 +10,7 @@ from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
 from .styles import line_properties, fill_properties, text_properties
+from .util import date_to_integer
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -73,6 +74,12 @@ class HeatMapPlot(ColorbarPlot):
         elif 'line_color' not in style:
             style['line_color'] = 'white'
 
+        if not element._unique:
+            self.warning('HeatMap element index is not unique,  ensure you '
+                         'aggregate the data before displaying it, e.g. '
+                         'using heatmap.aggregate(function=np.mean). '
+                         'Duplicate index values have been dropped.')
+
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
 
@@ -86,6 +93,8 @@ class HeatMapPlot(ColorbarPlot):
             width = 1
         else:
             xvals = aggregate.dimension_values(xdim, flat=False)
+            if xtype.kind == 'M':
+                xvals = xvals.astype('datetime64[ms]').astype(int)
             edges = GridInterface._infer_interval_breaks(xvals, axis=1)
             widths = np.diff(edges, axis=1).T.flatten()
             xvals = xvals.T.flatten()
@@ -104,12 +113,12 @@ class HeatMapPlot(ColorbarPlot):
             height = 'height'
 
         zvals = aggregate.dimension_values(2, flat=False)
-        
+        zvals = zvals.T.flatten()
+
         if self.invert_axes:
-            xdim, ydim = ydim, xdim
-            zvals = zvals.T.flatten()
-        else:
-            zvals = zvals.T.flatten()
+            xvals, yvals = yvals, xvals
+            width, height = height, width
+
         data = {x: xvals, y: yvals, 'zvalues': zvals}
         if widths is not None:
             data['width'] = widths

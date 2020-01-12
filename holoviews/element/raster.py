@@ -938,6 +938,12 @@ class HeatMap(Dataset, Element2D):
         super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
         self.gridded = categorical_aggregate2d(self)
 
+    @property
+    def _unique(self):
+        """
+        Reports if the Dataset is unique.
+        """
+        return self.gridded.label != 'non-unique'
 
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
