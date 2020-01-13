@@ -92,8 +92,6 @@ class HeatMapPlot(ColorbarPlot):
             width = 1
         else:
             xvals = aggregate.dimension_values(xdim, flat=False)
-            if xtype.kind == 'M':
-                xvals = xvals.astype('datetime64[ms]').astype(int)
             edges = GridInterface._infer_interval_breaks(xvals, axis=1)
             widths = np.diff(edges, axis=1).T.flatten()
             xvals = xvals.T.flatten()
@@ -115,7 +113,6 @@ class HeatMapPlot(ColorbarPlot):
         zvals = zvals.T.flatten()
 
         if self.invert_axes:
-            xvals, yvals = yvals, xvals
             width, height = height, width
 
         data = {x: xvals, y: yvals, 'zvalues': zvals}

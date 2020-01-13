@@ -80,13 +80,13 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_heatmap_construct(self):
         hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])
         dataset = Dataset({'x': ['A', 'B'], 'y': ['a', 'b'], 'z': [[1, np.NaN], [np.NaN, 2]]},
-                          kdims=['x', 'y'], vdims=['z'])
+                          kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
     def test_heatmap_construct_unsorted(self):
         hmap = HeatMap([('B', 'b', 2), ('A', 'a', 1)])
         dataset = Dataset({'x': ['B', 'A'], 'y': ['b', 'a'], 'z': [[2, np.NaN], [np.NaN, 1]]},
-                          kdims=['x', 'y'], vdims=['z'])
+                          kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
     def test_heatmap_construct_partial_sorted(self):
@@ -94,7 +94,7 @@ class ElementConstructorTest(ComparisonTestCase):
         hmap = HeatMap(data)
         dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['c', 'b', 'a'],
                            'z': [[0, 2, np.NaN], [np.NaN, 0, 0], [0, np.NaN, 2]]},
-                          kdims=['x', 'y'], vdims=['z'])
+                          kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
     def test_heatmap_construct_and_sort(self):
@@ -102,7 +102,7 @@ class ElementConstructorTest(ComparisonTestCase):
         hmap = HeatMap(data).sort()
         dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['a', 'b', 'c'],
                            'z': [[np.NaN, 0, 0], [0, np.NaN, 2], [0, 2, np.NaN]]},
-                          kdims=['x', 'y'], vdims=['z'])
+                          kdims=['x', 'y'], vdims=['z'], label='unique')
         self.assertEqual(hmap.gridded, dataset)
 
 

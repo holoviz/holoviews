@@ -70,7 +70,7 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
                          'aggregate the data before displaying it, e.g. '
                          'using heatmap.aggregate(function=np.mean). '
                          'Duplicate index values have been dropped.')
-        
+
         gridded = element.gridded
         xdim, ydim = gridded.dimensions()[:2]
         data = gridded.dimension_values(2, flat=False)

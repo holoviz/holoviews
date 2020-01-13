@@ -159,7 +159,7 @@ class categorical_aggregate2d(Operation):
         elif not is_cyclic(orderings):
             coords = list(itertools.chain(*sort_topologically(orderings)))
             ycoords = coords if len(coords) == len(ycoords) else np.sort(ycoords)
-        return xcoords, ycoords
+        return np.asarray(xcoords), np.asarray(ycoords)
 
     def _aggregate_dataset(self, obj):
         """
@@ -207,9 +207,9 @@ class categorical_aggregate2d(Operation):
         index = pd.MultiIndex.from_product(levels, names=df.index.names)
         reindexed = df.reindex(index)
         data = tuple(levels)
-        shape = data[1].shape + data[0].shape
+        shape = tuple(d.shape[0] for d in data)
         for vdim in obj.vdims:
-            data += (reindexed[vdim.name].values.reshape(shape),)
+            data += (reindexed[vdim.name].values.reshape(shape).T,)
         return obj.clone(data, datatype=self.p.datatype, label=label)
 
     def _process(self, obj, key=None):
