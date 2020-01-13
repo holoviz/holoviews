@@ -9,11 +9,13 @@ import numpy as np
 from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from .selection import BokehOverlaySelectionDisplay
+from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator, isfinite)
+                          unique_iterator, unique_array, isfinite)
 from ...operation.stats import univariate_kde
+from ...util.transform import dim
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
@@ -315,6 +317,9 @@ class ViolinPlot(BoxWhiskerPlot):
           * quartiles - Indicates first, second and third quartiles
         """)
 
+    split = param.ClassSelector(default=None, class_=(str, dim), doc="""
+       The dimension to split the Violin on.""")
+
     violin_width = param.Number(default=0.8, doc="""
        Relative width of the violin""")
 
@@ -325,14 +330,16 @@ class ViolinPlot(BoxWhiskerPlot):
         Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`""")
 
     # Map each glyph to a style group
-    _style_groups = {'patches': 'violin', 'segment': 'stats', 'vbar': 'box',
-                     'scatter': 'median', 'hbar': 'box'}
+    _style_groups = {'patches': 'violin', 'multi_line': 'outline',
+                     'segment': 'stats', 'vbar': 'box', 'scatter': 'median',
+                     'hbar': 'box'}
 
-    _draw_order = ['patches', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
+    _draw_order = ['patches', 'multi_line', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
 
     style_opts = ([glyph+p for p in fill_properties+line_properties
                    for glyph in ('violin_', 'box_')] +
-                  ['stats_'+p for p in line_properties] +
+                  [glyph+p for p in line_properties
+                   for glyph in ('stats_', 'outline_')] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
                   ['cmap', 'box_cmap', 'violin_cmap'])
@@ -341,20 +348,91 @@ class ViolinPlot(BoxWhiskerPlot):
 
     selection_display = BokehOverlaySelectionDisplay(color_prop='violin_fill_color')
 
-    def _kde_data(self, el, key, **kwargs):
-        vdim = el.vdims[0]
-        values = el.dimension_values(vdim)
+    def _get_axis_dims(self, element):
+        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
+        return kdims, element.vdims[0]
+
+    def _get_factors(self, element, ranges):
+        """
+        Get factors for categorical axes.
+        """
+        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
+        if not kdims:
+            xfactors, yfactors = [element.label], []
+        else:
+            factors = [key for key in element.groupby(kdims).data.keys()]
+            if element.ndims > 1:
+                factors = sorted(factors)
+            factors = [tuple(d.pprint_value(k) for d, k in zip(kdims, key))
+                       for key in factors]
+            factors = [f[0] if len(f) == 1 else f for f in factors]
+            xfactors, yfactors = factors, []
+        return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
+
+    def _kde_data(self, element, el, key, split_dim, **kwargs):
+        vdims = el.vdims
+        vdim = vdims[0]
         if self.clip:
             vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
-        kde = univariate_kde(el, dimension=vdim.name, **kwargs)
-        xs, ys = (kde.dimension_values(i) for i in range(2))
-        mask = isfinite(ys) & (ys>0) # Mask out non-finite and zero values
-        xs, ys = xs[mask], ys[mask]
-        ys = (ys/ys.max())*(self.violin_width/2.) if len(ys) else []
-        ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
-        xs = np.concatenate([xs, xs[::-1]])
-        kde =  {'ys': xs, 'xs': ys}
+
+        if split_dim is not None:
+            el = el.clone(kdims=element.kdims)
+            all_cats = split_dim.apply(el)
+            bin_cats = unique_array(all_cats)
+            if len(bin_cats) > 2:
+                raise ValueError(
+                    'The number of categories for split violin plots cannot be '
+                    'greater than 2! Found {0} categories: {1}'.format(
+                        len(bin_cats), ', '.join(bin_cats)))
+            el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
+
+            kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
+            scale = 4
+        else:
+            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)] * 2
+            scale = 2
+
+        x_range = el.range(vdim)
+        xs, fill_xs, ys, fill_ys = [], [], [], []
+        for i, kde in enumerate(kdes):
+            _xs, _ys = (kde.dimension_values(i) for i in range(2))
+            mask = isfinite(_ys) & (_ys>0) # Mask out non-finite and zero values
+            _xs, _ys = _xs[mask], _ys[mask]
+
+            if i == 0:
+                _ys *= -1
+            else:
+                _ys = _ys[::-1]
+                _xs = _xs[::-1]
+
+            if split_dim and len(_xs):
+                fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
+                fill_ys.append([0]+list(_ys)+[0])
+            x_range = x_range[::-1]
+
+            xs += list(_xs)
+            ys += list(_ys)
+
+        xs = np.array(xs)
+        ys = np.array(ys)
+
+        # this scales the width
+        if split_dim:
+            fill_xs = [np.asarray(x) for x in fill_xs]
+            fill_ys = [[key + (y,) for y in (fy/ys.max())*(self.violin_width/scale)] for fy in fill_ys]
+        ys = (ys/ys.max())*(self.violin_width/scale) if len(ys) else []
+        ys = [key + (y,) for y in ys]
+
+        line = {'ys': xs, 'xs': ys}
+        if split_dim:
+            kde = {'ys': fill_xs, 'xs': fill_ys}
+        else:
+            kde = line
+        if isinstance(kdes, NdOverlay):
+            kde[repr(split_dim)] = [str(k) for k in kdes.keys()]
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
@@ -389,13 +467,16 @@ class ViolinPlot(BoxWhiskerPlot):
             bars['top'].append(q3)
             scatter['x'] = xpos
             scatter['y'] = q2
-        return kde, segments, bars, scatter
+        return kde, line, segments, bars, scatter
 
 
     def get_data(self, element, ranges, style):
-        if element.kdims:
+        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        kdims = [kd for kd in element.kdims if not split_dim or split_dim.dimension != kd]
+
+        if kdims:
             with sorted_context(False):
-                groups = element.groupby(element.kdims).data
+                groups = element.groupby(kdims).data
         else:
             groups = dict([((element.label,), element)])
 
@@ -423,20 +504,28 @@ class ViolinPlot(BoxWhiskerPlot):
 
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
         mapping, data = {}, {}
-        patches_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(4))
+        kde_data, line_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(5))
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
-            kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
+            kde, line, segs, bars, scatter = self._kde_data(element, g, key, split_dim, **kwargs)
             for k, v in segs.items():
                 seg_data[k] += v
             for k, v in bars.items():
                 bar_data[k] += v
             for k, v in scatter.items():
                 scatter_data[k].append(v)
-            for k, v in kde.items():
-                patches_data[k].append(v)
+            for k, v in line.items():
+                line_data[k].append(v)
+            for k, vals in kde.items():
+                if split_dim:
+                    for v in vals:
+                        kde_data[k].append(v)
+                else:
+                    kde_data[k].append(vals)
 
-        data['patches_1'] = patches_data
+        data['multi_line_1'] = line_data
+        mapping['multi_line_1'] = kde_map
+        data['patches_1'] = kde_data
         mapping['patches_1'] = kde_map
         if seg_data:
             data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
@@ -448,6 +537,22 @@ class ViolinPlot(BoxWhiskerPlot):
             mapping[bar_glyph+'_1'] = bar_map
         if scatter_data:
             data['scatter_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
-                              for k, v in scatter_data.items()}
+                                 for k, v in scatter_data.items()}
             mapping['scatter_1'] = scatter_map
+
+        if split_dim:
+            factors = [str(v) for v in unique_iterator(split_dim.apply(element))]
+            cmapper = self._get_colormapper(
+                split_dim, element, ranges, dict(style), name='violin_color_mapper',
+                group='violin', factors=factors)
+            style['violin_fill_color'] = {'field': repr(split_dim), 'transform': cmapper}
+            if self.show_legend:
+                legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
+                kde_map[legend_prop] = repr(split_dim)
+
+        for k, v in list(style.items()):
+            if k.startswith('violin_line'):
+                style[k.replace('violin', 'outline')] = style.pop(k)
+        style['violin_line_width'] = 0
+
         return data, mapping, style

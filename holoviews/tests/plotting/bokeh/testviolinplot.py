@@ -6,6 +6,7 @@ import numpy as np
 
 from holoviews.element import Violin
 from holoviews.operation.stats import univariate_kde
+from holoviews.util.transform import dim
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -153,10 +154,31 @@ class TestBokehViolinPlot(TestBokehPlot):
         b = np.repeat(np.arange(5), 5)
         violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(violin_line_width='b')
         plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertEqual(source.data['outline_line_width'], np.arange(5))
+        self.assertEqual(glyph.line_width, {'field': 'outline_line_width'})
+
+    def test_violin_split_op_multi(self):
+        a = np.repeat(np.arange(5), 5)
+        b = np.repeat(np.arange(5), 5)
+        violin = Violin((a, b, np.arange(25)), ['a', 'b'], 'd').options(split=dim('b')>2)
+        plot = bokeh_renderer.get_plot(violin)
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
-        self.assertEqual(source.data['violin_line_width'], np.arange(5))
-        self.assertEqual(glyph.line_width, {'field': 'violin_line_width'})
+        cmapper = plot.handles['violin_color_mapper']
+        self.assertEqual(source.data["dim('b')>2"], ['False', 'False', 'False', 'True', 'True'])
+        self.assertEqual(glyph.fill_color, {'field': "dim('b')>2", 'transform': cmapper})
+
+    def test_violin_split_op_single(self):
+        a = np.repeat(np.arange(2), 5)
+        violin = Violin((a, np.arange(10)), ['a'], 'd').options(split='a')
+        plot = bokeh_renderer.get_plot(violin)
+        source = plot.handles['patches_1_source']
+        glyph = plot.handles['patches_1_glyph']
+        cmapper = plot.handles['violin_color_mapper']
+        self.assertEqual(source.data["'a'"], ['0', '1'])
+        self.assertEqual(glyph.fill_color, {'field': "'a'", 'transform': cmapper})
 
     def test_violin_box_linear_color_op(self):
         a = np.repeat(np.arange(5), 5)
