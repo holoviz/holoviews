@@ -256,10 +256,11 @@ options.Rectangles = Options('style', edgecolor='black')
 options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest',
+options.HeatMap = Options('style', cmap='RdYlBu_r', edgecolors='white',
                           annular_edgecolors='white', annular_linewidth=0.5,
                           xmarks_edgecolor='white', xmarks_linewidth=3,
-                          ymarks_edgecolor='white', ymarks_linewidth=3)
+                          ymarks_edgecolor='white', ymarks_linewidth=3,
+                          linewidths=0)
 options.HeatMap = Options('plot', show_values=True)
 options.RGB = Options('style', interpolation='nearest')
 # Composites

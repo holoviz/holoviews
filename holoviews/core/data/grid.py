@@ -247,7 +247,10 @@ class GridInterface(DictInterface):
             coord = coord.astype('datetime64')
         if len(coord) == 0:
             return np.array([], dtype=coord.dtype)
-        deltas = 0.5 * np.diff(coord, axis=axis)
+        if len(coord) > 1:
+            deltas = 0.5 * np.diff(coord, axis=axis)
+        else:
+            deltas = np.array([0.5])
         first = np.take(coord, [0], axis=axis) - np.take(deltas, [0], axis=axis)
         last = np.take(coord, [-1], axis=axis) + np.take(deltas, [-1], axis=axis)
         trim_last = tuple(slice(None, -1) if n == axis else slice(None)

@@ -4,6 +4,7 @@ import numpy as np
 
 from ...core.options import SkipRendering
 from ...element import Image, Raster
+from ..mixins import HeatMapMixin
 from .element import ColorbarPlot
 
 
@@ -38,28 +39,59 @@ class RasterPlot(ColorbarPlot):
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
-class HeatMapPlot(RasterPlot):
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        return (np.NaN,)*4
+class HeatMapPlot(HeatMapMixin, RasterPlot):
 
     def init_layout(self, key, element, ranges):
         layout = super(HeatMapPlot, self).init_layout(key, element, ranges)
         gridded = element.gridded
-        xlabels, ylabels = (gridded.dimension_values(i, False) for i in range(2))
-        xvals = np.arange(len(xlabels))
-        yvals = np.arange(len(ylabels))
-        layout['xaxis']['tickvals'] = xvals
-        layout['xaxis']['ticktext'] = xlabels
-        layout['yaxis']['tickvals'] = yvals
-        layout['yaxis']['ticktext'] = ylabels
+        xdim, ydim = gridded.dimensions()[:2]
+
+        if self.invert_axes:
+            xaxis, yaxis = ('yaxis', 'xaxis')
+        else:
+            xaxis, yaxis = ('xaxis', 'yaxis')
+
+        shape = gridded.interface.shape(gridded, gridded=True)
+
+        xtype = gridded.interface.dtype(gridded, xdim)
+        if xtype.kind in 'SUO':
+            layout[xaxis]['tickvals'] = np.arange(shape[1])
+            layout[xaxis]['ticktext'] = gridded.dimension_values(0, expanded=False)
+
+        ytype = gridded.interface.dtype(gridded, ydim)
+        if ytype.kind in 'SUO':
+            layout[yaxis]['tickvals'] = np.arange(shape[0])
+            layout[yaxis]['ticktext'] = gridded.dimension_values(1, expanded=False)
         return layout
 
     def get_data(self, element, ranges, style):
+        if not element._unique:
+            self.warning('HeatMap element index is not unique,  ensure you '
+                         'aggregate the data before displaying it, e.g. '
+                         'using heatmap.aggregate(function=np.mean). '
+                         'Duplicate index values have been dropped.')
+
         gridded = element.gridded
-        yn, xn = gridded.interface.shape(gridded, True)
-        return [dict(x=np.arange(xn), y=np.arange(yn),
-                     z=gridded.dimension_values(2, flat=False))]
+        xdim, ydim = gridded.dimensions()[:2]
+        data = gridded.dimension_values(2, flat=False)
+
+        xtype = gridded.interface.dtype(gridded, xdim)
+        if xtype.kind in 'SUO':
+            xvals = np.arange(data.shape[1]+1)-0.5
+        else:
+            xvals = gridded.interface.coords(gridded, xdim, edges=True, ordered=True)
+
+        ytype = gridded.interface.dtype(gridded, ydim)
+        if ytype.kind in 'SUO':
+            yvals = np.arange(data.shape[0]+1)-0.5
+        else:
+            yvals = gridded.interface.coords(gridded, ydim, edges=True, ordered=True)
+
+        if self.invert_axes:
+            xvals, yvals = yvals, xvals
+            data = data.T
+
+        return [dict(x=xvals, y=yvals, z=data)]
 
 
 class QuadMeshPlot(RasterPlot):

@@ -8,14 +8,16 @@ import param
 from matplotlib.patches import Wedge, Circle
 from matplotlib.collections import LineCollection, PatchCollection
 
-from ...core.util import dimension_sanitizer, unique_array, is_nan
+from ...core.data import GridInterface
+from ...core.util import dimension_sanitizer, is_nan
 from ...core.spaces import HoloMap
+from ..mixins import HeatMapMixin
 from .element import ColorbarPlot
-from .raster import RasterPlot
+from .raster import QuadMeshPlot
 from .util import filter_styles
 
 
-class HeatMapPlot(RasterPlot):
+class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -59,12 +61,6 @@ class HeatMapPlot(RasterPlot):
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        ys, xs = element.gridded.interface.shape(element.gridded, gridded=True)
-        return (0, 0, xs, ys)
-
-
     @classmethod
     def is_radial(cls, heatmap):
         heatmap = heatmap.last if isinstance(heatmap, HoloMap) else heatmap
@@ -73,6 +69,8 @@ class HeatMapPlot(RasterPlot):
                  and not (opts.get('radial') == False)) or opts.get('radial', False))
 
     def _annotate_plot(self, ax, annotations):
+        for a in self.handles.get('annotations', {}).values():
+            a.remove()
         handles = {}
         for plot_coord, text in annotations.items():
             handles[plot_coord] = ax.annotate(text, xy=plot_coord,
@@ -82,20 +80,11 @@ class HeatMapPlot(RasterPlot):
         return handles
 
 
-    def _annotate_values(self, element):
+    def _annotate_values(self, element, xvals, yvals):
         val_dim = element.vdims[0]
-        vals = element.dimension_values(2, flat=False)
-        d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
-        if self.invert_axes:
-            d1uniq, d2uniq = d2uniq, d1uniq
-        else:
-            vals = vals.T
-        if self.invert_xaxis: vals = vals[::-1]
-        if self.invert_yaxis: vals = vals[:, ::-1]
-        vals = vals.flatten()
-        num_x, num_y = len(d1uniq), len(d2uniq)
-        xpos = np.linspace(0.5, num_x-0.5, num_x)
-        ypos = np.linspace(0.5, num_y-0.5, num_y)
+        vals = element.dimension_values(val_dim).flatten()
+        xpos = xvals[:-1] + np.diff(xvals)/2.
+        ypos = yvals[:-1] + np.diff(yvals)/2.
         plot_coords = product(xpos, ypos)
         annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
@@ -104,108 +93,100 @@ class HeatMapPlot(RasterPlot):
         return annotations
 
 
-    def _compute_ticks(self, element, ranges):
-        xdim, ydim = element.dimensions()[:2]
-        agg = element.gridded
-        dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
-                                for i in range(2)]
+    def _compute_ticks(self, element, xvals, yvals, xfactors, yfactors):
+        xdim, ydim = element.kdims
         if self.invert_axes:
-            dim1_keys, dim2_keys = dim2_keys, dim1_keys
-        num_x, num_y = len(dim1_keys), len(dim2_keys)
-        xpos = np.linspace(.5, num_x-0.5, num_x)
-        ypos = np.linspace(.5, num_y-0.5, num_y)
-        xlabels = [xdim.pprint_value(k) for k in dim1_keys]
-        ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-        return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
+            xdim, ydim = ydim, xdim
+
+        opts = self.lookup_options(element, 'plot').options
+
+        xticks = opts.get('xticks')
+        if xticks is None:
+            xpos = xvals[:-1] + np.diff(xvals)/2.
+            if not xfactors:
+                xfactors = element.gridded.dimension_values(xdim, False)
+            xlabels = [xdim.pprint_value(k) for k in xfactors]
+            xticks = list(zip(xpos, xlabels))
+
+        yticks = opts.get('yticks')
+        if yticks is None:
+            ypos = yvals[:-1] + np.diff(yvals)/2.
+            if not yfactors:
+                yfactors = element.gridded.dimension_values(ydim, False)
+            ylabels = [ydim.pprint_value(k) for k in yfactors]
+            yticks = list(zip(ypos, ylabels))
+        return xticks, yticks
 
 
-    def _draw_markers(self, ax, element, marks, axis='x'):
-        if marks is None:
+    def _draw_markers(self, ax, element, marks, values, factors, axis='x'):
+        if marks is None or self.radial:
             return
-        style = self.style[self.cyclic_index]
-        mark_opts = {k[7:]: v for k, v in style.items() if axis+'mark' in k}
-        mark_opts = {k[4:] if 'edge' in k else k: v for k, v in mark_opts.items()}
-        categories = list(element.dimension_values(0 if axis == 'x' else 1,
-                                                   expanded=False))
-
-        if callable(marks):
-            positions = [i for i, x in enumerate(categories) if marks(x)]
-        elif isinstance(marks, int):
-            nth_mark = np.ceil(len(categories) / marks).astype(int)
-            positions = np.arange(len(categories)+1)[::nth_mark]
-        elif isinstance(marks, tuple):
-            positions = [categories.index(m) for m in marks if m in categories]
-        else:
-            positions = [m for m in marks if isinstance(m, int) and m < len(categories)]
-
-        prev_markers = self.handles.get(axis+'marks', [])
-        new_markers = []
-        for p in positions:
-            if axis == 'x':
-                line = ax.axvline(p, **mark_opts)
-            else:
-                line = ax.axhline(p, **mark_opts)
-            new_markers.append(line)
-        for pm in prev_markers:
-            pm.remove()
-        self.handles[axis+'marks'] = new_markers
+        self.warning('Only radial HeatMaps supports marks, to make the'
+                     'HeatMap quads more distinguishable set linewidths'
+                     'to a non-zero value.')
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        ax.set_aspect(plot_kwargs.pop('aspect', 1))
-
-        handles = {}
+        xfactors = plot_kwargs.pop('xfactors')
+        yfactors = plot_kwargs.pop('yfactors')
+        annotations = plot_kwargs.pop('annotations', None)
         prefixes = ['annular', 'xmarks', 'ymarks']
         plot_kwargs = {k: v for k, v in plot_kwargs.items()
                        if not any(p in k for p in prefixes)}
-        annotations = plot_kwargs.pop('annotations', None)
-        handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
+        artist = ax.pcolormesh(*plot_args, **plot_kwargs)
+
         if self.show_values and annotations:
-            handles['annotations'] = self._annotate_plot(ax, annotations)
-        self._draw_markers(ax, self.current_frame, self.xmarks, axis='x')
-        self._draw_markers(ax, self.current_frame, self.ymarks, axis='y')
-        return handles
+            self.handles['annotations'] = self._annotate_plot(ax, annotations)
+        self._draw_markers(ax, self.current_frame, self.xmarks,
+                           plot_args[0], xfactors, axis='x')
+        self._draw_markers(ax, self.current_frame, self.ymarks,
+                           plot_args[1], yfactors, axis='y')
+        return {'artist': artist}
 
 
     def get_data(self, element, ranges, style):
-        xticks, yticks = self._compute_ticks(element, ranges)
+        xdim, ydim = element.kdims
+        aggregate = element.gridded
 
-        data = np.flipud(element.gridded.dimension_values(2, flat=False))
+        if not element._unique:
+            self.warning('HeatMap element index is not unique,  ensure you '
+                         'aggregate the data before displaying it, e.g. '
+                         'using heatmap.aggregate(function=np.mean). '
+                         'Duplicate index values have been dropped.')
+
+        data = aggregate.dimension_values(2, flat=False)
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        if self.invert_axes: data = data.T[::-1, ::-1]
+        if self.invert_axes:
+            xdim, ydim = ydim, xdim
+            data = data.T[::-1, ::-1]
 
-        shape = data.shape
-        style['aspect'] = shape[0]/shape[1]
-        style['extent'] = (0, shape[1], 0, shape[0])
+        xtype = aggregate.interface.dtype(aggregate, xdim)
+        if xtype.kind in 'SUO':
+            xvals = np.arange(data.shape[1]+1)-0.5
+        else:
+            xvals = aggregate.dimension_values(xdim, expanded=False)
+            xvals = GridInterface._infer_interval_breaks(xvals)
+
+        ytype = aggregate.interface.dtype(aggregate, ydim)
+        if ytype.kind in 'SUO':
+            yvals = np.arange(data.shape[0]+1)-0.5
+        else:
+            yvals = aggregate.dimension_values(ydim, expanded=False)
+            yvals = GridInterface._infer_interval_breaks(yvals)
+
+        xfactors = list(ranges.get(xdim.name, {}).get('factors', []))
+        yfactors = list(ranges.get(ydim.name, {}).get('factors', []))
+        xticks, yticks = self._compute_ticks(element, xvals, yvals, xfactors, yfactors)
+
+        style['xfactors'] = xfactors
+        style['yfactors'] = yfactors
+
         if self.show_values:
-            style['annotations'] = self._annotate_values(element.gridded)
-        style['origin'] = 'upper'
+            style['annotations'] = self._annotate_values(element.gridded, xvals, yvals)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
-        return [data], style, {'xticks': xticks, 'yticks': yticks}
+        return (xvals, yvals, data), style, {'xticks': xticks, 'yticks': yticks}
 
-
-    def update_handles(self, key, axis, element, ranges, style):
-        im = self.handles['artist']
-        data, style, axis_kwargs = self.get_data(element, ranges, style)
-        im.set_data(data[0])
-        im.set_extent(style['extent'])
-        im.set_clim((style['vmin'], style['vmax']))
-        if 'norm' in style:
-            im.norm = style['norm']
-
-        if self.show_values:
-            annotations = self.handles['annotations']
-            for annotation in annotations.values():
-                try:
-                    annotation.remove()
-                except:
-                    pass
-            annotations = self._annotate_plot(axis, style['annotations'])
-            self.handles['annotations'] = annotations
-        self._draw_markers(axis, element, self.xmarks, axis='x')
-        self._draw_markers(axis, element, self.ymarks, axis='y')
-        return axis_kwargs
 
 
 class RadialHeatMapPlot(ColorbarPlot):
@@ -402,7 +383,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         if paths:
             groups = [g for g in self._style_groups if g != 'xmarks']
             xmark_opts = filter_styles(plot_kwargs, 'xmarks', groups, color_opts)
-            xmark_opts.pop('interpolation', None)
+            xmark_opts.pop('edgecolors', None)
             xseparators = LineCollection(paths, **xmark_opts)
             ax.add_collection(xseparators)
             artists['xseparator'] = xseparators
@@ -411,7 +392,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         if paths:
             groups = [g for g in self._style_groups if g != 'ymarks']
             ymark_opts = filter_styles(plot_kwargs, 'ymarks', groups, color_opts)
-            ymark_opts.pop('interpolation', None)
+            ymark_opts.pop('edgecolors', None)
             yseparators = PatchCollection(paths, facecolor='none',
                                           transform=ax.transAxes, **ymark_opts)
             ax.add_collection(yseparators)

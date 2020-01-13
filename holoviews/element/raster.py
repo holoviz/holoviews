@@ -937,3 +937,39 @@ class HeatMap(Dataset, Element2D):
     def __init__(self, data, kdims=None, vdims=None, **params):
         super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
         self.gridded = categorical_aggregate2d(self)
+
+    @property
+    def _unique(self):
+        """
+        Reports if the Dataset is unique.
+        """
+        return self.gridded.label != 'non-unique'
+
+    def range(self, dim, data_range=True, dimension_range=True):
+        """Return the lower and upper bounds of values along dimension.
+
+        Args:
+            dimension: The dimension to compute the range on.
+            data_range (bool): Compute range from data values
+            dimension_range (bool): Include Dimension ranges
+                Whether to include Dimension range and soft_range
+                in range calculation
+
+        Returns:
+            Tuple containing the lower and upper bound
+        """
+        dim = self.get_dimension(dim)
+        if dim in self.kdims:
+            try:
+                self.gridded._binned = True
+                if self.gridded is self:
+                    return super(HeatMap, self).range(dim, data_range, dimension_range)
+                else:
+                    drange = self.gridded.range(dim, data_range, dimension_range)
+            except:
+                drange = None
+            finally:
+                self.gridded._binned = False
+            if drange is not None:
+                return drange
+        return super(HeatMap, self).range(dim, data_range, dimension_range)

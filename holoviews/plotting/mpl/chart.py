@@ -651,6 +651,13 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles['artist']
         (xs, ys), style, _ = self.get_data(element, ranges, style)
+        xdim, ydim = element.dimensions()[:2]
+        if 'factors' in ranges.get(xdim.name, {}):
+            factors = list(ranges[xdim.name]['factors'])
+            xs = [factors.index(x) for x in xs if x in factors]
+        if 'factors' in ranges.get(ydim.name, {}):
+            factors = list(ranges[ydim.name]['factors'])
+            ys = [factors.index(y) for y in ys if y in factors]
         paths.set_offsets(np.column_stack([xs, ys]))
         if 's' in style:
             sizes = style['s']
