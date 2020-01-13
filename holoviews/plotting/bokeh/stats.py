@@ -408,7 +408,7 @@ class ViolinPlot(BoxWhiskerPlot):
                 _ys = _ys[::-1]
                 _xs = _xs[::-1]
 
-            if split_dim:
+            if split_dim and len(_xs):
                 fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
                 fill_ys.append([0]+list(_ys)+[0])
             x_range = x_range[::-1]
@@ -474,7 +474,7 @@ class ViolinPlot(BoxWhiskerPlot):
         split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or split_dim.dimension != kd]
 
-        if element.kdims:
+        if kdims:
             with sorted_context(False):
                 groups = element.groupby(kdims).data
         else:
@@ -550,7 +550,9 @@ class ViolinPlot(BoxWhiskerPlot):
                 legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
                 kde_map[legend_prop] = repr(split_dim)
 
+        for k, v in list(style.items()):
+            if k.startswith('violin_line'):
+                style[k.replace('violin', 'outline')] = style.pop(k)
         style['violin_line_width'] = 0
-        style['outline_line_color'] = style.pop('violin_line_color', 'black')
 
         return data, mapping, style
