@@ -21,7 +21,7 @@ from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..plot import PlotSelector
-from ..mixins import AreaMixin, SpikesMixin
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -834,7 +834,7 @@ class VectorFieldPlot(ColorbarPlot):
 
 
 
-class BarPlot(LegendPlot):
+class BarPlot(BarsMixin, LegendPlot):
 
     bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
@@ -927,17 +927,6 @@ class BarPlot(LegendPlot):
                         for n,k in enumerate(style_product)}
 
         return style, color_groups, sopts
-
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        ngroups = len(self.values['group'])
-        vdim = element.vdims[0].name
-        if self.stacked or self.stack_index == 1:
-            return 0, 0, ngroups, np.NaN
-        else:
-            vrange = ranges[vdim]['combined']
-            lower_limit = vrange[0] if self.logy else np.nanmin([vrange[0], 0])
-            return 0, lower_limit, ngroups, vrange[1]
 
 
     @mpl_rc_context
