@@ -153,6 +153,8 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
 class BarPlot(ElementPlot):
 
+    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
+
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
@@ -287,6 +289,8 @@ class BarPlot(ElementPlot):
 
 
 class HistogramPlot(ElementPlot):
+
+    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     trace_kwargs = {'type': 'bar'}
 

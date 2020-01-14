@@ -287,6 +287,8 @@ class HistogramPlot(ColorbarPlot):
     animation.
     """
 
+    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
+
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
                   'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
                   'linewidth']
@@ -836,8 +838,10 @@ class VectorFieldPlot(ColorbarPlot):
 
 class BarPlot(LegendPlot):
 
-    padding = param.Number(default=0.2, doc="""
+    bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
+
+    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
@@ -1016,7 +1020,7 @@ class BarPlot(LegendPlot):
         xdims = [d for d in [cdim, gdim] if d is not None]
 
         # Compute widths
-        width = (1-(2.*self.padding)) / len(values['category'])
+        width = (1-(2.*self.bar_padding)) / len(values['category'])
 
         # Initialize variables
         xticks = []
@@ -1042,7 +1046,7 @@ class BarPlot(LegendPlot):
                     yalign = 0
                 xticks.append((gidx+0.5, grp, yalign))
             for cidx, cat_name in enumerate(values['category']):
-                xpos = gidx+self.padding+(cidx*width)
+                xpos = gidx+self.bar_padding+(cidx*width)
                 if cat_name is not None:
                     cat = gdim.pprint_value(cat_name)
                     if 'category' in style_groups:
@@ -1119,6 +1123,8 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
+
+    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
