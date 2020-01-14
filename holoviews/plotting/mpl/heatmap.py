@@ -27,6 +27,8 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     radial = param.Boolean(default=False, doc="""
         Whether the HeatMap should be radial""")
 

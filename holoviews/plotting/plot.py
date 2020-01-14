@@ -952,7 +952,7 @@ class GenericElementPlot(DimensionedPlot):
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
 
-    padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
+    padding = param.ClassSelector(default=0.1, class_=(int, float, tuple), doc="""
         Fraction by which to increase auto-ranged extents to make
         datapoints more visible around borders.
 
