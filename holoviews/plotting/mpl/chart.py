@@ -287,8 +287,6 @@ class HistogramPlot(ColorbarPlot):
     animation.
     """
 
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
-
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
                   'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
                   'linewidth']
@@ -841,8 +839,6 @@ class BarPlot(LegendPlot):
     bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
 
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
-
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -1123,8 +1119,6 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
-
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")

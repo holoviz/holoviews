@@ -64,8 +64,6 @@ class DistributionPlot(ElementPlot):
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
 
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
-
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}

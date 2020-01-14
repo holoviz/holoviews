@@ -397,8 +397,6 @@ class CurvePlot(ElementPlot):
 
 class HistogramPlot(ColorbarPlot):
 
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
-
     style_opts = line_properties + fill_properties + ['cmap', 'visible']
     _plot_methods = dict(single='quad')
 
@@ -569,6 +567,7 @@ class ErrorPlot(ColorbarPlot):
 class SpreadPlot(ElementPlot):
 
     style_opts = line_properties + fill_properties + ['visible']
+
     _no_op_style = style_opts
 
     _plot_methods = dict(single='patch')
@@ -646,8 +645,6 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     spike_length = param.Number(default=0.5, doc="""
       The length of each spike if Spikes object is one dimensional.""")
-
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
@@ -738,8 +735,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
-
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
     # Deprecated parameters
 

@@ -23,7 +23,6 @@ class DistributionPlot(AreaPlot):
     filled = param.Boolean(default=True, doc="""
         Whether the bivariate contours should be filled.""")
 
-    padding = param.ClassSelector(default=(0.1, (0, 0.1)), class_=(int, float, tuple))
 
 
 class BivariatePlot(PolygonPlot):
