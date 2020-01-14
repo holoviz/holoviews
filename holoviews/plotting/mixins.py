@@ -78,16 +78,9 @@ class SpikesMixin(object):
             s1 = max(s1, 0) if util.isfinite(s1) else 0
             ranges[ydim.name]['soft'] = (s0, s1)
         proxy_dim = None
-        if 'spike_length' in opts:
+        if 'spike_length' in opts or len(element.dimensions()) == 1:
             proxy_dim = Dimension('proxy_dim')
-            proxy_range = (self.position, self.position + opts['spike_length'])
-            ranges['proxy_dim'] = {'data':    proxy_range,
-                                  'hard':     (np.nan, np.nan),
-                                  'soft':     (np.nan, np.nan),
-                                  'combined': proxy_range}
-        l, b, r, t = super(SpikesMixin, self).get_extents(element, ranges, range_type,
-                                                          ydim=proxy_dim)
-        if len(element.dimensions()) == 1 and range_type != 'hard':
+            length = opts.get('spike_length', self.spike_length)
             if self.batched:
                 bs, ts = [], []
                 # Iterate over current NdOverlay and compute extents
@@ -96,13 +89,17 @@ class SpikesMixin(object):
                 for el in frame.values():
                     opts = self.lookup_options(el, 'plot').options
                     pos = opts.get('position', self.position)
-                    length = opts.get('spike_length', self.spike_length)
                     bs.append(pos)
                     ts.append(pos+length)
-                b, t = (np.nanmin(bs), np.nanmax(ts))
+                proxy_range = (np.nanmin(bs), np.nanmax(ts))
             else:
-                b, t = self.position, self.position+self.spike_length
-        return l, b, r, t
+                proxy_range = (self.position, self.position+length)
+            ranges['proxy_dim'] = {'data':    proxy_range,
+                                  'hard':     (np.nan, np.nan),
+                                  'soft':     proxy_range,
+                                  'combined': proxy_range}
+        return super(SpikesMixin, self).get_extents(element, ranges, range_type,
+                                                    ydim=proxy_dim)
 
 
 

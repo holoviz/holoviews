@@ -1004,9 +1004,15 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = range_pad(lower, upper, padding, log)
-    lower = max_range([(lower, None), (soft_range[0], None)])[0]
-    upper = max_range([(None, upper), (None, soft_range[1])])[1]
+    plower, pupper = range_pad(lower, upper, padding, log)
+    if isfinite(soft_range[0]) and soft_range[0] <= lower:
+        lower = soft_range[0]
+    else:
+        lower = max_range([(plower, None), (soft_range[0], None)])[0]
+    if isfinite(soft_range[1]) and soft_range[1] >= upper:
+        upper = soft_range[1]
+    else:
+        upper = max_range([(None, pupper), (None, soft_range[1])])[1]
     dmin, dmax = hard_range
     lower = lower if dmin is None or not isfinite(dmin) else dmin
     upper = upper if dmax is None or not isfinite(dmax) else dmax
