@@ -1,15 +1,19 @@
 from unittest import SkipTest
 
+import pyviz_comms as comms
+
+from param import concrete_descendents
+
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-import pyviz_comms as comms
 
 try:
     from bokeh.models import (
         ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
     )
     from holoviews.plotting.bokeh.callbacks import Callback
+    from holoviews.plotting.bokeh.element import ElementPlot
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
@@ -35,11 +39,17 @@ class TestBokehPlot(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
+        self._padding = {}
+        for plot in concrete_descendents(ElementPlot).values():
+            self._padding[plot] = plot.padding
+            plot.padding = 0
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}
+        for plot, padding in self._padding.items():
+            plot.padding = padding
 
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)
