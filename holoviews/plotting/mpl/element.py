@@ -1044,9 +1044,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             handle = subplot.traverse(lambda p: p.handles['artist'],
                                       [lambda p: 'artist' in p.handles])
             if isinstance(overlay, NdOverlay):
-                key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
-                label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
-                                  zip(dimensions, key)])
+                label = ','.join([dim.pprint_value(k, print_unit=True)
+                                  for k, dim in zip(key, dimensions)])
                 if handle:
                     legend_data.append((handle, label))
             else:
