@@ -27,7 +27,7 @@ from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph, Contours
+from ..element import Table, Graph, Contours, Raster, Image, QuadMesh, HeatMap
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
@@ -1169,12 +1169,26 @@ class GenericElementPlot(DimensionedPlot):
         """
 
 
-    def get_padding(self, extents):
+    def get_padding(self, obj, extents):
         """
         Computes padding along the axes taking into account the plot aspect.
         """
         (x0, y0, z0, x1, y1, z1) = extents
-        padding = 0 if self.overlaid else self.padding
+        padding_opt = self.lookup_options(obj, 'plot').kwargs.get('padding')
+        if self.overlaid:
+            padding = 0
+        elif padding_opt is None:
+            rasters = obj.traverse(lambda x: x, [Raster, Image, HeatMap, QuadMesh])
+            if rasters:
+                padding = self._traverse_options(Overlay(rasters), 'plot', ['padding'], defaults=False).get('padding')
+                if padding:
+                    padding = padding[0]
+                else:
+                    padding = 0
+            else:
+                padding = self.padding
+        else:
+            padding = self.padding
         xpad, ypad, zpad = get_axis_padding(padding)
         if not self.overlaid and not self.batched:
             xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
@@ -1224,7 +1238,7 @@ class GenericElementPlot(DimensionedPlot):
                 y0, y1 = my0, my1
 
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
             x0, x1 = xsrange
@@ -1668,7 +1682,7 @@ class GenericOverlayPlot(GenericElementPlot):
         z0, z1 = get_minimum_span(z0, z1, zspan)
 
         # Apply padding
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(overlay, (x0, y0, z0, x1, y1, z1))
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
         if len(extents['data']) == 6:
