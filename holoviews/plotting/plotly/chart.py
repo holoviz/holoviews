@@ -67,6 +67,8 @@ class CurvePlot(ChartPlot, ColorbarPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
@@ -82,6 +84,8 @@ class CurvePlot(ChartPlot, ColorbarPlot):
 
 
 class AreaPlot(AreaMixin, ChartPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
@@ -103,6 +107,8 @@ class AreaPlot(AreaMixin, ChartPlot):
 
 
 class SpreadPlot(ChartPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 

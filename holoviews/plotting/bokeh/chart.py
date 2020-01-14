@@ -322,6 +322,8 @@ class VectorFieldPlot(ColorbarPlot):
 
 class CurvePlot(ElementPlot):
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
                                          default='linear', doc="""
@@ -565,6 +567,8 @@ class ErrorPlot(ColorbarPlot):
 
 class SpreadPlot(ElementPlot):
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     style_opts = line_properties + fill_properties + ['visible']
 
     _no_op_style = style_opts
@@ -618,6 +622,8 @@ class SpreadPlot(ElementPlot):
 
 
 class AreaPlot(AreaMixin, SpreadPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     _stream_data = False # Plot does not support streaming data
 

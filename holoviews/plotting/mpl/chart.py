@@ -62,6 +62,8 @@ class CurvePlot(ChartPlot):
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     show_grid = param.Boolean(default=False, doc="""
         Enable axis grid.""")
 
@@ -203,6 +205,8 @@ class ErrorPlot(ColorbarPlot):
 
 class AreaPlot(AreaMixin, ChartPlot):
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -258,6 +262,8 @@ class SpreadPlot(AreaPlot):
     """
     SpreadPlot plots the Spread Element type.
     """
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -1108,6 +1114,8 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
