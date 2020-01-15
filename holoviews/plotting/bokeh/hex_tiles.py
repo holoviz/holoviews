@@ -9,13 +9,12 @@ except:
     cartesian_to_axial = None
 
 from ...core import Dimension, Operation
-from ...core.options import Compositor, SkipRendering
+from ...core.options import Compositor
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
 from ...util.transform import dim
 from .element import ColorbarPlot
 from .styles import line_properties, fill_properties
-from .util import bokeh_version
 
 
 class hex_binning(Operation):
