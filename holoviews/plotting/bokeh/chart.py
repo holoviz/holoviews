@@ -16,7 +16,6 @@ from ...core.dimension import dimension_name
 from ...core.util import (
     OrderedDict, basestring, dimension_sanitizer, isfinite
 )
-from ...element.util import categorical_aggregate2d
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin

@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from itertools import product
-
 import param
 import numpy as np
 import matplotlib as mpl
@@ -13,9 +11,8 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    OrderedDict, match_spec, unique_iterator, basestring, isfinite,
-    dt_to_int, dt64_to_dt, search_indices, unique_array, isscalar,
-    isdatetime
+    match_spec, basestring, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
