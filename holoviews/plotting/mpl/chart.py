@@ -1,7 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from itertools import product
-
 import param
 import numpy as np
 import matplotlib as mpl
@@ -13,9 +11,8 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    OrderedDict, match_spec, unique_iterator, basestring, isfinite,
-    dt_to_int, dt64_to_dt, search_indices, unique_array, isscalar,
-    isdatetime
+    match_spec, basestring, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
@@ -842,41 +839,24 @@ class VectorFieldPlot(ColorbarPlot):
 
 
 
-class BarPlot(BarsMixin, LegendPlot):
+class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
 
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
+    multi_level = param.Boolean(default=True, doc="""
+       Whether the Bars should be grouped into a second categorical axis level.""")
 
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
-    xticks = param.Integer(0, precedence=-1)
-
-    # Deprecated parameters
-
-    color_by = param.List(default=['category'], doc="""
-       Defines how the Bar elements colored. Valid options include
-       any permutation of 'group', 'category' and 'stack'.""")
-
-    group_index = param.Integer(default=0, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=2, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'edgecolor',
                   'log', 'facecolor', 'capsize', 'error_kw', 'hatch']
 
-    _nonvectorized_styles = style_opts
+    _nonvectorized_styles = ['visible']
 
     legend_specs = dict(LegendPlot.legend_specs, **{
         'top':    dict(bbox_to_anchor=(0., 1.02, 1., .102),
@@ -885,56 +865,30 @@ class BarPlot(BarsMixin, LegendPlot):
                        bbox_to_anchor=(0., -0.4, 1., .102),
                        borderaxespad=0.1)})
 
-    _dimensions = OrderedDict([('group', 0),
-                               ('category',1),
-                               ('stack',2)])
-
-    def __init__(self, element, **params):
-        super(BarPlot, self).__init__(element, **params)
-        self.values, self.bar_dimensions = self._get_values()
-
-    def _get_values(self):
+    def _get_values(self, element, ranges):
         """
         Get unique index value for each bar
         """
-        (gi, _), (ci, _), (si, _) = self._get_dims(self.hmap.last)
-        ndims = self.hmap.last.ndims
-        dims = self.hmap.last.kdims
-        dimensions = []
-        values = {}
-        for vidx, vtype in zip([gi, ci, si], self._dimensions):
-            if vidx < ndims:
-                dim = dims[vidx]
-                dimensions.append(dim)
-                vals = self.hmap.dimension_values(dim.name)
+        gvals, cvals = self._get_coords(element, ranges, as_string=False)
+        kdims = element.kdims
+        if element.ndims == 1:
+            dimensions = kdims + [None, None]
+            values = {'group': gvals, 'stack': [None]}
+        elif self.stacked:
+            stack_dim = kdims[1]
+            dimensions = [kdims[0], None, stack_dim]
+            if stack_dim.values:
+                stack_order = stack_dim.values
+            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
+                stack_order = ranges[stack_dim]['factors']
             else:
-                dimensions.append(None)
-                vals = [None]
-            values[vtype] = list(unique_iterator(vals))
-        return values, dimensions
-
-
-    def _compute_styles(self, element, style_groups):
-        """
-        Computes color and hatch combinations by
-        any combination of the 'group', 'category'
-        and 'stack'.
-        """
-        style = self.lookup_options(element, 'style')[0]
-        sopts = []
-        for sopt in ['color', 'hatch']:
-            if sopt in style:
-                sopts.append(sopt)
-                style.pop(sopt, None)
-        color_groups = []
-        for sg in style_groups:
-            color_groups.append(self.values[sg])
-        style_product = list(product(*color_groups))
-        wrapped_style = self.lookup_options(element, 'style').max_cycles(len(style_product))
-        color_groups = {k:tuple(wrapped_style[n][sopt] for sopt in sopts)
-                        for n,k in enumerate(style_product)}
-
-        return style, color_groups, sopts
+                stack_order = element.dimension_values(1, False)
+            stack_order = list(stack_order)
+            values = {'group': gvals, 'stack': stack_order}
+        else:
+            dimensions = kdims + [None]
+            values = {'group': gvals, 'category': cvals}
+        return dimensions, values
 
 
     @mpl_rc_context
@@ -944,163 +898,130 @@ class BarPlot(BarsMixin, LegendPlot):
         axis = self.handles['axis']
         key = self.keys[-1]
 
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], self.handles['xticks'], xdims = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'],
-                                   element=element, dimensions=[xdims, vdim])
+        self.handles['artist'], xticks, xdims = self._create_bars(axis, element, ranges, style)
+        kwargs = {'yticks': xticks} if self.invert_axes else {'xticks': xticks}
+        return self._finalize_axis(key, ranges=ranges, element=element,
+                                   dimensions=[xdims, vdim], **kwargs)
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        yalignments = None
-        if xticks is not None:
-            ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-            xticks = (list(ticks), list(labels))
+        alignments = None
+        ticks = xticks or yticks
+        if ticks is not None:
+            ticks, labels, alignments = zip(*sorted(ticks, key=lambda x: x[0]))
+            ticks = (list(ticks), list(labels))
+        if xticks:
+            xticks = ticks
+        elif yticks:
+            yticks = ticks
         super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
-        if yalignments:
-            for t, y in zip(axis.get_xticklabels(), yalignments):
-                t.set_y(y)
+        if alignments:
+            if xticks:
+                for t, y in zip(axis.get_xticklabels(), alignments):
+                    t.set_y(y)
+            elif yticks:
+                for t, x in zip(axis.get_yticklabels(), alignments):
+                    t.set_x(x)
 
 
-    def _get_dims(self, element):
-        ndims = len(element.dimensions())
-        if element.ndims < 2:
-            gdim, cdim, sdim = element.kdims[0], None, None
-            gi, ci, si = 0, ndims+1, ndims+1
-        elif element.ndims == 3:
-            gdim, cdim, sdim = element.kdims
-            gi, ci, si = 0, 1, 2
-        elif self.stacked or self.stack_index == 1:
-            gdim, cdim, sdim = element.kdims[0], None, element.kdims[1]
-            gi, ci, si = 0, ndims+1, 1
+    def _create_bars(self, axis, element, ranges, style):
+        # Get values dimensions, and style information
+        (gdim, cdim, sdim), values = self._get_values(element, ranges)
+        style_dim = None
+        if sdim:
+            cats = values['stack']
+            style_dim = sdim
+        elif cdim:
+            cats = values['category']
+            style_dim = cdim
+
+        if style_dim:
+            style_map = {style_dim.pprint_value(v): self.style[i]
+                         for i, v in enumerate(cats)}
         else:
-            gdim, cdim, sdim = element.kdims[0], element.kdims[1], None
-            gi, ci, si = 0, 1, ndims+1
-        return (gi, gdim), (ci, cdim), (si, sdim)
-
-
-    def _create_bars(self, axis, element):
-        # Get style and dimension information
-        values = self.values
-        if self.group_index != 0:
-            self.warning('Bars group_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.category_index != 1:
-            self.warning('Bars category_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.stack_index != 2 and not (self.stack_index == 1 and not self.stacked):
-            self.warning('Bars stack_index plot option is deprecated '
-                         'and will be ignored, set stacked=True/False '
-                         'instead.')
-        if self.color_by != ['category']:
-            self.warning('Bars color_by plot option is deprecated '
-                         'and will be ignored, in future it will '
-                         'support color style mapping by dimension.')
-
-        (gi, gdim), (ci, cdim), (si, sdim) = self._get_dims(element)
-        indices = dict(zip(self._dimensions, (gi, ci, si)))
-        color_by = ['category'] if cdim else ['stack']
-        style_groups = [sg for sg in color_by if indices[sg] < element.ndims]
-        style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
-        dims = element.dimensions('key', label=True)
-        ndims = len(dims)
-        xdims = [d for d in [cdim, gdim] if d is not None]
+            style_map = {None: {}}
 
         # Compute widths
-        width = (1-(2.*self.bar_padding)) / len(values['category'])
-
-        # Initialize variables
-        xticks = []
-        val_key = [None] * ndims
-        style_key = [None] * len(style_groups)
-        label_key = [None] * len(style_groups)
-        labels = []
-        bars = {}
+        width = (1-(2.*self.bar_padding)) / len(values.get('category', [None]))
+        if self.invert_axes:
+            plot_fn = 'barh'
+            x, y, w, bottom = 'y', 'width', 'height', 'left'
+        else:
+            plot_fn = 'bar'
+            x, y, w, bottom = 'x', 'height', 'width', 'bottom'
 
         # Iterate over group, category and stack dimension values
         # computing xticks and drawing bars and applying styles
-        for gidx, grp_name in enumerate(values['group']):
-            if grp_name is not None:
-                grp = gdim.pprint_value(grp_name)
-                if 'group' in style_groups:
-                    idx = style_groups.index('group')
-                    label_key[idx] = str(grp)
-                    style_key[idx] = grp_name
-                val_key[gi] = grp_name
-                if ci < ndims:
-                    yalign = -0.04
-                else:
-                    yalign = 0
-                xticks.append((gidx+0.5, grp, yalign))
-            for cidx, cat_name in enumerate(values['category']):
+        xticks, labels, bar_data = [], [], {}
+        for gidx, grp in enumerate(values.get('group', [None])):
+            sel_key = {}
+            label = None
+            if grp is not None:
+                grp_label = gdim.pprint_value(grp)
+                sel_key[gdim.name] = [grp]
+                yalign = -0.04 if cdim and self.multi_level else 0
+                xticks.append((gidx+0.5, grp_label, yalign))
+            for cidx, cat in enumerate(values.get('category', [None])):
                 xpos = gidx+self.bar_padding+(cidx*width)
-                if cat_name is not None:
-                    cat = gdim.pprint_value(cat_name)
-                    if 'category' in style_groups:
-                        idx = style_groups.index('category')
-                        label_key[idx] = str(cat)
-                        style_key[idx] = cat_name
-                    val_key[ci] = cat_name
-                    xticks.append((xpos+width/2., cat, 0))
+                if cat is not None:
+                    label = cdim.pprint_value(cat)
+                    sel_key[cdim.name] = [cat]
+                    if self.multi_level:
+                        xticks.append((xpos+width/2., label, 0))
                 prev = 0
-                for stk_name in values['stack']:
-                    if stk_name is not None:
-                        if 'stack' in style_groups:
-                            idx = style_groups.index('stack')
-                            stk = gdim.pprint_value(stk_name)
-                            label_key[idx] = str(stk)
-                            style_key[idx] = stk_name
-                        val_key[si] = stk_name
-                    vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                for stk in values.get('stack', [None]):
+                    if stk is not None:
+                        label = sdim.pprint_value(stk)
+                        sel_key[sdim.name] = [stk]
+                    el = element.select(**sel_key)
+                    vals = el.dimension_values(element.vdims[0].name)
                     val = float(vals[0]) if len(vals) else np.NaN
-                    label = ', '.join(label_key)
-                    style = dict(style_opts, label='' if label in labels else label,
-                                 **dict(zip(sopts, color_groups[tuple(style_key)])))
-                    with abbreviated_exception():
-                        style = self._apply_transforms(element, {}, style)
-                    bar = axis.bar([xpos+width/2.], [val], width=width, bottom=prev,
-                                   **style)
-
-                    # Update variables
-                    bars[tuple(val_key)] = bar
+                    xval = xpos+width/2.
+                    if label in bar_data:
+                        group = bar_data[label]
+                        group[x].append(xval)
+                        group[y].append(val)
+                        group[bottom].append(prev)
+                    else:
+                        bar_style = dict(style, **style_map.get(label, {}))
+                        with abbreviated_exception():
+                            bar_style = self._apply_transforms(el, ranges, bar_style)
+                        bar_data[label] = {
+                            x:[xval], y: [val], w: width, bottom: [prev],
+                            'label': label,
+                        }
+                        bar_data[label].update(bar_style)
                     prev += val if isfinite(val) else 0
-                    labels.append(label)
-        title = [element.kdims[indices[cg]].pprint_label
-                 for cg in color_by if indices[cg] < ndims]
+                    if label is not None:
+                        labels.append(label)
 
-        if self.show_legend and any(len(l) for l in labels) and color_by != ['category']:
+        # Draw bars
+        bars = [getattr(axis, plot_fn)(**bar_spec) for bar_spec in bar_data.values()]
+
+        # Generate legend and axis labels
+        ax_dims = [gdim]
+        title = ''
+        if sdim:
+            title = sdim.pprint_label
+            ax_dims.append(sdim)
+        elif cdim:
+            title = cdim.pprint_label
+            if self.multi_level:
+                ax_dims.append(cdim)
+        if self.show_legend and any(len(l) for l in labels) and (sdim or not self.multi_level):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            axis.legend(title=', '.join(title), **leg_spec)
-        return bars, xticks, xdims
+            axis.legend(title=title, **leg_spec)
 
+        return bars, xticks, ax_dims
 
-    def update_handles(self, key, axis, element, ranges, style):
-        dims = element.dimensions('key', label=True)
-        ndims = len(dims)
-        (gi, _), (ci, _), (si, _) = self._get_dims(element)
-        val_key = [None] * ndims
-        for g in self.values['group']:
-            if g is not None: val_key[gi] = g
-            for c in self.values['category']:
-                if c is not None: val_key[ci] = c
-                prev = 0
-                for s in self.values['stack']:
-                    if s is not None: val_key[si] = s
-                    bar = self.handles['artist'].get(tuple(val_key))
-                    if bar:
-                        vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
-                        height = float(vals[0]) if len(vals) else np.NaN
-                        bar[0].set_height(height)
-                        bar[0].set_y(prev)
-                        prev += height if isfinite(height) else 0
-        return {'xticks': self.handles['xticks']}
 
 
 class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):

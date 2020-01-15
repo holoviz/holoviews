@@ -155,25 +155,14 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
 class BarPlot(BarsMixin, ElementPlot):
 
+    multi_level = param.Boolean(default=True, doc="""
+       Whether the Bars should be grouped into a second categorical axis level.""")
+
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
-
-    # Deprecated parameters
-
-    group_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into groups.""")
-
-    category_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
-    stack_index = param.Integer(default=None, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will stacked.""")
 
     stacked = param.Boolean(default=False)
 
@@ -184,7 +173,7 @@ class BarPlot(BarsMixin, ElementPlot):
     selection_display = PlotlyOverlaySelectionDisplay()
 
     def _get_axis_dims(self, element):
-        if element.ndims > 1 and not (self.stacked or self.stack_index):
+        if element.ndims > 1 and not self.stacked:
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
@@ -197,27 +186,20 @@ class BarPlot(BarsMixin, ElementPlot):
         return (None, y0, None, y1)
 
     def get_data(self, element, ranges, style):
-        if self.stack_index is not None:
-            self.param.warning(
-                'Bars stack_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-        if self.category_index is not None:
-            self.param.warning(
-                'Bars category_index plot option is deprecated and '
-                'will be ignored, set stacked=True/False instead.')
-        if self.group_index not in (None, 1):
-            self.param.warning(
-                'Bars group_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             pass
-        elif self.stacked or self.stack_index:
+        elif self.stacked:
             stack_dim = element.get_dimension(1)
+            if stack_dim.values:
+                svals = stack_dim.values
+            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
+                svals = ranges[stack_dim]['factors']
+            else:
+                svals = element.dimension_values(1, False)
         else:
             group_dim = element.get_dimension(1)
 
@@ -228,31 +210,45 @@ class BarPlot(BarsMixin, ElementPlot):
             x, y = ('x', 'y')
             orientation = 'v'
 
+        xvals, gvals = self._get_coords(element, ranges, as_string=False)
+
         bars = []
         if element.ndims == 1:
+            values = []
+            for v in xvals:
+                sel = element[[v]]
+                values.append(sel.iloc[0, 1] if len(sel) else 0)
             bars.append({
                 'orientation': orientation, 'showlegend': False,
-                x: [xdim.pprint_value(v) for v in element.dimension_values(xdim)],
-                y: element.dimension_values(vdim)})
-        elif stack_dim:
-            els = element.groupby(stack_dim)
-            for k, el in els.items():
+                x: [xdim.pprint_value(v) for v in xvals],
+                y: values})
+        elif stack_dim or not self.multi_level:
+            group_dim = stack_dim or group_dim
+            order = list(svals if stack_dim else gvals)
+            els = element.groupby(group_dim)
+            sorted_groups = sorted(els.items(), key=lambda x: order.index(x[0])
+                                   if x[0] in order else -1)
+            for k, el in sorted_groups[::-1]:
+                values = []
+                for v in xvals:
+                    sel = el[[v]]
+                    values.append(sel.iloc[0, 1] if len(sel) else 0)
                 bars.append({
-                    'orientation': orientation, 'name': stack_dim.pprint_value(k),
-                    x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
-                    y: el.dimension_values(vdim)})
-        elif group_dim:
+                    'orientation': orientation, 'name': group_dim.pprint_value(k),
+                    x: [xdim.pprint_value(v) for v in xvals],
+                    y: values})
+        else:
             bars.append({
-                    'orientation': orientation,
-                    x: [[xdim.pprint_value(v) for v in element.dimension_values(dim)]
-                        for dim in (xdim, group_dim)],
-                    y: element.dimension_values(vdim)})
+                'orientation': orientation,
+                x: [[d.pprint_value(v) for v in element.dimension_values(d)]
+                    for d in (xdim, group_dim)],
+                y: element.dimension_values(vdim)})
         return bars
 
     def init_layout(self, key, element, ranges):
         layout = super(BarPlot, self).init_layout(key, element, ranges)
         stack_dim = None
-        if element.ndims > 1 and (self.stacked or self.stack_index):
+        if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
         layout['barmode'] = 'stack' if stack_dim else 'group'
         return layout
