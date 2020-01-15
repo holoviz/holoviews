@@ -995,8 +995,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                             bar_style = self._apply_transforms(el, ranges, bar_style)
                         bar_data[label] = {
                             x:[xval], y: [val], w: width, bottom: [prev],
-                            'label': label, **bar_style
+                            'label': label,
                         }
+                        bar_data[label].update(bar_style)
                     prev += val if isfinite(val) else 0
                     if label is not None:
                         labels.append(label)
