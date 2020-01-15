@@ -480,7 +480,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         logger = self.param if init else None
         aspect_props, dimension_props = compute_layout_properties(
             self.width, self.height, self.frame_width, self.frame_height,
-            options['width'], options['height'], self.aspect, self.data_aspect,
+            options.get('width'), options.get('height'), self.aspect, self.data_aspect,
             self.responsive, size_multiplier, logger=logger)
 
         if not init:
@@ -756,8 +756,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or yfactors is not None)
 
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
-        fixed_width = (self.frame_width or options['width'])
-        fixed_height = (self.frame_height or options['height'])
+        fixed_width = (self.frame_width or options.get('width'))
+        fixed_height = (self.frame_height or options.get('height'))
 
         data_aspect = (self.aspect == 'equal' or self.data_aspect)
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']

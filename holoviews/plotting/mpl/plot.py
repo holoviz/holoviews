@@ -390,7 +390,7 @@ class GridPlot(CompositePlot):
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
         norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = all(norm_opts['axiswise'])
+        axiswise = all(norm_opts.get('axiswise', []))
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()

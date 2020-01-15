@@ -801,11 +801,15 @@ class DimensionedPlot(Plot):
 
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        options = defaultdict(lambda: defaultdict(list))
+        options = OrderedDict()
         default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
+            if key not in options:
+                options[key] = {}
             for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = []
                 options[key][opt].append(v)
             for opt, v in defaults.items():
                 default_opts[key][opt].append(v)
@@ -834,8 +838,8 @@ class DimensionedPlot(Plot):
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
-        from_overlay = not all(p is None for p in opts[True]['projection'])
-        projections = opts[from_overlay]['projection']
+        from_overlay = not all(p is None for p in opts.get(True, {}).get('projection', []))
+        projections = opts.get(from_overlay).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
@@ -1178,17 +1182,19 @@ class GenericElementPlot(DimensionedPlot):
         if self.overlaid:
             padding = 0
         elif padding_opt is None:
-            rasters = obj.traverse(lambda x: x, [Raster, Image, HeatMap, QuadMesh])
-            if rasters:
-                padding = self._traverse_options(Overlay(rasters), 'plot', ['padding'], defaults=False).get('padding')
+            if self.param.params('padding').default is not self.padding:
+                padding = self.padding
+            else:
+                opts = self._traverse_options(
+                    obj, 'plot', ['padding'], specs=[Element], defaults=True
+                )
+                padding = opts.get('padding')
                 if padding:
                     padding = padding[0]
                 else:
-                    padding = 0
-            else:
-                padding = self.padding
+                    padding = self.padding
         else:
-            padding = self.padding
+            padding = padding_opt
         xpad, ypad, zpad = get_axis_padding(padding)
         if not self.overlaid and not self.batched:
             xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
