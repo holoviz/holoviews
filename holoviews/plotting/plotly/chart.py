@@ -190,6 +190,13 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
+    def get_extents(self, element, ranges, range_type='combined'):
+        x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
+        if range_type not in ('data', 'combined'):
+            return x0, y0, x1, y1
+        nx = len(element.dimension_values(0, False))
+        return (None, y0, None, y1)
+
     def get_data(self, element, ranges, style):
         if self.stack_index is not None:
             self.param.warning(
@@ -222,20 +229,25 @@ class BarPlot(BarsMixin, ElementPlot):
             x, y = ('x', 'y')
             orientation = 'v'
 
+        bars = []
         if element.ndims == 1:
-            bars = [{
+            bars.append({
                 'orientation': orientation, 'showlegend': False,
                 x: [xdim.pprint_value(v) for v in element.dimension_values(xdim)],
-                y: element.dimension_values(vdim)}]
-        else:
-            group_dim = group_dim or stack_dim
-            els = element.groupby(group_dim)
-            bars = []
+                y: element.dimension_values(vdim)})
+        elif stack_dim:
+            els = element.groupby(stack_dim)
             for k, el in els.items():
                 bars.append({
-                    'orientation': orientation, 'name': group_dim.pprint_value(k),
+                    'orientation': orientation, 'name': stack_dim.pprint_value(k),
                     x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
                     y: el.dimension_values(vdim)})
+        elif group_dim:
+            bars.append({
+                    'orientation': orientation,
+                    x: [[xdim.pprint_value(v) for v in element.dimension_values(dim)]
+                        for dim in (xdim, group_dim)],
+                    y: element.dimension_values(vdim)})
         return bars
 
     def init_layout(self, key, element, ranges):
