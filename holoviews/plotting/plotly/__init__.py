@@ -1,9 +1,17 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import plotly
+
+from param import concrete_descendents
+
+from ...core import (
+    Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
+)
 from ...core.options import Store, Cycle, Options
-from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
-                     GridMatrix, config)
+from ...core.util import LooseVersion, VersionError
 from ...element import *              # noqa (Element import for registration)
+
+from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
 from .annotation import *            # noqa (API import)
@@ -17,9 +25,6 @@ from .tabular import *               # noqa (API import)
 from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
 from .images import *                # noqa (API import)
-
-from ...core.util import LooseVersion, VersionError
-import plotly
 
 if LooseVersion(plotly.__version__) < '4.0.0':
     raise VersionError(
@@ -90,7 +95,11 @@ Store.register({Points: ScatterPlot,
 
 options = Store.options(backend='plotly')
 
-dflt_cmap = 'hot' if config.style_17 else 'fire'
+if config.no_padding:
+    for plot in concrete_descendents(ElementPlot).values():
+        plot.padding = 0
+
+dflt_cmap = 'fire'
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',

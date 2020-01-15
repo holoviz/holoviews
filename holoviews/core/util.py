@@ -128,21 +128,20 @@ class Config(param.ParameterizedFunction):
     future_deprecations = param.Boolean(default=False, doc="""
        Whether to warn about future deprecations""")
 
-    style_17 = param.Boolean(default=False, doc="""
-       Switch to the default style options used up to (and including)
-       the HoloViews 1.7 release.""")
+    image_rtol = param.Number(default=10e-4, doc="""
+      The tolerance used to enforce regular sampling for regular,
+      gridded data where regular sampling is expected. Expressed as the
+      maximal allowable sampling difference between sample
+      locations.""")
+
+    no_padding = param.Boolean(default=False, doc="""
+       Disable default padding (introduced in 1.13.0).""")
 
     warn_options_call = param.Boolean(default=True, doc="""
        Whether to warn when the deprecated __call__ options syntax is
        used (the opts method should now be used instead). It is
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
-
-    image_rtol = param.Number(default=10e-4, doc="""
-      The tolerance used to enforce regular sampling for regular,
-      gridded data where regular sampling is expected. Expressed as the
-      maximal allowable sampling difference between sample
-      locations.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)
