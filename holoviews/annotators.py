@@ -124,17 +124,37 @@ class annotate(param.ParameterizedFunction):
         return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
 
     def __call__(self, element, **params):
-        matches = []
-        for eltype, annotator_type in self._annotator_types.items():
-            if isinstance(element, eltype):
-                matches.append((getmro(type(element)).index(eltype), annotator_type))
-        annotator_type = sorted(matches)[0][1] if matches else None
+        overlay = element if isinstance(element, Overlay) else [element]
+
+        layers = []
+        annotator_type = None
+        for element in overlay:
+            matches = []
+            for eltype, atype in self._annotator_types.items():
+                if isinstance(element, eltype):
+                    matches.append((getmro(type(element)).index(eltype), atype))
+            if matches:
+                if annotator_type is None:
+                    msg = ('An annotate call may only annotate a single element. '
+                           'If you want to annotate multiple elements call annotate '
+                           'on each one separately and then use the annotate.compose '
+                           'method to combine them into a single layout.')
+                    raise ValueError(msg)
+                else:
+                    annotator_type = sorted(matches)[0][1]
+                    self.annotator = annotator_type(element, **params)
+                    tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
+                    layout = (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
+                    layers.append(layout)
+
         if annotator_type is None:
-            raise ValueError('Annotation of %s element types is not '
-                             'supported.' % type(element).__name__)
-        self.annotator = annotator_type(element, **params)
-        tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
-        return (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
+            obj = overlay if isinstance(overlay, Overlay) else element
+            raise ValueError('Could not find an Element to annotate on'
+                             '%s object.' % type(obj).__name__)
+
+        if len(layers) == 1:
+            return layers[0]
+        return self.compose(*layers)
 
 
 
