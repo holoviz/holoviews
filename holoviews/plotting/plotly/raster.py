@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
+import param
 
 from ...core.options import SkipRendering
 from ...element import Image, Raster
@@ -9,6 +10,8 @@ from .element import ColorbarPlot
 
 
 class RasterPlot(ColorbarPlot):
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     style_opts = ['visible', 'cmap', 'alpha']
 

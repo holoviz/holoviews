@@ -801,11 +801,15 @@ class DimensionedPlot(Plot):
 
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        options = defaultdict(lambda: defaultdict(list))
+        options = OrderedDict()
         default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
+            if key not in options:
+                options[key] = {}
             for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = []
                 options[key][opt].append(v)
             for opt, v in defaults.items():
                 default_opts[key][opt].append(v)
@@ -834,8 +838,8 @@ class DimensionedPlot(Plot):
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
-        from_overlay = not all(p is None for p in opts[True]['projection'])
-        projections = opts[from_overlay]['projection']
+        from_overlay = not all(p is None for p in opts.get(True, {}).get('projection', []))
+        projections = opts.get(from_overlay).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
@@ -952,7 +956,7 @@ class GenericElementPlot(DimensionedPlot):
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
 
-    padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
+    padding = param.ClassSelector(default=0.1, class_=(int, float, tuple), doc="""
         Fraction by which to increase auto-ranged extents to make
         datapoints more visible around borders.
 
@@ -1169,12 +1173,28 @@ class GenericElementPlot(DimensionedPlot):
         """
 
 
-    def get_padding(self, extents):
+    def get_padding(self, obj, extents):
         """
         Computes padding along the axes taking into account the plot aspect.
         """
         (x0, y0, z0, x1, y1, z1) = extents
-        padding = 0 if self.overlaid else self.padding
+        padding_opt = self.lookup_options(obj, 'plot').kwargs.get('padding')
+        if self.overlaid:
+            padding = 0
+        elif padding_opt is None:
+            if self.param.params('padding').default is not self.padding:
+                padding = self.padding
+            else:
+                opts = self._traverse_options(
+                    obj, 'plot', ['padding'], specs=[Element], defaults=True
+                )
+                padding = opts.get('padding')
+                if padding:
+                    padding = padding[0]
+                else:
+                    padding = self.padding
+        else:
+            padding = padding_opt
         xpad, ypad, zpad = get_axis_padding(padding)
         if not self.overlaid and not self.batched:
             xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
@@ -1224,7 +1244,7 @@ class GenericElementPlot(DimensionedPlot):
                 y0, y1 = my0, my1
 
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
             x0, x1 = xsrange
@@ -1668,7 +1688,7 @@ class GenericOverlayPlot(GenericElementPlot):
         z0, z1 = get_minimum_span(z0, z1, zspan)
 
         # Apply padding
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(overlay, (x0, y0, z0, x1, y1, z1))
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
         if len(extents['data']) == 6:

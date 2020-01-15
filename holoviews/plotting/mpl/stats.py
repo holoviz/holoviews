@@ -24,6 +24,7 @@ class DistributionPlot(AreaPlot):
         Whether the bivariate contours should be filled.""")
 
 
+
 class BivariatePlot(PolygonPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density

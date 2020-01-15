@@ -2,7 +2,9 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 
-from ..core import util, Dimension
+from ..core import util, Dataset, Dimension
+from ..element import Bars
+from .util import get_axis_padding
 
 
 class GeomMixin(object):
@@ -78,16 +80,9 @@ class SpikesMixin(object):
             s1 = max(s1, 0) if util.isfinite(s1) else 0
             ranges[ydim.name]['soft'] = (s0, s1)
         proxy_dim = None
-        if 'spike_length' in opts:
+        if 'spike_length' in opts or len(element.dimensions()) == 1:
             proxy_dim = Dimension('proxy_dim')
-            proxy_range = (self.position, self.position + opts['spike_length'])
-            ranges['proxy_dim'] = {'data':    proxy_range,
-                                  'hard':     (np.nan, np.nan),
-                                  'soft':     (np.nan, np.nan),
-                                  'combined': proxy_range}
-        l, b, r, t = super(SpikesMixin, self).get_extents(element, ranges, range_type,
-                                                          ydim=proxy_dim)
-        if len(element.dimensions()) == 1 and range_type != 'hard':
+            length = opts.get('spike_length', self.spike_length)
             if self.batched:
                 bs, ts = [], []
                 # Iterate over current NdOverlay and compute extents
@@ -96,13 +91,17 @@ class SpikesMixin(object):
                 for el in frame.values():
                     opts = self.lookup_options(el, 'plot').options
                     pos = opts.get('position', self.position)
-                    length = opts.get('spike_length', self.spike_length)
                     bs.append(pos)
                     ts.append(pos+length)
-                b, t = (np.nanmin(bs), np.nanmax(ts))
+                proxy_range = (np.nanmin(bs), np.nanmax(ts))
             else:
-                b, t = self.position, self.position+self.spike_length
-        return l, b, r, t
+                proxy_range = (self.position, self.position+length)
+            ranges['proxy_dim'] = {'data':    proxy_range,
+                                  'hard':     (np.nan, np.nan),
+                                  'soft':     proxy_range,
+                                  'combined': proxy_range}
+        return super(SpikesMixin, self).get_extents(element, ranges, range_type,
+                                                    ydim=proxy_dim)
 
 
 
@@ -122,3 +121,46 @@ class AreaMixin(object):
             s1 = max(s1, 0) if util.isfinite(s1) else 0
             ranges[vdim]['soft'] = (s0, s1)
         return super(AreaMixin, self).get_extents(element, ranges, range_type)
+
+
+class BarsMixin(object):
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        """
+        Make adjustments to plot extents by computing
+        stacked bar heights, adjusting the bar baseline
+        and forcing the x-axis to be categorical.
+        """
+        if self.batched:
+            overlay = self.current_frame
+            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
+                           vdims=element.vdims)
+            for kd in overlay.kdims:
+                ranges[kd.name]['combined'] = overlay.range(kd)
+
+        vdim = element.vdims[0].name
+        s0, s1 = ranges[vdim]['soft']
+        s0 = min(s0, 0) if util.isfinite(s0) else 0
+        s1 = max(s1, 0) if util.isfinite(s1) else 0
+        ranges[vdim]['soft'] = (s0, s1)
+        if range_type not in ('combined', 'data'):
+            return super(BarsMixin, self).get_extents(element, ranges, range_type)
+
+        # Compute stack heights
+        xdim = element.kdims[0]
+        if self.stacked or self.stack_index:
+            ds = Dataset(element)
+            pos_range = ds.select(**{vdim: (0, None)}).aggregate(xdim, function=np.sum).range(vdim)
+            neg_range = ds.select(**{vdim: (None, 0)}).aggregate(xdim, function=np.sum).range(vdim)
+            y0, y1 = util.max_range([pos_range, neg_range])
+        else:
+            y0, y1 = ranges[vdim]['combined']
+
+        if range_type == 'data':
+            return ('', y0, '', y1)
+
+        padding = 0 if self.overlaid else self.padding
+        _, ypad, _ = get_axis_padding(padding)
+        y0, y1 = util.dimension_range(y0, y1, ranges[vdim]['hard'], ranges[vdim]['soft'], ypad, self.logy)
+        y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+        return ('', y0, '', y1)

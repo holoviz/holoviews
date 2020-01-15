@@ -61,7 +61,7 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(spikes)
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 3.2)
+        self.assertEqual(x_range.end, 3)
 
     def test_spikes_padding_unequal(self):
         spikes = Spikes([1, 2, 3]).options(padding=(0.05, 0.1))

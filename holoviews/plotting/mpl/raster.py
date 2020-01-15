@@ -19,6 +19,8 @@ class RasterBasePlot(ElementPlot):
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -125,6 +127,8 @@ class RGBPlot(RasterBasePlot):
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")

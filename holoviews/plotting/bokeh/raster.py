@@ -16,6 +16,8 @@ class RasterPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -120,6 +122,8 @@ class RasterPlot(ColorbarPlot):
 
 class RGBPlot(ElementPlot):
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     style_opts = ['alpha', 'visible']
 
     _nonvectorized_styles = style_opts
@@ -193,6 +197,8 @@ class HSVPlot(RGBPlot):
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")

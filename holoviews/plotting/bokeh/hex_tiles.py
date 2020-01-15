@@ -9,13 +9,12 @@ except:
     cartesian_to_axial = None
 
 from ...core import Dimension, Operation
-from ...core.options import Compositor, SkipRendering
+from ...core.options import Compositor
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
 from ...util.transform import dim
 from .element import ColorbarPlot
 from .styles import line_properties, fill_properties
-from .util import bokeh_version
 
 
 class hex_binning(Operation):
@@ -136,11 +135,20 @@ class HexTilesPlot(ColorbarPlot):
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    _plot_methods = dict(single='hex_tile')
-
     style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
 
+    _plot_methods = dict(single='hex_tile')
+
     _nonvectorized_styles = ['cmap', 'line_dash']
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        xdim, ydim = element.kdims[:2]
+        ranges[xdim.name]['data'] = xdim.range
+        ranges[ydim.name]['data'] = ydim.range
+        xdim, ydim = element.dataset.kdims[:2]
+        ranges[xdim.name]['hard'] = xdim.range
+        ranges[ydim.name]['hard'] = ydim.range
+        return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:
@@ -150,17 +158,14 @@ class HexTilesPlot(ColorbarPlot):
         return dims, {}
 
     def get_data(self, element, ranges, style):
-        if bokeh_version < '0.12.15':
-            raise SkipRendering('Plotting HexTiles with bokeh requires bokeh '
-                                'version >=0.12.15, skipping plot.')
-
         mapping = {'q': 'q', 'r': 'r'}
         if not len(element):
             data = {'q': [], 'r': []}
             return data, mapping, style
+
         q, r = (element.dimension_values(i) for i in range(2))
         x, y = element.kdims[::-1] if self.invert_axes else element.kdims
-        (x0, x1), (y0, y1) = ranges[x.name]['combined'], ranges[y.name]['combined']
+        (x0, x1), (y0, y1) = x.range, y.range
         if isinstance(self.gridsize, tuple):
             sx, sy = self.gridsize
         else:

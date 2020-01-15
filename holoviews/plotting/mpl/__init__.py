@@ -4,6 +4,7 @@ import os
 
 from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap
+from param import concrete_descendents
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
@@ -14,6 +15,7 @@ from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .element import ElementPlot
 from .geometry import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .heatmap import * # noqa (API import)
@@ -77,12 +79,6 @@ def get_color_cycle():
 
 styles = {'default': './default.mplstyle',
           'default>1.5': './default1.5.mplstyle'}
-
-if config.style_17:
-    if mpl_ge_150:
-        set_style('default>1.5')
-    else:
-        set_style('default')
 
 # Define Palettes and cycles from matplotlib colormaps
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
@@ -206,34 +202,24 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           Spikes: SideSpikesPlot,
                           BoxWhisker: SideBoxPlot})
 
-if config.style_17:
-    CurvePlot.show_grid = True
-    SideHistogramPlot.show_grid = True
-    PointPlot.show_grid = True
+if config.no_padding:
+    for plot in concrete_descendents(ElementPlot).values():
+        plot.padding = 0
 
-    MPLPlot.show_frame = True
-    for framelesscls in [RasterGridPlot, GridPlot,
-                         AdjoinedPlot, Plot3D, CurvePlot, HistogramPlot]:
-        framelesscls.show_frame = False
-else:
-    # Raster types, Path types and VectorField should have frames
-    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
-                      QuadMeshPlot, HeatMapPlot, PolygonPlot]:
-        framedcls.show_frame = True
-
+# Raster types, Path types and VectorField should have frames
+for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
+                  QuadMeshPlot, HeatMapPlot, PolygonPlot]:
+    framedcls.show_frame = True
 
 options = Store.options(backend='matplotlib')
-dflt_cmap = 'hot' if config.style_17 else 'fire'
+dflt_cmap = 'fire'
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
-
-if not config.style_17:
-    options.Points = Options('plot', show_frame=True)
-
+options.Points = Options('plot', show_frame=True)
 options.ErrorBars = Options('style', edgecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', edgecolor='k', color=Cycle())
@@ -274,27 +260,18 @@ options.HLine = Options('style', color=Cycle())
 options.Slope = Options('style', color=Cycle())
 options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
-if config.style_17:
-    options.Spline = Options('style', linewidth=2, edgecolor='r')
-else:
-    options.Spline = Options('style', edgecolor=Cycle())
+options.Spline = Options('style', edgecolor=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle(), cmap='viridis')
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle(), cmap='viridis')
-
-if config.style_17:
-    options.Box = Options('style', color=Cycle())
-    options.Bounds = Options('style', color=Cycle())
-    options.Ellipse = Options('style', color=Cycle())
-else:
-    options.Box = Options('style', color='black')
-    options.Bounds = Options('style', color='black')
-    options.Ellipse = Options('style', color='black')
-    options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
-                               cmap='viridis')
+options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
+                           cmap='viridis')
+options.Box = Options('style', color='black')
+options.Bounds = Options('style', color='black')
+options.Ellipse = Options('style', color='black')
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())

@@ -14,13 +14,12 @@ from ...selection import NoOpSelectionDisplay
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
-    OrderedDict, max_range, basestring, dimension_sanitizer,
-    isfinite, range_pad, dimension_range)
-from ...element import Bars
+    OrderedDict, basestring, dimension_sanitizer, isfinite
+)
 from ...operation import interpolate_curve
 from ...util.transform import dim
-from ..mixins import AreaMixin, SpikesMixin
-from ..util import compute_sizes, get_min_distance, get_axis_padding
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin
+from ..util import compute_sizes, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
@@ -189,6 +188,8 @@ class VectorFieldPlot(ColorbarPlot):
         distance between vectors, this can be disabled with the
         rescale_lengths option.""")
 
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
+
     pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
                                  doc="""
         The point around which the arrows should pivot valid options
@@ -322,6 +323,8 @@ class VectorFieldPlot(ColorbarPlot):
 
 
 class CurvePlot(ElementPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
                                                   'steps-pre', 'steps-post'],
@@ -566,7 +569,10 @@ class ErrorPlot(ColorbarPlot):
 
 class SpreadPlot(ElementPlot):
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     style_opts = line_properties + fill_properties + ['visible']
+
     _no_op_style = style_opts
 
     _plot_methods = dict(single='patch')
@@ -618,6 +624,8 @@ class SpreadPlot(ElementPlot):
 
 
 class AreaPlot(AreaMixin, SpreadPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     _stream_data = False # Plot does not support streaming data
 
@@ -725,7 +733,7 @@ class SideSpikesPlot(SpikesPlot):
 
 
 
-class BarPlot(ColorbarPlot, LegendPlot):
+class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     """
     BarPlot allows generating single- or multi-category
     bar Charts, by selecting which key dimensions are
@@ -761,51 +769,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
     _y_range_type = Range1d
 
     selection_display = BokehOverlaySelectionDisplay()
-
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        Make adjustments to plot extents by computing
-        stacked bar heights, adjusting the bar baseline
-        and forcing the x-axis to be categorical.
-        """
-        if self.batched:
-            overlay = self.current_frame
-            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
-                           vdims=element.vdims)
-            for kd in overlay.kdims:
-                ranges[kd.name]['combined'] = overlay.range(kd)
-
-        extents = super(BarPlot, self).get_extents(element, ranges, range_type)
-        xdim = element.kdims[0]
-        ydim = element.vdims[0]
-
-        # Compute stack heights
-        if self.stacked or self.stack_index:
-            ds = Dataset(element)
-            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
-            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
-            y0, y1 = max_range([pos_range, neg_range])
-        else:
-            y0, y1 = ranges[ydim.name]['combined']
-
-        padding = 0 if self.overlaid else self.padding
-        _, ypad, _ = get_axis_padding(padding)
-        y0, y1 = range_pad(y0, y1, ypad, self.logy)
-
-        # Set y-baseline
-        if y0 < 0:
-            y1 = max([y1, 0])
-        elif self.logy:
-            y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
-        else:
-            y0 = 0
-
-        y0, y1 = dimension_range(y0, y1, self.ylim, (None, None))
-
-        # Ensure x-axis is picked up as categorical
-        x0 = xdim.pprint_value(extents[0])
-        x1 = xdim.pprint_value(extents[2])
-        return (x0, y0, x1, y1)
 
 
     def _get_factors(self, element, ranges):

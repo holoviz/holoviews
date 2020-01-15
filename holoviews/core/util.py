@@ -128,21 +128,20 @@ class Config(param.ParameterizedFunction):
     future_deprecations = param.Boolean(default=False, doc="""
        Whether to warn about future deprecations""")
 
-    style_17 = param.Boolean(default=False, doc="""
-       Switch to the default style options used up to (and including)
-       the HoloViews 1.7 release.""")
+    image_rtol = param.Number(default=10e-4, doc="""
+      The tolerance used to enforce regular sampling for regular,
+      gridded data where regular sampling is expected. Expressed as the
+      maximal allowable sampling difference between sample
+      locations.""")
+
+    no_padding = param.Boolean(default=False, doc="""
+       Disable default padding (introduced in 1.13.0).""")
 
     warn_options_call = param.Boolean(default=True, doc="""
        Whether to warn when the deprecated __call__ options syntax is
        used (the opts method should now be used instead). It is
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
-
-    image_rtol = param.Number(default=10e-4, doc="""
-      The tolerance used to enforce regular sampling for regular,
-      gridded data where regular sampling is expected. Expressed as the
-      maximal allowable sampling difference between sample
-      locations.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)
@@ -1004,9 +1003,15 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = range_pad(lower, upper, padding, log)
-    lower = max_range([(lower, None), (soft_range[0], None)])[0]
-    upper = max_range([(None, upper), (None, soft_range[1])])[1]
+    plower, pupper = range_pad(lower, upper, padding, log)
+    if isfinite(soft_range[0]) and soft_range[0] <= lower:
+        lower = soft_range[0]
+    else:
+        lower = max_range([(plower, None), (soft_range[0], None)])[0]
+    if isfinite(soft_range[1]) and soft_range[1] >= upper:
+        upper = soft_range[1]
+    else:
+        upper = max_range([(None, pupper), (None, soft_range[1])])[1]
     dmin, dmax = hard_range
     lower = lower if dmin is None or not isfinite(dmin) else dmin
     upper = upper if dmax is None or not isfinite(dmax) else dmax

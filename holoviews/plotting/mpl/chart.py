@@ -21,7 +21,7 @@ from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..plot import PlotSelector
-from ..mixins import AreaMixin, SpikesMixin
+from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -61,6 +61,8 @@ class CurvePlot(ChartPlot):
     relative_labels = param.Boolean(default=False, doc="""
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     show_grid = param.Boolean(default=False, doc="""
         Enable axis grid.""")
@@ -203,6 +205,8 @@ class ErrorPlot(ColorbarPlot):
 
 class AreaPlot(AreaMixin, ChartPlot):
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -258,6 +262,8 @@ class SpreadPlot(AreaPlot):
     """
     SpreadPlot plots the Spread Element type.
     """
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -708,6 +714,8 @@ class VectorFieldPlot(ColorbarPlot):
         distance between vectors, this can be disabled with the
         rescale_lengths option.""")
 
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
+
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
@@ -834,9 +842,9 @@ class VectorFieldPlot(ColorbarPlot):
 
 
 
-class BarPlot(LegendPlot):
+class BarPlot(BarsMixin, LegendPlot):
 
-    padding = param.Number(default=0.2, doc="""
+    bar_padding = param.Number(default=0.2, doc="""
        Defines the padding between groups.""")
 
     show_legend = param.Boolean(default=True, doc="""
@@ -929,17 +937,6 @@ class BarPlot(LegendPlot):
         return style, color_groups, sopts
 
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        ngroups = len(self.values['group'])
-        vdim = element.vdims[0].name
-        if self.stacked or self.stack_index == 1:
-            return 0, 0, ngroups, np.NaN
-        else:
-            vrange = ranges[vdim]['combined']
-            lower_limit = vrange[0] if self.logy else np.nanmin([vrange[0], 0])
-            return 0, lower_limit, ngroups, vrange[1]
-
-
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
@@ -1016,7 +1013,7 @@ class BarPlot(LegendPlot):
         xdims = [d for d in [cdim, gdim] if d is not None]
 
         # Compute widths
-        width = (1-(2.*self.padding)) / len(values['category'])
+        width = (1-(2.*self.bar_padding)) / len(values['category'])
 
         # Initialize variables
         xticks = []
@@ -1042,7 +1039,7 @@ class BarPlot(LegendPlot):
                     yalign = 0
                 xticks.append((gidx+0.5, grp, yalign))
             for cidx, cat_name in enumerate(values['category']):
-                xpos = gidx+self.padding+(cidx*width)
+                xpos = gidx+self.bar_padding+(cidx*width)
                 if cat_name is not None:
                     cat = gdim.pprint_value(cat_name)
                     if 'category' in style_groups:
@@ -1119,6 +1116,8 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
     spike_length = param.Number(default=0.1, doc="""
       The length of each spike if Spikes object is one dimensional.""")
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")

@@ -1,15 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import param
-import numpy as np
 
 from .selection import PlotlyOverlaySelectionDisplay
-from ...core.data import Dataset
 from ...core import util
-from ...element import Bars
 from ...operation import interpolate_curve
-from ..mixins import AreaMixin
-from ..util import get_axis_padding
+from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
 
 
@@ -71,6 +67,8 @@ class CurvePlot(ChartPlot, ColorbarPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
+
     trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
@@ -86,6 +84,8 @@ class CurvePlot(ChartPlot, ColorbarPlot):
 
 
 class AreaPlot(AreaMixin, ChartPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
@@ -107,6 +107,8 @@ class AreaPlot(AreaMixin, ChartPlot):
 
 
 class SpreadPlot(ChartPlot):
+
+    padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
@@ -151,7 +153,7 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
                  error_k: error_v}]
 
 
-class BarPlot(ElementPlot):
+class BarPlot(BarsMixin, ElementPlot):
 
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
@@ -181,53 +183,18 @@ class BarPlot(ElementPlot):
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
-    def get_extents(self, element, ranges, range_type='combined'):
-        """
-        Make adjustments to plot extents by computing
-        stacked bar heights, adjusting the bar baseline
-        and forcing the x-axis to be categorical.
-        """
-        if self.batched:
-            overlay = self.current_frame
-            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
-                           vdims=element.vdims)
-            for kd in overlay.kdims:
-                ranges[kd.name]['combined'] = overlay.range(kd)
-
-        xdim = element.kdims[0]
-        ydim = element.vdims[0]
-
-        # Compute stack heights
-        if self.stacked or self.stack_index:
-            ds = Dataset(element)
-            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
-            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
-            y0, y1 = util.max_range([pos_range, neg_range])
-        else:
-            y0, y1 = ranges[ydim.name]['combined']
-
-        padding = 0 if self.overlaid else self.padding
-        _, ypad, _ = get_axis_padding(padding)
-        y0, y1 = util.range_pad(y0, y1, ypad, self.logy)
-
-        # Set y-baseline
-        if y0 < 0:
-            y1 = max([y1, 0])
-        elif self.logy:
-            y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
-        else:
-            y0 = 0
-
-        # Ensure x-axis is picked up as categorical
-        nx = len(element.dimension_values(0, False))
-        return (-0.5, y0, nx-0.5, y1)
-
     def _get_axis_dims(self, element):
         if element.ndims > 1 and not (self.stacked or self.stack_index):
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
+
+    def get_extents(self, element, ranges, range_type='combined'):
+        x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
+        if range_type not in ('data', 'combined'):
+            return x0, y0, x1, y1
+        return (None, y0, None, y1)
 
     def get_data(self, element, ranges, style):
         if self.stack_index is not None:
@@ -261,20 +228,25 @@ class BarPlot(ElementPlot):
             x, y = ('x', 'y')
             orientation = 'v'
 
+        bars = []
         if element.ndims == 1:
-            bars = [{
+            bars.append({
                 'orientation': orientation, 'showlegend': False,
                 x: [xdim.pprint_value(v) for v in element.dimension_values(xdim)],
-                y: element.dimension_values(vdim)}]
-        else:
-            group_dim = group_dim or stack_dim
-            els = element.groupby(group_dim)
-            bars = []
+                y: element.dimension_values(vdim)})
+        elif stack_dim:
+            els = element.groupby(stack_dim)
             for k, el in els.items():
                 bars.append({
-                    'orientation': orientation, 'name': group_dim.pprint_value(k),
+                    'orientation': orientation, 'name': stack_dim.pprint_value(k),
                     x: [xdim.pprint_value(v) for v in el.dimension_values(xdim)],
                     y: el.dimension_values(vdim)})
+        elif group_dim:
+            bars.append({
+                    'orientation': orientation,
+                    x: [[xdim.pprint_value(v) for v in element.dimension_values(dim)]
+                        for dim in (xdim, group_dim)],
+                    y: element.dimension_values(vdim)})
         return bars
 
     def init_layout(self, key, element, ranges):

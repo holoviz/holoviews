@@ -359,7 +359,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
 
         # Compute final width/height
         w, h = self._get_size(subplot.width, subplot.height)
-        print(w, h)
 
         fig = figure_grid(plots,
                           column_spacing=self.hspacing,

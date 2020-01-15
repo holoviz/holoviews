@@ -22,6 +22,8 @@ class HeatMapPlot(ColorbarPlot):
         #FFFFFF or #FFFFFFFF, (2) a length-3 or length-4 tuple specifying
         values in the range 0-1, or (3) a named HTML color.""")
 
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
