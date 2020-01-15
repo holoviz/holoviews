@@ -39,7 +39,7 @@ class TestGridPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['yaxis'], 'y')
         self.assertEqual(state['layout']['xaxis']['range'], [0, 1])
         self.assertEqual(state['layout']['xaxis']['domain'], [0, x_domain_break1])
-        self.assertEqual(state['layout']['yaxis']['range'], [-10, 0])
+        self.assertEqual(state['layout']['yaxis']['range'], [-10, 1])
         self.assertEqual(state['layout']['yaxis']['domain'], [0, y_domain_break1])
 
         # Check the grid plot on the right
