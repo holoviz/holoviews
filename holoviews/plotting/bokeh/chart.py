@@ -16,6 +16,7 @@ from ...core.dimension import dimension_name
 from ...core.util import (
     OrderedDict, basestring, dimension_sanitizer, isfinite
 )
+from ...element.util import categorical_aggregate2d
 from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
@@ -740,6 +741,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     mapped onto separate groups, categories and stacks.
     """
 
+    multi_level = param.Boolean(default=True, doc="""
+       Whether the Bars should be grouped into a second categorical axis level.""")
+
     stacked = param.Boolean(default=False, doc="""
        Whether the bars should be stacked or grouped.""")
 
@@ -748,14 +752,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
-    group_index = param.ClassSelector(default=1, class_=(basestring, int),
-                                      allow_None=True, doc="""
-       Deprecated; use stacked option instead.""")
-
-    stack_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-       Deprecated; use stacked option instead.""")
 
     style_opts = (line_properties
                   + fill_properties
@@ -770,44 +766,39 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-
-    def _get_factors(self, element, ranges):
-        """
-        Get factors for categorical axes.
-        """
-        gdim = None
-        sdim = None
-        if element.ndims == 1:
-            pass
-        elif not (self.stacked or self.stack_index):
-            gdim = element.get_dimension(1)
-        else:
-            sdim = element.get_dimension(1)
-
-        xdim, ydim = element.dimensions()[:2]
-
-        xvals = np.asarray(xdim.values or element.dimension_values(0, False))
-        c_is_str = xvals.dtype.kind in 'SU'
-
-        if gdim and not sdim:
-            gvals = np.asarray(gdim.values or element.dimension_values(gdim, False))
-            xvals = sorted([(x, g) for x in xvals for g in gvals])
-            g_is_str = gvals.dtype.kind in 'SU'
-            xvals = [(x if c_is_str else xdim.pprint_value(x), g if g_is_str else gdim.pprint_value(g))
-                     for (x, g) in xvals]
-        else:
-            xvals = [x if c_is_str else xdim.pprint_value(x) for x in xvals]
-        coords = xvals, []
-        if self.invert_axes: coords = coords[::-1]
-        return coords
-
+    def _axis_properties(self, axis, key, plot, dimension=None,
+                         ax_mapping={'x': 0, 'y': 1}):
+        props = super(BarPlot, self)._axis_properties(axis, key, plot, dimension, ax_mapping)
+        if (not self.multi_level and not self.stacked and self.current_frame.ndims > 1 and
+            ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):
+            props['separator_line_width'] = 0
+            props['major_tick_line_alpha'] = 0
+            props['major_label_text_font_size'] = '0pt'
+            props['group_text_color'] = 'black'
+            props['group_text_font_style'] = "normal"
+            if axis == 'x':
+                props['group_text_align'] = "center"
+            if 'major_label_orientation' in props:
+                props['group_label_orientation'] = props.pop('major_label_orientation')
+            elif axis == 'y':
+                props['group_label_orientation'] = 0
+                props['group_text_align'] = 'right'
+                props['group_text_baseline'] = 'middle'
+        return props
 
     def _get_axis_dims(self, element):
-        if element.ndims > 1 and not (self.stacked or self.stack_index):
+        if element.ndims > 1 and not (self.stacked or not self.multi_level):
             xdims = element.kdims
         else:
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
+
+
+    def _get_factors(self, element, ranges):
+        xvals, gvals = self._get_coords(element, ranges)
+        if gvals is not None:
+            xvals = [(x, g) for x in xvals for g in gvals]
+        return ([], xvals) if self.invert_axes else (xvals, [])
 
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
@@ -851,7 +842,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             isinstance(cmapper, CategoricalColorMapper)):
             mapping[legend_prop] = cdim.name
 
-        if not (self.stacked or self.stack_index) and ds.ndims > 1:
+        if not self.stacked and ds.ndims > 1 and self.multi_level:
             cmapping.pop(legend_prop, None)
             mapping.pop(legend_prop, None)
 
@@ -867,22 +858,20 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
 
     def get_data(self, element, ranges, style):
-        if self.stack_index is not None:
-            self.param.warning(
-                'Bars stack_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-        if self.group_index not in (None, 1):
-            self.param.warning(
-                'Bars group_index plot option is deprecated and will '
-                'be ignored, set stacked=True/False instead.')
-
         # Get x, y, group, stack and color dimensions
         group_dim, stack_dim = None, None
         if element.ndims == 1:
             grouping = None
-        elif self.stacked or self.stack_index:
+        elif self.stacked:
             grouping = 'stacked'
             stack_dim = element.get_dimension(1)
+            if stack_dim.values:
+                stack_order = stack_dim.values
+            elif stack_dim in ranges and ranges[stack_dim.name].get('factors'):
+                stack_order = ranges[stack_dim]['factors']
+            else:
+                stack_order = element.dimension_values(1, False)
+            stack_order = list(stack_order)
         else:
             grouping = 'grouped'
             group_dim = element.get_dimension(1)
@@ -964,6 +953,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             if grouping == 'stacked':
                 for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
                     slc_ds = ds.select(**{ds.vdims[0].name: slc})
+                    stack_inds = [stack_order.index(v) if v in stack_order else -1
+                                  for v in slc_ds[stack_dim.name]]
+                    slc_ds = slc_ds.add_dimension('_stack_order', 0, stack_inds).sort('_stack_order')
                     xs = slc_ds.dimension_values(xdim)
                     ys = slc_ds.dimension_values(ydim)
                     bs, ts = self.get_stack(xs, ys, baselines, sign)

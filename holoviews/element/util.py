@@ -123,7 +123,8 @@ class categorical_aggregate2d(Operation):
     datatype = param.List(['xarray', 'grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
-    def _get_coords(self, obj):
+    @classmethod
+    def _get_coords(cls, obj):
         """
         Get the coordinates of the 2D aggregate, maintaining the correct
         sorting order.
