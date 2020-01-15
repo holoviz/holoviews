@@ -6,6 +6,7 @@ import re
 import numpy as np
 from plotly import colors
 
+from ...core.util import isfinite, max_range
 from ..util import color_intervals, process_cmap
 
 # Constants
@@ -833,8 +834,6 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
     # Build mapping from matching properties to (axis, ref) tuples
     axis_map = {}
 
-    # print(fig['layout'])
-
     for k, v in fig.get('layout', {}).items():
         if k[1:5] == 'axis':
             matching_val = v.get(matching_prop, None)
@@ -847,16 +846,18 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
             axis_pair = (axis_ref, v)
             axis_map[matching_val].append(axis_pair)
 
-    # print(axis_map)
-
     # Set matching
     for _, axis_pairs in axis_map.items():
         if len(axis_pairs) < 2:
             continue
 
-        matches_reference = axis_pairs[0][0]
+        matches_reference, linked_axis = axis_pairs[0]
         for _, axis in axis_pairs[1:]:
             axis['matches'] = matches_reference
+            if 'range' in axis and 'range' in linked_axis:
+                linked_axis['range'] = [
+                    v if isfinite(v) else None for v in max_range([axis['range'], linked_axis['range']])
+                ]
 
 
 def clean_internal_figure_properties(fig):
