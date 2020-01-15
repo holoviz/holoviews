@@ -98,7 +98,7 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
         self.assertEqual(glyph.bottom, 0.001)
         self.assertEqual(y_range.start, 0.001)
-        self.assertEqual(y_range.end, 3.0000000000000013)
+        self.assertEqual(y_range.end, 3)
 
     def test_bars_ylim(self):
         bars = Bars([1, 2, 3]).opts(ylim=(0, 200))
