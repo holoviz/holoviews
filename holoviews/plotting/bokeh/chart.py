@@ -188,6 +188,8 @@ class VectorFieldPlot(ColorbarPlot):
         distance between vectors, this can be disabled with the
         rescale_lengths option.""")
 
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
+
     pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
                                  doc="""
         The point around which the arrows should pivot valid options

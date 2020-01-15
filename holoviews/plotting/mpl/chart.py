@@ -714,6 +714,8 @@ class VectorFieldPlot(ColorbarPlot):
         distance between vectors, this can be disabled with the
         rescale_lengths option.""")
 
+    padding = param.ClassSelector(default=0.05, class_=(int, float, tuple))
+
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
