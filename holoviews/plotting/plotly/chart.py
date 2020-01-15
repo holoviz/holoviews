@@ -194,7 +194,6 @@ class BarPlot(BarsMixin, ElementPlot):
         x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
         if range_type not in ('data', 'combined'):
             return x0, y0, x1, y1
-        nx = len(element.dimension_values(0, False))
         return (None, y0, None, y1)
 
     def get_data(self, element, ranges, style):
