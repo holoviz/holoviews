@@ -37,7 +37,7 @@ color = pnw.Select(name='Color', value='None', options=['None'] + quantileable)
 
 @pn.depends(x.param.value, y.param.value, color.param.value, size.param.value) 
 def create_figure(x, y, color, size):
-    opts = dict(cmap='rainbow', width=800, height=600, padding=0.1, line_color='black')
+    opts = dict(cmap='rainbow', width=800, height=600, line_color='black')
     if color != 'None':
         opts['color'] = color 
     if size != 'None':
