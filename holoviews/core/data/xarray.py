@@ -59,17 +59,15 @@ class XArrayInterface(GridInterface):
                 return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
         else:
             array = dataset.data[dataset.vdims[0].name]
-        if not any(cls.irregular(dataset, kd) for kd in dataset.kdims):
-            names = [kd.name for kd in dataset.kdims
-                     if kd.name in array.dims][::-1]
-            if not all(d in names for d in array.dims):
-                array = np.squeeze(array)
-            if len(names) > 1:
-                try:
-                    array = array.transpose(*names, transpose_coords=False)
-                except:
-                    array = array.transpose(*names) # Handle old xarray
-        shape = array.shape
+        shape_map = dict(zip(array.dims, array.shape))
+        unknown = iter([d for d in array.dims if d not in dataset.kdims][::-1])
+        shape = []
+        for kd in dataset.kdims[::-1]:
+            if kd.name in shape_map:
+                shape.append(shape_map[kd.name])
+            else:
+                shape.append(shape_map[next(unknown)])
+        shape = tuple(shape)
         if gridded:
             return shape
         else:
@@ -342,8 +340,7 @@ class XArrayInterface(GridInterface):
 
         if dim in dataset.kdims:
             idx = dataset.get_dimension_index(dim)
-            isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
-                       and len(data) == (shape[dataset.ndims-idx-1]+1))
+            isedges = (len(shape) == dataset.ndims and len(data) == (shape[dataset.ndims-idx-1]+1))
         else:
             isedges = False
         if edges and not isedges:
