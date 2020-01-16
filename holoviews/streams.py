@@ -1052,8 +1052,11 @@ class PointDraw(CDSStream):
     """
     Attaches a PointDrawTool and syncs the datasource.
 
+    add: boolean
+        Whether to allow adding new Points
+
     drag: boolean
-        Whether to enable dragging of polygons and paths
+        Whether to enable dragging of Points
 
     empty_value: int/float/string/None
         The value to insert on non-position columns when adding a new polygon
@@ -1070,8 +1073,9 @@ class PointDraw(CDSStream):
         An optional tooltip to override the default
     """
 
-    def __init__(self, empty_value=None, drag=True, num_objects=0, styles={},
-                 tooltip=None, **params):
+    def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
+                 styles={}, tooltip=None, **params):
+        self.add = add
         self.drag = drag
         self.empty_value = empty_value
         self.num_objects = num_objects
