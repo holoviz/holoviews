@@ -5,6 +5,7 @@ from unittest import SkipTest
 import numpy as np
 
 try:
+    import pandas as pd
     import xarray as xr
 except:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
@@ -44,6 +45,29 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
                   np.tile(y[:, np.newaxis], len(x)))
         return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
                                    'yc': xr.DataArray(ys, dims=('y','x')),})
+
+    def get_multi_dim_irregular_dataset(self):
+        temp = 15 + 8 * np.random.randn(2, 2, 4, 3)
+        precip = 10 * np.random.rand(2, 2, 4, 3)
+        lon = [[-99.83, -99.32], [-99.79, -99.23]]
+        lat = [[42.25, 42.21], [42.63, 42.59]]
+        return xr.Dataset({'temperature': (['x', 'y', 'z', 'time'],  temp),
+                         'precipitation': (['x', 'y', 'z', 'time'], precip)},
+                        coords={'lon': (['x', 'y'], lon),
+                                'lat': (['x', 'y'], lat),
+                                'z': np.arange(4),
+                                'time': pd.date_range('2014-09-06', periods=3),
+                                'reference_time': pd.Timestamp('2014-09-05')})
+
+    def test_xarray_dataset_irregular_shape(self):
+        ds = Dataset(self.get_multi_dim_irregular_dataset())
+        shape = ds.interface.shape(ds, gridded=True)
+        self.assertEqual(shape, (np.nan, np.nan, 3, 4))
+
+    def test_xarray_irregular_dataset_values(self):
+        ds = Dataset(self.get_multi_dim_irregular_dataset())
+        values = ds.dimension_values('z', expanded=False)
+        self.assertEqual(values, np.array([0, 1, 2, 3]))
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]

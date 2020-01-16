@@ -52,29 +52,13 @@ class XArrayInterface(GridInterface):
     @classmethod
     def shape(cls, dataset, gridded=False):
         if cls.packed(dataset):
-            shape = dataset.data.shape[:-1]
-            if gridded:
-                return shape
-            else:
-                return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
+            array = dataset.data[..., 0]
         else:
             array = dataset.data[dataset.vdims[0].name]
-        if not any(cls.irregular(dataset, kd) for kd in dataset.kdims):
-            names = [kd.name for kd in dataset.kdims
-                     if kd.name in array.dims][::-1]
-            if not all(d in names for d in array.dims):
-                array = np.squeeze(array)
-            if len(names) > 1:
-                try:
-                    array = array.transpose(*names, transpose_coords=False)
-                except:
-                    array = array.transpose(*names) # Handle old xarray
-        shape = array.shape
-        if gridded:
-            return shape
-        else:
-            return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
-
+        if not gridded:
+            return (np.product(array.shape, dtype=np.intp), len(dataset.dimensions()))
+        shape_map = dict(zip(array.dims, array.shape))
+        return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -342,8 +326,7 @@ class XArrayInterface(GridInterface):
 
         if dim in dataset.kdims:
             idx = dataset.get_dimension_index(dim)
-            isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
-                       and len(data) == (shape[dataset.ndims-idx-1]+1))
+            isedges = (len(shape) == dataset.ndims and len(data) == (shape[dataset.ndims-idx-1]+1))
         else:
             isedges = False
         if edges and not isedges:
