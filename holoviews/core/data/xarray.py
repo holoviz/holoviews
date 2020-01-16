@@ -52,27 +52,13 @@ class XArrayInterface(GridInterface):
     @classmethod
     def shape(cls, dataset, gridded=False):
         if cls.packed(dataset):
-            shape = dataset.data.shape[:-1]
-            if gridded:
-                return shape
-            else:
-                return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
+            array = dataset.data[..., 0]
         else:
             array = dataset.data[dataset.vdims[0].name]
+        if not gridded:
+            return (np.product(array.shape, dtype=np.intp), len(dataset.dimensions()))
         shape_map = dict(zip(array.dims, array.shape))
-        unknown = iter([d for d in array.dims if d not in dataset.kdims][::-1])
-        shape = []
-        for kd in dataset.kdims[::-1]:
-            if kd.name in shape_map:
-                shape.append(shape_map[kd.name])
-            else:
-                shape.append(shape_map[next(unknown)])
-        shape = tuple(shape)
-        if gridded:
-            return shape
-        else:
-            return (np.product(shape, dtype=np.intp), len(dataset.dimensions()))
-
+        return tuple(shape_map.get(kd.name, np.nan) for kd in dataset.kdims[::-1])
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
