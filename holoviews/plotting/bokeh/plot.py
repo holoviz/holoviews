@@ -893,7 +893,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 nsubplots = len(subplots)
 
                 modes = {sp.sizing_mode for sp in subplots
-                         if sp not in (None, 'auto', 'fixed')}
+                         if sp.sizing_mode not in (None, 'auto', 'fixed')}
+                sizing_mode = self.sizing_mode
                 if modes:
                     responsive_width = any(s in m for m in modes for s in ('width', 'both'))
                     responsive_height = any(s in m for m in modes for s in ('height', 'both'))
@@ -905,8 +906,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                         sizing_mode = 'stretch_width'
                     elif responsive_height:
                         sizing_mode = 'stretch_height'
-                    else:
-                        sizing_mode = None
 
                 # If tabs enabled lay out AdjointLayout on grid
                 if self.tabs:
