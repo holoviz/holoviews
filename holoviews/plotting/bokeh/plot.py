@@ -857,6 +857,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     def initialize_plot(self, plots=None, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        opts = self.layout.opts.get('plot', self.backend)
+        opts = {} if opts is None else opts.kwargs
 
         plot_grid = self._compute_grid()
         passed_plots = [] if plots is None else plots
@@ -864,6 +866,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         col_offsets = defaultdict(int)
         tab_plots = []
 
+        stretch_width = False
+        stretch_height = False
         for r in range(self.rows):
             # Compute row offset
             row = [(k, sp) for k, sp in self.subplots.items() if k[0] == r]
@@ -888,23 +892,41 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 subplots = subplot.initialize_plot(ranges=ranges, plots=shared_plots)
                 nsubplots = len(subplots)
 
+                modes = {sp.sizing_mode for sp in subplots
+                         if sp not in (None, 'auto', 'fixed')}
+                if modes:
+                    responsive_width = any(s in m for m in modes for s in ('width', 'both'))
+                    responsive_height = any(s in m for m in modes for s in ('height', 'both'))
+                    stretch_width |= responsive_width
+                    stretch_height |= responsive_height
+                    if responsive_width and responsive_height:
+                        sizing_mode = 'stretch_both'
+                    elif responsive_width:
+                        sizing_mode = 'stretch_width'
+                    elif responsive_height:
+                        sizing_mode = 'stretch_height'
+                    else:
+                        sizing_mode = None
+
                 # If tabs enabled lay out AdjointLayout on grid
                 if self.tabs:
                     title = subplot.subplots['main']._format_title(self.keys[-1],
                                                                    dimensions=False)
+
                     if not title:
                         title = ' '.join(self.paths[r,c])
+
                     if nsubplots == 1:
                         grid = subplots[0]
                     elif nsubplots == 2:
                         grid = gridplot([subplots], merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
-                                        sizing_mode=self.sizing_mode)
+                                        sizing_mode=sizing_mode)
                     else:
                         grid = [[subplots[2], None], subplots[:2]]
                         grid = gridplot(children=grid, merge_tools=self.merge_tools,
                                         toolbar_location=self.toolbar,
-                                        sizing_mode=self.sizing_mode)
+                                        sizing_mode=sizing_mode)
                     tab_plots.append((title, grid))
                     continue
 
@@ -919,22 +941,33 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                     plot_column[c+c_offset-int(col_padded)] = subplots[0]
                 passed_plots.append(subplots[0])
 
+        if 'sizing_mode' in opts:
+            sizing_mode = opts['sizing_mode']
+        elif stretch_width and stretch_height:
+            sizing_mode = 'stretch_both'
+        elif stretch_width:
+            sizing_mode = 'stretch_width'
+        elif stretch_height:
+            sizing_mode = 'stretch_height'
+        else:
+            sizing_mode = None
+
         # Wrap in appropriate layout model
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
             panels = [Panel(child=child, title=t) for t, child in tab_plots]
-            layout_plot = Tabs(tabs=panels)
+            layout_plot = Tabs(tabs=panels, sizing_mode=sizing_mode)
         else:
             plot_grid = filter_toolboxes(plot_grid)
             layout_plot = gridplot(children=plot_grid,
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools,
-                                   sizing_mode=self.sizing_mode)
+                                   sizing_mode=sizing_mode)
 
         title = self._get_title_div(self.keys[-1])
         if title:
             self.handles['title'] = title
-            layout_plot = Column(title, layout_plot)
+            layout_plot = Column(title, layout_plot, sizing_mode=sizing_mode)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
