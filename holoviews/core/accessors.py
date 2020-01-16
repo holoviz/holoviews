@@ -205,16 +205,25 @@ class Apply(object):
                     mapped.append((k, new_val))
             return self._obj.clone(mapped, link=link_inputs)
 
-
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a aggregate function to all ViewableElements.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
         kwargs['per_element'] = True
         return self.__call__('aggregate', **kwargs)
+
+    def transform(self, *args, drop=False, drop_duplicate_data=True, **kwargs):
+        """Applies transforms to all Datasets.
+
+        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        kwargs['_method_args'] = args
+        return self._call__('transform', drop=drop, drop_duplicate_data=drop_duplicate_data,
+                            spec=Dataset, **kwargs)
 
     def opts(self, *args, **kwargs):
         """Applies options to all ViewableElement objects.

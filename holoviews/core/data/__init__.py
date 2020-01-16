@@ -970,48 +970,33 @@ argument to specify a selection specification""")
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
 
-    def transform(
-        self,
-        signature=None,
-        dim_transform=None,
-        drop=False,
-        drop_duplicate_data=True,
-        **kwargs
-    ):
+    def transform(self, *args, drop=False, drop_duplicate_data=True, **kwargs):
         """
         Transforms the Dataset according to a dimension transform.
 
         Args:
-            signature: Specify output arguments as a list of strings
-            dim_transform: a holoviews.util.transform.dim object
+            args: Specify the output arguments and transforms as a
+                  tuple of dimension specs and dim transforms
             drop (bool): Whether to drop all variables not part of output
             drop_duplicate_data (bool): Whether to drop duplicate data (if
-                non-output variables are dropped, see argument `bool`)
+                non-output variables are dropped, see argument `drop`)
             kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
             Transformed dataset with new dimensions
         """
-        if signature is None:
-            new_dimensions = OrderedDict([
-                (dim_name, dim_transform.apply(self))
-                for dim_name, dim_transform in kwargs.items()
-            ])
-        elif dim_transform is not None:
-            if isinstance(signature, (str, Dimension)):
-                signature = [signature]
-            if len(signature)==1:
-                new_dimensions = OrderedDict([
-                    (signature[0], dim_transform.apply(self))
-                ])
+        transforms = OrderedDict()
+        for s, transform in list(args)+list(kwargs.items()):
+            transforms[wrap_tuple(s)] = transform
+
+        new_dimensions = OrderedDict()
+        for signature, transform in transforms.items():
+            applied = dim_transform.apply(self)
+            if len(s) == 1:
+                new_dimensions[s[0]] = applied
             else:
-                dim_transform_output = dim_transform.apply(self)
-                new_dimensions = OrderedDict([
-                    (dim_name, dim_transform_output[k])
-                    for k, dim_name in enumerate(signature)
-                ])
-        else:
-            raise ValueError('Need either kwargs or both signature and dim_transform')
+                for s, vals in zip(signature, applied):
+                    new_dimensions[s] = vals
 
         ds_new = self.clone()
         for dim_name, dim_val in new_dimensions.items():
