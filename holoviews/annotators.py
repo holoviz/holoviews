@@ -121,7 +121,7 @@ class annotate(param.ParameterizedFunction):
                 raise ValueError("Cannot compose %s type with annotators." %
                                  type(annotator).__name__)
         tables = Overlay(tables, group='Annotator')
-        return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
+        return (Overlay(layers).collate() + tables)
 
     def __call__(self, element, **params):
         overlay = element if isinstance(element, Overlay) else [element]
@@ -143,7 +143,7 @@ class annotate(param.ParameterizedFunction):
                 annotator_type = sorted(matches)[0][1]
                 self.annotator = annotator_type(element, **params)
                 tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
-                layout = (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
+                layout = (self.annotator.plot + tables)
                 layers.append(layout)
             else:
                 layers.append(element)
