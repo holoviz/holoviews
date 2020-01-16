@@ -134,18 +134,19 @@ class annotate(param.ParameterizedFunction):
                 if isinstance(element, eltype):
                     matches.append((getmro(type(element)).index(eltype), atype))
             if matches:
-                if annotator_type is None:
+                if annotator_type is not None:
                     msg = ('An annotate call may only annotate a single element. '
                            'If you want to annotate multiple elements call annotate '
                            'on each one separately and then use the annotate.compose '
                            'method to combine them into a single layout.')
                     raise ValueError(msg)
-                else:
-                    annotator_type = sorted(matches)[0][1]
-                    self.annotator = annotator_type(element, **params)
-                    tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
-                    layout = (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
-                    layers.append(layout)
+                annotator_type = sorted(matches)[0][1]
+                self.annotator = annotator_type(element, **params)
+                tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
+                layout = (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
+                layers.append(layout)
+            else:
+                layers.append(element)
 
         if annotator_type is None:
             obj = overlay if isinstance(overlay, Overlay) else element
