@@ -11,7 +11,7 @@ from panel.pane import PaneBase
 from panel.layout import Row, Tabs
 from panel.util import param_name
 
-from .core import DynamicMap, Element, Layout, Overlay, Store
+from .core import DynamicMap, HoloMap, ViewableElement, Element, Layout, Overlay, Store
 from .core.util import isscalar
 from .element import Rectangles, Path, Polygons, Points, Table, Curve
 from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
@@ -115,7 +115,7 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, annotate):
                 layers.append(annotator.plot)
                 tables += [t[0].object for t in annotator.editor]
-            elif isinstance(annotator, Element):
+            elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
                 raise ValueError("Cannot compose %s type with annotators." %
