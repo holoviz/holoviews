@@ -412,13 +412,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
         x_range_type, y_range_type = range_types
-        if categorical or categorical_x:
+        if 'x_range' in ranges:
+            pass
+        elif categorical or categorical_x:
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
-        elif 'x_range' not in plot_ranges:
+        else:
             plot_ranges['x_range'] = x_range_type()
 
-        if categorical or categorical_y:
+        if 'y_range' in ranges:
+            pass
+        elif categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
@@ -908,7 +912,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Computes the aspect ratio of the plot
         """
-        if self.data_aspect:
+        if 'plot' in self.handles and self.state.frame_width and self.state.frame_height:
+            return self.state.frame_width/self.state.frame_height
+        elif self.data_aspect:
             return (yspan/xspan)*self.data_aspect
         elif self.aspect == 'equal':
             return yspan/xspan
@@ -927,8 +933,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        xvals = np.asarray(xdim.values or element.dimension_values(0, False))
-        yvals = np.asarray(ydim.values or element.dimension_values(1, False))
+        if xdim.values:
+            xvals = xdim.values
+        elif 'factors' in ranges.get(xdim.name, {}):
+            xvals = ranges[xdim.name]['factors']
+        else:
+            xvals = element.dimension_values(0, False)
+
+        if ydim.values:
+            yvals = ydim.values
+        elif 'factors' in ranges.get(ydim.name, {}):
+            yvals = ranges[ydim.name]['factors']
+        else:
+            yvals = element.dimension_values(1, False)
+        xvals, yvals = np.asarray(xvals), np.asarray(yvals)
         coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
                        for dim, vals in [(xdim, xvals), (ydim, yvals)])
         if self.invert_axes: coords = coords[::-1]
