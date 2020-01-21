@@ -638,7 +638,11 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-output.__doc__ = Store.output_settings._generate_docstring()
+if sys.version_info.major == 2:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=True)
+else:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+    output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
