@@ -2,6 +2,7 @@ import os, sys, inspect, shutil
 
 from collections import defaultdict
 from types import FunctionType
+from inspect import Parameter, Signature
 
 try:
     from pathlib import Path
@@ -484,10 +485,17 @@ class opts(param.ParameterizedFunction):
             return Options(spec, **kws)
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        sorted_kw_set = sorted(set(filtered_keywords))
+        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+        if sys.version_info.major == 2:
+            builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        else:
+            signature = Signature([Parameter('cls', Parameter.POSITIONAL_ONLY)]
+                                  + ([Parameter('spec', Parameter.KEYWORD_ONLY)]
+                                     + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                        for kw in sorted_kw_set]))
+            builder.__signature__ = signature
         return classmethod(builder)
-
 
     @classmethod
     def _element_keywords(cls, backend, elements=None):
