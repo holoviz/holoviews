@@ -493,10 +493,10 @@ class opts(param.ParameterizedFunction):
         if sys.version_info.major == 2:
             builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
         else:
-            signature = Signature([Parameter('cls', Parameter.POSITIONAL_ONLY)]
-                                  + ([Parameter('spec', Parameter.KEYWORD_ONLY)]
-                                     + [Parameter(kw, Parameter.KEYWORD_ONLY)
-                                        for kw in sorted_kw_set]))
+            signature = Signature([Parameter('cls', Parameter.POSITIONAL_ONLY),
+                                   Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
             builder.__signature__ = signature
         return classmethod(builder)
 
