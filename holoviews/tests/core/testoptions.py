@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 from unittest import SkipTest
 
@@ -901,6 +902,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
         return img
 
     def test_builder_backend_switch(self):
+        if sys.version_info.major == 3:
+            raise SkipTest('Python 3 tab completes via __signature__ not __doc__')
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.set_current_backend('bokeh')
