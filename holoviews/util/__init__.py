@@ -533,9 +533,17 @@ class opts(param.ParameterizedFunction):
                         cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
-        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        sorted_kw_set = sorted(set(filtered_keywords))
+        if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+            old_doc = cls.__original_docstring__.replace(
+                'params(strict=Boolean, name=String)','')
+            cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        else:
+            signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
+            cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
