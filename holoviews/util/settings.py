@@ -245,7 +245,7 @@ class OutputSettings(KeywordSettings):
     def _generate_signature(cls):
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
-        return  Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
+        return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
 
 
     @classmethod
