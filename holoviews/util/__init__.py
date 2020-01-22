@@ -489,12 +489,11 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
         sorted_kw_set = sorted(set(filtered_keywords))
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
         if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
             builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
         else:
-            signature = Signature([Parameter('cls', Parameter.POSITIONAL_ONLY),
-                                   Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+            signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
                                   + [Parameter(kw, Parameter.KEYWORD_ONLY)
                                      for kw in sorted_kw_set])
             builder.__signature__ = signature
