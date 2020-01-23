@@ -679,7 +679,7 @@ class Callable(param.Parameterized):
         Returns:
             Cloned Callable object
         """
-        old = {k: v for k, v in self.get_param_values()
+        old = {k: v for k, v in self.param.get_param_values()
                if k not in ['callable', 'name']}
         params = dict(old, **overrides)
         callable = self.callable if callable is None else callable

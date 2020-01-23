@@ -403,7 +403,7 @@ class aggregate(AggregationOperation):
 
         if overlay_aggregate.applies(element, agg_fn):
             params = dict(
-                {p: v for p, v in self.get_param_values() if p != 'name'},
+                {p: v for p, v in self.param.get_param_values() if p != 'name'},
                 dynamic=False, **{p: v for p, v in self.p.items()
                                   if p not in ('name', 'dynamic')})
             return overlay_aggregate(element, **params)
@@ -492,7 +492,8 @@ class overlay_aggregate(aggregate):
         info = self._get_sampling(element, x, y, ndims)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         ((x0, x1), (y0, y1)), _ = self._dt_transform(x_range, y_range, xs, ys, xtype, ytype)
-        agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
+        agg_params = dict({k: v for k, v in dict(self.param.get_param_values(),
+                                                 **self.p).items()
                            if k in aggregate.param},
                           x_range=(x0, x1), y_range=(y0, y1))
         bbox = (x0, y0, x1, y1)

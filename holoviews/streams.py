@@ -413,7 +413,7 @@ class Stream(param.Parameterized):
     def __repr__(self):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k, v)
-                          for (k, v) in self.get_param_values() if k != 'name')
+                          for (k, v) in self.param.get_param_values() if k != 'name')
         if not self._rename:
             return '%s(%s)' % (cls_name, kwargs)
         else:

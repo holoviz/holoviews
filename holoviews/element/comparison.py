@@ -300,8 +300,8 @@ class Comparison(ComparisonInterface):
                                        % (dim1.label, dim2.label))
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.get_param_values())
-        dim2_params = dict(dim2.get_param_values())
+        dim1_params = dict(dim1.param.get_param_values())
+        dim2_params = dict(dim2.param.get_param_values())
 
         # Special handling of deprecated 'initial' values argument
         dim1_params['values'] = [] if dim1.values=='initial' else dim1.values

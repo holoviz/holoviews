@@ -67,7 +67,7 @@ class ElementConversion(DataConversion):
 
     def raster(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Raster(heatmap.data, **dict(self._element.get_param_values(onlychanged=True)))
+        return Raster(heatmap.data, **dict(self._element.param.get_param_values(onlychanged=True)))
 
     def scatter(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Scatter, kdims, vdims, groupby, **kwargs)
@@ -83,7 +83,7 @@ class ElementConversion(DataConversion):
 
     def surface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
+        return Surface(heatmap.data, **dict(self._table.param.get_param_values(onlychanged=True)))
 
     def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(TriSurface, kdims, vdims, groupby, **kwargs)
