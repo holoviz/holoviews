@@ -326,6 +326,10 @@ class PlotSelector(object):
     def params(self):
         return self.plot_options
 
+    @property
+    def param(self):
+        return self.plot_options
+
 
 
 class DimensionedPlot(Plot):
