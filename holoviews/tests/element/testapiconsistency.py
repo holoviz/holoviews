@@ -11,7 +11,7 @@ class TestParameterDeclarations(ComparisonTestCase):
     def test_element_group_parameter_declared_constant(self):
         for element_name in all_elements:
             el = getattr(element, element_name)
-            self.assertEqual(el.params('group').constant, True,
+            self.assertEqual(el.param['group'].constant, True,
                              msg='Group parameter of element %s not constant' % element_name)
 
     def test_element_label_parameter_declared_constant(self):
@@ -20,6 +20,6 @@ class TestParameterDeclarations(ComparisonTestCase):
         """
         for element_name in all_elements:
             el = getattr(element, element_name)
-            self.assertEqual(el.params('label').constant, True,
+            self.assertEqual(el.param['label'].constant, True,
                              msg='Label parameter of element %s not constant' % element_name)
 
