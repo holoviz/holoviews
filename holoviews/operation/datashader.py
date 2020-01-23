@@ -1386,7 +1386,7 @@ class rasterize(AggregationOperation):
 
         unused_params = list(all_supplied_kws - all_allowed_kws)
         if unused_params:
-            self.warning('Parameter(s) [%s] not consumed by any element rasterizer.'
+            self.param.warning('Parameter(s) [%s] not consumed by any element rasterizer.'
                          % ', '.join(unused_params))
         return element
 

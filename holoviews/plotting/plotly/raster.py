@@ -69,10 +69,10 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 
     def get_data(self, element, ranges, style):
         if not element._unique:
-            self.warning('HeatMap element index is not unique,  ensure you '
-                         'aggregate the data before displaying it, e.g. '
-                         'using heatmap.aggregate(function=np.mean). '
-                         'Duplicate index values have been dropped.')
+            self.param.warning('HeatMap element index is not unique,  ensure you '
+                               'aggregate the data before displaying it, e.g. '
+                               'using heatmap.aggregate(function=np.mean). '
+                               'Duplicate index values have been dropped.')
 
         gridded = element.gridded
         xdim, ydim = gridded.dimensions()[:2]

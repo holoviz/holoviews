@@ -1265,9 +1265,9 @@ class Dimensioned(LabelledData):
                              "Supplying both formats is not supported.")
         elif args and all(isinstance(el, dict) for el in args):
             if len(args) > 1:
-                self.warning('Only a single dictionary can be passed '
-                             'as a positional argument. Only processing '
-                             'the first dictionary')
+                self.param.warning('Only a single dictionary can be passed '
+                                   'as a positional argument. Only processing '
+                                   'the first dictionary')
             options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)

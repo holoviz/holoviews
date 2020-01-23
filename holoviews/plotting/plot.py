@@ -487,7 +487,7 @@ class DimensionedPlot(Plot):
 
         custom_title = (self.title != self.param['title'].default)
         if custom_title and self.title_format:
-            self.warning('Both title and title_format set. Using title')
+            self.param.warning('Both title and title_format set. Using title')
         title_str = (
             self.title if custom_title or self.title_format is None
             else self.title_format

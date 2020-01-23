@@ -76,10 +76,10 @@ class HeatMapPlot(ColorbarPlot):
             style['line_color'] = 'white'
 
         if not element._unique:
-            self.warning('HeatMap element index is not unique,  ensure you '
-                         'aggregate the data before displaying it, e.g. '
-                         'using heatmap.aggregate(function=np.mean). '
-                         'Duplicate index values have been dropped.')
+            self.param.warning('HeatMap element index is not unique,  ensure you '
+                               'aggregate the data before displaying it, e.g. '
+                               'using heatmap.aggregate(function=np.mean). '
+                               'Duplicate index values have been dropped.')
 
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
@@ -138,8 +138,8 @@ class HeatMapPlot(ColorbarPlot):
     def _draw_markers(self, plot, element, marks, axis='x'):
         if marks is None or self.radial:
             return
-        self.warning('Only radial HeatMaps supports marks, to make the'
-                     'HeatMap quads for distinguishable set a line_width')
+        self.param.warning('Only radial HeatMaps supports marks, to make the'
+                           'HeatMap quads for distinguishable set a line_width')
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(HeatMapPlot, self)._init_glyphs(plot, element, ranges, source)
