@@ -51,7 +51,7 @@ class ElementConversion(DataConversion):
             element = self._element
             params = dict(kdims=[element.get_dimension(dim)],
                           label=element.label)
-            if element.group != element.params()['group'].default:
+            if element.group != element.param['group'].default:
                 params['group'] = element.group
             return Distribution((element.dimension_values(dim),),
                                 **dict(params, **kwargs))

@@ -95,7 +95,7 @@ def lookup_options(obj, group, backend):
     if group == 'style' and style_opts is not None:
         return node.filtered(style_opts)
     elif group == 'plot' and plot_class:
-        return node.filtered(list(plot_class.params().keys()))
+        return node.filtered(list(plot_class.param))
     else:
         return node
 

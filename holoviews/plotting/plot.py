@@ -54,7 +54,7 @@ class Plot(param.Parameterized):
 
     def __init__(self, renderer=None, root=None, **params):
         params = {k: v for k, v in params.items()
-                  if k in self.params()}
+                  if k in self.param}
         super(Plot, self).__init__(**params)
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self._force = False
@@ -288,7 +288,7 @@ class PlotSelector(object):
 
 
     def _define_interface(self, plots, allow_mismatch):
-        parameters = [{k:v.precedence for k,v in plot.params().items()
+        parameters = [{k:v.precedence for k,v in plot.param.params().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
@@ -485,7 +485,7 @@ class DimensionedPlot(Plot):
             key, dimensions=True, separator='\n'
         )
 
-        custom_title = (self.title != self.param.params('title').default)
+        custom_title = (self.title != self.param['title'].default)
         if custom_title and self.title_format:
             self.warning('Both title and title_format set. Using title')
         title_str = (
@@ -1104,7 +1104,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             self.ordering = util.layer_sort(self.hmap)
             overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
-            opts = {k: v for k, v in overlay_opts if k in self.params()}
+            opts = {k: v for k, v in overlay_opts if k in self.param}
             self.param.set_param(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
