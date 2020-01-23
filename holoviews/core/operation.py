@@ -169,6 +169,19 @@ class Operation(param.ParameterizedFunction):
         return self._apply(element, key)
 
 
+    def __new__(class_, *args, **params):
+        """
+        Overrides param's __new__ implementation ensuring that any
+        dynamically evaluated parameters are resolved before passing
+        them to the instance method where they will be validated.
+        """
+        kwargs = dict(params)
+        kwargs.update(util.resolve_dependent_kwargs(params))
+        inst = class_.instance(**kwargs)
+        inst.param._set_name(class_.__name__)
+        return inst.__call__(*args, **params)
+
+
     def __call__(self, element, **kwargs):
         params = dict(kwargs)
         for k, v in kwargs.items():
