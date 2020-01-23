@@ -5,6 +5,8 @@ import os, io
 import numpy as np # noqa (API import)
 import param
 
+# Warn when using method not on param namespace object
+param.parameterized.Parameters._disable_stubs = False
 
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
                                         reponame="holoviews"))
