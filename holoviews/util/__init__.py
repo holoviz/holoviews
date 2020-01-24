@@ -2,7 +2,7 @@ import os, sys, inspect, shutil
 
 from collections import defaultdict
 from types import FunctionType
-from inspect import Parameter, Signature
+
 
 try:
     from pathlib import Path
@@ -493,6 +493,7 @@ class opts(param.ParameterizedFunction):
             kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
             builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
         else:
+            from inspect import Parameter, Signature
             signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
                                   + [Parameter(kw, Parameter.KEYWORD_ONLY)
                                      for kw in sorted_kw_set])
@@ -542,6 +543,7 @@ class opts(param.ParameterizedFunction):
                 'params(strict=Boolean, name=String)','')
             cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
         else:
+            from inspect import Parameter, Signature
             signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
                                   + [Parameter(kw, Parameter.KEYWORD_ONLY)
                                      for kw in sorted_kw_set])
