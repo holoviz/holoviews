@@ -1748,6 +1748,8 @@ class ndmapping_groupby(param.ParameterizedFunction):
     performance (if available).
     """
 
+    sort = param.Boolean(default=False, doc='Whether to apply a sorted groupby')
+
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
         try:

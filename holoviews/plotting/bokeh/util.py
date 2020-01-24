@@ -587,7 +587,7 @@ def get_tab_title(key, frame, overlay):
             title = []
             if frame.label:
                 title.append(frame.label)
-                if frame.group != frame.params('group').default:
+                if frame.group != frame.param.objects('existing')['group'].default:
                     title.append(frame.group)
             else:
                 title.append(frame.group)

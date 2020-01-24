@@ -54,7 +54,7 @@ class Plot(param.Parameterized):
 
     def __init__(self, renderer=None, root=None, **params):
         params = {k: v for k, v in params.items()
-                  if k in self.params()}
+                  if k in self.param}
         super(Plot, self).__init__(**params)
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self._force = False
@@ -288,7 +288,7 @@ class PlotSelector(object):
 
 
     def _define_interface(self, plots, allow_mismatch):
-        parameters = [{k:v.precedence for k,v in plot.params().items()
+        parameters = [{k:v.precedence for k,v in plot.param.params().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
@@ -324,6 +324,10 @@ class PlotSelector(object):
                             % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
 
     def params(self):
+        return self.plot_options
+
+    @property
+    def param(self):
         return self.plot_options
 
 
@@ -485,9 +489,9 @@ class DimensionedPlot(Plot):
             key, dimensions=True, separator='\n'
         )
 
-        custom_title = (self.title != self.param.params('title').default)
+        custom_title = (self.title != self.param['title'].default)
         if custom_title and self.title_format:
-            self.warning('Both title and title_format set. Using title')
+            self.param.warning('Both title and title_format set. Using title')
         title_str = (
             self.title if custom_title or self.title_format is None
             else self.title_format
@@ -1104,7 +1108,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             self.ordering = util.layer_sort(self.hmap)
             overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
-            opts = {k: v for k, v in overlay_opts if k in self.params()}
+            opts = {k: v for k, v in overlay_opts if k in self.param}
             self.param.set_param(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
@@ -1555,7 +1559,7 @@ class GenericOverlayPlot(GenericElementPlot):
                                    'during plotting' % obj.last)
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
-            param_vals = dict(self.get_param_values())
+            param_vals = dict(self.param.get_param_values())
             propagate = {opt: param_vals[opt] for opt in self._propagate_options
                          if opt in param_vals}
             opts['batched'] = self.batched

@@ -21,7 +21,7 @@ def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
                       isinstance(v, type) and issubclass(v, Stream)]
     for stream_cls in all_stream_cls:
-        for name, p in stream_cls.params().items():
+        for name, p in stream_cls.param.params().items():
             if name == 'name': continue
             if p.constant != True:
                 raise TypeError('Parameter %s of stream %s not declared constant'
@@ -46,12 +46,12 @@ class TestStreamsDefine(ComparisonTestCase):
                                           test=test_param)
 
     def test_XY_types(self):
-        self.assertEqual(isinstance(self.XY.params('x'), param.Number),True)
-        self.assertEqual(isinstance(self.XY.params('y'), param.Number),True)
+        self.assertEqual(isinstance(self.XY.param['x'], param.Number),True)
+        self.assertEqual(isinstance(self.XY.param['y'], param.Number),True)
 
     def test_XY_defaults(self):
-        self.assertEqual(self.XY.params('x').default,0.0)
-        self.assertEqual(self.XY.params('y').default, 5.0)
+        self.assertEqual(self.XY.param['x'].default,0.0)
+        self.assertEqual(self.XY.param['y'].default, 5.0)
 
     def test_XY_instance(self):
         xy = self.XY(x=1,y=2)
@@ -93,18 +93,18 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(inner.state, (42,420))
 
     def test_custom_types(self):
-        self.assertEqual(isinstance(self.TypesTest.params('t'), param.Boolean),True)
-        self.assertEqual(isinstance(self.TypesTest.params('u'), param.Integer),True)
-        self.assertEqual(isinstance(self.TypesTest.params('v'), param.Number),True)
-        self.assertEqual(isinstance(self.TypesTest.params('w'), param.Tuple),True)
-        self.assertEqual(isinstance(self.TypesTest.params('x'), param.String),True)
-        self.assertEqual(isinstance(self.TypesTest.params('y'), param.List),True)
-        self.assertEqual(isinstance(self.TypesTest.params('z'), param.Array),True)
+        self.assertEqual(isinstance(self.TypesTest.param['t'], param.Boolean),True)
+        self.assertEqual(isinstance(self.TypesTest.param['u'], param.Integer),True)
+        self.assertEqual(isinstance(self.TypesTest.param['v'], param.Number),True)
+        self.assertEqual(isinstance(self.TypesTest.param['w'], param.Tuple),True)
+        self.assertEqual(isinstance(self.TypesTest.param['x'], param.String),True)
+        self.assertEqual(isinstance(self.TypesTest.param['y'], param.List),True)
+        self.assertEqual(isinstance(self.TypesTest.param['z'], param.Array),True)
 
     def test_explicit_parameter(self):
-        self.assertEqual(isinstance(self.ExplicitTest.params('test'), param.Integer),True)
-        self.assertEqual(self.ExplicitTest.params('test').default,42)
-        self.assertEqual(self.ExplicitTest.params('test').doc, 'Test docstring')
+        self.assertEqual(isinstance(self.ExplicitTest.param['test'], param.Integer),True)
+        self.assertEqual(self.ExplicitTest.param['test'].default,42)
+        self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
 class TestSubscriber(object):

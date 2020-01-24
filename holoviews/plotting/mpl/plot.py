@@ -1060,7 +1060,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             override_opts = {}
             sublabel_opts = {}
             if pos == 'main':
-                own_params = self.get_param_values(onlychanged=True)
+                own_params = self.param.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
             elif pos == 'right':

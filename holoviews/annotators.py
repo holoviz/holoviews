@@ -262,6 +262,8 @@ class Annotator(PaneBase):
 
     def _update_object(self, data=None):
         with param.discard_events(self):
+            if len(self._stream.source) == 0:
+                self.plot[()]
             self.object = self._stream.element
 
     def _update_table(self):

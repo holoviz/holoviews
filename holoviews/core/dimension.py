@@ -240,16 +240,16 @@ class Dimension(param.Parameterized):
             raise KeyError('Dimension name must only be passed as the positional argument')
 
         if isinstance(spec, Dimension):
-            existing_params = dict(spec.get_param_values())
+            existing_params = dict(spec.param.get_param_values())
         elif (spec, params.get('unit', None)) in self.presets.keys():
             preset = self.presets[(str(spec), str(params['unit']))]
-            existing_params = dict(preset.get_param_values())
+            existing_params = dict(preset.param.get_param_values())
         elif isinstance(spec, dict):
             existing_params = spec
         elif spec in self.presets:
-            existing_params = dict(self.presets[spec].get_param_values())
+            existing_params = dict(self.presets[spec].param.get_param_values())
         elif (spec,) in self.presets:
-            existing_params = dict(self.presets[(spec,)].get_param_values())
+            existing_params = dict(self.presets[(spec,)].param.get_param_values())
         else:
             existing_params = {}
 
@@ -324,7 +324,7 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.get_param_values(), **overrides)
+        settings = dict(self.param.get_param_values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
@@ -382,7 +382,7 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.get_param_values(onlychanged=True))
+        changed = dict(self.param.get_param_values(onlychanged=True))
         if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
             return 'Dimension({spec})'.format(spec=repr(self.name))
 
@@ -548,7 +548,7 @@ class LabelledData(param.Parameterized):
         Returns:
             Cloned object
         """
-        params = dict(self.get_param_values())
+        params = dict(self.param.get_param_values())
         if new_type is None:
             clone_type = self.__class__
         else:
@@ -1265,9 +1265,9 @@ class Dimensioned(LabelledData):
                              "Supplying both formats is not supported.")
         elif args and all(isinstance(el, dict) for el in args):
             if len(args) > 1:
-                self.warning('Only a single dictionary can be passed '
-                             'as a positional argument. Only processing '
-                             'the first dictionary')
+                self.param.warning('Only a single dictionary can be passed '
+                                   'as a positional argument. Only processing '
+                                   'the first dictionary')
             options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)

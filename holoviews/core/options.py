@@ -95,7 +95,7 @@ def lookup_options(obj, group, backend):
     if group == 'style' and style_opts is not None:
         return node.filtered(style_opts)
     elif group == 'plot' and plot_class:
-        return node.filtered(list(plot_class.params().keys()))
+        return node.filtered(list(plot_class.param))
     else:
         return node
 
@@ -332,7 +332,7 @@ class Cycle(param.Parameterized):
 
     def __call__(self, values=None, **params):
         values = values if values else self.values
-        return self.__class__(**dict(self.get_param_values(), values=values, **params))
+        return self.__class__(**dict(self.param.get_param_values(), values=values, **params))
 
 
     def __len__(self):

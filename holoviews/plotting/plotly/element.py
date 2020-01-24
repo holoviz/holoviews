@@ -135,7 +135,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         # Set plot options
         plot_opts = self.lookup_options(element, 'plot').options
         self.param.set_param(**{k: v for k, v in plot_opts.items()
-                                if k in self.params()})
+                                if k in self.param})
 
         # Get ranges
         ranges = self.compute_ranges(self.hmap, key, ranges)
@@ -307,7 +307,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
                 continue
             elif (not v.applies(element) and v.dimension not in self.overlay_dims):
                 new_style.pop(k)
-                self.warning('Specified %s dim transform %r could not be applied, as not all '
+                self.param.warning('Specified %s dim transform %r could not be applied, as not all '
                              'dimensions could be resolved.' % (k, v))
                 continue
 
@@ -603,7 +603,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                                            self._propagate_options,
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.set_param(**plot_opts)
+        self.param.set_param(**plot_opts)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None

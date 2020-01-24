@@ -919,9 +919,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         style_mapping = [v for k, v in style.items() if 'color' in k and
                          (isinstance(v, dim) or v in element)]
         if style_mapping and not no_cidx and self.color_index is not None:
-            self.warning("Cannot declare style mapping for '%s' option "
-                         "and declare a color_index; ignoring the color_index."
-                         % style_mapping[0])
+            self.param.warning("Cannot declare style mapping for '%s' option "
+                               "and declare a color_index; ignoring the color_index."
+                               % style_mapping[0])
             cdim = None
 
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None

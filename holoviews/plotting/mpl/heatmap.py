@@ -123,9 +123,9 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
     def _draw_markers(self, ax, element, marks, values, factors, axis='x'):
         if marks is None or self.radial:
             return
-        self.warning('Only radial HeatMaps supports marks, to make the'
-                     'HeatMap quads more distinguishable set linewidths'
-                     'to a non-zero value.')
+        self.param.warning('Only radial HeatMaps supports marks, to make the'
+                           'HeatMap quads more distinguishable set linewidths'
+                           'to a non-zero value.')
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
@@ -151,10 +151,10 @@ class HeatMapPlot(HeatMapMixin, QuadMeshPlot):
         aggregate = element.gridded
 
         if not element._unique:
-            self.warning('HeatMap element index is not unique,  ensure you '
-                         'aggregate the data before displaying it, e.g. '
-                         'using heatmap.aggregate(function=np.mean). '
-                         'Duplicate index values have been dropped.')
+            self.param.warning('HeatMap element index is not unique,  ensure you '
+                               'aggregate the data before displaying it, e.g. '
+                               'using heatmap.aggregate(function=np.mean). '
+                               'Duplicate index values have been dropped.')
 
         data = aggregate.dimension_values(2, flat=False)
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))

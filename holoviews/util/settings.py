@@ -268,7 +268,7 @@ class OutputSettings(KeywordSettings):
         prev_backend = Store.current_backend
         prev_renderer = Store.renderers[prev_backend]
         prev_backend_spec = prev_backend+':'+prev_renderer.mode
-        prev_params = {k: v for k, v in prev_renderer.get_param_values()
+        prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
                        if k in cls.render_params}
         prev_restore = dict(OutputSettings.options)
         try:
@@ -287,7 +287,7 @@ class OutputSettings(KeywordSettings):
             else:
                 backend_spec = prev_backend_spec
             renderer = Store.renderers[backend_spec.split(':')[0]]
-            render_params = {k: v for k, v in renderer.get_param_values()
+            render_params = {k: v for k, v in renderer.param.get_param_values()
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
