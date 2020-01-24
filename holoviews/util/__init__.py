@@ -3,6 +3,7 @@ import os, sys, inspect, shutil
 from collections import defaultdict
 from types import FunctionType
 
+
 try:
     from pathlib import Path
 except:
@@ -87,6 +88,9 @@ class opts(param.ParameterizedFunction):
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
+
+    def __init__(self, *args, **kwargs): # Needed for opts specific __signature__
+        super(opts, self).__init__(*args, **kwargs)
 
     def __call__(self, *args, **params):
         if not params and not args:
@@ -484,10 +488,17 @@ class opts(param.ParameterizedFunction):
             return Options(spec, **kws)
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        sorted_kw_set = sorted(set(filtered_keywords))
+        if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+            builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        else:
+            from inspect import Parameter, Signature
+            signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
+            builder.__signature__ = signature
         return classmethod(builder)
-
 
     @classmethod
     def _element_keywords(cls, backend, elements=None):
@@ -525,9 +536,18 @@ class opts(param.ParameterizedFunction):
                         cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
-        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        sorted_kw_set = sorted(set(filtered_keywords))
+        if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+            old_doc = cls.__original_docstring__.replace(
+                'params(strict=Boolean, name=String)','')
+            cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        else:
+            from inspect import Parameter, Signature
+            signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
+            cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -619,7 +639,11 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-output.__doc__ = Store.output_settings._generate_docstring()
+if sys.version_info.major == 2:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=True)
+else:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+    output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):

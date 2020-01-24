@@ -211,7 +211,7 @@ class OutputSettings(KeywordSettings):
     nbagg_counter = 0
 
     @classmethod
-    def _generate_docstring(cls):
+    def _generate_docstring(cls, signature=False):
         intro = ["Helper used to set HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
         backend = "backend      : The backend used by HoloViews"
@@ -234,8 +234,18 @@ class OutputSettings(KeywordSettings):
                         dpi, filename, info, css, widget_location]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
-        signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
-        return '\n'.join([signature] + intro + descriptions)
+        if signature:
+            doc_signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
+            return '\n'.join([doc_signature] + intro + descriptions)
+        else:
+            return '\n'.join(intro + descriptions)
+
+    @classmethod
+    def _generate_signature(cls):
+        from inspect import Signature, Parameter
+        keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
+                    'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
+        return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
 
 
     @classmethod

@@ -257,21 +257,6 @@ class notebook_extension(extension):
         publish_display_data(data={'text/html': html})
 
 
-    @param.parameterized.bothmethod
-    def tab_completion_docstring(self_or_cls):
-        """
-        Generates a docstring that can be used to enable tab-completion
-        of resources.
-        """
-        elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
-        for name, p in self_or_cls.param.objects().items():
-            param_type = p.__class__.__name__
-            elements.append("%s=%s" % (name, param_type))
-
-        return "params(%s)" % ', '.join(['holoviews=Boolean'] + elements)
-
-
-notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
 notebook_extension.add_delete_action(Renderer._delete_plot)
 
 
