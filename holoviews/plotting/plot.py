@@ -1186,7 +1186,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.overlaid:
             padding = 0
         elif padding_opt is None:
-            if self.param.params('padding').default is not self.padding:
+            if self.param.objects('existing')['padding'].default is not self.padding:
                 padding = self.padding
             else:
                 opts = self._traverse_options(
