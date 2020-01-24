@@ -603,7 +603,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                                            self._propagate_options,
                                            defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items() if k not in plot_opts})
-        self.set_param(**plot_opts)
+        self.param.set_param(**plot_opts)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         figure = None
