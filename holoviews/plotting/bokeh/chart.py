@@ -20,8 +20,10 @@ from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (expand_batched_style, line_properties, fill_properties,
-                     mpl_to_bokeh, rgb2hex)
+from .styles import (
+    expand_batched_style, base_properties, line_properties, fill_properties,
+    mpl_to_bokeh, rgb2hex
+)
 from .util import bokeh_version, categorize_array
 
 
@@ -336,7 +338,7 @@ class CurvePlot(ElementPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + ['visible']
+    style_opts = base_properties + line_properties
 
     _batched_style_opts = line_properties
     _nonvectorized_styles = line_properties + ['visible']
@@ -403,10 +405,11 @@ class CurvePlot(ElementPlot):
 
 class HistogramPlot(ColorbarPlot):
 
-    style_opts = line_properties + fill_properties + ['cmap', 'visible']
+    style_opts = base_properties + fill_properties + line_properties + ['cmap']
+
     _plot_methods = dict(single='quad')
 
-    _nonvectorized_styles = ['line_dash', 'visible']
+    _nonvectorized_styles = ['line_dash'] + base_properties
 
     selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
 
@@ -510,9 +513,9 @@ class ErrorPlot(ColorbarPlot):
     style_opts = ([
         p for p in line_properties if p.split('_')[0] not in
         ('hover', 'selection', 'nonselection', 'muted')
-    ] + ['lower_head', 'upper_head', 'visible'])
+    ] + ['lower_head', 'upper_head'] + base_properties)
 
-    _nonvectorized_styles = ['line_dash', 'visible']
+    _nonvectorized_styles = ['line_dash'] + base_properties
 
     _mapping = dict(base="base", upper="upper", lower="lower")
 
@@ -573,9 +576,10 @@ class SpreadPlot(ElementPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + fill_properties + ['visible']
+    style_opts = base_properties + fill_properties + line_properties
 
     _no_op_style = style_opts
+    _nonvectorized_styles = style_opts
     _plot_methods = dict(single='patch')
     _stream_data = False # Plot does not support streaming data
 
@@ -669,8 +673,9 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['color', 'cmap', 'palette', 'visible'] + line_properties)
+    style_opts = (['cmap', 'palette'] + base_properties + line_properties)
 
+    _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
 
     def _get_axis_dims(self, element):
@@ -756,11 +761,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (line_properties
-                  + fill_properties
-                  + ['width', 'bar_width', 'cmap', 'visible'])
+    style_opts = (base_properties + fill_properties + line_properties +
+                  ['bar_width', 'cmap'])
 
-    _nonvectorized_styles = ['bar_width', 'cmap', 'width', 'visible']
+    _nonvectorized_styles = ['bar_width', 'cmap', 'width'] + base_properties
 
     _plot_methods = dict(single=('vbar', 'hbar'))
 

@@ -5,7 +5,7 @@ import numpy as np
 from ..mixins import GeomMixin
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties
 
 
 class SegmentPlot(GeomMixin, ColorbarPlot):
@@ -16,10 +16,9 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + ['cmap']
+    style_opts = base_properties + line_properties + ['cmap']
 
-    _nonvectorized_styles = ['cmap']
-
+    _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
 
     def get_data(self, element, ranges, style):
@@ -37,7 +36,10 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap', 'visible'] + line_properties + fill_properties
+    style_opts = (base_properties + line_properties + fill_properties +
+                  ['cmap'])
+
+    _nonvectorized_styles = ['cmap'] + base_properties
     _plot_methods = dict(single='rect')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'

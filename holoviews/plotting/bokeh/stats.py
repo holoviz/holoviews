@@ -19,7 +19,7 @@ from ...util.transform import dim
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
-from .styles import fill_properties, line_properties
+from .styles import base_properties, fill_properties, line_properties
 from .util import bokeh_version, decode_bytes
 
 
@@ -80,8 +80,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Map each glyph to a style group
     _style_groups = {'segment': 'whisker', 'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
-    style_opts = (['whisker_'+p for p in line_properties] +
-                  ['box_'+p for p in fill_properties+line_properties] +
+    style_opts = (['whisker_'+p for p in base_properties+line_properties] +
+                  ['box_'+p for p in base_properties+fill_properties+line_properties] +
                   ['outlier_'+p for p in fill_properties+line_properties] +
                   ['width', 'box_width', 'cmap', 'box_cmap'])
 
@@ -336,9 +336,9 @@ class ViolinPlot(BoxWhiskerPlot):
 
     _draw_order = ['patches', 'multi_line', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
 
-    style_opts = ([glyph+p for p in fill_properties+line_properties
+    style_opts = ([glyph+p for p in base_properties+fill_properties+line_properties
                    for glyph in ('violin_', 'box_')] +
-                  [glyph+p for p in line_properties
+                  [glyph+p for p in base_properties+line_properties
                    for glyph in ('stats_', 'outline_')] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +
