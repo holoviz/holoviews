@@ -676,7 +676,7 @@ class layout_chords(Operation):
         for i in range(areas_in_radians.shape[0]):
             n_conn = weights_of_areas[i]
             p0, p1 = points[i], points[i+1]
-            angles = np.linspace(p0, p1, n_conn)
+            angles = np.linspace(p0, p1, int(n_conn))
             coords = list(zip(np.cos(angles), np.sin(angles)))
             all_areas.append(coords)
 
