@@ -497,11 +497,7 @@ class SideHistogramPlot(HistogramPlot):
                    'main_source': main_source}
         axis = 'y' if self.invert_axes else 'x'
         callback = self._callback.format(axis=axis)
-        if box_select.callback:
-            box_select.callback.code += callback
-            box_select.callback.args.update(handles)
-        else:
-            box_select.callback = CustomJS(args=handles, code=callback)
+        box_select.js_on_event("selectiongeometry", CustomJS(args=handles, code=callback))
         return ret
 
 
