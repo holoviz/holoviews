@@ -382,7 +382,7 @@ class TestServerCallbacks(CallbackTestCase):
 
     def test_server_callback_resolve_attr_spec_source_selected(self):
         source = ColumnDataSource()
-        source.selected = Selection(indices=[1, 2, 3])
+        source.selected.indices = [1, 2, 3]
         msg = Callback.resolve_attr_spec('cb_obj.selected.indices', source)
         self.assertEqual(msg, {'id': source.ref['id'], 'value': [1, 2, 3]})
 
