@@ -15,7 +15,6 @@ import bokeh
 import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
-from bokeh.core.properties import value
 from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
@@ -407,9 +406,9 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
 
     axis_props = {}
     if label_size:
-        axis_props['axis_label_text_font_size'] = value(label_size)
+        axis_props['axis_label_text_font_size'] = label_size
     if tick_size:
-        axis_props['major_label_text_font_size'] = value(tick_size)
+        axis_props['major_label_text_font_size'] = tick_size
 
     tick_px = font_size_to_pixels(tick_size)
     if tick_px is None:
