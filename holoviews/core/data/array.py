@@ -18,6 +18,8 @@ class ArrayInterface(Interface):
 
     datatype = 'array'
 
+    named = False
+
     @classmethod
     def dimension_type(cls, dataset, dim):
         return dataset.data.dtype.type

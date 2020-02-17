@@ -20,6 +20,8 @@ class ImageInterface(GridInterface):
 
     datatype = 'image'
 
+    named = False
+
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
