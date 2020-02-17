@@ -10,7 +10,7 @@ from .core.element import Element, Layout
 from .core.options import Store
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
-from .util import Dynamic, DynamicMap, opts
+from .util import DynamicMap, opts
 
 
 class _Cmap(Stream):
@@ -127,7 +127,6 @@ class _base_link_selections(param.ParameterizedFunction):
         from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
             initialize_dynamic(hvobj)
-
             if len(hvobj.callback.inputs) == 1 and hvobj.callback.operation:
                 child_hvobj = hvobj.callback.inputs[0]
                 fn = hvobj.callback.callable
@@ -176,9 +175,7 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, (Layout, Overlay)):
             new_hvobj = hvobj.clone(shared_data=False)
             for k, v in hvobj.items():
-                new_hvobj[k] = self._selection_transform(
-                    v, operations
-                )
+                new_hvobj[k] = self._selection_transform(v, operations)
 
             # collate if available. Needed for Overlay
             try:
@@ -271,17 +268,13 @@ class link_selections(_base_link_selections):
         ]
 
         def update_colors(*_):
-            colors_stream.event(
-                colors=[inst.unselected_color, inst.selected_color]
-            )
+            colors = [inst.unselected_color, inst.selected_color]
+            colors_stream.event(colors=colors)
             cmap_streams[0].event(cmap=inst.unselected_cmap)
             if cmap_streams[1] is not None:
                 cmap_streams[1].event(cmap=inst.selected_cmap)
 
-        inst.param.watch(
-            update_colors,
-            parameter_names=['unselected_color', 'selected_color']
-        )
+        inst.param.watch(update_colors,['unselected_color', 'selected_color'])
 
         # Exprs stream
         exprs_stream = _Exprs(exprs=[True, None])
@@ -295,10 +288,7 @@ class link_selections(_base_link_selections):
                 inst._obj_selections.clear()
                 inst._obj_regions.clear()
 
-        inst.param.watch(
-            update_exprs,
-            parameter_names=['selection_expr']
-        )
+        inst.param.watch(update_exprs, ['selection_expr'])
 
         return _SelectionStreams(
             colors_stream=colors_stream,
@@ -429,31 +419,15 @@ class OverlaySelectionDisplay(SelectionDisplay):
                            selection_streams.exprs_stream]
 
             if isinstance(hvobj, DynamicMap):
-                def apply_map(
-                        obj,
-                        build_layer=build_layer,
-                        colors=None,
-                        exprs=None,
-                        **kwargs
-                ):
-                    return obj.map(
-                        lambda el: build_layer(el, colors, exprs),
-                        specs=Element,
-                        clone=True,
-                    )
+                def apply_map(obj, build_layer=build_layer, colors=None,
+                              exprs=None, **kwargs):
+                    fn = lambda el: build_layer(el, colors, exprs)
+                    return obj.map(fn, specs=Element, clone=True)
 
-                layer = Dynamic(
-                    hvobj,
-                    operation=apply_map,
-                    streams=hvobj.streams + sel_streams,
-                    link_inputs=True,
-                )
+                streams = hvobj.streams + sel_streams
+                layer = hvobj.apply(apply_map, streams=streams)
             else:
-                layer = Dynamic(
-                        hvobj,
-                        operation=build_layer,
-                        streams=sel_streams,
-                    )
+                layer = hvobj.apply(build_layer, streams=sel_streams)
 
             layers.append(layer)
 
@@ -470,19 +444,15 @@ class OverlaySelectionDisplay(SelectionDisplay):
                     else:
                         # Want to default to current cmap
                         default_cmap = op.cmap
-                        cmap_stream_default = _Cmap(
-                            cmap=cmap_stream.cmap if cmap_stream.cmap else default_cmap
-                        )
+                        cmap = cmap_stream.cmap if cmap_stream.cmap else default_cmap
+                        cmap_stream_default = _Cmap(cmap=cmap)
 
-                        def update_cmap(
-                                cmap,
+                        def update_cmap(cmap,
                                 default_cmap=default_cmap,
                                 cmap_stream_default=cmap_stream_default
                         ):
-                            cmap_stream_default.event(
-                                cmap=cmap if cmap else default_cmap
-                            )
-
+                            cmap = cmap if cmap else default_cmap
+                            cmap_stream_default.event(cmap=cmap)
                         cmap_stream.add_subscriber(update_cmap)
                         streams += [cmap_stream_default]
                 new_op = op.instance(streams=streams)
@@ -507,12 +477,8 @@ class OverlaySelectionDisplay(SelectionDisplay):
                     region_element = element._get_selection_expr_for_stream_value()[2]
                 return self._style_region_element(region_element, unselected_color)
 
-            region = Dynamic(
-                hvobj,
-                operation=update_region,
-                streams=[region_stream, selection_streams.colors_stream]
-            )
-
+            streams = [region_stream, selection_streams.colors_stream]
+            region = hvobj.apply(update_region, streams)
             if isinstance(hvobj, Histogram):
                 layers.insert(1, region)
             else:
@@ -532,12 +498,9 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
     def _build_layer_callback(self, layer_number):
         def _build_layer(element, colors, exprs, **_):
-            layer_element = self._build_element_layer(
+            return self._build_element_layer(
                 element, colors[layer_number], exprs[layer_number]
             )
-
-            return layer_element
-
         return _build_layer
 
     def _build_element_layer(self, element, layer_color, selection_expr=True):
@@ -551,13 +514,11 @@ class OverlaySelectionDisplay(SelectionDisplay):
         from .util.transform import dim
         if isinstance(selection_expr, dim):
             try:
-                element = element.pipeline(
-                    element.dataset.select(selection_expr=selection_expr)
-                )
+                selection = element.dataset.select(selection_expr=selection_expr)
+                element = element.pipeline(selection)
             except Exception as e:
                 print(e)
                 raise
-
         return element
 
 
@@ -578,28 +539,19 @@ class ColorListSelectionDisplay(SelectionDisplay):
 
             # Use darker version of unselected_color if not selected color proveded
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
-            selected_colors = [
-                c or backup_clr for c in colors[1:]
-            ]
+            selected_colors = [c or backup_clr for c in colors[1:]]
             n = len(el.dimension_values(0))
-
-            clrs = np.array(
-                [unselected_color] + list(selected_colors))
+            clrs = np.array([unselected_color] + list(selected_colors))
 
             color_inds = np.zeros(n, dtype='int8')
 
-            for i, expr, color in zip(
-                    range(1, len(clrs)),
-                    selection_exprs,
-                    selected_colors
-            ):
+            for i, expr, color in zip(range(1, len(clrs)), selection_exprs, selected_colors):
                 if not expr:
                     color_inds[:] = i
                 else:
                     color_inds[expr.apply(el)] = i
 
             colors = clrs[color_inds]
-
             return el.options(**{color_prop: colors for color_prop in self.color_props})
 
         sel_streams = [selection_streams.colors_stream,
@@ -612,19 +564,10 @@ class ColorListSelectionDisplay(SelectionDisplay):
                     specs=Element,
                     clone=True,
                 )
-
-            hvobj = Dynamic(
-                hvobj,
-                operation=apply_map,
-                streams=hvobj.streams + sel_streams,
-                link_inputs=True,
-            )
+            streams = hvobj.streams + sel_streams
+            hvobj = hvobj.apply(apply_map, streams=streams, link_inputs=True)
         else:
-            hvobj = Dynamic(
-                hvobj,
-                operation=_build_selection,
-                streams=sel_streams
-            )
+            hvobj = hvobj.apply(build_selection, streams=sel_streams)
 
         for op in operations:
             hvobj = op(hvobj)
