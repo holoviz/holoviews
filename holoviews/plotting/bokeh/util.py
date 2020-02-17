@@ -678,8 +678,16 @@ def recursive_model_update(model, props):
                 nested_props = v.properties_with_values(include_defaults=False)
                 recursive_model_update(nested_model, nested_props)
             else:
-                setattr(model, k, v)
+                try:
+                    setattr(model, k, v)
+                except Exception as e:
+                    if isinstance(v, dict) and 'value' in v:
+                        setattr(model, k, v['value'])
+                    else:
+                        raise e
         elif k in valid_properties and v != valid_properties[k]:
+            if isinstance(v, dict) and 'value' in v:
+                v = v['value']
             updates[k] = v
     model.update(**updates)
 
