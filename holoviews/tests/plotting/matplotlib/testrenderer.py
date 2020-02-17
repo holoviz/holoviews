@@ -123,12 +123,12 @@ class MPLRendererTest(ComparisonTestCase):
     def test_render_holomap_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.components(hmap)
-        self.assertIn('State', data['text/html'])
+        self.assertIn('State"', data['text/html'])
 
     def test_render_holomap_not_embedded(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
         data, _ = self.renderer.instance(widget_mode='live').components(hmap)
-        self.assertNotIn('State', data['text/html'])
+        self.assertNotIn('State"', data['text/html'])
 
     def test_render_holomap_scrubber(self):
         hmap = HoloMap({i: Curve([1, 2, i]) for i in range(5)})
