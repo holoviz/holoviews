@@ -381,16 +381,8 @@ class dim(object):
                     applies &= arg.applies(dataset)
         return applies
 
-    def apply(
-            self,
-            dataset,
-            flat=False,
-            expanded=None,
-            ranges={},
-            all_values=False,
-            keep_index=False,
-            compute=True,
-    ):
+    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+              keep_index=False, compute=True):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -458,7 +450,7 @@ class dim(object):
         op_repr = "'%s'" % self.dimension
         for o in self.ops:
             if 'dim(' in op_repr:
-                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
+                prev = '({repr})'
             else:
                 prev = 'dim({repr})'
             fn = o['fn']
@@ -469,9 +461,9 @@ class dim(object):
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
-                    format_string = '{args}{fn}'+prev
+                    format_string = '({args}) {fn} '+prev
                 else:
-                    format_string = prev+'{fn}{args}'
+                    format_string = prev+' {fn} ({args})'
             elif fn in self._unary_funcs:
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
@@ -497,7 +489,9 @@ class dim(object):
                 else:
                     format_string = prev+', {fn}'
                 if args:
-                    format_string += ', {args}'
+                    if not format_string.endswith('('):
+                        format_string += ', '
+                    format_string += '{args}'
                     if kwargs:
                         format_string += ', {kwargs}'
                 elif kwargs:
