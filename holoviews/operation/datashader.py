@@ -1381,7 +1381,7 @@ class rasterize(AggregationOperation):
         all_allowed_kws = set()
         all_supplied_kws = set()
         for predicate, transform in self._transforms:
-            merged_param_values = dict(self.get_param_values(), **self.p)
+            merged_param_values = dict(self.param.get_param_values(), **self.p)
 
             # If aggregator or interpolation are 'default', pop parameter so
             # datashader can choose the default aggregator itself
