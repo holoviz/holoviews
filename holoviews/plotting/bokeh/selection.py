@@ -58,10 +58,13 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             options["color"] = region_color
             options["line_width"] = 1
             options["fill_alpha"] = 0
+            options["selection_fill_alpha"] = 0
+            options["nonselection_fill_alpha"] = 0
         else:
             # Darken unselected color slightly
             region_color = linear_gradient(unselected_color, "#000000", 9)[1]
             options["fill_color"] = region_color
             options["color"] = region_color
 
-        return region_element.options(**options)
+        el = region_element.options(**options)
+        return el
