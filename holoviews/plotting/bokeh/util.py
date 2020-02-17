@@ -402,7 +402,8 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
     reset = "range.setv({start: 0, end: range.factors.length})"
-    ranges.callback = CustomJS(args=dict(range=ranges), code=reset)
+    customjs = CustomJS(args=dict(range=ranges), code=reset)
+    ranges.js_on_change('start', customjs)
 
     axis_props = {}
     if label_size:
