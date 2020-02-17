@@ -29,7 +29,9 @@ _SelectionStreams = namedtuple(
 
 
 class _CmapStyle(Operation):
+
     cmap = param.Parameter(default=None, allow_None=True)
+
     disable_colorbar = param.Boolean(default=False)
 
     def _process(self, element, key=None):
@@ -68,6 +70,7 @@ class _base_link_selections(param.ParameterizedFunction):
     subclasses to control whether new selections override prior selections or
     whether they are combined with prior selections
     """
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super(_base_link_selections, self_or_cls).instance(**params)
@@ -116,11 +119,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
         return hvobj_selection
 
-    def _selection_transform(
-            self,
-            hvobj,
-            operations=(),
-    ):
+    def _selection_transform(self, hvobj, operations=()):
         """
         Transform an input HoloViews object into a dynamic object with linked
         selections enabled.
@@ -219,25 +218,36 @@ class _base_link_selections(param.ParameterizedFunction):
 
 
 class link_selections(_base_link_selections):
-    selection_expr = param.Parameter(default=None, doc="""
-    dim expression of the current selection or None to indicate that everything
-    is selected""")
+    """
+    Operation which automatically links selections between elements
+    in the supplied HoloViews object. Can be used a single time or
+    be used as an instance to apply the linked selections across
+    multiple objects.
+    """
 
-    unselected_color = param.Color(default="#e6e9ec", doc="""
-    Color of unselected data""")
+    cross_filter_mode = param.Selector(
+        ['overwrite', 'intersect'], default='intersect', doc="""
+        Determines how to combine selections across different
+        elements.""")
+
+    selection_expr = param.Parameter(default=None, doc="""
+        dim expression of the current selection or None to indicate
+        that everything is selected.""")
 
     selected_color = param.Color(default=None, allow_None=True, doc="""
-    Color of selected data, or None to use the original color of each element""")
+        Color of selected data, or None to use the original color of
+        each element.""")
 
-    cross_element_op = param.Selector(
-        ['overwrite', 'intersect'], default='intersect', doc="""
-        Set operation to use to combine selections across different elements"""
-    )
-    element_op = param.Selector(
+    selection_mode = param.Selector(
         ['overwrite', 'intersect', 'union', 'difference'], default='overwrite', doc="""
-        Set operation to use to combine successive selections on the same element"""
-    )
-    show_regions = param.Boolean(default=True)
+        Determines how to combine successive selections on the same
+        element.""")
+
+    show_regions = param.Boolean(default=True, doc="""
+        Whether to highlight the selected regions.""")
+
+    unselected_color = param.Color(default="#e6e9ec", doc="""
+        Color of unselected data.""")
 
     @bothmethod
     def instance(self_or_cls, **params):
@@ -315,7 +325,7 @@ class link_selections(_base_link_selections):
 
     def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
         if selection_expr:
-            if self.cross_element_op == "overwrite":
+            if self.cross_filter_mode == "overwrite":
                 # clear other regions and selections
                 for k, v in self._region_streams.items():
                     if k is not hvobj:
@@ -324,15 +334,15 @@ class link_selections(_base_link_selections):
                         self._obj_selections.pop(k, None)
 
             # Update selection expression
-            if hvobj not in self._obj_selections or self.element_op == "overwrite":
-                if self.element_op == "difference":
+            if hvobj not in self._obj_selections or self.selection_mode == "overwrite":
+                if self.selection_mode == "difference":
                     self._obj_selections[hvobj] = ~selection_expr
                 else:
                     self._obj_selections[hvobj] = selection_expr
             else:
-                if self.element_op == "intersect":
+                if self.selection_mode == "intersect":
                     self._obj_selections[hvobj] &= selection_expr
-                elif self.element_op == "union":
+                elif self.selection_mode == "union":
                     self._obj_selections[hvobj] |= selection_expr
                 else:  # difference
                     self._obj_selections[hvobj] &= ~selection_expr
@@ -345,7 +355,7 @@ class link_selections(_base_link_selections):
                     el_type = hvobj
 
                 region_element = el_type._merge_regions(
-                    self._obj_regions.get(hvobj, None), region_element, self.element_op
+                    self._obj_regions.get(hvobj, None), region_element, self.selection_mode
                 )
                 self._obj_regions[hvobj] = region_element
             else:
@@ -375,9 +385,8 @@ class SelectionDisplay(object):
     element) into a HoloViews object that represents the current selection
     state.
     """
-    def build_selection(
-            self, selection_streams, hvobj, operations, region_stream=None
-    ):
+
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         raise NotImplementedError()
 
 
@@ -386,9 +395,8 @@ class NoOpSelectionDisplay(SelectionDisplay):
     Selection display class that returns input element unchanged. For use with
     elements that don't support displaying selections.
     """
-    def build_selection(
-            self, selection_streams, hvobj, operations, region_stream=None
-    ):
+
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         return hvobj
 
 
@@ -397,6 +405,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
     Selection display base class that represents selections by overlaying
     colored subsets on top of the original element in an Overlay container.
     """
+
     def __init__(self, color_prop='color', is_cmap=False):
         if not isinstance(color_prop, (list, tuple)):
             self.color_props = [color_prop]
@@ -408,9 +417,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
         return {color_prop: [color] if self.is_cmap else color
                 for color_prop in self.color_props}
 
-    def build_selection(
-            self, selection_streams, hvobj, operations, region_stream=None
-    ):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         from holoviews import opts
         from .element import Histogram
 
@@ -537,9 +544,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         return _build_layer
 
-    def _build_element_layer(
-            self, element, layer_color, selection_expr=True
-    ):
+    def _build_element_layer(self, element, layer_color, selection_expr=True):
         raise NotImplementedError()
 
     def _style_region_element(self, region_element, unselected_cmap):
@@ -565,12 +570,11 @@ class ColorListSelectionDisplay(SelectionDisplay):
     Selection display class for elements that support coloring by a
     vectorized color list.
     """
+
     def __init__(self, color_prop='color'):
         self.color_props = [color_prop]
 
-    def build_selection(
-            self, selection_streams, hvobj, operations, region_stream=None
-    ):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         def _build_selection(el, colors, exprs, **_):
             from .plotting.util import linear_gradient
             selection_exprs = exprs[1:]

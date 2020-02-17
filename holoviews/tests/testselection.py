@@ -298,7 +298,7 @@ class TestLinkSelections(ComparisonTestCase):
                                         self.data.iloc[[0, 2]])
 
     def do_crossfilter_scatter_histogram(
-            self, element_op, cross_element_op,
+            self, selection_mode, cross_filter_mode,
             selected1, selected2, selected3, selected4,
             scatter_region1, scatter_region2, scatter_region3, scatter_region4,
             hist_region2, hist_region3, hist_region4, show_regions=True, dynamic=False
@@ -314,8 +314,8 @@ class TestLinkSelections(ComparisonTestCase):
             hist_orig = hist
 
         lnk_sel = link_selections.instance(
-            element_op=element_op,
-            cross_element_op=cross_element_op,
+            selection_mode=selection_mode,
+            cross_filter_mode=cross_filter_mode,
             show_regions=show_regions,
         )
         linked = lnk_sel(scatter + hist)
@@ -516,10 +516,10 @@ class TestLinkSelections(ComparisonTestCase):
             selection_hist.data, hist_orig.pipeline(hist_orig.dataset.iloc[selected4]).data
         )
 
-    #  cross_element_op="overwrite"
+    #  cross_filter_mode="overwrite"
     def test_scatter_histogram_overwrite_overwrite(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="overwrite", cross_element_op="overwrite",
+            selection_mode="overwrite", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([], []),
@@ -534,7 +534,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_intersect_overwrite(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="intersect", cross_element_op="overwrite",
+            selection_mode="intersect", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([], []),
@@ -549,7 +549,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_union_overwrite(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="union", cross_element_op="overwrite",
+            selection_mode="union", cross_filter_mode="overwrite",
             selected1=[1, 2], selected2=[0, 1], selected3=[0, 2], selected4=[1, 2],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([], []),
@@ -562,10 +562,10 @@ class TestLinkSelections(ComparisonTestCase):
     def test_scatter_histogram_union_overwrite_dynamic(self):
         self.test_scatter_histogram_union_overwrite(dynamic=True)
 
-    #  cross_element_op="intersect"
+    #  cross_filter_mode="intersect"
     def test_scatter_histogram_overwrite_intersect(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="overwrite", cross_element_op="intersect",
+            selection_mode="overwrite", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
@@ -580,7 +580,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_overwrite_intersect_hide_region(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="overwrite", cross_element_op="intersect",
+            selection_mode="overwrite", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0], selected4=[2],
             scatter_region1=([], []),
             scatter_region2=([], []),
@@ -595,7 +595,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_intersect_intersect(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="intersect", cross_element_op="intersect",
+            selection_mode="intersect", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[], selected4=[],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
@@ -616,7 +616,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_union_intersect(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="union", cross_element_op="intersect",
+            selection_mode="union", cross_filter_mode="intersect",
             selected1=[1, 2], selected2=[1], selected3=[0, 1], selected4=[0, 1, 2],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
@@ -637,7 +637,7 @@ class TestLinkSelections(ComparisonTestCase):
 
     def test_scatter_histogram_difference_intersect(self, dynamic=False):
         self.do_crossfilter_scatter_histogram(
-            element_op="difference", cross_element_op="intersect",
+            selection_mode="difference", cross_filter_mode="intersect",
             selected1=[0], selected2=[], selected3=[], selected4=[],
             scatter_region1=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
             scatter_region2=([1, 4, 4, 1, 1], [1, 1, 4, 4, 1]),
