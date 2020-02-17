@@ -898,6 +898,8 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         else:
             raise ValueError("Supplied cmap %s not found among %s colormaps." %
                              (cmap,providers_checked))
+        if isinstance(palette, tuple):
+            palette = list(palette)
     else:
         try:
             # Try processing as matplotlib colormap
