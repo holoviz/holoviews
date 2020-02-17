@@ -239,7 +239,7 @@ class link_selections(_base_link_selections):
         each element.""")
 
     selection_mode = param.Selector(
-        ['overwrite', 'intersect', 'union', 'difference'], default='overwrite', doc="""
+        ['overwrite', 'intersect', 'union', 'inverse'], default='overwrite', doc="""
         Determines how to combine successive selections on the same
         element.""")
 
@@ -335,7 +335,7 @@ class link_selections(_base_link_selections):
 
             # Update selection expression
             if hvobj not in self._obj_selections or self.selection_mode == "overwrite":
-                if self.selection_mode == "difference":
+                if self.selection_mode == "inverse":
                     self._obj_selections[hvobj] = ~selection_expr
                 else:
                     self._obj_selections[hvobj] = selection_expr
@@ -344,7 +344,7 @@ class link_selections(_base_link_selections):
                     self._obj_selections[hvobj] &= selection_expr
                 elif self.selection_mode == "union":
                     self._obj_selections[hvobj] |= selection_expr
-                else:  # difference
+                else:  # inverse
                     self._obj_selections[hvobj] &= ~selection_expr
 
             # Update region
