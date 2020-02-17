@@ -151,7 +151,7 @@ class StatisticsElement(Dataset, Element2D):
 
 
 
-class Bivariate(Selection2DExpr, StatisticsElement):
+class Bivariate(StatisticsElement):
     """
     Bivariate elements are containers for two dimensional data, which
     is to be visualized as a kernel density estimate. The data should

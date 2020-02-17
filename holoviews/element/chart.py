@@ -288,7 +288,6 @@ class Histogram(Chart):
             ),
         }
         region = self.pipeline(self.dataset.select(selection_expr))
-        print(region)
         return selection_expr, bbox, region
 
     @staticmethod
