@@ -504,9 +504,8 @@ class OverlaySelectionDisplay(SelectionDisplay):
             def update_region(element, region_element, colors, **_):
                 unselected_color = colors[0]
                 if region_element is None:
-                    return element._get_selection_expr_for_stream_value()[2]
-                else:
-                    return self._style_region_element(region_element, unselected_color)
+                    region_element = element._get_selection_expr_for_stream_value()[2]
+                return self._style_region_element(region_element, unselected_color)
 
             region = Dynamic(
                 hvobj,

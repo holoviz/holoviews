@@ -5,8 +5,7 @@ from ..streams import BoundsXY
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from .geom import Points, VectorField # noqa: backward compatible import
-from .stats import BoxWhisker         # noqa: backward compatible import
+from .geom import Selection2DExpr, Rectangles, Points, VectorField # noqa: backward compatible import
 
 
 class Chart(Dataset, Element2D):
@@ -48,77 +47,61 @@ class Chart(Dataset, Element2D):
         return super(Chart, self).__getitem__(index)
 
 
-class Chart2dSelectionExpr(object):
+class Selection1DExpr(Selection2DExpr):
     """
-    Mixin class for Cartesian 2D Chart elements to add basic support for
+    Mixin class for Cartesian 1D Chart elements to add basic support for
     SelectionExpr streams.
     """
-    _selection_streams = (BoundsXY,)
+
+    _inverted_expr = False
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
 
+        if kwargs.get('bounds', None) is None:
+            return None, None, Rectangles([])
+
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
-        if kwargs.get('bounds', None):
-            x0, y0, x1, y1 = kwargs['bounds']
+        x0, y0, x1, y1 = kwargs['bounds']
+        
+        # Handle invert_xaxis/invert_yaxis
+        if y0 > y1:
+            y0, y1 = y1, y0
+        if x0 > x1:
+            x0, x1 = x1, x0
 
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
+        if len(self.dimensions()) == 1:
+            xdim = self.dimensions()[0]
+            ydim = None
+        else:
+            xdim, ydim = self.dimensions()[:2]
 
-            if invert_axes:
-                ydim = self.kdims[0]
-                xdim = self.vdims[0]
-            else:
-                xdim = self.kdims[0]
-                ydim = self.vdims[0]
+        if invert_axes:
+            x0, x1, y0, y1 = y0, y1, x0, x1
+            xdim, ydim = ydim, xdim
+        if self._inverted_expr and ydim is not None:
+            xdim = ydim
+            x0, x1 = y0, y1
 
-            bbox = {
-                xdim.name: (x0, x1),
-                ydim.name: (y0, y1),
-            }
-
-            selection_expr = (
-                    (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-                    (dim(ydim) >= y0) & (dim(ydim) <= y1)
-            )
-            # region_element = Bounds(kwargs['bounds'])
-            x0, y0, x1, y1 = kwargs['bounds']
-            region_element = Curve(([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0]))
-            return selection_expr, bbox, region_element
-        return None, None, Curve(([], []))
-
-    @staticmethod
-    def _merge_regions(region1, region2, operation):
-        if region1 is None or operation == "overwrite":
-            return region2
-
-        x = region1.kdims[0]
-        y = region1.vdims[0]
-        return region1.clone((
-            np.concatenate([
-                region1.dimension_values(x), [np.nan], region2.dimension_values(x)
-            ]),
-            np.concatenate([
-                region1.dimension_values(y), [np.nan], region2.dimension_values(y)
-            ])
-        ))
+        bbox = {xdim.name: (x0, x1)}
+        selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
+        region_element = Rectangles([tuple(kwargs['bounds'])])
+        return selection_expr, bbox, region_element
 
 
-class Scatter(Chart2dSelectionExpr, Chart):
+class Scatter(Selection2DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
     location along the x-axis while the first value dimension
     represents the location of the point along the y-axis.
     """
+
     group = param.String(default='Scatter', constant=True)
 
 
-class Curve(Chart2dSelectionExpr, Chart):
+class Curve(Selection2DExpr, Chart):
     """
     Curve is a Chart element representing a line in a 1D coordinate
     system where the key dimension maps on the line x-coordinate and
@@ -129,7 +112,7 @@ class Curve(Chart2dSelectionExpr, Chart):
     group = param.String(default='Curve', constant=True)
 
 
-class ErrorBars(Chart2dSelectionExpr, Chart):
+class ErrorBars(Selection2DExpr, Chart):
     """
     ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the
@@ -144,6 +127,7 @@ class ErrorBars(Chart2dSelectionExpr, Chart):
     A parameter `horizontal`, when set `True`, will define the errors
     along the x-axis.
     """
+
     group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantity measured by the ErrorBars
         object.""")
@@ -259,53 +243,53 @@ class Histogram(Chart):
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
-        if kwargs.get('bounds', None):
-            if invert_axes:
-                y0, x0, y1, x1 = kwargs['bounds']
-            else:
-                x0, y0, x1, y1 = kwargs['bounds']
+        if kwargs.get('bounds', None) is None:
+            return None, None, self.pipeline(self.dataset.iloc[:0])
 
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
+        if invert_axes:
+            y0, x0, y1, x1 = kwargs['bounds']
+        else:
+            x0, y0, x1, y1 = kwargs['bounds']
 
-            xdim = self.kdims[0]
-            ydim = self.vdims[0]
+        # Handle invert_xaxis/invert_yaxis
+        if y0 > y1:
+            y0, y1 = y1, y0
+        if x0 > x1:
+            x0, x1 = x1, x0
 
-            edges = self.edges
-            centers = self.dimension_values(xdim)
-            heights = self.dimension_values(ydim)
+        xdim = self.kdims[0]
+        ydim = self.vdims[0]
 
-            selected_mask = (
-                (centers >= x0) & (centers <= x1) &
-                (heights >= y0) & (heights <= y1)
-            )
+        edges = self.edges
+        centers = self.dimension_values(xdim)
+        heights = self.dimension_values(ydim)
 
-            selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
-            if not selected_bins:
-                return None, None, self.pipeline(self.dataset.iloc[:0])
+        selected_mask = (
+            (centers >= x0) & (centers <= x1) &
+            (heights >= y0) & (heights <= y1)
+        )
 
-            selection_expr = (
-                dim(xdim).digitize(edges).isin(selected_bins)
-            )
+        selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
+        if not selected_bins:
+            return None, None, self.pipeline(self.dataset.iloc[:0])
 
-            if selected_bins[-1] == len(centers):
-                # Handle values exactly on the upper boundary
-                selection_expr = selection_expr | (dim(xdim) == edges[-1])
+        selection_expr = (
+            dim(xdim).digitize(edges).isin(selected_bins)
+        )
 
-            bbox = {
-                xdim.name: (
-                    edges[max(0, min(selected_bins) - 1)],
-                    edges[min(len(edges - 1), max(selected_bins))],
-                ),
-            }
+        if selected_bins[-1] == len(centers):
+            # Handle values exactly on the upper boundary
+            selection_expr = selection_expr | (dim(xdim) == edges[-1])
 
-            region = self.pipeline(self.dataset.select(selection_expr))
-            return selection_expr, bbox, region
-
-        return None, None, self.pipeline(self.dataset.iloc[:0])
+        bbox = {
+            xdim.name: (
+                edges[max(0, min(selected_bins) - 1)],
+                edges[min(len(edges - 1), max(selected_bins))],
+            ),
+        }
+        region = self.pipeline(self.dataset.select(selection_expr))
+        print(region)
+        return selection_expr, bbox, region
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
@@ -362,7 +346,7 @@ class Histogram(Chart):
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 
-class Spikes(Chart2dSelectionExpr, Chart):
+class Spikes(Selection1DExpr, Chart):
     """
     Spikes is a Chart element which represents a number of discrete
     spikes, events or observations in a 1D coordinate system. The key
@@ -380,6 +364,7 @@ class Spikes(Chart2dSelectionExpr, Chart):
     vdims = param.List(default=[])
 
     _auto_indexable_1d = False
+
 
 
 class Area(Curve):

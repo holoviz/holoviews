@@ -5,6 +5,7 @@ from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
 from ..core.util import get_param_values, OrderedDict
+from .chart import Selection1DExpr
 
 
 class StatisticsElement(Dataset, Element2D):
@@ -150,7 +151,7 @@ class StatisticsElement(Dataset, Element2D):
 
 
 
-class Bivariate(StatisticsElement):
+class Bivariate(Selection2DExpr, StatisticsElement):
     """
     Bivariate elements are containers for two dimensional data, which
     is to be visualized as a kernel density estimate. The data should
@@ -166,7 +167,7 @@ class Bivariate(StatisticsElement):
 
 
 
-class Distribution(StatisticsElement):
+class Distribution(Selection1DExpr, StatisticsElement):
     """
     Distribution elements provides a representation for a
     one-dimensional distribution which can be visualized as a kernel
@@ -181,6 +182,7 @@ class Distribution(StatisticsElement):
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
 
+
 class BoxWhisker(Dataset, Element2D):
     """
     BoxWhisker represent data as a distributions highlighting the
@@ -191,9 +193,11 @@ class BoxWhisker(Dataset, Element2D):
 
     group = param.String(default='BoxWhisker', constant=True)
 
-    kdims = param.List(default=[], bounds=(0,None))
+    kdims = param.List(default=[], bounds=(0, None))
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+
+    _inverted_expr = True
 
 
 class Violin(BoxWhisker):
@@ -205,6 +209,8 @@ class Violin(BoxWhisker):
     """
 
     group = param.String(default='Violin', constant=True)
+
+    _inverted_expr = True
 
 
 class HexTiles(Dataset, Element2D):

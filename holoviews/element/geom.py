@@ -27,67 +27,52 @@ class Geometry(Dataset, Element2D):
     __abstract = True
 
 
-class GeometrySelectionExpr(object):
+class Selection2DExpr(object):
     """
-    Mixin class for Geometry elements to add basic support for
+    Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
     """
+
     _selection_streams = (BoundsXY,)
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-        from ..element import Curve
+
+        if kwargs.get('bounds', None) is None:
+            return None, None, Rectangles([])
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
-        if kwargs.get('bounds', None):
-            x0, y0, x1, y1 = kwargs['bounds']
+        x0, y0, x1, y1 = kwargs['bounds']
 
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
+        # Handle invert_xaxis/invert_yaxis
+        if y0 > y1:
+            y0, y1 = y1, y0
+        if x0 > x1:
+            x0, x1 = x1, x0
 
-            if invert_axes:
-                ydim, xdim = self.kdims[:2]
-            else:
-                xdim, ydim = self.kdims[:2]
+        xdim, ydim = self.dimensions()[:2]
+        if invert_axes:
+            xdim, ydim = ydim, xdim
 
-            bbox = {
-                xdim.name: (x0, x1),
-                ydim.name: (y0, y1),
-            }
+        bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
 
-            selection_expr = (
-                    (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-                    (dim(ydim) >= y0) & (dim(ydim) <= y1)
-            )
-
-            # region_element = Bounds(kwargs['bounds'])
-            x0, y0, x1, y1 = kwargs['bounds']
-            region_element = Curve(([x0, x1, x1, x0, x0], [y0, y0, y1, y1, y0]))
-            return selection_expr, bbox, region_element
-        return None, None, Curve(([], []))
+        selection_expr = (
+            (dim(xdim) >= x0) & (dim(xdim) <= x1) &
+            (dim(ydim) >= y0) & (dim(ydim) <= y1)
+        )
+        region_element = Rectangles([kwargs['bounds']])
+        return selection_expr, bbox, region_element
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
         if region1 is None or operation == "overwrite":
             return region2
-
-        x = region1.kdims[0]
-        y = region1.vdims[0]
-        return region1.clone((
-            np.concatenate([
-                region1.dimension_values(x), [np.nan], region2.dimension_values(x)
-            ]),
-            np.concatenate([
-                region1.dimension_values(y), [np.nan], region2.dimension_values(y)
-            ])
-        ))
+        return region1.clone(region1.interface.concatenate([region1, region2]))
 
 
-class Points(GeometrySelectionExpr, Geometry):
+
+class Points(Selection2DExpr, Geometry):
     """
     Points represents a set of coordinates in 2D space, which may
     optionally be associated with any number of value dimensions.
@@ -98,7 +83,7 @@ class Points(GeometrySelectionExpr, Geometry):
     _auto_indexable_1d = True
 
 
-class VectorField(GeometrySelectionExpr, Geometry):
+class VectorField(Selection2DExpr, Geometry):
     """
     A VectorField represents a set of vectors in 2D space with an
     associated angle, as well as an optional magnitude and any number
