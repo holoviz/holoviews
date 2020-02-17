@@ -5,7 +5,7 @@ import param
 
 from param.parameterized import bothmethod
 
-from .core import OperationCallable, Overlay, Operation
+from .core import Overlay, Operation
 from .core.element import Element, Layout
 from .core.options import Store
 from .streams import SelectionExpr, PlotReset, Stream
@@ -130,11 +130,8 @@ class _base_link_selections(param.ParameterizedFunction):
 
             if len(hvobj.callback.inputs) == 1 and hvobj.callback.operation:
                 child_hvobj = hvobj.callback.inputs[0]
-                if isinstance(hvobj.callback, OperationCallable):
-                    next_op = hvobj.callback.operation
-                else:
-                    fn = hvobj.callback.operation
-                    next_op = function.instance(fn=fn)
+                fn = hvobj.callback.callable
+                next_op = function.instance(fn=fn)
                 new_operations = (next_op,) + operations
 
                 # Recurse on child with added operation
@@ -610,12 +607,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
                        selection_streams.exprs_stream]
 
         if isinstance(hvobj, DynamicMap):
-            def apply_map(
-                    obj,
-                    colors=None,
-                    exprs=None,
-                    **kwargs
-            ):
+            def apply_map(obj, colors=None, exprs=None, **kwargs):
                 return obj.map(
                     lambda el: _build_selection(el, colors, exprs),
                     specs=Element,
