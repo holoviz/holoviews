@@ -13,6 +13,7 @@ from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
 from ..core.util import OrderedDict, disable_constant
 from .geom import Geometry
+from .tabular import SelectionIndexExpr
 
 
 class Path(Geometry):
@@ -83,6 +84,8 @@ class Path(Geometry):
 
 
     def __getitem__(self, key):
+        if isinstance(key, np.ndarray):
+            return self.select(selection_mask=np.squeeze(key))
         if key in self.dimensions(): return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
