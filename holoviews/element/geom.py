@@ -3,6 +3,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
+from ..core.util import lzip, unique_zip
 from ..streams import BoundsXY
 
 
@@ -58,9 +59,9 @@ class Selection2DExpr(object):
         bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
-            vals = zip_dim.apply(self.dataset.select(**bbox))
-            expr = zip_dim.isin(vals)
+            sel = self.dataset.select(**bbox)
+            vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(sel)
+            selection_expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)
             region_element = None
         else:
             selection_expr = (

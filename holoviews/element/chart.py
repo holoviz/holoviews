@@ -87,9 +87,9 @@ class Selection1DExpr(Selection2DExpr):
         bbox = {xdim.name: (x0, x1)}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
-            vals = zip_dim.apply(self.dataset.select(**bbox))
-            expr = zip_dim.isin(vals)
+            sel = self.dataset.select(**bbox)
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
+            selection_expr = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals)
             region_element = None
         else:
             selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
@@ -288,10 +288,10 @@ class Histogram(Chart):
         }
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
-            vals = zip_dim.apply(self.dataset.select(**bbox))
-            expr = zip_dim.isin(vals)
-            region_element = None
+            sel = self.dataset.select(**bbox)
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
+            selection_expr = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals)
+            region = None
         else:
             selection_expr = dim(xdim).digitize(edges).isin(selected_bins)
             if selected_bins[-1] == len(centers):

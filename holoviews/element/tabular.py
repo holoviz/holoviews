@@ -4,7 +4,7 @@ import param
 
 from ..core import OrderedDict, Element, Empty, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
-from ..core.util import unique_zip
+from ..core.util import lzip, unique_zip
 from ..streams import Selection1D
 
 
@@ -20,8 +20,8 @@ class SelectionIndexExpr(object):
         if index is None or index_cols is None:
             expr = None
         else:
-            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
-            expr = zip_dim.isin(zip_dim.apply(self.iloc[index]))
+            vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(self.iloc[index])
+            expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)
         return expr, None, None
 
     @staticmethod
