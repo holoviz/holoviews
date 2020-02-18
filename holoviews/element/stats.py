@@ -158,12 +158,12 @@ class Bivariate(StatisticsElement):
     be supplied in a tabular format of x- and y-columns.
     """
 
+    group = param.String(default="Bivariate", constant=True)
+
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0,1))
-
-    group = param.String(default="Bivariate", constant=True)
 
 
 
@@ -175,9 +175,9 @@ class Distribution(Selection1DExpr, StatisticsElement):
     and will use the first column.
     """
 
-    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
-
     group = param.String(default='Distribution', constant=True)
+
+    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
@@ -197,8 +197,6 @@ class BoxWhisker(Dataset, Element2D):
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
-    _inverted_expr = True
-
 
 class Violin(BoxWhisker):
     """
@@ -209,8 +207,6 @@ class Violin(BoxWhisker):
     """
 
     group = param.String(default='Violin', constant=True)
-
-    _inverted_expr = True
 
 
 class HexTiles(Dataset, Element2D):
@@ -226,4 +222,3 @@ class HexTiles(Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
-

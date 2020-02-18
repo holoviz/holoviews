@@ -551,7 +551,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
             streams = hvobj.streams + sel_streams
             hvobj = hvobj.apply(apply_map, streams=streams, link_inputs=True)
         else:
-            hvobj = hvobj.apply(build_selection, streams=sel_streams)
+            hvobj = hvobj.apply(_build_selection, streams=sel_streams)
 
         for op in operations:
             hvobj = op(hvobj)
