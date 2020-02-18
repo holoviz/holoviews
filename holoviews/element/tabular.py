@@ -2,8 +2,31 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Element, Dataset, Tabular
+from ..core import OrderedDict, Element, Empty, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
+from ..core.util import unique_zip
+from ..streams import Selection1D
+
+
+class SelectionIndexExpr(object):
+
+    _selection_streams = (Selection1D,)
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        from ..util.transform import dim
+
+        index = kwargs.get('index')
+        index_cols = kwargs.get('index_cols')
+        if index is None or index_cols is None:
+            expr = None
+        else:
+            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
+            expr = zip_dim.isin(zip_dim.apply(self.iloc[index]))
+        return expr, None, None
+
+    @staticmethod
+    def _merge_regions(region1, region2, operation):
+        return None
 
 
 class ItemTable(Element):
@@ -27,16 +50,13 @@ class ItemTable(Element):
 
     group = param.String(default="ItemTable", constant=True)
 
-
     @property
     def rows(self):
         return len(self.vdims)
 
-
     @property
     def cols(self):
         return 2
-
 
     def __init__(self, data, **params):
         if data is None:
@@ -128,7 +148,7 @@ class ItemTable(Element):
 
 
 
-class Table(Dataset, Tabular):
+class Table(SelectionIndexExpr, Dataset, Tabular):
     """
     Table is a Dataset type, which gets displayed in a tabular
     format and is convertible to most other Element types.

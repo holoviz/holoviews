@@ -56,12 +56,18 @@ class Selection2DExpr(object):
             xdim, ydim = ydim, xdim
 
         bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
-
-        selection_expr = (
-            (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-            (dim(ydim) >= y0) & (dim(ydim) <= y1)
-        )
-        region_element = Rectangles([kwargs['bounds']])
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
+            vals = zip_dim.apply(self.dataset.select(**bbox))
+            expr = zip_dim.isin(vals)
+            region_element = None
+        else:
+            selection_expr = (
+                (dim(xdim) >= x0) & (dim(xdim) <= x1) &
+                (dim(ydim) >= y0) & (dim(ydim) <= y1)
+            )
+            region_element = Rectangles([kwargs['bounds']])
         return selection_expr, bbox, region_element
 
     @staticmethod

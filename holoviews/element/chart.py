@@ -85,8 +85,15 @@ class Selection1DExpr(Selection2DExpr):
             x0, x1 = y0, y1
 
         bbox = {xdim.name: (x0, x1)}
-        selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
-        region_element = Rectangles([tuple(kwargs['bounds'])])
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
+            vals = zip_dim.apply(self.dataset.select(**bbox))
+            expr = zip_dim.isin(vals)
+            region_element = None
+        else:
+            selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
+            region_element = Rectangles([tuple(kwargs['bounds'])])
         return selection_expr, bbox, region_element
 
 
@@ -273,21 +280,24 @@ class Histogram(Chart):
         if not selected_bins:
             return None, None, self.pipeline(self.dataset.iloc[:0])
 
-        selection_expr = (
-            dim(xdim).digitize(edges).isin(selected_bins)
-        )
-
-        if selected_bins[-1] == len(centers):
-            # Handle values exactly on the upper boundary
-            selection_expr = selection_expr | (dim(xdim) == edges[-1])
-
         bbox = {
             xdim.name: (
                 edges[max(0, min(selected_bins) - 1)],
                 edges[min(len(edges - 1), max(selected_bins))],
             ),
         }
-        region = self.pipeline(self.dataset.select(selection_expr))
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            zip_dim = dim(index_cols[0], unique_zip, *index_cols[1:])
+            vals = zip_dim.apply(self.dataset.select(**bbox))
+            expr = zip_dim.isin(vals)
+            region_element = None
+        else:
+            selection_expr = dim(xdim).digitize(edges).isin(selected_bins)
+            if selected_bins[-1] == len(centers):
+                # Handle values exactly on the upper boundary
+                selection_expr = selection_expr | (dim(xdim) == edges[-1])
+            region = self.pipeline(self.dataset.select(selection_expr))
         return selection_expr, bbox, region
 
     @staticmethod

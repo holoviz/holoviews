@@ -202,7 +202,7 @@ class Path(Geometry):
 
 
 
-class Contours(Path):
+class Contours(SelectionIndexExpr, Path):
     """
     The Contours element is a subtype of a Path which is characterized
     by the fact that each path geometry may only be associated with
@@ -244,6 +244,14 @@ class Contours(Path):
     group = param.String(default='Contours', constant=True)
 
     _level_vdim = Dimension('Level') # For backward compatibility
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        expr, _, _ = super(Contours, self)._get_selection_expr_for_stream_value(**kwargs)
+        if expr:
+            region = self.pipeline(self.dataset.select(expr))
+        else:
+            region = self.iloc[:0]
+        return expr, _, region
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data

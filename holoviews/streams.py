@@ -763,7 +763,9 @@ class ParamMethod(Params):
 class SelectionExpr(Stream):
 
     selection_expr = param.Parameter(default=None, constant=True)
+
     bbox = param.Dict(default=None, constant=True)
+
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, **params):
@@ -771,23 +773,23 @@ class SelectionExpr(Stream):
         from .core.spaces import DynamicMap
         from .plotting.util import initialize_dynamic
 
+        self._index_cols = params.pop('index_cols', None)
+
         if isinstance(source, DynamicMap):
             initialize_dynamic(source)
 
-        if isinstance(source, Element) or (
-                isinstance(source, DynamicMap) and
-                issubclass(source.type, Element)
-        ):
+        if ((isinstance(source, DynamicMap) and issubclass(source.type, Element)) or
+            isinstance(source, Element)):
             self._source_streams = []
             super(SelectionExpr, self).__init__(source=source, **params)
             self._register_chart(source)
         else:
-            raise ValueError("""
-The source of SelectionExpr must be an instance of an Element subclass,
-or a DynamicMap that returns such an instance
-            Received value of type {typ}: {val}""".format(
-            typ=type(source), val=source
-        ))
+            raise ValueError(
+                "The source of SelectionExpr must be an instance of an "
+                "Element subclass or a DynamicMap that returns such an "
+                "instance Received value of type {typ}: {val}".format(
+                    typ=type(source), val=source)
+            )
 
     def _register_chart(self, hvobj):
         from .core.spaces import DynamicMap
@@ -804,6 +806,7 @@ or a DynamicMap that returns such an instance
                 element = hvobj.values()[-1]
             else:
                 element = hvobj
+            params = dict(params, index_cols=self._index_cols)
             selection_expr, bbox, region_element = \
                 element._get_selection_expr_for_stream_value(**params)
 
@@ -816,7 +819,6 @@ or a DynamicMap that returns such an instance
         for stream_type in selection_streams:
             stream = stream_type(source=hvobj)
             self._source_streams.append(stream)
-
             stream.add_subscriber(_set_expr)
 
     def _unregister_chart(self):

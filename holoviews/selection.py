@@ -13,9 +13,11 @@ from .core.operation import Operation, OperationCallable
 from .core.options import Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
+from .core.util import unique_zip
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import DynamicMap, opts
+from .util.transform import dim
 
 
 class _Cmap(Stream):
@@ -102,7 +104,7 @@ class _base_link_selections(param.ParameterizedFunction):
             self._region_streams[hvobj] = _RegionElement()
 
         # Create SelectionExpr stream
-        expr_stream = SelectionExpr(source=hvobj)
+        expr_stream = SelectionExpr(source=hvobj, index_cols=self.index_cols)
         expr_stream.add_subscriber(
             lambda **kwargs: self._expr_stream_updated(hvobj, **kwargs)
         )
@@ -214,6 +216,11 @@ class link_selections(_base_link_selections):
         ['overwrite', 'intersect'], default='intersect', doc="""
         Determines how to combine selections across different
         elements.""")
+
+    index_cols = param.List(default=None, doc="""
+        If provided selection switches to index mode where all queries
+        are expressed solely in terms discrete values along the
+        index_cols.""")
 
     selection_expr = param.Parameter(default=None, doc="""
         dim expression of the current selection or None to indicate
@@ -342,8 +349,13 @@ class link_selections(_base_link_selections):
             # build combined selection
             selection_exprs = list(self._obj_selections.values())
             selection_expr = selection_exprs[0]
-            for expr in selection_exprs[1:]:
-                selection_expr = selection_expr & expr
+            if self.index_cols:
+                if len(selection_exprs) > 1:
+                    vals = set.intersection(*(set(expr.ops[1]['args'][0]) for expr in selection_exprs))
+                    selection_expr = dim(self.index_cols[0], unique_zip, *self.index_cols[1:]).isin(vals)
+            else:
+                for expr in selection_exprs[1:]:
+                    selection_expr = selection_expr & expr
 
             # Set _reset_regions to False so that plot regions aren't automatically
             # cleared when self.selection_expr is set.

@@ -9,7 +9,6 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...plotting.bokeh.selection import BokehOverlaySelectionDisplay
 from ...selection import NoOpSelectionDisplay
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
@@ -21,6 +20,7 @@ from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
 from .util import bokeh_version, categorize_array

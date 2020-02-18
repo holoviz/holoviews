@@ -10,6 +10,7 @@ from ...element import Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, validate)
 from .util import bokeh_version, multi_polygons_data
@@ -290,3 +291,5 @@ class PolygonPlot(ContourPlot):
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'
+
+    selection_display = BokehOverlaySelectionDisplay()
