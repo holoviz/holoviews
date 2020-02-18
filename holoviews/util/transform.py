@@ -9,14 +9,9 @@ from ..core.dimension import Dimension
 from ..core.util import basestring, unique_iterator
 from ..element import Graph
 
-function_types = (
-    BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc)
-
-
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
-        series_like = hasattr(values, 'index')
+        series_like = hasattr(values, 'index') and not isinstance(values, list)
         map_fn = (getattr(values, 'map_partitions', None) or
                   getattr(values, 'map_blocks', None))
         if map_fn:
@@ -69,6 +64,24 @@ def lognorm(values, min=None, max=None):
     min = np.log(np.min(values)) if min is None else np.log(min)
     max = np.log(np.max(values)) if max is None else np.log(max)
     return (np.log(values) - min) / (max-min)
+
+
+class iloc(object):
+    """Implements integer array indexing for dim expressions.
+    """
+
+    __name__ = 'iloc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values[self.index]
 
 
 @_maybe_map
@@ -141,6 +154,11 @@ astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
 
+function_types = (
+    BuiltinFunctionType, BuiltinMethodType, FunctionType,
+    MethodType, np.ufunc, iloc)
+
+
 class dim(object):
     """
     dim transform objects are a way to express deferred transforms on
@@ -150,7 +168,7 @@ class dim(object):
     """
 
     _binary_funcs = {
-        operator.add: '+', operator.and_: '&', operator.eq: '=',
+        operator.add: '+', operator.and_: '&', operator.eq: '==',
         operator.floordiv: '//', operator.ge: '>=', operator.gt: '>',
         operator.le: '<=', operator.lshift: '<<', operator.lt: '<',
         operator.mod: '%', operator.mul: '*', operator.ne: '!=',
@@ -168,6 +186,7 @@ class dim(object):
         isin: 'isin',
         astype: 'astype',
         round_: 'round',
+        iloc: 'iloc'
     }
 
     _numpy_funcs = {
@@ -300,8 +319,12 @@ class dim(object):
     ## Custom functions
     def astype(self, dtype): return dim(self, astype, dtype=dtype)
     def round(self, decimals=0): return dim(self, round_, decimals=decimals)
-    def digitize(self, *args, **kwargs): return dim(self, digitize,  *args, **kwargs)
-    def isin(self, *args, **kwargs):     return dim(self, isin,  *args, **kwargs)
+    def digitize(self, *args, **kwargs): return dim(self, digitize, *args, **kwargs)
+    def isin(self, *args, **kwargs):     return dim(self, isin, *args, **kwargs)
+
+    @property
+    def iloc(self):
+        return iloc(self)
 
     def bin(self, bins, labels=None):
         """Bins continuous values.
@@ -475,6 +498,8 @@ class dim(object):
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+'.{fn}('
+                elif isinstance(fn, iloc):
+                    format_string = prev+'.iloc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
                     format_string = prev+'.{fn}('
@@ -496,7 +521,8 @@ class dim(object):
                         format_string += ', {kwargs}'
                 elif kwargs:
                     format_string += '{kwargs}'
-                format_string += ')'
+                if format_string.count('(') - format_string.count(')') > 0:
+                    format_string += ')'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
         return op_repr

@@ -230,6 +230,18 @@ class TestDimTransforms(ComparisonTestCase):
         expr = dim('int').norm()
         self.check_apply(expr, (self.linear_ints-1)/9.)
 
+    def test_iloc_transform_int(self):
+        expr = dim('int').iloc[1]
+        self.check_apply(expr, self.linear_ints[1])
+
+    def test_iloc_transform_slice(self):
+        expr = dim('int').iloc[1:3]
+        self.check_apply(expr, self.linear_ints[1:3])
+
+    def test_iloc_transform_list(self):
+        expr = dim('int').iloc[[1, 3, 5]]
+        self.check_apply(expr, self.linear_ints[[1, 3, 5]])
+
     def test_bin_transform(self):
         expr = dim('int').bin([0, 5, 10])
         expected = pd.Series(
