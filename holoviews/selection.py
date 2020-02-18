@@ -1,13 +1,18 @@
-from collections import namedtuple
 import copy
+
+from collections import namedtuple
+
 import numpy as np
 import param
 
 from param.parameterized import bothmethod
 
-from .core import Overlay, Operation
+from .core.dimension import OrderedDict
 from .core.element import Element, Layout
+from .core.operation import Operation, OperationCallable
 from .core.options import Store
+from .core.overlay import NdOverlay, Overlay
+from .core.spaces import GridSpace
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import DynamicMap, opts
@@ -126,27 +131,23 @@ class _base_link_selections(param.ParameterizedFunction):
         """
         from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
-            initialize_dynamic(hvobj)
-            if len(hvobj.callback.inputs) == 1 and hvobj.callback.operation:
-                child_hvobj = hvobj.callback.inputs[0]
-                fn = hvobj.callback.callable
-                next_op = function.instance(fn=fn)
+            callback = hvobj.callback
+            ninputs = len(callback.inputs)
+            if ninputs == 1:
+                child_hvobj = callback.inputs[0]
+                if isinstance(callback, OperationCallable) and callback.operation:
+                    next_op = {'op': callback.operation, 'kwargs': callback.operation_kwargs}
+                else:
+                    fn = function.instance(fn=callback.callable)
+                    next_op = {'op': fn, 'kwargs': callback.operation_kwargs}
                 new_operations = (next_op,) + operations
+                return self._selection_transform(child_hvobj, new_operations)
+            elif ninputs == 2:
+                return Overlay([self._selection_transform(el)
+                                for el in hvobj.callback.inputs]).collate()
 
-                # Recurse on child with added operation
-                return self._selection_transform(
-                    hvobj=child_hvobj,
-                    operations=new_operations,
-                )
-            elif hvobj.type == Overlay and not hvobj.streams:
-                # Process overlay inputs individually and then overlay again
-                overlay_elements = hvobj.callback.inputs
-                new_hvobj = self._selection_transform(overlay_elements[0])
-                for overlay_element in overlay_elements[1:]:
-                    new_hvobj = new_hvobj * self._selection_transform(overlay_element)
-
-                return new_hvobj
-            elif issubclass(hvobj.type, Element):
+            initialize_dynamic(hvobj)
+            if issubclass(hvobj.type, Element):
                 self._register(hvobj)
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display.build_selection(
@@ -156,36 +157,26 @@ class _base_link_selections(param.ParameterizedFunction):
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
                 return hvobj
-
         elif isinstance(hvobj, Element):
-            element = hvobj.clone(link=False)
-
             # Register hvobj to receive selection expression callbacks
-            self._register(element)
-            chart = Store.registry[Store.current_backend][type(element)]
-            try:
+            chart = Store.registry[Store.current_backend][type(hvobj)]
+            if hasattr(chart, 'selection_display'):
+                element = hvobj.clone(link=False)
+                self._register(element)
                 return chart.selection_display.build_selection(
                     self._selection_streams, element, operations,
                     self._region_streams.get(element, None),
                 )
-            except AttributeError:
-                # In case chart doesn't have selection_display defined
-                return element
-
-        elif isinstance(hvobj, (Layout, Overlay)):
-            new_hvobj = hvobj.clone(shared_data=False)
-            for k, v in hvobj.items():
-                new_hvobj[k] = self._selection_transform(v, operations)
-
-            # collate if available. Needed for Overlay
-            try:
+            return hvobj
+        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
+            data = OrderedDict([(k, self._selection_transform(v, operations))
+                                 for k, v in hvobj.items()])
+            new_hvobj = hvobj.clone(data)
+            if hasattr(new_hvobj, 'collate'):
                 new_hvobj = new_hvobj.collate()
-            except AttributeError:
-                pass
-
             return new_hvobj
         else:
-            # Unsupported object
+             # Unsupported object
             return hvobj
 
     @classmethod
@@ -433,30 +424,23 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         # Wrap in operations
         for op in operations:
+            op, kws = op['op'], op['kwargs']
             for layer_number in range(num_layers):
                 streams = copy.copy(op.streams)
                 cmap_stream = selection_streams.cmap_streams[layer_number]
+                kwargs = dict(kws)
 
                 # Handle cmap as an operation parameter
-                if 'cmap' in op.param:
-                    if layer_number == 0 or op.cmap is None:
+                if 'cmap' in op.param or 'cmap' in kwargs:
+                    if layer_number == 0 or (op.cmap is None and kwargs.get('cmap') is None):
                         streams += [cmap_stream]
                     else:
-                        # Want to default to current cmap
-                        default_cmap = op.cmap
-                        cmap = cmap_stream.cmap if cmap_stream.cmap else default_cmap
-                        cmap_stream_default = _Cmap(cmap=cmap)
-
-                        def update_cmap(cmap,
-                                default_cmap=default_cmap,
-                                cmap_stream_default=cmap_stream_default
-                        ):
-                            cmap = cmap if cmap else default_cmap
-                            cmap_stream_default.event(cmap=cmap)
-                        cmap_stream.add_subscriber(update_cmap)
-                        streams += [cmap_stream_default]
+                        @param.depends(cmap=cmap_stream.param.cmap)
+                        def update_cmap(cmap, default=op.cmap, kw=kwargs.get('cmap')):
+                            return cmap or kw or default
+                        kwargs['cmap'] = update_cmap
                 new_op = op.instance(streams=streams)
-                layers[layer_number] = new_op(layers[layer_number])
+                layers[layer_number] = new_op(layers[layer_number], **kwargs)
 
         # Handle cmap as a style option (e.g. in Image)
         for layer_number in range(len(layers)):

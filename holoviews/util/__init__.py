@@ -975,11 +975,12 @@ class Dynamic(param.ParameterizedFunction):
         if isinstance(self.p.operation, Operation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
                                      link_inputs=self.p.link_inputs,
-                                     operation=self.p.operation)
+                                     operation=self.p.operation,
+                                     operation_kwargs=self.p.kwargs)
         else:
             return Callable(dynamic_operation, inputs=[map_obj],
                             link_inputs=self.p.link_inputs,
-                            operation=apply)
+                            operation=apply, operation_kwargs=self.p.kwargs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):

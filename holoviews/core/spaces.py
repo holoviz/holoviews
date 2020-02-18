@@ -625,6 +625,10 @@ class Callable(param.Parameterized):
          The list of inputs the callable function is wrapping. Used
          to allow deep access to streams in chained Callables.""")
 
+    operation_kwargs = param.Dict(default={}, constant=True, doc="""
+        Potential dynamic keyword arguments associated with the
+        operation.""")
+
     link_inputs = param.Boolean(default=True, doc="""
          If the Callable wraps around other DynamicMaps in its inputs,
          determines whether linked streams attached to the inputs are
@@ -1160,11 +1164,6 @@ class DynamicMap(HoloMap):
         Returns:
             Cloned object
         """
-        if 'link_inputs' in overrides:
-            self.param.warning(
-                'link_inputs argument to the clone method is deprecated, '
-                'use the more general link argument instead.')
-        link = link and overrides.pop('link_inputs', True)
         callback = overrides.pop('callback', self.callback)
         if data is None and shared_data:
             data = self.data
@@ -1178,8 +1177,10 @@ class DynamicMap(HoloMap):
         # stream sources are inherited
         if clone.callback is self.callback:
             with util.disable_constant(clone):
-                clone.callback = clone.callback.clone(inputs=[self],
-                                                      link_inputs=link)
+                clone.callback = clone.callback.clone(
+                    inputs=[self], link_inputs=link, operation=None,
+                    operation_kwargs={}
+                )
         return clone
 
 
