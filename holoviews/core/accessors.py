@@ -97,7 +97,8 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+    def __call__(self, function, streams=[], link_inputs=True, dynamic=None,
+                 per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
         Any keyword arguments are passed through to the function. If
@@ -122,6 +123,10 @@ class Apply(object):
                 supplied, an instance parameter is supplied as a
                 keyword argument, or the supplied function is a
                 parameterized method.
+            per_element (bool, optional): Whether to apply per element
+                By default apply works on the any leaf nodes which
+                includes both elements and overlays. If set it will
+                apply directly to elements.
             kwargs (dict, optional): Additional keyword arguments
                 Keyword arguments which will be supplied to the
                 function.
@@ -131,6 +136,7 @@ class Apply(object):
             contained (Nd)Overlay or Element objects.
         """
         from .dimension import ViewableElement
+        from .element import Element
         from .spaces import HoloMap, DynamicMap
         from ..util import Dynamic
 
@@ -164,7 +170,8 @@ class Apply(object):
             kwargs = {k: v.param.value if isinstance(v, Widget) else v
                       for k, v in kwargs.items()}
 
-        applies = isinstance(self._obj, ViewableElement)
+        spec = Element if per_element else ViewableElement
+        applies = isinstance(self._obj, spec)
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
