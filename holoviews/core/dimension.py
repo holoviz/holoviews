@@ -961,14 +961,24 @@ class Dimensioned(LabelledData):
                 raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
-        dimension = dimension_name(dimension)
-        name_map = {dim.name: dim for dim in all_dims}
-        name_map.update({dim.label: dim for dim in all_dims})
-        name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
-        if strict and dimension not in name_map:
-            raise KeyError("Dimension %r not found." % dimension)
+
+        if isinstance(dimension, Dimension):
+            dims = [d for d in all_dims if dimension == d]
+            if strict and not dims:
+                raise KeyError("Dimension %r not found." % dimension)
+            elif dims:
+                return dims[0]
+            else:
+                return None
         else:
-            return name_map.get(dimension, default)
+            dimension = dimension_name(dimension)
+            name_map = {dim.spec: dim for dim in all_dims}
+            name_map.update({dim.label: dim for dim in all_dims})
+            name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
+            if strict and dimension not in name_map:
+                raise KeyError("Dimension %r not found." % dimension)
+            else:
+                return name_map.get(dimension, default)
 
 
     def get_dimension_index(self, dimension):
