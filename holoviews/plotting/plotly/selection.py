@@ -9,8 +9,6 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
     """
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
-        element = self._select(element, selection_expr)
-
         backend_options = Store.options(backend='plotly')
         style_options = backend_options[(type(element).name,)]['style']
         allowed = style_options.allowed_keywords
@@ -21,6 +19,11 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             shared_opts = dict()
 
         merged_opts = dict(shared_opts)
+
+        if 'opacity' in allowed:
+            merged_opts['opacity'] = layer_alpha
+        elif 'alpha' in allowed:
+            merged_opts['alpha'] = layer_alpha
 
         if layer_color is not None:
             # set color
@@ -48,16 +51,18 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         if element_name != "Histogram":
             # Darken unselected color
-            region_color = linear_gradient(unselected_color, "#000000", 9)[3]
+            if unselected_color:
+                region_color = linear_gradient(unselected_color, "#000000", 9)[3]
             if "line_width" in allowed_keywords:
                 options["line_width"] = 1
         else:
             # Darken unselected color slightly
+            unselected_color = unselected_color or "#e6e9ec"
             region_color = linear_gradient(unselected_color, "#000000", 9)[1]
 
-        if "color" in allowed_keywords:
+        if "color" in allowed_keywords and unselected_color:
             options["color"] = region_color
-        elif "line_color" in allowed_keywords:
+        elif "line_color" in allowed_keywords and unselected_color:
             options["line_color"] = region_color
 
         if "selectedpoints" in allowed_keywords:

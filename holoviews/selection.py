@@ -418,13 +418,17 @@ class OverlaySelectionDisplay(SelectionDisplay):
                         kwargs['cmap'] = update_cmap
 
                 new_op = op.instance(streams=streams)
-                layer = new_op(layers[layer_number], **kwargs)
-                streams = [selection_streams.style_stream, cmap_stream]
-                layer = layer.apply(
-                    self._apply_style_callback, layer_number=layer_number,
-                    streams=streams, per_element=True
-                )
-                layers[layer_number] = layer
+                layers[layer_number] = new_op(layers[layer_number], **kwargs)
+
+        for layer_number in range(num_layers):
+            cmap_stream = selection_streams.cmap_streams[layer_number]
+            layer = layers[layer_number]
+            streams = [selection_streams.style_stream, cmap_stream]
+            layer = layer.apply(
+                self._apply_style_callback, layer_number=layer_number,
+                streams=streams, per_element=True
+            )
+            layers[layer_number] = layer
 
         # Build region layer
         if region_stream is not None:
@@ -491,7 +495,8 @@ class ColorListSelectionDisplay(SelectionDisplay):
             selection_exprs = exprs[1:]
             unselected_color = colors[0]
 
-            # Use darker version of unselected_color if not selected color proveded
+            # Use darker version of unselected_color if not selected color provided
+            unselected_color = unselected_color or "#e6e9ec"
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
             selected_colors = [c or backup_clr for c in colors[1:]]
             n = len(el.dimension_values(0))
