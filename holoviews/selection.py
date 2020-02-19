@@ -25,45 +25,14 @@ class _Cmap(Stream):
 
 
 _Exprs = Stream.define('Exprs', exprs=[])
-_Colors = Stream.define('Colors', colors=[])
+_Styles = Stream.define('Styles', colors=[], alpha=1.)
 _RegionElement = Stream.define("RegionElement", region_element=None)
 
 
 _SelectionStreams = namedtuple(
     'SelectionStreams',
-    'colors_stream exprs_stream cmap_streams '
+    'style_stream exprs_stream cmap_streams '
 )
-
-
-class _CmapStyle(Operation):
-
-    cmap = param.Parameter(default=None, allow_None=True)
-
-    disable_colorbar = param.Boolean(default=False)
-
-    def _process(self, element, key=None):
-        cmap = self.p.cmap
-        if cmap:
-            cmap_opts = []
-            def traverse_fn(hvobj):
-                backend_options = Store.options()
-                try:
-                    style_options = backend_options[(type(hvobj).name,)]['style']
-                    opts_cls = getattr(opts, type(hvobj).name)
-                    opts_kwargs = {}
-                    if "cmap" in style_options.allowed_keywords:
-                        opts_kwargs['cmap'] = cmap
-                        if self.p.disable_colorbar:
-                            opts_kwargs['colorbar'] = False
-                    cmap_opts.append(opts_cls(**opts_kwargs))
-                except (KeyError, AttributeError):
-                    pass
-
-            element.traverse(traverse_fn)
-            return element.options(*cmap_opts)
-        else:
-            return element
-
 
 class _base_link_selections(param.ParameterizedFunction):
     """
@@ -238,7 +207,10 @@ class link_selections(_base_link_selections):
     show_regions = param.Boolean(default=True, doc="""
         Whether to highlight the selected regions.""")
 
-    unselected_color = param.Color(default="#e6e9ec", doc="""
+    unselected_alpha = param.Magnitude(default=0.1, doc="""
+        Alpha of unselected data.""")
+
+    unselected_color = param.Color(default=None, doc="""
         Color of unselected data.""")
 
     @bothmethod
@@ -255,8 +227,9 @@ class link_selections(_base_link_selections):
     @classmethod
     def _build_selection_streams(cls, inst):
         # Colors stream
-        colors_stream = _Colors(
-            colors=[inst.unselected_color, inst.selected_color]
+        style_stream = _Styles(
+            colors=[inst.unselected_color, inst.selected_color],
+            alpha=inst.unselected_alpha
         )
 
         # Cmap streams
@@ -267,12 +240,12 @@ class link_selections(_base_link_selections):
 
         def update_colors(*_):
             colors = [inst.unselected_color, inst.selected_color]
-            colors_stream.event(colors=colors)
+            style_stream.event(colors=colors, alpha=inst.unselected_alpha)
             cmap_streams[0].event(cmap=inst.unselected_cmap)
             if cmap_streams[1] is not None:
                 cmap_streams[1].event(cmap=inst.selected_cmap)
 
-        inst.param.watch(update_colors,['unselected_color', 'selected_color'])
+        inst.param.watch(update_colors,['unselected_color', 'selected_color', 'unselected_alpha'])
 
         # Exprs stream
         exprs_stream = _Exprs(exprs=[True, None])
@@ -289,7 +262,7 @@ class link_selections(_base_link_selections):
         inst.param.watch(update_exprs, ['selection_expr'])
 
         return _SelectionStreams(
-            colors_stream=colors_stream,
+            style_stream=style_stream,
             exprs_stream=exprs_stream,
             cmap_streams=cmap_streams,
         )
@@ -299,6 +272,8 @@ class link_selections(_base_link_selections):
         """
         The datashader colormap for unselected data
         """
+        if self.unselected_color is None:
+            return None
         return _color_to_cmap(self.unselected_color)
 
     @property
@@ -412,33 +387,23 @@ class OverlaySelectionDisplay(SelectionDisplay):
         from .element import Histogram
 
         layers = []
-        num_layers = len(selection_streams.colors_stream.colors)
+        num_layers = len(selection_streams.style_stream.colors)
         if not num_layers:
-            return Overlay(items=[])
+            return Overlay()
 
         for layer_number in range(num_layers):
-            build_layer = self._build_layer_callback(layer_number)
-            sel_streams = [selection_streams.colors_stream,
-                           selection_streams.exprs_stream]
-
-            if isinstance(hvobj, DynamicMap):
-                def apply_map(obj, build_layer=build_layer, colors=None,
-                              exprs=None, **kwargs):
-                    fn = lambda el: build_layer(el, colors, exprs)
-                    return obj.map(fn, specs=Element, clone=True)
-
-                streams = hvobj.streams + sel_streams
-                layer = hvobj.apply(apply_map, streams=streams)
-            else:
-                layer = hvobj.apply(build_layer, streams=sel_streams)
-
+            streams = [selection_streams.exprs_stream]
+            layer = hvobj.apply(
+                self._build_layer_callback, streams=streams,
+                layer_number=layer_number, per_element=True
+            )
             layers.append(layer)
 
         # Wrap in operations
         for op in operations:
             op, kws = op['op'], op['kwargs']
             for layer_number in range(num_layers):
-                streams = copy.copy(op.streams)
+                streams = list(op.streams)
                 cmap_stream = selection_streams.cmap_streams[layer_number]
                 kwargs = dict(kws)
 
@@ -451,55 +416,47 @@ class OverlaySelectionDisplay(SelectionDisplay):
                         def update_cmap(cmap, default=op.cmap, kw=kwargs.get('cmap')):
                             return cmap or kw or default
                         kwargs['cmap'] = update_cmap
+
                 new_op = op.instance(streams=streams)
-                layers[layer_number] = new_op(layers[layer_number], **kwargs)
-
-        # Handle cmap as a style option (e.g. in Image)
-        for layer_number in range(len(layers)):
-            layer = layers[layer_number]
-
-            cmap_stream = selection_streams.cmap_streams[layer_number]
-            layers[layer_number] = _CmapStyle(
-                layer,
-                disable_colorbar=layer_number == 0,
-                streams=[cmap_stream]
-            )
+                layer = new_op(layers[layer_number], **kwargs)
+                streams = [selection_streams.style_stream, cmap_stream]
+                layer = layer.apply(
+                    self._apply_style_callback, layer_number=layer_number,
+                    streams=streams, per_element=True
+                )
+                layers[layer_number] = layer
 
         # Build region layer
         if region_stream is not None:
-            def update_region(element, region_element, colors, **_):
+            def update_region(element, region_element, colors, **kwargs):
                 unselected_color = colors[0]
                 if region_element is None:
                     region_element = element._get_selection_expr_for_stream_value()[2]
                 return self._style_region_element(region_element, unselected_color)
 
-            streams = [region_stream, selection_streams.colors_stream]
+            streams = [region_stream, selection_streams.style_stream]
             region = hvobj.apply(update_region, streams)
             if isinstance(hvobj, Histogram):
                 layers.insert(1, region)
             else:
                 layers.append(region)
+        return Overlay(layers).collate()
 
-        # Add remaining layers
-        result = layers[0]
-        for layer in layers[1:]:
-            result *= layer
+    def _build_layer_callback(self, element, exprs, layer_number, **kwargs):
+        return self._select(element, exprs[layer_number])
 
-        if Store.current_backend == "bokeh" and isinstance(hvobj, Histogram):
-            # It seems that the selected alpha doesn't always take for Bokeh
-            # Histograms unless it's applied on the overlay
-            result.opts(opts.Histogram(selection_alpha=1.0))
+    def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
+        opts = {}
+        if layer_number == 0:
+            opts['colorbar'] = False
+        else:
+            alpha = 1
+        if cmap is not None:
+            opts['cmap'] = cmap
+        color = colors[layer_number] if colors else None
+        return self._build_element_layer(element, color, alpha, **opts)
 
-        return result
-
-    def _build_layer_callback(self, layer_number):
-        def _build_layer(element, colors, exprs, **_):
-            return self._build_element_layer(
-                element, colors[layer_number], exprs[layer_number]
-            )
-        return _build_layer
-
-    def _build_element_layer(self, element, layer_color, selection_expr=True):
+    def _build_element_layer(self, element, layer_color, layer_alpha, selection_expr=True):
         raise NotImplementedError()
 
     def _style_region_element(self, region_element, unselected_cmap):
@@ -524,11 +481,12 @@ class ColorListSelectionDisplay(SelectionDisplay):
     vectorized color list.
     """
 
-    def __init__(self, color_prop='color'):
+    def __init__(self, color_prop='color', alpha_prop='alpha'):
         self.color_props = [color_prop]
+        self.alpha_props = [alpha_prop]
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
-        def _build_selection(el, colors, exprs, **_):
+        def _build_selection(el, colors, alpha, exprs, **_):
             from .plotting.util import linear_gradient
             selection_exprs = exprs[1:]
             unselected_color = colors[0]
@@ -550,20 +508,8 @@ class ColorListSelectionDisplay(SelectionDisplay):
             colors = clrs[color_inds]
             return el.options(**{color_prop: colors for color_prop in self.color_props})
 
-        sel_streams = [selection_streams.colors_stream,
-                       selection_streams.exprs_stream]
-
-        if isinstance(hvobj, DynamicMap):
-            def apply_map(obj, colors=None, exprs=None, **kwargs):
-                return obj.map(
-                    lambda el: _build_selection(el, colors, exprs),
-                    specs=Element,
-                    clone=True,
-                )
-            streams = hvobj.streams + sel_streams
-            hvobj = hvobj.apply(apply_map, streams=streams, link_inputs=True)
-        else:
-            hvobj = hvobj.apply(_build_selection, streams=sel_streams)
+        sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]
+        hvobj = hvobj.apply(_build_selection, streams=sel_streams, per_element=True)
 
         for op in operations:
             hvobj = op(hvobj)

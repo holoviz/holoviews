@@ -7,15 +7,15 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
     """
     Overlay selection display subclass for use with plotly backend
     """
-    def _build_element_layer(
-            self, element, layer_color, selection_expr=True
-    ):
+
+    def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
         element = self._select(element, selection_expr)
 
         backend_options = Store.options(backend='plotly')
         style_options = backend_options[(type(element).name,)]['style']
+        allowed = style_options.allowed_keywords
 
-        if 'selectedpoints' in style_options.allowed_keywords:
+        if 'selectedpoints' in allowed:
             shared_opts = dict(selectedpoints=False)
         else:
             shared_opts = dict()
@@ -32,9 +32,11 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
                 if current_color:
                     merged_opts.update({color_prop: current_color})
 
-        layer_element = element.options(**merged_opts)
+        for opt in ('cmap', 'colorbar'):
+            if opt in opts and opt in allowed:
+                merged_opts[opt] = opts[opt]
 
-        return layer_element
+        return element.options(**merged_opts)
 
     def _style_region_element(self, region_element, unselected_color):
         from ..util import linear_gradient
