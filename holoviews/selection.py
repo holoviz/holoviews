@@ -485,13 +485,15 @@ class ColorListSelectionDisplay(SelectionDisplay):
     vectorized color list.
     """
 
-    def __init__(self, color_prop='color', alpha_prop='alpha'):
+    def __init__(self, color_prop='color', alpha_prop='alpha', backend=None):
         self.color_props = [color_prop]
         self.alpha_props = [alpha_prop]
+        self.backend = backend
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
-        def _build_selection(el, colors, alpha, exprs, **_):
+        def _build_selection(el, colors, alpha, exprs, **kwargs):
             from .plotting.util import linear_gradient
+            ds = el.dataset
             selection_exprs = exprs[1:]
             unselected_color = colors[0]
 
@@ -499,7 +501,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
             unselected_color = unselected_color or "#e6e9ec"
             backup_clr = linear_gradient(unselected_color, "#000000", 7)[2]
             selected_colors = [c or backup_clr for c in colors[1:]]
-            n = len(el.dimension_values(0))
+            n = len(ds)
             clrs = np.array([unselected_color] + list(selected_colors))
 
             color_inds = np.zeros(n, dtype='int8')
@@ -508,10 +510,11 @@ class ColorListSelectionDisplay(SelectionDisplay):
                 if not expr:
                     color_inds[:] = i
                 else:
-                    color_inds[expr.apply(el)] = i
+                    color_inds[expr.apply(ds)] = i
 
             colors = clrs[color_inds]
-            return el.options(**{color_prop: colors for color_prop in self.color_props})
+            color_opts = {color_prop: colors for color_prop in self.color_props}
+            return el.pipeline(ds).opts(backend=self.backend, clone=True, **color_opts)
 
         sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]
         hvobj = hvobj.apply(_build_selection, streams=sel_streams, per_element=True)

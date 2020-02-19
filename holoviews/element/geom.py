@@ -57,8 +57,9 @@ class Selection2DExpr(object):
             xdim, ydim = ydim, xdim
 
         bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
-        index_cols = [self.get_dimension(c) for c in kwargs.get('index_cols', [])]
+        index_cols = kwargs.get('index_cols')
         if index_cols:
+            index_cols = [self.get_dimension(c) for c in index_cols]
             sel = self.dataset.select(**bbox)
             vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(sel)
             selection_expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)

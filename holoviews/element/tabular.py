@@ -20,6 +20,7 @@ class SelectionIndexExpr(object):
         if index is None or index_cols is None:
             expr = None
         else:
+            index_cols = [self.get_dimension(c) for c in index_cols]
             vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(self.iloc[index])
             expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)
         return expr, None, None

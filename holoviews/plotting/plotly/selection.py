@@ -39,7 +39,7 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             if opt in opts and opt in allowed:
                 merged_opts[opt] = opts[opt]
 
-        return element.options(**merged_opts)
+        return element.opts(clone=True, backend='plotly', **merged_opts)
 
     def _style_region_element(self, region_element, unselected_color):
         from ..util import linear_gradient
@@ -68,4 +68,4 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
         if "selectedpoints" in allowed_keywords:
             options["selectedpoints"] = False
 
-        return region_element.options(**options)
+        return region_element.opts(clone=True, backend='plotly', **options)
