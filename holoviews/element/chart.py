@@ -85,7 +85,7 @@ class Selection1DExpr(Selection2DExpr):
             x0, x1 = y0, y1
 
         bbox = {xdim.name: (x0, x1)}
-        index_cols = kwargs.get('index_cols')
+        index_cols = [self.get_dimension(c) for c in kwargs.get('index_cols', [])]
         if index_cols:
             sel = self.dataset.select(**bbox)
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
@@ -286,7 +286,7 @@ class Histogram(Chart):
                 edges[min(len(edges - 1), max(selected_bins))],
             ),
         }
-        index_cols = kwargs.get('index_cols')
+        index_cols = [self.get_dimension(c) for c in kwargs.get('index_cols', [])]
         if index_cols:
             sel = self.dataset.select(**bbox)
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
