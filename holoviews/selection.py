@@ -13,7 +13,7 @@ from .core.operation import Operation, OperationCallable
 from .core.options import Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .core.util import unique_zip
+from .core.util import builtins, unique_zip
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import DynamicMap, opts
@@ -393,7 +393,8 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
         for layer_number in range(num_layers):
             streams = [selection_streams.exprs_stream]
-            layer = hvobj.apply(
+            obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
+            layer = obj.apply(
                 self._build_layer_callback, streams=streams,
                 layer_number=layer_number, per_element=True
             )
@@ -439,6 +440,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 return self._style_region_element(region_element, unselected_color)
 
             streams = [region_stream, selection_streams.style_stream]
+            hvobj = hvobj.clone(link=False)
             region = hvobj.apply(update_region, streams)
             if isinstance(hvobj, Histogram):
                 layers.insert(1, region)
