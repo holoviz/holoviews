@@ -14,6 +14,7 @@ from ...core.util import basestring, isfinite
 from ...element import HexTiles
 from ...util.transform import dim
 from .element import ColorbarPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties
 
 
@@ -140,6 +141,8 @@ class HexTilesPlot(ColorbarPlot):
     _plot_methods = dict(single='hex_tile')
 
     _nonvectorized_styles = ['cmap', 'line_dash']
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def get_extents(self, element, ranges, range_type='combined'):
         xdim, ydim = element.kdims[:2]

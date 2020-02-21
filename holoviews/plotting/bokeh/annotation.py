@@ -70,6 +70,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
 
 
 
+
 class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     show_legend = param.Boolean(default=False, doc="""
@@ -167,6 +168,8 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         ranges[dim]['soft'] = loc, loc
         return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
 
+    def _get_factors(self, element, ranges):
+        return [], []
 
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
@@ -200,6 +203,9 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
         return None, box
+
+    def _get_factors(self, element, ranges):
+        return [], []
 
 
 class SlopePlot(ElementPlot, AnnotationPlot):

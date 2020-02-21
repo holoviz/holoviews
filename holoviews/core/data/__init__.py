@@ -331,7 +331,6 @@ class Dataset(Element):
         """
         The Dataset that this object was created from
         """
-        from . import Dataset
         if self._dataset is None:
             datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
             dataset = Dataset(self, _validate_vdims=False, datatype=datatype)

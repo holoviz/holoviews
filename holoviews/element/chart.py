@@ -63,7 +63,7 @@ class Selection1DExpr(Selection2DExpr):
         from .annotation import HSpan, VSpan
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-        region_el = HSpan if invert_axes else VSpan
+        region_el = HSpan if invert_axes or self._inverted_expr else VSpan
         if kwargs.get('bounds', None) is None:
             region = None if 'index_cols' in kwargs else NdOverlay({0: region_el()})
             return None, None, region
@@ -85,8 +85,8 @@ class Selection1DExpr(Selection2DExpr):
         if invert_axes:
             x0, x1, y0, y1 = y0, y1, x0, x1
             xdim, ydim = ydim, xdim
-        if self._inverted_expr and ydim is not None:
-            xdim = ydim
+        if self._inverted_expr:
+            if ydim is not None: xdim = ydim
             x0, x1 = y0, y1
 
         bbox = {xdim.name: (x0, x1)}

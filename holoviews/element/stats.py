@@ -4,8 +4,9 @@ import numpy as np
 from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
-from ..core.util import get_param_values, OrderedDict
+from ..core.util import get_param_values, unique_iterator, OrderedDict
 from .chart import Selection1DExpr
+from .geom import Selection2DExpr
 
 
 class StatisticsElement(Dataset, Element2D):
@@ -36,6 +37,19 @@ class StatisticsElement(Dataset, Element2D):
                              type(self).__name__)
         else:
             self.vdims = process_dimensions(None, vdims)['vdims']
+
+    @property
+    def dataset(self):
+        """
+        The Dataset that this object was created from
+        """
+        from . import Dataset
+        if self._dataset is None:
+            datatype = list(unique_iterator(self.datatype+Dataset.datatype))
+            dataset = Dataset(self, vdims=[], datatype=datatype)
+            return dataset
+        else:
+            return self._dataset
 
 
     def range(self, dim, data_range=True, dimension_range=True):
@@ -151,7 +165,7 @@ class StatisticsElement(Dataset, Element2D):
 
 
 
-class Bivariate(StatisticsElement):
+class Bivariate(Selection2DExpr, StatisticsElement):
     """
     Bivariate elements are containers for two dimensional data, which
     is to be visualized as a kernel density estimate. The data should
@@ -183,7 +197,7 @@ class Distribution(Selection1DExpr, StatisticsElement):
 
 
 
-class BoxWhisker(Dataset, Element2D):
+class BoxWhisker(Selection1DExpr, Dataset, Element2D):
     """
     BoxWhisker represent data as a distributions highlighting the
     median, mean and various percentiles. It may have a single value
@@ -197,6 +211,8 @@ class BoxWhisker(Dataset, Element2D):
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
+    _inverted_expr = True
+
 
 class Violin(BoxWhisker):
     """
@@ -209,7 +225,7 @@ class Violin(BoxWhisker):
     group = param.String(default='Violin', constant=True)
 
 
-class HexTiles(Dataset, Element2D):
+class HexTiles(Selection2DExpr, Dataset, Element2D):
     """
     HexTiles is a statistical element with a visual representation
     that renders a density map of the data values as a hexagonal grid.
@@ -222,3 +238,5 @@ class HexTiles(Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
+
+
