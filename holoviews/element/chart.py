@@ -53,18 +53,23 @@ class Selection1DExpr(Selection2DExpr):
     SelectionExpr streams.
     """
 
+    _selection_dims = 1
+
     _inverted_expr = False
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
-
-        if kwargs.get('bounds', None) is None:
-            return None, None, Rectangles([])
+        from ..core import NdOverlay
+        from .annotation import HSpan, VSpan
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+        region_el = HSpan if invert_axes else VSpan
+        if kwargs.get('bounds', None) is None:
+            region = None if 'index_cols' in kwargs else NdOverlay({0: region_el()})
+            return None, None, region
 
         x0, y0, x1, y1 = kwargs['bounds']
-        
+
         # Handle invert_xaxis/invert_yaxis
         if y0 > y1:
             y0, y1 = y1, y0
@@ -94,11 +99,41 @@ class Selection1DExpr(Selection2DExpr):
             region_element = None
         else:
             selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
-            region_element = Rectangles([tuple(kwargs['bounds'])])
+            region_element = NdOverlay({0: region_el(x0, x1)})
         return selection_expr, bbox, region_element
 
+    @staticmethod
+    def _merge_regions(region1, region2, operation):
+        from ..core import NdOverlay
+        if region1 is None or operation == "overwrite":
+            return region2
+        data = [d.data for d in region1] + [d.data for d in region2]
+        prev = len(data)
+        new = None
+        while prev != new:
+            prev = len(data)
+            contiguous = []
+            for l, u in data:
+                if not util.isfinite(l) or not util.isfinite(u):
+                    continue
+                overlap = False
+                for i, (pl, pu) in enumerate(contiguous):
+                    if l >= pl and l <= pu:
+                        pu = max(u, pu)
+                        overlap = True
+                    elif u <= pu and u >= pl:
+                        pl = min(l, pl)
+                        overlap = True
+                    if overlap:
+                        contiguous[i] = (pl, pu)
+                if not overlap:
+                    contiguous.append((l, u))
+            new = len(contiguous)
+            data = contiguous
+        return NdOverlay([(i, region1.last.clone(l, u)) for i, (l, u) in enumerate(data)])
 
-class Scatter(Selection2DExpr, Chart):
+
+class Scatter(Selection1DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
@@ -109,7 +144,7 @@ class Scatter(Selection2DExpr, Chart):
     group = param.String(default='Scatter', constant=True)
 
 
-class Curve(Selection2DExpr, Chart):
+class Curve(Selection1DExpr, Chart):
     """
     Curve is a Chart element representing a line in a 1D coordinate
     system where the key dimension maps on the line x-coordinate and
@@ -289,7 +324,7 @@ class Histogram(Chart):
         }
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            index_cols = [self.get_dimension(c) for c in index_cols]
+            index_cols = [self.dataset.get_dimension(c) for c in index_cols]
             sel = self.dataset.select(**bbox)
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
             selection_expr = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals)

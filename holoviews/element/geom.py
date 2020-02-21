@@ -34,6 +34,8 @@ class Selection2DExpr(object):
     SelectionExpr streams.
     """
 
+    _selection_dims = 2
+
     _selection_streams = (BoundsXY,)
 
     def _get_selection_expr_for_stream_value(self, **kwargs):

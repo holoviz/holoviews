@@ -339,6 +339,8 @@ class CurvePlot(ElementPlot):
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
@@ -575,6 +577,8 @@ class SpreadPlot(ElementPlot):
 
     _stream_data = False # Plot does not support streaming data
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     def _split_area(self, xs, lower, upper):
         """
         Splits area plots at nans and returns x- and y-coordinates for
@@ -624,6 +628,8 @@ class AreaPlot(AreaMixin, SpreadPlot):
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
     _stream_data = False # Plot does not support streaming data
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y')

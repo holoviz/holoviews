@@ -440,9 +440,10 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 return self._style_region_element(region_element, unselected_color)
 
             streams = [region_stream, selection_streams.style_stream]
-            hvobj = hvobj.clone(link=False)
-            region = hvobj.apply(update_region, streams)
-            if isinstance(hvobj, Histogram):
+            region = hvobj.clone(link=False).apply(update_region, streams)
+            if getattr(hvobj, '_selection_dims') == 1:
+                layers.insert(0, region)
+            elif isinstance(hvobj, Histogram):
                 layers.insert(1, region)
             else:
                 layers.append(region)

@@ -1,5 +1,6 @@
-from ...selection import OverlaySelectionDisplay
 from ...core.options import Store
+from ...core.overlay import NdOverlay
+from ...selection import OverlaySelectionDisplay
 
 
 class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
@@ -34,10 +35,14 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
     def _style_region_element(self, region_element, unselected_color):
         from ..util import linear_gradient
         backend_options = Store.options(backend="bokeh")
-        element_name = type(region_element).name
+        if isinstance(region_element, NdOverlay):
+            element_name = type(region_element.last).name
+        else:
+            element_name = type(region_element).name
         style_options = backend_options[(element_name,)]['style']
+        allowed = style_options.allowed_keywords
         options = {}
-        for opt_name in style_options.allowed_keywords:
+        for opt_name in allowed:
             if 'alpha' in opt_name:
                 options[opt_name] = 1.0
 
@@ -46,10 +51,18 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             if unselected_color:
                 region_color = linear_gradient(unselected_color, "#000000", 9)[3]
                 options["color"] = region_color
-            options["line_width"] = 1
-            options["fill_alpha"] = 0
-            options["selection_fill_alpha"] = 0
-            options["nonselection_fill_alpha"] = 0
+            if element_name == 'Rectangles':
+                options["line_width"] = 1
+                options["fill_alpha"] = 0
+                options["selection_fill_alpha"] = 0
+                options["nonselection_fill_alpha"] = 0
+            elif "Span" in element_name:
+                unselected_color = unselected_color or "#e6e9ec"
+                region_color = linear_gradient(unselected_color, "#000000", 9)[1]
+                options["color"] = region_color
+                options["fill_alpha"] = 0.2
+                options["selection_fill_alpha"] = 0.2
+                options["nonselection_fill_alpha"] = 0.2
         else:
             # Darken unselected color slightly
             unselected_color = unselected_color or "#e6e9ec"
@@ -57,4 +70,4 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             options["fill_color"] = region_color
             options["color"] = region_color
 
-        return region_element.opts(backend='bokeh', clone=True, **options)
+        return region_element.opts(element_name, backend='bokeh', clone=True, **options)

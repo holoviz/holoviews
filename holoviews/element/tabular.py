@@ -10,6 +10,8 @@ from ..streams import Selection1D
 
 class SelectionIndexExpr(object):
 
+    _selection_dims = None
+
     _selection_streams = (Selection1D,)
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
