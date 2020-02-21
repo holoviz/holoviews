@@ -471,10 +471,16 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
     @staticmethod
     def _select(element, selection_expr):
+        from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
+            dataset = element.dataset
             try:
-                selection = element.dataset.select(selection_expr=selection_expr)
+                if isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
+                    mask = selection_expr.apply(dataset)
+                    selection = element.dataset.clone(dataset.interface.mask(dataset, ~mask))
+                else:
+                    selection = element.dataset.select(selection_expr=selection_expr)
                 element = element.pipeline(selection)
             except Exception as e:
                 print(e)
