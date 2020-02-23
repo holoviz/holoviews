@@ -25,6 +25,8 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         return (data, mapping, style)
 
+    def _get_factors(self, element, ranges):
+        return [], []
 
 
 class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
@@ -43,4 +45,5 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
         return data, mapping, style
 
-    
+    def _get_factors(self, element, ranges):
+        return [], []

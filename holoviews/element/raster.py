@@ -11,6 +11,7 @@ from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
+from .geom import Selection2DExpr
 from .graphs import TriMesh
 from .tabular import Table
 from .util import compute_slice_bounds, categorical_aggregate2d
@@ -908,7 +909,7 @@ class QuadMesh(Dataset, Element2D):
 
 
 
-class HeatMap(Dataset, Element2D):
+class HeatMap(Selection2DExpr, Dataset, Element2D):
     """
     HeatMap represents a 2D grid of categorical coordinates which can
     be computed from a sparse tabular representation. A HeatMap does

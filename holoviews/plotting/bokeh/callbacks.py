@@ -19,7 +19,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
-                        FreehandDraw, CurveEdit)
+                        FreehandDraw, CurveEdit, SelectionXY)
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
@@ -858,6 +858,32 @@ class BoundsCallback(Callback):
             return {}
 
 
+class SelectionXYCallback(BoundsCallback):
+    """
+    Converts a bounds selection to numeric or categorical x-range
+    and y-range selections.
+    """
+
+    def _process_msg(self, msg):
+        msg = super(SelectionXYCallback, self)._process_msg(msg)
+        if 'bounds' not in msg:
+            return msg
+        x0, y0, x1, y1 = msg['bounds']
+        x_range = self.plot.handles['x_range']
+        if isinstance(x_range, FactorRange):
+            x0, x1 = int(round(x0)), int(round(x1))
+            msg['x_selection'] = x_range.factors[x0: x1]
+        else:
+            msg['x_selection'] = (x0, x1)
+        y_range = self.plot.handles['y_range']
+        if isinstance(y_range, FactorRange):
+            y0, y1 = int(round(y0)), int(round(y1))
+            msg['y_selection'] = y_range.factors[y0: y1]
+        else:
+            msg['y_selection'] = (y0, y1)
+        return msg
+
+
 class BoundsXCallback(Callback):
     """
     Returns the bounds of a xbox_select tool.
@@ -1242,6 +1268,7 @@ callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+callbacks[SelectionXY] = SelectionXYCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback
 callbacks[CDSStream]   = CDSCallback

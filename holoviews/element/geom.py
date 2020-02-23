@@ -4,7 +4,7 @@ import param
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.util import lzip, unique_zip
-from ..streams import BoundsXY
+from ..streams import SelectionXY
 
 
 class Geometry(Dataset, Element2D):
@@ -36,41 +36,64 @@ class Selection2DExpr(object):
 
     _selection_dims = 2
 
-    _selection_streams = (BoundsXY,)
+    _selection_streams = (SelectionXY,)
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from ..util.transform import dim
+        from .graphs import Graph
 
-        if kwargs.get('bounds', None) is None:
+        if kwargs.get('bounds') is None and kwargs.get('x_selection') is None:
             return None, None, Rectangles([])
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
+        xcats, ycats = None, None
+        if 'x_selection' in kwargs:
+            xsel = kwargs['x_selection']
+            if isinstance(xsel, list):
+                xcats = xsel
+            else:
+                x0, x1 = xsel
+            ysel = kwargs['y_selection']
+            if isinstance(ysel, list):
+                ycats = ysel
+            else:
+                y0, y1 = ysel
         x0, y0, x1, y1 = kwargs['bounds']
+        xsel, ysel = (x0, x1), (y0, y1)
 
         # Handle invert_xaxis/invert_yaxis
-        if y0 > y1:
-            y0, y1 = y1, y0
         if x0 > x1:
             x0, x1 = x1, x0
+        if y0 > y1:
+            y0, y1 = y1, y0
 
-        xdim, ydim = self.dimensions()[:2]
+        if isinstance(self, Graph):
+            xdim, ydim = self.nodes.dimensions()[:2]
+        else:
+            xdim, ydim = self.dimensions()[:2]
         if invert_axes:
             xdim, ydim = ydim, xdim
 
-        bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
+        bbox = {xdim.name: xsel, ydim.name: ysel}
         index_cols = kwargs.get('index_cols')
         if index_cols:
             index_cols = [self.get_dimension(c) for c in index_cols]
             sel = self.dataset.select(**bbox)
-            vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(sel)
-            selection_expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)
+            other = dim(c for c in index_cols[1:])
+            vals = dim(index_cols[0], unique_zip, *other).apply(sel)
+            selection_expr = dim(index_cols[0], lzip, *other).isin(vals)
             region_element = None
         else:
-            selection_expr = (
-                (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-                (dim(ydim) >= y0) & (dim(ydim) <= y1)
-            )
+            if xcats:
+                xexpr = dim(xdim).isin(xcats)
+            else:
+                xexpr = (dim(xdim) >= x0) & (dim(xdim) <= x1)
+            if ycats:
+                yexpr = dim(ydim).isin(ycats)
+            else:
+                yexpr = (dim(ydim) >= y0) & (dim(ydim) <= y1)
+            selection_expr = (xexpr & yexpr)
             region_element = Rectangles([kwargs['bounds']])
         return selection_expr, bbox, region_element
 

@@ -121,7 +121,7 @@ class _base_link_selections(param.ParameterizedFunction):
             if issubclass(hvobj.type, Element):
                 self._register(hvobj)
                 chart = Store.registry[Store.current_backend][hvobj.type]
-                return chart.selection_display.build_selection(
+                return chart.selection_display(element).build_selection(
                     self._selection_streams, hvobj, operations,
                     self._region_streams.get(hvobj, None),
                 )
@@ -131,10 +131,10 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
-            if hasattr(chart, 'selection_display'):
+            if getattr(chart, 'selection_display', None):
                 element = hvobj.clone(link=False)
                 self._register(element)
-                return chart.selection_display.build_selection(
+                return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
                     self._region_streams.get(element, None),
                 )
@@ -350,6 +350,9 @@ class SelectionDisplay(object):
     element) into a HoloViews object that represents the current selection
     state.
     """
+
+    def __call__(self, element):
+        return self
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         raise NotImplementedError()

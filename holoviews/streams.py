@@ -1000,6 +1000,24 @@ class BoundsXY(LinkedStream):
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
+class SelectionXY(BoundsXY):
+    """
+    A stream representing the selection along the x-axis and y-axis.
+    Unlike a BoundsXY stream this stream return range or categorical
+    selections.
+    """
+
+    x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
+                                     doc="""
+      The current selection along the x-axis, either a numerical range
+      defined as a tuple or a list of categories.""")
+
+    y_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
+                                     doc="""
+      The current selection along the y-axis, either a numerical range
+      defined as a tuple or a list of categories.""")
+
+    
 class BoundsX(LinkedStream):
     """
     A stream representing the bounds of a box selection as an

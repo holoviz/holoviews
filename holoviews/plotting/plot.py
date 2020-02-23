@@ -286,6 +286,9 @@ class PlotSelector(object):
         interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
+    def selection_display(self, obj):
+        plt_class = self.get_plot_class(obj)
+        return getattr(plt_class, 'selection_display', None)
 
     def _define_interface(self, plots, allow_mismatch):
         parameters = [{k:v.precedence for k,v in plot.param.params().items()
