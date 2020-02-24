@@ -4,6 +4,7 @@ import numpy as np
 
 from ..mixins import GeomMixin
 from .element import ColorbarPlot, LegendPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties
 
 
@@ -12,6 +13,9 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     Segments are lines in 2D space where each two each dimensions specify a
     (x, y) node of the line.
     """
+
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = line_properties + ['cmap']
 
     _nonvectorized_styles = ['cmap']
@@ -30,6 +34,8 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = ['cmap', 'visible'] + line_properties + fill_properties
     _plot_methods = dict(single='rect')

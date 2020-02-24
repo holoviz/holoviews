@@ -41,15 +41,7 @@ class Selection2DExpr(object):
 
     _selection_streams = (SelectionXY,)
 
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from .geom import Rectangles
-        from .graphs import Graph
-
-        if kwargs.get('bounds') is None and kwargs.get('x_selection') is None:
-            return None, None, Rectangles([])
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
+    def _get_selection(self, **kwargs):
         xcats, ycats = None, None
         x0, y0, x1, y1 = kwargs['bounds']
         if 'x_selection' in kwargs:
@@ -67,14 +59,27 @@ class Selection2DExpr(object):
             x0, x1 = x1, x0
         if y0 > y1:
             y0, y1 = y1, y0
-        
-        xsel, ysel = xcats or (x0, x1), ycats or (y0, y1)
-        bounds = (x0, y0, x1, y1)
+
+        return (x0, x1), xcats, (y0, y1), ycats
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        from .geom import Rectangles
+        from .graphs import Graph
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
+        if kwargs.get('bounds') is None and kwargs.get('x_selection') is None:
+            return None, None, Rectangles([])
+
+        (x0, x1), xcats, (y0, y1), ycats = self._get_selection(**kwargs)
+        xsel = xcats or (x0, x1)
+        ysel = ycats or (y0, y1)
 
         if isinstance(self, Graph):
             xdim, ydim = self.nodes.dimensions()[:2]
         else:
             xdim, ydim = self.dimensions()[:2]
+
         if invert_axes:
             xdim, ydim = ydim, xdim
 
@@ -97,7 +102,7 @@ class Selection2DExpr(object):
             else:
                 yexpr = (dim(ydim) >= y0) & (dim(ydim) <= y1)
             selection_expr = (xexpr & yexpr)
-            region_element = Rectangles([bounds])
+            region_element = Rectangles([(x0, y0, x1, y1)])
         return selection_expr, bbox, region_element
 
     @staticmethod
@@ -105,6 +110,43 @@ class Selection2DExpr(object):
         if region1 is None or operation == "overwrite":
             return region2
         return region1.clone(region1.interface.concatenate([region1, region2]))
+
+
+class SelectionGeomExpr(Selection2DExpr):
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        from .geom import Rectangles
+
+        if kwargs.get('bounds') is None and kwargs.get('x_selection') is None:
+            return None, None, Rectangles([])
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
+        (x0, x1), xcats, (y0, y1), ycats = self._get_selection(**kwargs)
+        xsel = xcats or (x0, x1)
+        ysel = ycats or (y0, y1)
+
+        x0dim, y0dim, x1dim, y1dim = self.kdims
+        if invert_axes:
+            x0dim, x1dim, y0dim, y1dim = y0dim, y1dim, x0dim, x1dim
+        
+        bbox = {x0dim.name: xsel, y0dim.name: ysel, x1dim.name: xsel, y1dim.name: ysel}
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            index_cols = [self.get_dimension(c) for c in index_cols]
+            sel = self.dataset.select(**bbox)
+            other = tuple(dim(c) for c in index_cols[1:])
+            vals = dim(index_cols[0], util.unique_zip, *other).apply(sel)
+            selection_expr = dim(index_cols[0], util.lzip, *other).isin(vals).iloc[:, 0]
+            region_element = None
+        else:
+            x0expr = (dim(x0dim) >= x0) & (dim(x0dim) <= x1)
+            y0expr = (dim(y0dim) >= y0) & (dim(y0dim) <= y1)
+            x1expr = (dim(x1dim) >= x0) & (dim(x1dim) <= x1)
+            y1expr = (dim(y1dim) >= y0) & (dim(y1dim) <= y1)
+            selection_expr = (x0expr & y0expr & x1expr & y1expr)
+            region_element = Rectangles([(x0, y0, x1, y1)])
+        return selection_expr, bbox, region_element
 
 
 class Selection1DExpr(Selection2DExpr):
@@ -119,7 +161,11 @@ class Selection1DExpr(Selection2DExpr):
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-        region_el = HSpan if invert_axes or self._inverted_expr else VSpan
+        if ((invert_axes and not self._inverted_expr) or (not invert_axes and self._inverted_expr)):
+            region_el = HSpan
+        else:
+            region_el = VSpan
+
         if kwargs.get('bounds', None) is None:
             region = None if 'index_cols' in kwargs else NdOverlay({0: region_el()})
             return None, None, region
@@ -140,7 +186,6 @@ class Selection1DExpr(Selection2DExpr):
 
         if invert_axes:
             x0, x1, y0, y1 = y0, y1, x0, x1
-            xdim, ydim = ydim, xdim
             cat_kwarg = 'y_selection'
         else:
             cat_kwarg = 'x_selection'

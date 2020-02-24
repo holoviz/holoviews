@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
-from .selection import Selection2DExpr
+from .selection import Selection2DExpr, SelectionGeomExpr
 
 
 class Geometry(Dataset, Element2D):
@@ -53,7 +53,7 @@ class VectorField(Selection2DExpr, Geometry):
                                 Dimension('Magnitude')], bounds=(1, None))
 
 
-class Segments(Geometry):
+class Segments(SelectionGeomExpr, Geometry):
     """
     Segments represent a collection of lines in 2D space.
     """
@@ -66,7 +66,7 @@ class Segments(Geometry):
         coordinates in 2D space.""")
 
 
-class Rectangles(Geometry):
+class Rectangles(SelectionGeomExpr, Geometry):
     """
     Rectangles represent a collection of axis-aligned rectangles in 2D space.
     """

@@ -70,7 +70,7 @@ class Curve(Selection1DExpr, Chart):
     group = param.String(default='Curve', constant=True)
 
 
-class ErrorBars(Selection2DExpr, Chart):
+class ErrorBars(Selection1DExpr, Chart):
     """
     ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the
