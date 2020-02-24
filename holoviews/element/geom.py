@@ -3,7 +3,6 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
-from ..core.util import lzip, unique_zip
 from .selection import Selection2DExpr
 
 

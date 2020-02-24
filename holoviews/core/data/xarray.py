@@ -476,7 +476,6 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def mask(cls, dataset, mask, mask_val=np.nan):
-        import xarray as xr
         packed = cls.packed(dataset)
         masked = dataset.data.copy()
         if packed:

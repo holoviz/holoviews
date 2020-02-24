@@ -1,5 +1,3 @@
-import copy
-
 from collections import namedtuple
 
 import numpy as np
@@ -9,14 +7,14 @@ from param.parameterized import bothmethod
 
 from .core.dimension import OrderedDict
 from .core.element import Element, Layout
-from .core.operation import Operation, OperationCallable
+from .core.operation import OperationCallable
 from .core.options import Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .core.util import builtins, unique_zip
+from .core.util import unique_zip
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
-from .util import DynamicMap, opts
+from .util import DynamicMap
 from .util.transform import dim
 
 
@@ -121,7 +119,7 @@ class _base_link_selections(param.ParameterizedFunction):
             if issubclass(hvobj.type, Element):
                 self._register(hvobj)
                 chart = Store.registry[Store.current_backend][hvobj.type]
-                return chart.selection_display(element).build_selection(
+                return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
                     self._region_streams.get(hvobj, None),
                 )
@@ -386,7 +384,6 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 for color_prop in self.color_props}
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
-        from holoviews import opts
         from .element import Histogram
 
         layers = []

@@ -4,7 +4,6 @@ import param
 
 from ..core import OrderedDict, Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
-from ..core.util import lzip, unique_zip
 from .selection import SelectionIndexExpr
 
 
