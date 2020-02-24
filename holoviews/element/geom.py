@@ -48,18 +48,16 @@ class Selection2DExpr(object):
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
         xcats, ycats = None, None
+        x0, y0, x1, y1 = kwargs['bounds']
         if 'x_selection' in kwargs:
             xsel = kwargs['x_selection']
             if isinstance(xsel, list):
                 xcats = xsel
-            else:
-                x0, x1 = xsel
+                x0, x1 = int(round(x0)), int(round(x1))
             ysel = kwargs['y_selection']
             if isinstance(ysel, list):
                 ycats = ysel
-            else:
-                y0, y1 = ysel
-        x0, y0, x1, y1 = kwargs['bounds']
+                y0, y1 = int(round(y0)), int(round(y1))
         xsel, ysel = (x0, x1), (y0, y1)
 
         # Handle invert_xaxis/invert_yaxis
@@ -67,6 +65,7 @@ class Selection2DExpr(object):
             x0, x1 = x1, x0
         if y0 > y1:
             y0, y1 = y1, y0
+        bounds = (x0, y0, x1, y1)
 
         if isinstance(self, Graph):
             xdim, ydim = self.nodes.dimensions()[:2]
@@ -94,7 +93,7 @@ class Selection2DExpr(object):
             else:
                 yexpr = (dim(ydim) >= y0) & (dim(ydim) <= y1)
             selection_expr = (xexpr & yexpr)
-            region_element = Rectangles([kwargs['bounds']])
+            region_element = Rectangles([bounds])
         return selection_expr, bbox, region_element
 
     @staticmethod

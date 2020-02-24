@@ -214,7 +214,7 @@ class Raster(Element2D):
 
 
 
-class Image(Dataset, Raster, SheetCoordinateSystem):
+class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     """
     Image represents a regularly sampled 2D grid of an underlying
     continuous space of intensity values, which will be colormapped on
@@ -325,6 +325,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                              'density.')
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._validate(data_bounds, supplied_bounds)
+        # Ensure Image factory has the appropriate kwargs
+        self._pipeline.operations[-1].kwargs.update(
+            xdensity=xdensity, ydensity=ydensity, bounds=bounds
+        )
 
 
     def _validate(self, data_bounds, supplied_bounds):

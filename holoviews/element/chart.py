@@ -286,8 +286,10 @@ class Histogram(Chart):
 
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
 
+        ds = self.dataset
         if kwargs.get('bounds', None) is None:
-            return None, None, self.pipeline(self.dataset.iloc[:0])
+            el = ds.clone([]) if ds.interface.gridded else ds.iloc[:0]
+            return None, None, self.pipeline(el)
 
         if invert_axes:
             y0, x0, y1, x1 = kwargs['bounds']
@@ -314,7 +316,8 @@ class Histogram(Chart):
 
         selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
         if not selected_bins:
-            return None, None, self.pipeline(self.dataset.iloc[:0])
+            el = ds.clone([]) if ds.interface.gridded else ds.iloc[:0]
+            return None, None, self.pipeline(el)
 
         bbox = {
             xdim.name: (
@@ -325,16 +328,22 @@ class Histogram(Chart):
         index_cols = kwargs.get('index_cols')
         if index_cols:
             index_cols = [self.dataset.get_dimension(c) for c in index_cols]
-            sel = self.dataset.select(**bbox)
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
-            selection_expr = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals)
+            sel = ds.select(**bbox)
+            other = tuple(dim(c) for c in index_cols[1:])
+            vals = dim(index_cols[0], util.unique_zip, *other).apply(sel)
+            selection_expr = dim(index_cols[0], util.lzip, *other).isin(vals)
             region = None
         else:
             selection_expr = dim(xdim).digitize(edges).isin(selected_bins)
             if selected_bins[-1] == len(centers):
                 # Handle values exactly on the upper boundary
                 selection_expr = selection_expr | (dim(xdim) == edges[-1])
-            region = self.pipeline(self.dataset.select(selection_expr))
+            if ds.interface.gridded:
+                mask = selection_expr.apply(ds, expanded=True, flat=False)
+                ds = ds.clone(ds.interface.mask(ds, mask))
+            else:
+                ds = ds.select(selection_expr)
+            region = self.pipeline(ds)
         return selection_expr, bbox, region
 
     @staticmethod

@@ -8,6 +8,7 @@ from bokeh.models import DatetimeAxis, CustomJSHover
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from .element import ElementPlot, ColorbarPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties, mpl_to_bokeh
 from .util import colormesh
 
@@ -26,6 +27,8 @@ class RasterPlot(ColorbarPlot):
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image')
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
@@ -129,6 +132,8 @@ class RGBPlot(ElementPlot):
     _nonvectorized_styles = style_opts
 
     _plot_methods = dict(single='image_rgba')
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
