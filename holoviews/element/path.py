@@ -13,7 +13,7 @@ from ..core.data import MultiInterface
 from ..core.dimension import Dimension, asdim
 from ..core.util import OrderedDict, disable_constant
 from .geom import Geometry
-from .tabular import SelectionIndexExpr
+from .selection import SelectionIndexExpr
 
 
 class Path(Geometry):

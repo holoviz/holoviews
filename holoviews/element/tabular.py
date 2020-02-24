@@ -2,34 +2,10 @@ import numpy as np
 
 import param
 
-from ..core import OrderedDict, Element, Empty, Dataset, Tabular
+from ..core import OrderedDict, Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
 from ..core.util import lzip, unique_zip
-from ..streams import Selection1D
-
-
-class SelectionIndexExpr(object):
-
-    _selection_dims = None
-
-    _selection_streams = (Selection1D,)
-
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from ..util.transform import dim
-
-        index = kwargs.get('index')
-        index_cols = kwargs.get('index_cols')
-        if index is None or index_cols is None:
-            expr = None
-        else:
-            index_cols = [self.get_dimension(c) for c in index_cols]
-            vals = dim(index_cols[0], unique_zip, *index_cols[1:]).apply(self.iloc[index])
-            expr = dim(index_cols[0], lzip, *index_cols[1:]).isin(vals)
-        return expr, None, None
-
-    @staticmethod
-    def _merge_regions(region1, region2, operation):
-        return None
+from .selection import SelectionIndexExpr
 
 
 class ItemTable(Element):

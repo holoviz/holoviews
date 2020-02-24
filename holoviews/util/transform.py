@@ -7,7 +7,6 @@ import numpy as np
 
 from ..core.dimension import Dimension
 from ..core.util import basestring, unique_iterator
-from ..element import Graph
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
@@ -389,6 +388,8 @@ class dim(object):
         Dataset, i.e. whether all referenced dimensions can be
         resolved.
         """
+        from ..element import Graph
+
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         else:
@@ -425,6 +426,8 @@ class dim(object):
         Returns:
             values: NumPy array computed by evaluating the expression
         """
+        from ..element import Graph
+
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
