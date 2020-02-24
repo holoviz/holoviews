@@ -42,6 +42,14 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
+    def test_dataset_empty_constructor(self):
+        ds = Dataset([], ['x', 'y'], ['z'])
+        assert ds.interface.shape(ds, gridded=True) == (0, 0)
+
+    def test_dataset_multi_vdim_empty_constructor(self):
+        ds = Dataset([], ['x', 'y'], ['z1', 'z2', 'z3'])
+        assert all(ds.dimension_values(vd, flat=False).shape == (0, 0) for vd in ds.vdims)
+
     def test_irregular_grid_data_values(self):
         nx, ny = 20, 5
         xs, ys = np.meshgrid(np.arange(nx)+0.5, np.arange(ny)+0.5)

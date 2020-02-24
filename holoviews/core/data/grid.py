@@ -66,18 +66,34 @@ class GridInterface(DictInterface):
                 data[vdim_tuple] = value_array
             else:
                 data = {d: v for d, v in zip(dimensions, data)}
-        elif isinstance(data, list) and data == []:
-            data = OrderedDict([(d, []) for d in dimensions])
+        elif (isinstance(data, list) and data == []):
+            if len(kdims) == 1:
+                data = OrderedDict([(d, []) for d in dimensions])
+            else:
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                if len(vdims) == 1:
+                    data[vdims[0].name] = np.zeros((0, 0))
+                else:
+                    data[vdim_tuple] = np.zeros((0, 0, len(vdims)))
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, np.ndarray):
-            if data.ndim == 1:
-                if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
-                    data = np.column_stack([np.arange(len(data)), data])
-                else:
-                    data = np.atleast_2d(data).T
-            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+            if data.shape == (0, 0) and len(vdims) == 1:
+                array = data
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data[vdims[0].name] = array
+            elif data.shape == (0, 0, len(vdims)):
+                array = data
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data[vdim_tuple] = array
+            else:
+                if data.ndim == 1:
+                    if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                        data = np.column_stack([np.arange(len(data)), data])
+                    else:
+                        data = np.atleast_2d(data).T
+                data = {k: data[:, i] for i, k in enumerate(dimensions)}
         elif isinstance(data, list) and data == []:
             data = {d: np.array([]) for d in dimensions[:ndims]}
             data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
