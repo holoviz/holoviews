@@ -236,11 +236,22 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         self.assertEqual(t.data.dims , dict(chain=1,value=8))
         self.assertEqual(t.data.stuff.shape , (1,8))
 
+    def test_mask_2d_array_transposed(self):
+        array = np.random.rand(4, 3)
+        da = xr.DataArray(array.T, coords={'x': [0, 1, 2], 'y': [0, 1, 2, 3]}, dims=['x', 'y'])
+        ds = Dataset(da, ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
+    # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")
 
-    # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
 

@@ -479,7 +479,10 @@ class OverlaySelectionDisplay(SelectionDisplay):
         if isinstance(selection_expr, dim):
             dataset = element.dataset
             try:
-                if isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
+                if element.interface.gridded:
+                    mask = selection_expr.apply(dataset, expanded=True, flat=False)
+                    selection = element.dataset.clone(dataset.interface.mask(dataset, ~mask))
+                elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
                     mask = selection_expr.apply(dataset)
                     selection = element.dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:

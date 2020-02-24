@@ -202,6 +202,13 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
+    def mask(cls, dataset, mask, mask_val=np.nan):
+        masked = dataset.data.copy()
+        masked[np.flipud(mask)] = mask_val
+        return masked
+
+
+    @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         """
         Slice the underlying numpy array in sheet coordinates.

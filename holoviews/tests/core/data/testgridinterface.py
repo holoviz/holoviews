@@ -274,6 +274,46 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Dataset):
             self.assertEqual(ds, Dataset(self.dataset_grid.columns(), 'x', 'z'))
 
+    def test_mask_2d_array(self):
+        array = np.random.rand(4, 3)
+        ds = Dataset(([0, 1, 2], [1, 2, 3, 4], array), ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
+    def test_mask_2d_array_x_reversed(self):
+        array = np.random.rand(4, 3)
+        ds = Dataset(([0, 1, 2][::-1], [1, 2, 3, 4], array[:, ::-1]), ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
+    def test_mask_2d_array_y_reversed(self):
+        array = np.random.rand(4, 3)
+        ds = Dataset(([0, 1, 2], [1, 2, 3, 4][::-1], array[::-1]), ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
+    def test_mask_2d_array_xy_reversed(self):
+        array = np.random.rand(4, 3)
+        ds = Dataset(([0, 1, 2][::-1], [1, 2, 3, 4][::-1], array[::-1, ::-1]), ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
 
 class GridInterfaceTests(BaseGridInterfaceTests):
 

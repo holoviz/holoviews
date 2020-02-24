@@ -58,6 +58,7 @@ class GridInterface(DictInterface):
         ndims = len(kdims)
         dimensions = [dimension_name(d) for d in kdims+vdims]
         vdim_tuple = tuple(dimension_name(vd) for vd in vdims)
+
         if isinstance(data, tuple):
             if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                 len(data[-1].shape) == (ndims+1)):
@@ -409,9 +410,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(
-            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             vdim_tuple = cls.packed(dataset)
@@ -612,6 +611,21 @@ class GridInterface(DictInterface):
                 return np.array([np.squeeze(data[vd.name])
                                  for vd in dataset.vdims])
         return data
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_val=np.nan):
+        mask = cls.canonicalize(dataset, mask)
+        packed = cls.packed(dataset)
+        masked = OrderedDict(dataset.data)
+        if packed:
+            masked = dataset.data[packed].copy()
+            masked[mask] = mask_val
+        else:
+            for vd in dataset.vdims:
+                masked[vd.name] = marr = masked[vd.name].copy()
+                marr[mask] = mask_val
+        return masked
 
 
     @classmethod
