@@ -29,8 +29,9 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             if opt in opts and opt in allowed:
                 merged_opts[opt] = opts[opt]
 
+        filtered = {k: v for k, v in merged_opts.items() if k in allowed}
         return element.opts(backend='bokeh', clone=True, tools=['box_select'],
-                            **merged_opts)
+                            **filtered)
 
     def _style_region_element(self, region_element, unselected_color):
         from ..util import linear_gradient

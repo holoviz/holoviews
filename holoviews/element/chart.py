@@ -1,10 +1,10 @@
 import numpy as np
 import param
 
-from ..streams import BoundsXY
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
+from ..streams import SelectionXY
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
 from .selection import Selection1DExpr, Selection2DExpr
 
@@ -180,7 +180,7 @@ class Histogram(Chart):
 
     _binned = True
 
-    _selection_streams = (BoundsXY,)
+    _selection_streams = (SelectionXY,)
 
     def __init__(self, data, edges=None, **params):
         if data is None:
@@ -264,7 +264,7 @@ class Histogram(Chart):
     @staticmethod
     def _merge_regions(region1, region2, operation):
         if region1 is None:
-            if operation == 'difference':
+            if operation == 'inverse':
                 return region2.clone(data=(
                     (region2.edges,
                      np.zeros_like(region2.dimension_values(1)))
@@ -274,7 +274,7 @@ class Histogram(Chart):
 
         if operation == 'overwrite':
             return region2
-        elif operation == 'difference':
+        elif operation == 'inverse':
             y = region1.dimension_values(1).copy()
             y[region2.dimension_values(1) > 0] = 0
             return region1.clone(data=(region1.edges, y))

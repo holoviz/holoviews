@@ -104,7 +104,7 @@ class _base_link_selections(param.ParameterizedFunction):
             ninputs = len(callback.inputs)
             if ninputs == 1:
                 child_hvobj = callback.inputs[0]
-                if isinstance(callback, OperationCallable) and callback.operation:
+                if callback.operation:
                     next_op = {'op': callback.operation, 'kwargs': callback.operation_kwargs}
                 else:
                     fn = function.instance(fn=callback.callable)
@@ -386,11 +386,11 @@ class OverlaySelectionDisplay(SelectionDisplay):
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         from .element import Histogram
 
-        layers = []
         num_layers = len(selection_streams.style_stream.colors)
         if not num_layers:
             return Overlay()
 
+        layers = []
         for layer_number in range(num_layers):
             streams = [selection_streams.exprs_stream]
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
@@ -417,13 +417,12 @@ class OverlaySelectionDisplay(SelectionDisplay):
                         def update_cmap(cmap, default=op.cmap, kw=kwargs.get('cmap')):
                             return cmap or kw or default
                         kwargs['cmap'] = update_cmap
-
                 new_op = op.instance(streams=streams)
                 layers[layer_number] = new_op(layers[layer_number], **kwargs)
 
         for layer_number in range(num_layers):
-            cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = layers[layer_number]
+            cmap_stream = selection_streams.cmap_streams[layer_number]
             streams = [selection_streams.style_stream, cmap_stream]
             layer = layer.apply(
                 self._apply_style_callback, layer_number=layer_number,
