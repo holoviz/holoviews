@@ -19,6 +19,7 @@ from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
+from ..operation.element import function
 from ..streams import Stream, Params
 from .settings import OutputSettings, list_formats, list_backends
 
@@ -972,15 +973,13 @@ class Dynamic(param.ParameterizedFunction):
             key, obj = resolve(key, kwargs)
             return apply(obj, *key, **kwargs)
 
-        if isinstance(self.p.operation, Operation):
-            return OperationCallable(dynamic_operation, inputs=[map_obj],
-                                     link_inputs=self.p.link_inputs,
-                                     operation=self.p.operation,
-                                     operation_kwargs=self.p.kwargs)
-        else:
-            return Callable(dynamic_operation, inputs=[map_obj],
-                            link_inputs=self.p.link_inputs,
-                            operation=apply, operation_kwargs=self.p.kwargs)
+        operation = self.p.operation
+        if not isinstance(operation, Operation):
+            operation = function.instance(fn=apply)
+        return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                 link_inputs=self.p.link_inputs,
+                                 operation=operation,
+                                 operation_kwargs=self.p.kwargs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):

@@ -1176,9 +1176,11 @@ class DynamicMap(HoloMap):
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
+            from ..operation import function
             with util.disable_constant(clone):
+                op = function.instance(fn=lambda x, **kwargs: x)
                 clone.callback = clone.callback.clone(
-                    inputs=[self], link_inputs=link, operation=None,
+                    inputs=[self], link_inputs=link, operation=op,
                     operation_kwargs={}
                 )
         return clone
