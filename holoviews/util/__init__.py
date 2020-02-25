@@ -17,7 +17,6 @@ from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
-from ..core.spaces import Callable
 from ..core import util
 from ..operation.element import function
 from ..streams import Stream, Params

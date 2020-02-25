@@ -7,7 +7,6 @@ from param.parameterized import bothmethod
 
 from .core.dimension import OrderedDict
 from .core.element import Element, Layout
-from .core.operation import OperationCallable
 from .core.options import Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace

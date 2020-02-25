@@ -268,15 +268,6 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(expr.apply(points), np.array([False, False, True, False, False]))
         self.assertEqual(region, None)
 
-    def test_points_selection_numeric_index_cols(self):
-        points = Points([3, 2, 1, 3, 2])
-        expr, bbox, region = points._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
-        )
-        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
-        self.assertEqual(expr.apply(points), np.array([False, False, True, False, False]))
-        self.assertEqual(region, None)
-
     def test_image_selection_numeric(self):
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         expr, bbox, region = img._get_selection_expr_for_stream_value(bounds=(0.5, 1.5, 2.1, 3.1))

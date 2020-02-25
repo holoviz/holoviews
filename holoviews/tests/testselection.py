@@ -1,5 +1,5 @@
 from unittest import SkipTest, skip, skipIf
-import numpy as np
+
 import holoviews as hv
 import pandas as pd
 
