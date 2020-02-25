@@ -10,7 +10,6 @@ from .core.element import Element, Layout
 from .core.options import Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .core.util import unique_zip
 from .streams import SelectionExpr, PlotReset, Stream
 from .operation.element import function
 from .util import DynamicMap
@@ -320,12 +319,16 @@ class link_selections(_base_link_selections):
 
             # build combined selection
             selection_exprs = list(self._obj_selections.values())
-            selection_expr = selection_exprs[0]
             if self.index_cols:
                 if len(selection_exprs) > 1:
-                    vals = set.intersection(*(set(expr.ops[1]['args'][0]) for expr in selection_exprs))
-                    selection_expr = dim(self.index_cols[0], unique_zip, *self.index_cols[1:]).isin(vals)
+                    vals = set.intersection(*(set(expr.ops[2]['args'][0]) for expr in selection_exprs))
+                    old = selection_exprs[0]
+                    selection_expr = dim('new')
+                    selection_expr.dimension = old.dimension
+                    selection_expr.ops = list(old.ops)
+                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
             else:
+                selection_expr = selection_exprs[0]
                 for expr in selection_exprs[1:]:
                     selection_expr = selection_expr & expr
 
@@ -439,9 +442,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
             streams = [region_stream, selection_streams.style_stream]
             region = hvobj.clone(link=False).apply(update_region, streams)
-            if getattr(hvobj, '_selection_dims', None) == 1:
-                layers.insert(0, region)
-            elif isinstance(hvobj, Histogram):
+            if getattr(hvobj, '_selection_dims', None) == 1 or isinstance(hvobj, Histogram):
                 layers.insert(1, region)
             else:
                 layers.append(region)
@@ -474,14 +475,14 @@ class OverlaySelectionDisplay(SelectionDisplay):
         if isinstance(selection_expr, dim):
             dataset = element.dataset
             try:
-                if element.interface.gridded:
+                if dataset.interface.gridded:
                     mask = selection_expr.apply(dataset, expanded=True, flat=False)
-                    selection = element.dataset.clone(dataset.interface.mask(dataset, ~mask))
+                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
                     mask = selection_expr.apply(dataset)
-                    selection = element.dataset.clone(dataset.interface.mask(dataset, ~mask))
+                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:
-                    selection = element.dataset.select(selection_expr=selection_expr)
+                    selection = dataset.select(selection_expr=selection_expr)
                 element = element.pipeline(selection)
             except Exception as e:
                 print(e)

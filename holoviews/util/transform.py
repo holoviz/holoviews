@@ -152,6 +152,10 @@ isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
+def _python_isin(array, values):
+    return [v in values for v in array]
+
+python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
@@ -183,6 +187,7 @@ class dim(object):
         categorize: 'categorize',
         digitize: 'digitize',
         isin: 'isin',
+        python_isin: 'isin',
         astype: 'astype',
         round_: 'round',
         iloc: 'iloc'
@@ -319,7 +324,10 @@ class dim(object):
     def astype(self, dtype): return dim(self, astype, dtype=dtype)
     def round(self, decimals=0): return dim(self, round_, decimals=decimals)
     def digitize(self, *args, **kwargs): return dim(self, digitize, *args, **kwargs)
-    def isin(self, *args, **kwargs):     return dim(self, isin, *args, **kwargs)
+    def isin(self, *args, **kwargs):
+        if kwargs.pop('object', None):
+            return dim(self, python_isin, *args, **kwargs)
+        return dim(self, isin, *args, **kwargs)
 
     @property
     def iloc(self):
@@ -475,10 +483,10 @@ class dim(object):
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
         for o in self.ops:
-            if 'dim(' in op_repr:
-                prev = '({repr})'
+            if op_repr.startswith('dim('):
+                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
             else:
-                prev = 'dim({repr})'
+                prev = 'dim({repr}'
             fn = o['fn']
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
@@ -515,7 +523,7 @@ class dim(object):
                     if fn_name in dir(np):
                         format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
-                    format_string = prev+', {fn}'
+                    format_string = 'dim(' + prev+', {fn}'
                 if args:
                     if not format_string.endswith('('):
                         format_string += ', '
@@ -524,8 +532,10 @@ class dim(object):
                         format_string += ', {kwargs}'
                 elif kwargs:
                     format_string += '{kwargs}'
-                if format_string.count('(') - format_string.count(')') > 0:
-                    format_string += ')'
+            if format_string.count('(') - format_string.count(')') > 0:
+                format_string += ')'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
+        if op_repr.count('(') - op_repr.count(')') > 0:
+            op_repr += ')'
         return op_repr

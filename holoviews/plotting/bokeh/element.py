@@ -1368,7 +1368,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         style = self.lookup_options(style_element, 'style')
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
-        ranges = self.compute_ranges(self.hmap, key, ranges)
+        if not self.overlaid:
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+        else:
+            self.ranges.update(ranges)
         self.param.set_param(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges

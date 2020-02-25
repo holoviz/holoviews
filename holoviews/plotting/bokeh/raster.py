@@ -208,6 +208,8 @@ class QuadMeshPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = ['cmap', 'color', 'visible'] + line_properties + fill_properties
 
     _nonvectorized_styles = style_opts

@@ -808,7 +808,7 @@ class HSV(RGB):
                    **params)
 
 
-class QuadMesh(Dataset, Element2D):
+class QuadMesh(Selection2DExpr, Dataset, Element2D):
     """
     A QuadMesh represents 2D rectangular grid expressed as x- and
     y-coordinates defined as 1D or 2D arrays. Unlike the Image type

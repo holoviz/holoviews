@@ -136,13 +136,12 @@ class HexTilesPlot(ColorbarPlot):
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
 
-    _plot_methods = dict(single='hex_tile')
-
     _nonvectorized_styles = ['cmap', 'line_dash']
-
-    selection_display = BokehOverlaySelectionDisplay()
+    _plot_methods = dict(single='hex_tile')
 
     def get_extents(self, element, ranges, range_type='combined'):
         xdim, ydim = element.kdims[:2]

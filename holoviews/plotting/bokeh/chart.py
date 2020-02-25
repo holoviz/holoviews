@@ -55,13 +55,13 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'visible'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -218,6 +218,8 @@ class VectorFieldPlot(ColorbarPlot):
         transforms using the magnitude option, e.g.
         `dim('Magnitude').norm()`.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = line_properties + ['scale', 'cmap', 'visible']
 
     _nonvectorized_styles = ['scale', 'cmap', 'visible']
@@ -333,13 +335,13 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    style_opts = line_properties + ['visible']
-    _nonvectorized_styles = line_properties + ['visible']
-
-    _plot_methods = dict(single='line', batched='multi_line')
-    _batched_style_opts = line_properties
-
     selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = line_properties + ['visible']
+
+    _batched_style_opts = line_properties
+    _nonvectorized_styles = line_properties + ['visible']
+    _plot_methods = dict(single='line', batched='multi_line')
 
     def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
@@ -569,15 +571,13 @@ class SpreadPlot(ElementPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = line_properties + fill_properties + ['visible']
 
     _no_op_style = style_opts
-
     _plot_methods = dict(single='patch')
-
     _stream_data = False # Plot does not support streaming data
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _split_area(self, xs, lower, upper):
         """
@@ -627,9 +627,9 @@ class AreaPlot(AreaMixin, SpreadPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    _stream_data = False # Plot does not support streaming data
-
     selection_display = BokehOverlaySelectionDisplay()
+
+    _stream_data = False # Plot does not support streaming data
 
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y')
@@ -667,11 +667,11 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (['color', 'cmap', 'palette', 'visible'] + line_properties)
 
     _plot_methods = dict(single='segment')
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _get_axis_dims(self, element):
         if 'spike_length' in self.lookup_options(element, 'plot').options:
@@ -754,6 +754,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (line_properties
                   + fill_properties
                   + ['width', 'bar_width', 'cmap', 'visible'])
@@ -764,8 +766,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     # Declare that y-range should auto-range if not bounded
     _y_range_type = Range1d
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):

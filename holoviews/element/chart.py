@@ -48,7 +48,7 @@ class Chart(Dataset, Element2D):
         return super(Chart, self).__getitem__(index)
 
 
-class Scatter(Selection1DExpr, Chart):
+class Scatter(Selection2DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
@@ -242,11 +242,14 @@ class Histogram(Chart):
         }
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            index_cols = [self.dataset.get_dimension(c) for c in index_cols]
-            sel = ds.select(**bbox)
-            other = tuple(dim(c) for c in index_cols[1:])
-            vals = dim(index_cols[0], util.unique_zip, *other).apply(sel)
-            selection_expr = dim(index_cols[0], util.lzip, *other).isin(vals)
+            shape = dim(index_cols[0], np.shape)
+            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+            sel = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+                sel, expanded=True, flat=True
+            )
+            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+            selection_expr = dim(contains, np.reshape, shape)
             region = None
         else:
             selection_expr = dim(xdim).digitize(edges).isin(selected_bins)

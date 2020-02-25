@@ -1,6 +1,24 @@
+import numpy as np
+
 from ...core.options import Store
 from ...core.overlay import NdOverlay
-from ...selection import OverlaySelectionDisplay
+from ...selection import OverlaySelectionDisplay, SelectionDisplay
+
+
+class TabularSelectionDisplay(SelectionDisplay):
+
+    def _build_selection(self, el, exprs, **kwargs):
+        opts = {}
+        if exprs[1]:
+            opts['selected'] = np.where(exprs[1].apply(el.dataset, expanded=True, flat=True))[0]
+        return el.opts(clone=True, backend='bokeh', **opts)
+
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+        sel_streams = [selection_streams.exprs_stream]
+        hvobj = hvobj.apply(self._build_selection, streams=sel_streams, per_element=True)
+        for op in operations:
+            hvobj = op(hvobj)
+        return hvobj
 
 
 class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
@@ -10,12 +28,15 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
         backend_options = Store.options(backend='bokeh')
-        style_options = backend_options[(type(element).name,)]['style']
+        el_name = type(element).name
+        style_options = backend_options[(el_name,)]['style']
         allowed = style_options.allowed_keywords
 
         merged_opts = {opt_name: layer_alpha for opt_name in allowed
                        if 'alpha' in opt_name}
-        if layer_color is None:
+        if el_name in ('HeatMap', 'QuadMesh'):
+            merged_opts.pop('line_alpha')
+        elif layer_color is None:
             # Keep current color (including color from cycle)
             for color_prop in self.color_props:
                 current_color = element.opts.get(group="style")[0].get(color_prop, None)

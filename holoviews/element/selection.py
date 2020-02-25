@@ -3,6 +3,8 @@ Defines mix-in classes to handle support for linked brushing on
 elements.
 """
 
+import numpy as np
+
 from ..core import util, NdOverlay
 from ..streams import SelectionXY, Selection1D
 from ..util.transform import dim
@@ -21,9 +23,13 @@ class SelectionIndexExpr(object):
         if index is None or index_cols is None:
             expr = None
         else:
-            index_cols = [self.get_dimension(c) for c in index_cols]
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(self.iloc[index])
-            expr = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals)
+            get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
+            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+                self.iloc[index], expanded=True, flat=True
+            )
+            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+            expr = dim(contains, np.reshape, get_shape)
         return expr, None, None
 
     @staticmethod
@@ -62,6 +68,16 @@ class Selection2DExpr(object):
 
         return (x0, x1), xcats, (y0, y1), ycats
 
+    def _get_index_expr(self, index_cols, bbox):
+        get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
+        index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+        sel = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
+        vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+            sel, expanded=True, flat=True
+        )
+        contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+        return dim(contains, np.reshape, get_shape)
+
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from .geom import Rectangles
         from .graphs import Graph
@@ -86,11 +102,7 @@ class Selection2DExpr(object):
         bbox = {xdim.name: xsel, ydim.name: ysel}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            index_cols = [self.get_dimension(c) for c in index_cols]
-            sel = self.dataset.select(**bbox)
-            other = tuple(dim(c) for c in index_cols[1:])
-            vals = dim(index_cols[0], util.unique_zip, *other).apply(sel)
-            selection_expr = dim(index_cols[0], util.lzip, *other).isin(vals).iloc[:, 0]
+            selection_expr = self._get_index_expr(index_cols, bbox)
             region_element = None
         else:
             if xcats:
@@ -133,11 +145,7 @@ class SelectionGeomExpr(Selection2DExpr):
         bbox = {x0dim.name: xsel, y0dim.name: ysel, x1dim.name: xsel, y1dim.name: ysel}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            index_cols = [self.get_dimension(c) for c in index_cols]
-            sel = self.dataset.select(**bbox)
-            other = tuple(dim(c) for c in index_cols[1:])
-            vals = dim(index_cols[0], util.unique_zip, *other).apply(sel)
-            selection_expr = dim(index_cols[0], util.lzip, *other).isin(vals).iloc[:, 0]
+            selection_expr = self._get_index_expr(index_cols, bbox)
             region_element = None
         else:
             x0expr = (dim(x0dim) >= x0) & (dim(x0dim) <= x1)
@@ -201,19 +209,14 @@ class Selection1DExpr(Selection2DExpr):
             bbox[self.kdims[0].name] = cats
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            index_cols = [self.get_dimension(c) for c in index_cols]
-            sel = self.dataset.select(**bbox)
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(sel)
-            selection_expr = dim(
-                index_cols[0], util.lzip, *index_cols[1:]
-            ).isin(vals).iloc[:, 0]
+            selection_expr = self._get_index_expr(index_cols, bbox)
             region_element = None
         else:
-            if cats and xdim is self.kdims[0]:
+            if isinstance(cats, list) and xdim in self.kdims[:1]:
                 selection_expr = dim(xdim).isin(cats)
             else:
                 selection_expr = ((dim(xdim) >= x0) & (dim(xdim) <= x1))
-                if cats is not None and len(self.kdims) == 1:
+                if isinstance(cats, list) and len(self.kdims) == 1:
                     selection_expr &= dim(self.kdims[0]).isin(cats)
             region_element = NdOverlay({0: region_el(x0, x1)})
         return selection_expr, bbox, region_element
