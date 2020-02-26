@@ -377,7 +377,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
         self.assertEqual(bbox, {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([False, True, False]))
-        self.assertEqual(region, Segments([(0.9, 0.5, 4.9, 3.4)]))
+        self.assertEqual(region, Reactangles([(0.9, 0.5, 4.9, 3.4)]))
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0, 4.9, 3.5))
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([True, True, True]))
