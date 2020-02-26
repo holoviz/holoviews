@@ -325,11 +325,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                              'density.')
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._validate(data_bounds, supplied_bounds)
-        # Ensure Image factory has the appropriate kwargs
-        self._pipeline.operations[-1].kwargs.update(
-            xdensity=xdensity, ydensity=ydensity, bounds=bounds
-        )
-
 
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
