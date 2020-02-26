@@ -864,7 +864,7 @@ class DimensionedPlot(Plot):
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
         from_overlay = not all(p is None for p in opts.get(True, {}).get('projection', []))
-        projections = opts.get(from_overlay).get('projection', [])
+        projections = opts.get(from_overlay, {}).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
