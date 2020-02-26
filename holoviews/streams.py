@@ -139,7 +139,16 @@ class Stream(param.Parameterized):
         items = [stream.contents.items() for stream in set(streams)]
         union = [kv for kvs in items for kv in kvs]
         klist = [k for k, _ in union]
-        key_clashes = set([k for k in klist if klist.count(k) > 1])
+        key_clashes = []
+        for k, v in union:
+            key_count = klist.count(k)
+            try:
+                value_count = union.count((k, v))
+            except Exception:
+                # If we can't compare values we assume they are not equal
+                value_count = 1
+            if key_count > 1 and key_count > value_count and k not in key_clashes:
+                key_clashes.append(k)
         if key_clashes:
             print('Parameter name clashes for keys %r' % key_clashes)
 
