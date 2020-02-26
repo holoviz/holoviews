@@ -973,6 +973,7 @@ class Dimensioned(LabelledData):
         else:
             dimension = dimension_name(dimension)
             name_map = {dim.spec: dim for dim in all_dims}
+            name_map.update({dim.name: dim for dim in all_dims})
             name_map.update({dim.label: dim for dim in all_dims})
             name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
             if strict and dimension not in name_map:

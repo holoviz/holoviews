@@ -256,10 +256,8 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def values(
-            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
-        dim = dataset.get_dimension(dim).name
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+        dim = dataset.get_dimension(dim, strict=True).name
         values = dataset.data.get(dim)
         if isscalar(values):
             if not expanded:

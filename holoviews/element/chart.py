@@ -242,7 +242,7 @@ class Histogram(Chart):
         }
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            shape = dim(index_cols[0], np.shape)
+            shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
             index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
             sel = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
