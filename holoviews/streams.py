@@ -1008,12 +1008,12 @@ class SelectionXY(BoundsXY):
     """
 
     x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
-                                     doc="""
+                                      constant=True, doc="""
       The current selection along the x-axis, either a numerical range
       defined as a tuple or a list of categories.""")
 
     y_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
-                                     doc="""
+                                      constant=True, doc="""
       The current selection along the y-axis, either a numerical range
       defined as a tuple or a list of categories.""")
 

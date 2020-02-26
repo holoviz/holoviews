@@ -177,8 +177,8 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
         cmapper = plot.handles['violin_color_mapper']
-        self.assertEqual(source.data["'a'"], ['0', '1'])
-        self.assertEqual(glyph.fill_color, {'field': "'a'", 'transform': cmapper})
+        self.assertEqual(source.data["dim('a')"], ['0', '1'])
+        self.assertEqual(glyph.fill_color, {'field': "dim('a')", 'transform': cmapper})
 
     def test_violin_box_linear_color_op(self):
         a = np.repeat(np.arange(5), 5)
