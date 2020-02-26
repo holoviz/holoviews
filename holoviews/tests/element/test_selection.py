@@ -86,31 +86,6 @@ class TestSelection1DExpr(ComparisonTestCase):
         self.assertEqual(expr.apply(curve), np.array([False, True, True, False, True]))
         self.assertEqual(region, None)
 
-    def test_scatter_selection_numeric(self):
-        scatter = Scatter([3, 2, 1, 3, 4])
-        expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
-        self.assertEqual(bbox, {'x': (1, 3)})
-        self.assertEqual(expr.apply(scatter), np.array([False, True, True, True, False]))
-        self.assertEqual(region, NdOverlay({0: VSpan(1, 3)}))
-
-    def test_scatter_selection_categorical(self):
-        scatter = Scatter((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
-        expr, bbox, region = scatter._get_selection_expr_for_stream_value(
-            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C']
-        )
-        self.assertEqual(bbox, {'x': ['B', 'A', 'C']})
-        self.assertEqual(expr.apply(scatter), np.array([True, True, True, False, False]))
-        self.assertEqual(region, NdOverlay({0: VSpan(0, 2)}))
-
-    def test_scatter_selection_numeric_index_cols(self):
-        scatter = Scatter([3, 2, 1, 3, 2])
-        expr, bbox, region = scatter._get_selection_expr_for_stream_value(
-            bounds=(1, 0, 3, 2), index_cols=['y']
-        )
-        self.assertEqual(bbox, {'x': (1, 3)})
-        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, True]))
-        self.assertEqual(region, None)
-
     def test_box_whisker_single(self):
         box_whisker = BoxWhisker(list(range(10)))
         expr, bbox, region = box_whisker._get_selection_expr_for_stream_value(
@@ -266,6 +241,38 @@ class TestSelection2DExpr(ComparisonTestCase):
         )
         self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
         self.assertEqual(expr.apply(points), np.array([False, False, True, False, False]))
+        self.assertEqual(region, None)
+
+    def test_scatter_selection_numeric(self):
+        scatter = Scatter([3, 2, 1, 3, 4])
+        expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
+        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
+        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
+        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]))
+
+    def test_scatter_selection_numeric_inverted(self):
+        scatter = Scatter([3, 2, 1, 3, 4]).opts(invert_axes=True)
+        expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
+        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
+        self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+
+    def test_scatter_selection_categorical(self):
+        scatter = Scatter((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
+        expr, bbox, region = scatter._get_selection_expr_for_stream_value(
+            bounds=(0, 1, 2, 3), x_selection=['B', 'A', 'C'], y_selection=None
+        )
+        self.assertEqual(bbox, {'x': ['B', 'A', 'C'], 'y': (1, 3)})
+        self.assertEqual(expr.apply(scatter), np.array([True, True, True, False, False]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+
+    def test_scatter_selection_numeric_index_cols(self):
+        scatter = Scatter([3, 2, 1, 3, 2])
+        expr, bbox, region = scatter._get_selection_expr_for_stream_value(
+            bounds=(1, 0, 3, 2), index_cols=['y']
+        )
+        self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
+        self.assertEqual(expr.apply(scatter), np.array([False, False, True, False, False]))
         self.assertEqual(region, None)
 
     def test_image_selection_numeric(self):
