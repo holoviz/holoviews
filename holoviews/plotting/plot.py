@@ -131,6 +131,7 @@ class Plot(param.Parameterized):
         if (config.console_output != 'disable' and self.root and
             self.root.ref['id'] not in state._handles and
             isinstance(self.comm, JupyterComm)):
+            from IPython.display import display
             handle = display(display_id=uuid.uuid4().hex)
             state._handles[self.root.ref['id']] = (handle, [])
 
