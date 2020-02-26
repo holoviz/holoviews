@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict
+from functools import partial
 
 import param
 import numpy as np
+
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ToolbarBox, Range1d,
     DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
@@ -70,7 +72,12 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
+            if plot.pane:
+                on_error = partial(plot.pane._on_error, plot.root)
+            else:
+                on_error = None
             self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
+            self.comm._on_error = on_error
         else:
             self.comm = None
         self.source = source

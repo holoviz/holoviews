@@ -6,16 +6,20 @@ of this Plot baseclass.
 from __future__ import absolute_import
 
 import threading
+import uuid
 import warnings
 
-from itertools import groupby, product
 from collections import Counter, defaultdict
+from functools import partial
+from itertools import groupby, product
 
 import numpy as np
 import param
 
+from panel.config import config
 from panel.io.notebook import push
 from panel.io.state import state
+from pyviz_comms import JupyterComm
 
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
@@ -118,18 +122,28 @@ class Plot(param.Parameterized):
                 if plot is not None:
                     plot.document = doc
 
-
     @property
     def pane(self):
         return self._pane
 
     @pane.setter
     def pane(self, pane):
+        if (config.console_output != 'disable' and
+            self.root.ref['id'] not in state._handles and
+            isinstance(self.comm, JupyterComm)):
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[self.root.ref['id']] = (handle, [])
+
         self._pane = pane
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
+                for cb in getattr(plot, 'callbacks', []):
+                    cb.comm._on_error = partial(pane._on_error, self.root)
+        else:
+            for cb in getattr(self, 'callbacks', []):
+                cb.comm._on_error = partial(pane._on_error, self.root.ref['id'])
 
 
     @property
