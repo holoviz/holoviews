@@ -482,11 +482,11 @@ class dim(object):
 
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
-        for o in self.ops:
-            if op_repr.startswith('dim('):
-                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
-            else:
+        for i, o in enumerate(self.ops):
+            if i == 0:
                 prev = 'dim({repr}'
+            else:
+                prev = '({repr}'
             fn = o['fn']
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
@@ -495,9 +495,11 @@ class dim(object):
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
-                    format_string = '({args}) {fn} '+prev
+                    format_string = '{args}{fn}'+prev
                 else:
-                    format_string = prev+' {fn} ({args})'
+                    format_string = prev+'){fn}{args}'
+                if any(isinstance(a, dim) for a in o['args']):
+                    format_string = format_string.replace('{args}', '({args})')
             elif fn in self._unary_funcs:
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
@@ -508,12 +510,12 @@ class dim(object):
                     format_string = '{fn}'+prev
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
                 elif isinstance(fn, iloc):
-                    format_string = prev+'.iloc[{0}]'.format(repr(fn.index))
+                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
                 elif ufunc:
                     fn_name = str(fn)[8:-2]
                     if not (prev.startswith('dim') or prev.endswith(')')):
@@ -532,10 +534,12 @@ class dim(object):
                         format_string += ', {kwargs}'
                 elif kwargs:
                     format_string += '{kwargs}'
-            if format_string.count('(') - format_string.count(')') > 0:
-                format_string += ')'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
+            if op_repr.count('(') - op_repr.count(')') > 0:
+                op_repr += ')'
+        if not self.ops:
+            op_repr = 'dim({repr})'.format(repr=op_repr)
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr

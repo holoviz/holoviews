@@ -236,11 +236,11 @@ class TestDimTransforms(ComparisonTestCase):
 
     def test_iloc_transform_slice(self):
         expr = dim('int').iloc[1:3]
-        self.check_apply(expr, self.linear_ints[1:3])
+        self.check_apply(expr, self.linear_ints[1:3], skip_dask=True)
 
     def test_iloc_transform_list(self):
         expr = dim('int').iloc[[1, 3, 5]]
-        self.check_apply(expr, self.linear_ints[[1, 3, 5]])
+        self.check_apply(expr, self.linear_ints[[1, 3, 5]], skip_dask=True)
 
     def test_bin_transform(self):
         expr = dim('int').bin([0, 5, 10])
@@ -311,7 +311,7 @@ class TestDimTransforms(ComparisonTestCase):
     # Repr method
 
     def test_dim_repr(self):
-        self.assertEqual(repr(dim('float')), "'float'")
+        self.assertEqual(repr(dim('float')), "dim('float')")
 
     def test_unary_op_repr(self):
         self.assertEqual(repr(-dim('float')), "-dim('float')")
