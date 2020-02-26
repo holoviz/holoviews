@@ -11,10 +11,12 @@ from bokeh.models import (
     DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
     FreehandDrawTool, PointDrawTool
 )
+from panel.io.state import state
 from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
+from ...core.options import CallbackError
 from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
@@ -84,7 +86,6 @@ class MessageCallback(object):
         self.handle_ids = defaultdict(dict)
         self.reset()
 
-
     def cleanup(self):
         self.reset()
         self.handle_ids = None
@@ -144,6 +145,12 @@ class MessageCallback(object):
 
         try:
             Stream.trigger(streams)
+        except CallbackError as e:
+            if self.plot.root and self.plot.root.ref['id'] in state._handles:
+                handle, _ = state._handles[self.plot.root.ref['id']]
+                handle.update({'text/html': str(e)}, raw=True)
+            else:
+                raise e
         except Exception as e:
             raise e
         finally:

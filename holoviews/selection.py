@@ -7,7 +7,7 @@ from param.parameterized import bothmethod
 
 from .core.dimension import OrderedDict
 from .core.element import Element, Layout
-from .core.options import Store
+from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
 from .streams import SelectionExpr, PlotReset, Stream
@@ -484,9 +484,14 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 else:
                     selection = dataset.select(selection_expr=selection_expr)
                 element = element.pipeline(selection)
+            except KeyError as e:
+                key_error = str(e).replace('"', '').replace('.', '')
+                raise CallbackError("linked_selection aborted because it could not "
+                                    "display selection for all elements: %s on '%r'."
+                                    % (key_error, element))
             except Exception as e:
-                print(e)
-                raise
+                raise CallbackError("linked_selection aborted because it could not "
+                                    "display selection for all elements: %s." % e)
         return element
 
 

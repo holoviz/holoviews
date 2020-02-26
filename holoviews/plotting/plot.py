@@ -128,7 +128,7 @@ class Plot(param.Parameterized):
 
     @pane.setter
     def pane(self, pane):
-        if (config.console_output != 'disable' and
+        if (config.console_output != 'disable' and self.root and
             self.root.ref['id'] not in state._handles and
             isinstance(self.comm, JupyterComm)):
             handle = display(display_id=uuid.uuid4().hex)
@@ -139,9 +139,11 @@ class Plot(param.Parameterized):
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
+                if not plot.root:
+                    continue
                 for cb in getattr(plot, 'callbacks', []):
-                    cb.comm._on_error = partial(pane._on_error, self.root)
-        else:
+                    cb.comm._on_error = partial(pane._on_error, plot.root.ref['id'])
+        elif self.root:
             for cb in getattr(self, 'callbacks', []):
                 cb.comm._on_error = partial(pane._on_error, self.root.ref['id'])
 
@@ -1597,7 +1599,7 @@ class GenericOverlayPlot(GenericElementPlot):
                         renderer=self.renderer, adjoined=self.adjoined,
                         stream_sources=self.stream_sources,
                         projection=self.projection, fontscale=self.fontscale,
-                        zorder=zorder, **passed_handles)
+                        zorder=zorder, root=self.root, **passed_handles)
         return plottype(obj, **plotopts)
 
 

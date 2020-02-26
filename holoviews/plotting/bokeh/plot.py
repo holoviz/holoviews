@@ -560,7 +560,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
-                                         renderer=self.renderer,
+                                         renderer=self.renderer, root=self.root,
                                          ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
@@ -808,7 +808,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = plot_type(element, keys=self.keys,
                                 dimensions=self.dimensions,
                                 layout_dimensions=layout_dimensions,
-                                ranges=ranges, subplot=True,
+                                ranges=ranges, subplot=True, root=self.root,
                                 uniform=self.uniform, layout_num=num,
                                 renderer=self.renderer,
                                 **dict({'shared_axes': self.shared_axes},
