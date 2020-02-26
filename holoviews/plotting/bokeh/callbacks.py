@@ -18,6 +18,7 @@ from pyviz_comms import JS_CALLBACK
 from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
+from ...element import Table
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
@@ -952,8 +953,15 @@ class Selection1DCallback(Callback):
     on_changes = ['indices']
 
     def _process_msg(self, msg):
+        el = self.plot.current_frame
         if 'index' in msg:
             msg = {'index': [int(v) for v in msg['index']]}
+            if isinstance(el, Table):
+                # Ensure that explicitly applied selection does not
+                # trigger new events
+                sel = el.opts.get('style').kwargs.get('selection')
+                if sel is not None and list(sel) == msg['index']:
+                    return {}
             return self._transform(msg)
         else:
             return {}
