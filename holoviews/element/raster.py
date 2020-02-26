@@ -315,15 +315,18 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if self.interface is ImageInterface and not isinstance(data, (np.ndarray, Image)):
             data_bounds = self.bounds.lbrt()
 
-        l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
-        ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
-        if not util.isfinite(xdensity) or not util.isfinite(ydensity):
-            raise ValueError('Density along Image axes could not be determined. '
-                             'If the data contains only one coordinate along the '
-                             'x- or y-axis ensure you declare the bounds and/or '
-                             'density.')
+        non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
+        if non_finite:
+            bounds = BoundingBox(points=((0, 0), (0, 0)))
+            xdensity = xdensity or 1
+            ydensity = ydensity or 1
+        else:
+            l, b, r, t = bounds.lbrt()
+            xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
+            ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        if non_finite:
+           self.bounds = BoundingBox(points=((np.nan, np.nan), (np.nan, np.nan)))
         self._validate(data_bounds, supplied_bounds)
 
     def _validate(self, data_bounds, supplied_bounds):
