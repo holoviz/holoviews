@@ -620,11 +620,19 @@ class GridInterface(DictInterface):
         masked = OrderedDict(dataset.data)
         if packed:
             masked = dataset.data[packed].copy()
-            masked[mask] = mask_val
+            try:
+                masked[mask] = mask_val
+            except ValueError:
+                masked = masked.astype('float')
+                masked[mask] = mask_val
         else:
             for vd in dataset.vdims:
                 masked[vd.name] = marr = masked[vd.name].copy()
-                marr[mask] = mask_val
+                try:
+                    marr[mask] = mask_val
+                except ValueError:
+                    masked[vd.name] = marr = marr.astype('float')
+                    marr[mask] = mask_val
         return masked
 
 

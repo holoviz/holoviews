@@ -203,7 +203,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def mask(cls, dataset, mask, mask_val=np.nan):
-        masked = dataset.data.copy()
+        masked = dataset.data.copy().astype('float')
         masked[np.flipud(mask)] = mask_val
         return masked
 
