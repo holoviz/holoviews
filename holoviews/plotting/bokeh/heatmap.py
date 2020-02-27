@@ -94,8 +94,11 @@ class HeatMapPlot(ColorbarPlot):
             width = 1
         else:
             xvals = aggregate.dimension_values(xdim, flat=False)
-            edges = GridInterface._infer_interval_breaks(xvals, axis=1)
-            widths = np.diff(edges, axis=1).T.flatten()
+            if xvals.shape[1] > 1:
+                edges = GridInterface._infer_interval_breaks(xvals, axis=1)
+                widths = np.diff(edges, axis=1).T.flatten()
+            else:
+                widths = [self.default_span]*xvals.shape[0] if len(xvals) else []
             xvals = xvals.T.flatten()
             width = 'width'
 
@@ -106,8 +109,11 @@ class HeatMapPlot(ColorbarPlot):
             height = 1
         else:
             yvals = aggregate.dimension_values(ydim, flat=False)
-            edges = GridInterface._infer_interval_breaks(yvals, axis=0)
-            heights = np.diff(edges, axis=0).T.flatten()
+            if yvals.shape[0] > 1:
+                edges = GridInterface._infer_interval_breaks(yvals, axis=0)
+                heights = np.diff(edges, axis=0).T.flatten()
+            else:
+                heights = [self.default_span]*yvals.shape[1] if len(yvals) else []
             yvals = yvals.T.flatten()
             height = 'height'
 

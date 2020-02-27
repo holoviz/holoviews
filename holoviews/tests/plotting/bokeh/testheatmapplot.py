@@ -111,3 +111,21 @@ class TestHeatMapPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(hmap)
         glyph = plot.handles['glyph']
         self.assertTrue(glyph.dilate) 
+
+    def test_heatmap_single_x_value(self):
+        hmap = HeatMap(([1], ['A', 'B'], np.array([[1], [2]])))
+        plot = bokeh_renderer.get_plot(hmap)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['x'], np.array([1, 1]))
+        self.assertEqual(cds.data['y'], np.array(['A', 'B']))
+        self.assertEqual(cds.data['width'], [2.0, 2.0])
+        self.assertEqual(plot.handles['glyph'].height, 1)
+
+    def test_heatmap_single_y_value(self):
+        hmap = HeatMap((['A', 'B'], [1], np.array([[1, 2]])))
+        plot = bokeh_renderer.get_plot(hmap)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['y'], np.array([1, 1]))
+        self.assertEqual(cds.data['x'], np.array(['A', 'B']))
+        self.assertEqual(cds.data['height'], [2.0, 2.0])
+        self.assertEqual(plot.handles['glyph'].width, 1)
