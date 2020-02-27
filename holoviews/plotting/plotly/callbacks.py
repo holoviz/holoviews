@@ -3,7 +3,8 @@ from weakref import WeakValueDictionary
 from param.parameterized import add_metaclass
 
 from ...streams import (
-    Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY
+    Stream, Selection1D, RangeXY, RangeX, RangeY, BoundsXY, BoundsX, BoundsY,
+    SelectionXY
 )
 
 from .util import _trace_to_subplot
@@ -206,6 +207,7 @@ class RangeYCallback(RangeCallback):
 
 callbacks = Stream._callbacks['plotly']
 callbacks[Selection1D] = Selection1DCallback
+callbacks[SelectionXY] = BoundsXYCallback
 callbacks[BoundsXY] = BoundsXYCallback
 callbacks[BoundsX] = BoundsXCallback
 callbacks[BoundsY] = BoundsYCallback
