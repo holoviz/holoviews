@@ -148,8 +148,10 @@ class HexTilesPlot(ColorbarPlot):
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range
         xdim, ydim = element.dataset.kdims[:2]
-        ranges[xdim.name]['hard'] = xdim.range
-        ranges[ydim.name]['hard'] = ydim.range
+        if xdim.name in ranges:
+            ranges[xdim.name]['hard'] = xdim.range
+        if ydim.name in ranges:
+            ranges[ydim.name]['hard'] = ydim.range
         return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
