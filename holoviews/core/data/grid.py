@@ -262,9 +262,9 @@ class GridInterface(DictInterface):
         if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
             # np.diff does not work on datetimes in python 2
             coord = coord.astype('datetime64')
-        if len(coord) == 0:
+        if coord.shape[axis] == 0:
             return np.array([], dtype=coord.dtype)
-        if len(coord) > 1:
+        if coord.shape[axis] > 1:
             deltas = 0.5 * np.diff(coord, axis=axis)
         else:
             deltas = np.array([0.5])
