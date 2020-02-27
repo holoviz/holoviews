@@ -124,7 +124,7 @@ class Apply(object):
                 keyword argument, or the supplied function is a
                 parameterized method.
             per_element (bool, optional): Whether to apply per element
-                By default apply works on the any leaf nodes which
+                By default apply works on the leaf nodes, which
                 includes both elements and overlays. If set it will
                 apply directly to elements.
             kwargs (dict, optional): Additional keyword arguments

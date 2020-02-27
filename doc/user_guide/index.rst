@@ -105,7 +105,7 @@ These guides provide detail about specific additional features in HoloViews:
 `Working with renderers and plots <Plots_and_Renderers.html>`_
  Using the ``Renderer`` and ``Plot`` classes for access to the plotting machinery.
 
-`Using linked selections to cross-filter complex datasets <Linked_Brushing.html>`_
+`Using linked brushing to cross-filter complex datasets <Linked_Brushing.html>`_
  Explains how to use the `link_selections` helper to cross-filter multiple elements.
 
 `Using Annotators to edit and label data <Annotators.html>`_

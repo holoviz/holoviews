@@ -1108,7 +1108,7 @@ def unique_iterator(seq):
 
 def lzip(*args):
     """
-    zip function which returns a list.
+    zip function that returns a list.
     """
     return list(zip(*args))
 

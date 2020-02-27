@@ -183,7 +183,7 @@ class link_selections(_base_link_selections):
         elements.""")
 
     index_cols = param.List(default=None, doc="""
-        If provided selection switches to index mode where all queries
+        If provided, selection switches to index mode where all queries
         are expressed solely in terms of discrete values along the
         index_cols.  All Elements given to link_selections must define the index_cols, either as explicit dimensions or by sharing an underlying Dataset that defines them.""")
 

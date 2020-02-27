@@ -1012,7 +1012,7 @@ class BoundsXY(LinkedStream):
 class SelectionXY(BoundsXY):
     """
     A stream representing the selection along the x-axis and y-axis.
-    Unlike a BoundsXY stream this stream return range or categorical
+    Unlike a BoundsXY stream, this stream returns range or categorical
     selections.
     """
 
