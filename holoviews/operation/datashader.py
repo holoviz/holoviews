@@ -25,7 +25,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface
 from ..core.util import (
     LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, get_param_values, max_range)
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
                        Segments, Scatter, Points, Polygons)
@@ -131,26 +131,33 @@ class ResamplingOperation(LinkableOperation):
             if x is None:
                 x_range = self.p.x_range or (-0.5, 0.5)
             elif self.p.expand or not self.p.x_range:
-                x_range = self.p.x_range or max_range([element.range(xd) for xd in x])
+                if self.p.x_range and all(isfinite(v) for v in self.p.x_range):
+                    x_range = self.p.x_range
+                else:
+                    x_range = max_range([element.range(xd) for xd in x])
             else:
                 x0, x1 = self.p.x_range
                 ex0, ex1 = max_range([element.range(xd) for xd in x])
-                x_range = (np.min([np.max([x0, ex0]), ex1]),
-                           np.max([np.min([x1, ex1]), ex0]))
+                x_range = (np.nanmin([np.nanmax([x0, ex0]), ex1]),
+                           np.nanmax([np.nanmin([x1, ex1]), ex0]))
 
             if (y is None and ndim == 2):
                 y_range = self.p.y_range or default or (-0.5, 0.5)
             elif self.p.expand or not self.p.y_range:
-                y_range = self.p.y_range or (max_range([element.range(yd) for yd in y])
-                                             if default is None else default)
+                if self.p.y_range and all(isfinite(v) for v in self.p.y_range):
+                    y_range = self.p.y_range
+                elif default is None:
+                    y_range = max_range([element.range(yd) for yd in y])
+                else:
+                    y_range = default
             else:
                 y0, y1 = self.p.y_range
                 if default is None:
                     ey0, ey1 = max_range([element.range(yd) for yd in y])
                 else:
                     ey0, ey1 = default
-                y_range = (np.min([np.max([y0, ey0]), ey1]),
-                           np.max([np.min([y1, ey1]), ey0]))
+                y_range = (np.nanmin([np.nanmax([y0, ey0]), ey1]),
+                           np.nanmax([np.nanmin([y1, ey1]), ey0]))
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
@@ -1241,17 +1248,21 @@ class shade(LinkableOperation):
         elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
-            if np.isnan(array.data).all():
-                arr = np.zeros(array.data.shape, dtype=np.uint32)
-                img = array.copy()
-                img.data = arr
-            else:
-                img = tf.shade(array, **shade_opts)
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:],
                       xdensity=xdensity, ydensity=ydensity)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
+            if np.isnan(array.data).all():
+                xd, yd = kdims[:2]
+                arr = np.zeros(array.data.shape[:2]+(4,), dtype=np.uint8)
+                coords = {xd.name: element.data.coords[xd.name],
+                          yd.name: element.data.coords[yd.name],
+                          'band': [0, 1, 2, 3]}
+                img = xr.DataArray(arr, coords=coords, dims=(yd.name, xd.name, 'band'))
+                return RGB(img, **params)
+            else:
+                img = tf.shade(array, **shade_opts)
         return RGB(self.uint32_to_uint8_xr(img), **params)
 
 
