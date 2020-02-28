@@ -101,9 +101,11 @@ class BokehRenderer(Renderer):
         logger.disabled = True
 
         if fmt == 'gif':
-            from bokeh.io.export import get_screenshot_as_png, create_webdriver
+            from bokeh.io.export import get_screenshot_as_png
+            from bokeh.io.webdriver import webdriver_control
+
             if pn.state.webdriver is None:
-                webdriver = create_webdriver()
+                webdriver = webdriver_control.create()
             else:
                 webdriver = pn.state.webdriver
 
@@ -124,7 +126,7 @@ class BokehRenderer(Renderer):
             data = bio.read()
         elif fmt == 'png':
             from bokeh.io.export import get_screenshot_as_png
-            img = get_screenshot_as_png(plot.state)
+            img = get_screenshot_as_png(plot.state, driver=pn.state.webdriver)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             data = imgByteArr.getvalue()
