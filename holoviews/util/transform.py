@@ -250,6 +250,9 @@ class dim(object):
                 args[k] = dim(arg)
         return dim(args[0], func, *args[1:], **kwargs)
 
+    def __hash__(self):
+        return repr(self)
+
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
     def __round__(self, ndigits=None):
