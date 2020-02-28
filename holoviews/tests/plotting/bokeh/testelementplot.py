@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 import numpy as np
 
-from bokeh.core.properties import value
 from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream, PointDraw

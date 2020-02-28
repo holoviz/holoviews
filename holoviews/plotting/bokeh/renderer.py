@@ -104,10 +104,10 @@ class BokehRenderer(Renderer):
             from bokeh.io.export import get_screenshot_as_png
             from bokeh.io.webdriver import webdriver_control
 
-            if pn.state.webdriver is None:
+            if state.webdriver is None:
                 webdriver = webdriver_control.create()
             else:
-                webdriver = pn.state.webdriver
+                webdriver = state.webdriver
 
             nframes = len(plot)
             frames = []
@@ -115,7 +115,7 @@ class BokehRenderer(Renderer):
                 plot.update(i)
                 img = get_screenshot_as_png(plot.state, driver=webdriver)
                 frames.append(img)
-            if pn.state.webdriver is not None:
+            if state.webdriver is not None:
                 webdriver.close()
 
             bio = BytesIO()
@@ -126,7 +126,7 @@ class BokehRenderer(Renderer):
             data = bio.read()
         elif fmt == 'png':
             from bokeh.io.export import get_screenshot_as_png
-            img = get_screenshot_as_png(plot.state, driver=pn.state.webdriver)
+            img = get_screenshot_as_png(plot.state, driver=state.webdriver)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             data = imgByteArr.getvalue()
