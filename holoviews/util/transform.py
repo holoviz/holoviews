@@ -1,6 +1,7 @@
 from __future__ import division
 
 import operator
+
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -251,7 +252,7 @@ class dim(object):
         return dim(args[0], func, *args[1:], **kwargs)
 
     def __hash__(self):
-        return repr(self)
+        return hash(repr(self))
 
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
