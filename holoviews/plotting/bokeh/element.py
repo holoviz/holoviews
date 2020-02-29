@@ -13,14 +13,21 @@ from bokeh.document.events import ModelChangedEvent
 from bokeh.models import Renderer, Title, Legend, ColorBar, tools
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
-    FuncTickFormatter, TickFormatter, MercatorTickFormatter)
+    FuncTickFormatter, TickFormatter, MercatorTickFormatter
+)
 from bokeh.models.mappers import (
-    LinearColorMapper, LogColorMapper, CategoricalColorMapper)
+    LinearColorMapper, LogColorMapper, CategoricalColorMapper
+)
 from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
-    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker)
+    Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
+)
 from bokeh.models.widgets import Panel, Tabs
-from bokeh.plotting.helpers import _known_tools as known_tools
+
+try:
+    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
+except:
+    from bokeh.plotting._tools import TOOLS_MAP
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
@@ -34,13 +41,15 @@ from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
-    rgba_tuple, text_properties, validate)
+    rgba_tuple, text_properties, validate
+)
 from .tabular import TablePlot
 from .util import (
     TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type)
+    compute_layout_properties, wrap_formatter, match_ax_type
+)
 
 
 
@@ -218,7 +227,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = False
         for cb in callbacks:
             for handle in cb.models+cb.extra_models:
-                if handle and handle in known_tools:
+                if handle and handle in TOOLS_MAP:
                     tool_names.append(handle)
                     if handle == 'hover':
                         tool = tools.HoverTool(
@@ -226,7 +235,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                             **hover_opts)
                         hover = tool
                     else:
-                        tool = known_tools[handle]()
+                        tool = TOOLS_MAP[handle]()
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 

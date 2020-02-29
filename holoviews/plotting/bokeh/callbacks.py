@@ -271,7 +271,6 @@ class CustomJSCallback(MessageCallback):
         code = conditional + data + attributes + self.code + self_callback
         return CustomJS(args=references, code=code)
 
-
     def set_customjs_callback(self, js_callback, handle):
         """
         Generates a CustomJS callback by generating the required JS
@@ -284,9 +283,6 @@ class CustomJSCallback(MessageCallback):
         if self.on_changes:
             for change in self.on_changes:
                 handle.js_on_change(change, js_callback)
-        elif hasattr(handle, 'callback'):
-            handle.callback = js_callback
-
 
 
 class ServerCallback(MessageCallback):

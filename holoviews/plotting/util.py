@@ -620,7 +620,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         palette = palette(ncolors)
     if reverse: palette = palette[::-1]
 
-    return resample_palette(palette, ncolors, categorical, cmap_categorical)
+    return list(resample_palette(palette, ncolors, categorical, cmap_categorical))
 
 
 def linear_gradient(start_hex, finish_hex, n=10):

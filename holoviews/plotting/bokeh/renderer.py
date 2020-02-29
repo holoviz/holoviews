@@ -12,6 +12,7 @@ from bokeh.io import curdoc
 from bokeh.models import Model
 from bokeh.themes.theme import Theme
 from panel.io.notebook import render_mimebundle
+from panel.io.state import state
 from param.parameterized import bothmethod
 
 from ...core import Store, HoloMap
@@ -100,16 +101,22 @@ class BokehRenderer(Renderer):
         logger.disabled = True
 
         if fmt == 'gif':
-            from bokeh.io.export import get_screenshot_as_png, create_webdriver
-            webdriver = create_webdriver()
+            from bokeh.io.export import get_screenshot_as_png
+            from bokeh.io.webdriver import webdriver_control
+
+            if state.webdriver is None:
+                webdriver = webdriver_control.create()
+            else:
+                webdriver = state.webdriver
 
             nframes = len(plot)
             frames = []
             for i in range(nframes):
                 plot.update(i)
-                img = get_screenshot_as_png(plot.state, webdriver)
+                img = get_screenshot_as_png(plot.state, driver=webdriver)
                 frames.append(img)
-            webdriver.close()
+            if state.webdriver is not None:
+                webdriver.close()
 
             bio = BytesIO()
             duration = (1./self.fps)*1000
@@ -119,7 +126,7 @@ class BokehRenderer(Renderer):
             data = bio.read()
         elif fmt == 'png':
             from bokeh.io.export import get_screenshot_as_png
-            img = get_screenshot_as_png(plot.state, None)
+            img = get_screenshot_as_png(plot.state, driver=state.webdriver)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             data = imgByteArr.getvalue()

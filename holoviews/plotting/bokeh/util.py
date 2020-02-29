@@ -15,7 +15,6 @@ import bokeh
 import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
-from bokeh.core.properties import value
 from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
@@ -402,13 +401,14 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
     reset = "range.setv({start: 0, end: range.factors.length})"
-    ranges.callback = CustomJS(args=dict(range=ranges), code=reset)
+    customjs = CustomJS(args=dict(range=ranges), code=reset)
+    ranges.js_on_change('start', customjs)
 
     axis_props = {}
     if label_size:
-        axis_props['axis_label_text_font_size'] = value(label_size)
+        axis_props['axis_label_text_font_size'] = label_size
     if tick_size:
-        axis_props['major_label_text_font_size'] = value(tick_size)
+        axis_props['major_label_text_font_size'] = tick_size
 
     tick_px = font_size_to_pixels(tick_size)
     if tick_px is None:
@@ -678,8 +678,16 @@ def recursive_model_update(model, props):
                 nested_props = v.properties_with_values(include_defaults=False)
                 recursive_model_update(nested_model, nested_props)
             else:
-                setattr(model, k, v)
+                try:
+                    setattr(model, k, v)
+                except Exception as e:
+                    if isinstance(v, dict) and 'value' in v:
+                        setattr(model, k, v['value'])
+                    else:
+                        raise e
         elif k in valid_properties and v != valid_properties[k]:
+            if isinstance(v, dict) and 'value' in v:
+                v = v['value']
             updates[k] = v
     model.update(**updates)
 
