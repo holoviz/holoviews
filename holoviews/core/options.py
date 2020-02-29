@@ -325,7 +325,7 @@ class Cycle(param.Parameterized):
     def _get_values(self):
         if self.values: return self.values
         elif self.key:
-            return self.default_cycles[self.key]
+            return list(self.default_cycles[self.key])
         else:
             raise ValueError("Supply either a key or explicit values.")
 

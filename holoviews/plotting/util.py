@@ -620,7 +620,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         palette = palette(ncolors)
     if reverse: palette = palette[::-1]
 
-    return resample_palette(palette, ncolors, categorical, cmap_categorical)
+    return list(resample_palette(palette, ncolors, categorical, cmap_categorical))
 
 
 def linear_gradient(start_hex, finish_hex, n=10):
@@ -898,8 +898,6 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         else:
             raise ValueError("Supplied cmap %s not found among %s colormaps." %
                              (cmap,providers_checked))
-        if isinstance(palette, tuple):
-            palette = list(palette)
     else:
         try:
             # Try processing as matplotlib colormap
