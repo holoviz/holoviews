@@ -9,7 +9,6 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...selection import NoOpSelectionDisplay
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
