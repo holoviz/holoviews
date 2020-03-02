@@ -1323,6 +1323,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             data, mapping, style = self.get_data(element, ranges, style)
 
+        # Include old data if source static
+        if self.static_source:
+            for k, v in source.data.items():
+                if k not in data:
+                    data[k] = v
+                elif not len(data[k]) and len(source.data):
+                    data[k] = source.data[k]
+
         with abbreviated_exception():
             style = self._apply_transforms(element, data, ranges, style)
 
