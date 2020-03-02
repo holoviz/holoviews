@@ -230,6 +230,20 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+
+    def clone(self, dimension=None, ops=None):
+        """
+        Creates a clone of the dim expression optionally overriding
+        the dim and ops.
+        """
+        if dimension is None:
+            dimension = self.dimension
+        new_dim = dim(dimension)
+        if ops is None:
+            ops = list(self.ops)
+        new_dim.ops = ops
+        return new_dim
+
     @classmethod
     def register(cls, key, function):
         """

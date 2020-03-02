@@ -283,14 +283,21 @@ class Dataset(Element):
         input_data = data
         dataset_provided = 'dataset' in kwargs
         input_dataset = kwargs.pop('dataset', None)
-        input_pipeline = kwargs.pop(
-            'pipeline', None
-        )
+        input_pipeline = kwargs.pop('pipeline', None)
+        input_transforms = kwargs.pop('transforms', None)
 
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
+        if isinstance(data, Dataset):
+            if not dataset_provided and data._dataset is not None:
+                input_dataset = data._dataset
+            if input_pipeline is None:
+                input_pipeline = data.pipeline
+            if input_transforms is None:
+                input_transforms = data._transforms
+
         kwargs.update(process_dimensions(kdims, vdims))
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
@@ -316,6 +323,7 @@ class Dataset(Element):
             operations=input_pipeline.operations + [init_op],
             output_type=type(self),
         )
+        self._transforms = input_transforms or []
 
         # Handle initializing the dataset property.
         self._dataset = None

@@ -965,7 +965,7 @@ class Dimensioned(LabelledData):
         if isinstance(dimension, Dimension):
             dims = [d for d in all_dims if dimension == d]
             if strict and not dims:
-                raise KeyError("Dimension %r not found." % dimension)
+                raise KeyError("%r not found." % dimension)
             elif dims:
                 return dims[0]
             else:

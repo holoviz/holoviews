@@ -818,6 +818,9 @@ class SelectionExpr(Stream):
             params = dict(params, index_cols=self._index_cols)
             selection_expr, bbox, region_element = \
                 element._get_selection_expr_for_stream_value(**params)
+            for expr_transform in element._transforms[::-1]:
+                if selection_expr is not None:
+                    selection_expr = expr_transform(selection_expr)
 
             self.event(
                 selection_expr=selection_expr,
