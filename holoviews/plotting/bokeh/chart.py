@@ -508,7 +508,10 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
-    style_opts = line_properties + ['lower_head', 'upper_head', 'visible']
+    style_opts = ([
+        p for p in line_properties if p.split('_')[0] not in
+        ('hover', 'selection', 'nonselection', 'muted')
+    ] + ['lower_head', 'upper_head', 'visible'])
 
     _nonvectorized_styles = ['line_dash', 'visible']
 
@@ -516,9 +519,7 @@ class ErrorPlot(ColorbarPlot):
 
     _plot_methods = dict(single=Whisker)
 
-    # selection_display should be changed to BokehOverlaySelectionDisplay
-    # when #3950 is fixed
-    selection_display = NoOpSelectionDisplay()
+    selection_display = BokehOverlaySelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)

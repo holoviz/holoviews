@@ -533,7 +533,7 @@ argument to specify a selection specification""")
         selection = {dim_name: sel for dim_name, sel in selection.items()
                      if dim_name in self.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-                or (not selection and not selection_expr)):
+            or (not selection and not selection_expr)):
             return self
 
         # Handle selection dim expression

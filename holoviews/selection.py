@@ -374,12 +374,13 @@ class OverlaySelectionDisplay(SelectionDisplay):
     colored subsets on top of the original element in an Overlay container.
     """
 
-    def __init__(self, color_prop='color', is_cmap=False):
+    def __init__(self, color_prop='color', is_cmap=False, supports_region=True):
         if not isinstance(color_prop, (list, tuple)):
             self.color_props = [color_prop]
         else:
             self.color_props = color_prop
         self.is_cmap = is_cmap
+        self.supports_region = supports_region
 
     def _get_color_kwarg(self, color):
         return {color_prop: [color] if self.is_cmap else color
@@ -433,7 +434,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             layers[layer_number] = layer
 
         # Build region layer
-        if region_stream is not None:
+        if region_stream is not None and self.supports_region:
             def update_region(element, region_element, colors, **kwargs):
                 unselected_color = colors[0]
                 if region_element is None:

@@ -890,7 +890,7 @@ class SelectionXYCallback(BoundsCallback):
             x0, x1 = int(round(x0)), int(round(x1))
             xfactors = x_range.factors[x0: x1]
             if x_range.tags and x_range.tags[0]:
-                xdim = el.get_dimension(x_range.tags[0][0])
+                xdim = el.get_dimension(x_range.tags[0][0][0])
                 if xdim and hasattr(el, 'interface'):
                     dtype = el.interface.dtype(el, xdim)
                     try:
@@ -905,7 +905,7 @@ class SelectionXYCallback(BoundsCallback):
             y0, y1 = int(round(y0)), int(round(y1))
             yfactors = y_range.factors[y0: y1]
             if y_range.tags and y_range.tags[0]:
-                ydim = el.get_dimension(y_range.tags[0][0])
+                ydim = el.get_dimension(y_range.tags[0][0][0])
                 if ydim and hasattr(el, 'interface'):
                     dtype = el.interface.dtype(el, ydim)
                     try:

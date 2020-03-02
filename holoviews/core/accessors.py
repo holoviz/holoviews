@@ -316,7 +316,7 @@ class Redim(object):
         return dimension
 
     def _create_expression_transform(self, kdims, vdims, exclude=[]):
-        from .dimension import dimension_name, Dimension
+        from .dimension import dimension_name
         from ..util.transform import dim
 
         def _transform_expression(expression):

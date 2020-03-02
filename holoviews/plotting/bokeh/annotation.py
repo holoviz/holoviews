@@ -22,6 +22,7 @@ from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import text_properties, line_properties, fill_properties
 from .plot import BokehPlot
 from .util import date_to_integer
@@ -87,6 +88,8 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = text_properties + ['cmap', 'angle', 'visible']
 

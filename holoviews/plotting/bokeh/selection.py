@@ -35,7 +35,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
         merged_opts = {opt_name: layer_alpha for opt_name in allowed
                        if 'alpha' in opt_name}
         if el_name in ('HeatMap', 'QuadMesh'):
-            merged_opts.pop('line_alpha')
+            merged_opts = {k: v for k, v in merged_opts.items() if 'line_' not in k}
         elif layer_color is None:
             # Keep current color (including color from cycle)
             for color_prop in self.color_props:
