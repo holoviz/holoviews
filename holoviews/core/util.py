@@ -1106,6 +1106,20 @@ def unique_iterator(seq):
             yield item
 
 
+def lzip(*args):
+    """
+    zip function that returns a list.
+    """
+    return list(zip(*args))
+
+
+def unique_zip(*args):
+    """
+    Returns a unique list of zipped values.
+    """
+    return list(unique_iterator(zip(*args)))
+
+
 def unique_array(arr):
     """
     Returns an array of unique values in the input order.

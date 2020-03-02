@@ -37,6 +37,9 @@ class Surface(Image, Element3D):
         extents = extents if extents else (None, None, None, None, None, None)
         Image.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        expr, bbox, _ = super(Surface, self)._get_selection_expr_for_stream_value(**kwargs)
+        return expr, bbox, None
 
 
 class TriSurface(Element3D, Points):

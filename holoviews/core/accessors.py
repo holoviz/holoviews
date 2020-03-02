@@ -97,7 +97,8 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, function, streams=[], link_inputs=True, dynamic=None, **kwargs):
+    def __call__(self, function, streams=[], link_inputs=True, dynamic=None,
+                 per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
         Any keyword arguments are passed through to the function. If
@@ -122,6 +123,10 @@ class Apply(object):
                 supplied, an instance parameter is supplied as a
                 keyword argument, or the supplied function is a
                 parameterized method.
+            per_element (bool, optional): Whether to apply per element
+                By default apply works on the leaf nodes, which
+                includes both elements and overlays. If set it will
+                apply directly to elements.
             kwargs (dict, optional): Additional keyword arguments
                 Keyword arguments which will be supplied to the
                 function.
@@ -131,6 +136,7 @@ class Apply(object):
             contained (Nd)Overlay or Element objects.
         """
         from .dimension import ViewableElement
+        from .element import Element
         from .spaces import HoloMap, DynamicMap
         from ..util import Dynamic
 
@@ -164,7 +170,8 @@ class Apply(object):
             kwargs = {k: v.param.value if isinstance(v, Widget) else v
                       for k, v in kwargs.items()}
 
-        applies = isinstance(self._obj, ViewableElement)
+        spec = Element if per_element else ViewableElement
+        applies = isinstance(self._obj, spec)
         params = {p: val for p, val in kwargs.items()
                   if isinstance(val, param.Parameter)
                   and isinstance(val.owner, param.Parameterized)}
@@ -299,6 +306,46 @@ class Redim(object):
                 filtered.append((key, value))
         return filtered
 
+    def _transform_dimension(self, kdims, vdims, dimension):
+        if dimension in kdims:
+            idx = kdims.index(dimension)
+            dimension = self._obj.kdims[idx]
+        elif dimension in vdims:
+            idx = vdims.index(dimension)
+            dimension = self._obj.vdims[idx]
+        return dimension
+
+    def _create_expression_transform(self, kdims, vdims, exclude=[]):
+        from .dimension import dimension_name
+        from ..util.transform import dim
+
+        def _transform_expression(expression):
+            if dimension_name(expression.dimension) in exclude:
+                dimension = expression.dimension
+            else:
+                dimension = self._transform_dimension(
+                    kdims, vdims, expression.dimension
+                )
+            expression = expression.clone(dimension)
+            ops = []
+            for op in expression.ops:
+                new_op = dict(op)
+                new_args = []
+                for arg in op['args']:
+                    if isinstance(arg, dim):
+                        arg = _transform_expression(arg)
+                    new_args.append(arg)
+                new_op['args'] = tuple(new_args)
+                new_kwargs = {}
+                for kw, kwarg in op['kwargs'].items():
+                    if isinstance(kwarg, dim):
+                        kwarg = _transform_expression(kwarg)
+                    new_kwargs[kw] = kwarg
+                new_op['kwargs'] = new_kwargs
+                ops.append(new_op)
+            expression.ops = ops
+            return expression
+        return _transform_expression
 
     def __call__(self, specs=None, **dimensions):
         """
@@ -324,13 +371,15 @@ class Redim(object):
         kdims = self.replace_dimensions(obj.kdims, dimensions)
         vdims = self.replace_dimensions(obj.vdims, dimensions)
         zipped_dims = zip(obj.kdims+obj.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+        renames = {pk.name: nk for pk, nk in zipped_dims if pk.name != nk.name}
 
         if self.mode == 'dataset':
             data = obj.data
             if renames:
                 data = obj.interface.redim(obj, renames)
-            clone = obj.clone(data, kdims=kdims, vdims=vdims)
+            transform = self._create_expression_transform(kdims, vdims, list(renames.values()))
+            transforms = obj._transforms + [transform]
+            clone = obj.clone(data, kdims=kdims, vdims=vdims, transforms=transforms)
             if self._obj.dimensions(label='name') == clone.dimensions(label='name'):
                 # Ensure that plot_id is inherited as long as dimension
                 # name does not change

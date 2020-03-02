@@ -883,7 +883,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         extension("bokeh")
 
     def test_selection_expr_stream_scatter_points(self):
-        for element_type in [Scatter, Points, Curve]:
+        for element_type in [Scatter, Points]:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10]))
             expr_stream = SelectionExpr(element)
@@ -900,8 +900,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr((dim('x') >= 1) & (dim('x') <= 3) &
-                     (dim('y') >= 1) & (dim('y') <= 4))
+                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -909,7 +908,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             )
 
     def test_selection_expr_stream_invert_axes(self):
-        for element_type in [Scatter, Points, Curve]:
+        for element_type in [Scatter, Points]:
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(invert_axes=True)
             expr_stream = SelectionExpr(element)
@@ -926,8 +925,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr((dim('y') >= 1) & (dim('y') <= 3) &
-                     (dim('x') >= 1) & (dim('x') <= 4))
+                repr(((dim('y')>=1)&(dim('y')<=3))&((dim('x')>=1)&(dim('x')<=4)))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -935,7 +933,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             )
 
     def test_selection_expr_stream_invert_xaxis_yaxis(self):
-        for element_type in [Scatter, Points, Curve]:
+        for element_type in [Scatter, Points]:
 
             # Create SelectionExpr on element
             element = element_type(([1, 2, 3], [1, 5, 10])).opts(
@@ -956,8 +954,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr((dim('x') >= 1) & (dim('x') <= 3) &
-                     (dim('y') >= 1) & (dim('y') <= 4))
+                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             )
             self.assertEqual(
                 expr_stream.bbox,
@@ -1063,7 +1060,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
 
     def test_selection_expr_stream_dynamic_map(self):
-        for element_type in [Scatter, Points, Curve]:
+        for element_type in [Scatter, Points]:
             # Create SelectionExpr on element
             dmap = Dynamic(element_type(([1, 2, 3], [1, 5, 10])))
             expr_stream = SelectionExpr(dmap)
@@ -1080,8 +1077,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             # Check SelectionExpr values
             self.assertEqual(
                 repr(expr_stream.selection_expr),
-                repr((dim('x') >= 1) & (dim('x') <= 3) &
-                     (dim('y') >= 1) & (dim('y') <= 4))
+                repr(((dim('x')>=1)&(dim('x')<=3))&((dim('y')>=1)&(dim('y')<=4)))
             )
             self.assertEqual(
                 expr_stream.bbox,

@@ -18,6 +18,8 @@ class ArrayInterface(Interface):
 
     datatype = 'array'
 
+    named = False
+
     @classmethod
     def dimension_type(cls, dataset, dim):
         return dataset.data.dtype.type
@@ -123,9 +125,7 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def values(
-            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         data = dataset.data
         dim_idx = dataset.get_dimension_index(dim)
         if data.ndim == 1:
@@ -134,6 +134,13 @@ class ArrayInterface(Interface):
         if not expanded:
             return util.unique_array(values)
         return values
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = np.copy(dataset.data)
+        masked[mask] = mask_value
+        return masked
 
 
     @classmethod

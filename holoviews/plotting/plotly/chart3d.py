@@ -44,6 +44,8 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
     style_opts = ['visible', 'alpha', 'lighting', 'lightposition', 'cmap']
 
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
+
     def graph_options(self, element, ranges, style):
         opts = super(SurfacePlot, self).graph_options(element, ranges, style)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
@@ -88,6 +90,8 @@ class Path3DPlot(Chart3DPlot, CurvePlot):
 class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
 
     style_opts = ['cmap', 'edges_color', 'facecolor']
+
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
 
     def get_data(self, element, ranges, style):
         try:

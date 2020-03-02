@@ -255,6 +255,13 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = dataset.data.copy()
+        masked[mask] = mask_value
+        return masked
+
+
+    @classmethod
     def redim(cls, dataset, dimensions):
         column_renames = {k: v.name for k, v in dimensions.items()}
         return dataset.data.rename(columns=column_renames)

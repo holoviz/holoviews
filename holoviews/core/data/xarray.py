@@ -475,6 +475,27 @@ class XArrayInterface(GridInterface):
         return dataset
 
     @classmethod
+    def mask(cls, dataset, mask, mask_val=np.nan):
+        packed = cls.packed(dataset)
+        masked = dataset.data.copy()
+        if packed:
+            data_coords = list(dataset.data.dims)[:-1]
+            mask = cls.canonicalize(dataset, mask, data_coords)
+            try:
+                masked.values[mask] = mask_val
+            except ValueError:
+                masked = masked.astype('float')
+                masked.values[mask] = mask_val
+        else:
+            orig_mask = mask
+            for vd in dataset.vdims:
+                data_coords = list(dataset.data[vd.name].dims)
+                mask = cls.canonicalize(dataset, orig_mask, data_coords)
+                masked[vd.name] = marr = masked[vd.name].astype('float')
+                marr.values[mask] = mask_val
+        return masked
+
+    @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
         for k, v in selection.items():

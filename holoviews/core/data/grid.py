@@ -58,6 +58,7 @@ class GridInterface(DictInterface):
         ndims = len(kdims)
         dimensions = [dimension_name(d) for d in kdims+vdims]
         vdim_tuple = tuple(dimension_name(vd) for vd in vdims)
+
         if isinstance(data, tuple):
             if (len(data) != len(dimensions) and len(data) == (ndims+1) and
                 len(data[-1].shape) == (ndims+1)):
@@ -66,18 +67,34 @@ class GridInterface(DictInterface):
                 data[vdim_tuple] = value_array
             else:
                 data = {d: v for d, v in zip(dimensions, data)}
-        elif isinstance(data, list) and data == []:
-            data = OrderedDict([(d, []) for d in dimensions])
+        elif (isinstance(data, list) and data == []):
+            if len(kdims) == 1:
+                data = OrderedDict([(d, []) for d in dimensions])
+            else:
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                if len(vdims) == 1:
+                    data[vdims[0].name] = np.zeros((0, 0))
+                else:
+                    data[vdim_tuple] = np.zeros((0, 0, len(vdims)))
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, np.ndarray):
-            if data.ndim == 1:
-                if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
-                    data = np.column_stack([np.arange(len(data)), data])
-                else:
-                    data = np.atleast_2d(data).T
-            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+            if data.shape == (0, 0) and len(vdims) == 1:
+                array = data
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data[vdims[0].name] = array
+            elif data.shape == (0, 0, len(vdims)):
+                array = data
+                data = OrderedDict([(d.name, np.array([])) for d in kdims])
+                data[vdim_tuple] = array
+            else:
+                if data.ndim == 1:
+                    if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                        data = np.column_stack([np.arange(len(data)), data])
+                    else:
+                        data = np.atleast_2d(data).T
+                data = {k: data[:, i] for i, k in enumerate(dimensions)}
         elif isinstance(data, list) and data == []:
             data = {d: np.array([]) for d in dimensions[:ndims]}
             data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
@@ -245,9 +262,9 @@ class GridInterface(DictInterface):
         if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
             # np.diff does not work on datetimes in python 2
             coord = coord.astype('datetime64')
-        if len(coord) == 0:
+        if coord.shape[axis] == 0:
             return np.array([], dtype=coord.dtype)
-        if len(coord) > 1:
+        if coord.shape[axis] > 1:
             deltas = 0.5 * np.diff(coord, axis=axis)
         else:
             deltas = np.array([0.5])
@@ -393,9 +410,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(
-            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             vdim_tuple = cls.packed(dataset)
@@ -596,6 +611,29 @@ class GridInterface(DictInterface):
                 return np.array([np.squeeze(data[vd.name])
                                  for vd in dataset.vdims])
         return data
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_val=np.nan):
+        mask = cls.canonicalize(dataset, mask)
+        packed = cls.packed(dataset)
+        masked = OrderedDict(dataset.data)
+        if packed:
+            masked = dataset.data[packed].copy()
+            try:
+                masked[mask] = mask_val
+            except ValueError:
+                masked = masked.astype('float')
+                masked[mask] = mask_val
+        else:
+            for vd in dataset.vdims:
+                masked[vd.name] = marr = masked[vd.name].copy()
+                try:
+                    marr[mask] = mask_val
+                except ValueError:
+                    masked[vd.name] = marr = marr.astype('float')
+                    marr[mask] = mask_val
+        return masked
 
 
     @classmethod

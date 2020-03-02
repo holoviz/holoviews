@@ -6,16 +6,20 @@ of this Plot baseclass.
 from __future__ import absolute_import
 
 import threading
+import uuid
 import warnings
 
-from itertools import groupby, product
 from collections import Counter, defaultdict
+from functools import partial
+from itertools import groupby, product
 
 import numpy as np
 import param
 
+from panel.config import config
 from panel.io.notebook import push
 from panel.io.state import state
+from pyviz_comms import JupyterComm
 
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
@@ -118,19 +122,33 @@ class Plot(param.Parameterized):
                 if plot is not None:
                     plot.document = doc
 
-
     @property
     def pane(self):
         return self._pane
 
     @pane.setter
     def pane(self, pane):
+        if (config.console_output != 'disable' and self.root and
+            self.root.ref['id'] not in state._handles and
+            isinstance(self.comm, JupyterComm)):
+            from IPython.display import display
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[self.root.ref['id']] = (handle, [])
+
         self._pane = pane
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
-
+                if not plot.root:
+                    continue
+                for cb in getattr(plot, 'callbacks', []):
+                    if hasattr(pane, '_on_error') and cb.comm:
+                        cb.comm._on_error = partial(pane._on_error, plot.root.ref['id'])
+        elif self.root:
+            for cb in getattr(self, 'callbacks', []):
+                if hasattr(pane, '_on_error') and cb.comm:
+                    cb.comm._on_error = partial(pane._on_error, self.root.ref['id'])
 
     @property
     def comm(self):
@@ -286,6 +304,9 @@ class PlotSelector(object):
         interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
+    def selection_display(self, obj):
+        plt_class = self.get_plot_class(obj)
+        return getattr(plt_class, 'selection_display', None)
 
     def _define_interface(self, plots, allow_mismatch):
         parameters = [{k:v.precedence for k,v in plot.param.params().items()
@@ -843,7 +864,7 @@ class DimensionedPlot(Plot):
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
         from_overlay = not all(p is None for p in opts.get(True, {}).get('projection', []))
-        projections = opts.get(from_overlay).get('projection', [])
+        projections = opts.get(from_overlay, {}).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
@@ -1580,7 +1601,7 @@ class GenericOverlayPlot(GenericElementPlot):
                         renderer=self.renderer, adjoined=self.adjoined,
                         stream_sources=self.stream_sources,
                         projection=self.projection, fontscale=self.fontscale,
-                        zorder=zorder, **passed_handles)
+                        zorder=zorder, root=self.root, **passed_handles)
         return plottype(obj, **plotopts)
 
 

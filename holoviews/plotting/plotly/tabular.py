@@ -18,7 +18,7 @@ class TablePlot(ElementPlot):
 
     _style_key = 'cells'
 
-    selection_display = ColorListSelectionDisplay(color_prop='fill')
+    selection_display = ColorListSelectionDisplay(color_prop='fill', backend='plotly')
 
     def get_data(self, element, ranges, style):
         header = dict(values=[d.pprint_label for d in element.dimensions()])

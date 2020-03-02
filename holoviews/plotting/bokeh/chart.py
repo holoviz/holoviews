@@ -9,8 +9,6 @@ from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...plotting.bokeh.selection import BokehOverlaySelectionDisplay
-from ...selection import NoOpSelectionDisplay
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
@@ -21,6 +19,7 @@ from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import (expand_batched_style, line_properties, fill_properties,
                      mpl_to_bokeh, rgb2hex)
 from .util import bokeh_version, categorize_array
@@ -55,13 +54,13 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (['cmap', 'palette', 'marker', 'size', 'angle', 'visible'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = line_properties + fill_properties + ['size', 'marker', 'angle']
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -218,6 +217,8 @@ class VectorFieldPlot(ColorbarPlot):
         transforms using the magnitude option, e.g.
         `dim('Magnitude').norm()`.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = line_properties + ['scale', 'cmap', 'visible']
 
     _nonvectorized_styles = ['scale', 'cmap', 'visible']
@@ -333,11 +334,13 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    style_opts = line_properties + ['visible']
-    _nonvectorized_styles = line_properties + ['visible']
+    selection_display = BokehOverlaySelectionDisplay()
 
-    _plot_methods = dict(single='line', batched='multi_line')
+    style_opts = line_properties + ['visible']
+
     _batched_style_opts = line_properties
+    _nonvectorized_styles = line_properties + ['visible']
+    _plot_methods = dict(single='line', batched='multi_line')
 
     def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
@@ -405,7 +408,7 @@ class HistogramPlot(ColorbarPlot):
 
     _nonvectorized_styles = ['line_dash', 'visible']
 
-    selection_display = BokehOverlaySelectionDisplay()
+    selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -504,7 +507,10 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
-    style_opts = line_properties + ['lower_head', 'upper_head', 'visible']
+    style_opts = ([
+        p for p in line_properties if p.split('_')[0] not in
+        ('hover', 'selection', 'nonselection', 'muted')
+    ] + ['lower_head', 'upper_head', 'visible'])
 
     _nonvectorized_styles = ['line_dash', 'visible']
 
@@ -512,9 +518,7 @@ class ErrorPlot(ColorbarPlot):
 
     _plot_methods = dict(single=Whisker)
 
-    # selection_display should be changed to BokehOverlaySelectionDisplay
-    # when #3950 is fixed
-    selection_display = NoOpSelectionDisplay()
+    selection_display = BokehOverlaySelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
@@ -567,12 +571,12 @@ class SpreadPlot(ElementPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = line_properties + fill_properties + ['visible']
 
     _no_op_style = style_opts
-
     _plot_methods = dict(single='patch')
-
     _stream_data = False # Plot does not support streaming data
 
     def _split_area(self, xs, lower, upper):
@@ -623,6 +627,8 @@ class AreaPlot(AreaMixin, SpreadPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     _stream_data = False # Plot does not support streaming data
 
     def get_data(self, element, ranges, style):
@@ -661,11 +667,11 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (['color', 'cmap', 'palette', 'visible'] + line_properties)
 
     _plot_methods = dict(single='segment')
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _get_axis_dims(self, element):
         if 'spike_length' in self.lookup_options(element, 'plot').options:
@@ -748,6 +754,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = (line_properties
                   + fill_properties
                   + ['width', 'bar_width', 'cmap', 'visible'])
@@ -758,8 +766,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     # Declare that y-range should auto-range if not bounded
     _y_range_type = Range1d
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):

@@ -100,6 +100,13 @@ def lookup_options(obj, group, backend):
         return node
 
 
+
+class CallbackError(RuntimeError):
+    """
+    An error raised during a callback.
+    """
+
+
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display

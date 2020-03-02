@@ -12,7 +12,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, NdOverlay)
-from ..core.options import Cycle
+from ..core.options import CallbackError, Cycle
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
@@ -273,7 +273,7 @@ def get_plot_frame(map_obj, key_map, cached=False):
             return map_obj[key]
         except KeyError:
             return None
-        except StopIteration as e:
+        except (StopIteration, CallbackError) as e:
             raise e
         except Exception:
             print(traceback.format_exc())
@@ -1075,8 +1075,8 @@ def dim_range_key(eldim):
     """
     if isinstance(eldim, dim):
         dim_name = repr(eldim)
-        if dim_name.startswith("'") and dim_name.endswith("'"):
-            dim_name = dim_name[1:-1]
+        if dim_name.startswith("dim('") and dim_name.endswith("')"):
+            dim_name = dim_name[5:-2]
     else:
         dim_name = eldim.name
     return dim_name

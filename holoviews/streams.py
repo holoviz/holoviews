@@ -139,7 +139,16 @@ class Stream(param.Parameterized):
         items = [stream.contents.items() for stream in set(streams)]
         union = [kv for kvs in items for kv in kvs]
         klist = [k for k, _ in union]
-        key_clashes = set([k for k in klist if klist.count(k) > 1])
+        key_clashes = []
+        for k, v in union:
+            key_count = klist.count(k)
+            try:
+                value_count = union.count((k, v))
+            except Exception:
+                # If we can't compare values we assume they are not equal
+                value_count = 1
+            if key_count > 1 and key_count > value_count and k not in key_clashes:
+                key_clashes.append(k)
         if key_clashes:
             print('Parameter name clashes for keys %r' % key_clashes)
 
@@ -763,30 +772,33 @@ class ParamMethod(Params):
 class SelectionExpr(Stream):
 
     selection_expr = param.Parameter(default=None, constant=True)
+
     bbox = param.Dict(default=None, constant=True)
+
+    region_element = param.Parameter(default=None, constant=True)
 
     def __init__(self, source, **params):
         from .element import Element
         from .core.spaces import DynamicMap
         from .plotting.util import initialize_dynamic
 
+        self._index_cols = params.pop('index_cols', None)
+
         if isinstance(source, DynamicMap):
             initialize_dynamic(source)
 
-        if isinstance(source, Element) or (
-                isinstance(source, DynamicMap) and
-                issubclass(source.type, Element)
-        ):
+        if ((isinstance(source, DynamicMap) and issubclass(source.type, Element)) or
+            isinstance(source, Element)):
             self._source_streams = []
             super(SelectionExpr, self).__init__(source=source, **params)
             self._register_chart(source)
         else:
-            raise ValueError("""
-The source of SelectionExpr must be an instance of an Element subclass,
-or a DynamicMap that returns such an instance
-            Received value of type {typ}: {val}""".format(
-            typ=type(source), val=source
-        ))
+            raise ValueError(
+                "The source of SelectionExpr must be an instance of an "
+                "Element subclass or a DynamicMap that returns such an "
+                "instance. Received value of type {typ}: {val}".format(
+                    typ=type(source), val=source)
+            )
 
     def _register_chart(self, hvobj):
         from .core.spaces import DynamicMap
@@ -803,15 +815,22 @@ or a DynamicMap that returns such an instance
                 element = hvobj.values()[-1]
             else:
                 element = hvobj
-            selection_expr, bbox = \
-                element._get_selection_expr_for_stream_value(**params);
+            params = dict(params, index_cols=self._index_cols)
+            selection_expr, bbox, region_element = \
+                element._get_selection_expr_for_stream_value(**params)
+            for expr_transform in element._transforms[::-1]:
+                if selection_expr is not None:
+                    selection_expr = expr_transform(selection_expr)
 
-            self.event(selection_expr=selection_expr, bbox=bbox)
+            self.event(
+                selection_expr=selection_expr,
+                bbox=bbox,
+                region_element=region_element,
+            )
 
         for stream_type in selection_streams:
             stream = stream_type(source=hvobj)
             self._source_streams.append(stream)
-
             stream.add_subscriber(_set_expr)
 
     def _unregister_chart(self):
@@ -993,6 +1012,24 @@ class BoundsXY(LinkedStream):
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
+class SelectionXY(BoundsXY):
+    """
+    A stream representing the selection along the x-axis and y-axis.
+    Unlike a BoundsXY stream, this stream returns range or categorical
+    selections.
+    """
+
+    x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
+                                      constant=True, doc="""
+      The current selection along the x-axis, either a numerical range
+      defined as a tuple or a list of categories.""")
+
+    y_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
+                                      constant=True, doc="""
+      The current selection along the y-axis, either a numerical range
+      defined as a tuple or a list of categories.""")
+
+    
 class BoundsX(LinkedStream):
     """
     A stream representing the bounds of a box selection as an

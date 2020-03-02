@@ -214,6 +214,8 @@ class MultiInterface(Interface):
         from ...element import Polygons
         if not dataset.data:
             return dataset.data
+        elif selection_mask is not None:
+            return [d for b, d in zip(selection_mask, dataset.data) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, 'geo_column'):

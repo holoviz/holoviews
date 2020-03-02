@@ -29,7 +29,7 @@ class Element(ViewableElement, Composable, Overlayable):
     _selection_streams = ()
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
-        return None, None
+        return None, None, None
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
@@ -377,6 +377,8 @@ class Element3D(Element2D):
         defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
 
     __abstract = True
+
+    _selection_streams = ()
 
 
 class Collator(NdMapping):

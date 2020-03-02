@@ -22,6 +22,7 @@ from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import text_properties, line_properties, fill_properties
 from .plot import BokehPlot
 from .util import date_to_integer
@@ -70,6 +71,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
 
 
 
+
 class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     show_legend = param.Boolean(default=False, doc="""
@@ -86,6 +88,8 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
+
+    selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = text_properties + ['cmap', 'angle', 'visible']
 
@@ -167,6 +171,8 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         ranges[dim]['soft'] = loc, loc
         return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
 
+    def _get_factors(self, element, ranges):
+        return [], []
 
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
@@ -200,6 +206,9 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
         box = BoxAnnotation(level=properties.get('level', 'glyph'), **mapping)
         plot.renderers.append(box)
         return None, box
+
+    def _get_factors(self, element, ranges):
+        return [], []
 
 
 class SlopePlot(ElementPlot, AnnotationPlot):

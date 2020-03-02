@@ -965,7 +965,7 @@ class Dimensioned(LabelledData):
         if isinstance(dimension, Dimension):
             dims = [d for d in all_dims if dimension == d]
             if strict and not dims:
-                raise KeyError("Dimension %r not found." % dimension)
+                raise KeyError("%r not found." % dimension)
             elif dims:
                 return dims[0]
             else:
@@ -973,6 +973,7 @@ class Dimensioned(LabelledData):
         else:
             dimension = dimension_name(dimension)
             name_map = {dim.spec: dim for dim in all_dims}
+            name_map.update({dim.name: dim for dim in all_dims})
             name_map.update({dim.label: dim for dim in all_dims})
             name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
             if strict and dimension not in name_map:

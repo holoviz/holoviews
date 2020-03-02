@@ -9,6 +9,7 @@ from ...core.data import GridInterface
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties, text_properties
 
 
@@ -56,6 +57,8 @@ class HeatMapPlot(ColorbarPlot):
                   ['ymarks_' + p for p in line_properties] +
                   ['cmap', 'color', 'dilate', 'visible'] + line_properties + fill_properties)
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     @classmethod
     def is_radial(cls, heatmap):
         heatmap = heatmap.last if isinstance(heatmap, HoloMap) else heatmap
@@ -72,6 +75,8 @@ class HeatMapPlot(ColorbarPlot):
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if 'line_alpha' not in style and 'line_width' not in style:
             style['line_alpha'] = 0
+            style['selection_line_alpha'] = 0
+            style['nonselection_line_alpha'] = 0
         elif 'line_color' not in style:
             style['line_color'] = 'white'
 

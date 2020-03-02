@@ -1,25 +1,30 @@
 from __future__ import absolute_import, division, unicode_literals
 
 from collections import defaultdict
+from functools import partial
 
 import param
 import numpy as np
+
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ToolbarBox, Range1d,
     DataRange1d, PolyDrawTool, BoxEditTool, PolyEditTool,
     FreehandDrawTool, PointDrawTool
 )
+from panel.io.state import state
 from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
 
 from ...core import OrderedDict
+from ...core.options import CallbackError
 from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
+from ...element import Table
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
-                        FreehandDraw, CurveEdit)
+                        FreehandDraw, CurveEdit, SelectionXY)
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import convert_timestamp
@@ -70,13 +75,17 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
+            if plot.pane:
+                on_error = partial(plot.pane._on_error, plot.root)
+            else:
+                on_error = None
             self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
+            self.comm._on_error = on_error
         else:
             self.comm = None
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()
-
 
     def cleanup(self):
         self.reset()
@@ -137,6 +146,12 @@ class MessageCallback(object):
 
         try:
             Stream.trigger(streams)
+        except CallbackError as e:
+            if self.plot.root and self.plot.root.ref['id'] in state._handles:
+                handle, _ = state._handles[self.plot.root.ref['id']]
+                handle.update({'text/html': str(e)}, raw=True)
+            else:
+                raise e
         except Exception as e:
             raise e
         finally:
@@ -858,6 +873,51 @@ class BoundsCallback(Callback):
             return {}
 
 
+class SelectionXYCallback(BoundsCallback):
+    """
+    Converts a bounds selection to numeric or categorical x-range
+    and y-range selections.
+    """
+
+    def _process_msg(self, msg):
+        msg = super(SelectionXYCallback, self)._process_msg(msg)
+        if 'bounds' not in msg:
+            return msg
+        el = self.plot.current_frame
+        x0, y0, x1, y1 = msg['bounds']
+        x_range = self.plot.handles['x_range']
+        if isinstance(x_range, FactorRange):
+            x0, x1 = int(round(x0)), int(round(x1))
+            xfactors = x_range.factors[x0: x1]
+            if x_range.tags and x_range.tags[0]:
+                xdim = el.get_dimension(x_range.tags[0][0][0])
+                if xdim and hasattr(el, 'interface'):
+                    dtype = el.interface.dtype(el, xdim)
+                    try:
+                        xfactors = list(np.array(xfactors).astype(dtype))
+                    except:
+                        pass
+            msg['x_selection'] = xfactors
+        else:
+            msg['x_selection'] = (x0, x1)
+        y_range = self.plot.handles['y_range']
+        if isinstance(y_range, FactorRange):
+            y0, y1 = int(round(y0)), int(round(y1))
+            yfactors = y_range.factors[y0: y1]
+            if y_range.tags and y_range.tags[0]:
+                ydim = el.get_dimension(y_range.tags[0][0][0])
+                if ydim and hasattr(el, 'interface'):
+                    dtype = el.interface.dtype(el, ydim)
+                    try:
+                        yfactors = list(np.array(yfactors).astype(dtype))
+                    except:
+                        pass
+            msg['y_selection'] = yfactors
+        else:
+            msg['y_selection'] = (y0, y1)
+        return msg
+
+
 class BoundsXCallback(Callback):
     """
     Returns the bounds of a xbox_select tool.
@@ -912,8 +972,15 @@ class Selection1DCallback(Callback):
     on_changes = ['indices']
 
     def _process_msg(self, msg):
+        el = self.plot.current_frame
         if 'index' in msg:
             msg = {'index': [int(v) for v in msg['index']]}
+            if isinstance(el, Table):
+                # Ensure that explicitly applied selection does not
+                # trigger new events
+                sel = el.opts.get('style').kwargs.get('selection')
+                if sel is not None and list(sel) == msg['index']:
+                    return {}
             return self._transform(msg)
         else:
             return {}
@@ -1242,6 +1309,7 @@ callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+callbacks[SelectionXY] = SelectionXYCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback
 callbacks[CDSStream]   = CDSCallback

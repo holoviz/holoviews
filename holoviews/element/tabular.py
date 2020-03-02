@@ -4,6 +4,7 @@ import param
 
 from ..core import OrderedDict, Element, Dataset, Tabular
 from ..core.dimension import Dimension, dimension_name
+from .selection import SelectionIndexExpr
 
 
 class ItemTable(Element):
@@ -27,16 +28,13 @@ class ItemTable(Element):
 
     group = param.String(default="ItemTable", constant=True)
 
-
     @property
     def rows(self):
         return len(self.vdims)
 
-
     @property
     def cols(self):
         return 2
-
 
     def __init__(self, data, **params):
         if data is None:
@@ -128,7 +126,7 @@ class ItemTable(Element):
 
 
 
-class Table(Dataset, Tabular):
+class Table(SelectionIndexExpr, Dataset, Tabular):
     """
     Table is a Dataset type, which gets displayed in a tabular
     format and is convertible to most other Element types.

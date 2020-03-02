@@ -149,6 +149,7 @@ class Graph(Dataset, Element2D):
             node_info = None
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
+
         self._nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
@@ -251,7 +252,7 @@ class Graph(Dataset, Element2D):
                                         *args, **overrides)
 
 
-    def select(self, selection_specs=None, selection_mode='edges', **selection):
+    def select(self, selection_expr=None, selection_specs=None, selection_mode='edges', **selection):
         """
         Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
@@ -265,17 +266,28 @@ class Graph(Dataset, Element2D):
         connected to the selected nodes. To select only edges between the
         selected nodes set the selection_mode to 'nodes'.
         """
+        from ..util.transform import dim
+        if selection_expr is not None and not isinstance(selection_expr, dim):
+            raise ValueError("""\
+The first positional argument to the Dataset.select method is expected to be a
+holoviews.util.transform.dim expression. Use the selection_specs keyword
+argument to specify a selection specification""")
+        
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions('ranges')+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-            or not selection):
+            or (not selection and not selection_expr)):
             return self
 
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
         node_selection = {index_dim: v for k, v in selection.items()
                           if k in self.kdims}
-        nodes = self.nodes.select(**dict(selection, **node_selection))
+        if selection_expr:
+            mask = selection_expr.apply(self.nodes, compute=False, keep_index=True)
+            nodes = self.nodes[mask]
+        else:
+            nodes = self.nodes.select(**dict(selection, **node_selection))
         selection = {k: v for k, v in selection.items() if k in dimensions}
 
         # Compute mask for edges if nodes were selected on
@@ -364,8 +376,12 @@ class Graph(Dataset, Element2D):
         Computes the node positions the first time they are requested
         if no explicit node information was supplied.
         """
+        
         if self._nodes is None:
+            from ..operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)
+            self._nodes._dataset = None
+            self._nodes._pipeline = chain.instance()
         return self._nodes
 
 

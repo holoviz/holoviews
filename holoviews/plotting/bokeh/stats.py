@@ -89,7 +89,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     _stream_data = False # Plot does not support streaming data
 
-    selection_display = BokehOverlaySelectionDisplay()
+    selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
 
     def get_extents(self, element, ranges, range_type='combined'):
         return super(BoxWhiskerPlot, self).get_extents(

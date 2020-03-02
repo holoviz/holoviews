@@ -14,6 +14,7 @@ from ...core.util import basestring, isfinite
 from ...element import HexTiles
 from ...util.transform import dim
 from .element import ColorbarPlot
+from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties
 
 
@@ -135,19 +136,22 @@ class HexTilesPlot(ColorbarPlot):
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
 
-    _plot_methods = dict(single='hex_tile')
-
     _nonvectorized_styles = ['cmap', 'line_dash']
+    _plot_methods = dict(single='hex_tile')
 
     def get_extents(self, element, ranges, range_type='combined'):
         xdim, ydim = element.kdims[:2]
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range
         xdim, ydim = element.dataset.kdims[:2]
-        ranges[xdim.name]['hard'] = xdim.range
-        ranges[ydim.name]['hard'] = ydim.range
+        if xdim.name in ranges:
+            ranges[xdim.name]['hard'] = xdim.range
+        if ydim.name in ranges:
+            ranges[ydim.name]['hard'] = ydim.range
         return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):

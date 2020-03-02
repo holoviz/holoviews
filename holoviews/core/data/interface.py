@@ -158,6 +158,9 @@ class Interface(param.Parameterized):
     # Denotes whether the interface expects ragged data
     multi = False
 
+    # Whether the interface stores the names of the underlying dimensions
+    named = True
+
     @classmethod
     def loaded(cls):
         """
@@ -229,7 +232,7 @@ class Interface(param.Parameterized):
                     datatype = eltype.datatype
 
             interface = data.interface
-            if interface.datatype in datatype and interface.datatype in eltype.datatype:
+            if interface.datatype in datatype and interface.datatype in eltype.datatype and interface.named:
                 data = data.data
             elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
                 data = [d for d in data.interface.split(data, None, None, 'columns')]

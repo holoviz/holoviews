@@ -27,9 +27,11 @@ class TestDimTransforms(ComparisonTestCase):
         self.repeating = pd.Series(
             ['A', 'B', 'C', 'A', 'B', 'C', 'A', 'B', 'C', 'A']
         )
+        self.booleans = self.repeating == 'A'
         self.dataset = Dataset(
-            (self.linear_ints, self.linear_floats, self.negative, self.repeating),
-            ['int', 'float', 'negative', 'categories']
+            (self.linear_ints, self.linear_floats,
+             self.negative, self.repeating, self.booleans),
+            ['int', 'float', 'negative', 'categories', 'booleans']
         )
 
         if dd is None:
@@ -115,6 +117,10 @@ class TestDimTransforms(ComparisonTestCase):
     def test_neg_transform(self):
         expr = -dim('negative')
         self.check_apply(expr, self.linear_floats)
+
+    def test_inv_transform(self):
+        expr = ~dim('booleans')
+        self.check_apply(expr, ~self.booleans)
 
     # Binary operators
 
@@ -224,6 +230,18 @@ class TestDimTransforms(ComparisonTestCase):
         expr = dim('int').norm()
         self.check_apply(expr, (self.linear_ints-1)/9.)
 
+    def test_iloc_transform_int(self):
+        expr = dim('int').iloc[1]
+        self.check_apply(expr, self.linear_ints[1])
+
+    def test_iloc_transform_slice(self):
+        expr = dim('int').iloc[1:3]
+        self.check_apply(expr, self.linear_ints[1:3], skip_dask=True)
+
+    def test_iloc_transform_list(self):
+        expr = dim('int').iloc[[1, 3, 5]]
+        self.check_apply(expr, self.linear_ints[[1, 3, 5]], skip_dask=True)
+
     def test_bin_transform(self):
         expr = dim('int').bin([0, 5, 10])
         expected = pd.Series(
@@ -293,7 +311,7 @@ class TestDimTransforms(ComparisonTestCase):
     # Repr method
 
     def test_dim_repr(self):
-        self.assertEqual(repr(dim('float')), "'float'")
+        self.assertEqual(repr(dim('float')), "dim('float')")
 
     def test_unary_op_repr(self):
         self.assertEqual(repr(-dim('float')), "-dim('float')")

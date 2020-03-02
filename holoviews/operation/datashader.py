@@ -1346,13 +1346,12 @@ class rasterize(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
-                                     default=None)
+                                     default='default')
 
     interpolation = param.ObjectSelector(
-        default='bilinear', objects=['linear', 'nearest', 'bilinear', None, False], doc="""
+        default='default', objects=['default', 'linear', 'nearest', 'bilinear', None, False], doc="""
         The interpolation method to apply during rasterization.
-        Defaults to linear interpolation and None and False are aliases
-        of each other.""")
+        Default depends on element type""")
 
     _transforms = [(Image, regrid),
                    (Polygons, geometry_rasterize),
@@ -1374,7 +1373,7 @@ class rasterize(AggregationOperation):
                    (Points, aggregate),
                    (Curve, aggregate),
                    (Path, aggregate),
-                   (type(None), shade) # To handles parameters of datashade 
+                   (type(None), shade) # To handle parameters of datashade
     ]
 
     def _process(self, element, key=None):
@@ -1382,7 +1381,15 @@ class rasterize(AggregationOperation):
         all_allowed_kws = set()
         all_supplied_kws = set()
         for predicate, transform in self._transforms:
-            op_params = dict({k: v for k, v in self.p.items()
+            merged_param_values = dict(self.param.get_param_values(), **self.p)
+
+            # If aggregator or interpolation are 'default', pop parameter so
+            # datashader can choose the default aggregator itself
+            for k in ['aggregator', 'interpolation']:
+                if merged_param_values.get(k, None) == 'default':
+                    merged_param_values.pop(k)
+
+            op_params = dict({k: v for k, v in merged_param_values.items()
                               if not (v is None and k == 'aggregator')},
                              dynamic=False)
             extended_kws = dict(op_params, **self.p.extra_keywords())

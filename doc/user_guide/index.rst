@@ -105,6 +105,9 @@ These guides provide detail about specific additional features in HoloViews:
 `Working with renderers and plots <Plots_and_Renderers.html>`_
  Using the ``Renderer`` and ``Plot`` classes for access to the plotting machinery.
 
+`Using linked brushing to cross-filter complex datasets <Linked_Brushing.html>`_
+ Explains how to use the `link_selections` helper to cross-filter multiple elements.
+
 `Using Annotators to edit and label data <Annotators.html>`_
  Explains how to use the `annotate` helper to edit and annotate elements with the help of drawing tools and editable tables.
 
@@ -148,6 +151,7 @@ These guides provide detail about specific additional features in HoloViews:
     Plotting with matplotlib <Plotting_with_Matplotlib>
     Plotting with plotly <Plotting_with_Plotly>
     Working with Plot and Renderers <Plots_and_Renderers>
+    Linked Brushing <Linked_Brushing>
     Annotators <Annotators>
     Exporting and Archiving <Exporting_and_Archiving>
     Continuous Coordinates <Continuous_Coordinates>

@@ -11,6 +11,7 @@ from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve
+from .geom import Selection2DExpr
 from .graphs import TriMesh
 from .tabular import Table
 from .util import compute_slice_bounds, categorical_aggregate2d
@@ -213,7 +214,7 @@ class Raster(Element2D):
 
 
 
-class Image(Dataset, Raster, SheetCoordinateSystem):
+class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
     """
     Image represents a regularly sampled 2D grid of an underlying
     continuous space of intensity values, which will be colormapped on
@@ -314,17 +315,19 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if self.interface is ImageInterface and not isinstance(data, (np.ndarray, Image)):
             data_bounds = self.bounds.lbrt()
 
-        l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
-        ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
-        if not util.isfinite(xdensity) or not util.isfinite(ydensity):
-            raise ValueError('Density along Image axes could not be determined. '
-                             'If the data contains only one coordinate along the '
-                             'x- or y-axis ensure you declare the bounds and/or '
-                             'density.')
+        non_finite = all(not util.isfinite(v) for v in bounds.lbrt())
+        if non_finite:
+            bounds = BoundingBox(points=((0, 0), (0, 0)))
+            xdensity = xdensity or 1
+            ydensity = ydensity or 1
+        else:
+            l, b, r, t = bounds.lbrt()
+            xdensity = xdensity if xdensity else util.compute_density(l, r, dim1, self._time_unit)
+            ydensity = ydensity if ydensity else util.compute_density(b, t, dim2, self._time_unit)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        if non_finite:
+           self.bounds = BoundingBox(points=((np.nan, np.nan), (np.nan, np.nan)))
         self._validate(data_bounds, supplied_bounds)
-
 
     def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
@@ -803,7 +806,7 @@ class HSV(RGB):
                    **params)
 
 
-class QuadMesh(Dataset, Element2D):
+class QuadMesh(Selection2DExpr, Dataset, Element2D):
     """
     A QuadMesh represents 2D rectangular grid expressed as x- and
     y-coordinates defined as 1D or 2D arrays. Unlike the Image type
@@ -908,7 +911,7 @@ class QuadMesh(Dataset, Element2D):
 
 
 
-class HeatMap(Dataset, Element2D):
+class HeatMap(Selection2DExpr, Dataset, Element2D):
     """
     HeatMap represents a 2D grid of categorical coordinates which can
     be computed from a sparse tabular representation. A HeatMap does

@@ -353,10 +353,16 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
-    def test_segments_aggregate_sum(self):
+    def test_segments_aggregate_sum(self, instance=False):
         segments = Segments([(0, 1, 4, 1, 2), (1, 0, 1, 4, 4)], vdims=['value'])
-        agg = rasterize(segments, width=4, height=4, dynamic=False,
-                        aggregator='sum')
+        if instance:
+            agg = rasterize.instance(
+                width=10, height=10, dynamic=False, aggregator='sum'
+            )(segments, width=4, height=4)
+        else:
+            agg = rasterize(
+                segments, width=4, height=4, dynamic=False, aggregator='sum'
+            )
         xs = [0.5, 1.5, 2.5, 3.5]
         ys = [0.5, 1.5, 2.5, 3.5]
         na = np.nan
@@ -368,6 +374,9 @@ class DatashaderAggregateTests(ComparisonTestCase):
         ])
         expected = Image((xs, ys, arr), vdims='value')
         self.assertEqual(agg, expected)
+
+    def test_segments_aggregate_sum_instance(self):
+        self.test_segments_aggregate_sum(instance=True)
 
     def test_segments_aggregate_dt_count(self):
         segments = Segments([

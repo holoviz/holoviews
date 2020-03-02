@@ -90,15 +90,7 @@ class DaskInterface(PandasInterface):
         return dataset.data
 
     @classmethod
-    def values(
-            cls,
-            dataset,
-            dim,
-            expanded=True,
-            flat=True,
-            compute=True,
-            keep_index=False,
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim)
         data = dataset.data[dim.name]
         if not expanded:

@@ -1,22 +1,17 @@
 from __future__ import division
 
 import operator
+
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
 
 from ..core.dimension import Dimension
 from ..core.util import basestring, unique_iterator
-from ..element import Graph
-
-function_types = (
-    BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc)
-
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
-        series_like = hasattr(values, 'index')
+        series_like = hasattr(values, 'index') and not isinstance(values, list)
         map_fn = (getattr(values, 'map_partitions', None) or
                   getattr(values, 'map_blocks', None))
         if map_fn:
@@ -69,6 +64,24 @@ def lognorm(values, min=None, max=None):
     min = np.log(np.min(values)) if min is None else np.log(min)
     max = np.log(np.max(values)) if max is None else np.log(max)
     return (np.log(values) - min) / (max-min)
+
+
+class iloc(object):
+    """Implements integer array indexing for dim expressions.
+    """
+
+    __name__ = 'iloc'
+
+    def __init__(self, dim_expr):
+        self.expr = dim_expr
+        self.index = slice(None)
+
+    def __getitem__(self, index):
+        self.index = index
+        return dim(self.expr, self)
+
+    def __call__(self, values):
+        return values[self.index]
 
 
 @_maybe_map
@@ -140,6 +153,15 @@ isin = _maybe_map(np.isin)
 astype = _maybe_map(np.asarray)
 round_ = _maybe_map(np.round)
 
+def _python_isin(array, values):
+    return [v in values for v in array]
+
+python_isin = _maybe_map(_python_isin)
+
+function_types = (
+    BuiltinFunctionType, BuiltinMethodType, FunctionType,
+    MethodType, np.ufunc, iloc)
+
 
 class dim(object):
     """
@@ -150,7 +172,7 @@ class dim(object):
     """
 
     _binary_funcs = {
-        operator.add: '+', operator.and_: '&', operator.eq: '=',
+        operator.add: '+', operator.and_: '&', operator.eq: '==',
         operator.floordiv: '//', operator.ge: '>=', operator.gt: '>',
         operator.le: '<=', operator.lshift: '<<', operator.lt: '<',
         operator.mod: '%', operator.mul: '*', operator.ne: '!=',
@@ -166,8 +188,10 @@ class dim(object):
         categorize: 'categorize',
         digitize: 'digitize',
         isin: 'isin',
+        python_isin: 'isin',
         astype: 'astype',
         round_: 'round',
+        iloc: 'iloc'
     }
 
     _numpy_funcs = {
@@ -206,6 +230,20 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+
+    def clone(self, dimension=None, ops=None):
+        """
+        Creates a clone of the dim expression optionally overriding
+        the dim and ops.
+        """
+        if dimension is None:
+            dimension = self.dimension
+        new_dim = dim(dimension)
+        if ops is None:
+            ops = list(self.ops)
+        new_dim.ops = ops
+        return new_dim
+
     @classmethod
     def register(cls, key, function):
         """
@@ -227,6 +265,9 @@ class dim(object):
                 args[k] = dim(arg)
         return dim(args[0], func, *args[1:], **kwargs)
 
+    def __hash__(self):
+        return hash(repr(self))
+
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
     def __round__(self, ndigits=None):
@@ -236,6 +277,7 @@ class dim(object):
     # Unary operators
     def __neg__(self): return dim(self, operator.neg)
     def __not__(self): return dim(self, operator.not_)
+    def __invert__(self): return dim(self, operator.inv)
     def __pos__(self): return dim(self, operator.pos)
 
     # Binary operators
@@ -299,8 +341,15 @@ class dim(object):
     ## Custom functions
     def astype(self, dtype): return dim(self, astype, dtype=dtype)
     def round(self, decimals=0): return dim(self, round_, decimals=decimals)
-    def digitize(self, *args, **kwargs): return dim(self, digitize,  *args, **kwargs)
-    def isin(self, *args, **kwargs):     return dim(self, isin,  *args, **kwargs)
+    def digitize(self, *args, **kwargs): return dim(self, digitize, *args, **kwargs)
+    def isin(self, *args, **kwargs):
+        if kwargs.pop('object', None):
+            return dim(self, python_isin, *args, **kwargs)
+        return dim(self, isin, *args, **kwargs)
+
+    @property
+    def iloc(self):
+        return iloc(self)
 
     def bin(self, bins, labels=None):
         """Bins continuous values.
@@ -365,6 +414,8 @@ class dim(object):
         Dataset, i.e. whether all referenced dimensions can be
         resolved.
         """
+        from ..element import Graph
+
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         else:
@@ -380,16 +431,8 @@ class dim(object):
                     applies &= arg.applies(dataset)
         return applies
 
-    def apply(
-            self,
-            dataset,
-            flat=False,
-            expanded=None,
-            ranges={},
-            all_values=False,
-            keep_index=False,
-            compute=True,
-    ):
+    def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
+              keep_index=False, compute=True):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -409,6 +452,8 @@ class dim(object):
         Returns:
             values: NumPy array computed by evaluating the expression
         """
+        from ..element import Graph
+
         dimension = self.dimension
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
@@ -455,11 +500,11 @@ class dim(object):
 
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
-        for o in self.ops:
-            if 'dim(' in op_repr:
-                prev = '{repr}' if op_repr.endswith(')') else '({repr})'
+        for i, o in enumerate(self.ops):
+            if i == 0:
+                prev = 'dim({repr}'
             else:
-                prev = 'dim({repr})'
+                prev = '({repr}'
             fn = o['fn']
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
@@ -470,7 +515,9 @@ class dim(object):
                 if o['reverse']:
                     format_string = '{args}{fn}'+prev
                 else:
-                    format_string = prev+'{fn}{args}'
+                    format_string = prev+'){fn}{args}'
+                if any(isinstance(a, dim) for a in o['args']):
+                    format_string = format_string.replace('{args}', '({args})')
             elif fn in self._unary_funcs:
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
@@ -481,10 +528,12 @@ class dim(object):
                     format_string = '{fn}'+prev
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
+                elif isinstance(fn, iloc):
+                    format_string = prev+').iloc[{0}]'.format(repr(fn.index))
                 elif fn in self._custom_funcs:
                     fn_name = self._custom_funcs[fn]
-                    format_string = prev+'.{fn}('
+                    format_string = prev+').{fn}('
                 elif ufunc:
                     fn_name = str(fn)[8:-2]
                     if not (prev.startswith('dim') or prev.endswith(')')):
@@ -494,14 +543,21 @@ class dim(object):
                     if fn_name in dir(np):
                         format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
-                    format_string = prev+', {fn}'
+                    format_string = 'dim(' + prev+', {fn}'
                 if args:
-                    format_string += ', {args}'
+                    if not format_string.endswith('('):
+                        format_string += ', '
+                    format_string += '{args}'
                     if kwargs:
                         format_string += ', {kwargs}'
                 elif kwargs:
                     format_string += '{kwargs}'
-                format_string += ')'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
+            if op_repr.count('(') - op_repr.count(')') > 0:
+                op_repr += ')'
+        if not self.ops:
+            op_repr = 'dim({repr})'.format(repr=op_repr)
+        if op_repr.count('(') - op_repr.count(')') > 0:
+            op_repr += ')'
         return op_repr

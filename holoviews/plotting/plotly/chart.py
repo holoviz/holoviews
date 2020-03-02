@@ -271,7 +271,10 @@ class HistogramPlot(ElementPlot):
         ydim = element.vdims[0]
         values = element.interface.coords(element, ydim)
         edges = element.interface.coords(element, xdim)
-        binwidth = edges[1] - edges[0]
+        if len(edges) < 2:
+            binwidth = 0
+        else:
+            binwidth = edges[1] - edges[0]
 
         if self.invert_axes:
             ys = edges

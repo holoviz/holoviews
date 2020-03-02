@@ -225,6 +225,16 @@ class DictInterface(Interface):
 
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = OrderedDict()
+        for k, v in dataset.data.items():
+            new_array = np.copy(dataset.data[k])
+            new_array[mask] = mask_value
+            masked[k] = new_array
+        return masked
+
+
+    @classmethod
     def sort(cls, dataset, by=[], reverse=False):
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
@@ -246,10 +256,8 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def values(
-            cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
-        dim = dataset.get_dimension(dim).name
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+        dim = dataset.get_dimension(dim, strict=True).name
         values = dataset.data.get(dim)
         if isscalar(values):
             if not expanded:

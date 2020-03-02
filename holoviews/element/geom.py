@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core import Dimension, Dataset, Element2D
-from ..streams import BoundsXY
+from .selection import Selection2DExpr, SelectionGeomExpr
 
 
 class Geometry(Dataset, Element2D):
@@ -27,47 +27,7 @@ class Geometry(Dataset, Element2D):
     __abstract = True
 
 
-class GeometrySelectionExpr(object):
-    """
-    Mixin class for Geometry elements to add basic support for
-    SelectionExpr streams.
-    """
-    _selection_streams = (BoundsXY,)
-
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from ..util.transform import dim
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
-        if kwargs.get('bounds', None):
-            x0, y0, x1, y1 = kwargs['bounds']
-
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
-
-            if invert_axes:
-                ydim, xdim = self.kdims[:2]
-            else:
-                xdim, ydim = self.kdims[:2]
-
-            bbox = {
-                xdim.name: (x0, x1),
-                ydim.name: (y0, y1),
-            }
-
-            selection_expr = (
-                    (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-                    (dim(ydim) >= y0) & (dim(ydim) <= y1)
-            )
-
-            return selection_expr, bbox
-        return None, None
-
-
-class Points(GeometrySelectionExpr, Geometry):
+class Points(Selection2DExpr, Geometry):
     """
     Points represents a set of coordinates in 2D space, which may
     optionally be associated with any number of value dimensions.
@@ -78,7 +38,7 @@ class Points(GeometrySelectionExpr, Geometry):
     _auto_indexable_1d = True
 
 
-class VectorField(GeometrySelectionExpr, Geometry):
+class VectorField(Selection2DExpr, Geometry):
     """
     A VectorField represents a set of vectors in 2D space with an
     associated angle, as well as an optional magnitude and any number
@@ -93,7 +53,7 @@ class VectorField(GeometrySelectionExpr, Geometry):
                                 Dimension('Magnitude')], bounds=(1, None))
 
 
-class Segments(Geometry):
+class Segments(SelectionGeomExpr, Geometry):
     """
     Segments represent a collection of lines in 2D space.
     """
@@ -106,7 +66,7 @@ class Segments(Geometry):
         coordinates in 2D space.""")
 
 
-class Rectangles(Geometry):
+class Rectangles(SelectionGeomExpr, Geometry):
     """
     Rectangles represent a collection of axis-aligned rectangles in 2D space.
     """
