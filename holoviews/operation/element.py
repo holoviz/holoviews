@@ -480,6 +480,7 @@ class contours(Operation):
             from matplotlib.contour import QuadContourSet
             from matplotlib.axes import Axes
             from matplotlib.figure import Figure
+            from matplotlib.dates import num2date, date2num
         except ImportError:
             raise ImportError("contours operation requires matplotlib.")
         extent = element.range(0) + element.range(1)[::-1]
@@ -498,6 +499,14 @@ class contours(Operation):
         if ys.shape[1] != zs.shape[1]:
             ys = ys[:, :-1] + (np.diff(ys, axis=1)/2.)
         data = (xs, ys, zs)
+
+        # if any data is a datetime, transform to matplotlib's numerical format
+        data_is_datetime = tuple(isdatetime(arr) for k, arr in enumerate(data))
+        if any(data_is_datetime):
+            data = tuple(
+                date2num(d) if is_datetime else d
+                for d, is_datetime in zip(data, data_is_datetime)
+            )
 
         xdim, ydim = element.dimensions('key', label=True)
         if self.p.filled:
@@ -536,6 +545,14 @@ class contours(Operation):
                 interior = []
                 polys = geom.to_polygons(closed_only=False)
                 for ncp, cp in enumerate(polys):
+                    if any(data_is_datetime[0:2]):
+                        # transform x/y coordinates back to datetimes
+                        xs, ys = np.split(cp, 2, axis=1)
+                        if data_is_datetime[0]:
+                            xs = np.array(num2date(xs))
+                        if data_is_datetime[1]:
+                            ys = np.array(num2date(ys))
+                        cp = np.concatenate((xs, ys), axis=1)
                     if ncp == 0:
                         exteriors.append(cp)
                         exteriors.append(empty)
@@ -545,7 +562,11 @@ class contours(Operation):
                     interiors.append(interior)
             if not exteriors:
                 continue
-            geom = {element.vdims[0].name: level, (xdim, ydim): np.concatenate(exteriors[:-1])}
+            geom = {
+                element.vdims[0].name:
+                num2date(level) if data_is_datetime[2] else level,
+                (xdim, ydim): np.concatenate(exteriors[:-1])
+            }
             if self.p.filled and interiors:
                 geom['holes'] = interiors
             paths.append(geom)
