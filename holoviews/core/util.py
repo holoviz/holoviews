@@ -78,8 +78,8 @@ except ImportError:
     pd = None
 
 if pd:
+    pandas_version = LooseVersion(pd.__version__)
     try:
-        pandas_version = LooseVersion(pd.__version__)
         if pandas_version >= '0.24.0':
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
@@ -862,13 +862,21 @@ def isfinite(val):
         elif val.dtype.kind == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
         elif val.dtype.kind in 'US':
-            return np.ones_like(val, dtype=bool)
-        return np.isfinite(val)
+            return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
+        finite = np.isfinite(val)
+        if pd and pandas_version >= '1.0.0':
+            finite &= ~pd.isna(val)
+        return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
     elif isinstance(val, basestring):
         return True
-    return np.isfinite(val)
+    finite = np.isfinite(val)
+    if pd and pandas_version >= '1.0.0':
+        if finite is pd.NA:
+            return False
+        return finite & (~pd.isna(val))
+    return finite
 
 
 def isdatetime(value):
