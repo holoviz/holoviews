@@ -2,7 +2,8 @@ from __future__ import absolute_import
 
 import sys
 import datetime as dt
-from collections import OrderedDict, defaultdict, Iterable
+
+from collections import OrderedDict, defaultdict
 
 try:
     import itertools.izip as zip
@@ -374,7 +375,7 @@ class GridInterface(DictInterface):
             if stop is not None:
                 new_start = length - stop
             return slice(new_start-1, new_stop-1)
-        elif isinstance(index, Iterable):
+        elif isinstance(index, util.Iterable):
             new_index = []
             for ind in index:
                 new_index.append(length-ind)
