@@ -48,7 +48,7 @@ from .util import (
     TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type
+    compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
 )
 
 
@@ -2001,8 +2001,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         legend.items[:] = list(util.unique_iterator(filtered))
 
         if self.multiple_legends:
-            plot.legend.pop(plot.legend.index(legend))
-            legend.plot = None
+            remove_legend(plot, legend)
             properties = legend.properties_with_values(include_defaults=False)
             legend_group = []
             for item in legend.items:
@@ -2018,7 +2017,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 plot.add_layout(new_legend, pos)
             legend.items[:] = []
         elif pos in ['above', 'below', 'right', 'left']:
-            plot.legend.pop(plot.legend.index(legend))
+            remove_legend(plot, legend)
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 
