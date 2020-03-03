@@ -810,9 +810,12 @@ class regrid(AggregationOperation):
             coord_dict = {x.name: coords[0], y.name: coords[1]}
 
         arrays = {}
-        for vd in element.vdims:
+        for i, vd in enumerate(element.vdims):
             if element.interface is XArrayInterface:
-                xarr = element.data[vd.name]
+                if element.interface.packed(element):
+                    xarr = element.data[..., i] 
+                else:
+                    xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
                     xarr = xarr.copy()
                 if dims != xarr.dims and not irregular:
