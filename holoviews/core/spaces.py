@@ -349,53 +349,6 @@ class HoloMap(UniformNdMapping, Overlayable):
                         drop_constant=drop_constant)()
 
 
-    def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
-        """Concatenates and aggregates along supplied dimensions
-
-        Useful to collapse stacks of objects into a single object,
-        e.g. to average a stack of Images or Curves.
-
-        Args:
-            dimensions: Dimension(s) to collapse
-                Defaults to all key dimensions
-            function: Aggregation function to apply, e.g. numpy.mean
-            spreadfn: Secondary reduction to compute value spread
-                Useful for computing a confidence interval, spread, or
-                standard deviation.
-            **kwargs: Keyword arguments passed to the aggregation function
-
-        Returns:
-            Returns the collapsed element or HoloMap of collapsed
-            elements
-        """
-        from .data import concat
-        if not dimensions:
-            dimensions = self.kdims
-        if not isinstance(dimensions, list): dimensions = [dimensions]
-        if self.ndims > 1 and len(dimensions) != self.ndims:
-            groups = self.groupby([dim for dim in self.kdims
-                                   if dim not in dimensions])
-        elif all(d in self.kdims for d in dimensions):
-            groups = HoloMap([(0, self)])
-        else:
-            raise KeyError("Supplied dimensions not found.")
-
-        collapsed = groups.clone(shared_data=False)
-        for key, group in groups.items():
-            if hasattr(group.last, 'interface'):
-                group_data = concat(group)
-                if function:
-                    agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
-                    group_data = group.type(agg)
-            else:
-                group_data = [el.data for el in group]
-                args = (group_data, function, group.last.kdims)
-                data = group.type.collapse_data(*args, **kwargs)
-                group_data = group.last.clone(data)
-            collapsed[key] = group_data
-        return collapsed if self.ndims-len(dimensions) else collapsed.last
-
-
     def sample(self, samples=[], bounds=None, **sample_values):
         """Samples element values at supplied coordinates.
 
@@ -930,11 +883,6 @@ class DynamicMap(HoloMap):
             callback = Generator(callback)
         elif not isinstance(callback, Callable):
             callback = Callable(callback)
-
-        if 'sampled' in params:
-            self.param.warning('DynamicMap sampled parameter is deprecated '
-                               'and no longer needs to be specified.')
-            del params['sampled']
 
         valid, invalid = Stream._process_streams(streams)
         if invalid:
