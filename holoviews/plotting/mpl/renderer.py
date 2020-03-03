@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import os
-import sys
 import base64
+
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
