@@ -782,7 +782,7 @@ class ColorbarPlot(ElementPlot):
         if isinstance(dimension, dim):
             dimension = dimension.dimension
         dimension = element.get_dimension(dimension)
-        if self.clabel:
+        if self.clabel is not None:
             label = self.clabel
         elif dimension:
             label = dimension.pprint_label
