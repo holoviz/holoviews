@@ -29,9 +29,9 @@ if sys.version_info.major >= 3:
     import builtins as builtins   # noqa (compatibility)
 
     if sys.version_info.minor > 3:
-        from collections.abc import Iterable
+        from collections.abc import Iterable # noqa (compatibility)
     else:
-        from collections import Iterable
+        from collections import Iterable # noqa (compatibility)
 
     basestring = str
     unicode = str
@@ -44,7 +44,7 @@ if sys.version_info.major >= 3:
     LooseVersion = _LooseVersion
 else:
     import __builtin__ as builtins # noqa (compatibility)
-    from collections import Iterable
+    from collections import Iterable # noqa (compatibility)
 
     basestring = basestring
     unicode = unicode
