@@ -12,7 +12,7 @@ import weakref
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce, partial
+from functools import partial
 
 import param
 import numpy as np
