@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division
 
-from collections import Callable, Iterable
+from collections import Callable
 import warnings
 
 import param
@@ -24,7 +24,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay, OrderedDict)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface
 from ..core.util import (
-    LooseVersion, basestring, cftime_types, cftime_to_timestamp,
+    Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, isfinite, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
