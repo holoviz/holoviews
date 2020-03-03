@@ -1,5 +1,6 @@
 from __future__ import division
 
+from collections import Counter
 from functools import cmp_to_key
 from itertools import cycle
 
@@ -27,7 +28,7 @@ class _layout_sankey(Operation):
     node_width = param.Number(default=15, doc="""
         Width of the nodes.""")
 
-    node_padding = param.Integer(default=10, doc="""
+    node_padding = param.Integer(default=None, allow_None=True, doc="""
         Number of pixels of padding relative to the bounds.""")
 
     iterations = param.Integer(default=32, doc="""
@@ -201,13 +202,19 @@ class _layout_sankey(Operation):
 
     def computeNodeBreadths(self, graph):
         node_map = OrderedDict()
+        depths = Counter()
         for n in graph['nodes']:
             if n['x0'] not in node_map:
                 node_map[n['x0']] = []
             node_map[n['x0']].append(n)
+            depths[n['depth']] += 1
 
         _, y0, _, y1 = self.p.bounds
         py = self.p.node_padding
+        if py is None:
+            max_depth = max(depths.values()) - 1
+            height = self.p.bounds[3] - self.p.bounds[1]
+            py = min((height * 0.1) / max_depth, 20)
 
         def initializeNodeBreadth():
             kys = []
