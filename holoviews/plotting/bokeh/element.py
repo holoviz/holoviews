@@ -1022,7 +1022,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if util.isscalar(val):
                 key = val
             else:
-                key = {'field': k}
+                # Node marker does not handle {'field': ...}
+                key = k if k == 'node_marker' else {'field': k} 
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
