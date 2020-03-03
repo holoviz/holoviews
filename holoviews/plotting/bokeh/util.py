@@ -378,6 +378,18 @@ def empty_plot(width, height):
     return Spacer(width=width, height=height)
 
 
+def remove_legend(plot, legend):
+    """
+    Removes a legend from a bokeh plot.
+    """
+    valid_places = ['left', 'right', 'above', 'below', 'center']
+    plot.legend[:] = [l for l in plot.legend if l is not legend]
+    for place in valid_places:
+        place = getattr(plot, place)
+        if legend in place:
+            place.remove(legend)
+
+
 def font_size_to_pixels(size):
     """
     Convert a fontsize to a pixel value
