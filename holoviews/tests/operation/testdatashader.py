@@ -483,7 +483,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
              [  0, 68]],
         ]).T
         da = xr.DataArray(data=arr, dims=('x', 'y', 'band'), coords=coords)
-        im = RGB(da)
+        im = RGB(da, ['x', 'y'])
         agg = rasterize(im, width=3, height=3, dynamic=False, upsample=True)
         xs = [0.8333333, 1.5, 2.166666]
         ys = [0.8333333, 1.5, 2.166666]
