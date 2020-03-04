@@ -39,7 +39,9 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
 
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
-        self.assertEqual(ds.range(0), (np.nan, np.nan))
+        vmin, vmax = ds.range(0)
+        self.assertTrue(np.isnan(vmin))
+        self.assertTrue(np.isnan(vmax))
 
     def test_dataset_groupby(self):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
@@ -95,3 +97,16 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
                           kdims=self.kdims[1:], vdims=self.vdims)
         self.assertEqual(self.table.reduce(['Gender'], np.mean).sort(), reduced.sort())
+
+    def test_dataset_groupby_second_dim(self):
+        group1 = {'Gender':['M'], 'Weight':[15], 'Height':[0.8]}
+        group2 = {'Gender':['M'], 'Weight':[18], 'Height':[0.6]}
+        group3 = {'Gender':['F'], 'Weight':[10], 'Height':[0.8]}
+        grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
+                           (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
+                           (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
+                          kdims=['Age'])
+        self.assertEqual(self.table.groupby(['Age']).apply('sort'), grouped)
+
+    def test_dataset_aggregate_string_types_size(self):
+        raise SkipTest("cuDF does not support variance aggregation")
