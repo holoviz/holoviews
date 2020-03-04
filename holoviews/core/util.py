@@ -544,6 +544,8 @@ def get_method_owner(method):
     """
     Gets the instance that owns the supplied method
     """
+    if isinstance(method, partial):
+        method = method.func
     return method.__self__ if sys.version_info.major >= 3 else method.im_self
 
 

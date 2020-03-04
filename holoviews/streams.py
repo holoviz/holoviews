@@ -8,6 +8,7 @@ import weakref
 from numbers import Number
 from collections import defaultdict
 from contextlib import contextmanager
+from functools import partial
 from itertools import groupby
 from types import FunctionType
 
@@ -186,6 +187,8 @@ class Stream(param.Parameterized):
         parameterizeds = defaultdict(set)
         valid, invalid = [], []
         for s in streams:
+            if isinstance(s, partial):
+                s = s.func
             if isinstance(s, Stream):
                 pass
             elif isinstance(s, param.Parameter):
