@@ -97,7 +97,7 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, function, streams=[], link_inputs=True, dynamic=None,
+    def __call__(self, apply_function, streams=[], link_inputs=True, dynamic=None,
                  per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
@@ -107,7 +107,7 @@ class Apply(object):
         response to changes in those objects.
 
         Args:
-            function: A callable function
+            apply_function: A callable function
                 The function will be passed the return value of the
                 DynamicMap as the first argument and any supplied
                 stream values or keywords as additional keyword
@@ -150,12 +150,12 @@ class Apply(object):
             if not len(samples):
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
-                function, streams, link_inputs, dynamic, **kwargs)
+                apply_function, streams, link_inputs, dynamic, **kwargs)
 
-        if isinstance(function, util.basestring):
+        if isinstance(apply_function, util.basestring):
             args = kwargs.pop('_method_args', ())
-            method_name = function
-            def function(object, **kwargs):
+            method_name = apply_function
+            def apply_function(object, **kwargs):
                 method = getattr(object, method_name, None)
                 if method is None:
                     raise AttributeError('Applied method %s does not exist.'
@@ -183,23 +183,23 @@ class Apply(object):
 
         if dynamic is None:
             is_dynamic = (bool(streams) or isinstance(self._obj, DynamicMap) or
-                          util.is_param_method(function, has_deps=True) or
+                          util.is_param_method(apply_function, has_deps=True) or
                           params or dependent_kws)
         else:
             is_dynamic = dynamic
 
         if (applies or isinstance(self._obj, HoloMap)) and is_dynamic:
-            return Dynamic(self._obj, operation=function, streams=streams,
+            return Dynamic(self._obj, operation=apply_function, streams=streams,
                            kwargs=kwargs, link_inputs=link_inputs)
         elif applies:
             inner_kwargs = util.resolve_dependent_kwargs(kwargs)
-            if hasattr(function, 'dynamic'):
+            if hasattr(apply_function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
-            return function(self._obj, **inner_kwargs)
+            return apply_function(self._obj, **inner_kwargs)
         elif self._obj._deep_indexable:
             mapped = []
             for k, v in self._obj.data.items():
-                new_val = v.apply(function, dynamic=dynamic, streams=streams,
+                new_val = v.apply(apply_function, dynamic=dynamic, streams=streams,
                                   link_inputs=link_inputs, **kwargs)
                 if new_val is not None:
                     mapped.append((k, new_val))
