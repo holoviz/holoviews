@@ -19,6 +19,8 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     datatype = 'cuDF'
     data_type = cudf.DataFrame
 
+    __test__ = True
+
     def setUp(self):
         super(cuDFInterfaceTests, self).setUp()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
