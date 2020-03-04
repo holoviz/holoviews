@@ -174,6 +174,13 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def concat_fn(cls, dataframes, **kwargs):
+        if util.pandas_version >= '0.23.0':
+            kwargs['sort'] = False
+        return pd.concat(dataframes, **kwargs)
+
+        
+    @classmethod
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
         for key, ds in datasets:
@@ -181,8 +188,7 @@ class PandasInterface(Interface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        kwargs = dict(sort=False) if util.pandas_version >= '0.23.0' else {}
-        return pd.concat(dataframes, **kwargs)
+        return cls.concat_fn(dataframes)
 
 
     @classmethod
@@ -315,13 +321,20 @@ class PandasInterface(Interface):
     @classmethod
     def sample(cls, dataset, samples=[]):
         data = dataset.data
-        mask = False
+        mask = None
         for sample in samples:
-            sample_mask = True
+            sample_mask = None
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
-            mask |= sample_mask
+                submask = data.iloc[:, i]==v
+                if sample_mask is None:
+                    sample_mask = submask
+                else:
+                    sample_mask &= submask
+            if mask is None:
+                mask = sample_mask
+            else:
+                mask |= sample_mask
         return data[mask]
 
 
