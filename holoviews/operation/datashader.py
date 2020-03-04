@@ -1280,7 +1280,8 @@ class geometry_rasterize(AggregationOperation):
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
-        if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+        if (not (element.vdims or isinstance(agg, basestring)) and
+            agg.column is None and not isinstance(agg, (rd.count, rd.any))):
             return ds.count()
         return super(geometry_rasterize, self)._get_aggregator(element, add_field)
 
@@ -1300,12 +1301,19 @@ class geometry_rasterize(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        if element.interface.datatype != 'spatialpandas':
-            element = element.clone(datatype=['spatialpandas'])
-        data = element.data
+        if element._plot_id in self._precomputed:
+            data, col = self._precomputed[element._plot_id]
+        else:
+            if element.interface.datatype != 'spatialpandas':
+                element = element.clone(datatype=['spatialpandas'])
+            data = element.data
+            col = element.interface.geo_column(data)
+
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = (data, col)
+
         if isinstance(agg_fn, ds.count_cat):
             data[agg_fn.column] = data[agg_fn.column].astype('category')
-        col = element.interface.geo_column(element.data)
 
         if isinstance(element, Polygons):
             agg = cvs.polygons(data, geometry=col, agg=agg_fn)
@@ -1313,6 +1321,7 @@ class geometry_rasterize(AggregationOperation):
             agg = cvs.line(data, geometry=col, agg=agg_fn)
         elif isinstance(element, Points):
             agg = cvs.points(data, geometry=col, agg=agg_fn)
+        agg = agg.rename({'x': xdim.name, 'y': ydim.name})
 
         if agg.ndim == 2:
             return self.p.element_type(agg, **params)
