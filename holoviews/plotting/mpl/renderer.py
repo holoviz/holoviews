@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import os
-import sys
 import base64
+
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
@@ -23,26 +23,15 @@ from .util import get_tight_bbox, mpl_version
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
 
-mpl_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-var target = $('#fig_{plot_id}');
-var img = $('<div />').html(msg);
-target.children().each(function () {{ $(this).remove() }})
-target.append(img)
-"""
-
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
     'webm': ('ffmpeg', 'webm', {},
              ['-vcodec', 'libvpx-vp9', '-b', '1000k']),
     'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
             ['-pix_fmt', 'yuv420p']),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+    'gif': ('pillow', 'gif', {'fps': 10}, []),
     'scrubber': ('html', None, {'fps': 5}, None)
 }
-
-if mpl_version >= '2.2':
-    ANIMATION_OPTS['gif'] = ('pillow', 'gif', {'fps': 10}, [])
 
 
 class MPLRenderer(Renderer):
@@ -154,8 +143,6 @@ class MPLRenderer(Renderer):
         any IPython dependency.
         """
         if fmt in ['gif', 'mp4', 'webm']:
-            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
             with mpl.rc_context(rc=plot.fig_rcparams):
                 anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)

@@ -19,7 +19,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.1', 'bokeh>=1.1.0,<2.0.0']
+    'pandas', 'matplotlib>=2.2', 'bokeh>=1.1.0,<2.0.0']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
@@ -37,7 +37,7 @@ extras_require['extras'] = extras_require['examples']+[
 # Test requirements
 extras_require['tests'] = [
     'nose', 'mock', 'flake8==3.6.0', 'coveralls', 'path.py',
-    'matplotlib>=2.1,<3.1', 'nbsmoke >=0.2.0', 'pytest-cov ==2.5.1']
+    'matplotlib>=2.2,<3.1', 'nbsmoke >=0.2.0', 'pytest-cov ==2.5.1']
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
 

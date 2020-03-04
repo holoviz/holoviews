@@ -214,7 +214,7 @@ class OptsSpec(Parser):
                'show_xaxis':      'xaxis',
                'show_yaxis':      'yaxis'}
 
-    deprecations = [('GridImage', 'Image')]
+    deprecations = []
 
     @classmethod
     def process_normalization(cls, parse_group):
