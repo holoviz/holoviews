@@ -32,11 +32,6 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
         raise SkipTest("cuDF does not support variance aggregation")
 
-    def test_dataset_reduce_ht(self):
-        reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
-                          kdims=self.kdims[1:], vdims=self.vdims)
-        self.assertEqual(self.table.reduce(['Gender'], np.mean), reduced)
-
     def test_dataset_mixed_type_range(self):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
         vmin, vmax = ds.range(0)
