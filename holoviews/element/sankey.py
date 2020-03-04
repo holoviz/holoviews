@@ -212,7 +212,7 @@ class _layout_sankey(Operation):
         _, y0, _, y1 = self.p.bounds
         py = self.p.node_padding
         if py is None:
-            max_depth = max(depths.values()) - 1
+            max_depth = max(depths.values()) - 1 if depths else 1
             height = self.p.bounds[3] - self.p.bounds[1]
             py = min((height * 0.1) / max_depth, 20)
 
