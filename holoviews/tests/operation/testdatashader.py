@@ -21,12 +21,18 @@ except:
     raise SkipTest('Datashader not available')
 
 try:
+    import cudf
+    import cupy
+except:
+    cudf = None
+
+try:
     import spatialpandas
 except:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
-
+cudf_skip = skipIf(cudf is None, "cuDF not available")
 
 
 class DatashaderAggregateTests(ComparisonTestCase):
@@ -40,6 +46,17 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=['Count'])
+        self.assertEqual(img, expected)
+
+    @cudf_skip
+    def test_aggregate_points_cudf(self):
+        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
+        self.assertIsInstance(points.data, cudf.DataFrame)
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=['Count'])
+        self.assertIsInstance(img.data.Count.data, cupy.ndarray)
         self.assertEqual(img, expected)
 
     def test_aggregate_zero_range_points(self):
