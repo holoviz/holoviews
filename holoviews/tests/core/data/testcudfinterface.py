@@ -46,7 +46,7 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'], sort=False)
+                          kdims=['Gender'])
         self.assertEqual(self.table.groupby(['Gender']).apply('sort'), grouped.apply('sort'))
 
     def test_dataset_groupby_alias(self):
@@ -56,9 +56,9 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
                                          vdims=self.alias_vdims)),
                            ('F', Dataset(group2, kdims=[('age', 'Age')],
                                          vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')], sort=False)
+                          kdims=[('gender', 'Gender')])
         self.assertEqual(self.alias_table.groupby('Gender').apply('sort'),
-                         grouped.apply('sort'))
+                         grouped)
 
     def test_dataset_aggregate_ht(self):
         aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
@@ -83,3 +83,15 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         reduced = Dataset({'x':self.xs, 'z':self.zs},
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean).sort(), reduced.sort())
+
+    def test_dataset_2D_aggregate_partial_hm(self):
+        z_ints = [el**2 for el in self.y_ints]
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z':z_ints},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(dataset.aggregate(['x'], np.mean).sort(),
+                         Dataset({'x':self.xs, 'z':z_ints}, kdims=['x'], vdims=['z']).sort())
+
+    def test_dataset_reduce_ht(self):
+        reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
+                          kdims=self.kdims[1:], vdims=self.vdims)
+        self.assertEqual(self.table.reduce(['Gender'], np.mean).sort(), reduced.sort())
