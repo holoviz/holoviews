@@ -31,7 +31,7 @@ class SankeyPlot(GraphPlot):
     node_width = param.Number(default=15, doc="""
         Width of the nodes.""")
 
-    node_padding = param.Integer(default=10, doc="""
+    node_padding = param.Integer(default=None, doc="""
         Number of pixels of padding relative to the bounds.""")
 
     iterations = param.Integer(default=32, doc="""
