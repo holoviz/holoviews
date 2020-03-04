@@ -668,7 +668,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=True,
+    normed = param.ObjectSelector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then

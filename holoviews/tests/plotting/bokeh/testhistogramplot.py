@@ -60,10 +60,8 @@ class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):
         hist = histogram(Dataset(dates, 'Date'), num_bins=4)
         plot = bokeh_renderer.get_plot(hist)
         source = plot.handles['source']
-        print(source.data)
         data = {
-            'top': np.array([
-                3.85802469e-18, 3.85802469e-18, 3.85802469e-18, 3.85802469e-18]),
+            'top': np.array([1, 1, 1, 1]),
             'left': np.array([
                 '2017-01-01T00:00:00.000000', '2017-01-01T18:00:00.000000',
                 '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000'],
