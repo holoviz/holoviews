@@ -326,8 +326,9 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        dataset.param.warning("cuDF DataFrames do not yet support sorting.")
-        return dataset.data
+        cols = [dataset.get_dimension(d, strict=True).name for d in by]
+        return dataset.data.sort_values(by=cols, ascending=not reverse)
+
 
     @classmethod
     def dframe(cls, dataset, dimensions):

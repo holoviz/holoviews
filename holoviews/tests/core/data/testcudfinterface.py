@@ -23,23 +23,10 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         super(cuDFInterfaceTests, self).setUp()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
 
-    def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_vdim_ht(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_vdim_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_vdim_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_string_ht(self):
-        raise SkipTest("Not supported")
-
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
         raise SkipTest("cuDF does not support variance aggregation")
+
+    def test_dataset_reduce_ht(self):
+        reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
+                          kdims=self.kdims[1:], vdims=self.vdims)
+        self.assertEqual(self.table.reduce(['Gender'], np.mean), reduced)
