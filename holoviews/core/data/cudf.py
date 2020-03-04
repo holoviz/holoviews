@@ -24,7 +24,7 @@ class cuDFInterface(PandasInterface):
     """
     The cuDFInterface allows a Dataset objects to wrap a cuDF
     DataFrame object. Using cuDF allows working with columnar
-    data on a GPU. Most operation leave the data in GPU memory,
+    data on a GPU. Most operations leave the data in GPU memory,
     however to plot the data it has to be loaded into memory.
 
     The cuDFInterface covers almost the complete API exposed
