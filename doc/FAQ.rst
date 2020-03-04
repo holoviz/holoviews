@@ -38,7 +38,7 @@ To override a label for plotting it is also possible to use the
 .. code:: python
 
   curve = hv.Curve(df, 'x_col', 'y_col')
-  curve = curve.options(xlabel='X Label', ylabel='Label for Y')
+  curve = curve.opts(xlabel='X Label', ylabel='Label for Y')
 
 **Q: How do I adjust the x/y/z axis bounds (matplotlib's xlim, ylim)?**
 
@@ -74,11 +74,17 @@ across all objects that are presented together, so that they can be
 compared directly. If you don't want objects that share a dimension to
 be normalized together in your layout, you can change the ``axiswise``
 normalization option to True, making each object be normalized
-independently:
+independently, e.g. for a layout of `Curve` objects use:
 
 .. code:: python
 
-    your_layout.options(axiswise=True)
+    your_layout.opts(opts.Curve(axiswise=True))
+
+Alternatively you may also set `shared_axes=False` on the Layout itself:
+
+.. code:: python
+
+    your_layout.opts(shared_axes=False)
 
 Similarly, if you have a HoloMap composed of multiple frames in an
 animation or controlled with widgets, you can make each frame be
@@ -86,7 +92,7 @@ normalized independently by changing ``framewise`` to True:
 
 .. code:: python
 
-    your_holomap.options(framewise=True)
+    your_holomap.opts(framewise=True)
 
 
 **Q: Why doesn't my DynamicMap respect the ``framewise=False`` option for axis normalization across frames?**
