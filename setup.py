@@ -107,6 +107,7 @@ setup_args.update(dict(
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
         "Natural Language :: English",
+        "Framework :: Matplotlib",
         "Topic :: Scientific/Engineering",
         "Topic :: Software Development :: Libraries"]
 ))
