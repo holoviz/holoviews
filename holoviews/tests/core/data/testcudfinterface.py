@@ -2,12 +2,15 @@ import logging
 
 from unittest import SkipTest
 
+import numpy as np
+
 try:
     import cudf
 except:
     raise SkipTest("Could not import cuDF, skipping cuDFInterface tests.")
 
 from holoviews.core.data import Dataset
+from holoviews.core.spaces import HoloMap
 
 from .base import HeterogeneousColumnTests, InterfaceTests
 
