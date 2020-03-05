@@ -721,6 +721,7 @@ argument to specify a selection specification""")
         # may be replaced with more general handling
         # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
+        datatype = ['dataframe', 'dictionary', 'dask']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
@@ -737,7 +738,7 @@ argument to specify a selection specification""")
             if np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
-                reindexed = selection.clone(new_type=Dataset, datatype=['dataframe', 'dictionary']).reindex(kdims)
+                reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
             datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
@@ -755,7 +756,7 @@ argument to specify a selection specification""")
                 pass
         samples = [util.wrap_tuple(s) for s in samples]
         sampled = self.interface.sample(self, samples)
-        return self.clone(sampled, new_type=Table, datatype=['dataframe', 'dictionary'])
+        return self.clone(sampled, new_type=Table, datatype=datatype)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
