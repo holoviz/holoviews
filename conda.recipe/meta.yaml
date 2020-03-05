@@ -39,6 +39,7 @@ requirements:
 test:
   requires:
     - nose
+    - matplotlib<=3.0
   imports:
     - holoviews
   commands:
