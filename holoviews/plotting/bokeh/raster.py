@@ -9,6 +9,7 @@ from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from .element import ElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
+from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import colormesh
 
 
@@ -21,7 +22,7 @@ class RasterPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap', 'alpha'] + base_properties
+    style_opts = base_properties + ['cmap', 'alpha']
 
     _nonvectorized_styles = style_opts
 

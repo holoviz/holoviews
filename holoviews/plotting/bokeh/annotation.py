@@ -23,7 +23,7 @@ from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import text_properties, line_properties, fill_properties
+from .styles import base_properties, fill_properties, line_properties, text_properties
 from .plot import BokehPlot
 from .util import date_to_integer
 
@@ -91,9 +91,9 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = text_properties + ['cmap', 'angle', 'visible']
+    style_opts = base_properties + text_properties + ['cmap', 'angle']
 
-    _nonvectorized_styles = ['cmap']
+    _nonvectorized_styles = base_properties + ['cmap']
 
     _plot_methods = dict(single='text', batched='text')
     _batched_style_opts = text_properties

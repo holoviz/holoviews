@@ -138,9 +138,9 @@ class HexTilesPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap', 'scale'] + base_properties + line_properties + fill_properties
+    style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
 
-    _nonvectorized_styles = ['cmap', 'line_dash']
+    _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
     def get_extents(self, element, ranges, range_type='combined'):

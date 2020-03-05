@@ -56,18 +56,12 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge',
                      'bezier': 'edge'}
 
-<<<<<<< HEAD
-    style_opts = (['edge_'+p for p in fill_properties+line_properties] +
-                  ['node_'+p for p in fill_properties+line_properties] +
-                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap',
-                   'node_radius', 'node_marker'])
-=======
     style_opts = (['edge_'+p for p in base_properties+fill_properties+line_properties] +
                   ['node_'+p for p in base_properties+fill_properties+line_properties] +
-                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap', 'node_radius'])
->>>>>>> Add muted style option to bokeh plots
+                  ['node_size', 'cmap', 'edge_cmap', 'node_cmap',
+                   'node_radius', 'node_marker'])
 
-    _nonvectorized_styles =  ['cmap', 'edge_cmap', 'node_cmap']
+    _nonvectorized_styles =  base_properties + ['cmap', 'edge_cmap', 'node_cmap']
 
     # Filled is only supported for subclasses
     filled = False

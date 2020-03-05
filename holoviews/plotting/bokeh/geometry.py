@@ -39,7 +39,7 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
     style_opts = (base_properties + line_properties + fill_properties +
                   ['cmap'])
 
-    _nonvectorized_styles = ['cmap'] + base_properties
+    _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='rect')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'

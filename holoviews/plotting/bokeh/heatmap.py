@@ -9,14 +9,10 @@ from ...core.data import GridInterface
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
-<<<<<<< HEAD
 from .selection import BokehOverlaySelectionDisplay
-from .styles import line_properties, fill_properties, text_properties
-=======
 from .styles import (
     base_properties, line_properties, fill_properties, text_properties
 )
->>>>>>> Add muted style option to bokeh plots
 
 
 class HeatMapPlot(ColorbarPlot):

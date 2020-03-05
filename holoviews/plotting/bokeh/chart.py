@@ -221,9 +221,9 @@ class VectorFieldPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + ['scale', 'cmap', 'visible']
+    style_opts = base_properties + line_properties + ['scale', 'cmap']
 
-    _nonvectorized_styles = ['scale', 'cmap', 'visible']
+    _nonvectorized_styles = base_properties + ['scale', 'cmap']
 
     _plot_methods = dict(single='segment')
 
@@ -341,7 +341,7 @@ class CurvePlot(ElementPlot):
     style_opts = base_properties + line_properties
 
     _batched_style_opts = line_properties
-    _nonvectorized_styles = line_properties + ['visible']
+    _nonvectorized_styles = base_properties + line_properties
     _plot_methods = dict(single='line', batched='multi_line')
 
     def get_data(self, element, ranges, style):
@@ -405,13 +405,12 @@ class CurvePlot(ElementPlot):
 
 class HistogramPlot(ColorbarPlot):
 
+    selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
+
     style_opts = base_properties + fill_properties + line_properties + ['cmap']
 
+    _nonvectorized_styles = base_properties + ['line_dash']
     _plot_methods = dict(single='quad')
-
-    _nonvectorized_styles = ['line_dash'] + base_properties
-
-    selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -510,18 +509,16 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = ([
         p for p in line_properties if p.split('_')[0] not in
         ('hover', 'selection', 'nonselection', 'muted')
     ] + ['lower_head', 'upper_head'] + base_properties)
 
-    _nonvectorized_styles = ['line_dash'] + base_properties
-
+    _nonvectorized_styles = base_properties + ['line_dash']
     _mapping = dict(base="base", upper="upper", lower="lower")
-
     _plot_methods = dict(single=Whisker)
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
@@ -673,7 +670,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['cmap', 'palette'] + base_properties + line_properties)
+    style_opts = base_properties + line_properties + ['cmap', 'palette'] 
 
     _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
@@ -764,8 +761,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     style_opts = (base_properties + fill_properties + line_properties +
                   ['bar_width', 'cmap'])
 
-    _nonvectorized_styles = ['bar_width', 'cmap', 'width'] + base_properties
-
+    _nonvectorized_styles = base_properties + ['bar_width', 'cmap']
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded
