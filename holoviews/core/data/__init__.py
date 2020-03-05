@@ -737,7 +737,7 @@ argument to specify a selection specification""")
             if np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
-                reindexed = selection.clone(new_type=Dataset).reindex(kdims)
+                reindexed = selection.clone(new_type=Dataset, datatype=['dataframe', 'dictionary']).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
             datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
@@ -754,7 +754,8 @@ argument to specify a selection specification""")
             except NotImplementedError:
                 pass
         samples = [util.wrap_tuple(s) for s in samples]
-        return self.clone(self.interface.sample(self, samples), new_type=Table)
+        sampled = self.interface.sample(self, samples)
+        return self.clone(sampled, new_type=Table, datatype=['dataframe', 'dictionary'])
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
