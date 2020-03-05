@@ -116,7 +116,7 @@ class Raster(Element2D):
             return function(np.dstack(data_list), axis=-1, **kwargs)
 
 
-    def sample(self, samples=[], **sample_values):
+    def sample(self, samples=[], bounds=None, **sample_values):
         """
         Sample the Raster along one or both of its dimensions,
         returning a reduced dimensionality type, which is either
@@ -131,8 +131,6 @@ class Raster(Element2D):
 
         params = dict(self.param.get_param_values(onlychanged=True),
                       vdims=self.vdims)
-        params.pop('extents', None)
-        params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
                 samples = zip(*[c if isinstance(c, list) else [c] for _, c in
@@ -484,64 +482,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         else:
             return self.clone(data, xdensity=self.xdensity, datatype=datatype,
                               ydensity=self.ydensity, bounds=bounds)
-
-
-    def sample(self, samples=[], **kwargs):
-        """
-        Allows sampling of an Image as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Alternatively may supply kwargs to
-        sample a coordinate on an object. On an Image the coordinates
-        are continuously indexed and will always snap to the nearest
-        coordinate.
-        """
-        kwargs = {k: v for k, v in kwargs.items() if k != 'closest'}
-        if kwargs and samples:
-            raise Exception('Supply explicit list of samples or kwargs, not both.')
-        elif kwargs:
-            sample = [slice(None) for _ in range(self.ndims)]
-            for dim, val in kwargs.items():
-                sample[self.get_dimension_index(dim)] = val
-            samples = [tuple(sample)]
-
-        # If a 1D cross-section of 2D space return Curve
-        shape = self.interface.shape(self, gridded=True)
-        if len(samples) == 1:
-            dims = [kd for kd, v in zip(self.kdims, samples[0])
-                    if not (np.isscalar(v) or isinstance(v, util.datetime_types))]
-            if len(dims) == 1:
-                kdims = [self.get_dimension(kd) for kd in dims]
-                sample = tuple(np.datetime64(s) if isinstance(s, util.datetime_types) else s
-                               for s in samples[0])
-                sel = {kd.name: s for kd, s in zip(self.kdims, sample)}
-                dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
-                selection = self.select(**sel)
-                selection = tuple(selection.columns(kdims+self.vdims).values())
-                datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
-                return self.clone(selection, kdims=kdims, new_type=Curve,
-                                  datatype=datatype)
-            else:
-                kdims = self.kdims
-        else:
-            kdims = self.kdims
-
-        xs, ys = zip(*samples)
-        if isinstance(xs[0], util.datetime_types):
-            xs = np.array(xs).astype(np.datetime64)
-        if isinstance(ys[0], util.datetime_types):
-            ys = np.array(ys).astype(np.datetime64)
-        yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
-        yidx = shape[0]-yidx-1
-
-        # Detect out-of-bounds indices
-        out_of_bounds= (yidx<0) | (xidx<0) | (yidx>=shape[0]) | (xidx>=shape[1])
-        if out_of_bounds.any():
-            coords = [samples[idx] for idx in np.where(out_of_bounds)[0]]
-            raise IndexError('Coordinate(s) %s out of bounds for %s with bounds %s' %
-                             (coords, type(self).__name__, self.bounds.lbrt()))
-
-        data = self.interface.ndloc(self, (yidx, xidx))
-        return self.clone(data, new_type=Table, datatype=['dataframe', 'dictionary'])
 
 
     def closest(self, coords=[], **kwargs):

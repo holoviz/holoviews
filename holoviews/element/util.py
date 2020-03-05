@@ -8,8 +8,10 @@ from ..core.boundingregion import BoundingBox
 from ..core.data import default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
-from ..core.util import (is_nan, sort_topologically, one_to_one,
-                         cartesian_product, is_cyclic, datetime_types)
+from ..core.util import (
+    cartesian_product, datetime_types, is_cyclic, is_nan,
+    one_to_one, sort_topologically
+)
 
 try:
     import pandas as pd
