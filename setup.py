@@ -49,7 +49,7 @@ extras_require['nbtests'] = extras_require['recommended'] + [
     'cyordereddict', 'ipython==5.4.1']
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite>0.5.2', 'sphinx', 'sphinx_holoviz_theme', 'mpl_sample_data', 'awscli']
+    'nbsite>0.5.2', 'sphinx', 'sphinx_holoviz_theme', 'mpl_sample_data', 'awscli', 'pscript']
 
 extras_require['build'] = ['param >=1.7.0', 'setuptools >=30.3.0', 'pyct >=0.4.4']
 

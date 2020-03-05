@@ -1,7 +1,9 @@
 from collections import OrderedDict
 
 from holoviews.core import Dimension
-from holoviews.core.ndmapping import MultiDimensionalMapping, NdMapping
+from holoviews.core.ndmapping import (
+    MultiDimensionalMapping, NdMapping, UniformNdMapping
+)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import HoloMap, Dataset
 import numpy as np
@@ -200,6 +202,17 @@ class NdIndexableMappingTest(ComparisonTestCase):
         self.assertEqual(ndmap['A'].data, nested_clone.data)
 
 
+class UniformNdMappingTest(ComparisonTestCase):
+
+    def test_collapse_nested(self):
+        inner1 = UniformNdMapping({1: Dataset([(1, 2)], ['x', 'y'])}, 'Y')
+        inner2 = UniformNdMapping({1: Dataset([(3, 4)], ['x', 'y'])}, 'Y')
+        outer = UniformNdMapping({1: inner1, 2: inner2}, 'X')
+        collapsed = outer.collapse()
+        expected = Dataset([(1, 1, 1, 2), (2, 1, 3, 4)], ['X', 'Y', 'x', 'y'])
+        self.assertEqual(collapsed, expected)
+
+
 class HoloMapTest(ComparisonTestCase):
 
     def setUp(self):
@@ -231,7 +244,6 @@ class HoloMapTest(ComparisonTestCase):
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         expected = Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
         self.compare_dataset(collapsed, expected)
-
 
     def test_columns_sample_homogeneous(self):
         samples = self.columns.sample([0, 5, 10]).dimension_values('y')

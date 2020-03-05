@@ -1,6 +1,8 @@
 from __future__ import absolute_import
+
 import sys
 import types
+
 from collections import OrderedDict
 
 import numpy as np
@@ -568,14 +570,24 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def dframe(cls, dataset, dimensions):
-        data = dataset.data.to_dataframe().reset_index()
+        import xarray as xr
+        if cls.packed(dataset):
+            bands = {vd.name: dataset.data[..., i].drop('band')
+                     for i, vd in enumerate(dataset.vdims)}
+            data = xr.Dataset(bands)
+        else:
+            data = dataset.data
+        data = data.to_dataframe().reset_index()
         if dimensions:
             return data[dimensions]
         return data
 
     @classmethod
     def sample(cls, dataset, samples=[]):
-        raise NotImplementedError
+        names = [kd.name for kd in dataset.kdims]
+        samples = [dataset.data.sel(**{k: [v] for k, v in zip(names, s)}).to_dataframe().reset_index()
+                   for s in samples]
+        return util.pd.concat(samples)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):

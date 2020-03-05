@@ -213,6 +213,7 @@ class Apply(object):
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
+        kwargs['per_element'] = True
         return self.__call__('aggregate', **kwargs)
 
     def opts(self, *args, **kwargs):
@@ -231,7 +232,18 @@ class Apply(object):
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
+        kwargs['per_element'] = True
         return self.__call__('reduce', **kwargs)
+
+    def sample(self, samples=[], bounds=None, **kwargs):
+        """Samples element values at supplied coordinates.
+
+        See :py:meth:`Dataset.sample` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        kwargs['_method_args'] = (samples, bounds)
+        kwargs['per_element'] = True
+        return self.__call__('sample', **kwargs)
 
     def select(self, **kwargs):
         """Applies a selection to all ViewableElement objects.
