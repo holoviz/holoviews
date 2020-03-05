@@ -74,7 +74,7 @@ else:
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
 
-datetime_types = (np.datetime64, dt.datetime, dt.date)
+datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 arraylike_types = (np.ndarray,)
 
@@ -954,7 +954,7 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types)
+            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
