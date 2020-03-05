@@ -890,8 +890,7 @@ class UniformNdMapping(NdMapping):
             last = group.values()[-1]
             if isinstance(last, UniformNdMapping):
                 group_data = OrderedDict([
-                    (k, v.collapse(function=function, spreadfn=spreadfn))
-                    for k, v in group.items()
+                    (k, v.collapse()) for k, v in group.items()
                 ])
                 group = group.clone(group_data)
             if hasattr(group.values()[-1], 'interface'):
