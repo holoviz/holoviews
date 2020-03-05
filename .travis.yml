@@ -90,6 +90,7 @@ jobs:
       stage: docs_dev
       env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
+        - conda install $CHANS_DEV firefox geckodriver 
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - nbsite build --what=html --output=builtdocs
@@ -101,6 +102,7 @@ jobs:
       stage: gallery_dev
       env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
+        - conda install $CHANS_DEV firefox geckodriver
         - bokeh sampledata
         - aws s3 sync --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
