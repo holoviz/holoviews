@@ -260,13 +260,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['hover'] = hover
         return copied_tools
 
-
     def _update_hover(self, element):
-        tooltips, hover_opts = self._hover_opts(element)
-        tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
-                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
-        self.handles['hover'].tooltips = tooltips
-
+        tool = self.handles['hover']
+        if 'hv_created' in tool.tags:
+            tooltips, hover_opts = self._hover_opts(element)
+            tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
+                        if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+            tool.tooltips = tooltips
+        else:
+            plot_opts = element.opts.get('plot', 'bokeh')
+            new_hover = [t for t in plot_opts.kwargs.get('tools', [])
+                         if isinstance(t, tools.HoverTool)]
+            if new_hover:
+                tool.tooltips = new_hover[0].tooltips
 
     def _get_hover_data(self, data, element, dimensions=None):
         """
@@ -1390,7 +1396,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_plot(key, plot, style_element)
             self._set_active_tools(plot)
 
-        if 'hover' in self.handles and 'hv_created' in self.handles['hover'].tags:
+        if 'hover' in self.handles:
             self._update_hover(element)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
