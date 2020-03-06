@@ -7,7 +7,7 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 
 import numpy as np
 
-from ..core.dimension import Dimension, dimension_name
+from ..core.dimension import Dimension
 from ..core.util import basestring, unique_iterator
 
 def _maybe_map(numpy_fn):
@@ -486,7 +486,7 @@ class dim(object):
         for o in self.ops:
             args = o['args']
             fn = o['fn']
-            fn_name = self._numy_funcs.get(fn)
+            fn_name = self._numpy_funcs.get(fn)
             if fn_name and hasattr(data, fn_name):
                 fn = fn_name
             fn_args = [] if isinstance(fn, basestring) else [data]
