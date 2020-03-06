@@ -411,7 +411,8 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True,
+               keep_index=False, canonicalize=True):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             vdim_tuple = cls.packed(dataset)
@@ -419,16 +420,17 @@ class GridInterface(DictInterface):
                 data = dataset.data[vdim_tuple][..., dataset.vdims.index(dim)]
             else:
                 data = dataset.data[dim.name]
-            data = cls.canonicalize(dataset, data)
+            if canonicalize:
+                data = cls.canonicalize(dataset, data)
             da = dask_array_module()
             if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim.name, expanded=True)
+            data = cls.coords(dataset, dim.name, expanded=True, ordered=canonicalize)
             return data.T.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim.name, ordered=True)
+            return cls.coords(dataset, dim.name, ordered=canonicalize)
 
 
     @classmethod
@@ -798,5 +800,19 @@ class GridInterface(DictInterface):
                 column.sort()
                 return column[0], column[-1]
 
+    @classmethod
+    def assign(cls, dataset, new_data):
+        data = OrderedDict(dataset.data)
+        for k, v in new_data.items():
+            if k in dataset.kdims:
+                coords = cls.coords(dataset, k)
+                if not coords.ndim > 1 and np.all(coords[1:] < coords[:-1]):
+                    v = v[::-1]
+                data[k] = v
+            else:
+                data[k] = cls.canonicalize(dataset, v)
+        return data
+
+            
 
 Interface.register(GridInterface)

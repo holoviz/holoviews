@@ -603,12 +603,25 @@ class XArrayInterface(GridInterface):
     @classmethod
     def assign(cls, dataset, new_data):
         data = dataset.data
-        coords = {k: v for k, v in new_data.items() if k in dataset.kdims}
+        coords = OrderedDict()
+        for k, v in new_data.items():
+            if k not in dataset.kdims:
+                continue
+            coord_vals = cls.coords(dataset, k)
+            if not coord_vals.ndim > 1 and np.all(coord_vals[1:] < coord_vals[:-1]):
+                v = v[::-1]
+            coords[k] = (k, v)
         if coords:
             data = data.assign_coords(coords)
-        vars = {k: (tuple(kd.name for kd in dataset.kdims[::-1]), v)
-                for k, v in new_data.items() if k not in dataset.kdims}
-        data = data.assign(vars)
+        packed = cls.packed(dataset)
+        dims = tuple(kd.name for kd in dataset.kdims[::-1])
+        vars = OrderedDict()
+        for k, v in new_data.items():
+            if k in dataset.kdims:
+                continue
+            vars[k] = (dims, cls.canonicalize(dataset, v, data_coords=dims))
+        if vars:
+            data = data.assign(vars)
         return data
 
 
