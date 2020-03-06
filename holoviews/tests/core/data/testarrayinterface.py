@@ -1,3 +1,5 @@
+from unittest import SkipTest
+
 import numpy as np
 
 from holoviews.core.data import Dataset
@@ -43,3 +45,9 @@ class ArrayDatasetTest(HomogeneousColumnTests, InterfaceTests):
         ds_sorted = Dataset(([2, 2, 1, 1], [2, 1, 2, 1], [0, 2, 1, 3]),
                             kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(ds.sort(reverse=True), ds_sorted)
+
+    def test_dataset_transform_replace_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_transform_add_hm(self):
+        raise SkipTest("Not supported")

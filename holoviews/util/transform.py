@@ -501,7 +501,7 @@ class dim(object):
                 fn_args.append(arg)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
             eldim = dataset.get_dimension(lookup)
-            drange = ranges.get(dimension_name(lookup), {})
+            drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
             kwargs = o['kwargs']
             if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
