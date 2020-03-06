@@ -513,7 +513,14 @@ class dim(object):
                 not ('min' in kwargs and 'max' in kwargs)):
                 data = fn(data, *drange)
             elif isinstance(fn, basestring):
-                data = getattr(data, fn)(*args, **kwargs)
+                method = getattr(data, fn, None)
+                if method is None:
+                    raise AttributeError(
+                        "%r could not be applied to '%r', '%s' method "
+                        "does not exist on %s type."
+                        % (self, dataset, fn, type(data).__name__)
+                    )
+                data = method(*args, **kwargs)
             else:
                 data = fn(*args, **kwargs)
         return data
@@ -529,7 +536,7 @@ class dim(object):
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
             kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
+            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
