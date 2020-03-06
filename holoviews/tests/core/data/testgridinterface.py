@@ -335,7 +335,7 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
             ([2, 0], self.grid_ys[::-1], self.grid_zs), ['x', 'y'], ['z']
         )
         self.assertEqual(transformed, expected)
-        
+
     def test_dataset_transform_replace_vdim_on_inverted_grid(self):
         transformed = self.dataset_grid_inv.transform(z=dim('z')*2)
         expected = self.element(

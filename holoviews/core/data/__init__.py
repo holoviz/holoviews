@@ -942,7 +942,7 @@ argument to specify a selection specification""")
         Returns:
             Transformed dataset with new dimensions
         """
-        drop = kwargs.pop('drop')
+        drop = kwargs.pop('drop', False)
         transforms = OrderedDict()
         for s, transform in list(args)+list(kwargs.items()):
             transforms[util.wrap_tuple(s)] = transform
@@ -961,15 +961,18 @@ argument to specify a selection specification""")
             if self.get_dimension(d) is None:
                 new_dims.append(d)
 
+        if self.interface.datatype in ('image', 'array'):
+            ds = self.clone(datatype=[dt for dt in self.datatype if dt != self.interface.datatype])
+
         if drop:
-            kdims = [self.get_dimension(d) for d in new_data if d in self.kdims]
-            vdims = [self.get_dimension(d) or d for d in new_data if d not in self.kdims]
+            kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
+            vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
             data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
-            return self.clone(data, kdims=kdims, vdims=vdims)
+            return ds.clone(data, kdims=kdims, vdims=vdims)
         else:
             new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
-            data = self.interface.assign(self, new_data)
-            return self.clone(data, vdims=self.vdims+new_dims)
+            data = ds.interface.assign(ds, new_data)
+            return ds.clone(data, vdims=ds.vdims+new_dims)
 
     def __len__(self):
         "Number of values in the Dataset."
