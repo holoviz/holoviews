@@ -961,8 +961,9 @@ argument to specify a selection specification""")
             if self.get_dimension(d) is None:
                 new_dims.append(d)
 
-        if self.interface.datatype in ('image', 'array'):
-            ds = self.clone(datatype=[dt for dt in self.datatype if dt != self.interface.datatype])
+        ds = self
+        if ds.interface.datatype in ('image', 'array'):
+            ds = ds.clone(datatype=[dt for dt in ds.datatype if dt != ds.interface.datatype])
 
         if drop:
             kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]

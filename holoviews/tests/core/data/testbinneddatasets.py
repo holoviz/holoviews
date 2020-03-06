@@ -13,6 +13,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.core.util import OrderedDict
 from holoviews.element import Histogram, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.util.transform import dim
 
 
 class Binned1DTest(ComparisonTestCase):
@@ -156,7 +157,17 @@ class Binned2DTest(ComparisonTestCase):
                            for i in range(3)}, kdims=['y'])
         self.assertEqual(grouped, holomap)
 
+    def test_qmesh_transform_replace_kdim(self):
+        transformed = self.dataset2d.transform(x=dim('x')*2)
+        expected = QuadMesh((self.xs*2, self.ys, self.zs))
+        self.assertEqual(expected, transformed)
 
+    def test_qmesh_transform_replace_vdim(self):
+        transformed = self.dataset2d.transform(z=dim('z')*2)
+        expected = QuadMesh((self.xs, self.ys, self.zs*2))
+        self.assertEqual(expected, transformed)
+
+        
 
 class Irregular2DBinsTest(ComparisonTestCase):
 
@@ -253,3 +264,13 @@ class Irregular2DBinsTest(ComparisonTestCase):
         hmap = HoloMap({0: Dataset((self.xs, self.ys, zs[0]), ['lon', 'lat'], 'A'),
                         1: Dataset((self.xs, self.ys, zs[1]), ['lon', 'lat'], 'A')}, kdims='z')
         self.assertEqual(grouped, hmap)
+
+    def test_irregular_transform_replace_kdim(self):
+        transformed = Dataset((self.xs, self.ys, self.zs), ['x', 'y'], 'z').transform(x=dim('x')*2)
+        expected = Dataset((self.xs*2, self.ys, self.zs), ['x', 'y'], 'z')
+        self.assertEqual(expected, transformed)
+
+    def test_irregular_transform_replace_vdim(self):
+        transformed = Dataset((self.xs, self.ys, self.zs), ['x', 'y'], 'z').transform(z=dim('z')*2)
+        expected = Dataset((self.xs, self.ys, self.zs*2), ['x', 'y'], 'z')
+        self.assertEqual(expected, transformed)
