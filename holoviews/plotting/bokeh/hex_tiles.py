@@ -203,7 +203,8 @@ class HexTilesPlot(ColorbarPlot):
         style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
         scale = style.get('scale')
-        if scale_dim and ((isinstance(scale, basestring) and scale in element) or isinstance(scale, dim)):
+        if (scale_dim and ((isinstance(scale, basestring) and scale in element) or
+                           isinstance(scale, dim_transform))):
             self.param.warning("Cannot declare style mapping for 'scale' option "
                                "and declare a size_index; ignoring the size_index.")
             scale_dim = None
