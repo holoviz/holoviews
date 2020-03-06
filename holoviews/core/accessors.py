@@ -252,7 +252,7 @@ class Apply(object):
         """
         return self.__call__('select', **kwargs)
 
-    def transform(self, *args, drop=False, **kwargs):
+    def transform(self, *args, **kwargs):
         """Applies transforms to all Datasets.
 
         See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
