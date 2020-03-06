@@ -920,7 +920,7 @@ argument to specify a selection specification""")
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
 
-    def transform(self, *args, drop=False, **kwargs):
+    def transform(self, *args, **kwargs):
         """Transforms the Dataset according to a dimension transform.
 
         Transforms may be supplied as tuples consisting of the
@@ -942,6 +942,7 @@ argument to specify a selection specification""")
         Returns:
             Transformed dataset with new dimensions
         """
+        drop = kwargs.pop('drop')
         transforms = OrderedDict()
         for s, transform in list(args)+list(kwargs.items()):
             transforms[util.wrap_tuple(s)] = transform
