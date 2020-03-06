@@ -2,6 +2,7 @@ from __future__ import division
 
 import operator
 
+from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -222,7 +223,7 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types) or
+            if not (isinstance(fn, function_types+(basestring,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
@@ -267,6 +268,14 @@ class dim(object):
 
     def __hash__(self):
         return hash(repr(self))
+
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return self.__dict__[attr]
+        return partial(self.method, attr)
+
+    def method(self, method, *args, **kwargs):
+        return dim(self, method, *args, **kwargs)
 
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
@@ -491,11 +500,15 @@ class dim(object):
             eldim = dataset.get_dimension(dimension)
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
+            fn = o['fn']
             kwargs = o['kwargs']
-            if ((o['fn'] is norm) or (o['fn'] is lognorm)) and drange != {} and not ('min' in kwargs and 'max' in kwargs):
-                data = o['fn'](data, *drange)
+            if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
+                not ('min' in kwargs and 'max' in kwargs)):
+                data = fn(data, *drange)
+            elif isinstance(fn, basestring):
+                data = getattr(data, fn)(*args[1:], **kwargs)
             else:
-                data = o['fn'](*args, **kwargs)
+                data = fn(*args, **kwargs)
         return data
 
     def __repr__(self):
@@ -522,10 +535,15 @@ class dim(object):
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                fn_name = fn.__name__
+                if isinstance(fn, basestring):
+                    fn_name = fn
+                else:
+                    fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
+                elif isinstance(fn, basestring):
+                    format_string = prev+').{fn}('
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
