@@ -601,56 +601,14 @@ class XArrayInterface(GridInterface):
         return dataset.data.assign(**{dim: arr})
 
     @classmethod
-    def drop_dimensions(
-        cls, dataset, dimensions, keep_kdims=None, keep_vdims=None,
-        drop_duplicate_data=True,
-    ):
-        """
-        Drop dimensions from an xarray dataset.
-
-        Note:
-            xarray automatically takes care of removing duplicate data that may
-            arise from removing key dimensions.
-        """
-        data = dataset.data.copy()
-        dim_names = [d.name for d in dimensions]
-
-        # replace constant values by non-dimensional array
-        import xarray as xr
-        for d in keep_vdims:
-            val = np.unique(data[d.name])
-            if len(val) == 1:
-                data[d.name] = xr.DataArray(val[0], dims=[])
-
-        # utility to get the set of dimension names that are
-        # linked to variables in the data
-        def dependent_dimension_names(data):
-            dims = set()
-            for v in data:
-                dims = dims.union(set(data[v].dims))
-            return dims
-
-        # first drop vdims
-        for d in dataset.vdims:
-            if d in dim_names:
-                data = data.drop(d.name)
-        # now, some of the kdims may have become obsolete
-        for d in dataset.kdims:
-            if d in dim_names:
-                if d.name in dependent_dimension_names(data):
-                    cls.param.warning(
-                        'Not dropping "%s" as it has dependent dimensions' %d
-                    )
-                else:
-                    data = data.drop_dims(d.name)
-
-        keep_kdims = [
-            d for d in dataset.kdims if d.name in data
-        ]
-        keep_vdims = [
-            d for d in dataset.vdims if d.name in data
-        ]
-        return data, keep_kdims, keep_vdims
+    def assign(cls, dataset, new_data):
+        data = dataset.data
+        coords = {k: v for k, v in new_data.items() if k in dataset.kdims}
+        if coords:
+            data = data.assign_coords(coords)
+        vars = {k: v for k, v in new_data.items() if k not in dataset.kdims}
+        data = data.assign(vars)
+        return data
 
 
 Interface.register(XArrayInterface)

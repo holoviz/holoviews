@@ -240,6 +240,18 @@ class ArrayInterface(Interface):
 
 
     @classmethod
+    def assign(cls, dataset, new_data):
+        data = dataset.data.copy()
+        for d, arr in new_data.items():
+            if dataset.get_dimension(d) is None:
+                continue
+            idx = dataset.get_dimension_index(d)
+            data[:, idx] = arr
+        new_cols = [arr for d, arr in new_data.items() if dataset.get_dimension(d) is None]
+        return np.column_stack([data]+new_cols)
+
+
+    @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
         reindexed = dataset.reindex(dimensions)
         grouped = (cls.groupby(reindexed, dimensions, list, 'raw')

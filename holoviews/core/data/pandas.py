@@ -179,7 +179,7 @@ class PandasInterface(Interface):
             kwargs['sort'] = False
         return pd.concat(dataframes, **kwargs)
 
-        
+
     @classmethod
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
@@ -346,13 +346,8 @@ class PandasInterface(Interface):
         return data
 
     @classmethod
-    def drop_dimensions(cls, dataset, dimensions, keep_kdims=None, keep_vdims=None, drop_duplicate_data=True):
-        data = dataset.data.drop(columns=[
-            d.name for d in dimensions
-        ])
-        if drop_duplicate_data:
-            data = data.loc[~data.duplicated()]
-        return data, keep_kdims, keep_vdims
+    def assign(cls, dataset, new_data):
+        return dataset.data.assign(**new_data)
 
     @classmethod
     def as_dframe(cls, dataset):

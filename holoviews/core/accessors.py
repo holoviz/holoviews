@@ -215,16 +215,6 @@ class Apply(object):
         kwargs['per_element'] = True
         return self.__call__('aggregate', **kwargs)
 
-    def transform(self, *args, drop=False, drop_duplicate_data=True, **kwargs):
-        """Applies transforms to all Datasets.
-
-        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
-        for more information.
-        """
-        kwargs['_method_args'] = args
-        return self._call__('transform', drop=drop, drop_duplicate_data=drop_duplicate_data,
-                            spec=Dataset, **kwargs)
-
     def opts(self, *args, **kwargs):
         """Applies options to all ViewableElement objects.
 
@@ -262,6 +252,15 @@ class Apply(object):
         """
         return self.__call__('select', **kwargs)
 
+    def transform(self, *args, drop=False, **kwargs):
+        """Applies transforms to all Datasets.
+
+        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        kwargs['_method_args'] = args
+        kwargs['per_element'] = True
+        return self.__call__('transform', drop=drop, **kwargs)
 
 @add_metaclass(AccessorPipelineMeta)
 class Redim(object):

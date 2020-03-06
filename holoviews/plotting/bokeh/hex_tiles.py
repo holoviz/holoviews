@@ -28,15 +28,11 @@ class hex_binning(Operation):
     useable.
     """
 
-    aggregator = param.ClassSelector(default=np.size, class_=(dim, types.FunctionType),
-    doc="""
-    Aggregation function or dimension transform used to compute bin values.
-    Defaults to np.size to count the number of values in each bin.""")
-
-    aggregator_signature = param.List(default=None, class_=str, doc="""
-    Names for output variables of aggregator. Can be referenced in dim
-    transforms on the element. Only respected when aggregator is itself a dim
-    transform.""")
+    aggregator = param.ClassSelector(
+        default=np.size, class_=(dim, types.FunctionType, tuple), doc="""
+        Aggregation function or dimension transform used to compute
+        bin values. Defaults to np.size to count the number of values
+        in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
@@ -90,19 +86,9 @@ class hex_binning(Operation):
         xd, yd = (element.get_dimension(i) for i in indexes)
         xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
-        if isinstance(aggregator, dim_transform):
-            signature = self.p.aggregator_signature
-            if signature is None:
-                signature = vdims[:1]
-            agg_args = dict(
-                dim_transform=aggregator,
-                dim_transform_signature=signature,
-            )
-        else:
-            agg_args = dict(function=aggregator)
         agg = (
             element.clone(data, kdims=kdims, vdims=vdims)
-            .aggregate(**agg_args)
+            .aggregate(function=aggregator)
         )
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
@@ -118,15 +104,10 @@ Compositor.register(compositor)
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.ClassSelector(default=np.size, class_=(dim, types.FunctionType),
+    aggregator = param.ClassSelector(default=np.size, class_=(dim, types.FunctionType, tuple),
     doc="""
     Aggregation function or dimension transform used to compute bin values.
     Defaults to np.size to count the number of values in each bin.""")
-
-    aggregator_signature = param.List(default=None, class_=str, doc="""
-    Names for output variables of aggregator. Can be referenced in dim
-    transforms on the element. Only respected when aggregator is itself a dim
-    transform.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
