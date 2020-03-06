@@ -613,7 +613,6 @@ class XArrayInterface(GridInterface):
             coords[k] = (k, v)
         if coords:
             data = data.assign_coords(coords)
-        packed = cls.packed(dataset)
         dims = tuple(kd.name for kd in dataset.kdims[::-1])
         vars = OrderedDict()
         for k, v in new_data.items():
