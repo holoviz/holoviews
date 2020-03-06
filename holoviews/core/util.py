@@ -1504,6 +1504,35 @@ def is_param_method(obj, has_deps=False):
     return parameterized
 
 
+def resolve_dependent_value(value):
+    """Resolves parameter dependencies on the supplied value
+
+    Resolves parameter values, Parameterized instance methods and
+    parameterized functions with dependencies on the supplied value.
+
+    Args:
+       value: A value which will be resolved
+
+    Returns:
+       A new dictionary with where any parameter dependencies have been
+       resolved.
+    """
+    if 'panel' in sys.modules:
+        from panel.widgets.base import Widget
+        if isinstance(value, Widget):
+            value = value.param.value
+    if is_param_method(value, has_deps=True):
+        value = value()
+    elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
+        value = getattr(value.owner, value.name)
+    elif isinstance(value, FunctionType) and hasattr(value, '_dinfo'):
+        deps = value._dinfo
+        args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
+        kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
+        value = value(*args, **kwargs)
+    return value
+
+
 def resolve_dependent_kwargs(kwargs):
     """Resolves parameter dependencies in the supplied dictionary
 
@@ -1518,23 +1547,7 @@ def resolve_dependent_kwargs(kwargs):
        A new dictionary with where any parameter dependencies have been
        resolved.
     """
-    resolved = {}
-    for k, v in kwargs.items():
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-            if isinstance(v, Widget):
-                v = v.param.value
-        if is_param_method(v, has_deps=True):
-            v = v()
-        elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
-            v = getattr(v.owner, v.name)
-        elif isinstance(v, FunctionType) and hasattr(v, '_dinfo'):
-            deps = v._dinfo
-            args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
-            kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
-            v = v(*args, **kwargs)
-        resolved[k] = v
-    return resolved
+    return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
 
 
 @contextmanager
@@ -1641,7 +1654,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
             for c in clashes:
                 if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
                     clash_streams.append(s)
-        if clashes:
+        if [c for c in clashes if c != '_memoize_key']:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
                             'clash on the following parameters: %r'

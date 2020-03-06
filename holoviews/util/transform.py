@@ -8,7 +8,7 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 import numpy as np
 
 from ..core.dimension import Dimension
-from ..core.util import basestring, unique_iterator
+from ..core.util import basestring, resolve_dependent_value, unique_iterator
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
@@ -504,8 +504,23 @@ class dim(object):
                         keep_index,
                         compute,
                     )
+                arg = resolve_dependent_value(arg)
                 fn_args.append(arg)
+            fn_kwargs = {}
+            for k, v in kwargs.items():
+                if isinstance(v, dim):
+                    v = v.apply(
+                        dataset,
+                        flat,
+                        expanded,
+                        ranges,
+                        all_values,
+                        keep_index,
+                        compute,
+                    )
+                fn_kwargs[k] = resolve_dependent_value(v)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
+            kwargs = dict(fn_kwargs)
             eldim = dataset.get_dimension(lookup)
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
