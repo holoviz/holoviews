@@ -937,19 +937,25 @@ argument to specify a selection specification""")
             args: Specify the output arguments and transforms as a
                   tuple of dimension specs and dim transforms
             drop (bool): Whether to drop all variables not part of the transform
+            keep_index (bool): Whether to keep indexes
+                  Whether to apply transform on datastructure with
+                  index, e.g. pandas.Series or xarray.DataArray
             kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
             Transformed dataset with new dimensions
         """
         drop = kwargs.pop('drop', False)
+        keep_index = kwargs.pop('keep_index', False)
         transforms = OrderedDict()
         for s, transform in list(args)+list(kwargs.items()):
             transforms[util.wrap_tuple(s)] = transform
 
         new_data = OrderedDict()
         for signature, transform in transforms.items():
-            applied = transform.apply(self, compute=False, keep_index=True)
+            applied = transform.apply(
+                self, compute=False, keep_index=keep_index
+            )
             if len(signature) == 1:
                 new_data[signature[0]] = applied
             else:

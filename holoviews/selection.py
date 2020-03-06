@@ -477,13 +477,14 @@ class OverlaySelectionDisplay(SelectionDisplay):
             dataset = element.dataset
             try:
                 if dataset.interface.gridded:
-                    mask = selection_expr.apply(dataset, expanded=True, flat=False)
+                    mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
-                    mask = selection_expr.apply(dataset)
+                    mask = selection_expr.apply(dataset, compute=False, strict=True)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:
-                    selection = dataset.select(selection_expr=selection_expr)
+                    mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=True)
+                    selection = dataset.select(selection_mask=mask)
                 element = element.pipeline(selection)
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')

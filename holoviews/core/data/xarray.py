@@ -353,7 +353,9 @@ class XArrayInterface(GridInterface):
         if packed:
             data = dataset.data.data[..., dataset.vdims.index(dim)]
         else:
-            data = dataset.data[dim.name].data
+            data = dataset.data[dim.name]
+            if not keep_index:
+                data = data.data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
         irregular_kdims = [d for d in dataset.kdims if cls.irregular(dataset, d)]
         if irregular_kdims:
@@ -371,13 +373,16 @@ class XArrayInterface(GridInterface):
             if is_cupy(data):
                 import cupy
                 data = cupy.asnumpy(data)
-            data = cls.canonicalize(dataset, data, data_coords=data_coords,
-                                    virtual_coords=virtual_coords)
-            return data.T.flatten() if flat else data
+            if not keep_index:
+                data = cls.canonicalize(dataset, data, data_coords=data_coords,
+                                        virtual_coords=virtual_coords)
+            return data.T.flatten() if flat and not keep_index else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
             return data.T.flatten() if flat else data
         else:
+            if keep_index:
+                return dataset[dim.name]
             return cls.coords(dataset, dim.name, ordered=True)
 
 
@@ -602,11 +607,14 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def assign(cls, dataset, new_data):
+        import xarray as xr
         data = dataset.data
         coords = OrderedDict()
         for k, v in new_data.items():
             if k not in dataset.kdims:
                 continue
+            elif isinstance(v, xr.DataArray):
+                coords[k] = v.rename(**{v.name: k})
             coord_vals = cls.coords(dataset, k)
             if not coord_vals.ndim > 1 and np.all(coord_vals[1:] < coord_vals[:-1]):
                 v = v[::-1]
@@ -618,7 +626,10 @@ class XArrayInterface(GridInterface):
         for k, v in new_data.items():
             if k in dataset.kdims:
                 continue
-            vars[k] = (dims, cls.canonicalize(dataset, v, data_coords=dims))
+            if isinstance(v, xr.DataArray):
+                vars[k] = v
+            else:
+                vars[k] = (dims, cls.canonicalize(dataset, v, data_coords=dims))
         if vars:
             data = data.assign(vars)
         return data

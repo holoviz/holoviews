@@ -7,7 +7,7 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 
 import numpy as np
 
-from ..core.dimension import Dimension
+from ..core.dimension import Dimension, dimension_name
 from ..core.util import basestring, unique_iterator
 
 def _maybe_map(numpy_fn):
@@ -441,7 +441,7 @@ class dim(object):
         return applies
 
     def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
-              keep_index=False, compute=True):
+              keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -457,6 +457,7 @@ class dim(object):
                should be preserved in the result.
            compute: For data types that support lazy evaluation, whether
                the result should be computed before it is returned.
+           strict: Whether to strictly check for dimension matches
 
         Returns:
             values: NumPy array computed by evaluating the expression
@@ -473,9 +474,10 @@ class dim(object):
                 dimension = dataset.nodes.kdims[2]
             dataset = dataset if dimension in dataset else dataset.nodes
 
+        lookup = dimension if strict else dimension.name
         data = dataset.interface.values(
             dataset,
-            dimension,
+            lookup,
             expanded=expanded,
             flat=flat,
             compute=compute,
@@ -483,7 +485,8 @@ class dim(object):
         )
         for o in self.ops:
             args = o['args']
-            fn_args = [data]
+            fn = o['fn']
+            fn_args = [] if isinstance(fn, basestring) else [data]
             for arg in args:
                 if isinstance(arg, dim):
                     arg = arg.apply(
@@ -497,16 +500,15 @@ class dim(object):
                     )
                 fn_args.append(arg)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            eldim = dataset.get_dimension(dimension)
-            drange = ranges.get(eldim.name, {})
+            eldim = dataset.get_dimension(lookup)
+            drange = ranges.get(dimension_name(lookup), {})
             drange = drange.get('combined', drange)
-            fn = o['fn']
             kwargs = o['kwargs']
             if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
                 not ('min' in kwargs and 'max' in kwargs)):
                 data = fn(data, *drange)
             elif isinstance(fn, basestring):
-                data = getattr(data, fn)(*args[1:], **kwargs)
+                data = getattr(data, fn)(*args, **kwargs)
             else:
                 data = fn(*args, **kwargs)
         return data
