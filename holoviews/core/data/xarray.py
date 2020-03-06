@@ -606,7 +606,8 @@ class XArrayInterface(GridInterface):
         coords = {k: v for k, v in new_data.items() if k in dataset.kdims}
         if coords:
             data = data.assign_coords(coords)
-        vars = {k: v for k, v in new_data.items() if k not in dataset.kdims}
+        vars = {k: (tuple(kd.name for kd in dataset.kdims[::-1]), v)
+                for k, v in new_data.items() if k not in dataset.kdims}
         data = data.assign(vars)
         return data
 

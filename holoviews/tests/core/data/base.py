@@ -395,7 +395,17 @@ class HomogeneousColumnTests(object):
         df = self.dataset_hm.dframe(['x'])
         self.assertEqual(df, pd.DataFrame({'x': self.xs}, dtype=df.dtypes[0]))
 
+    def test_dataset_transform_replace_hm(self):
+        transformed = self.dataset_hm.transform(y=dim('y')*2)
+        expected = Dataset((self.xs, self.y_ints*2), 'x', 'y')
+        self.assertEqual(transformed, expected)
 
+    def test_dataset_transform_add_hm(self):
+        transformed = self.dataset_hm.transform(y2=dim('y')*2)
+        expected = Dataset((self.xs, self.y_ints, self.y_ints*2), 'x', ['y', 'y2'])
+        self.assertEqual(transformed, expected)
+
+        
 
 class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
@@ -613,7 +623,6 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
                            ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
                           kdims=['Gender'], sort=False)
-        print(grouped.keys())
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
     def test_dataset_groupby_alias(self):
@@ -839,6 +848,26 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_array_ht(self):
         self.assertEqual(self.dataset_ht.array(),
                          np.column_stack([self.xs, self.ys]))
+
+    # Transforms
+
+    def test_dataset_transform_replace_ht(self):
+        transformed = self.table.transform(
+            Age=dim('Age')**2, Weight=dim('Weight')*2, Height=dim('Height')/2.
+        )
+        expected = Dataset({'Gender':self.gender, 'Age':self.age**2,
+                            'Weight':self.weight*2, 'Height':self.height/2.},
+                           kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(transformed, expected)
+
+    def test_dataset_transform_add_ht(self):
+        transformed = self.table.transform(combined=dim('Age')*dim('Weight'))
+        expected = Dataset({'Gender':self.gender, 'Age':self.age,
+                              'Weight':self.weight, 'Height':self.height,
+                              'combined': self.age*self.weight},
+                             kdims=self.kdims, vdims=self.vdims+['combined'])
+        self.assertEqual(transformed, expected)
+
 
 
 class ScalarColumnTests(object):

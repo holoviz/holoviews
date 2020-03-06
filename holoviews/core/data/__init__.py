@@ -950,14 +950,14 @@ argument to specify a selection specification""")
         for signature, transform in transforms.items():
             applied = transform.apply(self, compute=False, keep_index=True)
             if len(signature) == 1:
-                new_data[s[0]] = applied
+                new_data[signature[0]] = applied
             else:
                 for s, vals in zip(signature, applied):
                     new_data[s] = vals
 
         new_dims = []
         for d in new_data:
-            if self.get_dimension(s) is None:
+            if self.get_dimension(d) is None:
                 new_dims.append(d)
 
         if drop:
