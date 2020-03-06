@@ -486,8 +486,11 @@ class dim(object):
         for o in self.ops:
             args = o['args']
             fn = o['fn']
+            kwargs = dict(o['kwargs'])
             fn_name = self._numpy_funcs.get(fn)
             if fn_name and hasattr(data, fn_name):
+                if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
+                    kwargs['axis'] = None
                 fn = fn_name
             fn_args = [] if isinstance(fn, basestring) else [data]
             for arg in args:
@@ -506,7 +509,6 @@ class dim(object):
             eldim = dataset.get_dimension(lookup)
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
-            kwargs = o['kwargs']
             if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
                 not ('min' in kwargs and 'max' in kwargs)):
                 data = fn(data, *drange)
