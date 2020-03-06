@@ -260,7 +260,7 @@ class Apply(object):
         """
         kwargs['_method_args'] = args
         kwargs['per_element'] = True
-        return self.__call__('transform', drop=drop, **kwargs)
+        return self.__call__('transform', **kwargs)
 
 @add_metaclass(AccessorPipelineMeta)
 class Redim(object):
