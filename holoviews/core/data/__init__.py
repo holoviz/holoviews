@@ -14,7 +14,7 @@ from param.parameterized import add_metaclass, ParameterizedMetaclass
 from .. import util
 from ..accessors import Redim
 from ..dimension import (
-    Dimension, process_dimensions, Dimensioned, LabelledData
+    Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
 )
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
@@ -450,40 +450,36 @@ class Dataset(Element):
 
         Args:
             dimension: Dimension or dimension spec to add
-            dim_pos (int, None) Integer index to insert dimension at. Default: last
+            dim_pos (int) Integer index to insert dimension at
             dim_val (scalar or ndarray): Dimension value(s) to add
-            vdim: (bool) Whether to insert as vdim, otherwise as kdim
+            vdim: Disabled, this type does not have value dimensions
             **kwargs: Keyword arguments passed to the cloned element
-
         Returns:
             Cloned object containing the new dimension
         """
         if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
 
+        if dimension.name in self.kdims:
+            raise Exception('{dim} dimension already defined'.format(dim=dimension.name))
+
         if vdim:
             dims = self.vdims[:]
-            if dim_pos is None:
-                dim_pos = len(self.vdims) + len(self.kdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(vdims=dims)
+            dim_pos += self.ndims
         else:
             dims = self.kdims[:]
-            if dim_pos is None:
-                dim_pos = len(self.kdims)
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
         if issubclass(self.interface, ArrayInterface) and np.asarray(dim_val).dtype != self.data.dtype:
             element = self.clone(datatype=[default_datatype])
+            data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         else:
-            element = self.clone()
-
-        if dimension.name in element.dimensions():
-            # self.param.warning('Overwriting existing "{dim}" dimension'.format(dim=dimension.name))
-            element = element.drop_dimensions([dimension.name])
-        data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
+            data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
         return self.clone(data, **dimensions)
+
 
     def select(self, selection_expr=None, selection_specs=None, **selection):
         """Applies selection by dimension name
@@ -801,8 +797,8 @@ argument to specify a selection specification""")
         """Aggregates data on the supplied dimensions.
 
         Aggregates over the supplied key dimensions with the defined
-        function or dim_transform. If neither is given explicitly, we can assign
-        aggregated variables in the form var_name=dim_transform.
+        function or dim_transform specified as tuple of the transformed
+        dimension name and dim transform.
 
         Args:
             dimensions: Dimension(s) to aggregate on
@@ -925,13 +921,22 @@ argument to specify a selection specification""")
                                       group_type, **kwargs)
 
     def transform(self, *args, drop=False, **kwargs):
-        """
-        Transforms the Dataset according to a dimension transform.
+        """Transforms the Dataset according to a dimension transform.
+
+        Transforms may be supplied as tuples consisting of the
+        dimension(s) and the dim transform to apply or keyword
+        arguments mapping from dimension(s) to dim transforms. If the
+        arg or kwarg declares multiple dimensions the dim transform
+        should return a tuple of values for each.
+
+        A transform may override an existing dimension or add a new
+        one in which case it will be added as an additional value
+        dimension.
 
         Args:
             args: Specify the output arguments and transforms as a
                   tuple of dimension specs and dim transforms
-            drop (bool): Whether to drop all variables not part of output
+            drop (bool): Whether to drop all variables not part of the transform
             kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
@@ -958,8 +963,10 @@ argument to specify a selection specification""")
         if drop:
             kdims = [self.get_dimension(d) for d in new_data if d in self.kdims]
             vdims = [self.get_dimension(d) or d for d in new_data if d not in self.kdims]
-            return self.clone(new_data, kdims=kdims, vdims=vdims)
+            data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            return self.clone(data, kdims=kdims, vdims=vdims)
         else:
+            new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
             data = self.interface.assign(self, new_data)
             return self.clone(data, vdims=self.vdims+new_dims)
 
