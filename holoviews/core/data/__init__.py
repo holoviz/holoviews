@@ -979,7 +979,9 @@ argument to specify a selection specification""")
         else:
             new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
             data = ds.interface.assign(ds, new_data)
-            return ds.clone(data, vdims=ds.vdims+new_dims)
+            data, drop = data if isinstance(data, tuple) else (data, [])
+            kdims = [kd for kd in self.kdims if kd.name not in drop]
+            return ds.clone(data, kdims=kdims, vdims=ds.vdims+new_dims)
 
     def __len__(self):
         "Number of values in the Dataset."
