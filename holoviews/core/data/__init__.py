@@ -281,6 +281,12 @@ class Dataset(Element):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
+    def __new__(cls, data, kdims=None, vdims=None, **kwargs):
+        if isinstance(data, DynamicMap):
+            return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
+        else:
+            return super(Dataset, cls).__new__(cls)
+
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
             chain as chain_op, factory
