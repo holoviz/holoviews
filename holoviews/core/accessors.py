@@ -221,6 +221,14 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
+        from ..util.transform import dim
+        from ..streams import Params
+        params = {}
+        for arg in kwargs.values():
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
         kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
@@ -258,24 +266,16 @@ class Apply(object):
         See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
         for more information.
         """
+        from ..util.transform import dim
         from ..streams import Params
-        streams = []
         params = {}
         for _, arg in list(args)+list(kwargs.items()):
-            for op in arg.ops:
-                op_args = list(op['args'])+list(op['kwargs'].items())
-                for op_arg in op_args:
-                    if 'panel' in sys.modules:
-                        from panel.widgets.base import Widget
-                        if isinstance(op_arg, Widget):
-                            op_arg = op_arg.param.value
-                    if (isinstance(op_arg, param.Parameter) and
-                        isinstance(op_arg.owner, param.Parameterized)):
-                        params[op_arg.name+str(id(op))] = op_arg
-        streams += Params.from_params(params, watch_only=True)
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
         kwargs['_method_args'] = args
         kwargs['per_element'] = True
-        kwargs['streams'] = streams
         return self.__call__('transform', **kwargs)
 
 

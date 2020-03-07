@@ -1,11 +1,13 @@
 from __future__ import division
 
 import operator
+import sys
 
 from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import param
 
 from ..core.dimension import Dimension
 from ..core.util import basestring, resolve_dependent_value, unique_iterator
@@ -273,6 +275,21 @@ class dim(object):
         if attr in self.__dict__:
             return self.__dict__[attr]
         return partial(self.method, attr)
+
+    @property
+    def params(self):
+        params = {}
+        for op in self.ops:
+            op_args = list(op['args'])+list(op['kwargs'].items())
+            for op_arg in op_args:
+                if 'panel' in sys.modules:
+                    from panel.widgets.base import Widget
+                    if isinstance(op_arg, Widget):
+                        op_arg = op_arg.param.value
+                if (isinstance(op_arg, param.Parameter) and
+                    isinstance(op_arg.owner, param.Parameterized)):
+                    params[op_arg.name+str(id(op))] = op_arg
+        return params
 
     def method(self, method, *args, **kwargs):
         return dim(self, method, *args, **kwargs)
