@@ -475,6 +475,7 @@ class dim(object):
            compute: For data types that support lazy evaluation, whether
                the result should be computed before it is returned.
            strict: Whether to strictly check for dimension matches
+               (if False, counts any dimensions with matching names as the same)
 
         Returns:
             values: NumPy array computed by evaluating the expression

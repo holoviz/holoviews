@@ -282,6 +282,10 @@ class Dataset(Element):
     _kdim_reductions = {}
 
     def __new__(cls, data, kdims=None, vdims=None, **kwargs):
+        """
+        Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
+        class to each underlying element.
+        """
         if isinstance(data, DynamicMap):
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
@@ -456,7 +460,7 @@ class Dataset(Element):
 
         Args:
             dimension: Dimension or dimension spec to add
-            dim_pos (int) Integer index to insert dimension at
+            dim_pos (int): Integer index to insert dimension at
             dim_val (scalar or ndarray): Dimension value(s) to add
             vdim: Disabled, this type does not have value dimensions
             **kwargs: Keyword arguments passed to the cloned element
@@ -803,7 +807,7 @@ argument to specify a selection specification""")
         """Aggregates data on the supplied dimensions.
 
         Aggregates over the supplied key dimensions with the defined
-        function or dim_transform specified as tuple of the transformed
+        function or dim_transform specified as a tuple of the transformed
         dimension name and dim transform.
 
         Args:

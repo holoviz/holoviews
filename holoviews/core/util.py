@@ -1514,7 +1514,7 @@ def resolve_dependent_value(value):
        value: A value which will be resolved
 
     Returns:
-       A new dictionary with where any parameter dependencies have been
+       A new dictionary where any parameter dependencies have been
        resolved.
     """
     if 'panel' in sys.modules:
