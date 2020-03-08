@@ -281,7 +281,7 @@ class Dataset(Element):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
-    def __new__(cls, data, kdims=None, vdims=None, **kwargs):
+    def __new__(cls, data=None, kdims=None, vdims=None, **kwargs):
         """
         Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
         class to each underlying element.
