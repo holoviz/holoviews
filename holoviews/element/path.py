@@ -369,6 +369,9 @@ class BaseShape(Path):
 
     __abstract = True
 
+    def __new__(cls, *args, **kwargs):
+        return super(Dataset, cls).__new__(cls)
+
     def __init__(self, **params):
         super(BaseShape, self).__init__([], **params)
         self.interface = MultiInterface
