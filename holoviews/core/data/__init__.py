@@ -949,14 +949,16 @@ argument to specify a selection specification""")
             drop (bool): Whether to drop all variables not part of the transform
             keep_index (bool): Whether to keep indexes
                   Whether to apply transform on datastructure with
-                  index, e.g. pandas.Series or xarray.DataArray
+                  index, e.g. pandas.Series or xarray.DataArray,
+                  (important for dask datastructures where index may
+                  be required to align datasets).
             kwargs: Specify new dimensions in the form new_dim=dim_transform
 
         Returns:
             Transformed dataset with new dimensions
         """
         drop = kwargs.pop('drop', False)
-        keep_index = kwargs.pop('keep_index', False)
+        keep_index = kwargs.pop('keep_index', True)
         transforms = OrderedDict()
         for s, transform in list(args)+list(kwargs.items()):
             transforms[util.wrap_tuple(s)] = transform
