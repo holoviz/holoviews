@@ -382,7 +382,7 @@ class XArrayInterface(GridInterface):
             return data.T.flatten() if flat else data
         else:
             if keep_index:
-                return dataset[dim.name]
+                return dataset.data[dim.name]
             return cls.coords(dataset, dim.name, ordered=True)
 
 
@@ -618,6 +618,7 @@ class XArrayInterface(GridInterface):
                 continue
             elif isinstance(v, xr.DataArray):
                 coords[k] = v.rename(**{v.name: k})
+                continue
             coord_vals = cls.coords(dataset, k)
             if not coord_vals.ndim > 1 and np.all(coord_vals[1:] < coord_vals[:-1]):
                 v = v[::-1]
