@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
+import types
 
 import param
 import numpy as np
@@ -12,7 +13,7 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor
 from ...core.util import basestring, isfinite
 from ...element import HexTiles
-from ...util.transform import dim
+from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import line_properties, fill_properties
@@ -26,7 +27,11 @@ class hex_binning(Operation):
     useable.
     """
 
-    aggregator = param.Callable(default=np.size)
+    aggregator = param.ClassSelector(
+        default=np.size, class_=(types.FunctionType, tuple), doc="""
+      Aggregation function or dimension transform used to compute bin
+      values. Defaults to np.size to count the number of values
+      in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
@@ -80,7 +85,10 @@ class hex_binning(Operation):
         xd, yd = (element.get_dimension(i) for i in indexes)
         xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
         kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
-        agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
+        agg = (
+            element.clone(data, kdims=kdims, vdims=vdims)
+            .aggregate(function=aggregator)
+        )
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
         return agg
@@ -95,10 +103,11 @@ Compositor.register(compositor)
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.Callable(default=np.size, doc="""
-      Aggregation function used to compute bin values. Any NumPy
-      reduction is allowed, defaulting to np.size to count the number
-      of values in each bin.""")
+    aggregator = param.ClassSelector(
+        default=np.size, class_=(types.FunctionType, tuple), doc="""
+      Aggregation function or dimension transform used to compute
+      bin values.  Defaults to np.size to count the number of values
+      in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
@@ -194,7 +203,8 @@ class HexTilesPlot(ColorbarPlot):
         style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
         scale = style.get('scale')
-        if scale_dim and ((isinstance(scale, basestring) and scale in element) or isinstance(scale, dim)):
+        if (scale_dim and ((isinstance(scale, basestring) and scale in element) or
+                           isinstance(scale, dim_transform))):
             self.param.warning("Cannot declare style mapping for 'scale' option "
                                "and declare a size_index; ignoring the size_index.")
             scale_dim = None

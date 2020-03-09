@@ -1,13 +1,16 @@
 from __future__ import division
 
 import operator
+import sys
 
+from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
+import param
 
 from ..core.dimension import Dimension
-from ..core.util import basestring, unique_iterator
+from ..core.util import basestring, resolve_dependent_value, unique_iterator
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
@@ -222,7 +225,7 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types) or
+            if not (isinstance(fn, function_types+(basestring,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
@@ -267,6 +270,29 @@ class dim(object):
 
     def __hash__(self):
         return hash(repr(self))
+
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return self.__dict__[attr]
+        return partial(self.method, attr)
+
+    @property
+    def params(self):
+        params = {}
+        for op in self.ops:
+            op_args = list(op['args'])+list(op['kwargs'].items())
+            for op_arg in op_args:
+                if 'panel' in sys.modules:
+                    from panel.widgets.base import Widget
+                    if isinstance(op_arg, Widget):
+                        op_arg = op_arg.param.value
+                if (isinstance(op_arg, param.Parameter) and
+                    isinstance(op_arg.owner, param.Parameterized)):
+                    params[op_arg.name+str(id(op))] = op_arg
+        return params
+
+    def method(self, method, *args, **kwargs):
+        return dim(self, method, *args, **kwargs)
 
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
@@ -432,7 +458,7 @@ class dim(object):
         return applies
 
     def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
-              keep_index=False, compute=True):
+              keep_index=False, compute=True, strict=False):
         """Evaluates the transform on the supplied dataset.
 
         Args:
@@ -448,6 +474,8 @@ class dim(object):
                should be preserved in the result.
            compute: For data types that support lazy evaluation, whether
                the result should be computed before it is returned.
+           strict: Whether to strictly check for dimension matches
+               (if False, counts any dimensions with matching names as the same)
 
         Returns:
             values: NumPy array computed by evaluating the expression
@@ -464,9 +492,10 @@ class dim(object):
                 dimension = dataset.nodes.kdims[2]
             dataset = dataset if dimension in dataset else dataset.nodes
 
+        lookup = dimension if strict else dimension.name
         data = dataset.interface.values(
             dataset,
-            dimension,
+            lookup,
             expanded=expanded,
             flat=flat,
             compute=compute,
@@ -474,7 +503,14 @@ class dim(object):
         )
         for o in self.ops:
             args = o['args']
-            fn_args = [data]
+            fn = o['fn']
+            kwargs = dict(o['kwargs'])
+            fn_name = self._numpy_funcs.get(fn)
+            if fn_name and hasattr(data, fn_name):
+                if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
+                    kwargs['axis'] = None
+                fn = fn_name
+            fn_args = [] if isinstance(fn, basestring) else [data]
             for arg in args:
                 if isinstance(arg, dim):
                     arg = arg.apply(
@@ -486,16 +522,40 @@ class dim(object):
                         keep_index,
                         compute,
                     )
+                arg = resolve_dependent_value(arg)
                 fn_args.append(arg)
+            fn_kwargs = {}
+            for k, v in kwargs.items():
+                if isinstance(v, dim):
+                    v = v.apply(
+                        dataset,
+                        flat,
+                        expanded,
+                        ranges,
+                        all_values,
+                        keep_index,
+                        compute,
+                    )
+                fn_kwargs[k] = resolve_dependent_value(v)
             args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            eldim = dataset.get_dimension(dimension)
+            kwargs = dict(fn_kwargs)
+            eldim = dataset.get_dimension(lookup)
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
-            kwargs = o['kwargs']
-            if ((o['fn'] is norm) or (o['fn'] is lognorm)) and drange != {} and not ('min' in kwargs and 'max' in kwargs):
-                data = o['fn'](data, *drange)
+            if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
+                not ('min' in kwargs and 'max' in kwargs)):
+                data = fn(data, *drange)
+            elif isinstance(fn, basestring):
+                method = getattr(data, fn, None)
+                if method is None:
+                    raise AttributeError(
+                        "%r could not be applied to '%r', '%s' method "
+                        "does not exist on %s type."
+                        % (self, dataset, fn, type(data).__name__)
+                    )
+                data = method(*args, **kwargs)
             else:
-                data = o['fn'](*args, **kwargs)
+                data = fn(*args, **kwargs)
         return data
 
     def __repr__(self):
@@ -509,7 +569,7 @@ class dim(object):
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
             kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
-            kwargs = '%s' % ', '.join(['%s=%s' % item for item in kwargs]) if kwargs else ''
+            kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
                 if o['reverse']:
@@ -522,10 +582,15 @@ class dim(object):
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                fn_name = fn.__name__
+                if isinstance(fn, basestring):
+                    fn_name = fn
+                else:
+                    fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
+                elif isinstance(fn, basestring):
+                    format_string = prev+').{fn}('
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('

@@ -209,11 +209,11 @@ class TestDimTransforms(ComparisonTestCase):
         self.check_apply(expr, self.linear_floats.sum())
 
     def test_std_transform(self):
-        expr = dim('float').std()
+        expr = dim('float').std(ddof=0)
         self.check_apply(expr, self.linear_floats.std(ddof=0))
 
     def test_var_transform(self):
-        expr = dim('float').var()
+        expr = dim('float').var(ddof=0)
         self.check_apply(expr, self.linear_floats.var(ddof=0))
 
     def test_log_transform(self):

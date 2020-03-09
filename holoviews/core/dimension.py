@@ -629,14 +629,11 @@ class LabelledData(param.Parameterized):
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
         return identifier_match
 
-
     def traverse(self, fn=None, specs=None, full_breadth=True):
         """Traverses object returning matching items
-
         Traverses the set of children of the object, collecting the
         all objects matching the defined specs. Each object can be
         processed with the supplied function.
-
         Args:
             fn (function, optional): Function applied to matched objects
             specs: List of specs to match
@@ -646,7 +643,6 @@ class LabelledData(param.Parameterized):
             full_breadth: Whether to traverse all objects
                 Whether to traverse the full set of objects on each
                 container or only the first.
-
         Returns:
             list: List of objects that matched
         """

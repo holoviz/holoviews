@@ -14,7 +14,7 @@ from param.parameterized import add_metaclass, ParameterizedMetaclass
 from .. import util
 from ..accessors import Redim
 from ..dimension import (
-    Dimension, process_dimensions, Dimensioned, LabelledData
+    Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
 )
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
@@ -281,6 +281,16 @@ class Dataset(Element):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
+    def __new__(cls, data=None, kdims=None, vdims=None, **kwargs):
+        """
+        Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
+        class to each underlying element.
+        """
+        if isinstance(data, DynamicMap):
+            return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
+        else:
+            return super(Dataset, cls).__new__(cls)
+
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
             chain as chain_op, factory
@@ -446,15 +456,14 @@ class Dataset(Element):
 
         Requires the dimension name or object, the desired position in
         the key dimensions and a key value scalar or array of values,
-        matching the length o shape of the Dataset.
+        matching the length or shape of the Dataset.
 
         Args:
             dimension: Dimension or dimension spec to add
-            dim_pos (int) Integer index to insert dimension at
+            dim_pos (int): Integer index to insert dimension at
             dim_val (scalar or ndarray): Dimension value(s) to add
             vdim: Disabled, this type does not have value dimensions
             **kwargs: Keyword arguments passed to the cloned element
-
         Returns:
             Cloned object containing the new dimension
         """
@@ -798,24 +807,37 @@ argument to specify a selection specification""")
         """Aggregates data on the supplied dimensions.
 
         Aggregates over the supplied key dimensions with the defined
-        function.
+        function or dim_transform specified as a tuple of the transformed
+        dimension name and dim transform.
 
         Args:
             dimensions: Dimension(s) to aggregate on
                 Default to all key dimensions
-            function: Aggregation function to apply, e.g. numpy.mean
+            function: Aggregation function or transform to apply
+                Supports both simple functions and dimension transforms
             spreadfn: Secondary reduction to compute value spread
                 Useful for computing a confidence interval, spread, or
                 standard deviation.
-            **kwargs: Keyword arguments passed to the aggregation function
+            **kwargs: Keyword arguments either passed to the aggregation function
+                or to create new names for the transformed variables
 
         Returns:
             Returns the aggregated Dataset
         """
-        if function is None:
-            raise ValueError("The aggregate method requires a function to be specified")
+        from ...util.transform import dim
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
+        if isinstance(function, tuple) or any(isinstance(v, dim) for v in kwargs.values()):
+            dataset = self.clone(new_type=Dataset)
+            if dimensions:
+                dataset = dataset.groupby(dimensions)
+            args = () if function is None else (function,)
+            transformed = dataset.apply.transform(*args, drop=True, **kwargs)
+            if not isinstance(transformed, Dataset):
+                transformed = transformed.collapse()
+            return transformed.clone(new_type=type(self))
+
+        # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
         if not len(self):
             if spreadfn:
@@ -907,6 +929,71 @@ argument to specify a selection specification""")
 
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
+
+    def transform(self, *args, **kwargs):
+        """Transforms the Dataset according to a dimension transform.
+
+        Transforms may be supplied as tuples consisting of the
+        dimension(s) and the dim transform to apply or keyword
+        arguments mapping from dimension(s) to dim transforms. If the
+        arg or kwarg declares multiple dimensions the dim transform
+        should return a tuple of values for each.
+
+        A transform may override an existing dimension or add a new
+        one in which case it will be added as an additional value
+        dimension.
+
+        Args:
+            args: Specify the output arguments and transforms as a
+                  tuple of dimension specs and dim transforms
+            drop (bool): Whether to drop all variables not part of the transform
+            keep_index (bool): Whether to keep indexes
+                  Whether to apply transform on datastructure with
+                  index, e.g. pandas.Series or xarray.DataArray,
+                  (important for dask datastructures where index may
+                  be required to align datasets).
+            kwargs: Specify new dimensions in the form new_dim=dim_transform
+
+        Returns:
+            Transformed dataset with new dimensions
+        """
+        drop = kwargs.pop('drop', False)
+        keep_index = kwargs.pop('keep_index', True)
+        transforms = OrderedDict()
+        for s, transform in list(args)+list(kwargs.items()):
+            transforms[util.wrap_tuple(s)] = transform
+
+        new_data = OrderedDict()
+        for signature, transform in transforms.items():
+            applied = transform.apply(
+                self, compute=False, keep_index=keep_index
+            )
+            if len(signature) == 1:
+                new_data[signature[0]] = applied
+            else:
+                for s, vals in zip(signature, applied):
+                    new_data[s] = vals
+
+        new_dims = []
+        for d in new_data:
+            if self.get_dimension(d) is None:
+                new_dims.append(d)
+
+        ds = self
+        if ds.interface.datatype in ('image', 'array'):
+            ds = ds.clone(datatype=[dt for dt in ds.datatype if dt != ds.interface.datatype])
+
+        if drop:
+            kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
+            vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
+            data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            return ds.clone(data, kdims=kdims, vdims=vdims)
+        else:
+            new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            data = ds.interface.assign(ds, new_data)
+            data, drop = data if isinstance(data, tuple) else (data, [])
+            kdims = [kd for kd in self.kdims if kd.name not in drop]
+            return ds.clone(data, kdims=kdims, vdims=ds.vdims+new_dims)
 
     def __len__(self):
         "Number of values in the Dataset."

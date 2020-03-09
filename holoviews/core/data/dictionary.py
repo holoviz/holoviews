@@ -215,7 +215,7 @@ class DictInterface(Interface):
         columns = defaultdict(list)
         for key, ds in datasets:
             for k, vals in ds.data.items():
-                columns[k].append(vals)
+                columns[k].append(np.atleast_1d(vals))
             for d, k in zip(dimensions, key):
                 columns[d.name].append(np.full(len(ds), k))
 
@@ -268,6 +268,13 @@ class DictInterface(Interface):
                 return util.unique_array(values)
             values = np.asarray(values)
         return values
+
+
+    @classmethod
+    def assign(cls, dataset, new_data):
+        data = OrderedDict(dataset.data)
+        data.update(new_data)
+        return data
 
 
     @classmethod

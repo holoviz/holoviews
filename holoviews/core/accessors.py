@@ -205,11 +205,10 @@ class Apply(object):
                     mapped.append((k, new_val))
             return self._obj.clone(mapped, link=link_inputs)
 
-
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """Applies a aggregate function to all ViewableElements.
 
-        See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
+        See :py:meth:`Dimensioned.aggregate` and :py:meth:`Apply.__call__`
         for more information.
         """
         kwargs['_method_args'] = (dimensions, function, spreadfn)
@@ -222,6 +221,14 @@ class Apply(object):
         See :py:meth:`Dimensioned.opts` and :py:meth:`Apply.__call__`
         for more information.
         """
+        from ..util.transform import dim
+        from ..streams import Params
+        params = {}
+        for arg in kwargs.values():
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
         kwargs['_method_args'] = args
         return self.__call__('opts', **kwargs)
 
@@ -252,6 +259,24 @@ class Apply(object):
         for more information.
         """
         return self.__call__('select', **kwargs)
+
+    def transform(self, *args, **kwargs):
+        """Applies transforms to all Datasets.
+
+        See :py:meth:`Dataset.transform` and :py:meth:`Apply.__call__`
+        for more information.
+        """
+        from ..util.transform import dim
+        from ..streams import Params
+        params = {}
+        for _, arg in list(args)+list(kwargs.items()):
+            if isinstance(arg, dim):
+                params.update(arg.params)
+        streams = Params.from_params(params, watch_only=True)
+        kwargs['streams'] = kwargs.get('streams', []) + streams
+        kwargs['_method_args'] = args
+        kwargs['per_element'] = True
+        return self.__call__('transform', **kwargs)
 
 
 @add_metaclass(AccessorPipelineMeta)

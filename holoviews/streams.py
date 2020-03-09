@@ -681,7 +681,7 @@ class Params(Stream):
                 group[0].owner.param.watch(self._watcher, [p.name for p in group])
 
     @classmethod
-    def from_params(cls, params):
+    def from_params(cls, params, **kwargs):
         """Returns Params streams given a dictionary of parameters
 
         Args:
@@ -699,7 +699,7 @@ class Params(Stream):
                 continue
             names = [p.name for _, p in group]
             rename = {p.name: n for n, p in group}
-            streams.append(cls(inst, names, rename=rename))
+            streams.append(cls(inst, names, rename=rename, **kwargs))
         return streams
 
     def _validate_rename(self, mapping):

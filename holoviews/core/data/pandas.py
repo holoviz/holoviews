@@ -179,7 +179,7 @@ class PandasInterface(Interface):
             kwargs['sort'] = False
         return pd.concat(dataframes, **kwargs)
 
-        
+
     @classmethod
     def concat(cls, datasets, dimensions, vdims):
         dataframes = []
@@ -345,6 +345,9 @@ class PandasInterface(Interface):
             data.insert(dim_pos, dimension.name, values)
         return data
 
+    @classmethod
+    def assign(cls, dataset, new_data):
+        return dataset.data.assign(**new_data)
 
     @classmethod
     def as_dframe(cls, dataset):
