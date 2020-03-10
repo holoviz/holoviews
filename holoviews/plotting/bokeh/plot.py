@@ -20,8 +20,9 @@ from ...core import (
 from ...core.options import SkipRendering
 from ...core.util import (
     basestring, cftime_to_timestamp, cftime_types, get_method_owner,
-    unique_iterator, wrap_tuple, wrap_tuple_streams, _STANDARD_CALENDARS)
-
+    is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
+    _STANDARD_CALENDARS
+)
 from ..links import Link
 from ..plot import (
     DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
@@ -232,7 +233,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             for stream in set(streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
-                    if get_method_owner(subscriber) not in plots
+                    if not is_param_method(subscriber) or
+                    get_method_owner(subscriber) not in plots
                 ]
 
 
