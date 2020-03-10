@@ -412,7 +412,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
         x_range_type, y_range_type = range_types
-        if 'x_range' in ranges:
+        if 'x_range' in plot_ranges:
             pass
         elif categorical or categorical_x:
             x_axis_type = 'auto'
@@ -420,7 +420,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             plot_ranges['x_range'] = x_range_type()
 
-        if 'y_range' in ranges:
+        if 'y_range' in plot_ranges:
             pass
         elif categorical or categorical_y:
             y_axis_type = 'auto'
