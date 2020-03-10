@@ -317,7 +317,8 @@ def connect_tri_edges_pd(trimesh):
     df = df.rename(columns={x.name: 'x1', y.name: 'y1'})
     df = pd.merge(df, nodes, left_on=[v3.name], right_on=[idx.name])
     df = df.rename(columns={x.name: 'x2', y.name: 'y2'})
-    return df.sort_values('trimesh_edge_index').drop(['trimesh_edge_index'], axis=1)
+    df = df.sort_values('trimesh_edge_index').drop(['trimesh_edge_index'], axis=1)
+    return df[['x0', 'y0', 'x1', 'y1', 'x2', 'y2']]
 
 
 def connect_edges(graph):
