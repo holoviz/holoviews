@@ -358,7 +358,7 @@ argument to specify a selection specification""")
     def dimensions(self, selection='all', label=False):
         dimensions = super(Graph, self).dimensions(selection, label)
         if selection == 'ranges':
-            if self._nodes:
+            if self._nodes is not None:
                 node_dims = self.nodes.dimensions(selection, label)
             else:
                 node_dims = self.node_type.kdims+self.node_type.vdims

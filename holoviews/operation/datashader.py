@@ -29,6 +29,7 @@ from ..core.util import (
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Spread,
                        Segments, Scatter, Points, Polygons)
+from ..element.util import connect_tri_edges_pd
 from ..streams import RangeXY, PlotSize
 
 ds_version = LooseVersion(ds.__version__)
@@ -954,10 +955,7 @@ class trimesh_rasterize(aggregate):
         if hasattr(element, '_wireframe'):
             segments = element._wireframe.data
         else:
-            simplexes = element.array([0, 1, 2, 0]).astype('int')
-            verts = element.nodes.array([0, 1])
-            segments = pd.DataFrame(verts[simplexes].reshape(len(simplexes), -1),
-                                    columns=['x0', 'y0', 'x1', 'y1', 'x2', 'y2', 'x3', 'y3'])
+            segments = connect_tri_edges_pd(element)
             element._wireframe = Dataset(segments, datatype=['dataframe', 'dask'])
         return {'segments': segments}
 
@@ -1027,9 +1025,9 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
         if wireframe:
-            agg = cvs.line(segments, x=['x0', 'x1', 'x2', 'x3'],
-                           y=['y0', 'y1', 'y2', 'y3'], axis=1,
-                           agg=agg)
+            agg = cvs.line(segments, x=['x0', 'x1', 'x2', 'x0'],
+                           y=['y0', 'y1', 'y2', 'y0'], axis=1,
+                           agg=agg).rename({'x': x.name, 'y': y.name})
         else:
             interpolate = bool(self.p.interpolation)
             agg = cvs.trimesh(pts, simplices, agg=agg,
