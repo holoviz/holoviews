@@ -40,8 +40,8 @@ from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
 from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
-    legend_dimensions, line_properties, mpl_to_bokeh, property_prefixes,
-    rgba_tuple, text_properties, validate
+    base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
+    property_prefixes, rgba_tuple, text_properties, validate
 )
 from .tabular import TablePlot
 from .util import (
@@ -1633,7 +1633,7 @@ class ColorbarPlot(ElementPlot):
 
     _default_nan = '#8b8b8b'
 
-    _nonvectorized_styles = ['cmap', 'palette']
+    _nonvectorized_styles = base_properties + ['cmap', 'palette']
 
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):

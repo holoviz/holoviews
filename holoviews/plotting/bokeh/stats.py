@@ -19,7 +19,7 @@ from ...util.transform import dim
 from .chart import AreaPlot
 from .element import CompositeElementPlot, ColorbarPlot, LegendPlot
 from .path import PolygonPlot
-from .styles import fill_properties, line_properties
+from .styles import base_properties, fill_properties, line_properties
 from .util import bokeh_version, decode_bytes
 
 
@@ -80,12 +80,12 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Map each glyph to a style group
     _style_groups = {'segment': 'whisker', 'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
-    style_opts = (['whisker_'+p for p in line_properties] +
-                  ['box_'+p for p in fill_properties+line_properties] +
+    style_opts = (['whisker_'+p for p in base_properties+line_properties] +
+                  ['box_'+p for p in base_properties+fill_properties+line_properties] +
                   ['outlier_'+p for p in fill_properties+line_properties] +
-                  ['width', 'box_width', 'cmap', 'box_cmap'])
+                  ['box_width', 'cmap', 'box_cmap'])
 
-    _nonvectorized_styles = ['box_width', 'whisker_width', 'width', 'cmap', 'box_cmap']
+    _nonvectorized_styles = base_properties + ['box_width', 'whisker_width', 'cmap', 'box_cmap']
 
     _stream_data = False # Plot does not support streaming data
 
@@ -168,7 +168,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         out_data = defaultdict(list, {'index': [], vdim: []})
 
         # Define glyph-data mapping
-        width = style.get('box_width', style.get('width', 0.7))
+        width = style.get('box_width', 0.7)
         whisker_width = style.pop('whisker_width', 0.4)/2.
         if 'width' in style:
             self.param.warning("BoxWhisker width option is deprecated "
@@ -336,9 +336,9 @@ class ViolinPlot(BoxWhiskerPlot):
 
     _draw_order = ['patches', 'multi_line', 'segment', 'vbar', 'hbar', 'circle', 'scatter']
 
-    style_opts = ([glyph+p for p in fill_properties+line_properties
+    style_opts = ([glyph+p for p in base_properties+fill_properties+line_properties
                    for glyph in ('violin_', 'box_')] +
-                  [glyph+p for p in line_properties
+                  [glyph+p for p in base_properties+line_properties
                    for glyph in ('stats_', 'outline_')] +
                   ['_'.join([glyph, p]) for p in ('color', 'alpha')
                    for glyph in ('box', 'violin', 'stats', 'median')] +

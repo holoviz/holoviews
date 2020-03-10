@@ -11,8 +11,10 @@ from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (expand_batched_style, line_properties, fill_properties,
-                     mpl_to_bokeh, validate)
+from .styles import (
+    expand_batched_style, base_properties, line_properties, fill_properties,
+    mpl_to_bokeh, validate
+)
 from .util import bokeh_version, multi_polygons_data
 
 
@@ -27,9 +29,11 @@ class PathPlot(LegendPlot, ColorbarPlot):
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    style_opts = line_properties + ['cmap', 'visible']
+    style_opts = base_properties + line_properties + ['cmap']
+
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
+    _nonvectorized_styles = base_properties + ['cmap']
     _batched_style_opts = line_properties
 
     def _hover_opts(self, element):
@@ -161,6 +165,7 @@ class ContourPlot(PathPlot):
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
     _color_style = 'line_color'
+    _nonvectorized_styles = base_properties + ['cmap']
 
     def __init__(self, *args, **params):
         super(ContourPlot, self).__init__(*args, **params)
@@ -287,7 +292,7 @@ class ContourPlot(PathPlot):
 
 class PolygonPlot(ContourPlot):
 
-    style_opts = ['cmap', 'visible'] + line_properties + fill_properties
+    style_opts = base_properties + line_properties + fill_properties + ['cmap']
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'

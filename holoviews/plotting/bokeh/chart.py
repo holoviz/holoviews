@@ -20,8 +20,10 @@ from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import (expand_batched_style, line_properties, fill_properties,
-                     mpl_to_bokeh, rgb2hex)
+from .styles import (
+    expand_batched_style, base_properties, line_properties, fill_properties,
+    mpl_to_bokeh, rgb2hex
+)
 from .util import bokeh_version, categorize_array
 
 
@@ -219,9 +221,9 @@ class VectorFieldPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + ['scale', 'cmap', 'visible']
+    style_opts = base_properties + line_properties + ['scale', 'cmap']
 
-    _nonvectorized_styles = ['scale', 'cmap', 'visible']
+    _nonvectorized_styles = base_properties + ['scale', 'cmap']
 
     _plot_methods = dict(single='segment')
 
@@ -336,10 +338,10 @@ class CurvePlot(ElementPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + ['visible']
+    style_opts = base_properties + line_properties
 
     _batched_style_opts = line_properties
-    _nonvectorized_styles = line_properties + ['visible']
+    _nonvectorized_styles = base_properties + line_properties
     _plot_methods = dict(single='line', batched='multi_line')
 
     def get_data(self, element, ranges, style):
@@ -403,12 +405,12 @@ class CurvePlot(ElementPlot):
 
 class HistogramPlot(ColorbarPlot):
 
-    style_opts = line_properties + fill_properties + ['cmap', 'visible']
-    _plot_methods = dict(single='quad')
-
-    _nonvectorized_styles = ['line_dash', 'visible']
-
     selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
+
+    style_opts = base_properties + fill_properties + line_properties + ['cmap']
+
+    _nonvectorized_styles = base_properties + ['line_dash']
+    _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges, style):
         if self.invert_axes:
@@ -507,18 +509,16 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
+    selection_display = BokehOverlaySelectionDisplay()
+
     style_opts = ([
         p for p in line_properties if p.split('_')[0] not in
         ('hover', 'selection', 'nonselection', 'muted')
-    ] + ['lower_head', 'upper_head', 'visible'])
+    ] + ['lower_head', 'upper_head'] + base_properties)
 
-    _nonvectorized_styles = ['line_dash', 'visible']
-
+    _nonvectorized_styles = base_properties + ['line_dash']
     _mapping = dict(base="base", upper="upper", lower="lower")
-
     _plot_methods = dict(single=Whisker)
-
-    selection_display = BokehOverlaySelectionDisplay()
 
     def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
@@ -573,9 +573,10 @@ class SpreadPlot(ElementPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = line_properties + fill_properties + ['visible']
+    style_opts = base_properties + fill_properties + line_properties
 
     _no_op_style = style_opts
+    _nonvectorized_styles = style_opts
     _plot_methods = dict(single='patch')
     _stream_data = False # Plot does not support streaming data
 
@@ -669,8 +670,9 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (['color', 'cmap', 'palette', 'visible'] + line_properties)
+    style_opts = base_properties + line_properties + ['cmap', 'palette'] 
 
+    _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
 
     def _get_axis_dims(self, element):
@@ -756,12 +758,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = (line_properties
-                  + fill_properties
-                  + ['width', 'bar_width', 'cmap', 'visible'])
+    style_opts = (base_properties + fill_properties + line_properties +
+                  ['bar_width', 'cmap'])
 
-    _nonvectorized_styles = ['bar_width', 'cmap', 'width', 'visible']
-
+    _nonvectorized_styles = base_properties + ['bar_width', 'cmap']
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded

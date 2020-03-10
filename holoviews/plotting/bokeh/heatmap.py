@@ -10,7 +10,9 @@ from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import line_properties, fill_properties, text_properties
+from .styles import (
+    base_properties, line_properties, fill_properties, text_properties
+)
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -53,9 +55,8 @@ class HeatMapPlot(ColorbarPlot):
 
     _plot_methods = dict(single='rect')
 
-    style_opts = (['xmarks_' + p for p in line_properties] +
-                  ['ymarks_' + p for p in line_properties] +
-                  ['cmap', 'color', 'dilate', 'visible'] + line_properties + fill_properties)
+    style_opts = (['cmap', 'color', 'dilate'] + base_properties +
+                  line_properties + fill_properties)
 
     selection_display = BokehOverlaySelectionDisplay()
 
@@ -235,11 +236,10 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     _draw_order = ['annular_wedge', 'multi_line', 'arc', 'text']
 
-    style_opts = (['xmarks_' + p for p in line_properties] + \
-                  ['ymarks_' + p for p in line_properties] + \
-                  ['annular_' + p for p in fill_properties + line_properties] + \
+    style_opts = (['xmarks_' + p for p in base_properties + line_properties] + \
+                  ['ymarks_' + p for p in base_properties + line_properties] + \
+                  ['annular_' + p for p in base_properties + fill_properties + line_properties] + \
                   ['ticks_' + p for p in text_properties] + ['cmap'])
-
 
     def __init__(self, *args, **kwargs):
         super(RadialHeatMapPlot, self).__init__(*args, **kwargs)

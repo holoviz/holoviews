@@ -23,7 +23,7 @@ from .. import option_intersections
 
 class TestPlotDefinitions(ComparisonTestCase):
 
-    known_clashes = [(('Bars',), {'width'}), (('BoxWhisker',), {'width'})]
+    known_clashes = []
 
     def test_bokeh_option_definitions(self):
         # Check option definitions do not introduce new clashes

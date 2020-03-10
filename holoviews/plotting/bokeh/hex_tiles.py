@@ -16,7 +16,7 @@ from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
-from .styles import line_properties, fill_properties
+from .styles import base_properties, line_properties, fill_properties
 
 
 class hex_binning(Operation):
@@ -147,9 +147,9 @@ class HexTilesPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
+    style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
 
-    _nonvectorized_styles = ['cmap', 'line_dash']
+    _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
     def get_extents(self, element, ranges, range_type='combined'):
