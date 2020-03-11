@@ -36,11 +36,10 @@ requirements:
 test:
   requires:
     - nose
-    - matplotlib-base<=3.0
   imports:
     - holoviews
   commands:
-    - nosetests holoviews.tests --with-doctest
+    - nosetests holoviews.tests.core holoviews.tests.element holoviews.tests.plotting.bokeh --with-doctest
 
 about:
   home: www.holoviews.org
