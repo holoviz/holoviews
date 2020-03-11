@@ -30,20 +30,16 @@ requirements:
     - {{ dep }}
     {% endfor %}
     {% for dep in sdata['extras_require']['recommended'] %}
-    {% if "matplotlib" not in dep %}
     - {{ dep }}
-    {% endif %}
-    - matplotlib-base>=2.2
     {% endfor %}
 
 test:
   requires:
     - nose
-    - matplotlib<=3.0
   imports:
     - holoviews
   commands:
-    - nosetests holoviews.tests --with-doctest
+    - nosetests holoviews.tests.core holoviews.tests.element holoviews.tests.plotting.bokeh --with-doctest
 
 about:
   home: www.holoviews.org
