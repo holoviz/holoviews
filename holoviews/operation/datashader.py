@@ -1520,20 +1520,31 @@ class SpreadingOperation(LinkableOperation):
         """Apply the spread function using the indicated parameters."""
         raise NotImplementedError
 
-    def _process(self, element, key=None):
-        if not isinstance(element, RGB):
-            raise ValueError('spreading can only be applied to RGB Elements.')
-        rgb = element.rgb
-        new_data = {kd.name: rgb.dimension_values(kd, expanded=False)
-                    for kd in rgb.kdims}
+    def _preprocess_rgb(self, element):
         rgbarray = np.dstack([element.dimension_values(vd, flat=False)
                               for vd in element.vdims])
-        data = self.uint8_to_uint32(rgbarray)
+        if rgbarray.dtype.kind == 'f':
+            rgbarray = rgbarray * 255
+        return tf.Image(self.uint8_to_uint32(rgbarray.astype('uint8')))
+
+    def _process(self, element, key=None):
+        if isinstance(element, RGB):
+            rgb = element.rgb
+            data = self._preprocess_rgb(rgb)
+        elif isinstance(element, Image):
+            data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
+        else:
+            raise ValueError('spreading can only be applied to Image or RGB Elements.')
         array = self._apply_spreading(data)
-        img = datashade.uint32_to_uint8(array)
-        for i, vd in enumerate(element.vdims):
-            if i < img.shape[-1]:
-                new_data[vd.name] = np.flipud(img[..., i])
+        if isinstance(element, RGB):
+            img = datashade.uint32_to_uint8(array.data)
+            new_data = {
+                kd.name: rgb.dimension_values(kd, expanded=False)
+                for kd in rgb.kdims
+            }
+            new_data[tuple(vd.name for vd in rgb.vdims)] = img
+        else:
+            new_data = array
         return element.clone(new_data)
 
 
@@ -1554,9 +1565,7 @@ class spread(SpreadingOperation):
         Number of pixels to spread on all sides.""")
 
     def _apply_spreading(self, array):
-        img = tf.Image(array)
-        return tf.spread(img, px=self.p.px,
-                         how=self.p.how, shape=self.p.shape).data
+        return tf.spread(array, px=self.p.px, how=self.p.how, shape=self.p.shape)
 
 
 class dynspread(SpreadingOperation):
@@ -1583,10 +1592,10 @@ class dynspread(SpreadingOperation):
         allowed.""")
 
     def _apply_spreading(self, array):
-        img = tf.Image(array)
-        return tf.dynspread(img, max_px=self.p.max_px,
-                            threshold=self.p.threshold,
-                            how=self.p.how, shape=self.p.shape).data
+        return tf.dynspread(
+            array, max_px=self.p.max_px, threshold=self.p.threshold,
+            how=self.p.how, shape=self.p.shape
+        )
 
 
 def split_dataframe(path_df):
