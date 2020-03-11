@@ -134,7 +134,7 @@ jobs:
     - &conda_pkg
       <<: *default
       stage: conda_dev_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev"
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
         - doit package_build $CHANS_DEV --no-pkg-tests
       script:
@@ -142,7 +142,7 @@ jobs:
 
     - <<: *conda_pkg
       stage: conda_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS_DEV="-c pyviz -c bokeh"
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
         - doit package_build $CHANS_DEV --no-pkg-tests
       script:
