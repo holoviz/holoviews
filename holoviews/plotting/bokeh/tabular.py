@@ -29,11 +29,15 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     height = param.Number(default=300)
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     width = param.Number(default=400)
 
     selection_display = TabularSelectionDisplay()
 
-    style_opts = ['row_headers', 'selectable', 'selected', 'editable',
+    style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'scroll_to_selection',
                   'index_position', 'visible']
 
@@ -69,8 +73,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['source'] = self.handles['cds'] = source
         self.handles['selected'] = source.selected
-        if 'selected' in style:
-            source.selected.indices = list(style['selected'])
+        if self.selected is not None:
+            source.selected.indices = self.selected
 
         columns = self._get_columns(element, data)
         style['reorderable'] = False
@@ -140,6 +144,4 @@ class TablePlot(BokehPlot, GenericElementPlot):
         data, _, style = self.get_data(element, ranges, style)
         columns = self._get_columns(element, data)
         self.handles['table'].columns = columns
-        if 'selected' in style:
-            source.selected.indices = list(style['selected'])
         self._update_datasource(source, data)

@@ -978,7 +978,7 @@ class Selection1DCallback(Callback):
             if isinstance(el, Table):
                 # Ensure that explicitly applied selection does not
                 # trigger new events
-                sel = el.opts.get('style').kwargs.get('selection')
+                sel = el.opts.get('plot').kwargs.get('selected')
                 if sel is not None and list(sel) == msg['index']:
                     return {}
             return self._transform(msg)

@@ -120,6 +120,12 @@ class TestCallbacks(CallbackTestCase):
         self.assertFalse(bool(stream._subscribers))
         self.assertFalse(bool(Callback._callbacks))
 
+    def test_selection1d_syncs_to_selected(self):
+        points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
+        stream = Selection1D(source=points)
+        bokeh_renderer.get_plot(points)
+        self.assertEqual(stream.index, [0, 2])
+
 
 class TestResetCallback(CallbackTestCase):
 
