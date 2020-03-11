@@ -211,9 +211,10 @@ class Renderer(Exporter):
                 obj = collate(obj)
                 initialize_dynamic(obj)
             obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
-            obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
                              **kwargs)
+            if isinstance(obj, AdjointLayout):
+                obj = Layout(obj)
             plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
                                                    **plot_opts)
             defaults = [kd.default for kd in plot.dimensions]
@@ -273,7 +274,8 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot, fmt = HoloViewsPane(obj, center=True, backend=self.backend, renderer=self), fmt
+            plot = HoloViewsPane(obj, center=True, backend=self.backend,
+                                 renderer=self)
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
