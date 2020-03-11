@@ -100,19 +100,22 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         raise NotImplementedError
 
 
+    def _update_selected(self, cds):
+        from .callbacks import Selection1DCallback
+        cds.selected.indices = self.selected
+        for cb in self.callbacks:
+            if isinstance(cb, Selection1DCallback):
+                for s in cb.streams:
+                    s.update(index=self.selected)
+
     def _init_datasource(self, data):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
         data = self._postprocess_data(data)
         cds = ColumnDataSource(data=data)
-        if hasattr(self, 'selected'):
-            from .callbacks import Selection1DCallback
-            cds.selected.indices = self.selected
-            for cb in self.callbacks:
-                if isinstance(cb, Selection1DCallback):
-                    for s in cb.streams:
-                        s.update(index=self.selected)
+        if hasattr(self, 'selected')  and self.selected is not None:
+            self._update_selected(cds)
         return cds
 
 
@@ -161,13 +164,9 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         else:
             source.data.update(data)
 
-        if hasattr(self, 'selected'):
-            from .callbacks import Selection1DCallback
-            source.selected.indices = self.selected
-            for cb in self.callbacks:
-                if isinstance(cb, Selection1DCallback):
-                    for s in cb.streams:
-                        s.update(index=self.selected)
+        if hasattr(self, 'selected') and self.selected is not None:
+            self._update_selected(source)
+
 
     def _update_callbacks(self, plot):
         """
