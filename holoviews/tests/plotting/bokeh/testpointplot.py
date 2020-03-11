@@ -322,6 +322,12 @@ class TestPointPlot(TestBokehPlot):
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])
 
+    def test_points_selected(self):
+        points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.selected.indices, [0, 2])
+
     ###########################
     #    Styling mapping      #
     ###########################

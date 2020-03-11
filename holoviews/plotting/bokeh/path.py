@@ -155,6 +155,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 

@@ -105,7 +105,15 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         Initializes a data source to be passed into the bokeh glyph.
         """
         data = self._postprocess_data(data)
-        return ColumnDataSource(data=data)
+        cds = ColumnDataSource(data=data)
+        if hasattr(self, 'selected'):
+            from .callbacks import Selection1DCallback
+            cds.selected.indices = self.selected
+            for cb in self.callbacks:
+                if isinstance(cb, Selection1DCallback):
+                    for s in cb.streams:
+                        s.update(index=self.selected)
+        return cds
 
 
     def _postprocess_data(self, data):
@@ -152,6 +160,14 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             source.data = data
         else:
             source.data.update(data)
+
+        if hasattr(self, 'selected'):
+            from .callbacks import Selection1DCallback
+            source.selected.indices = self.selected
+            for cb in self.callbacks:
+                if isinstance(cb, Selection1DCallback):
+                    for s in cb.streams:
+                        s.update(index=self.selected)
 
     def _update_callbacks(self, plot):
         """

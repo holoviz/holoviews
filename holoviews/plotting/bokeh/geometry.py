@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
+import param
 
 from ..mixins import GeomMixin
 from .element import ColorbarPlot, LegendPlot
@@ -13,6 +14,10 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
     Segments are lines in 2D space where each two each dimensions specify a
     (x, y) node of the line.
     """
+
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
 
     selection_display = BokehOverlaySelectionDisplay()
 
@@ -33,6 +38,10 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
 
 class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
+
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
 
     selection_display = BokehOverlaySelectionDisplay()
 

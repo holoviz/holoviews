@@ -32,6 +32,10 @@ class PointPlot(LegendPlot, ColorbarPlot):
     jitter = param.Number(default=None, bounds=(0, None), doc="""
       The amount of jitter to apply to offset the points along the x-axis.""")
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     # Deprecated parameters
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
@@ -509,6 +513,10 @@ class SideHistogramPlot(HistogramPlot):
 
 class ErrorPlot(ColorbarPlot):
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = ([
@@ -714,6 +722,10 @@ class SideSpikesPlot(SpikesPlot):
     """
     SpikesPlot with useful defaults for plotting adjoined rug plot.
     """
+
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
 
     xaxis = param.ObjectSelector(default='top-bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
