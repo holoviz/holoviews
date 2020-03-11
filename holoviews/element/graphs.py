@@ -592,7 +592,7 @@ class TriMesh(Graph):
             pts[:, [0, 1, 2, 0], :].astype(float),
             pad_width=((0, 0), (0, 1), (0, 0)),
             mode='constant', constant_values=np.nan
-        ).reshape(-1, 2)
+        ).reshape(-1, 2)[:-1]
         edgepaths = self.edge_type([paths], kdims=self.nodes.kdims[:2],
                                    datatype=['multitabular'])
         self._edgepaths = edgepaths
