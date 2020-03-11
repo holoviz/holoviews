@@ -19,7 +19,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.2', 'bokeh>=1.1.0,<2.0.0']
+    'pandas', 'matplotlib>=2.2', 'bokeh>=1.1.0']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
