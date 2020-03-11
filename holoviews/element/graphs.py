@@ -11,7 +11,7 @@ from ..core.operation import Operation
 from .chart import Points
 from .path import Path
 from .util import (split_path, pd, circular_layout, connect_edges,
-                   connect_edges_pd, quadratic_bezier)
+                   connect_edges_pd, quadratic_bezier, connect_tri_edges_pd)
 
 
 class RedimGraph(Redim):
@@ -358,7 +358,7 @@ argument to specify a selection specification""")
     def dimensions(self, selection='all', label=False):
         dimensions = super(Graph, self).dimensions(selection, label)
         if selection == 'ranges':
-            if self._nodes:
+            if self._nodes is not None:
                 node_dims = self.nodes.dimensions(selection, label)
             else:
                 node_dims = self.node_type.kdims+self.node_type.vdims
@@ -586,13 +586,13 @@ class TriMesh(Graph):
             self._edgepaths = edgepaths
             return edgepaths
 
-        simplices = self.array([0, 1, 2]).astype(np.int32)
-        pts = self.nodes.array([0, 1]).astype(float)
-        pts = pts[simplices]
-        paths = np.pad(pts[:, [0, 1, 2, 0], :],
-                       pad_width=((0, 0), (0, 1), (0, 0)),
-                       mode='constant',
-                       constant_values=np.nan).reshape(-1, 2)[:-1]
+        df = connect_tri_edges_pd(self)
+        pts = df.values.reshape((len(df), 3, 2))
+        paths = np.pad(
+            pts[:, [0, 1, 2, 0], :].astype(float),
+            pad_width=((0, 0), (0, 1), (0, 0)),
+            mode='constant', constant_values=np.nan
+        ).reshape(-1, 2)[:-1]
         edgepaths = self.edge_type([paths], kdims=self.nodes.kdims[:2],
                                    datatype=['multitabular'])
         self._edgepaths = edgepaths

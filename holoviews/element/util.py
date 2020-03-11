@@ -296,6 +296,31 @@ def connect_edges_pd(graph):
     return edge_segments
 
 
+def connect_tri_edges_pd(trimesh):
+    """
+    Given a TriMesh element containing abstract edges compute edge
+    segments directly connecting the source and target nodes. This
+    operation depends on pandas and is a lot faster than the pure
+    NumPy equivalent.
+    """
+    edges = trimesh.dframe().copy()
+    edges.index.name = 'trimesh_edge_index'
+    edges = edges.reset_index()
+    nodes = trimesh.nodes.dframe().copy()
+    nodes.index.name = 'node_index'
+    v1, v2, v3 = trimesh.kdims
+    x, y, idx = trimesh.nodes.kdims[:3]
+
+    df = pd.merge(edges, nodes, left_on=[v1.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x0', y.name: 'y0'})
+    df = pd.merge(df, nodes, left_on=[v2.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x1', y.name: 'y1'})
+    df = pd.merge(df, nodes, left_on=[v3.name], right_on=[idx.name])
+    df = df.rename(columns={x.name: 'x2', y.name: 'y2'})
+    df = df.sort_values('trimesh_edge_index').drop(['trimesh_edge_index'], axis=1)
+    return df[['x0', 'y0', 'x1', 'y1', 'x2', 'y2']]
+
+
 def connect_edges(graph):
     """
     Given a Graph element containing abstract edges compute edge
