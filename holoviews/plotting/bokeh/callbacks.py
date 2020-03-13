@@ -418,7 +418,7 @@ class ServerCallback(MessageCallback):
             equal = msg == self._prev_msg
         except Exception:
             equal = False
-        if not equal:
+        if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
 
