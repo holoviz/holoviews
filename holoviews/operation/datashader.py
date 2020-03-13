@@ -1509,6 +1509,8 @@ class SpreadingOperation(LinkableOperation):
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
 
+    _per_element = True
+
     @classmethod
     def uint8_to_uint32(cls, img):
         shape = img.shape

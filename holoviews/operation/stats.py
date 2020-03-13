@@ -56,6 +56,8 @@ class univariate_kde(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
+    _per_element = True
+
     def _process(self, element, key=None):
         if self.p.groupby:
             if not isinstance(element, Dataset):
@@ -165,6 +167,8 @@ class bivariate_kde(Operation):
     y_range  = param.NumericTuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
+
+    _per_element = True
 
     def _process(self, element, key=None):
         try:

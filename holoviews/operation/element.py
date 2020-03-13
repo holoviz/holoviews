@@ -344,6 +344,8 @@ class threshold(Operation):
     group = param.String(default='Threshold', doc="""
        The group assigned to the thresholded output.""")
 
+    _per_element = True
+
     def _process(self, matrix, key=None):
 
         if not isinstance(matrix, Image):
@@ -370,6 +372,8 @@ class gradient(Operation):
 
     group = param.String(default='Gradient', doc="""
     The group assigned to the output gradient matrix.""")
+
+    _per_element = True
 
     def _process(self, matrix, key=None):
 
@@ -425,6 +429,8 @@ class convolve(Operation):
         convolution in lbrt (left, bottom, right, top) format. By
         default, no slicing is applied.""")
 
+    _per_element = True
+
     def _process(self, overlay, key=None):
         if len(overlay) != 2:
             raise Exception("Overlay must contain at least to items.")
@@ -474,6 +480,8 @@ class contours(Operation):
 
     overlaid = param.Boolean(default=False, doc="""
         Whether to overlay the contour on the supplied Element.""")
+
+    _per_element = True
 
     def _process(self, element, key=None):
         try:
@@ -773,6 +781,8 @@ class decimate(Operation):
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
 
+    _per_element = True
+
     def _process_layer(self, element, key=None):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
@@ -806,6 +816,8 @@ class interpolate_curve(Operation):
                                                   'steps-post', 'linear'],
                                          default='steps-mid', doc="""
        Controls the transition point of the step along the x-axis.""")
+
+    _per_element = True
 
     @classmethod
     def pts_to_prestep(cls, x, values):

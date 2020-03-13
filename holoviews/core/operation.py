@@ -70,6 +70,9 @@ class Operation(param.ParameterizedFunction):
     _postprocess_hooks = []
     _allow_extra_keywords=False
 
+    # Whether to apply operation per element (will be enabled by default in 2.0)
+    _per_element = False
+
     # Flag indicating whether to automatically propagate the .dataset property from
     # the input of the operation to the result
     _propagate_dataset = True
@@ -184,10 +187,12 @@ class Operation(param.ParameterizedFunction):
                 # Backwards compatibility for key argument
                 return element.clone([(k, self._apply(el, key=k))
                                       for k, el in element.items()])
-            elif isinstance(element, ViewableElement):
+            elif ((self._per_element and isinstance(element, Element)) or
+                  (not self._per_element and isinstance(element, ViewableElement))):
                 return self._apply(element)
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
+        kwargs['per_element'] = self._per_element
         return element.apply(self, **kwargs)
 
 
