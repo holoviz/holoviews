@@ -308,9 +308,12 @@ class ServerCallback(MessageCallback):
     Stream(s) attached to the callback.
     """
 
+    _batched = []
+
     def __init__(self, plot, streams, source, **params):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
+        self._prev_msg = None
 
 
     @classmethod
@@ -343,6 +346,9 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((attr, old, new))
+        if self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
+            return # Skip until all batched events have arrived
+
         if not self._active and self.plot.document:
             self._active = True
             if self.plot.document.session_context:
@@ -408,7 +414,13 @@ class ServerCallback(MessageCallback):
             cb_obj = self.plot_handles.get(obj_handle)
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
-        self.on_msg(msg)
+        try:
+            equal = msg == self._prev_msg
+        except Exception:
+            equal = False
+        if not equal or any(s.transient for s in self.streams):
+            self.on_msg(msg)
+            self._prev_msg = msg
 
         if self.plot.document.session_context:
             self.plot.document.add_timeout_callback(self.process_on_change, 50)
@@ -785,6 +797,8 @@ class RangeXYCallback(Callback):
     models = ['x_range', 'y_range']
     on_changes = ['start', 'end']
 
+    _batched = on_changes
+    
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
