@@ -177,6 +177,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Formatter for ticks along the x-axis.""")
 
     _categorical = False
+    _allow_implicit_categories = True
 
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = []
@@ -953,6 +954,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             yvals = element.dimension_values(1, False)
         xvals, yvals = np.asarray(xvals), np.asarray(yvals)
+        if not self._allow_implicit_categories:
+            xvals = xvals if xvals.dtype.kind in 'SU' else []
+            yvals = yvals if yvals.dtype.kind in 'SU' else []
         coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
                        for dim, vals in [(xdim, xvals), (ydim, yvals)])
         if self.invert_axes: coords = coords[::-1]
