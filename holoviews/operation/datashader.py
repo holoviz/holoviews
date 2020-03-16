@@ -1515,6 +1515,8 @@ class SpreadingOperation(LinkableOperation):
     def uint8_to_uint32(cls, img):
         shape = img.shape
         flat_shape = np.multiply.reduce(shape[:2])
+        if shape[-1] == 3:
+            img = np.dstack([img, np.ones(shape[:2], dtype='uint8')*255])
         rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
         return rgb
 
@@ -1537,17 +1539,21 @@ class SpreadingOperation(LinkableOperation):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
             raise ValueError('spreading can only be applied to Image or RGB Elements.')
+
+        kwargs = {}
         array = self._apply_spreading(data)
         if isinstance(element, RGB):
-            img = datashade.uint32_to_uint8(array.data)
+            img = datashade.uint32_to_uint8(array.data)[::-1]
             new_data = {
                 kd.name: rgb.dimension_values(kd, expanded=False)
                 for kd in rgb.kdims
             }
-            new_data[tuple(vd.name for vd in rgb.vdims)] = img
+            vdims = rgb.vdims+[rgb.alpha_dimension] if len(rgb.vdims) == 3 else rgb.vdims
+            kwargs['vdims'] = vdims
+            new_data[tuple(vd.name for vd in vdims)] = img
         else:
             new_data = array
-        return element.clone(new_data)
+        return element.clone(new_data, **kwargs)
 
 
 

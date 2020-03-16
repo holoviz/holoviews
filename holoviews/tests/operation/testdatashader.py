@@ -15,7 +15,7 @@ try:
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, rasterize
+        shade, spread, rasterize
     )
 except:
     raise SkipTest('Datashader not available')
@@ -906,6 +906,25 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
 
+class DatashaderSpreadTests(ComparisonTestCase):
+
+    def test_spread_rgb_1px(self):
+        arr = np.array([[[0, 0, 0], [0, 1, 1], [0, 1, 1]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]]], dtype=np.uint8).T*255
+        spreaded = spread(RGB(arr))
+        arr = np.array([[[0, 0, 1], [0, 0, 1], [0, 0, 1]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[1, 1, 1], [1, 1, 1], [1, 1, 1]]], dtype=np.uint8).T*255
+        self.assertEqual(spreaded, RGB(arr))
+
+    def test_spread_img_1px(self):
+        arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
+        spreaded = spread(Image(arr))
+        arr = np.array([[0, 0, 0], [1, 1, 1], [1, 1, 1]]).T
+        self.assertEqual(spreaded, Image(arr))
+        
 
 class DatashaderStackTests(ComparisonTestCase):
 
