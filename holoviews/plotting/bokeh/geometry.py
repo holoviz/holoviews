@@ -23,6 +23,7 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
     style_opts = base_properties + line_properties + ['cmap']
 
+    _allow_implicit_categories = False
     _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
 
@@ -32,9 +33,6 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
         data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
         mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
         return (data, mapping, style)
-
-    def _get_factors(self, element, ranges):
-        return [], []
 
 
 class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
@@ -48,6 +46,7 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
     style_opts = (base_properties + line_properties + fill_properties +
                   ['cmap'])
 
+    _allow_implicit_categories = False
     _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='rect')
     _batched_style_opts = line_properties + fill_properties
@@ -61,6 +60,3 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         data = {'x': (x1+x0)/2., 'y': (y1+y0)/2., 'width': x1-x0, 'height': y1-y0}
         mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
         return data, mapping, style
-
-    def _get_factors(self, element, ranges):
-        return [], []
