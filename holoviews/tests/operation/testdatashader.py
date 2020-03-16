@@ -920,6 +920,8 @@ class DatashaderSpreadTests(ComparisonTestCase):
         self.assertEqual(spreaded, RGB(arr))
 
     def test_spread_img_1px(self):
+        if ds_version <= '0.10.0':
+            raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
         arr = np.array([[0, 0, 0], [1, 1, 1], [1, 1, 1]]).T
