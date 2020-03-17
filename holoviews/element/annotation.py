@@ -157,7 +157,7 @@ class Slope(Annotation):
 
     y_intercept = param.Number(default=0)
 
-    __pos_params = ['slope', 'intercept']
+    __pos_params = ['slope', 'y_intercept']
 
     def __init__(self, slope, y_intercept, kdims=None, vdims=None, **params):
         super(Slope, self).__init__(
