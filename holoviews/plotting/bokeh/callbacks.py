@@ -539,8 +539,8 @@ class PointerXYCallback(Callback):
     # Clip x and y values to available axis range
     code = """
     if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
+      var xstart = x_range.start;
+      var xend = x_range.end;
       if (xstart > xend) {
         [xstart, xend] = [xend, xstart]
       }
@@ -551,8 +551,8 @@ class PointerXYCallback(Callback):
       }
     }
     if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
+      var ystart = y_range.start;
+      var yend = y_range.end;
       if (ystart > yend) {
         [ystart, yend] = [yend, ystart]
       }
@@ -635,8 +635,8 @@ class PointerXCallback(PointerXYCallback):
     extra_models= ['x_range']
     code = """
     if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
+      var xstart = x_range.start;
+      var xend = x_range.end;
       if (xstart > xend) {
         [xstart, xend] = [xend, xstart]
       }
@@ -657,8 +657,8 @@ class PointerYCallback(PointerXYCallback):
     extra_models= ['y_range']
     code = """
     if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
+      var ystart = y_range.start;
+      var yend = y_range.end;
       if (ystart > yend) {
         [ystart, yend] = [yend, ystart]
       }
@@ -699,8 +699,8 @@ class TapCallback(PointerXYCallback):
     # Skip if tap is outside axis range
     code = """
     if (x_range.type.endsWith('Range1d')) {
-      xstart = x_range.start;
-      xend = x_range.end;
+      var xstart = x_range.start;
+      var xend = x_range.end;
       if (xstart > xend) {
         [xstart, xend] = [xend, xstart]
       }
@@ -709,8 +709,8 @@ class TapCallback(PointerXYCallback):
       }
     }
     if (y_range.type.endsWith('Range1d')) {
-      ystart = y_range.start;
-      yend = y_range.end;
+      var ystart = y_range.start;
+      var yend = y_range.end;
       if (ystart > yend) {
         [ystart, yend] = [yend, ystart]
       }
@@ -1047,9 +1047,9 @@ class CDSCallback(Callback):
 class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
-      var types = require("core/util/types");
+      var types = Bokeh.require("core/util/types");
       var length = cb_obj.data[length_var].length;
-      for (i = 0; i < length; i++) {
+      for (var i = 0; i < length; i++) {
         for (var style in styles) {
           var value = styles[style];
           if (types.isArray(value)) {
@@ -1659,8 +1659,8 @@ class VertexTableLinkCallback(LinkCallback):
     target_code = """
     if (!source_cds.selected.indices.length) { return }
     [x, y] = vertex_columns
-    xs_column = target_cds.data[x]
-    ys_column = target_cds.data[y]
+    var xs_column = target_cds.data[x]
+    var ys_column = target_cds.data[y]
     var xs = []
     var ys = []
     var points = []
