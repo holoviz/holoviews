@@ -143,7 +143,6 @@ After you have successfully installed and configured HoloViews, please see `Gett
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
    Reference Gallery <reference/index>
-   Showcase <showcase/index>
    Releases <releases>
    API <Reference_Manual/index>
    FAQ
