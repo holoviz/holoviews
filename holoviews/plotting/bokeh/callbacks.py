@@ -14,6 +14,7 @@ from bokeh.models import (
 from panel.io.state import state
 from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
+from tornado import gen
 
 from ...core import OrderedDict
 from ...core.options import CallbackError
@@ -308,6 +309,9 @@ class ServerCallback(MessageCallback):
     Stream(s) attached to the callback.
     """
 
+    # Timeout before the first event is processed
+    debounce = 50
+
     _batched = []
 
     def __init__(self, plot, streams, source, **params):
@@ -339,6 +343,8 @@ class ServerCallback(MessageCallback):
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
 
+    def _schedule_callback(self, cb):
+        PeriodicCallback(callback=cb, period=self.debounce, count=1).start()
 
     def on_change(self, attr, old, new):
         """
@@ -346,31 +352,21 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((attr, old, new))
-        if self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
-            return # Skip until all batched events have arrived
-
         if not self._active and self.plot.document:
             self._active = True
-            if self.plot.document.session_context:
-                self.plot.document.add_timeout_callback(self.process_on_change, 50)
-            else:
-                PeriodicCallback(callback=self.process_on_change, period=50, count=1).start()
-
+            self._schedule_callback(self.process_on_change)
 
     def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((event))
+        self._queue.append(event)
         if not self._active and self.plot.document:
             self._active = True
-            if self.plot.document.session_context:
-                self.plot.document.add_timeout_callback(self.process_on_event, 50)
-            else:
-                PeriodicCallback(callback=self.process_on_event, period=50, count=1).start()
+            self._schedule_callback(self.process_on_event)
 
-
+    @gen.coroutine
     def process_on_event(self):
         """
         Trigger callback change event and triggering corresponding streams.
@@ -390,17 +386,16 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
+        self._schedule_callback(self.process_on_event)
 
-        if self.plot.document.session_context:
-            self.plot.document.add_timeout_callback(self.process_on_event, 50)
-        else:
-            PeriodicCallback(callback=self.process_on_event, period=50, count=1).start()
-
-
+    @gen.coroutine
     def process_on_change(self):
         if not self._queue:
             self._active = False
             return
+        elif self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
+            self._schedule_callback(self.process_on_change)
+            return # Skip until all batched events have arrived
         self._queue = []
 
         msg = {}
@@ -422,10 +417,7 @@ class ServerCallback(MessageCallback):
             self.on_msg(msg)
             self._prev_msg = msg
 
-        if self.plot.document.session_context:
-            self.plot.document.add_timeout_callback(self.process_on_change, 50)
-        else:
-            PeriodicCallback(callback=self.process_on_change, period=100, count=1).start()
+        self._schedule_callback(self.process_on_change)
 
 
     def set_server_callback(self, handle):
@@ -798,7 +790,7 @@ class RangeXYCallback(Callback):
     on_changes = ['start', 'end']
 
     _batched = on_changes
-    
+
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
