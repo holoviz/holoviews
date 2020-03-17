@@ -143,11 +143,11 @@ class Plot(param.Parameterized):
                 if not plot.root:
                     continue
                 for cb in getattr(plot, 'callbacks', []):
-                    if hasattr(pane, '_on_error') and cb.comm:
+                    if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
                         cb.comm._on_error = partial(pane._on_error, plot.root.ref['id'])
         elif self.root:
             for cb in getattr(self, 'callbacks', []):
-                if hasattr(pane, '_on_error') and cb.comm:
+                if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
                     cb.comm._on_error = partial(pane._on_error, self.root.ref['id'])
 
     @property
