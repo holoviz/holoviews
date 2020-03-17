@@ -1,11 +1,11 @@
 About Us
 ========
 
-HoloViews is supported and maintained by `Anaconda <https://www.anaconda.com>`_.
+HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
-The primary developers are Jean-Luc Stevens, Philipp Rudiger, and
-James A. Bednar, with bug reports and patches from numerous members of
-the Github community.
+If you have any questions or usage issues visit the `HoloViews Discourse <https://discourse.holoviz.org/c/holoviews/>`_ site. If you are interested in contributing to HoloViews development to help address some of the `open issues <https://github.com/holoviz/holoviews/issues>`_.
+
+HoloViews is supported and maintained by `Anaconda <https://www.anaconda.com>`_.
 
 Prior Funding
 -------------
@@ -22,4 +22,3 @@ Doctoral Training Centre in Neuroinformatics and Computational Neuroscience <htt
 from the UK Engineering and Physical Sciences Research Council, 
 Biotechnology and Biological Sciences Research Council, and
 Medical Research Council.
-
