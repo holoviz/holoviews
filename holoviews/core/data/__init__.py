@@ -287,6 +287,9 @@ class Dataset(Element):
         class to each underlying element.
         """
         if isinstance(data, DynamicMap):
+            class_name = cls.__name__
+            msg = "Implicitly casting {class_name} to DynamicMap. Please use .apply({class_name}) instead."
+            cls.warning(cls, msg.format(class_name=class_name))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
             return super(Dataset, cls).__new__(cls)
