@@ -414,7 +414,7 @@ class DimensionedPlot(Plot):
         self.layout_num = layout_num
         self.layout_dimensions = layout_dimensions
         self.subplot = subplot
-        self.keys = keys
+        self.keys = keys if keys is None else list(keys)
         self.uniform = uniform
         self.dynamic = dynamic
         self.drawn = False
@@ -1166,7 +1166,7 @@ class GenericElementPlot(DimensionedPlot):
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
 
-        if not key in self.keys and self.dynamic:
+        if not key in self.keys and len(key) == self.hmap.ndims and self.dynamic:
             self.keys.append(key)
         self.current_frame = frame
         self.current_key = key
@@ -1395,7 +1395,8 @@ class GenericElementPlot(DimensionedPlot):
 
     def _format_title_components(self, key, dimensions=True, separator='\n'):
         frame = self._get_frame(key)
-        if frame is None: return None
+        if frame is None:
+            return ('', '', '', '')
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
