@@ -288,7 +288,7 @@ class Dataset(Element):
         """
         if isinstance(data, DynamicMap):
             class_name = cls.__name__
-            msg = "Implicitly casting {class_name} to DynamicMap. Please use .apply({class_name}) instead."
+            msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap.  Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call  .apply({class_name}) on the supplied DynamicMap."
             cls.warning(cls, msg.format(class_name=class_name))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
