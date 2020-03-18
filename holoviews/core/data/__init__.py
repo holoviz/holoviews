@@ -295,7 +295,8 @@ class Dataset(Element):
             extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
                                if el is not None])
             extras = ', ' + extras if extras else ''
-            apply_args= '{class_name}{extras}'.format(class_name=class_name, extras=extras)
+            apply_args= 'hv.{class_name}{extras}'.format(class_name=class_name,
+                                                         extras=extras)
             msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call  .apply({apply_args}) on the supplied DynamicMap."
             cls.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
