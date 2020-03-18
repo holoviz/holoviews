@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division
 
-from collections import Callable
 import warnings
+
+from collections import Callable
+from functools import partial
 
 import param
 import numpy as np
@@ -1141,6 +1143,7 @@ class shade(LinkableOperation):
         undersaturation, i.e. poorly visible low-value datapoints, at
         the expense of the overall dynamic range..""")
 
+
     @classmethod
     def concatenate(cls, overlay):
         """
@@ -1208,7 +1211,7 @@ class shade(LinkableOperation):
             ydensity = element.last.ydensity
             element = self.concatenate(element)
         elif isinstance(element, Overlay):
-            return element.map(self._process, [Element])
+            return element.map(partial(shade._process, self), [Element])
         else:
             xdensity = element.xdensity
             ydensity = element.ydensity
