@@ -287,6 +287,18 @@ class Dataset(Element):
         class to each underlying element.
         """
         if isinstance(data, DynamicMap):
+            class_name = cls.__name__
+            repr_kdims = 'kdims=%r' % kdims if kdims else None
+            repr_vdims = 'vdims=%r' % vdims if vdims else None
+            repr_kwargs = (', '.join('%s=%r' % (k,v) for k,v in kwargs.items())
+                           if kwargs else None)
+            extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
+                               if el is not None])
+            extras = ', ' + extras if extras else ''
+            apply_args= 'hv.{class_name}{extras}'.format(class_name=class_name,
+                                                         extras=extras)
+            msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call .apply({apply_args}) on the supplied DynamicMap."
+            cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
             return super(Dataset, cls).__new__(cls)
