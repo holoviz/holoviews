@@ -128,18 +128,21 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
+        self.param.set_param(**self.lookup_options(element, 'plot').options)
         self._get_title_div(key, '12pt')
 
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
         current_id = element._plot_id
+        source = self.handles['source']
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
         if (element is None or (not self.dynamic and self.static) or
             (self.streaming and self.streaming[0].data is self.current_frame.data
              and not self.streaming[0]._triggering) or self.static_source):
+            if self.static_source and hasattr(self, 'selected') and self.selected is not None:
+                self._update_selected(source)
             return
-        source = self.handles['source']
         style = self.lookup_options(element, 'style')[self.cyclic_index]
         data, _, style = self.get_data(element, ranges, style)
         columns = self._get_columns(element, data)

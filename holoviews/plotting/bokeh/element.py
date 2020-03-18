@@ -1196,6 +1196,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not cds_replace:
             if not self.static_source:
                 self._update_datasource(source, data)
+            if hasattr(self, 'selected') and self.selected is not None:
+                self._update_selected(source)
         elif self.document:
             server = self.renderer.mode == 'server'
             with hold_policy(self.document, 'collect', server=server):
@@ -1224,7 +1226,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             glyph.update(**update)
 
         if data is not None and cds_replace and not self.static_source:
-            return self._update_datasource(source, data)
+            self._update_datasource(source, data)
 
 
     def _postprocess_hover(self, renderer, source):
