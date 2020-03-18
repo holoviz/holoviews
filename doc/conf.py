@@ -80,7 +80,6 @@ html_context.update({
     # Social links
     'SOCIAL': (
         ('Discourse', '//discourse.holoviz.org/c/holoviews'),
-        ('Gitter', '//gitter.im/pyviz/pyviz'),
         ('Twitter', '//twitter.com/holoviews'),
         ('Github', '//github.com/pyviz/holoviews'),
     ),
