@@ -376,9 +376,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
+        range_types = (self._x_range_type, self._y_range_type)
+        if self.invert_axes: range_types = range_types[::-1]
+        x_range_type, y_range_type = range_types
         x_axis_type = 'log' if self.logx else 'auto'
         if xdims:
-            if len(xdims) > 1:
+            if len(xdims) > 1 or x_range_type is FactorRange:
                 x_axis_type = 'auto'
                 categorical_x = True
             else:
@@ -392,7 +395,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         y_axis_type = 'log' if self.logy else 'auto'
         if ydims:
-            if len(ydims) > 1:
+            if len(ydims) > 1 or y_range_type is FactorRange:
                 y_axis_type = 'auto'
                 categorical_y = True
             else:
@@ -411,15 +414,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_ranges = self._merge_ranges(plots, xspecs, yspecs, x_axis_type, y_axis_type)
 
         # Declare shared axes
-        if 'x_range' in plot_ranges:
+        x_range, y_range = plot_ranges.get('x_range'), plot_ranges.get('y_range')
+        if x_range and not (x_range_type is FactorRange and not isinstance(x_range, FactorRange)):
             self._shared['x'] = True
-        if 'y_range' in plot_ranges:
+        if y_range and not (y_range_type is FactorRange and not isinstance(y_range, FactorRange)):
             self._shared['y'] = True
 
-        range_types = (self._x_range_type, self._y_range_type)
-        if self.invert_axes: range_types = range_types[::-1]
-        x_range_type, y_range_type = range_types
-        if 'x_range' in plot_ranges:
+        if self._shared['x']:
             pass
         elif categorical or categorical_x:
             x_axis_type = 'auto'
@@ -427,7 +428,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             plot_ranges['x_range'] = x_range_type()
 
-        if 'y_range' in plot_ranges:
+        if self._shared['y']:
             pass
         elif categorical or categorical_y:
             y_axis_type = 'auto'
@@ -1051,7 +1052,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 key = val
             else:
                 # Node marker does not handle {'field': ...}
-                key = k if k == 'node_marker' else {'field': k} 
+                key = k if k == 'node_marker' else {'field': k}
                 data[k] = val
 
             # If color is not valid colorspec add colormapper
@@ -1952,6 +1953,20 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'min_height', 'max_height', 'min_width', 'min_height',
                           'margin', 'aspect', 'data_aspect', 'frame_width',
                           'frame_height', 'responsive', 'fontscale']
+
+    @property
+    def _x_range_type(self):
+        for v in self.subplots.values():
+            if not isinstance(v._x_range_type, Range1d):
+                return v._x_range_type
+        return self._x_range_type
+
+    @property
+    def _y_range_type(self):
+        for v in self.subplots.values():
+            if not isinstance(v._y_range_type, Range1d):
+                return v._y_range_type
+        return self._y_range_type
 
     def _process_legend(self, overlay):
         plot = self.handles['plot']

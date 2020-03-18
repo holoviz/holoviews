@@ -5,7 +5,9 @@ from collections import defaultdict
 import numpy as np
 import param
 
-from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
+from bokeh.models import (
+    CategoricalColorMapper, CustomJS, FactorRange, Range1d, Whisker
+)
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -777,6 +779,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded
+    _x_range_type = FactorRange
     _y_range_type = Range1d
 
     def _axis_properties(self, axis, key, plot, dimension=None,
