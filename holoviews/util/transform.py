@@ -291,8 +291,8 @@ class dim(object):
                     params[op_arg.name+str(id(op))] = op_arg
         return params
 
-    def method(self, method, *args, **kwargs):
-        return dim(self, method, *args, **kwargs)
+    def method(self, method_str, *args, **kwargs):
+        return dim(self, method_str, *args, **kwargs)
 
     # Builtin functions
     def __abs__(self):            return dim(self, abs)
@@ -553,7 +553,14 @@ class dim(object):
                         "does not exist on %s type."
                         % (self, dataset, fn, type(data).__name__)
                     )
-                data = method(*args, **kwargs)
+                try:
+                    data = method(*args, **kwargs)
+                except Exception as e:
+                    if 'axis' in kwargs:
+                        kwargs.pop('axis')
+                        data = method(*args, **kwargs)
+                    else:
+                        raise e
             else:
                 data = fn(*args, **kwargs)
         return data
