@@ -2,7 +2,7 @@ Version 1.13.0
 ==============
 
 This is a minor version release packed full of features and a general
-rearchitecting of the way HoloViews renders widgets now built on top
+refactoring of how HoloViews renders widgets now built on top
 of the Panel library. Many thanks to the many contributors to this
 release either directly by submitting PRs or by reporting issues and
 making suggestions. Specifically we would like to thank @poplarShift,
