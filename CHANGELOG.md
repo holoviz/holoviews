@@ -1,17 +1,16 @@
 Version 1.13.0
 ==============
 
-This is a minor version release packed full of features and a general
-refactoring of how HoloViews renders widgets now built on top
-of the Panel library. Many thanks to the many contributors to this
-release either directly by submitting PRs or by reporting issues and
-making suggestions. Specifically we would like to thank @poplarShift,
-@jonmease, @flothesof, @julioasotodv, @ltalirz, @DancingQuanta,
-@ahuang, @kcpevey, @Jacob-Barkhak, @nluetts, @harmbuisman, @ceball,
-@mgsnuno, @srp3003, @jsignell as well as the maintainers @jbednar,
-@jlstevens and @philippjfr for contributing to this release.  This
-version includes the addition of a large number of features,
-enhancements and bug fixes:
+This release is packed full of features and includes a general
+refactoring of how HoloViews renders widgets now built on top of the
+Panel library. Many thanks to the many contributors to this release
+either directly by submitting PRs or by reporting issues and making
+suggestions. Specifically we would like to thank @poplarShift,
+@jonmease, @flothesof, @julioasotodv, @ltalirz, @DancingQuanta, @ahuang,
+@kcpevey, @Jacob-Barkhak, @nluetts, @harmbuisman, @ceball, @mgsnuno,
+@srp3003, @jsignell as well as the maintainers @jbednar, @jlstevens and
+@philippjfr for contributing to this release.  This version includes the
+addition of a large number of features, enhancements and bug fixes:
 
 Major features:
 
