@@ -14,74 +14,138 @@ addition of a large number of features, enhancements and bug fixes:
 
 Major features:
 
-- Add `link_selection` to make linked brushing simple ([#3951](https://github.com/holoviz/holoviews/pull/3951))
-- Completely replaced custom Javascript widgets with Panel based
-	widgets allowing for customizable layout ([#84](https://github.com/holoviz/holoviews/pull/84), [#805](https://github.com/holoviz/holoviews/pull/805))
-- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements ([#3510](https://github.com/holoviz/holoviews/pull/3510), [#3532](https://github.com/holoviz/holoviews/pull/3532), [#4000](https://github.com/holoviz/holoviews/pull/4000))
+- Add `link_selection` to make linked brushing simple
+  ([#3951](https://github.com/holoviz/holoviews/pull/3951))
+- Completely replaced custom Javascript widgets with Panel based widgets
+  allowing for customizable layout
+  ([#84](https://github.com/holoviz/holoviews/pull/84),
+  [#805](https://github.com/holoviz/holoviews/pull/805))
+- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements
+  ([#3510](https://github.com/holoviz/holoviews/pull/3510),
+  [#3532](https://github.com/holoviz/holoviews/pull/3532),
+  [#4000](https://github.com/holoviz/holoviews/pull/4000))
 - Add Annotators to allow easily drawing, editing and annotating visual
   elements ([#1185](https://github.com/holoviz/holoviews/pull/1185))
 - Add a `Dataset.transform` method to easily perform data transforms
-  ([#237](https://github.com/holoviz/holoviews/pull/237), [#3932](https://github.com/holoviz/holoviews/pull/3932))
+  ([#237](https://github.com/holoviz/holoviews/pull/237),
+  [#3932](https://github.com/holoviz/holoviews/pull/3932))
 - Add support for cuDF GPU dataframes, cuPy backed xarrays and GPU
   datashading ([#3982](https://github.com/holoviz/holoviews/pull/3982))
 
 Other features
 
 - Add spatialpandas support and redesigned geometry interfaces for
-  consistent roundtripping ([#4120](https://github.com/holoviz/holoviews/pull/4120))
-- Support GIF rendering with Bokeh and Plotly backends ([#2956](https://github.com/holoviz/holoviews/pull/2956), [#4017](https://github.com/holoviz/holoviews/pull/4017))
+  consistent roundtripping
+  ([#4120](https://github.com/holoviz/holoviews/pull/4120))
+- Support GIF rendering with Bokeh and Plotly backends
+  ([#2956](https://github.com/holoviz/holoviews/pull/2956),
+  [#4017](https://github.com/holoviz/holoviews/pull/4017))
 - Support for Plotly `Bars`, `Bounds`, `Box`, `Ellipse`, `HLine`,
   `Histogram`, `RGB`, `VLine` and `VSpan` plots
-- Add `UniformNdMapping.collapse` to collapse nested datastructures ([#4250](https://github.com/holoviz/holoviews/pull/4250))
-- Add `CurveEdit` and `SelectionXY` streams ([#4119](https://github.com/holoviz/holoviews/pull/4119), [#4167](https://github.com/holoviz/holoviews/pull/4167))
-- Support for `dim` expressions in `Dataset.select` ([#3920](https://github.com/holoviz/holoviews/pull/3920))
-- Add `apply_when` helper to conditionally apply operations ([#4289](https://github.com/holoviz/holoviews/pull/4289))
-- Display Javascript callback errors in the notebook ([#4119](https://github.com/holoviz/holoviews/pull/4119))
-- Add support for linked streams in Plotly backend to enable rich interactivity ([#3880](https://github.com/holoviz/holoviews/pull/3880), [#3912](https://github.com/holoviz/holoviews/pull/3912))
-- Allow arbitrary method calls on `dim` expressions ([#4080](https://github.com/holoviz/holoviews/pull/4080))
+- Add `UniformNdMapping.collapse` to collapse nested datastructures
+  ([#4250](https://github.com/holoviz/holoviews/pull/4250))
+- Add `CurveEdit` and `SelectionXY` streams
+  ([#4119](https://github.com/holoviz/holoviews/pull/4119),
+  [#4167](https://github.com/holoviz/holoviews/pull/4167))
+- Support for `dim` expressions in `Dataset.select`
+  ([#3920](https://github.com/holoviz/holoviews/pull/3920))
+- Add `apply_when` helper to conditionally apply operations
+  ([#4289](https://github.com/holoviz/holoviews/pull/4289))
+- Display Javascript callback errors in the notebook
+  ([#4119](https://github.com/holoviz/holoviews/pull/4119))
+- Add support for linked streams in Plotly backend to enable rich
+  interactivity
+  ([#3880](https://github.com/holoviz/holoviews/pull/3880),
+  [#3912](https://github.com/holoviz/holoviews/pull/3912))
+- Allow arbitrary method calls on `dim` expressions
+  ([#4080](https://github.com/holoviz/holoviews/pull/4080))
 
 Enhancements:
 
-- Support for packed values dimensions, e.g. 3D `RGB`/`HSV` arrays ([#550](https://github.com/holoviz/holoviews/pull/550), [#3983](https://github.com/holoviz/holoviews/pull/3983))
-- Allow selecting/slicing datetimes with strings ([#886](https://github.com/holoviz/holoviews/pull/886))
-- Support for datashading `Area`, `Spikes`, `Segments` and `Polygons` ([#4120](https://github.com/holoviz/holoviews/pull/4120))
-- `HeatMap` now supports mixed categorical/numeric axes ([#2128](https://github.com/holoviz/holoviews/pull/2128))
-- Use `__signature__` to generate .opts tab completions ([#4193](https://github.com/holoviz/holoviews/pull/4193))
-- Allow passing element-specific keywords through `datashade` and `rasterize` ([#4077](https://github.com/holoviz/holoviews/pull/4077))
-- Add `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data ([#3967](https://github.com/holoviz/holoviews/pull/3967))
-- Add `per_element` flag to `.apply` accessor ([#4119](https://github.com/holoviz/holoviews/pull/4119))
-- Add `selected` plot option to control selected glyphs in bokeh ([#4281](https://github.com/holoviz/holoviews/pull/4281))
-- Improve default `Sankey` `node_padding` heuristic ([#4253](https://github.com/holoviz/holoviews/pull/4253))
-- Add `hooks` plot option for Plotly backend ([#4157](https://github.com/holoviz/holoviews/pull/4157))
-- Support for split `Violin` plots in bokeh ([#4112](https://github.com/holoviz/holoviews/pull/4112))
+- Support for packed values dimensions, e.g. 3D `RGB`/`HSV` arrays
+  ([#550](https://github.com/holoviz/holoviews/pull/550),
+  [#3983](https://github.com/holoviz/holoviews/pull/3983))
+- Allow selecting/slicing datetimes with strings
+  ([#886](https://github.com/holoviz/holoviews/pull/886))
+- Support for datashading `Area`, `Spikes`, `Segments` and `Polygons`
+  ([#4120](https://github.com/holoviz/holoviews/pull/4120))
+- `HeatMap` now supports mixed categorical/numeric axes
+  ([#2128](https://github.com/holoviz/holoviews/pull/2128))
+- Use `__signature__` to generate .opts tab completions
+  ([#4193](https://github.com/holoviz/holoviews/pull/4193))
+- Allow passing element-specific keywords through `datashade` and
+  `rasterize` ([#4077](https://github.com/holoviz/holoviews/pull/4077))
+- Add `Dataset.pipeline` and `Dataset.dataset` properties to track
+  provenance of data
+  ([#3967](https://github.com/holoviz/holoviews/pull/3967))
+- Add `per_element` flag to `.apply` accessor
+  ([#4119](https://github.com/holoviz/holoviews/pull/4119))
+- Add `selected` plot option to control selected glyphs in bokeh
+  ([#4281](https://github.com/holoviz/holoviews/pull/4281))
+- Improve default `Sankey` `node_padding` heuristic
+  ([#4253](https://github.com/holoviz/holoviews/pull/4253))
+- Add `hooks` plot option for Plotly backend
+  ([#4157](https://github.com/holoviz/holoviews/pull/4157))
+- Support for split `Violin` plots in bokeh
+  ([#4112](https://github.com/holoviz/holoviews/pull/4112))
 
 Bug fixes:
 
-- Fixed radial `HeatMap` sizing issues ([#4162](https://github.com/holoviz/holoviews/pull/4162))
-- Switched to Panel for rendering machinery fixing various export issues ([#3683](https://github.com/holoviz/holoviews/pull/3683))
-- Handle updating of user supplied `HoverTool` in bokeh ([#4266](https://github.com/holoviz/holoviews/pull/4266))
-- Fix issues with single value datashaded plots ([#3673](https://github.com/holoviz/holoviews/pull/3673))
-- Fix legend layout issues ([#3786](https://github.com/holoviz/holoviews/pull/3786))
-- Fix linked axes issues with mixed date, categorical and numeric axes in bokeh ([#3845](https://github.com/holoviz/holoviews/pull/3845))
-- Fixed handling of repeated dimensions in `PandasInterface` ([#4139](https://github.com/holoviz/holoviews/pull/4139))
-- Fixed various issues related to widgets ([#3868](https://github.com/holoviz/holoviews/pull/3868), [#2885](https://github.com/holoviz/holoviews/pull/2885), [#1677](https://github.com/holoviz/holoviews/pull/1677), [#3212](https://github.com/holoviz/holoviews/pull/3212), [#1059](https://github.com/holoviz/holoviews/pull/1059), [#3027](https://github.com/holoviz/holoviews/pull/3027), [#3777](https://github.com/holoviz/holoviews/pull/3777))
+- Fixed radial `HeatMap` sizing issues
+  ([#4162](https://github.com/holoviz/holoviews/pull/4162))
+- Switched to Panel for rendering machinery fixing various export issues
+  ([#3683](https://github.com/holoviz/holoviews/pull/3683))
+- Handle updating of user supplied `HoverTool` in bokeh
+  ([#4266](https://github.com/holoviz/holoviews/pull/4266))
+- Fix issues with single value datashaded plots
+  ([#3673](https://github.com/holoviz/holoviews/pull/3673))
+- Fix legend layout issues
+  ([#3786](https://github.com/holoviz/holoviews/pull/3786))
+- Fix linked axes issues with mixed date, categorical and numeric axes
+  in bokeh ([#3845](https://github.com/holoviz/holoviews/pull/3845))
+- Fixed handling of repeated dimensions in `PandasInterface`
+  ([#4139](https://github.com/holoviz/holoviews/pull/4139))
+- Fixed various issues related to widgets
+  ([#3868](https://github.com/holoviz/holoviews/pull/3868),
+  [#2885](https://github.com/holoviz/holoviews/pull/2885),
+  [#1677](https://github.com/holoviz/holoviews/pull/1677),
+  [#3212](https://github.com/holoviz/holoviews/pull/3212),
+  [#1059](https://github.com/holoviz/holoviews/pull/1059),
+  [#3027](https://github.com/holoviz/holoviews/pull/3027),
+  [#3777](https://github.com/holoviz/holoviews/pull/3777))
 
 
 Library compatibility:
 
-- Better support for Pandas 1.0 ([#4254](https://github.com/holoviz/holoviews/pull/4254))
-- Compatibility with Bokeh 2.0 ([#4226](https://github.com/holoviz/holoviews/pull/4226))
+- Better support for Pandas 1.0
+  ([#4254](https://github.com/holoviz/holoviews/pull/4254))
+- Compatibility with Bokeh 2.0
+  ([#4226](https://github.com/holoviz/holoviews/pull/4226))
 
 Migration notes:
 
-- Geometry `.iloc` now indexes by geometry instead of by datapoint. Convert to dataframe or dictionary before using `.iloc` to access individual datapoints ([#4104](https://github.com/holoviz/holoviews/pull/4104))
-- Padding is now enabled by default, to revert set `hv.config.node_padding = 0` ([#1090](https://github.com/holoviz/holoviews/pull/1090))
-- Removed Bars `group_index` and `stack_index` options, which are now controlled using `stacked` option ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `.table` is deprecated use `.collapse` method instead and cast to `Table` ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `HoloMap.split_overlays` is deprecated and is now a private method ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `Histogram.edges` and `Histogram.values` properties are deprecated use `dimension_values` ([#3985](https://github.com/holoviz/holoviews/pull/3985)) 
-- `Element.collapse_data` is deprecated, use the containers `.collapse` method instead ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `hv.output` `filename` argument is deprecated, use `hv.save` instead ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- Geometry `.iloc` now indexes by geometry instead of by
+  datapoint. Convert to dataframe or dictionary before using `.iloc` to
+  access individual datapoints
+  ([#4104](https://github.com/holoviz/holoviews/pull/4104))
+- Padding is now enabled by default, to revert set
+  `hv.config.node_padding = 0`
+  ([#1090](https://github.com/holoviz/holoviews/pull/1090))
+- Removed Bars `group_index` and `stack_index` options, which are now
+  controlled using `stacked` option
+  ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- `.table` is deprecated use `.collapse` method instead and cast to
+  `Table` ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- `HoloMap.split_overlays` is deprecated and is now a private method
+  ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- `Histogram.edges` and `Histogram.values` properties are deprecated use
+  `dimension_values`
+  ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- `Element.collapse_data` is deprecated, use the containers `.collapse`
+  method instead
+  ([#3985](https://github.com/holoviz/holoviews/pull/3985))
+- `hv.output` `filename` argument is deprecated, use `hv.save` instead
+  ([#3985](https://github.com/holoviz/holoviews/pull/3985))
 
 
 Version 1.12.7
@@ -146,7 +210,7 @@ Bug fixes:
   ([#4012](https://github.com/pyviz/holoviews/issues/4012))
 - Using hv.renderer no longer switches backends
   ([#4013](https://github.com/pyviz/holoviews/issues/4013))
-- Ensure that Points/Scatter categorizes data correctly when axes are inverted 
+- Ensure that Points/Scatter categorizes data correctly when axes are inverted
   ([#4014](https://github.com/pyviz/holoviews/issues/4014))
 - Fixed error creating legend for matplotlib Image artists
   ([#4031](https://github.com/pyviz/holoviews/issues/4031))
@@ -154,10 +218,10 @@ Bug fixes:
   ([#4032](https://github.com/pyviz/holoviews/issues/4032))
 - Fix bounds check when constructing Image with ImageInterface
   ([#4035](https://github.com/pyviz/holoviews/issues/4035))
-- Ensure elements cannot be constructed with wrong number of columns 
+- Ensure elements cannot be constructed with wrong number of columns
   ([#4040](https://github.com/pyviz/holoviews/issues/4040))
 - Ensure streaming data works on bokeh server
-  ([#4041](https://github.com/pyviz/holoviews/issues/4041)) 
+  ([#4041](https://github.com/pyviz/holoviews/issues/4041))
 
 Compatibility:
 
@@ -270,7 +334,7 @@ Bug fixes:
 - Ensure that bokeh backend handles Cycle of markers
   ([#3706](https://github.com/pyviz/holoviews/issues/3706))
 - Fix for using opts method on DynamicMap
-  ([#3691](https://github.com/pyviz/holoviews/issues/3691)) 
+  ([#3691](https://github.com/pyviz/holoviews/issues/3691))
 - Ensure that bokeh backend handles DynamicMaps with variable length
   NdOverlay ([#3696](https://github.com/pyviz/holoviews/issues/3696))
 - Fix default width/height setting for HeatMap
@@ -340,7 +404,7 @@ Enhancements:
 
 - Add support for passing in parameter instances as streams
   ([#3616](https://github.com/pyviz/holoviews/pull/3616))
-        
+
 Version 1.12.0
 ==============
 
@@ -362,7 +426,7 @@ Features:
   [#3474](https://github.com/pyviz/holoviews/pull/3474))
 
 Enhancements:
-  
+
 - Added a number of new plot options including a clabel param for
   colorbars ([#3517](https://github.com/pyviz/holoviews/pull/3517)),
   exposed Sankey font size
@@ -453,7 +517,7 @@ Bug fixes:
   ([#3435](https://github.com/pyviz/holoviews/pull/3435))
 - Ensure cftime datetimes are displayed as a slider
   ([#3413](https://github.com/pyviz/holoviews/pull/3413))
-  
+
 Enhancements:
 
 - Allow defining hook on backend load
@@ -496,7 +560,7 @@ Enhancements:
   element ([#3401](https://github.com/pyviz/holoviews/pull/3401))
 - Consistently support clim options
   ([#3382](https://github.com/pyviz/holoviews/pull/3382))
-  
+
 Documentation:
 
 - Completed updates from .options to .opts API in the documentation
@@ -521,7 +585,7 @@ users without requiring IPython magics. The new `dim` transform
 generalizes the mapping from data dimensions to visual dimensions,
 greatly increasing the expressive power of the options system. Please
 consult the updated user guides for more information.
-	
+
 Special thanks for the contributions by Andrew Huang (@ahuang11),
 Julia Signell (@jsignell), Jon Mease (@jonmmease), and Zachary Barry
 (@zbarry).
