@@ -60,7 +60,7 @@ html_context.update({
     'DESCRIPTION': description,
     'AUTHOR': authors,
     'VERSION': version,
-    'WEBSITE_SERVER': 'https:',
+    'WEBSITE_URL': 'https://holoviews.org', # for canonical link
     'GOOGLE_SEARCH_ID': '006807479272082416678:p6n_f0d8taw',
     'GOOGLE_ANALYTICS_UA': 'UA-61554933-1',
     # Links
