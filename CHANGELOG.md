@@ -78,12 +78,12 @@ Migration notes:
 
 - Geometry `.iloc` now indexes by geometry instead of by datapoint. Convert to dataframe or dictionary before using `.iloc` to access individual datapoints (#4104)
 - Padding is now enabled by default, to revert set `hv.config.node_padding = 0` (#1090)
-- Removed Bars `group_index` and `stack_index` options, which are now controlled using `stacked` option
-- `.table` is deprecated use `.collapse` method instead and cast to `Table`
-- `HoloMap.split_overlays` is deprecated and is now a private method
-- `Histogram.edges` and `Histogram.values` properties are deprecated use `dimension_values` 
-- `Element.collapse_data` is deprecated, use the containers `.collapse` method instead
-- `hv.output` `filename` argument is deprecated, use `hv.save` instead
+- Removed Bars `group_index` and `stack_index` options, which are now controlled using `stacked` option (#3985)
+- `.table` is deprecated use `.collapse` method instead and cast to `Table` (#3985)
+- `HoloMap.split_overlays` is deprecated and is now a private method (#3985)
+- `Histogram.edges` and `Histogram.values` properties are deprecated use `dimension_values` (#3985) 
+- `Element.collapse_data` is deprecated, use the containers `.collapse` method instead (#3985)
+- `hv.output` `filename` argument is deprecated, use `hv.save` instead (#3985)
 
 
 Version 1.12.7
