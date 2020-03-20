@@ -15,26 +15,31 @@ enhancements and bug fixes:
 
 Major features:
 
-- Add `link_selection` to make linked brushing simple
+- Add `link_selection` to make linked brushing simple (#3951)
 - Completely replaced custom Javascript widgets with Panel based
-  widgets allowing for customizable layout (#84, #805)
-- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements (#3510, #3532, #4000)
-- Add Annotators to allow easily drawing, editing and annotating visual elements (#1185)
-- Add a `Dataset.transform` method to easily perform data transforms (#237, #3932)
-- Add support for cuDF GPU dataframes, cuPy backed xarrays and GPU datashading
+	widgets allowing for customizable layout (#84, #805)
+- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements (#
+  3510, #3532, #4000)
+- Add Annotators to allow easily drawing, editing and annotating visual
+  elements (#1185)
+- Add a `Dataset.transform` method to easily perform data transforms
+  (#237, #3932)
+- Add support for cuDF GPU dataframes, cuPy backed xarrays and GPU
+  datashading (#3982)
 
 Other features
 
-- Add spatialpandas support and redesigned geometry interfaces for consistent roundtripping (#4120)
+- Add spatialpandas support and redesigned geometry interfaces for
+  consistent roundtripping (#4120)
 - Support GIF rendering with Bokeh and Plotly backends (#2956, #4017)
 - Support for Plotly `Bars`, `Bounds`, `Box`, `Ellipse`, `HLine`, `Histogram`, `RGB`, `VLine` and `VSpan` plots
-- Add `UniformNdMapping.collapse` to collapse nested datastructures
-- Add `CurveEdit` and `SelectionXY` streams
-- Support for `dim` expressions in `Dataset.select`
-- Add `apply_when` helper to conditionally apply operations
-- Display Javascript callback errors in the notebook
-- Add support for linked streams in Plotly backend to enable rich interactivity
-- Allow arbitrary method calls on `dim` expressions
+- Add `UniformNdMapping.collapse` to collapse nested datastructures (#4250)
+- Add `CurveEdit` and `SelectionXY` streams (#4119, #4167)
+- Support for `dim` expressions in `Dataset.select` (#3920)
+- Add `apply_when` helper to conditionally apply operations (#4289)
+- Display Javascript callback errors in the notebook (#4119)
+- Add support for linked streams in Plotly backend to enable rich interactivity (#3880, #3912)
+- Allow arbitrary method calls on `dim` expressions (#4080)
 
 Enhancements:
 
@@ -44,18 +49,18 @@ Enhancements:
 - `HeatMap` now supports mixed categorical/numeric axes (#2128)
 - Use `__signature__` to generate .opts tab completions (#4193)
 - Allow passing element-specific keywords through `datashade` and `rasterize` (#4077)
-- Add `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data
-- Add `per_element` flag to `.apply` accessor
-- Add `selected` plot option to control selected glyphs in bokeh
-- Improve default `Sankey` `node_padding` heuristic
-- Add `hooks` plot option for Plotly backend
+- Add `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data (#3967)
+- Add `per_element` flag to `.apply` accessor (#4119)
+- Add `selected` plot option to control selected glyphs in bokeh (#4281)
+- Improve default `Sankey` `node_padding` heuristic (#4253)
+- Add `hooks` plot option for Plotly backend (#4157)
 - Support for split `Violin` plots in bokeh (#4112)
 
 Bug fixes:
 
-- Fixed radial `HeatMap` sizing issues
+- Fixed radial `HeatMap` sizing issues (#4162)
 - Switched to Panel for rendering machinery fixing various export issues (#3683)
-- Handle updating of user supplied `HoverTool` in bokeh
+- Handle updating of user supplied `HoverTool` in bokeh (#4266)
 - Fix issues with single value datashaded plots (#3673)
 - Fix legend layout issues (#3786)
 - Fix linked axes issues with mixed date, categorical and numeric axes in bokeh (#3845)
@@ -65,8 +70,8 @@ Bug fixes:
 
 Library compatibility:
 
-- Better support for Pandas 1.0
-- Compatibility with Bokeh 2.0
+- Better support for Pandas 1.0 (#4254)
+- Compatibility with Bokeh 2.0 (#4226)
 
 Migration notes:
 
