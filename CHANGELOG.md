@@ -16,12 +16,16 @@ Major features:
 
 - Add `link_selection` to make custom linked brushing simple
   ([#3951](https://github.com/holoviz/holoviews/pull/3951))
-- `link_selection` builds on new support for much more powerful data-transform pipelines:
-  new `Dataset.transform` method ([#237](https://github.com/holoviz/holoviews/pull/237),
-  [#3932](https://github.com/holoviz/holoviews/pull/3932)),
-  `dim` expressions in `Dataset.select` ([#3920](https://github.com/holoviz/holoviews/pull/3920)),
-  arbitrary method calls on `dim` expressions ([#4080](https://github.com/holoviz/holoviews/pull/4080)), 
-  and `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data
+- `link_selection` builds on new support for much more powerful
+  data-transform pipelines: new `Dataset.transform` method
+  ([#237](https://github.com/holoviz/holoviews/pull/237),
+  [#3932](https://github.com/holoviz/holoviews/pull/3932)), `dim`
+  expressions in `Dataset.select`
+  ([#3920](https://github.com/holoviz/holoviews/pull/3920)), arbitrary
+  method calls on `dim` expressions
+  ([#4080](https://github.com/holoviz/holoviews/pull/4080)), and
+  `Dataset.pipeline` and `Dataset.dataset` properties to track
+  provenance of data
 - Add Annotators to allow easily drawing, editing, and annotating visual
   elements ([#1185](https://github.com/holoviz/holoviews/pull/1185))
 - Completely replaced custom Javascript widgets with Panel-based widgets
