@@ -530,7 +530,9 @@ class Renderer(Exporter):
                 resources = INLINE
             if fmt not in ["html", "png", "auto"]:
                 raise ValueError("Format for exporting panel not supported: %s" % fmt)
-            basename = basename if fmt == "auto" else "%s.%s" % (basename, fmt)
+            fmt = 'html' if fmt == 'auto' else fmt
+            if basename.split('.')[-1] not in ('html', 'png'):
+                basename = "%s.%s" % (basename, fmt)
             plot.layout.save(basename, embed=True, resources=resources)
             return
 
