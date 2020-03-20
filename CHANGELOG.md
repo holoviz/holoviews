@@ -1,3 +1,85 @@
+Version 1.13.0
+==============
+
+This is a minor version release packed full of features and a general
+rearchitecting of the way HoloViews renders widgets now built on top
+of the Panel library. Many thanks to the many contributors to this
+release either directly by submitting PRs or by reporting issues and
+making suggestions. Specifically we would like to thank @poplarShift,
+@jonmease, @flothesof, @julioasotodv, @ltalirz, @DancingQuanta,
+@ahuang, @kcpevey, @Jacob-Barkhak, @nluetts, @harmbuisman, @ceball,
+@mgsnuno, @srp3003, @jsignell as well as the maintainers @jbednar,
+@jlstevens and @philippjfr for contributing to this release.  This
+version includes the addition of a large number of features,
+enhancements and bug fixes:
+
+Major features:
+
+- Add `link_selection` to make linked brushing simple
+- Completely replaced custom Javascript widgets with Panel based
+  widgets allowing for customizable layout (#84, #805)
+- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements (#3510, #3532, #4000)
+- Add Annotators to allow easily drawing, editing and annotating visual elements (#1185)
+- Add a `Dataset.transform` method to easily perform data transforms (#237, #3932)
+- Add support for cuDF GPU dataframes, cuPy backed xarrays and GPU datashading
+
+Other features
+
+- Add spatialpandas support and redesigned geometry interfaces for consistent roundtripping (#4120)
+- Support GIF rendering with Bokeh and Plotly backends (#2956, #4017)
+- Support for Plotly `Bars`, `Bounds`, `Box`, `Ellipse`, `HLine`, `Histogram`, `RGB`, `VLine` and `VSpan` plots
+- Add `UniformNdMapping.collapse` to collapse nested datastructures
+- Add `CurveEdit` and `SelectionXY` streams
+- Support for `dim` expressions in `Dataset.select`
+- Add `apply_when` helper to conditionally apply operations
+- Display Javascript callback errors in the notebook
+- Add support for linked streams in Plotly backend to enable rich interactivity
+- Allow arbitrary method calls on `dim` expressions
+
+Enhancements:
+
+- Support for packed values dimensions, e.g. 3D `RGB`/`HSV` arrays (#550, #3983)
+- Allow selecting/slicing datetimes with strings (#886)
+- Support for datashading `Area`, `Spikes`, `Segments` and `Polygons` (#4120)
+- `HeatMap` now supports mixed categorical/numeric axes (#2128)
+- Use `__signature__` to generate .opts tab completions (#4193)
+- Allow passing element-specific keywords through `datashade` and `rasterize` (#4077)
+- Add `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data
+- Add `per_element` flag to `.apply` accessor
+- Add `selected` plot option to control selected glyphs in bokeh
+- Improve default `Sankey` `node_padding` heuristic
+- Add `hooks` plot option for Plotly backend
+- Support for split `Violin` plots in bokeh (#4112)
+
+Bug fixes:
+
+- Fixed radial `HeatMap` sizing issues
+- Switched to Panel for rendering machinery fixing various export issues (#3683)
+- Handle updating of user supplied `HoverTool` in bokeh
+- Fix issues with single value datashaded plots (#3673)
+- Fix legend layout issues (#3786)
+- Fix linked axes issues with mixed date, categorical and numeric axes in bokeh (#3845)
+- Fixed handling of repeated dimensions in `PandasInterface` (#4139)
+- Fixed various issues related to widgets (#3868, #2885, #1677, #3212, #1059, #3027, #3777)
+
+
+Library compatibility:
+
+- Better support for Pandas 1.0
+- Compatibility with Bokeh 2.0
+
+Migration notes:
+
+- Geometry `.iloc` now indexes by geometry instead of by datapoint. Convert to dataframe or dictionary before using `.iloc` to access individual datapoints (#4104)
+- Padding is now enabled by default, to revert set `hv.config.node_padding = 0` (#1090)
+- Removed Bars `group_index` and `stack_index` options, which are now controlled using `stacked` option
+- `.table` is deprecated use `.collapse` method instead and cast to `Table`
+- `HoloMap.split_overlays` is deprecated and is now a private method
+- `Histogram.edges` and `Histogram.values` properties are deprecated use `dimension_values` 
+- `Element.collapse_data` is deprecated, use the containers `.collapse` method instead
+- `hv.output` `filename` argument is deprecated, use `hv.save` instead
+
+
 Version 1.12.7
 ==============
 
