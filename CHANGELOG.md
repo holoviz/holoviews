@@ -14,9 +14,17 @@ addition of a large number of features, enhancements and bug fixes:
 
 Major features:
 
-- Add `link_selection` to make linked brushing simple
+- Add `link_selection` to make custom linked brushing simple
   ([#3951](https://github.com/holoviz/holoviews/pull/3951))
-- Completely replaced custom Javascript widgets with Panel based widgets
+- `link_selection` builds on new support for much more powerful data-transform pipelines:
+  new `Dataset.transform` method ([#237](https://github.com/holoviz/holoviews/pull/237),
+  [#3932](https://github.com/holoviz/holoviews/pull/3932)),
+  `dim` expressions in `Dataset.select` ([#3920](https://github.com/holoviz/holoviews/pull/3920)),
+  arbitrary method calls on `dim` expressions ([#4080](https://github.com/holoviz/holoviews/pull/4080)), 
+  and `Dataset.pipeline` and `Dataset.dataset` properties to track provenance of data
+- Add Annotators to allow easily drawing, editing, and annotating visual
+  elements ([#1185](https://github.com/holoviz/holoviews/pull/1185))
+- Completely replaced custom Javascript widgets with Panel-based widgets
   allowing for customizable layout
   ([#84](https://github.com/holoviz/holoviews/pull/84),
   [#805](https://github.com/holoviz/holoviews/pull/805))
@@ -24,12 +32,7 @@ Major features:
   ([#3510](https://github.com/holoviz/holoviews/pull/3510),
   [#3532](https://github.com/holoviz/holoviews/pull/3532),
   [#4000](https://github.com/holoviz/holoviews/pull/4000))
-- Add Annotators to allow easily drawing, editing and annotating visual
-  elements ([#1185](https://github.com/holoviz/holoviews/pull/1185))
-- Add a `Dataset.transform` method to easily perform data transforms
-  ([#237](https://github.com/holoviz/holoviews/pull/237),
-  [#3932](https://github.com/holoviz/holoviews/pull/3932))
-- Add support for cuDF GPU dataframes, cuPy backed xarrays and GPU
+- Add support for cuDF GPU dataframes, cuPy backed xarrays, and GPU
   datashading ([#3982](https://github.com/holoviz/holoviews/pull/3982))
 
 Other features
@@ -47,8 +50,6 @@ Other features
 - Add `CurveEdit` and `SelectionXY` streams
   ([#4119](https://github.com/holoviz/holoviews/pull/4119),
   [#4167](https://github.com/holoviz/holoviews/pull/4167))
-- Support for `dim` expressions in `Dataset.select`
-  ([#3920](https://github.com/holoviz/holoviews/pull/3920))
 - Add `apply_when` helper to conditionally apply operations
   ([#4289](https://github.com/holoviz/holoviews/pull/4289))
 - Display Javascript callback errors in the notebook
@@ -57,8 +58,6 @@ Other features
   interactivity
   ([#3880](https://github.com/holoviz/holoviews/pull/3880),
   [#3912](https://github.com/holoviz/holoviews/pull/3912))
-- Allow arbitrary method calls on `dim` expressions
-  ([#4080](https://github.com/holoviz/holoviews/pull/4080))
 
 Enhancements:
 
@@ -75,8 +74,6 @@ Enhancements:
   ([#4193](https://github.com/holoviz/holoviews/pull/4193))
 - Allow passing element-specific keywords through `datashade` and
   `rasterize` ([#4077](https://github.com/holoviz/holoviews/pull/4077))
-- Add `Dataset.pipeline` and `Dataset.dataset` properties to track
-  provenance of data
   ([#3967](https://github.com/holoviz/holoviews/pull/3967))
 - Add `per_element` flag to `.apply` accessor
   ([#4119](https://github.com/holoviz/holoviews/pull/4119))
@@ -128,23 +125,23 @@ Migration notes:
   datapoint. Convert to dataframe or dictionary before using `.iloc` to
   access individual datapoints
   ([#4104](https://github.com/holoviz/holoviews/pull/4104))
-- Padding is now enabled by default, to revert set
+- Padding around plot elements is now enabled by default, to revert set
   `hv.config.node_padding = 0`
   ([#1090](https://github.com/holoviz/holoviews/pull/1090))
 - Removed Bars `group_index` and `stack_index` options, which are now
-  controlled using `stacked` option
+  controlled using the `stacked` option
   ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `.table` is deprecated use `.collapse` method instead and cast to
+- `.table` is deprecated; use `.collapse` method instead and cast to
   `Table` ([#3985](https://github.com/holoviz/holoviews/pull/3985))
 - `HoloMap.split_overlays` is deprecated and is now a private method
   ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `Histogram.edges` and `Histogram.values` properties are deprecated use
+- `Histogram.edges` and `Histogram.values` properties are deprecated; use
   `dimension_values`
   ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `Element.collapse_data` is deprecated, use the containers `.collapse`
+- `Element.collapse_data` is deprecated; use the container's `.collapse`
   method instead
   ([#3985](https://github.com/holoviz/holoviews/pull/3985))
-- `hv.output` `filename` argument is deprecated, use `hv.save` instead
+- `hv.output` `filename` argument is deprecated; use `hv.save` instead
   ([#3985](https://github.com/holoviz/holoviews/pull/3985))
 
 
