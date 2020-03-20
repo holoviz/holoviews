@@ -18,9 +18,7 @@ Major features:
 - Add `link_selection` to make linked brushing simple ([#3951](https://github.com/holoviz/holoviews/pull/3951))
 - Completely replaced custom Javascript widgets with Panel based
 	widgets allowing for customizable layout ([#84](https://github.com/holoviz/holoviews/pull/84), [#805](https://github.com/holoviz/holoviews/pull/805))
-- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements ([#
-  3510](https://github.com/holoviz/holoviews/pull/
-  3510), [#3532](https://github.com/holoviz/holoviews/pull/3532), [#4000](https://github.com/holoviz/holoviews/pull/4000))
+- Add `HSpan`, `VSpan`, `Slope`, `Segments` and `Rectangles` elements ([#3510](https://github.com/holoviz/holoviews/pull/3510), [#3532](https://github.com/holoviz/holoviews/pull/3532), [#4000](https://github.com/holoviz/holoviews/pull/4000))
 - Add Annotators to allow easily drawing, editing and annotating visual
   elements ([#1185](https://github.com/holoviz/holoviews/pull/1185))
 - Add a `Dataset.transform` method to easily perform data transforms
