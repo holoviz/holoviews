@@ -32,7 +32,8 @@ Other features
 - Add spatialpandas support and redesigned geometry interfaces for
   consistent roundtripping (#4120)
 - Support GIF rendering with Bokeh and Plotly backends (#2956, #4017)
-- Support for Plotly `Bars`, `Bounds`, `Box`, `Ellipse`, `HLine`, `Histogram`, `RGB`, `VLine` and `VSpan` plots
+- Support for Plotly `Bars`, `Bounds`, `Box`, `Ellipse`, `HLine`,
+  `Histogram`, `RGB`, `VLine` and `VSpan` plots
 - Add `UniformNdMapping.collapse` to collapse nested datastructures (#4250)
 - Add `CurveEdit` and `SelectionXY` streams (#4119, #4167)
 - Support for `dim` expressions in `Dataset.select` (#3920)
