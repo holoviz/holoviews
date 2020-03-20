@@ -10,6 +10,163 @@ Announcements
 Release notes
 -------------
 
+Version 1.13
+~~~~~~~~~~~~
+
+Version 1.13.0
+**************
+
+This release is packed full of features and includes a general
+refactoring of how HoloViews renders widgets now built on top of the
+Panel library. Many thanks to the many contributors to this release
+either directly by submitting PRs or by reporting issues and making
+suggestions. Specifically we would like to thank @poplarShift,
+@jonmease, @flothesof, @julioasotodv, @ltalirz, @DancingQuanta, @ahuang,
+@kcpevey, @Jacob-Barkhak, @nluetts, @harmbuisman, @ceball, @mgsnuno,
+@srp3003, @jsignell as well as the maintainers @jbednar, @jlstevens and
+@philippjfr for contributing to this release. This version includes the
+addition of a large number of features, enhancements and bug fixes:
+
+Major features:
+
+-  Add ``link_selection`` to make custom linked brushing simple
+   (`#3951 <https://github.com/holoviz/holoviews/pull/3951>`__)
+-  ``link_selection`` builds on new support for much more powerful
+   data-transform pipelines: new ``Dataset.transform`` method
+   (`#237 <https://github.com/holoviz/holoviews/pull/237>`__,
+   `#3932 <https://github.com/holoviz/holoviews/pull/3932>`__), ``dim``
+   expressions in ``Dataset.select``
+   (`#3920 <https://github.com/holoviz/holoviews/pull/3920>`__),
+   arbitrary method calls on ``dim`` expressions
+   (`#4080 <https://github.com/holoviz/holoviews/pull/4080>`__), and
+   ``Dataset.pipeline`` and ``Dataset.dataset`` properties to track
+   provenance of data
+-  Add Annotators to allow easily drawing, editing, and annotating
+   visual elements
+   (`#1185 <https://github.com/holoviz/holoviews/pull/1185>`__)
+-  Completely replaced custom Javascript widgets with Panel-based
+   widgets allowing for customizable layout
+   (`#84 <https://github.com/holoviz/holoviews/pull/84>`__,
+   `#805 <https://github.com/holoviz/holoviews/pull/805>`__)
+-  Add ``HSpan``, ``VSpan``, ``Slope``, ``Segments`` and ``Rectangles``
+   elements (`#3510 <https://github.com/holoviz/holoviews/pull/3510>`__,
+   `#3532 <https://github.com/holoviz/holoviews/pull/3532>`__,
+   `#4000 <https://github.com/holoviz/holoviews/pull/4000>`__)
+-  Add support for cuDF GPU dataframes, cuPy backed xarrays, and GPU
+   datashading
+   (`#3982 <https://github.com/holoviz/holoviews/pull/3982>`__)
+
+Other features
+
+-  Add spatialpandas support and redesigned geometry interfaces for
+   consistent roundtripping
+   (`#4120 <https://github.com/holoviz/holoviews/pull/4120>`__)
+-  Support GIF rendering with Bokeh and Plotly backends
+   (`#2956 <https://github.com/holoviz/holoviews/pull/2956>`__,
+   `#4017 <https://github.com/holoviz/holoviews/pull/4017>`__)
+-  Support for Plotly ``Bars``, ``Bounds``, ``Box``, ``Ellipse``,
+   ``HLine``, ``Histogram``, ``RGB``, ``VLine`` and ``VSpan`` plots
+-  Add ``UniformNdMapping.collapse`` to collapse nested datastructures
+   (`#4250 <https://github.com/holoviz/holoviews/pull/4250>`__)
+-  Add ``CurveEdit`` and ``SelectionXY`` streams
+   (`#4119 <https://github.com/holoviz/holoviews/pull/4119>`__,
+   `#4167 <https://github.com/holoviz/holoviews/pull/4167>`__)
+-  Add ``apply_when`` helper to conditionally apply operations
+   (`#4289 <https://github.com/holoviz/holoviews/pull/4289>`__)
+-  Display Javascript callback errors in the notebook
+   (`#4119 <https://github.com/holoviz/holoviews/pull/4119>`__)
+-  Add support for linked streams in Plotly backend to enable rich
+   interactivity
+   (`#3880 <https://github.com/holoviz/holoviews/pull/3880>`__,
+   `#3912 <https://github.com/holoviz/holoviews/pull/3912>`__)
+
+Enhancements:
+
+-  Support for packed values dimensions, e.g. 3D ``RGB``/``HSV`` arrays
+   (`#550 <https://github.com/holoviz/holoviews/pull/550>`__,
+   `#3983 <https://github.com/holoviz/holoviews/pull/3983>`__)
+-  Allow selecting/slicing datetimes with strings
+   (`#886 <https://github.com/holoviz/holoviews/pull/886>`__)
+-  Support for datashading ``Area``, ``Spikes``, ``Segments`` and
+   ``Polygons``
+   (`#4120 <https://github.com/holoviz/holoviews/pull/4120>`__)
+-  ``HeatMap`` now supports mixed categorical/numeric axes
+   (`#2128 <https://github.com/holoviz/holoviews/pull/2128>`__)
+-  Use ``__signature__`` to generate .opts tab completions
+   (`#4193 <https://github.com/holoviz/holoviews/pull/4193>`__)
+-  Allow passing element-specific keywords through ``datashade`` and
+   ``rasterize``
+   (`#4077 <https://github.com/holoviz/holoviews/pull/4077>`__)
+   (`#3967 <https://github.com/holoviz/holoviews/pull/3967>`__)
+-  Add ``per_element`` flag to ``.apply`` accessor
+   (`#4119 <https://github.com/holoviz/holoviews/pull/4119>`__)
+-  Add ``selected`` plot option to control selected glyphs in bokeh
+   (`#4281 <https://github.com/holoviz/holoviews/pull/4281>`__)
+-  Improve default ``Sankey`` ``node_padding`` heuristic
+   (`#4253 <https://github.com/holoviz/holoviews/pull/4253>`__)
+-  Add ``hooks`` plot option for Plotly backend
+   (`#4157 <https://github.com/holoviz/holoviews/pull/4157>`__)
+-  Support for split ``Violin`` plots in bokeh
+   (`#4112 <https://github.com/holoviz/holoviews/pull/4112>`__)
+
+Bug fixes:
+
+-  Fixed radial ``HeatMap`` sizing issues
+   (`#4162 <https://github.com/holoviz/holoviews/pull/4162>`__)
+-  Switched to Panel for rendering machinery fixing various export
+   issues (`#3683 <https://github.com/holoviz/holoviews/pull/3683>`__)
+-  Handle updating of user supplied ``HoverTool`` in bokeh
+   (`#4266 <https://github.com/holoviz/holoviews/pull/4266>`__)
+-  Fix issues with single value datashaded plots
+   (`#3673 <https://github.com/holoviz/holoviews/pull/3673>`__)
+-  Fix legend layout issues
+   (`#3786 <https://github.com/holoviz/holoviews/pull/3786>`__)
+-  Fix linked axes issues with mixed date, categorical and numeric axes
+   in bokeh (`#3845 <https://github.com/holoviz/holoviews/pull/3845>`__)
+-  Fixed handling of repeated dimensions in ``PandasInterface``
+   (`#4139 <https://github.com/holoviz/holoviews/pull/4139>`__)
+-  Fixed various issues related to widgets
+   (`#3868 <https://github.com/holoviz/holoviews/pull/3868>`__,
+   `#2885 <https://github.com/holoviz/holoviews/pull/2885>`__,
+   `#1677 <https://github.com/holoviz/holoviews/pull/1677>`__,
+   `#3212 <https://github.com/holoviz/holoviews/pull/3212>`__,
+   `#1059 <https://github.com/holoviz/holoviews/pull/1059>`__,
+   `#3027 <https://github.com/holoviz/holoviews/pull/3027>`__,
+   `#3777 <https://github.com/holoviz/holoviews/pull/3777>`__)
+
+Library compatibility:
+
+-  Better support for Pandas 1.0
+   (`#4254 <https://github.com/holoviz/holoviews/pull/4254>`__)
+-  Compatibility with Bokeh 2.0
+   (`#4226 <https://github.com/holoviz/holoviews/pull/4226>`__)
+
+Migration notes:
+
+-  Geometry ``.iloc`` now indexes by geometry instead of by datapoint.
+   Convert to dataframe or dictionary before using ``.iloc`` to access
+   individual datapoints
+   (`#4104 <https://github.com/holoviz/holoviews/pull/4104>`__)
+-  Padding around plot elements is now enabled by default, to revert set
+   ``hv.config.node_padding = 0``
+   (`#1090 <https://github.com/holoviz/holoviews/pull/1090>`__)
+-  Removed Bars ``group_index`` and ``stack_index`` options, which are
+   now controlled using the ``stacked`` option
+   (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+-  ``.table`` is deprecated; use ``.collapse`` method instead and cast
+   to ``Table``
+   (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+-  ``HoloMap.split_overlays`` is deprecated and is now a private method
+   (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+-  ``Histogram.edges`` and ``Histogram.values`` properties are
+   deprecated; use ``dimension_values``
+   (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+-  ``Element.collapse_data`` is deprecated; use the container’s
+   ``.collapse`` method instead
+   (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+-  ``hv.output`` ``filename`` argument is deprecated; use ``hv.save``
+   instead (`#3985 <https://github.com/holoviz/holoviews/pull/3985>`__)
+
 
 Version 1.12
 ~~~~~~~~~~~~
