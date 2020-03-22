@@ -25,10 +25,15 @@ from .dictionary import DictInterface
 from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .spatialpandas import SpatialPandasInterface # noqa (API import)
 
 default_datatype = 'dictionary'
 datatypes = ['dictionary', 'grid', 'spatialpandas']
+
+try:
+    import spatialpandas
+    from .spatialpandas import SpatialPandasInterface # noqa (API import)
+except Exception:
+    pass
 
 try:
     import pandas as pd # noqa (Availability import)
