@@ -163,7 +163,8 @@ python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc)
+    MethodType, np.ufunc, iloc
+)
 
 
 class dim(object):
@@ -194,7 +195,7 @@ class dim(object):
         python_isin: 'isin',
         astype: 'astype',
         round_: 'round',
-        iloc: 'iloc'
+        iloc: 'iloc',
     }
 
     _numpy_funcs = {
@@ -271,10 +272,21 @@ class dim(object):
     def __hash__(self):
         return hash(repr(self))
 
+    def __call__(self, *args, **kwargs):
+        if (not self.opts or not isinstance(self.ops[-1]['fn'], basestring) or
+            'accessor' not in self.opts[-1]['kwargs']):
+            raise ValueError("Cannot use __call__ method on dim expression "
+                             "which is not an accessor. Ensure that you only "
+                             "call a dim expression, which was created by "
+                             "accessing an attribute that does not exist "
+                             "on an existing dim expression.")
+        new_op = dict(self.ops[-1], args=args, kwargs=kwargs)
+        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+
     def __getattr__(self, attr):
         if attr in self.__dict__:
             return self.__dict__[attr]
-        return partial(self.method, attr)
+        return dim(self, attr, accessor=True)
 
     @property
     def params(self):
@@ -510,7 +522,14 @@ class dim(object):
                 if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
                     kwargs['axis'] = None
                 fn = fn_name
-            fn_args = [] if isinstance(fn, basestring) else [data]
+
+            if isinstance(fn, basestring):
+                accessor = kwargs.pop('accessor', None)
+                fn_args = [data]
+            else:
+                accessor = False
+                fn_args = [data]
+
             for arg in args:
                 if isinstance(arg, dim):
                     arg = arg.apply(
@@ -548,19 +567,23 @@ class dim(object):
             elif isinstance(fn, basestring):
                 method = getattr(data, fn, None)
                 if method is None:
+                    mtype = 'attribute' if accessor else 'method'
                     raise AttributeError(
-                        "%r could not be applied to '%r', '%s' method "
+                        "%r could not be applied to '%r', '%s' %s"
                         "does not exist on %s type."
-                        % (self, dataset, fn, type(data).__name__)
+                        % (self, dataset, fn, mtype, type(data).__name__)
                     )
-                try:
-                    data = method(*args, **kwargs)
-                except Exception as e:
-                    if 'axis' in kwargs:
-                        kwargs.pop('axis')
+                if accessor:
+                    data = method
+                else:
+                    try:
                         data = method(*args, **kwargs)
-                    else:
-                        raise e
+                    except Exception as e:
+                        if 'axis' in kwargs:
+                            kwargs.pop('axis')
+                            data = method(*args, **kwargs)
+                        else:
+                            raise e
             else:
                 data = fn(*args, **kwargs)
         return data
