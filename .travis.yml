@@ -19,7 +19,7 @@ notifications:
 env:
   global:
     - PYENV_VERSION=3.7
-    - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
+    - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
@@ -136,15 +136,15 @@ jobs:
       stage: conda_dev_package
       env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS_DEV="-c pyviz/label/dev -c bokeh/label/dev"
       install:
-        - doit package_build $CHANS_DEV --no-pkg-tests
+        - doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
 
     - <<: *conda_pkg
       stage: conda_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS_DEV="-c pyviz -c bokeh"
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS="-c pyviz -c bokeh"
       install:
-        - doit package_build $CHANS_DEV --no-pkg-tests
+        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
 
