@@ -13,6 +13,17 @@ Release notes
 Version 1.13
 ~~~~~~~~~~~~
 
+Version 1.13.1
+**************
+
+This is a minor patch release to fix issues compatibility with the
+about to be released Bokeh 2.0.1 release. Additionally this release
+makes Pandas a hard dependency, which was already implicitly the case
+in 1.13.0 but not declared.
+
+- Fix compatibility with Bokeh 2.0.1
+  (`#4308 <https://github.com/holoviz/holoviews/pull/4308>`_)
+
 Version 1.13.0
 **************
 
