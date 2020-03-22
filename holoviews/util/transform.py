@@ -3,7 +3,6 @@ from __future__ import division
 import operator
 import sys
 
-from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
