@@ -25,16 +25,15 @@ from .dictionary import DictInterface
 from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
-from .spatialpandas import SpatialPandasInterface # noqa (API import)
 
 default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid', 'spatialpandas']
+datatypes = ['dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     default_datatype = 'dataframe'
-    datatypes = ['dataframe', 'dictionary', 'spatialpandas', 'grid']
+    datatypes.insert(0, 'dataframe')
     DFColumns = PandasInterface
 except ImportError:
     pd = None
@@ -44,20 +43,26 @@ except Exception as e:
                              'following error: %s' % e)
 
 try:
+    from .spatialpandas import SpatialPandasInterface # noqa (API import)
+    datatypes.append('spatialpandas')
+except ImportError:
+    pass
+
+try:
     from .xarray import XArrayInterface # noqa (Conditional API import)
     datatypes.append('xarray')
 except ImportError:
     pass
 
 try:
-    from .dask import DaskInterface   # noqa (Conditional API import)
-    datatypes.append('dask')
+    from .cudf import cuDFInterface   # noqa (Conditional API import)
+    datatypes.append('cuDF')
 except ImportError:
     pass
 
 try:
-    from .cudf import cuDFInterface   # noqa (Conditional API import)
-    datatypes.append('cuDF')
+    from .dask import DaskInterface   # noqa (Conditional API import)
+    datatypes.append('dask')
 except ImportError:
     pass
 

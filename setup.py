@@ -10,7 +10,8 @@ from setuptools import setup, find_packages
 import pyct.build
 
 setup_args = {}
-install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.2', 'panel>=0.7.0']
+install_requires = ['param>=1.8.0,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.2',
+                    'panel>=0.7.0', 'pandas']
 
 extras_require = {}
 
@@ -19,7 +20,7 @@ extras_require['notebook'] = ['ipython>=5.4.0', 'notebook']
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require['recommended'] = extras_require['notebook'] + [
-    'pandas', 'matplotlib>=2.2', 'bokeh>=1.1.0']
+    'matplotlib>=2.2', 'bokeh>=1.1.0']
 
 # Requirements to run all examples
 extras_require['examples'] = extras_require['recommended'] + [
