@@ -22,12 +22,8 @@ from bokeh.models.ranges import Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import (
     Ticker, BasicTicker, FixedTicker, LogTicker, MercatorTicker
 )
+from bokeh.models.tools import Tool
 from bokeh.models.widgets import Panel, Tabs
-
-try:
-    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
-except:
-    from bokeh.plotting._tools import TOOLS_MAP
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
@@ -50,6 +46,16 @@ from .util import (
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
 )
+
+if bokeh_version >= '2.0.1':
+    try:
+        TOOLS_MAP = Tool._known_aliases
+    except Exception:
+        TOOLS_MAP = TOOL_TYPES
+elif bokeh_version >= '2.0.0':
+    from bokeh.plotting._tools import TOOLS_MAP
+else:
+    from bokeh.plotting.helpers import _known_tools as TOOLS_MAP
 
 
 
