@@ -93,6 +93,7 @@ jobs:
         - conda install $CHANS_DEV firefox geckodriver 
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
+        - python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
         - nbsite build --what=html --output=builtdocs
       after_success:
         - aws s3 sync --quiet ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"

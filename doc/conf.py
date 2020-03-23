@@ -8,8 +8,14 @@ authors = u'PyViz developers'
 copyright = u'2019 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
 import holoviews
 version = release = holoviews.__version__
+
 
 html_theme = 'sphinx_holoviz_theme'
 html_static_path += ['_static']
@@ -69,7 +75,7 @@ html_context.update({
         ('User Guide', '/user_guide/index'),
         ('Gallery', '/gallery/index'),
         ('Reference Gallery', '/reference/index'),
-        ('API Docs', '/Reference_Manual/index'),
+        ('API Docs', '/reference_manual/index'),
         ('FAQ', '/FAQ'),
         ('About', '/about')
     ),
@@ -90,7 +96,7 @@ html_context.update({
         ('Gallery', 'gallery/index'),
         ('Reference Gallery', 'reference/index'),
         ('Releases', 'releases'),
-        ('API', 'Reference_Manual/index'),
+        ('API', 'reference_manual/index'),
         ('FAQ', 'FAQ')
     ),
     'js_includes': html_context['js_includes']+['holoviews.js']
