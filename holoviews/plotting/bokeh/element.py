@@ -1483,7 +1483,6 @@ class CompositeElementPlot(ElementPlot):
             style = self.style[self.cyclic_index]
             data, mapping, style = self.get_data(element, ranges, style)
 
-
         keys = glyph_order(dict(data, **mapping), self._draw_order)
 
         source_cache = {}
@@ -1730,9 +1729,7 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         if eldim:
             # check if there's an actual value (not np.nan)
-            if util.isfinite(self.clim).all():
-                low, high = self.clim
-            elif dim_name in ranges:
+            if dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
@@ -1741,6 +1738,10 @@ class ColorbarPlot(ElementPlot):
             if self.symmetric:
                 sym_max = max(abs(low), high)
                 low, high = -sym_max, sym_max
+            if util.isfinite(self.clim[0]):
+                low = self.clim[0]
+            if util.isfinite(self.clim[1]):
+                high = self.clim[1]
         else:
             low, high = None, None
 
