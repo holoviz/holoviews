@@ -8,8 +8,14 @@ authors = u'PyViz developers'
 copyright = u'2019 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
+
 import holoviews
 version = release = holoviews.__version__
+
 
 html_theme = 'sphinx_holoviz_theme'
 html_static_path += ['_static']
