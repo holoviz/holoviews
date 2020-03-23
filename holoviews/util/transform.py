@@ -445,7 +445,7 @@ class dim(object):
 
     # Other methods
 
-    def applies(self, dataset):
+    def applies(self, dataset, strict=False):
         """
         Determines whether the dim transform can be applied to the
         Dataset, i.e. whether all referenced dimensions can be
@@ -456,9 +456,10 @@ class dim(object):
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         else:
-            applies = dataset.get_dimension(self.dimension) is not None
+            lookup = self.dimension if strict else self.dimension.name
+            applies = dataset.get_dimension(lookup) is not None
             if isinstance(dataset, Graph) and not applies:
-                applies = dataset.nodes.get_dimension(self.dimension) is not None
+                applies = dataset.nodes.get_dimension(lookup) is not None
         for op in self.ops:
             args = op.get('args')
             if not args:
