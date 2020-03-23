@@ -12,7 +12,7 @@ import weakref
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce, partial
+from functools import partial
 
 import param
 import numpy as np
@@ -1452,38 +1452,5 @@ class ViewableTree(AttrTree, Dimensioned):
             return super(ViewableTree, self).dimension_values(
                 dimension, expanded, flat)
 
-
-    def regroup(self, group):
-        """Deprecated method to apply new group to items.
-
-        Equivalent functionality possible using:
-
-            ViewableTree(tree.relabel(group='Group').values())
-        """
-        self.param.warning('%s.regroup is deprecated, use relabel '
-                           'method with a group argument instead.'
-                           % type(self).__name__)
-        new_items = [el.relabel(group=group) for el in self.data.values()]
-        return reduce(lambda x,y: x+y, new_items)
-
-
-    def relabel(self, label=None, group=None, depth=1):
-        """Clone object and apply new group and/or label.
-
-        Applies relabeling to children up to the supplied depth.
-
-        Args:
-            label (str, optional): New label to apply to returned object
-            group (str, optional): New group to apply to returned object
-            depth (int, optional): Depth to which relabel will be applied
-                If applied to container allows applying relabeling to
-                contained objects up to the specified depth
-
-        Returns:
-            Returns relabelled object
-        """
-        return super(ViewableTree, self).relabel(label, group, depth)
-
-    
     def __len__(self):
         return len(self.data)

@@ -296,7 +296,7 @@ class OverlayTestCase(ElementTestCase):
 
     def test_overlay_group(self):
         t1 = (self.el1 * self.el2)
-        t2 = Overlay(list(t1.relabel(group='NewValue')))
+        t2 = Overlay(list(t1.relabel(group='NewValue', depth=1)))
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
 
     def test_overlay_quadruple_1(self):

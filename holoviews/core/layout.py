@@ -498,6 +498,22 @@ class Layout(ViewableTree):
         self._max_cols = ncols
         return self
 
+    def relabel(self, label=None, group=None, depth=1):
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to children up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
+        """
+        return super(Layout, self).relabel(label, group, depth)
 
     def grid_items(self):
         return {tuple(np.unravel_index(idx, self.shape)): (path, item)
