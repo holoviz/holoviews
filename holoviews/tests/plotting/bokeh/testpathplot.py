@@ -88,8 +88,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
         self.assertEqual(source.data['color'], np.array([998, 999, 998]))
-        self.assertEqual(source.data['date_dt_strings'],
-                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
+        self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 998)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
@@ -111,8 +110,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
         self.assertEqual(source.data['color'], np.array([998, 999, 998]))
-        self.assertEqual(source.data['date_dt_strings'],
-                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
+        self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])

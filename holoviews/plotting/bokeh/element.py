@@ -293,10 +293,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
-            values = np.asarray(data[dim])
-            if (values.dtype.kind == 'M' or (
-                    len(values) and isinstance(values[0], util.datetime_types))):
-                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
@@ -1243,20 +1239,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
+        if not isinstance(hover.tooltips, util.basestring) and 'hv_created' in hover.tags:
+            for k, values in source.data.items():
+                key = '@{%s}' % k
+                if key in hover.formatters:
+                    continue
+                if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
+                    (len(values) and isinstance(values[0], util.datetime_types))):
+                    hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
+                    hover.formatters[key] = "datetime"
         if hover.renderers == 'auto':
             hover.renderers = []
         hover.renderers.append(renderer)
-
-        # If datetime column is in the data replace hover formatter
-        for k, v in source.data.items():
-            if k+'_dt_strings' in source.data:
-                tooltips = []
-                for name, formatter in hover.tooltips:
-                    if formatter == '@{%s}' % k:
-                        formatter = '@{%s_dt_strings}' % k
-                    tooltips.append((name, formatter))
-                hover.tooltips = tooltips
-
 
     def _init_glyphs(self, plot, element, ranges, source):
         style_element = element.last if self.batched else element
@@ -2119,11 +2113,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['hover'] = subplot.handles['hover']
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
-            # Datetime formatter may have been applied, remove _dt_strings
-            # to match on the hover tooltips, then merge tool renderers
             if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
-                tooltips = tuple((name, spec.replace('_dt_strings', ''))
-                                  for name, spec in hover.tooltips)
+                tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()
             tool = self.handles['hover_tools'].get(tooltips)

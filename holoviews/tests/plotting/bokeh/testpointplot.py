@@ -138,7 +138,8 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']}}
         obj = obj.opts(plot=opts)
-        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
+                              formatters={'@{x}': "datetime"})
 
     def test_points_overlay_hover_batched(self):
         obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},
@@ -319,9 +320,9 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
-        self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])
+        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date}{%F %T}')],
+                         {'@{date}': "datetime"})
 
     def test_points_selected(self):
         points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])

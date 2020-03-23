@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import numpy as np
 import param
 
+from ...core.util import dimension_sanitizer
 from ..mixins import GeomMixin
 from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
@@ -29,9 +30,12 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         inds = (1, 0, 3, 2) if self.invert_axes else (0, 1, 2, 3)
+        xd0, yd0, xd1, yd1 = (dimension_sanitizer(element.get_dimension(i).name)
+                              for i in inds)
         x0s, y0s, x1s, y1s = (element.dimension_values(kd) for kd in inds)
-        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
-        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+        data = {xd0: x0s, xd1: x1s, yd0: y0s, yd1: y1s}
+        mapping = dict(x0=xd0, x1=xd1, y0=yd0, y1=yd1)
+        self._get_hover_data(data, element)
         return (data, mapping, style)
 
 
@@ -59,4 +63,5 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
         data = {'x': (x1+x0)/2., 'y': (y1+y0)/2., 'width': x1-x0, 'height': y1-y0}
         mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
+        self._get_hover_data(data, element)
         return data, mapping, style
