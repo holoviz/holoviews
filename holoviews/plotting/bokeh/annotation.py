@@ -276,7 +276,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
     style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
 
-    _style_groups = {'arrow': 'arrow', 'text': ''}
+    _style_groups = {'arrow': 'arrow', 'text': 'text'}
 
     _draw_order = ['arrow_1', 'text_1']
 
