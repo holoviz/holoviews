@@ -279,7 +279,11 @@ class dim(object):
                              "call a dim expression, which was created by "
                              "accessing an attribute that does not exist "
                              "on an existing dim expression.")
-        new_op = dict(self.ops[-1], args=args, kwargs=kwargs)
+        op = self.ops[-1]
+        if op['fn'] == 'str':
+            new_op = dict(op, fn=astype, args=(str,), kwargs={})
+        else:
+            new_op = dict(op, args=args, kwargs=kwargs)
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
     def __getattr__(self, attr):
@@ -439,9 +443,10 @@ class dim(object):
             kwargs = {'min': limits[0], 'max': limits[1]}
         return dim(self, norm, **kwargs)
 
+    @property
     def str(self):
-        "Casts values to strings."
-        return self.astype(str)
+        "Casts values to strings or provides str accessor."
+        return dim(self, 'str', accessor=True)
 
     # Other methods
 
@@ -525,7 +530,7 @@ class dim(object):
 
             if isinstance(fn, basestring):
                 accessor = kwargs.pop('accessor', None)
-                fn_args = [data]
+                fn_args = []
             else:
                 accessor = False
                 fn_args = [data]
@@ -569,7 +574,7 @@ class dim(object):
                 if method is None:
                     mtype = 'attribute' if accessor else 'method'
                     raise AttributeError(
-                        "%r could not be applied to '%r', '%s' %s"
+                        "%r could not be applied to '%r', '%s' %s "
                         "does not exist on %s type."
                         % (self, dataset, fn, mtype, type(data).__name__)
                     )
