@@ -69,7 +69,7 @@ html_context.update({
         ('User Guide', '/user_guide/index'),
         ('Gallery', '/gallery/index'),
         ('Reference Gallery', '/reference/index'),
-        ('API Docs', '/Reference_Manual/index'),
+        ('API Docs', '/reference_manual/index'),
         ('FAQ', '/FAQ'),
         ('About', '/about')
     ),
@@ -90,7 +90,7 @@ html_context.update({
         ('Gallery', 'gallery/index'),
         ('Reference Gallery', 'reference/index'),
         ('Releases', 'releases'),
-        ('API', 'Reference_Manual/index'),
+        ('API', 'reference_manual/index'),
         ('FAQ', 'FAQ')
     ),
     'js_includes': html_context['js_includes']+['holoviews.js']

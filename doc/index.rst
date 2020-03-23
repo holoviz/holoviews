@@ -19,7 +19,7 @@ The `Getting-Started <getting_started>`_ guide explains the basic concepts and h
 
 The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews, when you are ready for further study.
 
-The `API <Reference_Manual>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
+The `API <reference_manual>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
 
 If you have any `issues <https://github.com/holoviz/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/holoviz/holoviews>`_ or file a topic on the `HoloViz Discourse <https://discourse.holoviz.org/>`_.
 
@@ -137,8 +137,8 @@ After you have successfully installed and configured HoloViews, please see `Gett
    User Guide <user_guide/index>
    Reference Gallery <reference/index>
    Releases <releases>
-   API <Reference_Manual/index>
+   API <reference_manual/index>
    FAQ
-   Roadmap <Roadmap>
+   Roadmap <roadmap>
    Github source <https://github.com/holoviz/holoviews>
    About <about>
