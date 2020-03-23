@@ -1240,7 +1240,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if hover is None:
             return
         if not isinstance(hover.tooltips, util.basestring) and 'hv_created' in hover.tags:
-            tooltips = hover.tooltips
             for k, values in source.data.items():
                 key = '@{%s}' % k
                 if key in hover.formatters:

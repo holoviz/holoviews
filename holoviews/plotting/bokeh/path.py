@@ -201,7 +201,6 @@ class ContourPlot(PathPlot):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
-            values = data[dim]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
