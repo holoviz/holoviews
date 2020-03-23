@@ -60,6 +60,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
          Margins in pixel values specified as a tuple of the form
          (left, bottom, right, top).""")
 
+    responsive = param.Boolean(default=False, doc="""
+         Whether the plot should stretch to fill the available space.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -184,7 +187,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         self.handles['layout'] = layout
 
         # Create figure and return it
-        fig = dict(data=components['traces'], layout=layout)
+        layout['autosize'] = self.responsive
+        fig = dict(data=components['traces'], layout=layout, config=dict(responsive=self.responsive))
         self.handles['fig'] = fig
 
         self._execute_hooks(element)
@@ -472,8 +476,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             options['yaxis'] = yaxis
             options['margin'] = dict(l=l, r=r, b=b, t=t, pad=4)
 
-        return dict(width=self.width, height=self.height,
-                    title=self._format_title(key, separator=' '),
+        if not self.responsive:
+            options['width'] = self.width
+            options['height'] = self.height
+
+        return dict(title=self._format_title(key, separator=' '),
                     plot_bgcolor=self.bgcolor, **options)
 
     def _get_ticks(self, axis, ticker):
@@ -580,7 +587,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     _propagate_options = [
         'width', 'height', 'xaxis', 'yaxis', 'labelled', 'bgcolor',
         'invert_axes', 'show_frame', 'show_grid', 'logx', 'logy',
-        'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation',
+        'xticks', 'toolbar', 'yticks', 'xrotation', 'yrotation', 'responsive',
         'invert_xaxis', 'invert_yaxis', 'sizing_mode', 'title', 'title_format',
         'padding', 'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim']
 

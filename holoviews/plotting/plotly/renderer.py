@@ -28,7 +28,11 @@ def _PlotlyHoloviewsPane(fig_dict, **kwargs):
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 
-    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup', **kwargs)
+    config = fig_dict.pop('config', {})
+    if config.get('responsive'):
+        kwargs['sizing_mode'] = 'stretch_both'
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup',
+                                 config=config, **kwargs)
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
@@ -70,6 +74,7 @@ class PlotlyRenderer(Renderer):
         Allows cleaning the dictionary of any internal properties that were added
         """
         fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        config = fig_dict.get('config', {})
 
         # Remove internal properties (e.g. '_id', '_dim')
         clean_internal_figure_properties(fig_dict)
@@ -77,6 +82,7 @@ class PlotlyRenderer(Renderer):
         # Run through Figure constructor to normalize keys
         # (e.g. to expand magic underscore notation)
         fig_dict = go.Figure(fig_dict).to_dict()
+        fig_dict['config'] = config
 
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
