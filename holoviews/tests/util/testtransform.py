@@ -42,7 +42,7 @@ class TestDimTransforms(ComparisonTestCase):
 
     # Assertion helpers
 
-    def check_apply(self, expr, expected, skip_dask=False):
+    def check_apply(self, expr, expected, skip_dask=False, skip_no_index=False):
         if np.isscalar(expected):
             # Pandas input
             self.assertEqual(
@@ -69,10 +69,11 @@ class TestDimTransforms(ComparisonTestCase):
 
         # Check using dataset backed by pandas DataFrame
         # keep_index=False
-        np.testing.assert_equal(
-            expr.apply(self.dataset),
-            expected.values
-        )
+        if not skip_no_index:
+            np.testing.assert_equal(
+                expr.apply(self.dataset),
+                expected.values
+            )
         # keep_index=True
         pd.testing.assert_series_equal(
             expr.apply(self.dataset, keep_index=True),
@@ -87,9 +88,10 @@ class TestDimTransforms(ComparisonTestCase):
         expected_dask = dd.from_pandas(expected, npartitions=2)
 
         # keep_index=False, compute=False
-        da.assert_eq(
-            expr.apply(self.dataset_dask, compute=False), expected_dask.values
-        )
+        if not skip_no_index:
+            da.assert_eq(
+                expr.apply(self.dataset_dask, compute=False), expected_dask.values
+            )
         # keep_index=True, compute=False
         dd.assert_eq(
             expr.apply(self.dataset_dask, keep_index=True, compute=False),
@@ -97,10 +99,11 @@ class TestDimTransforms(ComparisonTestCase):
             check_names=False
         )
         # keep_index=False, compute=True
-        np.testing.assert_equal(
-            expr.apply(self.dataset_dask, compute=True),
-            expected_dask.values.compute()
-        )
+        if not skip_no_index:
+            np.testing.assert_equal(
+                expr.apply(self.dataset_dask, compute=True),
+                expected_dask.values.compute()
+            )
         # keep_index=True, compute=True
         pd.testing.assert_series_equal(
             expr.apply(self.dataset_dask, keep_index=True, compute=True),
@@ -226,6 +229,10 @@ class TestDimTransforms(ComparisonTestCase):
 
     # Custom functions
 
+    def test_str_astype(self):
+        expr = dim('int').str()
+        self.check_apply(expr, self.linear_ints.astype(str), skip_dask=True)
+
     def test_norm_transform(self):
         expr = dim('int').norm()
         self.check_apply(expr, (self.linear_ints-1)/9.)
@@ -284,6 +291,12 @@ class TestDimTransforms(ComparisonTestCase):
         # We don't skip dask because results are stable across partitions
         self.check_apply(expr, expected)
 
+    # Check accesors
+
+    def test_str_pandas_accessor(self):
+        expr = dim('categories').str.lower()
+        self.check_apply(expr, self.repeating.str.lower(), skip_no_index=True)
+
     # Numpy functions
 
     def test_digitize(self):
@@ -331,6 +344,10 @@ class TestDimTransforms(ComparisonTestCase):
     def test_multi_operator_expression_repr(self):
         self.assertEqual(repr(((dim('float')-2)*3)**2),
                          "((dim('float')-2)*3)**2")
+
+    def test_accessor_repr(self):
+        self.assertEqual(repr(dim('date').dt.year),
+                         "dim('date').dt.year")
 
     # Applies method
 

@@ -3,7 +3,6 @@ from __future__ import division
 import operator
 import sys
 
-from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -163,7 +162,8 @@ python_isin = _maybe_map(_python_isin)
 
 function_types = (
     BuiltinFunctionType, BuiltinMethodType, FunctionType,
-    MethodType, np.ufunc, iloc)
+    MethodType, np.ufunc, iloc
+)
 
 
 class dim(object):
@@ -194,7 +194,7 @@ class dim(object):
         python_isin: 'isin',
         astype: 'astype',
         round_: 'round',
-        iloc: 'iloc'
+        iloc: 'iloc',
     }
 
     _numpy_funcs = {
@@ -271,10 +271,25 @@ class dim(object):
     def __hash__(self):
         return hash(repr(self))
 
+    def __call__(self, *args, **kwargs):
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+            'accessor' not in self.ops[-1]['kwargs']):
+            raise ValueError("Cannot use __call__ method on dim expression "
+                             "which is not an accessor. Ensure that you only "
+                             "call a dim expression, which was created by "
+                             "accessing an attribute that does not exist "
+                             "on an existing dim expression.")
+        op = self.ops[-1]
+        if op['fn'] == 'str':
+            new_op = dict(op, fn=astype, args=(str,), kwargs={})
+        else:
+            new_op = dict(op, args=args, kwargs=kwargs)
+        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+
     def __getattr__(self, attr):
         if attr in self.__dict__:
             return self.__dict__[attr]
-        return partial(self.method, attr)
+        return dim(self, attr, accessor=True)
 
     @property
     def params(self):
@@ -428,13 +443,14 @@ class dim(object):
             kwargs = {'min': limits[0], 'max': limits[1]}
         return dim(self, norm, **kwargs)
 
+    @property
     def str(self):
-        "Casts values to strings."
-        return self.astype(str)
+        "Casts values to strings or provides str accessor."
+        return dim(self, 'str', accessor=True)
 
     # Other methods
 
-    def applies(self, dataset):
+    def applies(self, dataset, strict=False):
         """
         Determines whether the dim transform can be applied to the
         Dataset, i.e. whether all referenced dimensions can be
@@ -445,9 +461,10 @@ class dim(object):
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         else:
-            applies = dataset.get_dimension(self.dimension) is not None
+            lookup = self.dimension if strict else self.dimension.name
+            applies = dataset.get_dimension(lookup) is not None
             if isinstance(dataset, Graph) and not applies:
-                applies = dataset.nodes.get_dimension(self.dimension) is not None
+                applies = dataset.nodes.get_dimension(lookup) is not None
         for op in self.ops:
             args = op.get('args')
             if not args:
@@ -510,7 +527,14 @@ class dim(object):
                 if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
                     kwargs['axis'] = None
                 fn = fn_name
-            fn_args = [] if isinstance(fn, basestring) else [data]
+
+            if isinstance(fn, basestring):
+                accessor = kwargs.pop('accessor', None)
+                fn_args = []
+            else:
+                accessor = False
+                fn_args = [data]
+
             for arg in args:
                 if isinstance(arg, dim):
                     arg = arg.apply(
@@ -548,34 +572,44 @@ class dim(object):
             elif isinstance(fn, basestring):
                 method = getattr(data, fn, None)
                 if method is None:
+                    mtype = 'attribute' if accessor else 'method'
                     raise AttributeError(
-                        "%r could not be applied to '%r', '%s' method "
+                        "%r could not be applied to '%r', '%s' %s "
                         "does not exist on %s type."
-                        % (self, dataset, fn, type(data).__name__)
+                        % (self, dataset, fn, mtype, type(data).__name__)
                     )
-                try:
-                    data = method(*args, **kwargs)
-                except Exception as e:
-                    if 'axis' in kwargs:
-                        kwargs.pop('axis')
+                if accessor:
+                    data = method
+                else:
+                    try:
                         data = method(*args, **kwargs)
-                    else:
-                        raise e
+                    except Exception as e:
+                        if 'axis' in kwargs:
+                            kwargs.pop('axis')
+                            data = method(*args, **kwargs)
+                        else:
+                            raise e
             else:
                 data = fn(*args, **kwargs)
         return data
 
     def __repr__(self):
         op_repr = "'%s'" % self.dimension
+        accessor = False
         for i, o in enumerate(self.ops):
             if i == 0:
                 prev = 'dim({repr}'
+            elif accessor:
+                prev = '{repr}'
             else:
                 prev = '({repr}'
             fn = o['fn']
             ufunc = isinstance(fn, np.ufunc)
             args = ', '.join([repr(r) for r in o['args']]) if o['args'] else ''
-            kwargs = sorted(o['kwargs'].items(), key=operator.itemgetter(0))
+            kwargs = o['kwargs']
+            prev_accessor = accessor
+            accessor = kwargs.pop('accessor', None)
+            kwargs = sorted(kwargs.items(), key=operator.itemgetter(0))
             kwargs = '%s' % ', '.join(['%s=%r' % item for item in kwargs]) if kwargs else ''
             if fn in self._binary_funcs:
                 fn_name = self._binary_funcs[o['fn']]
@@ -597,7 +631,11 @@ class dim(object):
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
                 elif isinstance(fn, basestring):
-                    format_string = prev+').{fn}('
+                    if accessor:
+                        sep = '' if op_repr.endswith(')') or prev_accessor else ')'
+                        format_string = prev+sep+'.{fn}'
+                    else:
+                        format_string = prev+').{fn}('
                 elif fn in self._numpy_funcs:
                     fn_name = self._numpy_funcs[fn]
                     format_string = prev+').{fn}('
@@ -615,14 +653,18 @@ class dim(object):
                     if fn_name in dir(np):
                         format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
-                    format_string = 'dim(' + prev+', {fn}'
-                if args:
+                    format_string = prev+', {fn}'
+                if accessor:
+                    pass
+                elif args:
                     if not format_string.endswith('('):
                         format_string += ', '
                     format_string += '{args}'
                     if kwargs:
                         format_string += ', {kwargs}'
                 elif kwargs:
+                    if not format_string.endswith('('):
+                        format_string += ', '
                     format_string += '{kwargs}'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
