@@ -265,7 +265,7 @@ class SplinePlot(ElementPlot, AnnotationPlot):
                 data[yl].append(y)
         if skipped:
             self.param.warning(
-                'Bokeh SplitPlot only support cubic splines, unsupported '
+                'Bokeh SplinePlot only support cubic splines, unsupported '
                 'splines were skipped during plotting.')
         data = {da: data[da] for da in data_attrs}
         return (data, dict(zip(data_attrs, data_attrs)), style)
@@ -276,11 +276,15 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
     style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
 
-    _style_groups = {'arrow': 'arrow', 'label': 'text'}
+    _style_groups = {'arrow': 'arrow', 'text': ''}
+
+    _draw_order = ['arrow_1', 'text_1']
 
     def get_data(self, element, ranges, style):
         plot = self.state
         label_mapping = dict(x='x', y='y', text='text')
+        arrow_mapping = dict(x_start='x_start', x_end='x_end',
+                             y_start='y_start', y_end='y_end')
 
         # Compute arrow
         x1, y1 = element.x, element.y
@@ -300,12 +304,12 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         else:
             x2, y2 = x1, y1+span
             label_mapping['text_baseline'] = 'bottom'
-        arrow_opts = {'x_end': x1, 'y_end': y1,
-                      'x_start': x2, 'y_start': y2}
+        arrow_data = {'x_end': [x1], 'y_end': [y1],
+                      'x_start': [x2], 'y_start': [y2]}
 
         # Define arrowhead
-        arrow_opts['arrow_start'] = arrow_start.get(element.arrowstyle, None)
-        arrow_opts['arrow_end'] = arrow_end.get(element.arrowstyle, NormalHead)
+        arrow_mapping['arrow_start'] = arrow_start.get(element.arrowstyle, None)
+        arrow_mapping['arrow_end'] = arrow_end.get(element.arrowstyle, NormalHead)
 
         # Compute label
         if self.invert_axes:
@@ -313,8 +317,8 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         else:
             label_data = dict(x=[x2], y=[y2])
         label_data['text'] = [element.text]
-        return ({'label': label_data},
-                {'arrow': arrow_opts, 'label': label_mapping}, style)
+        return ({'text_1': label_data, 'arrow_1': arrow_data},
+                {'arrow_1': arrow_mapping, 'text_1': label_mapping}, style)
 
 
     def _init_glyph(self, plot, mapping, properties, key):
@@ -322,19 +326,20 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         Returns a Bokeh glyph object.
         """
         properties = {k: v for k, v in properties.items() if 'legend' not in k}
-        if key == 'arrow':
-            properties.pop('source')
+
+        if key == 'arrow_1':
+            source = properties.pop('source')
             arrow_end = mapping.pop('arrow_end')
             arrow_start = mapping.pop('arrow_start')
             start = arrow_start(**properties) if arrow_start else None
             end = arrow_end(**properties) if arrow_end else None
-            renderer = Arrow(start=start, end=end, **dict(**mapping))
+            renderer = Arrow(start=start, end=end, source=source, **mapping)
             glyph = renderer
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
             renderer, glyph = super(ArrowPlot, self)._init_glyph(
-                plot, mapping, properties, 'text_1')
+                plot, mapping, properties, key)
         plot.renderers.append(renderer)
         return renderer, glyph
 
