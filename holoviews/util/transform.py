@@ -272,8 +272,8 @@ class dim(object):
         return hash(repr(self))
 
     def __call__(self, *args, **kwargs):
-        if (not self.opts or not isinstance(self.ops[-1]['fn'], basestring) or
-            'accessor' not in self.opts[-1]['kwargs']):
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+            'accessor' not in self.ops[-1]['kwargs']):
             raise ValueError("Cannot use __call__ method on dim expression "
                              "which is not an accessor. Ensure that you only "
                              "call a dim expression, which was created by "
@@ -647,7 +647,7 @@ class dim(object):
                     if fn_name in dir(np):
                         format_string = '.'.join([self._namespaces['numpy'], format_string])
                 else:
-                    format_string = 'dim(' + prev+', {fn}'
+                    format_string = prev+', {fn}'
                 if accessor:
                     pass
                 elif args:
@@ -657,6 +657,8 @@ class dim(object):
                     if kwargs:
                         format_string += ', {kwargs}'
                 elif kwargs:
+                    if not format_string.endswith('('):
+                        format_string += ', '
                     format_string += '{kwargs}'
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
