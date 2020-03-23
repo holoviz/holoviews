@@ -97,7 +97,8 @@ class TestCurvePlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj.opts(plot=opts)
-        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
+                              formatters={'@{x}': "datetime"})
 
     def test_curve_overlay_hover_batched(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},

@@ -2115,7 +2115,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
             if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
-                tooltips = hover.tooltips
+                tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()
             tool = self.handles['hover_tools'].get(tooltips)
