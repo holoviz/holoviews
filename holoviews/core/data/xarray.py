@@ -625,6 +625,7 @@ class XArrayInterface(GridInterface):
             coords[k] = (k, v)
         if coords:
             data = data.assign_coords(**coords)
+
         dims = tuple(kd.name for kd in dataset.kdims[::-1])
         vars = OrderedDict()
         for k, v in new_data.items():
@@ -638,8 +639,9 @@ class XArrayInterface(GridInterface):
         if len(vars) == 1 and len(dataset.vdims) == 1:
             data = vars[dataset.vdims[0].name]
             used_coords = set(data.coords)
-        elif vars:
-            data = data.assign(vars)
+        else:
+            if vars:
+                data = data.assign(vars)
             used_coords = set.intersection(*[set(var.coords) for var in data.data_vars.values()])
         drop_coords = set.symmetric_difference(used_coords, prev_coords)
         return data.drop(list(drop_coords)), list(drop_coords)
