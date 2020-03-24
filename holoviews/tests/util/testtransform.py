@@ -4,6 +4,8 @@ Unit tests for dim transforms
 """
 from __future__ import division
 
+import sys
+
 from collections import OrderedDict
 from unittest import skipIf
 
@@ -21,6 +23,7 @@ try:
 except:
     xr = None
 
+py2_skip = skipIf(sys.version_info.major == 2, 'Requires Python>2')
 xr_skip = skipIf(xr is None, "xarray not available")
 
 from holoviews.core.data import Dataset
@@ -469,6 +472,14 @@ class TestDimTransforms(ComparisonTestCase):
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.quantile(0.95), skip_dask=True)
 
     @xr_skip
+    def test_xarray_roll_method(self):
+        expr = dim('z').xr.roll({'x': 1}, roll_coords=False)
+        self.assert_apply_xarray(expr, self.dataset_xarray.data.z.roll({'x': 1}, roll_coords=False))
+        
+    @xr_skip
+    @py2_skip
     def test_xarray_coarsen_method(self):
         expr = dim('z').xr.coarsen({'x': 4}).mean()
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.coarsen({'x': 4}).mean())
+
+    
