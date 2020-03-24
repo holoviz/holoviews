@@ -8,8 +8,10 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 import numpy as np
 import param
 
+from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, resolve_dependent_value, unique_iterator
+from ..core.util import basestring, pd, resolve_dependent_value, unique_iterator
+
 
 def _maybe_map(numpy_fn):
     def fn(values, *args, **kwargs):
@@ -211,8 +213,12 @@ class dim(object):
 
     _namespaces = {'numpy': 'np'}
 
+    namespace = 'numpy'
+
     def __init__(self, obj, *args, **kwargs):
         ops = []
+        self._ns = np.ndarray
+        self.coerce = kwargs.get('coerce', True)
         if isinstance(obj, basestring):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
@@ -233,6 +239,29 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+    def __call__(self, *args, **kwargs):
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+            'accessor' not in self.ops[-1]['kwargs']):
+            raise ValueError("Cannot use __call__ method on dim expression "
+                             "which is not an accessor. Ensure that you only "
+                             "call a dim expression, which was created by "
+                             "accessing an attribute that does not exist "
+                             "on an existing dim expression.")
+        op = self.ops[-1]
+        if op['fn'] == 'str':
+            new_op = dict(op, fn=astype, args=(str,), kwargs={})
+        else:
+            new_op = dict(op, args=args, kwargs=kwargs)
+        return self.clone(self.dimension, self.ops[:-1]+[new_op])
+
+    def __getattr__(self, attr):
+        if attr in dir(self._ns):
+            return partial(self.method, attr)
+        raise AttributeError("%r object has no attribute %r" %
+                             (type(self).__name__, attr))
+
+    def __dir__(self):
+        return super(dim, self).__dir__() + dir(self._ns)
 
     def clone(self, dimension=None, ops=None):
         """
@@ -270,26 +299,6 @@ class dim(object):
 
     def __hash__(self):
         return hash(repr(self))
-
-    def __call__(self, *args, **kwargs):
-        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
-            'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot use __call__ method on dim expression "
-                             "which is not an accessor. Ensure that you only "
-                             "call a dim expression, which was created by "
-                             "accessing an attribute that does not exist "
-                             "on an existing dim expression.")
-        op = self.ops[-1]
-        if op['fn'] == 'str':
-            new_op = dict(op, fn=astype, args=(str,), kwargs={})
-        else:
-            new_op = dict(op, args=args, kwargs=kwargs)
-        return self.clone(self.dimension, self.ops[:-1]+[new_op])
-
-    def __getattr__(self, attr):
-        if attr in self.__dict__:
-            return self.__dict__[attr]
-        return dim(self, attr, accessor=True)
 
     @property
     def params(self):
@@ -465,6 +474,7 @@ class dim(object):
             applies = dataset.get_dimension(lookup) is not None
             if isinstance(dataset, Graph) and not applies:
                 applies = dataset.nodes.get_dimension(lookup) is not None
+
         for op in self.ops:
             args = op.get('args')
             if not args:
@@ -472,7 +482,95 @@ class dim(object):
             for arg in args:
                 if isinstance(arg, dim):
                     applies &= arg.applies(dataset)
+            kwargs = op.get('kwargs')
+            for kwarg in kwargs.values():
+                if isinstance(kwarg, dim):
+                    applies &= kwarg.applies(dataset)
         return applies
+
+    def interface_applies(self, dataset, coerce):
+        return True
+
+    def _resolve_op(self, op, dataset, data, flat, expanded, ranges,
+                    all_values, keep_index, compute, strict):
+        args = op['args']
+        fn = op['fn']
+        kwargs = dict(op['kwargs'])
+        fn_name = self._numpy_funcs.get(fn)
+        if fn_name and hasattr(data, fn_name):
+            if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
+                kwargs['axis'] = None
+            fn = fn_name
+
+        if isinstance(fn, basestring):
+            accessor = kwargs.pop('accessor', None)
+            fn_args = []
+        else:
+            accessor = False
+            fn_args = [data]
+
+        for arg in args:
+            if isinstance(arg, dim):
+                arg = arg.apply(
+                    dataset, flat, expanded, ranges, all_values,
+                    keep_index, compute, strict
+                )
+            arg = resolve_dependent_value(arg)
+            fn_args.append(arg)
+        fn_kwargs = {}
+        for k, v in kwargs.items():
+            if isinstance(v, dim):
+                v = v.apply(
+                    dataset, flat, expanded, ranges, all_values,
+                    keep_index, compute, strict
+                )
+            fn_kwargs[k] = resolve_dependent_value(v)
+        args = tuple(fn_args[::-1] if op['reverse'] else fn_args)
+        kwargs = dict(fn_kwargs)
+        return fn, fn_name, args, kwargs, accessor
+
+    def _apply_fn(self, data, fn, fn_name, args, kwargs, accessor, drange):
+        if (((fn is norm) or (fn is lognorm)) and drange != {} and
+            not ('min' in kwargs and 'max' in kwargs)):
+            data = fn(data, *drange)
+        elif isinstance(fn, basestring):
+            method = getattr(data, fn, None)
+            if method is None:
+                mtype = 'attribute' if accessor else 'method'
+                raise AttributeError(
+                    "%r could not be applied to '%r', '%s' %s "
+                    "does not exist on %s type."
+                    % (self, dataset, fn, mtype, type(data).__name__)
+                )
+            if accessor:
+                data = method
+            else:
+                try:
+                    data = method(*args, **kwargs)
+                except Exception as e:
+                    if 'axis' in kwargs:
+                        kwargs.pop('axis')
+                        data = method(*args, **kwargs)
+                    else:
+                        raise e
+        else:
+            data = fn(*args, **kwargs)
+
+        return data
+
+    def _drop_index(self, data):
+        """
+        Implements conversion of data from namespace specific object,
+        e.g. pandas Series to NumPy array.
+        """
+        return data
+
+    def _coerce(self, data):
+        """
+        Implements coercion of data from current data format to the
+        namespace specific datatype.
+        """
+        return data
 
     def apply(self, dataset, flat=False, expanded=None, ranges={}, all_values=False,
               keep_index=False, compute=True, strict=False):
@@ -509,88 +607,42 @@ class dim(object):
                 dimension = dataset.nodes.kdims[2]
             dataset = dataset if dimension in dataset else dataset.nodes
 
-        lookup = dimension if strict else dimension.name
-        data = dataset.interface.values(
-            dataset,
-            lookup,
-            expanded=expanded,
-            flat=flat,
-            compute=compute,
-            keep_index=keep_index
-        )
-        for o in self.ops:
-            args = o['args']
-            fn = o['fn']
-            kwargs = dict(o['kwargs'])
-            fn_name = self._numpy_funcs.get(fn)
-            if fn_name and hasattr(data, fn_name):
-                if 'axis' not in kwargs and not isinstance(fn, np.ufunc):
-                    kwargs['axis'] = None
-                fn = fn_name
-
-            if isinstance(fn, basestring):
-                accessor = kwargs.pop('accessor', None)
-                fn_args = []
+        if not self.applies(dataset):
+            raise KeyError("One or more dimensions in the expression %r "
+                           "could not resolve on '%s'. Ensure all "
+                           "dimensions referenced by the expression are"
+                           "present on the supplied object." % (self, dataset))
+        if not self.interface_applies(dataset, coerce=self.coerce):
+            if self.coerce:
+                raise ValueError("The expression %r assumes a %s-like "
+                                 "API but the dataset contains %s data "
+                                 "and cannot be coerced." %
+                                 (self, self.namespace, dataset.interface.datatype))
             else:
-                accessor = False
-                fn_args = [data]
+                raise ValueError("The expression %r assumes a %s-like "
+                                 "API but the dataset contains %s data "
+                                 "and coercion is disabled." %
+                                 (self, self.namespace, dataset.interface.datatype))
 
-            for arg in args:
-                if isinstance(arg, dim):
-                    arg = arg.apply(
-                        dataset,
-                        flat,
-                        expanded,
-                        ranges,
-                        all_values,
-                        keep_index,
-                        compute,
-                    )
-                arg = resolve_dependent_value(arg)
-                fn_args.append(arg)
-            fn_kwargs = {}
-            for k, v in kwargs.items():
-                if isinstance(v, dim):
-                    v = v.apply(
-                        dataset,
-                        flat,
-                        expanded,
-                        ranges,
-                        all_values,
-                        keep_index,
-                        compute,
-                    )
-                fn_kwargs[k] = resolve_dependent_value(v)
-            args = tuple(fn_args[::-1] if o['reverse'] else fn_args)
-            kwargs = dict(fn_kwargs)
-            eldim = dataset.get_dimension(lookup)
+        dataset = self._coerce(dataset)
+        keep_index_for_compute = True if self.namespace != 'numpy' else keep_index
+        lookup = dimension if strict else dimension.name
+        eldim = dataset.get_dimension(lookup)
+        data = dataset.interface.values(
+            dataset, lookup, expanded=expanded, flat=flat,
+            compute=compute, keep_index=keep_index_for_compute
+        )
+        for op in self.ops:
+            fn, fn_name, args, kwargs, accessor = self._resolve_op(
+                op, dataset, data, flat, expanded, ranges, all_values,
+                keep_index_for_compute, compute, strict
+            )
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
-            if (((fn is norm) or (o['fn'] is lognorm)) and drange != {} and
-                not ('min' in kwargs and 'max' in kwargs)):
-                data = fn(data, *drange)
-            elif isinstance(fn, basestring):
-                method = getattr(data, fn, None)
-                if method is None:
-                    mtype = 'attribute' if accessor else 'method'
-                    raise AttributeError(
-                        "%r could not be applied to '%r', '%s' %s "
-                        "does not exist on %s type."
-                        % (self, dataset, fn, mtype, type(data).__name__)
-                    )
-                if accessor:
-                    data = method
-                else:
-                    try:
-                        data = method(*args, **kwargs)
-                    except Exception as e:
-                        if 'axis' in kwargs:
-                            kwargs.pop('axis')
-                            data = method(*args, **kwargs)
-                        else:
-                            raise e
-            else:
-                data = fn(*args, **kwargs)
+            data = self._apply_fn(data, fn, fn_name, args, kwargs,
+                                  accessor, drange)
+        if keep_index_for_compute and not keep_index:
+            data = self._drop_index(data)
         return data
 
     def __repr__(self):
@@ -675,3 +727,59 @@ class dim(object):
         if op_repr.count('(') - op_repr.count(')') > 0:
             op_repr += ')'
         return op_repr
+
+
+class df_dim(dim):
+
+    namespace = 'dataframe'
+
+    def __init__(self, obj, *args, **kwargs):
+        super(df_dim, self).__init__(obj, *args, **kwargs)
+        self._ns = pd.Series
+
+    def interface_applies(self, dataset, coerce):
+        return (dataset.interface.gridded and
+                (not coerce or isinstance(dataset.interface, PandasInterface)))
+
+    def _drop_index(self, data):
+        if hasattr(data, 'to_numpy'):
+            return data.to_numpy()
+        return data.values
+
+    def _coerce(self, dataset):
+        if self.interface_applies(dataset, coerce=False):
+            return dataset
+        pandas_interfaces = param.concrete_descendents(PandasInterface)
+        datatypes = [intfc.datatype for intfc in pandas_interfaces.values()
+                     if dataset.interface.multi == intfc.multi]
+        return dataset.clone(datatype=datatypes)
+
+
+
+class xr_dim(dim):
+
+    namespace = 'xarray'
+
+    def __init__(self, obj, *args, **kwargs):
+        try:
+            import xarray as xr
+        except ImportError:
+            raise ImportError("XArray could not be imported, xr_dim "
+                              "requires the pandas namespace to be "
+                              "available.")
+        super(xr_dim, self).__init__(obj, *args, **kwargs)
+        self._ns = xr.DataArray
+
+    def interface_applies(self, dataset, coerce):
+        return (dataset.interface.gridded and
+                (not coerce or dataset.interface.datatype == 'xarray'))
+
+    def _drop_index(self, data):
+        if hasattr(data, 'to_numpy'):
+            return data.to_numpy()
+        return data.values
+
+    def _coerce(self, dataset):
+        if self.interface_applies(dataset, coerce=False):
+            return dataset
+        return dataset.clone(datatype=['xarray'])

@@ -15,7 +15,7 @@ except:
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.util.transform import dim
+from holoviews.util.transform import df_dim, dim
 
 
 class TestDimTransforms(ComparisonTestCase):
@@ -294,7 +294,7 @@ class TestDimTransforms(ComparisonTestCase):
     # Check accesors
 
     def test_str_pandas_accessor(self):
-        expr = dim('categories').str.lower()
+        expr = df_dim('categories').str.lower()
         self.check_apply(expr, self.repeating.str.lower(), skip_no_index=True)
 
     # Numpy functions
@@ -346,7 +346,7 @@ class TestDimTransforms(ComparisonTestCase):
                          "((dim('float')-2)*3)**2")
 
     def test_accessor_repr(self):
-        self.assertEqual(repr(dim('date').dt.year),
+        self.assertEqual(repr(df_dim('date').dt.year),
                          "dim('date').dt.year")
 
     # Applies method
