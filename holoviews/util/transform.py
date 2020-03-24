@@ -3,7 +3,6 @@ from __future__ import division
 import operator
 import sys
 
-from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -241,6 +240,11 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+    @property
+    def _current_accessor(self):
+        if self.ops and self.ops[-1]['kwargs'].get('accessor'):
+            return self.ops[-1]['fn']
+
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
             'accessor' not in self.ops[-1]['kwargs']):
@@ -257,22 +261,30 @@ class dim(object):
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
     def __getattr__(self, attr):
-        if attr in dir(self._ns):
-            return partial(self.method, attr)
+        if attr in dir(self):
+            return type(self)(self, attr, accessor=True)
         raise AttributeError("%r object has no attribute %r" %
                              (type(self).__name__, attr))
 
     def __dir__(self):
-        return super(dim, self).__dir__() + dir(self._ns)
+        ns = self._ns
+        if self._current_accessor:
+            ns = getattr(ns, self._current_accessor)
+        extras = [attr for attr in dir(ns) if not attr.startswith('_')]
+        return (super(dim, self).__dir__() + extras)
 
-    def clone(self, dimension=None, ops=None):
+    def __hash__(self):
+        return hash(repr(self))
+
+    def clone(self, dimension=None, ops=None, dim_type=None):
         """
         Creates a clone of the dim expression optionally overriding
         the dim and ops.
         """
+        dim_type = dim_type or type(self)
         if dimension is None:
             dimension = self.dimension
-        new_dim = type(self)(dimension)
+        new_dim = dim_type(dimension)
         if ops is None:
             ops = list(self.ops)
         new_dim.ops = ops
@@ -285,22 +297,6 @@ class dim(object):
         on be referenced by the key.
         """
         cls._custom_funcs[key] = function
-
-    @classmethod
-    def pipe(cls, func, *args, **kwargs):
-        """
-        Wrapper to give multidimensional transforms a more intuitive syntax.
-        For a custom function 'func' with signature (*args, **kwargs), call as
-        dim.pipe(func, *args, **kwargs).
-        """
-        args = list(args) # make mutable
-        for k, arg in enumerate(args):
-            if isinstance(arg, basestring):
-                args[k] = type(self)(arg)
-        return type(self)(args[0], func, *args[1:], **kwargs)
-
-    def __hash__(self):
-        return hash(repr(self))
 
     @property
     def params(self):
@@ -317,8 +313,19 @@ class dim(object):
                     params[op_arg.name+str(id(op))] = op_arg
         return params
 
-    def method(self, method_str, *args, **kwargs):
-        return type(self)(self, method_str, *args, **kwargs)
+    # Namespace properties
+
+    @property
+    def df(self):
+        return self.clone(dim_type=df_dim)
+
+    @property
+    def np(self):
+        return self.clone(dim_type=dim)
+
+    @property
+    def xr(self):
+        return self.clone(dim_type=xr_dim)
 
     # Builtin functions
     def __abs__(self):            return type(self)(self, abs)
@@ -454,6 +461,19 @@ class dim(object):
             kwargs = {'min': limits[0], 'max': limits[1]}
         return type(self)(self, norm, **kwargs)
 
+    @classmethod
+    def pipe(cls, func, *args, **kwargs):
+        """
+        Wrapper to give multidimensional transforms a more intuitive syntax.
+        For a custom function 'func' with signature (*args, **kwargs), call as
+        dim.pipe(func, *args, **kwargs).
+        """
+        args = list(args) # make mutable
+        for k, arg in enumerate(args):
+            if isinstance(arg, basestring):
+                args[k] = cls(arg)
+        return cls(args[0], func, *args[1:], **kwargs)
+
     @property
     def str(self):
         "Casts values to strings or provides str accessor."
@@ -531,7 +551,7 @@ class dim(object):
         kwargs = dict(fn_kwargs)
         return fn, fn_name, args, kwargs, accessor
 
-    def _apply_fn(self, data, fn, fn_name, args, kwargs, accessor, drange):
+    def _apply_fn(self, dataset, data, fn, fn_name, args, kwargs, accessor, drange):
         if (((fn is norm) or (fn is lognorm)) and drange != {} and
             not ('min' in kwargs and 'max' in kwargs)):
             data = fn(data, *drange)
@@ -560,11 +580,13 @@ class dim(object):
 
         return data
 
-    def _drop_index(self, data):
+    def _compute_data(self, data, drop_index, compute):
         """
         Implements conversion of data from namespace specific object,
         e.g. pandas Series to NumPy array.
         """
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
         return data
 
     def _coerce(self, data):
@@ -627,24 +649,32 @@ class dim(object):
                                  (self, self.namespace, dataset.interface.datatype))
 
         dataset = self._coerce(dataset)
-        keep_index_for_compute = True if self.namespace != 'numpy' else keep_index
+        if self.namespace != 'numpy':
+            compute_for_compute = False
+            keep_index_for_compute = True
+        else:
+            compute_for_compute = compute
+            keep_index_for_compute = keep_index
+
         lookup = dimension if strict else dimension.name
         eldim = dataset.get_dimension(lookup)
         data = dataset.interface.values(
             dataset, lookup, expanded=expanded, flat=flat,
-            compute=compute, keep_index=keep_index_for_compute
+            compute=compute_for_compute, keep_index=keep_index_for_compute
         )
         for op in self.ops:
             fn, fn_name, args, kwargs, accessor = self._resolve_op(
                 op, dataset, data, flat, expanded, ranges, all_values,
-                keep_index_for_compute, compute, strict
+                keep_index_for_compute, compute_for_compute, strict
             )
             drange = ranges.get(eldim.name, {})
             drange = drange.get('combined', drange)
-            data = self._apply_fn(data, fn, fn_name, args, kwargs,
-                                  accessor, drange)
-        if keep_index_for_compute and not keep_index:
-            data = self._drop_index(data)
+            data = self._apply_fn(dataset, data, fn, fn_name, args,
+                                  kwargs, accessor, drange)
+        drop_index = keep_index_for_compute and not keep_index
+        compute = not compute_for_compute and compute
+        if (drop_index or compute):
+            data = self._compute_data(data, drop_index, compute)
         return data
 
     def __repr__(self):
@@ -732,6 +762,11 @@ class dim(object):
 
 
 class df_dim(dim):
+    """
+    A subclass of dim which provides access to the DataFrame namespace
+    along with tab-completion and type coercion allowing the expression
+    to be applied on any columnar dataset.
+    """
 
     namespace = 'dataframe'
 
@@ -743,8 +778,12 @@ class df_dim(dim):
         return (not dataset.interface.gridded and
                 (coerce or isinstance(dataset.interface, PandasInterface)))
 
-    def _drop_index(self, data):
-        if hasattr(data, 'to_numpy'):
+    def _compute_data(self, data, drop_index, compute):
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
+        if not drop_index:
+            return data
+        if compute and hasattr(data, 'to_numpy'):
             return data.to_numpy()
         return data.values
 
@@ -759,6 +798,11 @@ class df_dim(dim):
 
 
 class xr_dim(dim):
+    """
+    A subclass of dim which provides access to the xarray DataArray
+    namespace along with tab-completion and type coercion allowing
+    the expression to be applied on any gridded dataset.
+    """
 
     namespace = 'xarray'
 
@@ -776,10 +820,12 @@ class xr_dim(dim):
         return (dataset.interface.gridded and
                 (coerce or dataset.interface.datatype == 'xarray'))
 
-    def _drop_index(self, data):
-        if hasattr(data, 'to_numpy'):
-            return data.to_numpy()
-        return data.values
+    def _compute_data(self, data, drop_index, compute):
+        if drop_index:
+            data = data.data
+        if hasattr(data, 'compute') and compute:
+            data = data.compute()
+        return data
 
     def _coerce(self, dataset):
         if self.interface_applies(dataset, coerce=False):
