@@ -4,6 +4,9 @@ Unit tests for dim transforms
 """
 from __future__ import division
 
+from collections import OrderedDict
+from unittest import skipIf
+
 import numpy as np
 import pandas as pd
 
@@ -12,6 +15,13 @@ try:
     import dask.array as da
 except:
     da, dd = None, None
+
+try:
+    import xarray as xr
+except:
+    xr = None
+
+xr_skip = skipIf(xr is None, "xarray not available")
 
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
@@ -34,11 +44,30 @@ class TestDimTransforms(ComparisonTestCase):
             ['int', 'float', 'negative', 'categories', 'booleans']
         )
 
-        if dd is None:
+        if dd is not None:
+            ddf = dd.from_pandas(self.dataset.data, npartitions=2)
+            self.dataset_dask = self.dataset.clone(data=ddf)
+
+        if xr is None:
             return
 
-        ddf = dd.from_pandas(self.dataset.data, npartitions=2)
-        self.dataset_dask = self.dataset.clone(data=ddf)
+        x = np.arange(2, 62, 3)
+        y = np.arange(2, 12, 2)
+        array = np.arange(100).reshape(5, 20)
+        darray = xr.DataArray(
+            data=array,
+            coords=OrderedDict([('x', x), ('y', y)]),
+            dims=['y','x']
+        )
+        self.dataset_xarray = Dataset(darray, vdims=['z'])
+        if da is not None:
+            dask_array = da.from_array(array)
+            dask_da = xr.DataArray(
+                data=dask_array,
+                coords=OrderedDict([('x', x), ('y', y)]),
+                dims=['y','x']
+            )
+            self.dataset_xarray_dask = Dataset(dask_da, vdims=['z'])
 
     # Assertion helpers
 
@@ -90,7 +119,8 @@ class TestDimTransforms(ComparisonTestCase):
         # keep_index=False, compute=False
         if not skip_no_index:
             da.assert_eq(
-                expr.apply(self.dataset_dask, compute=False), expected_dask.values
+                expr.apply(self.dataset_dask, compute=False).compute(),
+                expected_dask.values.compute()
             )
         # keep_index=True, compute=False
         dd.assert_eq(
@@ -110,6 +140,67 @@ class TestDimTransforms(ComparisonTestCase):
             expected_dask.compute(),
             check_names=False
         )
+
+
+    def check_apply_xarray(self, expr, expected, skip_dask=False, skip_no_index=False):
+        import xarray as xr
+        if np.isscalar(expected):
+            # Pandas input
+            self.assertEqual(
+                expr.apply(self.dataset_xarray, keep_index=False), expected
+            )
+            self.assertEqual(
+                expr.apply(self.dataset_xarray, keep_index=True), expected
+            )
+            return
+
+        # Make sure expected is a pandas Series
+        self.assertIsInstance(expected, xr.DataArray)
+
+        # Check using dataset backed by pandas DataFrame
+        # keep_index=False
+        if not skip_no_index:
+            np.testing.assert_equal(
+                expr.apply(self.dataset_xarray),
+                expected.values
+            )
+        # keep_index=True
+        xr.testing.assert_equal(
+            expr.apply(self.dataset_xarray, keep_index=True),
+            expected
+        )
+
+        if skip_dask or da is None:
+            return
+
+        # Check using dataset backed by Dask DataFrame
+        expected_da = da.from_array(expected.values)
+        expected_dask = expected.copy()
+        expected_dask.data = expected_da
+
+        # keep_index=False, compute=False
+        if not skip_no_index:
+            da.assert_eq(
+                expr.apply(self.dataset_xarray_dask, compute=False),
+                expected_dask.data
+            )
+        # keep_index=True, compute=False
+        xr.testing.assert_equal(
+            expr.apply(self.dataset_xarray_dask, keep_index=True, compute=False),
+            expected_dask,
+        )
+        # keep_index=False, compute=True
+        if not skip_no_index:
+            np.testing.assert_equal(
+                expr.apply(self.dataset_xarray_dask, compute=True),
+                expected_dask.data.compute()
+            )
+        # keep_index=True, compute=True
+        xr.testing.assert_equal(
+            expr.apply(self.dataset_xarray_dask, keep_index=True, compute=True),
+            expected_dask.compute(),
+        )
+
 
     # Unary operators
 
@@ -291,12 +382,6 @@ class TestDimTransforms(ComparisonTestCase):
         # We don't skip dask because results are stable across partitions
         self.check_apply(expr, expected)
 
-    # Check accesors
-
-    def test_str_pandas_accessor(self):
-        expr = df_dim('categories').str.lower()
-        self.check_apply(expr, self.repeating.str.lower(), skip_no_index=True)
-
     # Numpy functions
 
     def test_digitize(self):
@@ -345,10 +430,6 @@ class TestDimTransforms(ComparisonTestCase):
         self.assertEqual(repr(((dim('float')-2)*3)**2),
                          "((dim('float')-2)*3)**2")
 
-    def test_accessor_repr(self):
-        self.assertEqual(repr(df_dim('date').dt.year),
-                         "dim('date').dt.year")
-
     # Applies method
 
     def test_multi_dim_expression_applies(self):
@@ -362,3 +443,39 @@ class TestDimTransforms(ComparisonTestCase):
     def test_multi_dim_expression_partial_applies(self):
         self.assertEqual((dim('int')-dim('bar')).applies(self.dataset),
                          False)
+
+    # Check namespaced expressions
+
+    def test_pandas_namespace_accessor_repr(self):
+        self.assertEqual(repr(dim('date').df.dt.year),
+                         "dim('date').dt.year")
+
+    def test_pandas_str_accessor(self):
+        expr = dim('categories').df.str.lower()
+        self.check_apply(expr, self.repeating.str.lower())
+
+    def test_pandas_chained_methods(self):
+        expr = dim('int').df.rolling(1).mean()
+        self.check_apply(expr, self.linear_ints.rolling(1).mean())
+
+    @xr_skip
+    def test_xarray_namespace_method_repr(self):
+        self.assertEqual(repr(dim('date').xr.quantile(0.95)),
+                         "dim('date').quantile(0.95)")
+
+    @xr_skip
+    def test_xarray_quantile_method(self):
+        expr = dim('z').xr.quantile(0.95)
+        self.check_apply_xarray(expr, self.dataset_xarray.data.z.quantile(0.95))
+
+    @xr_skip
+    def test_xarray_quantile_method(self):
+        expr = dim('z').xr.quantile(0.95)
+        self.check_apply_xarray(expr, self.dataset_xarray.data.z.quantile(0.95),
+                                skip_dask=True)
+
+    @xr_skip
+    def test_xarray_coarsen_method(self):
+        expr = dim('z').xr.coarsen({'x': 4}).mean()
+        
+        self.check_apply_xarray(expr, self.dataset_xarray.data.z.coarsen({'x': 4}).mean())
