@@ -272,7 +272,7 @@ class dim(object):
         """
         if dimension is None:
             dimension = self.dimension
-        new_dim = dim(dimension)
+        new_dim = type(self)(dimension)
         if ops is None:
             ops = list(self.ops)
         new_dim.ops = ops
@@ -296,8 +296,8 @@ class dim(object):
         args = list(args) # make mutable
         for k, arg in enumerate(args):
             if isinstance(arg, basestring):
-                args[k] = dim(arg)
-        return dim(args[0], func, *args[1:], **kwargs)
+                args[k] = type(self)(arg)
+        return type(self)(args[0], func, *args[1:], **kwargs)
 
     def __hash__(self):
         return hash(repr(self))
@@ -318,86 +318,86 @@ class dim(object):
         return params
 
     def method(self, method_str, *args, **kwargs):
-        return dim(self, method_str, *args, **kwargs)
+        return type(self)(self, method_str, *args, **kwargs)
 
     # Builtin functions
-    def __abs__(self):            return dim(self, abs)
+    def __abs__(self):            return type(self)(self, abs)
     def __round__(self, ndigits=None):
         args = () if ndigits is None else (ndigits,)
-        return dim(self, round_, *args)
+        return type(self)(self, round_, *args)
 
     # Unary operators
-    def __neg__(self): return dim(self, operator.neg)
-    def __not__(self): return dim(self, operator.not_)
-    def __invert__(self): return dim(self, operator.inv)
-    def __pos__(self): return dim(self, operator.pos)
+    def __neg__(self): return type(self)(self, operator.neg)
+    def __not__(self): return type(self)(self, operator.not_)
+    def __invert__(self): return type(self)(self, operator.inv)
+    def __pos__(self): return type(self)(self, operator.pos)
 
     # Binary operators
-    def __add__(self, other):       return dim(self, operator.add, other)
-    def __and__(self, other):       return dim(self, operator.and_, other)
-    def __div__(self, other):       return dim(self, operator.div, other)
-    def __eq__(self, other):        return dim(self, operator.eq, other)
-    def __floordiv__(self, other):  return dim(self, operator.floordiv, other)
-    def __ge__(self, other):        return dim(self, operator.ge, other)
-    def __gt__(self, other):        return dim(self, operator.gt, other)
-    def __le__(self, other):        return dim(self, operator.le, other)
-    def __lt__(self, other):        return dim(self, operator.lt, other)
-    def __lshift__(self, other):    return dim(self, operator.lshift, other)
-    def __mod__(self, other):       return dim(self, operator.mod, other)
-    def __mul__(self, other):       return dim(self, operator.mul, other)
-    def __ne__(self, other):        return dim(self, operator.ne, other)
-    def __or__(self, other):        return dim(self, operator.or_, other)
-    def __rshift__(self, other):    return dim(self, operator.rshift, other)
-    def __pow__(self, other):       return dim(self, operator.pow, other)
-    def __sub__(self, other):       return dim(self, operator.sub, other)
-    def __truediv__(self, other):   return dim(self, operator.truediv, other)
+    def __add__(self, other):       return type(self)(self, operator.add, other)
+    def __and__(self, other):       return type(self)(self, operator.and_, other)
+    def __div__(self, other):       return type(self)(self, operator.div, other)
+    def __eq__(self, other):        return type(self)(self, operator.eq, other)
+    def __floordiv__(self, other):  return type(self)(self, operator.floordiv, other)
+    def __ge__(self, other):        return type(self)(self, operator.ge, other)
+    def __gt__(self, other):        return type(self)(self, operator.gt, other)
+    def __le__(self, other):        return type(self)(self, operator.le, other)
+    def __lt__(self, other):        return type(self)(self, operator.lt, other)
+    def __lshift__(self, other):    return type(self)(self, operator.lshift, other)
+    def __mod__(self, other):       return type(self)(self, operator.mod, other)
+    def __mul__(self, other):       return type(self)(self, operator.mul, other)
+    def __ne__(self, other):        return type(self)(self, operator.ne, other)
+    def __or__(self, other):        return type(self)(self, operator.or_, other)
+    def __rshift__(self, other):    return type(self)(self, operator.rshift, other)
+    def __pow__(self, other):       return type(self)(self, operator.pow, other)
+    def __sub__(self, other):       return type(self)(self, operator.sub, other)
+    def __truediv__(self, other):   return type(self)(self, operator.truediv, other)
 
     # Reverse binary operators
-    def __radd__(self, other):      return dim(self, operator.add, other, reverse=True)
-    def __rand__(self, other):      return dim(self, operator.and_, other)
-    def __rdiv__(self, other):      return dim(self, operator.div, other, reverse=True)
-    def __rfloordiv__(self, other): return dim(self, operator.floordiv, other, reverse=True)
-    def __rlshift__(self, other):   return dim(self, operator.rlshift, other)
-    def __rmod__(self, other):      return dim(self, operator.mod, other, reverse=True)
-    def __rmul__(self, other):      return dim(self, operator.mul, other, reverse=True)
-    def __ror__(self, other):       return dim(self, operator.or_, other, reverse=True)
-    def __rpow__(self, other):      return dim(self, operator.pow, other, reverse=True)
-    def __rrshift__(self, other):   return dim(self, operator.rrshift, other)
-    def __rsub__(self, other):      return dim(self, operator.sub, other, reverse=True)
-    def __rtruediv__(self, other):  return dim(self, operator.truediv, other, reverse=True)
+    def __radd__(self, other):      return type(self)(self, operator.add, other, reverse=True)
+    def __rand__(self, other):      return type(self)(self, operator.and_, other)
+    def __rdiv__(self, other):      return type(self)(self, operator.div, other, reverse=True)
+    def __rfloordiv__(self, other): return type(self)(self, operator.floordiv, other, reverse=True)
+    def __rlshift__(self, other):   return type(self)(self, operator.rlshift, other)
+    def __rmod__(self, other):      return type(self)(self, operator.mod, other, reverse=True)
+    def __rmul__(self, other):      return type(self)(self, operator.mul, other, reverse=True)
+    def __ror__(self, other):       return type(self)(self, operator.or_, other, reverse=True)
+    def __rpow__(self, other):      return type(self)(self, operator.pow, other, reverse=True)
+    def __rrshift__(self, other):   return type(self)(self, operator.rrshift, other)
+    def __rsub__(self, other):      return type(self)(self, operator.sub, other, reverse=True)
+    def __rtruediv__(self, other):  return type(self)(self, operator.truediv, other, reverse=True)
 
     ## NumPy operations
     def __array_ufunc__(self, *args, **kwargs):
         ufunc = args[0]
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
-        return dim(self, ufunc, **kwargs)
+        return type(self)(self, ufunc, **kwargs)
 
     def clip(self, min=None, max=None):
         if min is None and max is None:
             raise ValueError('One of max or min must be given.')
-        return dim(self, np.clip, a_min=min, a_max=max)
+        return type(self)(self, np.clip, a_min=min, a_max=max)
 
-    def any(self, *args, **kwargs):      return dim(self, np.any, *args, **kwargs)
-    def all(self, *args, **kwargs):      return dim(self, np.all, *args, **kwargs)
-    def cumprod(self, *args, **kwargs):  return dim(self, np.cumprod,  *args, **kwargs)
-    def cumsum(self, *args, **kwargs):   return dim(self, np.cumsum,  *args, **kwargs)
-    def max(self, *args, **kwargs):      return dim(self, np.max, *args, **kwargs)
-    def mean(self, *args, **kwargs):     return dim(self, np.mean, *args, **kwargs)
-    def min(self, *args, **kwargs):      return dim(self, np.min, *args, **kwargs)
-    def sum(self, *args, **kwargs):      return dim(self, np.sum, *args, **kwargs)
-    def std(self, *args, **kwargs):      return dim(self, np.std, *args, **kwargs)
-    def var(self, *args, **kwargs):      return dim(self, np.var, *args, **kwargs)
-    def log(self, *args, **kwargs):      return dim(self, np.log, *args, **kwargs)
-    def log10(self, *args, **kwargs):    return dim(self, np.log10, *args, **kwargs)
+    def any(self, *args, **kwargs):      return type(self)(self, np.any, *args, **kwargs)
+    def all(self, *args, **kwargs):      return type(self)(self, np.all, *args, **kwargs)
+    def cumprod(self, *args, **kwargs):  return type(self)(self, np.cumprod,  *args, **kwargs)
+    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args, **kwargs)
+    def max(self, *args, **kwargs):      return type(self)(self, np.max, *args, **kwargs)
+    def mean(self, *args, **kwargs):     return type(self)(self, np.mean, *args, **kwargs)
+    def min(self, *args, **kwargs):      return type(self)(self, np.min, *args, **kwargs)
+    def sum(self, *args, **kwargs):      return type(self)(self, np.sum, *args, **kwargs)
+    def std(self, *args, **kwargs):      return type(self)(self, np.std, *args, **kwargs)
+    def var(self, *args, **kwargs):      return type(self)(self, np.var, *args, **kwargs)
+    def log(self, *args, **kwargs):      return type(self)(self, np.log, *args, **kwargs)
+    def log10(self, *args, **kwargs):    return type(self)(self, np.log10, *args, **kwargs)
 
     ## Custom functions
-    def astype(self, dtype): return dim(self, astype, dtype=dtype)
-    def round(self, decimals=0): return dim(self, round_, decimals=decimals)
-    def digitize(self, *args, **kwargs): return dim(self, digitize, *args, **kwargs)
+    def astype(self, dtype): return type(self)(self, astype, dtype=dtype)
+    def round(self, decimals=0): return type(self)(self, round_, decimals=decimals)
+    def digitize(self, *args, **kwargs): return type(self)(self, digitize, *args, **kwargs)
     def isin(self, *args, **kwargs):
         if kwargs.pop('object', None):
-            return dim(self, python_isin, *args, **kwargs)
-        return dim(self, isin, *args, **kwargs)
+            return type(self)(self, python_isin, *args, **kwargs)
+        return type(self)(self, isin, *args, **kwargs)
 
     @property
     def iloc(self):
@@ -415,7 +415,7 @@ class dim(object):
             labels: List of labels to assign to each bin
                 If the bins are length N the labels should be length N-1
         """
-        return dim(self, bin, bins, labels=labels)
+        return type(self)(self, bin, bins, labels=labels)
 
     def categorize(self, categories, default=None):
         """Replaces discrete values with supplied categories
@@ -427,7 +427,7 @@ class dim(object):
             categories: List or dict of categories to map inputs to
             default: Default value to assign if value not in categories
         """
-        return dim(self, categorize, categories=categories, default=default)
+        return type(self)(self, categorize, categories=categories, default=default)
 
     def lognorm(self, limits=None):
         """Unity-based normalization log scale.
@@ -439,7 +439,7 @@ class dim(object):
         kwargs = {}
         if limits is not None:
             kwargs = {'min': limits[0], 'max': limits[1]}
-        return dim(self, lognorm, **kwargs)
+        return type(self)(self, lognorm, **kwargs)
 
     def norm(self, limits=None):
         """Unity-based normalization to scale data into 0-1 range.
@@ -452,12 +452,12 @@ class dim(object):
         kwargs = {}
         if limits is not None:
             kwargs = {'min': limits[0], 'max': limits[1]}
-        return dim(self, norm, **kwargs)
+        return type(self)(self, norm, **kwargs)
 
     @property
     def str(self):
         "Casts values to strings or provides str accessor."
-        return dim(self, 'str', accessor=True)
+        return type(self)(self, 'str', accessor=True)
 
     # Other methods
 
@@ -740,8 +740,8 @@ class df_dim(dim):
         self._ns = pd.Series
 
     def interface_applies(self, dataset, coerce):
-        return (dataset.interface.gridded and
-                (not coerce or isinstance(dataset.interface, PandasInterface)))
+        return (not dataset.interface.gridded and
+                (coerce or isinstance(dataset.interface, PandasInterface)))
 
     def _drop_index(self, data):
         if hasattr(data, 'to_numpy'):
@@ -774,7 +774,7 @@ class xr_dim(dim):
 
     def interface_applies(self, dataset, coerce):
         return (dataset.interface.gridded and
-                (not coerce or dataset.interface.datatype == 'xarray'))
+                (coerce or dataset.interface.datatype == 'xarray'))
 
     def _drop_index(self, data):
         if hasattr(data, 'to_numpy'):
