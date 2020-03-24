@@ -448,7 +448,7 @@ class TestDimTransforms(ComparisonTestCase):
 
     def test_pandas_namespace_accessor_repr(self):
         self.assertEqual(repr(dim('date').df.dt.year),
-                         "dim('date').dt.year")
+                         "dim('date').pd.dt.year")
 
     def test_pandas_str_accessor(self):
         expr = dim('categories').df.str.lower()
@@ -461,7 +461,7 @@ class TestDimTransforms(ComparisonTestCase):
     @xr_skip
     def test_xarray_namespace_method_repr(self):
         self.assertEqual(repr(dim('date').xr.quantile(0.95)),
-                         "dim('date').quantile(0.95)")
+                         "dim('date').xr.quantile(0.95)")
 
     @xr_skip
     def test_xarray_quantile_method(self):

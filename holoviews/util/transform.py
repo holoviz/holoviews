@@ -216,6 +216,8 @@ class dim(object):
 
     namespace = 'numpy'
 
+    _accessor = None
+
     def __init__(self, obj, *args, **kwargs):
         ops = []
         self._ns = np.ndarray
@@ -248,9 +250,10 @@ class dim(object):
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot use __call__ method on %r expression. "
-                             "__call__ is only supported on attributes accessed via "
-                             "the namespace (e.g. dim().df or dim().xr" % self)
+            raise ValueError("Cannot call method on %r expression. "
+                             "Only methods accessed via namspaces, "
+                             "e.g. dim(...).df or dim(...).xr), "
+                             "can be called. " % self)
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -748,6 +751,15 @@ class dim(object):
                     if not format_string.endswith('('):
                         format_string += ', '
                     format_string += '{kwargs}'
+
+            # Insert accessor
+            if i == 0 and self._accessor:
+                idx = format_string.index(')')
+                format_string = ''.join([
+                    format_string[:idx], ').', self._accessor,
+                    format_string[idx+1:]
+                ])
+
             op_repr = format_string.format(fn=fn_name, repr=op_repr,
                                            args=args, kwargs=kwargs)
             if op_repr.count('(') - op_repr.count(')') > 0:
@@ -767,6 +779,8 @@ class df_dim(dim):
     """
 
     namespace = 'dataframe'
+
+    _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
         super(df_dim, self).__init__(obj, *args, **kwargs)
@@ -803,6 +817,8 @@ class xr_dim(dim):
     """
 
     namespace = 'xarray'
+
+    _accessor = 'xr'
 
     def __init__(self, obj, *args, **kwargs):
         try:
