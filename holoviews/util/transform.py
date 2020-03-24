@@ -248,11 +248,10 @@ class dim(object):
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
             'accessor' not in self.ops[-1]['kwargs']):
-            raise ValueError("Cannot use __call__ method on dim expression "
-                             "which is not an accessor. Ensure that you only "
-                             "call a dim expression, which was created by "
-                             "accessing an attribute that does not exist "
-                             "on an existing dim expression.")
+            fn = self.ops[-1]['fn']
+            raise ValueError("Cannot use __call__ method on %r expression. "
+                             "__call__ is only supported on attributes accessed via "
+                             "the namespace (e.g. dim().df or dim().xr")
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
@@ -810,9 +809,8 @@ class xr_dim(dim):
         try:
             import xarray as xr
         except ImportError:
-            raise ImportError("XArray could not be imported, xr_dim "
-                              "requires the pandas namespace to be "
-                              "available.")
+            raise ImportError("XArray could not be imported, dim().xr "
+                              "requires the xarray to be available.")
         super(xr_dim, self).__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 
