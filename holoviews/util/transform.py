@@ -271,8 +271,11 @@ class dim(object):
         ns = self._ns
         if self._current_accessor:
             ns = getattr(ns, self._current_accessor)
-        extras = [attr for attr in dir(ns) if not attr.startswith('_')]
-        return (list(self.__dict__) + extras)
+        extras = {attr for attr in dir(ns) if not attr.startswith('_')}
+        try:
+            return sorted(set(super(dim, self).__dir__()) | extras)
+        except Exception:
+            return sorted(set(dir(type(self))) | set(self.__dict__) | extras)
 
     def __hash__(self):
         return hash(repr(self))
