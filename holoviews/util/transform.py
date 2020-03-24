@@ -3,6 +3,7 @@ from __future__ import division
 import operator
 import sys
 
+from functools import partial
 from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodType
 
 import numpy as np
@@ -52,6 +53,7 @@ def norm(values, min=None, max=None):
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
+
 
 def lognorm(values, min=None, max=None):
     """Unity-based normalization on log scale.
