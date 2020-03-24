@@ -248,10 +248,9 @@ class dim(object):
     def __call__(self, *args, **kwargs):
         if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
             'accessor' not in self.ops[-1]['kwargs']):
-            fn = self.ops[-1]['fn']
             raise ValueError("Cannot use __call__ method on %r expression. "
                              "__call__ is only supported on attributes accessed via "
-                             "the namespace (e.g. dim().df or dim().xr")
+                             "the namespace (e.g. dim().df or dim().xr" % self)
         op = self.ops[-1]
         if op['fn'] == 'str':
             new_op = dict(op, fn=astype, args=(str,), kwargs={})
