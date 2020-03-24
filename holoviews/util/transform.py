@@ -272,7 +272,7 @@ class dim(object):
         if self._current_accessor:
             ns = getattr(ns, self._current_accessor)
         extras = [attr for attr in dir(ns) if not attr.startswith('_')]
-        return (super(dim, self).__dir__() + extras)
+        return (list(self.__dict__) + extras)
 
     def __hash__(self):
         return hash(repr(self))
