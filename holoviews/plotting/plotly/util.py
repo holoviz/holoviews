@@ -450,12 +450,12 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
     layout = fig.setdefault('layout', {})
 
     def scale_translate_x(x):
-        return [x[0] * scale_x + translate_x,
-                x[1] * scale_x + translate_x]
+        return [min(x[0] * scale_x + translate_x, 1),
+                min(x[1] * scale_x + translate_x, 1)]
 
     def scale_translate_y(y):
-        return [y[0] * scale_y + translate_y,
-                y[1] * scale_y + translate_y]
+        return [min(y[0] * scale_y + translate_y, 1),
+                min(y[1] * scale_y + translate_y, 1)]
 
     def perform_scale_translate(obj):
         domain = obj.setdefault('domain', {})
@@ -673,17 +673,26 @@ def figure_grid(figures_grid,
     nrows = len(row_heights)
     ncols = len(column_widths)
 
+    responsive = True
+    for r in range(nrows):
+        for c in range(ncols):
+            fig_element = figures_grid[r][c]
+            if not fig_element:
+                continue
+            responsive &= fig_element.get('config', {}).get('responsive', False)
+
+    default = None if responsive else 400
     for r in range(nrows):
         for c in range(ncols):
             fig_element = figures_grid[r][c]
             if not fig_element:
                 continue
 
-            w = fig_element.get('layout', {}).get('width', None)
+            w = fig_element.get('layout', {}).get('width', default)
             if w:
                 column_widths[c] = max(w, column_widths[c])
 
-            h = fig_element.get('layout', {}).get('height', None)
+            h = fig_element.get('layout', {}).get('height', default)
             if h:
                 row_heights[r] = max(h, row_heights[r])
 
@@ -730,20 +739,33 @@ def figure_grid(figures_grid,
 
                 _offset_subplot_ids(fig, subplot_offsets)
 
-                fig_height = fig['layout']['height'] * row_height_scale
-                fig_width = fig['layout']['width'] * column_width_scale
-
-                scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
-                scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
-                _scale_translate(fig,
-                                 scale_x, scale_y,
-                                 column_domain[0], row_domain[0])
+                if responsive:
+                    scale_x = 1./ncols
+                    scale_y = 1./nrows
+                    px = ((0.2/(ncols) if ncols > 1 else 0))
+                    py = ((0.2/(nrows) if nrows > 1 else 0))
+                    sx = scale_x-px
+                    sy = scale_y-py
+                    _scale_translate(fig, sx, sy, scale_x*c+px/2., scale_y*r+py/2.)
+                else:
+                    fig_height = fig['layout'].get('height', default) * row_height_scale
+                    fig_width = fig['layout'].get('width', default) * column_width_scale
+                    scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
+                    scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
+                    _scale_translate(
+                        fig, scale_x, scale_y, column_domain[0], row_domain[0]
+                    )
 
                 merge_figure(output_figure, fig)
+
+    if responsive:
+        output_figure['config'] = {'responsive': True}
 
     # Set output figure width/height
     if height:
         output_figure['layout']['height'] = height
+    elif responsive:
+        output_figure['layout']['autosize'] = True
     else:
         output_figure['layout']['height'] = (
             sum(row_heights) + row_spacing * (nrows - 1)
@@ -751,6 +773,8 @@ def figure_grid(figures_grid,
 
     if width:
         output_figure['layout']['width'] = width
+    elif responsive:
+        output_figure['layout']['autosize'] = True
     else:
         output_figure['layout']['width'] = (
                 sum(column_widths) + column_spacing * (ncols - 1)
