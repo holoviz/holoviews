@@ -643,8 +643,8 @@ class XArrayInterface(GridInterface):
             if vars:
                 data = data.assign(vars)
             used_coords = set.intersection(*[set(var.coords) for var in data.data_vars.values()])
-        drop_coords = set.symmetric_difference(used_coords, prev_coords)
-        return data.drop(list(drop_coords)), list(drop_coords)
+        drop_coords =  set.symmetric_difference(used_coords, prev_coords)
+        return data.drop([c for c in drop_coords if c in data.coords]), list(drop_coords)
 
 
 Interface.register(XArrayInterface)
