@@ -636,7 +636,7 @@ class XArrayInterface(GridInterface):
             else:
                 vars[k] = (dims, cls.canonicalize(dataset, v, data_coords=dims))
 
-        if len(vars) == 1 and len(dataset.vdims) == 1:
+        if len(vars) == 1 and list(vars) == [vd.name for vd in dataset.vdims]:
             data = vars[dataset.vdims[0].name]
             used_coords = set(data.coords)
         else:

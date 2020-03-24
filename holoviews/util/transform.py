@@ -627,12 +627,7 @@ class dim(object):
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))
 
-        if isinstance(dataset, Graph):
-            if dimension in dataset.kdims and all_values:
-                dimension = dataset.nodes.kdims[2]
-            dataset = dataset if dimension in dataset else dataset.nodes
-
-        if not self.applies(dataset):
+        if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
             raise KeyError("One or more dimensions in the expression %r "
                            "could not resolve on '%s'. Ensure all "
                            "dimensions referenced by the expression are"
@@ -648,6 +643,11 @@ class dim(object):
                                  "API but the dataset contains %s data "
                                  "and coercion is disabled." %
                                  (self, self.namespace, dataset.interface.datatype))
+
+        if isinstance(dataset, Graph):
+            if dimension in dataset.kdims and all_values:
+                dimension = dataset.nodes.kdims[2]
+            dataset = dataset if dimension in dataset else dataset.nodes
 
         dataset = self._coerce(dataset)
         if self.namespace != 'numpy':
