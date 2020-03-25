@@ -15,6 +15,9 @@ Enhancements:
   ([#4318](https://github.com/holoviz/holoviews/pull/4318))
 - Allow using dim expressions as accessors
   ([#4311](https://github.com/holoviz/holoviews/pull/4311))
+- Add explicit `.df` and `.xr` namespaces to `dim` expressions to
+  allow using dataframe and xarray APIs
+  ([#4320](https://github.com/holoviz/holoviews/pull/4320))
 - Allow defining clim which defines only upper or lower bound and not
   both ([#4314](https://github.com/holoviz/holoviews/pull/4314))
 
