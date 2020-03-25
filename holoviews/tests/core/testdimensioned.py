@@ -8,6 +8,11 @@ from ..utils import LoggingComparisonTestCase
 class TestObj(Element):
     pass
 
+class MockRenderer(object):
+
+    def __init__(self, backend):
+        self.backend = backend
+
 
 class CustomBackendTestCase(LoggingComparisonTestCase):
     """
@@ -29,6 +34,8 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
         Store._custom_options.pop('backend_1')
         Store._custom_options.pop('backend_2')
         Store.set_current_backend(self.current_backend)
+        Store.renderers.pop('backend_1')
+        Store.renderers.pop('backend_2')
 
     @classmethod
     def register_custom(cls, objtype, backend, custom_plot=[], custom_style=[]):
@@ -43,6 +50,7 @@ class CustomBackendTestCase(LoggingComparisonTestCase):
                       'style': Options(allowed_keywords=style_opts),
                       'output': Options(allowed_keywords=['backend'])}
         Store._options[backend][name] = opt_groups
+        Store.renderers[backend] = MockRenderer(backend)
 
 
 
@@ -207,7 +215,10 @@ class TestOptionsCleanup(CustomBackendTestCase):
         obj = HoloMap({0: TestObj([]), 1: TestObj([])}).opts(style_opt1='A').opts(plot_opt1='B')
         custom_options = Store._custom_options['backend_1']
         self.assertIn(obj.last.id, custom_options)
-        self.assertEqual(len(custom_options), 1)
+        self.assertEqual(len(custom_options), 2)
+        for o in obj:
+            o.id = None
+        self.assertEqual(len(custom_options), 0)
 
     def test_opts_resassignment_cleans_unused_tree_cross_backend(self):
         obj = TestObj([]).opts(style_opt1='A').opts(plot_opt1='B', backend='backend_2')
