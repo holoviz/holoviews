@@ -290,6 +290,7 @@ class OutputSettings(KeywordSettings):
             prev_renderer = None
             prev_backend_spec = prev_backend+':default'
             prev_params = {}
+        backend = prev_backend
 
         prev_restore = dict(OutputSettings.options)
         try:
