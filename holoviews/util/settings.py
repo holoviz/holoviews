@@ -273,13 +273,24 @@ class OutputSettings(KeywordSettings):
         if line and kwargs:
             raise ValueError('Please either specify a string to '
                              'parse or keyword arguments')
+        elif not Store.renderers:
+            raise ValueError("No plotting extension is currently loaded. "
+                             "Ensure you load an plotting extension with "
+                             "hv.extension or import it explicitly from "
+                             "holoviews.plotting before using hv.output.")
 
         # Make backup of previous options
         prev_backend = Store.current_backend
-        prev_renderer = Store.renderers[prev_backend]
-        prev_backend_spec = prev_backend+':'+prev_renderer.mode
-        prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
-                       if k in cls.render_params}
+        if prev_backend in Store.renderers:
+            prev_renderer = Store.renderers[prev_backend]
+            prev_backend_spec = prev_backend+':'+prev_renderer.mode
+            prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
+                           if k in cls.render_params}
+        else:
+            prev_renderer = None
+            prev_backend_spec = prev_backend+':default'
+            prev_params = {}
+
         prev_restore = dict(OutputSettings.options)
         try:
             if line is not None:
@@ -296,7 +307,8 @@ class OutputSettings(KeywordSettings):
                     backend_spec += ':default'
             else:
                 backend_spec = prev_backend_spec
-            renderer = Store.renderers[backend_spec.split(':')[0]]
+            backend = backend_spec.split(':')[0]
+            renderer = Store.renderers[backend]
             render_params = {k: v for k, v in renderer.param.get_param_values()
                              if k in cls.render_params}
 
@@ -307,6 +319,11 @@ class OutputSettings(KeywordSettings):
             # If setting options failed ensure they are reset
             OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
+            if backend not in Store.renderers:
+                raise ValueError("The selected plotting extension {ext} "
+                                 "has not been loaded, ensure you load it "
+                                 "with hv.extension({ext}) before using "
+                                 "hv.output.".format(ext=repr(backend)))
             print('Error: %s' % str(e))
             if help_prompt:
                 print(help_prompt)

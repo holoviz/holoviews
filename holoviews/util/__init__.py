@@ -333,6 +333,19 @@ class opts(param.ParameterizedFunction):
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
+
+        if not Store.renderers:
+            raise ValueError("No plotting extension is currently loaded. "
+                             "Ensure you load an plotting extension with "
+                             "hv.extension or import it explicitly from "
+                             "holoviews.plotting before applying any "
+                             "options.")
+        elif current_backend not in Store.renderers:
+            raise ValueError("Currently selected plotting extension {ext} "
+                             "has not been loaded, ensure you load it "
+                             "with hv.extension({ext}) before setting "
+                             "options".format(ext=repr(current_backend)))
+
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
