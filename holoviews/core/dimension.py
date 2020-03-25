@@ -1390,8 +1390,11 @@ class ViewableTree(AttrTree, Dimensioned):
         for i, (path, item) in enumerate(items):
             if counter[path] > 1:
                 path = path + (util.int_to_roman(counts[path]+1),)
-            elif counts[path]:
-                path = path[:-1] + (util.int_to_roman(counts[path]+1),)
+            else:
+                inc = 1
+                while counts[path]:
+                    path = path[:-1] + (util.int_to_roman(counts[path]+inc),)
+                    inc += 1
             new_items.append((path, item))
             counts[path] += 1
         return new_items
