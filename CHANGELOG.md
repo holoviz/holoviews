@@ -1,3 +1,44 @@
+Version 1.13.1
+==============
+
+This is a minor patch release to fix issues compatibility with the
+about to be released Bokeh 2.0.1 release. Additionally this release
+makes Pandas a hard dependency, which was already implicitly the case
+in 1.13.0 but not declared. Lastly this release contains a small number
+of enhancements and bug fixes.
+
+Enhancements:
+
+- Add option to set Plotly plots to responsive
+  ([#4319](https://github.com/holoviz/holoviews/pull/4319))
+- Unified datetime formatting in bokeh hover info
+  ([#4318](https://github.com/holoviz/holoviews/pull/4318))
+- Allow using dim expressions as accessors
+  ([#4311](https://github.com/holoviz/holoviews/pull/4311))
+- Add explicit `.df` and `.xr` namespaces to `dim` expressions to
+  allow using dataframe and xarray APIs
+  ([#4320](https://github.com/holoviz/holoviews/pull/4320))
+- Allow defining clim which defines only upper or lower bound and not
+  both ([#4314](https://github.com/holoviz/holoviews/pull/4314))
+
+Bug fixes:
+
+- Fix regression in Overlay.relabel that occurred in 1.12.3 resulting
+  in relabeling of contained elements by default
+  ([#4246](https://github.com/holoviz/holoviews/pull/4246))
+- Fix bug when updating bokeh Arrow elements
+  ([#4313](https://github.com/holoviz/holoviews/pull/4313))
+
+Compatibility:
+
+- Fix compatibility with Bokeh 2.0.1
+  ([#4308](https://github.com/holoviz/holoviews/pull/4308))
+
+Documentation:
+
+- Update API reference manual
+  ([#4316](https://github.com/holoviz/holoviews/pull/4316))
+
 Version 1.13.0
 ==============
 
