@@ -38,7 +38,6 @@ from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
-from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
@@ -545,20 +544,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not init:
             if aspect_props['aspect_ratio'] is None:
                 aspect_props['aspect_ratio'] = self.state.aspect_ratio
-
-        if self.dynamic and aspect_props['match_aspect']:
-            # Sync the plot size on dynamic plots to support accurate
-            # scaling of dimension ranges
-            plot_size = [s for s in self.streams if isinstance(s, PlotSize)]
-            callbacks = [c for c in self.callbacks if isinstance(c, PlotSizeCallback)]
-            if plot_size:
-                stream = plot_size[0]
-            elif callbacks:
-                stream = callbacks[0].streams[0]
-            else:
-                stream = PlotSize()
-                self.callbacks.append(PlotSizeCallback(self, [stream], None))
-            stream.add_subscriber(self._update_size)
 
         plot_props = {
             'align':         self.align,
