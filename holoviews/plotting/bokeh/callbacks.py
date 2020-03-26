@@ -56,11 +56,6 @@ class Callback(object):
                     y_range, plot, a plotting tool or any other
                     bokeh mode.
 
-    * extra_models: Any additional models available in handles which
-                    should be made available in the namespace of the
-                    objects, e.g. to make a tool available to skip
-                    checks.
-
     * attributes  : The attributes define which attributes to send
                     back to Python. They are defined as a dictionary
                     mapping between the name under which the variable
@@ -68,15 +63,17 @@ class Callback(object):
                     of the attribute. The specification should start
                     with the variable name that is to be accessed and
                     the location of the attribute separated by
-                    periods.  All models defined by the models and
-                    extra_models attributes can be addressed in this
-                    way, e.g. to get the start of the x_range as 'x'
-                    you can supply {'x': 'x_range.attributes.start'}.
-                    Additionally certain handles additionally make the
-                    cb_data and cb_obj variables available containing
-                    additional information about the event. 
+                    periods.  All models defined by the models and can
+                    be addressed in this way, e.g. to get the start of
+                    the x_range as 'x' you can supply {'x':
+                    'x_range.attributes.start'}. Additionally certain
+                    handles additionally make the cb_obj variables
+                    available containing additional information about
+                    the event.
+
     * on_events   : If the Callback should listen to bokeh events this
                     should declare the types of event as a list (optional)
+
     * on_changes  : If the Callback should listen to model attribute
                     changes on the defined ``models`` (optional)
 
@@ -108,9 +105,6 @@ class Callback(object):
 
     # The plotting handle(s) to attach the JS callback on
     models = []
-
-    # Additional models available to the callback
-    extra_models = []
 
     # Conditions when callback should be skipped
     skip_events  = []
@@ -214,7 +208,6 @@ class Callback(object):
             for stream in streams:
                 stream._metadata = {}
 
-
     def _init_plot_handles(self):
         """
         Find all requested plotting handles and cache them along
@@ -231,16 +224,11 @@ class Callback(object):
         self.plot_handles = handles
 
         requested = {}
-        for h in self.models+self.extra_models:
+        for h in self.models:
             if h in self.plot_handles:
                 requested[h] = handles[h]
-            elif h in self.extra_models:
-                print("Warning %s could not find the %s model. "
-                      "The corresponding stream may not work."
-                      % (type(self).__name__, h))
         self.handle_ids.update(self._get_stream_handle_ids(requested))
         return requested
-
 
     def _get_stream_handle_ids(self, handles):
         """
@@ -522,10 +510,9 @@ class PointerXYCallback(Callback):
         if 'y' in msg and isinstance(yaxis, DatetimeAxis):
             msg['y'] = convert_timestamp(msg['y'])
 
-        server_mode = self.comm is None
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
             msg['x'] = x_range.factors[int(msg['x'])]
-        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)) and server_mode:
+        elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)):
             xstart, xend = x_range.start, x_range.end
             if xstart > xend:
                 xstart, xend = xend, xstart
@@ -537,7 +524,7 @@ class PointerXYCallback(Callback):
 
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
             msg['y'] = y_range.factors[int(msg['y'])]
-        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)) and server_mode:
+        elif 'y' in msg and isinstance(y_range, (Range1d, DataRange1d)):
             ystart, yend = y_range.start, y_range.end
             if ystart > yend:
                 ystart, yend = yend, ystart
@@ -556,7 +543,10 @@ class PointerXCallback(PointerXYCallback):
     """
 
     attributes = {'x': 'cb_obj.x'}
+<<<<<<< HEAD
     extra_models= ['x_range']
+=======
+>>>>>>> Removed custom js code
 
 
 class PointerYCallback(PointerXYCallback):
@@ -565,7 +555,6 @@ class PointerYCallback(PointerXYCallback):
     """
 
     attributes = {'y': 'cb_obj.y'}
-    extra_models= ['y_range']
 
 
 class DrawCallback(PointerXYCallback):
