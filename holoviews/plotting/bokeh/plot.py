@@ -168,25 +168,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             self._update_selected(source)
 
 
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing
-        subplots into a CompositePlot and sets the plot id to match
-        the root level bokeh model.
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOL_TYPES[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-                    if self.top_level:
-                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
-
     @property
     def state(self):
         """
@@ -615,7 +596,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -988,7 +968,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 

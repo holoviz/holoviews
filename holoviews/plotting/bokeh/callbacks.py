@@ -161,7 +161,6 @@ class Callback(object):
                 handle = handles[handle_name]
                 cb_hash = (id(handle), id(type(self)))
                 self._callbacks.pop(cb_hash, None)
-        self.callbacks = []
         self.plot_handles = {}
         self._queue = []
 
