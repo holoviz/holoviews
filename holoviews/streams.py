@@ -942,6 +942,14 @@ class DoubleTap(PointerXY):
     The x/y-position of a double-tap or -click in data coordinates.
     """
 
+class PressUp(PointerXY):
+    """
+    The x/y position of a mouse pressup event in data coordinates.
+    """
+
+class PanEnd(PointerXY):
+    """The x/y position of a the end of a pan event in data coordinates.
+    """
 
 class MouseEnter(PointerXY):
     """
@@ -1032,7 +1040,7 @@ class SelectionXY(BoundsXY):
       The current selection along the y-axis, either a numerical range
       defined as a tuple or a list of categories.""")
 
-    
+
 class BoundsX(LinkedStream):
     """
     A stream representing the bounds of a box selection as an
