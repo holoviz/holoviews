@@ -20,7 +20,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_stre
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, mpl_version
+from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -28,16 +28,7 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    deprecated = [
-        'text.latex.unicode',
-        'examples.directory',
-        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
-        'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
-    ]
-    old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                    if mpl_version < '3.0' or k not in deprecated}
+    old_rcparams = get_old_rcparams()
     mpl.rcParams.clear()
     mpl.rcParams.update(dict(old_rcparams, **rcparams))
     try:
