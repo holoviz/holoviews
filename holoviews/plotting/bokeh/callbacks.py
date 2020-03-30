@@ -15,6 +15,7 @@ from bokeh.models import (
     FreehandDrawTool, PointDrawTool
 )
 from panel.io.state import state
+from panel.io.model import hold
 from pyviz_comms import JS_CALLBACK
 from tornado import gen
 
@@ -311,7 +312,8 @@ class Callback(object):
             if self.plot.renderer.mode == 'server':
                 self._schedule_callback(self.process_on_change, offset=False)
             else:
-                self.process_on_change()
+                with hold(self.plot.document):
+                    self.process_on_change()
 
     def on_event(self, event):
         """
@@ -325,7 +327,8 @@ class Callback(object):
             if self.plot.renderer.mode == 'server':
                 self._schedule_callback(self.process_on_event, offset=False)
             else:
-                self.process_on_event()
+                with hold(self.plot.document):
+                    self.process_on_event()
 
     def throttled(self):
         now = time.time()
@@ -423,6 +426,8 @@ class Callback(object):
 
         if self.plot.renderer.mode == 'server':
             self._schedule_callback(self.process_on_change)
+        else:
+            self._active = False
 
     def set_callback(self, handle):
         """
