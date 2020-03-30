@@ -20,8 +20,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_stre
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
-from .util import (compute_ratios, fix_aspect, mpl_version,
-                   get_non_deprecated_rcparams)
+from .util import compute_ratios, fix_aspect, get_non_deprecated_rcparams
 
 
 @contextmanager

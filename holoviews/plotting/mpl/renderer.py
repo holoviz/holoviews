@@ -18,7 +18,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, mpl_version, get_non_deprecated_rcparams
+from .util import get_tight_bbox, get_non_deprecated_rcparams
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
