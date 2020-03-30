@@ -1573,7 +1573,7 @@ class RectanglesTableLinkCallback(DataLinkCallback):
     var x1 = []
     var y0 = []
     var y1 = []
-    for (i = 0; i < xs.length; i++) {
+    for (var i = 0; i < xs.length; i++) {
       var hw = ws[i]/2.
       var hh = hs[i]/2.
       x0.push(xs[i]-hw)
@@ -1597,11 +1597,11 @@ class RectanglesTableLinkCallback(DataLinkCallback):
     var ys = []
     var ws = []
     var hs = []
-    for (i = 0; i < x0s.length; i++) {
-      x0 = Math.min(x0s[i], x1s[i])
-      y0 = Math.min(y0s[i], y1s[i])
-      x1 = Math.max(x0s[i], x1s[i])
-      y1 = Math.max(y0s[i], y1s[i])
+    for (var i = 0; i < x0s.length; i++) {
+      var x0 = Math.min(x0s[i], x1s[i])
+      var y0 = Math.min(y0s[i], y1s[i])
+      var x1 = Math.max(x0s[i], x1s[i])
+      var y1 = Math.max(y0s[i], y1s[i])
       xs.push((x0+x1)/2.)
       ys.push((y0+y1)/2.)
       ws.push(x1-x0)
@@ -1645,12 +1645,12 @@ class VertexTableLinkCallback(LinkCallback):
     var xs = []
     var ys = []
     var empty = []
-    for (i = 0; i < xs_column.length; i++) {
+    for (var i = 0; i < xs_column.length; i++) {
       xs.push(xs_column[i])
       ys.push(ys_column[i])
       empty.push(null)
     }
-    [x, y] = vertex_columns
+    var [x, y] = vertex_columns
     target_cds.data[x] = xs
     target_cds.data[y] = ys
     var length = xs.length
@@ -1659,14 +1659,14 @@ class VertexTableLinkCallback(LinkCallback):
       else if (col in source_cds.data) {
         var path = source_cds.data[col][index];
         if ((path == undefined)) {
-          data = empty;
+          var data = empty;
         } else if (path.length == length) {
-          data = source_cds.data[col][index];
+          var data = source_cds.data[col][index];
         } else {
-          data = empty;
+          var data = empty;
         }
       } else {
-        data = empty;
+        var data = empty;
       }
       target_cds.data[col] = data;
     }
@@ -1676,42 +1676,42 @@ class VertexTableLinkCallback(LinkCallback):
 
     target_code = """
     if (!source_cds.selected.indices.length) { return }
-    [x, y] = vertex_columns
+    var [x, y] = vertex_columns
     var xs_column = target_cds.data[x]
     var ys_column = target_cds.data[y]
     var xs = []
     var ys = []
     var points = []
-    for (i = 0; i < xs_column.length; i++) {
+    for (var i = 0; i < xs_column.length; i++) {
       xs.push(xs_column[i])
       ys.push(ys_column[i])
       points.push(i)
     }
-    index = source_cds.selected.indices[0]
-    const xpaths = source_cds.data['xs']
-    const ypaths = source_cds.data['ys']
+    var index = source_cds.selected.indices[0]
+    var xpaths = source_cds.data['xs']
+    var ypaths = source_cds.data['ys']
     var length = source_cds.data['xs'].length
     for (var col in target_cds.data) {
       if ((col == x) || (col == y)) { continue; }
       if (!(col in source_cds.data)) {
         var empty = []
-        for (i = 0; i < length; i++)
+        for (var i = 0; i < length; i++)
           empty.push([])
         source_cds.data[col] = empty
       }
       source_cds.data[col][index] = target_cds.data[col]
-      for (const p of points) {
-        for (let pindex = 0; pindex < xpaths.length; pindex++) {
+      for (var p of points) {
+        for (var pindex = 0; pindex < xpaths.length; pindex++) {
           if (pindex != index) { continue }
-          const xs = xpaths[pindex]
-          const ys = ypaths[pindex]
-          const column = source_cds.data[col][pindex]
+          var xs = xpaths[pindex]
+          var ys = ypaths[pindex]
+          var column = source_cds.data[col][pindex]
           if (column.length != xs.length) {
-            for (let ind = 0; ind < xs.length; ind++) {
+            for (var ind = 0; ind < xs.length; ind++) {
               column.push(null)
             }
           }
-          for (let ind = 0; ind < xs.length; ind++) {
+          for (var ind = 0; ind < xs.length; ind++) {
             if ((xs[ind] == xpaths[index][p]) && (ys[ind] == ypaths[index][p])) {
               column[ind] = target_cds.data[col][p]
               xs[ind] = xs[p];
