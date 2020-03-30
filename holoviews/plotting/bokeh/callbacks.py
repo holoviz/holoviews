@@ -23,6 +23,7 @@ from ...element import Table
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
+                        PressUp, PanEnd,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream,
                         FreehandDraw, CurveEdit, SelectionXY)
@@ -750,6 +751,21 @@ class SingleTapCallback(TapCallback):
 
     on_events = ['tap']
 
+class PressUpCallback(TapCallback):
+    """
+    Returns the mouse x/y-position of a pressup mouse event.
+    """
+
+    on_events = ['pressup']
+
+
+class PanEndCallback(TapCallback):
+    """
+    Returns the mouse x/y-position of a pan end event.
+    """
+
+    on_events = ['panend']
+
 
 class DoubleTapCallback(TapCallback):
     """
@@ -1305,6 +1321,8 @@ callbacks[PointerY]    = PointerYCallback
 callbacks[Tap]         = TapCallback
 callbacks[SingleTap]   = SingleTapCallback
 callbacks[DoubleTap]   = DoubleTapCallback
+callbacks[PressUp]     = PressUpCallback
+callbacks[PanEnd]      = PanEndCallback
 callbacks[MouseEnter]  = MouseEnterCallback
 callbacks[MouseLeave]  = MouseLeaveCallback
 callbacks[RangeXY]     = RangeXYCallback

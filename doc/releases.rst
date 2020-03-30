@@ -35,6 +35,8 @@ Enhancements:
   (`#4311 <https://github.com/holoviz/holoviews/pull/4311>`_)
 * Allow defining clim which defines only upper or lower bound and not
   both (`#4314 <https://github.com/holoviz/holoviews/pull/4314>`_)
+* Improved exceptions when selected plotting extension is not loaded
+  (`#4325 <https://github.com/holoviz/holoviews/pull/4325>`_)
 
 Bug fixes:
 
@@ -43,6 +45,8 @@ Bug fixes:
   (`#4246 <https://github.com/holoviz/holoviews/pull/4246>`_)
 * Fix bug when updating bokeh Arrow elements
   (`#4313 <https://github.com/holoviz/holoviews/pull/4313>`_)
+* Fix bug where Layout/Overlay constructors would drop items
+  (`#4313 <https://github.com/holoviz/holoviews/pull/4323>`_)
 
 Compatibility:
 
