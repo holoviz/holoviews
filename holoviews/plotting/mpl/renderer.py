@@ -18,7 +18,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, get_non_deprecated_rcparams
+from .util import get_tight_bbox, get_old_rcparams
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -230,7 +230,7 @@ class MPLRenderer(Renderer):
     @classmethod
     @contextmanager
     def state(cls):
-        old_rcparams = get_non_deprecated_rcparams()
+        old_rcparams = get_old_rcparams()
         try:
             cls._rcParams = old_rcparams
             yield

@@ -20,7 +20,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_stre
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, get_non_deprecated_rcparams
+from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -28,7 +28,7 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    old_rcparams = get_non_deprecated_rcparams()
+    old_rcparams = get_old_rcparams()
     mpl.rcParams.clear()
     mpl.rcParams.update(dict(old_rcparams, **rcparams))
     try:
