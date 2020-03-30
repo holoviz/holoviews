@@ -18,7 +18,7 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, mpl_version
+from .util import get_tight_bbox, mpl_version, get_non_deprecated_rcparams
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -230,17 +230,7 @@ class MPLRenderer(Renderer):
     @classmethod
     @contextmanager
     def state(cls):
-        deprecated = [
-            'text.latex.unicode',
-            'examples.directory',
-            'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
-            'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
-            'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
-            'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
-        ]
-        old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                        if mpl_version < '3.0' or k not in deprecated}
-
+        old_rcparams = get_non_deprecated_rcparams()
         try:
             cls._rcParams = old_rcparams
             yield

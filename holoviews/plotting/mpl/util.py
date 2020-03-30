@@ -62,6 +62,21 @@ validators = {
     's': lambda x: is_number(x) and (x >= 0)
 }
 
+def get_non_deprecated_rcparams():
+    deprecated_rcparams = [
+        'text.latex.unicode',
+        'examples.directory',
+        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
+        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
+        'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
+    ]
+    non_deprecated_rcparams = {
+        k: v for k, v in matplotlib.rcParams.items()
+        if mpl_version < '3.0' or k not in deprecated_rcparams
+    }
+    return non_deprecated_rcparams
+
 
 def get_validator(style):
     for k, v in validators.items():
