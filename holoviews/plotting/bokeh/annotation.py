@@ -274,7 +274,8 @@ class SplinePlot(ElementPlot, AnnotationPlot):
 
 class ArrowPlot(CompositeElementPlot, AnnotationPlot):
 
-    style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
+    style_opts = (['arrow_%s' % p for p in line_properties+fill_properties+['size']] +
+                  text_properties)
 
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
 
@@ -331,9 +332,19 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
             source = properties.pop('source')
             arrow_end = mapping.pop('arrow_end')
             arrow_start = mapping.pop('arrow_start')
+            for p in ('alpha', 'color'):
+                v = properties.pop(p, None)
+                for t in ('line', 'fill'):
+                    if v is None:
+                        continue
+                    key = '_'.join([t, p])
+                    if key not in properties:
+                        properties[key] = v
             start = arrow_start(**properties) if arrow_start else None
             end = arrow_end(**properties) if arrow_end else None
-            renderer = Arrow(start=start, end=end, source=source, **mapping)
+            line_props = {p: v for p, v in properties.items() if p.startswith('line_')}
+            renderer = Arrow(start=start, end=end, source=source,
+                             **dict(line_props, **mapping))
             glyph = renderer
         else:
             properties = {p if p == 'source' else 'text_'+p: v
