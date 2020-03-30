@@ -317,9 +317,9 @@ class Renderer(Exporter):
             from bokeh.resources import CDN, INLINE
             doc = Document()
             plot._render_model(doc)
-            if resources == 'cdn':
+            if resources.lower() == 'cdn':
                 resources = CDN
-            elif resources == 'inline':
+            elif resources.lower() == 'inline':
                 resources = INLINE
             return file_html(doc, resources)
         elif fmt in ['html', 'json']:
