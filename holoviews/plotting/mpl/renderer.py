@@ -236,10 +236,11 @@ class MPLRenderer(Renderer):
             'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
             'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
             'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
+            'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
         ]
         old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
                         if mpl_version < '3.0' or k not in deprecated}
-    
+
         try:
             cls._rcParams = old_rcparams
             yield
