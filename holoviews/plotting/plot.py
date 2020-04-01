@@ -215,7 +215,7 @@ class Plot(param.Parameterized):
                 # If we do not have the Document lock, schedule refresh as callback
                 self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
                                      for s in getattr(p, 'streams', []) if s._triggering]
-                if self.document.session_context:
+                if self.document and self.document.session_context:
                     self.document.add_next_tick_callback(self.refresh)
                     return
 
