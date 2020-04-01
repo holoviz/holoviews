@@ -4,7 +4,7 @@ channels:
   - conda-forge
 
 dependencies:
-  - pyviz::holoviews=0.9.*
+  - pyviz::holoviews=1.13*
   # Install requires
   - pyviz::param>=1.8.0,<2.0
   - pyviz::pyviz_comms>=0.7.2
