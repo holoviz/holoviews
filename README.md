@@ -4,7 +4,7 @@
 [![BuildStatus](https://travis-ci.org/holoviz/holoviews.svg?branch=master)](https://travis-ci.org/holoviz/holoviews)
 [![Coveralls](https://img.shields.io/coveralls/pyviz/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/pyviz/pyviz?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/pyviz/holoviews/master?filepath=examples)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/holoviz/holoviews/master?filepath=examples)
 
 # <img src="https://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="40px" align="left" /> HoloViews
 
