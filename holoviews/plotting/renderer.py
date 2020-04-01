@@ -12,9 +12,15 @@ try:
 except ImportError:
     from io import StringIO
 from contextlib import contextmanager
+from functools import partial
 
 import param
+import panel
 
+from bokeh.document import Document
+from bokeh.io import curdoc
+from bokeh.embed import file_html
+from bokeh.resources import CDN, INLINE
 from panel import config
 from panel.io.notebook import load_notebook, render_model, render_mimebundle
 from panel.io.state import state
@@ -26,11 +32,14 @@ from pyviz_comms import CommManager, JupyterCommManager
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions
+from ..core.util import unbound_dimensions, LooseVersion
+from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
+
+panel_version = LooseVersion(panel.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -231,8 +240,6 @@ class Renderer(Exporter):
             plot.comm = comm
 
         if comm or self_or_cls.mode == 'server':
-            from bokeh.document import Document
-            from bokeh.io import curdoc
             if doc is None:
                 doc = Document() if self_or_cls.notebook_context else curdoc()
             plot.document = doc
@@ -312,14 +319,11 @@ class Renderer(Exporter):
         if css is None: css = self.css
 
         if isinstance(plot, Viewable):
-            from bokeh.document import Document
-            from bokeh.embed import file_html
-            from bokeh.resources import CDN, INLINE
             doc = Document()
             plot._render_model(doc)
-            if resources.lower() == 'cdn':
+            if resources == 'cdn':
                 resources = CDN
-            elif resources.lower() == 'inline':
+            elif resources == 'inline':
                 resources = INLINE
             return file_html(doc, resources)
         elif fmt in ['html', 'json']:
@@ -356,20 +360,41 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            from bokeh.document import Document
-            dynamic = bool(plot.object.traverse(lambda x: x, [DynamicMap]))
-            embed = (not (dynamic or self.widget_mode == 'live') or config.embed)
+            registry = list(Stream.registry.items())
+            objects = plot.object.traverse(lambda x: x)
+            dynamic, streams = False, False
+            for source in objects:
+                dynamic |= isinstance(source, DynamicMap)
+                streams |= any(
+                    src is source or (src._plot_id is not None and src._plot_id == source._plot_id)
+                    for src, streams in registry for s in streams
+                )
+            embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
             comm = self.comm_manager.get_server_comm() if comm else None
             doc = Document()
             with config.set(embed=embed):
                 model = plot.layout._render_model(doc, comm)
-            return render_model(model, comm) if embed else render_mimebundle(model, doc, comm)
+            if embed:
+                return render_model(model, comm)
+            else:
+                args = (model, doc, comm)
+                if panel_version > '0.9.3':
+                    from panel.models.comm_manager import CommManager
+                    ref = model.ref['id']
+                    manager = CommManager(comm_id=comm.id, plot_id=ref)
+                    client_comm = self.comm_manager.get_client_comm(
+                        on_msg=partial(plot._on_msg, ref, manager),
+                        on_error=partial(plot._on_error, ref),
+                        on_stdout=partial(plot._on_stdout, ref)
+                    )
+                    manager.client_comm_id = client_comm.id
+                    args = args + (manager,)
+                return render_mimebundle(*args)
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
         data['text/html'] = html
 
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
-
 
     def static_html(self, obj, fmt=None, template=None):
         """
