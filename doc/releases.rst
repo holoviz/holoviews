@@ -13,6 +13,32 @@ Release notes
 Version 1.13
 ~~~~~~~~~~~~
 
+Version 1.13.2
+==============
+
+This is a minor patch release fixing a number of regressions
+introduced as part of the 1.13.x releases. Many thanks to the
+contributors including @eddienko, @poplarShift, @wuyuani135, @maximlt
+and the maintainer @philippjfr.
+
+Enhancements:
+
+- Add PressUp and PanEnd streams (`#4334
+  <https://github.com/holoviz/holoviews/pull/4334>`_)
+
+Bug fixes:
+
+- Fix regression in single node Sankey computation
+  (`#4337 <https://github.com/holoviz/holoviews/pull/4337>`_)
+- Fix color and alpha option on bokeh Arrow plot
+  (`#4338 <https://github.com/holoviz/holoviews/pull/4338>`_)
+- Fix undefined JS varaibles in various bokeh links
+  (`#4341 <https://github.com/holoviz/holoviews/pull/4341>`_)
+- Fix matplotlib >=3.2.1 deprecation warnings
+  (`#4335 <https://github.com/holoviz/holoviews/pull/4335>`_)
+- Fix handling of document in server mode
+  (`#4355 <https://github.com/holoviz/holoviews/pull/4355>`_)
+
 Version 1.13.1
 **************
 
