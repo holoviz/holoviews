@@ -11,7 +11,9 @@ import pyct.build
 
 setup_args = {}
 install_requires = ['param>=1.9.3,<2.0', 'numpy>=1.0', 'pyviz_comms>=0.7.3',
-                    'panel>=0.7.0', 'pandas']
+                    "panel>=0.7.0,<0.9.0; python_version<'3.6'",
+                    "panel>=0.7.0; python_version>='3.6'",
+                    'pandas']
 
 extras_require = {}
 
