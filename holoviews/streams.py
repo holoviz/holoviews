@@ -1023,6 +1023,16 @@ class BoundsXY(LinkedStream):
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
+class Lasso(LinkedStream):
+    """
+    A stream representing a lasso selection in 2D space as a two-column
+    array of coordinates.
+    """
+
+    geometry = param.Array(doc="""
+        The coordinates of the lasso geometry as a two-column array.""")
+
+
 class SelectionXY(BoundsXY):
     """
     A stream representing the selection along the x-axis and y-axis.
