@@ -6,7 +6,7 @@ elements.
 import numpy as np
 
 from ..core import util, NdOverlay
-from ..streams import SelectionXY, Selection1D
+from ..streams import SelectionXY, Selection1D, Lasso
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
 
@@ -37,6 +37,23 @@ class SelectionIndexExpr(object):
         return None
 
 
+def spatial_select(xvals, yvals, geometry):
+    try:
+        from spatialpandas.geometry import Polygon, PointArray
+        points = PointArray((xvals, yvals))
+        poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
+        return points.intersects(poly)
+    except Exception:
+        pass
+    try:
+        from shapely.geometry import Point, Polygon
+        points = (Point(x, y) for x, y in zip(xvals, yvals))
+        poly = Polygon(geometry)
+        return np.array([poly.contains(p) for p in points])
+    except ImportError:
+        raise ImportError("Lasso selection requires either spatialpandas or shapely to be available.")
+
+
 class Selection2DExpr(object):
     """
     Mixin class for Cartesian 2D elements to add basic support for
@@ -45,7 +62,7 @@ class Selection2DExpr(object):
 
     _selection_dims = 2
 
-    _selection_streams = (SelectionXY,)
+    _selection_streams = (SelectionXY, Lasso)
 
     def _get_selection(self, **kwargs):
         xcats, ycats = None, None
@@ -78,26 +95,11 @@ class Selection2DExpr(object):
         contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
         return dim(contains, np.reshape, get_shape)
 
-    def _get_selection_expr_for_stream_value(self, **kwargs):
+    def _get_bounds_selection(self, xdim, ydim, **kwargs):
         from .geom import Rectangles
-        from .graphs import Graph
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
-        if kwargs.get('bounds') is None and kwargs.get('x_selection') is None:
-            return None, None, Rectangles([])
-
         (x0, x1), xcats, (y0, y1), ycats = self._get_selection(**kwargs)
         xsel = xcats or (x0, x1)
         ysel = ycats or (y0, y1)
-
-        if isinstance(self, Graph):
-            xdim, ydim = self.nodes.dimensions()[:2]
-        else:
-            xdim, ydim = self.dimensions()[:2]
-
-        if invert_axes:
-            xdim, ydim = ydim, xdim
 
         bbox = {xdim.name: xsel, ydim.name: ysel}
         index_cols = kwargs.get('index_cols')
@@ -117,11 +119,49 @@ class Selection2DExpr(object):
             region_element = Rectangles([(x0, y0, x1, y1)])
         return selection_expr, bbox, region_element
 
+    def _get_lasso_selection(self, xdim, ydim, geometry, **kwargs):
+        from .path import Path
+        bbox = {xdim.name: geometry[:, 0], ydim.name: geometry[:, 1]}
+        expr = dim.pipe(spatial_select, xdim, dim(ydim), geometry=geometry)
+        return expr, bbox, Path([np.concatenate([geometry, geometry[:1]])])
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        from .geom import Rectangles
+        from .path import Path
+        from .graphs import Graph
+
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+
+        if (kwargs.get('bounds') is None and kwargs.get('x_selection') is None
+            and kwargs.get('geometry') is None):
+            return None, None, Rectangles([]) * Path([])
+
+        if isinstance(self, Graph):
+            xdim, ydim = self.nodes.dimensions()[:2]
+        else:
+            xdim, ydim = self.dimensions()[:2]
+
+        if invert_axes:
+            xdim, ydim = ydim, xdim
+
+        if 'bounds' in kwargs:
+            expr, bbox, region = self._get_bounds_selection(xdim, ydim, **kwargs)
+            return expr, bbox, region * Path([])
+        elif 'geometry' in kwargs:
+            expr, bbox, region = self._get_lasso_selection(xdim, ydim, **kwargs)
+            return expr, bbox, Rectangles([]) * region
+
     @staticmethod
     def _merge_regions(region1, region2, operation):
         if region1 is None or operation == "overwrite":
             return region2
-        return region1.clone(region1.interface.concatenate([region1, region2]))
+        rect1 = region1.get(0)
+        rect2 = region2.get(0)
+        rects = rect1.clone(rect1.interface.concatenate([rect1, rect2]))
+        poly1 = region1.get(1)
+        poly2 = region2.get(1)
+        polys = poly1.clone([poly1, poly2])
+        return rects * polys
 
 
 class SelectionGeomExpr(Selection2DExpr):
