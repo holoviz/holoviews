@@ -36,8 +36,26 @@ class SelectionIndexExpr(object):
     def _merge_regions(region1, region2, operation):
         return None
 
-
-def spatial_select(xvals, yvals, geometry):
+def spatial_select_gridded(xvals, yvals, geometry):
+    rectilinear = (np.diff(xvals, axis=0) == 0).all()
+    if rectilinear:
+        from .raster import Image
+        from .path import Polygons
+        try:
+            from ..operation.datashader import rasterize
+        except ImportError:
+            raise ImportError("Lasso selection on gridded data requires "
+                              "datashader to be available.")
+        xs, ys = xvals[0], yvals[:, 0]
+        target = Image((xs, ys, np.empty(ys.shape+xs.shape)))
+        poly = Polygons([geometry])
+        mask = rasterize(poly, target=target, dynamic=False, aggregator='any')
+        return mask.dimension_values(2, flat=False)
+    else:
+        mask = spatial_select_columnar(xvals.flatten(), yvals.flatten(), geometry)
+        return mask.reshape(xvals.shape)
+        
+def spatial_select_columnar(xvals, yvals, geometry):
     try:
         from spatialpandas.geometry import Polygon, PointArray
         points = PointArray((xvals, yvals))
@@ -51,8 +69,14 @@ def spatial_select(xvals, yvals, geometry):
         poly = Polygon(geometry)
         return np.array([poly.contains(p) for p in points])
     except ImportError:
-        raise ImportError("Lasso selection requires either spatialpandas or shapely to be available.")
+        raise ImportError("Lasso selection on tabular data requires "
+                          "either spatialpandas or shapely to be available.")
 
+def spatial_select(xvals, yvals, geometry):
+    if xvals.ndim > 1:
+        return spatial_select_gridded(xvals, yvals, geometry)
+    else:
+        return spatial_select_columnar(xvals, yvals, geometry)
 
 class Selection2DExpr(object):
     """
