@@ -490,6 +490,10 @@ class OverlaySelectionDisplay(SelectionDisplay):
                     if mask is None:
                         mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
+                elif dataset.interface.multi:
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, expanded=False, flat=False, strict=True)
+                    selection = dataset.clone(dataset.iloc[np.where(mask)[0]])
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
                     if mask is None:
                         mask = selection_expr.apply(dataset, compute=False, strict=True)
