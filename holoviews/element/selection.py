@@ -202,10 +202,10 @@ class Selection2DExpr(object):
 
         if 'bounds' in kwargs:
             expr, bbox, region = self._get_bounds_selection(*dims, **kwargs)
-            return expr, bbox, region * Path([])
+            return expr, bbox, None if region is None else region * Path([])
         elif 'geometry' in kwargs:
             expr, bbox, region = self._get_lasso_selection(*dims, **kwargs)
-            return expr, bbox, Rectangles([]) * region
+            return expr, bbox, None if region is None else Rectangles([]) * region
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
