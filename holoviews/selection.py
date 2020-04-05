@@ -381,6 +381,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             self.color_props = color_prop
         self.is_cmap = is_cmap
         self.supports_region = supports_region
+        self._cache = {}
 
     def _get_color_kwarg(self, color):
         return {color_prop: [color] if self.is_cmap else color
@@ -450,7 +451,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
         return Overlay(layers).collate()
 
     def _build_layer_callback(self, element, exprs, layer_number, **kwargs):
-        return self._select(element, exprs[layer_number])
+        return self._select(element, exprs[layer_number], self._cache)
 
     def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
         opts = {}
@@ -470,20 +471,32 @@ class OverlaySelectionDisplay(SelectionDisplay):
         raise NotImplementedError()
 
     @staticmethod
-    def _select(element, selection_expr):
+    def _select(element, selection_expr, cache={}):
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
             dataset = element.dataset
+            mask = None
+            if dataset._plot_id in cache:
+                ds_cache = cache[dataset._plot_id]
+                if selection_expr in ds_cache:
+                    mask = ds_cache[selection_expr]
+                else:
+                    ds_cache.clear()
+            else:
+                ds_cache = cache[dataset._plot_id] = {}
             try:
                 if dataset.interface.gridded:
-                    mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
-                    mask = selection_expr.apply(dataset, compute=False, strict=True)
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, compute=False, strict=True)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:
-                    mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=True)
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=True)
                     selection = dataset.select(selection_mask=mask)
                 element = element.pipeline(selection)
                 element._dataset = dataset
@@ -495,6 +508,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             except Exception as e:
                 raise CallbackError("linked_selection aborted because it could not "
                                     "display selection for all elements: %s." % e)
+            ds_cache[selection_expr] = mask
         return element
 
 
