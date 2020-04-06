@@ -12,7 +12,10 @@ except:
 import param
 from pyviz_comms import extension as _pyviz_extension
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from ..core import (
+    Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
+    StoreOptions, Store
+)
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
@@ -870,6 +873,14 @@ class Dynamic(param.ParameterizedFunction):
          corresponding visualization should update this stream with
          range changes originating from the newly generated axes.""")
 
+    link_dataset = param.Boolean(default=True, doc="""
+         Determines whether the output of the operation should inherit
+         the .dataset property of the input to the operation. Helpful
+         for tracking data providence for user supplied functions,
+         which do not make use of the clone method. Should be disabled
+         for operations where the output is not derived from the input
+         and instead depends on some external state.""")
+
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
@@ -979,7 +990,11 @@ class Dynamic(param.ParameterizedFunction):
 
         def apply(element, *key, **kwargs):
             kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
-            return self._process(element, key, kwargs)
+            processed = self._process(element, key, kwargs)
+            if (self.p.link_dataset and isinstance(element, Dataset) and
+                isinstance(processed, Dataset) and processed._dataset is None):
+                processed._dataset = element.dataset
+            return processed
 
         def dynamic_operation(*key, **kwargs):
             key, obj = resolve(key, kwargs)
