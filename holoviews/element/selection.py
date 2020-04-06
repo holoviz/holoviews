@@ -17,6 +17,9 @@ class SelectionIndexExpr(object):
 
     _selection_streams = (Selection1D,)
 
+    def _empty_region(self):
+        return None
+
     def _get_selection_expr_for_stream_value(self, **kwargs):
         index = kwargs.get('index')
         index_cols = kwargs.get('index_cols')
@@ -116,6 +119,11 @@ class Selection2DExpr(object):
     _selection_dims = 2
 
     _selection_streams = (SelectionXY, Lasso)
+
+    def _empty_region(self):
+        from .geom import Rectangles
+        from .path import Path
+        return Rectangles([]) * Path([])
 
     def _get_selection(self, **kwargs):
         xcats, ycats = None, None
@@ -294,6 +302,14 @@ class Selection1DExpr(Selection2DExpr):
     _selection_dims = 1
 
     _inverted_expr = False
+
+    def _empty_region(self):
+        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
+        if ((invert_axes and not self._inverted_expr) or (not invert_axes and self._inverted_expr)):
+            region_el = HSpan
+        else:
+            region_el = VSpan
+        return NdOverlay({0: region_el()})
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)

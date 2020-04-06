@@ -65,7 +65,12 @@ class _base_link_selections(param.ParameterizedFunction):
         selection expressions in response to user interaction events
         """
         # Create stream that produces element that displays region of selection
-        if getattr(hvobj, "_selection_streams", ()):
+        if isinstance(hvobj, DynamicMap):
+            eltype = hvobj.type
+        else:
+            eltype = type(hvobj)
+
+        if getattr(eltype, "_selection_streams", ()):
             self._region_streams[hvobj] = _RegionElement()
 
         # Create SelectionExpr stream
@@ -411,12 +416,14 @@ class OverlaySelectionDisplay(SelectionDisplay):
             def update_region(element, region_element, colors, **kwargs):
                 unselected_color = colors[0]
                 if region_element is None:
-                    region_element = element._get_selection_expr_for_stream_value()[2]
+                    region_element = element._empty_region()
                 return self._style_region_element(region_element, unselected_color)
 
             streams = [region_stream, selection_streams.style_stream]
-            region = hvobj.clone(link=False).apply(update_region, streams)
-            if getattr(hvobj, '_selection_dims', None) == 1 or isinstance(hvobj, Histogram):
+            region = hvobj.clone(link=False).apply(update_region, streams, link_dataset=False)
+
+            eltype = hvobj.type if isinstance(hvobj, DynamicMap) else hvobj
+            if getattr(eltype, '_selection_dims', None) == 1 or issubclass(eltype, Histogram):
                 layers.insert(1, region)
             else:
                 layers.append(region)
