@@ -11,7 +11,7 @@ from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
 from .streams import SelectionExpr, PlotReset, Stream
-from .operation.element import function
+from .operation.element import function, method
 from .util import DynamicMap
 from .util.transform import dim
 
@@ -99,19 +99,10 @@ class _base_link_selections(param.ParameterizedFunction):
         from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
             callback = hvobj.callback
-            ninputs = len(callback.inputs)
-            if ninputs == 1:
-                child_hvobj = callback.inputs[0]
-                if callback.operation:
-                    next_op = {'op': callback.operation, 'kwargs': callback.operation_kwargs}
-                else:
-                    fn = function.instance(fn=callback.callable)
-                    next_op = {'op': fn, 'kwargs': callback.operation_kwargs}
-                new_operations = (next_op,) + operations
-                return self._selection_transform(child_hvobj, new_operations)
-            elif ninputs == 2:
-                return Overlay([self._selection_transform(el)
-                                for el in hvobj.callback.inputs]).collate()
+            if len(callback.inputs) == 2:
+                return Overlay([
+                    self._selection_transform(el) for el in callback.inputs
+                ]).collate()
 
             initialize_dynamic(hvobj)
             if issubclass(hvobj.type, Element):
@@ -398,31 +389,12 @@ class OverlaySelectionDisplay(SelectionDisplay):
         for layer_number in range(num_layers):
             streams = [selection_streams.exprs_stream]
             obj = hvobj.clone(link=False) if layer_number == 1 else hvobj
+            cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = obj.apply(
-                self._build_layer_callback, streams=streams,
+                self._build_layer_callback, streams=[cmap_stream]+streams,
                 layer_number=layer_number, per_element=True
             )
             layers.append(layer)
-
-        # Wrap in operations
-        for op in operations:
-            op, kws = op['op'], op['kwargs']
-            for layer_number in range(num_layers):
-                streams = list(op.streams)
-                cmap_stream = selection_streams.cmap_streams[layer_number]
-                kwargs = dict(kws)
-
-                # Handle cmap as an operation parameter
-                if 'cmap' in op.param or 'cmap' in kwargs:
-                    if layer_number == 0 or (op.cmap is None and kwargs.get('cmap') is None):
-                        streams += [cmap_stream]
-                    else:
-                        @param.depends(cmap=cmap_stream.param.cmap)
-                        def update_cmap(cmap, default=op.cmap, kw=kwargs.get('cmap')):
-                            return cmap or kw or default
-                        kwargs['cmap'] = update_cmap
-                new_op = op.instance(streams=streams)
-                layers[layer_number] = new_op(layers[layer_number], **kwargs)
 
         for layer_number in range(num_layers):
             layer = layers[layer_number]
@@ -450,8 +422,23 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 layers.append(region)
         return Overlay(layers).collate()
 
-    def _build_layer_callback(self, element, exprs, layer_number, **kwargs):
-        return self._select(element, exprs[layer_number], self._cache)
+    @classmethod
+    def _inject_cmap_in_pipeline(cls, pipeline, cmap):
+        operations = []
+        for op in pipeline.operations:
+            if hasattr(op, 'cmap'):
+                op = op.instance(cmap=cmap)
+            operations.append(op)
+        return pipeline.instance(operations=operations)
+
+    def _build_layer_callback(self, element, exprs, layer_number, cmap, **kwargs):
+        selection = self._select(element, exprs[layer_number], self._cache)
+        pipeline = element.pipeline
+        if cmap is not None:
+            pipeline = self._inject_cmap_in_pipeline(pipeline, cmap)
+        if element is not selection:
+            return pipeline(selection)
+        return element
 
     def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
         opts = {}
@@ -488,22 +475,20 @@ class OverlaySelectionDisplay(SelectionDisplay):
             try:
                 if dataset.interface.gridded:
                     if mask is None:
-                        mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
+                        mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=False)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 elif dataset.interface.multi:
                     if mask is None:
-                        mask = selection_expr.apply(dataset, expanded=False, flat=False, strict=True)
+                        mask = selection_expr.apply(dataset, expanded=False, flat=False, strict=False)
                     selection = dataset.clone(dataset.iloc[np.where(mask)[0]])
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
                     if mask is None:
-                        mask = selection_expr.apply(dataset, compute=False, strict=True)
+                        mask = selection_expr.apply(dataset, compute=False, strict=False)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:
                     if mask is None:
-                        mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=True)
+                        mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=False)
                     selection = dataset.select(selection_mask=mask)
-                element = element.pipeline(selection)
-                element._dataset = dataset
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
@@ -513,7 +498,9 @@ class OverlaySelectionDisplay(SelectionDisplay):
                 raise CallbackError("linked_selection aborted because it could not "
                                     "display selection for all elements: %s." % e)
             ds_cache[selection_expr] = mask
-        return element
+        else:
+            selection = element
+        return selection
 
 
 class ColorListSelectionDisplay(SelectionDisplay):
