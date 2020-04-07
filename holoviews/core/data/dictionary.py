@@ -230,7 +230,7 @@ class DictInterface(Interface):
         for vd in dataset.vdims:
             new_array = np.copy(dataset.data[vd.name])
             new_array[mask] = mask_value
-            masked[k] = new_array
+            masked[vd.name] = new_array
         return masked
 
 
