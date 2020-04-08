@@ -341,8 +341,6 @@ class Dataset(Element):
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
-        self.redim = Redim(self, mode='dataset')
-
         # Handle _pipeline property
         if input_pipeline is None:
             input_pipeline = chain_op.instance()
@@ -365,6 +363,9 @@ class Dataset(Element):
         elif isinstance(input_data, Dataset) and not dataset_provided and input_data._dataset:
             self._dataset = input_data._dataset.clone(dataset=None, pipeline=None)
 
+    @property
+    def redim(self):
+        return Redim(self, mode='dataset')
 
     @property
     def dataset(self):
