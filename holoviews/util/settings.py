@@ -142,6 +142,7 @@ class OutputSettings(KeywordSettings):
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'       : list_backends(),
+               'center'        : [True, False],
                'fig'           : list_formats('fig'),
                'holomap'       : list_formats('holomap'),
                'widgets'       : ['embed', 'live'],
@@ -162,6 +163,7 @@ class OutputSettings(KeywordSettings):
                                             'min-height', 'outline', 'float']}}
 
     defaults = OrderedDict([('backend'      , None),
+                            ('center'       , True),
                             ('fig'          , None),
                             ('holomap'      , None),
                             ('widgets'      , None),
@@ -180,7 +182,7 @@ class OutputSettings(KeywordSettings):
 
     # Remaining backend specific options renderer options
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
-                     'widget_mode', 'mode', 'widget_location']
+                     'widget_mode', 'mode', 'widget_location', 'center']
 
     options = OrderedDict()
     _backend_options = defaultdict(dict)
