@@ -215,13 +215,9 @@ class chain(Operation):
     def _process(self, view, key=None):
         processed = view
         for i, operation in enumerate(self.p.operations):
-            new = operation.process_element(processed, key,
-                                            input_ranges=self.p.input_ranges)
-            if i and isinstance(processed, Dataset):
-                processed.id = None
-                processed._dataset = None
-                del processed
-            processed = new
+            processed = operation.process_element(
+                processed, key, input_ranges=self.p.input_ranges
+            )
 
         if not self.p.group:
             return processed
