@@ -422,7 +422,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             streams = [region_stream, selection_streams.style_stream]
             region = hvobj.clone(link=False).apply(update_region, streams, link_dataset=False)
 
-            eltype = hvobj.type if isinstance(hvobj, DynamicMap) else hvobj
+            eltype = hvobj.type if isinstance(hvobj, DynamicMap) else type(hvobj)
             if getattr(eltype, '_selection_dims', None) == 1 or issubclass(eltype, Histogram):
                 layers.insert(1, region)
             else:
