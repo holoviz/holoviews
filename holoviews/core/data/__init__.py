@@ -361,7 +361,7 @@ class Dataset(Element):
         if input_dataset is not None:
             self._dataset = input_dataset.clone(dataset=None, pipeline=None)
         elif isinstance(input_data, Dataset) and not dataset_provided and input_data._dataset:
-            self._dataset = input_data._dataset.clone(dataset=None, pipeline=None)
+            self._dataset = input_data._dataset
 
     @property
     def redim(self):
@@ -379,7 +379,6 @@ class Dataset(Element):
             dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
-            dataset._dataset = None
             return dataset
         return self._dataset
 
