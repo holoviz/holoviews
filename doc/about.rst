@@ -5,7 +5,7 @@ HoloViews is an `open-source <https://github.com/holoviz/holoviews/blob/master/L
 
 HoloViews is part of the `HoloViz <https://holoviz.org>`_ family of tools. The `holoviz.org <https://holoviz.org>`_ website shows how to use HoloViews together with other libraries to solve complex problems, with detailed tutorials and examples. You can see a variety of projects using HoloViews at `examples.pyviz.org <https://examples.pyviz.org>`_, and you can compare HoloViews to other available tools at `pyviz.org <https://pyviz.org>`_.
 
-If you have any questions or usage issues visit the `HoloViews Discourse <https://discourse.holoviz.org/c/holoviews/>`_ site. If you are interested in contributing to HoloViews development to help address some of the `open issues <https://github.com/holoviz/holoviews/issues>`_.
+If you have any questions or usage issues visit the `HoloViews Discourse <https://discourse.holoviz.org/c/holoviews/>`_ site. If you are interested in contributing to HoloViews development to help address some of the `open issues <https://github.com/holoviz/holoviews/issues>`_, see our `developer instructions https://holoviews.org/index.html` to set up your development environment.
 
 If you like HoloViews and have built something you want to share, tweet a link or screenshot of your latest creation at @HoloViews, along with any other library you used (@Panel_org, @Datashader, @BokehPlots, @Matplotlib, etc.). Thanks!
 
