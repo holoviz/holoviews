@@ -362,10 +362,9 @@ class Dataset(Element):
         self._dataset = None
         if input_dataset is not None:
             self._dataset = input_dataset.clone(dataset=None, pipeline=None)
-        elif isinstance(input_data, Dataset) and not dataset_provided:
-            self._dataset = input_data._dataset
-        elif type(self) is Dataset:
-            self._dataset = self
+        elif isinstance(input_data, Dataset) and not dataset_provided and input_data._dataset:
+            self._dataset = input_data._dataset.clone(dataset=None, pipeline=None)
+
 
     @property
     def dataset(self):
@@ -373,13 +372,16 @@ class Dataset(Element):
         The Dataset that this object was created from
         """
         if self._dataset is None:
+            if type(self) is Dataset:
+                return self
             datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
             dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
+            dataset._dataset = None
             return dataset
-        else:
-            return self._dataset
+        return self._dataset
+
 
     @property
     def pipeline(self):

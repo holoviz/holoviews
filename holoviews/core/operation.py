@@ -135,7 +135,7 @@ class Operation(param.ParameterizedFunction):
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
                 and isinstance(element, Dataset)):
-            ret._dataset = element.dataset.clone()
+            ret._dataset = element.dataset.clone(dataset=None, pipeline=None)
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
