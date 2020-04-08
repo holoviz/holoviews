@@ -7,8 +7,11 @@ except ImportError:
 
 import types
 import copy
+import weakref
+
 import numpy as np
 import param
+
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
 from .. import util
@@ -320,6 +323,16 @@ class Dataset(Element):
         input_transforms = kwargs.pop('transforms', None)
 
         if isinstance(data, Element):
+            if 'kdims' in kwargs:
+                kwargs['kdims'] = [
+                    data.get_dimension(kd) if isinstance(kd, basestring) else kd
+                    for kd in kwargs['kdims']
+                ]
+            if 'kdims' in kwargs:
+                kwargs['vdims'] = [
+                    data.get_dimension(vd) if isinstance(vd, basestring) else vd
+                    for vd in kwargs['vdims']
+                ]
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
@@ -357,11 +370,12 @@ class Dataset(Element):
         self._transforms = input_transforms or []
 
         # Handle initializing the dataset property.
-        self._dataset = None
-        if input_dataset is not None:
-            self._dataset = input_dataset.clone(dataset=None, pipeline=None)
-        elif isinstance(input_data, Dataset) and not dataset_provided and input_data._dataset:
-            self._dataset = input_data._dataset
+        self._dataset = input_dataset
+        if self._dataset is None and isinstance(input_data, Dataset) and not dataset_provided:
+            if input_data.data is self.data:
+                self._dataset = {'kdims': input_data.kdims, 'vdims': input_data.vdims}
+            else:
+                self._dataset = Dataset(input_data, dataset=None, pipeline=None, transforms=None)
 
     @property
     def redim(self):
@@ -380,6 +394,8 @@ class Dataset(Element):
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
             return dataset
+        elif not isinstance(self._dataset, Dataset):
+            return Dataset(self, **self._dataset)
         return self._dataset
 
 
