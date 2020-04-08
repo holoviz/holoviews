@@ -68,13 +68,13 @@ The recommended way to install HoloViews is using the
 
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
-[Numpy](http://numpy.org) and [Param](https://param.pyviz.org).
+[Numpy](http://numpy.org) and [Param](https://param.holoviz.org).
 Additional installation and configuration options are described in the
 [user guide](http://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 You can also clone holoviews directly from GitHub and install it with:
 
-    git clone git://github.com/pyviz/holoviews.git
+    git clone git://github.com/holoviz/holoviews.git
     cd holoviews
     pip install -e .
 
