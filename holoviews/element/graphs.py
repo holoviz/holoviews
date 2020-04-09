@@ -801,7 +801,6 @@ class Chord(Graph):
                                 % type(edgepaths))
             self._edgepaths = edgepaths
         self._validate()
-        self.redim = RedimGraph(self, mode='dataset')
 
 
     @property
