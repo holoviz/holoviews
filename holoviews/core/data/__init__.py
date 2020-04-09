@@ -7,7 +7,6 @@ except ImportError:
 
 import types
 import copy
-import weakref
 
 import numpy as np
 import param
