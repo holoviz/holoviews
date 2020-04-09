@@ -324,12 +324,12 @@ class Dataset(Element):
         if isinstance(data, Element):
             if 'kdims' in kwargs:
                 kwargs['kdims'] = [
-                    data.get_dimension(kd) if isinstance(kd, basestring) else kd
+                    data.get_dimension(kd) if isinstance(kd, util.basestring) else kd
                     for kd in kwargs['kdims']
                 ]
             if 'kdims' in kwargs:
                 kwargs['vdims'] = [
-                    data.get_dimension(vd) if isinstance(vd, basestring) else vd
+                    data.get_dimension(vd) if isinstance(vd, util.basestring) else vd
                     for vd in kwargs['vdims']
                 ]
             pvals = util.get_param_values(data)
