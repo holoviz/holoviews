@@ -156,7 +156,11 @@ class Graph(Dataset, Element2D):
         if node_info is not None:
             self._add_node_info(node_info)
         self._validate()
-        self.redim = RedimGraph(self, mode='dataset')
+
+
+    @property
+    def redim(self):
+        return RedimGraph(self, mode='dataset')
 
 
     def _add_node_info(self, node_info):
