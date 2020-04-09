@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import datetime as dt
+
 from collections import defaultdict
 from functools import partial
 
@@ -102,7 +104,6 @@ class MessageCallback(object):
                 pass
         Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
                                if cb is not self}
-
 
     def reset(self):
         if self.handle_ids:
@@ -311,7 +312,9 @@ class ServerCallback(MessageCallback):
     """
 
     # Timeout before the first event is processed
-    debounce = 50
+    throttle_timeout = 50
+
+    throttle_scheme = 'debounce'
 
     _batched = []
 
@@ -319,7 +322,7 @@ class ServerCallback(MessageCallback):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
         self._prev_msg = None
-
+        self._last_event = dt.datetime.now()
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
@@ -344,28 +347,44 @@ class ServerCallback(MessageCallback):
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
 
-    def _schedule_callback(self, cb):
-        PeriodicCallback(callback=cb, period=self.debounce, count=1).start()
+    def _schedule_callback(self, cb, timeout=None):
+        timeout = self.throttle_timeout if timeout is None else timeout
+        PeriodicCallback(callback=cb, period=timeout, count=1).start()
 
+    @gen.coroutine
     def on_change(self, attr, old, new):
         """
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((attr, old, new))
+        self._queue.append((attr, old, new, dt.datetime.now()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_change)
 
+    @gen.coroutine
     def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append(event)
+        self._queue.append((event, dt.datetime.now()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_event)
+
+    def throttled(self):
+        prev_event = self._queue[-1][-1]
+        now = dt.datetime.now()
+        if self.throttle_scheme == 'throttle':
+            diff = (now-self._last_event).total_seconds()
+            if diff < (self.throttle_timeout/100.):
+                return self.throttle_timeout-(diff*100)
+        else:
+            diff = (now-prev_event).total_seconds()
+            if diff < (self.throttle_timeout/100.):
+                return self.throttle_timeout
+        return False
 
     @gen.coroutine
     def process_on_event(self):
@@ -375,9 +394,13 @@ class ServerCallback(MessageCallback):
         if not self._queue:
             self._active = False
             return
+        throttled = self.throttled()
+        if throttled:
+            self._schedule_callback(self._process_on_event, throttled)
+        self._last_event = dt.datetime.now()
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
-                                   for event in self._queue]).values())
+                                   for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
@@ -397,6 +420,11 @@ class ServerCallback(MessageCallback):
         elif self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
             self._schedule_callback(self.process_on_change)
             return # Skip until all batched events have arrived
+        throttled = self.throttled()
+        if throttled:
+            self._schedule_callback(self.process_on_change, throttled)
+            return
+        self.last_event = dt.datetime.now()
         self._queue = []
 
         msg = {}
@@ -414,6 +442,7 @@ class ServerCallback(MessageCallback):
             equal = msg == self._prev_msg
         except Exception:
             equal = False
+
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             self._prev_msg = msg
