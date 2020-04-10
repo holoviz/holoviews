@@ -15,7 +15,6 @@ from bokeh.models import (
     FreehandDrawTool, PointDrawTool
 )
 from panel.io.state import state
-from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
 from tornado import gen
 
