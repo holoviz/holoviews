@@ -19,6 +19,7 @@ import param
 from panel.config import config
 from panel.io.notebook import push
 from panel.io.state import state
+from panel.io.server import unlocked
 from pyviz_comms import JupyterComm
 
 from ..selection import NoOpSelectionDisplay
@@ -232,6 +233,7 @@ class Plot(param.Parameterized):
                         for d, k in zip(self.dimensions, key))
             stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
 
+
             self._trigger_refresh(stream_key)
             if self.top_level:
                 self.push()
@@ -248,7 +250,8 @@ class Plot(param.Parameterized):
         "Triggers update to a plot on a refresh event"
         # Update if not top-level, batched or an ElementPlot
         if not self.top_level or isinstance(self, GenericElementPlot):
-            self.update(key)
+            with unlocked():
+                self.update(key)
 
 
     def push(self):
