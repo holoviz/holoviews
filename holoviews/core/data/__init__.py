@@ -376,6 +376,8 @@ class Dataset(Element):
             else:
                 self._dataset = Dataset(input_data, dataset=None, pipeline=None,
                                         transforms=None, _validate_vdims=False)
+                if hasattr(self, '_binned'):
+                    self._dataset._binned = self._binned
 
     @property
     def redim(self):
@@ -390,7 +392,8 @@ class Dataset(Element):
             if type(self) is Dataset:
                 return self
             datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
-            dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
+            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
+                              _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
             return dataset
@@ -1161,12 +1164,6 @@ argument to specify a selection specification""")
                 data = self
                 if link:
                     overrides['plot_id'] = self._plot_id
-
-            if 'dataset' not in overrides:
-                overrides['dataset'] = self.dataset
-
-            if 'pipeline' not in overrides:
-                overrides['pipeline'] = self._pipeline
         elif self._in_method:
             if 'dataset' not in overrides:
                 overrides['dataset'] = self.dataset
