@@ -360,7 +360,7 @@ class Dataset(Element):
         init_op = factory.instance(
             output_type=type(self),
             args=[],
-            kwargs=kwargs,
+            kwargs=dict(kwargs, kdims=self.kdims, vdims=self.vdims),
         )
         self._pipeline = input_pipeline.instance(
             operations=input_pipeline.operations + [init_op],
@@ -374,7 +374,8 @@ class Dataset(Element):
             if input_data.data is self.data:
                 self._dataset = {'kdims': input_data.kdims, 'vdims': input_data.vdims}
             else:
-                self._dataset = Dataset(input_data, dataset=None, pipeline=None, transforms=None)
+                self._dataset = Dataset(input_data, dataset=None, pipeline=None,
+                                        transforms=None, _validate_vdims=False)
 
     @property
     def redim(self):
