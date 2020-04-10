@@ -474,7 +474,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
-            dataset = element.dataset.clone()
+            dataset = element.dataset
             try:
                 if dataset.interface.gridded:
                     mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
@@ -486,6 +486,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
                     mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=True)
                     selection = dataset.select(selection_mask=mask)
                 element = element.pipeline(selection)
+                element._dataset = dataset
             except KeyError as e:
                 key_error = str(e).replace('"', '').replace('.', '')
                 raise CallbackError("linked_selection aborted because it could not "
