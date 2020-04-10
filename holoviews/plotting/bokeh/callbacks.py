@@ -5,8 +5,9 @@ import datetime as dt
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import panel as pn
+import param
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ToolbarBox, Range1d,
@@ -309,12 +310,22 @@ class ServerCallback(MessageCallback):
     resolves the requested attributes on the Python end and then hands
     the msg off to the general on_msg handler, which will update the
     Stream(s) attached to the callback.
+
+    The ServerCallback supports three different throttling modes:
+
+    - adaptive (default): The callback adapts the throttling timeout
+      depending on the time taken to process each message. 
+    - throttle: Uses the fixed throttle_timeout as the minimum amount
+      of time between events.
+    - debounce: Processes the message only when no new event has been
+      received within the throttle_timeout duration.
     """
 
     # Timeout before the first event is processed
     throttle_timeout = 50
 
-    throttle_scheme = 'debounce'
+    # The 
+    throttling_scheme = 'adaptive'
 
     _batched = []
 
@@ -322,7 +333,8 @@ class ServerCallback(MessageCallback):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
         self._prev_msg = None
-        self._last_event = dt.datetime.now()
+        self._last_event = dt.datetime.now().timestamp()
+        self._history = []
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
@@ -348,42 +360,49 @@ class ServerCallback(MessageCallback):
         return {'id': model.ref['id'], 'value': resolved}
 
     def _schedule_callback(self, cb, timeout=None):
-        timeout = self.throttle_timeout if timeout is None else timeout
-        PeriodicCallback(callback=cb, period=timeout, count=1).start()
+        if timeout is not None:
+            pass
+        elif self._history and self.throttling_scheme == 'adaptive':
+            timeout = np.array(self._history).mean()*1000
+        else:
+            timeout = self.throttle_timeout
+        pn.state.curdoc.add_timeout_callback(cb, timeout)
 
-    @gen.coroutine
     def on_change(self, attr, old, new):
         """
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((attr, old, new, dt.datetime.now()))
+        self._queue.append((attr, old, new, dt.datetime.now().timestamp()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_change)
 
-    @gen.coroutine
     def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((event, dt.datetime.now()))
+        self._queue.append((event, dt.datetime.now().timestamp()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_event)
 
     def throttled(self):
-        prev_event = self._queue[-1][-1]
-        now = dt.datetime.now()
-        if self.throttle_scheme == 'throttle':
-            diff = (now-self._last_event).total_seconds()
-            if diff < (self.throttle_timeout/100.):
-                return self.throttle_timeout-(diff*100)
+        now = dt.datetime.now().timestamp()
+        timeout = self.throttle_timeout/1000.
+        if self.throttling_scheme in ('throttle', 'adaptive'):
+            diff = (now-self._last_event)
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = np.array(self._history).mean()
+            if diff < timeout:
+                return int((timeout-diff)*1000)
         else:
-            diff = (now-prev_event).total_seconds()
-            if diff < (self.throttle_timeout/100.):
+            prev_event = self._queue[-1][-1]
+            diff = (now-prev_event)
+            if diff < timeout:
                 return self.throttle_timeout
+        self._last_event = dt.datetime.now().timestamp()
         return False
 
     @gen.coroutine
@@ -397,7 +416,7 @@ class ServerCallback(MessageCallback):
         throttled = self.throttled()
         if throttled:
             self._schedule_callback(self._process_on_event, throttled)
-        self._last_event = dt.datetime.now()
+            return
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
                                    for event, dt in self._queue]).values())
@@ -410,6 +429,7 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
+        self._history = self._history[-9:] + [dt.datetime.now().timestamp()-self._last_event]
         self._schedule_callback(self.process_on_event)
 
     @gen.coroutine
@@ -417,14 +437,10 @@ class ServerCallback(MessageCallback):
         if not self._queue:
             self._active = False
             return
-        elif self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
-            self._schedule_callback(self.process_on_change)
-            return # Skip until all batched events have arrived
         throttled = self.throttled()
         if throttled:
             self._schedule_callback(self.process_on_change, throttled)
             return
-        self.last_event = dt.datetime.now()
         self._queue = []
 
         msg = {}
@@ -445,10 +461,10 @@ class ServerCallback(MessageCallback):
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
+            self._history = self._history[-9:] + [dt.datetime.now().timestamp()-self._last_event]
             self._prev_msg = msg
 
         self._schedule_callback(self.process_on_change)
-
 
     def set_server_callback(self, handle):
         """
