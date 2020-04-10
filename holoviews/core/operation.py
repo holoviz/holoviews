@@ -135,10 +135,7 @@ class Operation(param.ParameterizedFunction):
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
             and isinstance(element, Dataset)):
-            if isinstance(element._dataset, dict):
-                ret._dataset = element.dataset
-            else:
-                ret._dataset = element._dataset
+            ret._dataset = element.dataset
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
