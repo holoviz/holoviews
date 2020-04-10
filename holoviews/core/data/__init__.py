@@ -1161,12 +1161,6 @@ argument to specify a selection specification""")
                 data = self
                 if link:
                     overrides['plot_id'] = self._plot_id
-
-            if 'dataset' not in overrides:
-                overrides['dataset'] = self.dataset
-
-            if 'pipeline' not in overrides:
-                overrides['pipeline'] = self._pipeline
         elif self._in_method:
             if 'dataset' not in overrides:
                 overrides['dataset'] = self.dataset

@@ -474,7 +474,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
         from .element import Curve, Spread
         from .util.transform import dim
         if isinstance(selection_expr, dim):
-            dataset = element.dataset
+            dataset = element.dataset.clone()
             try:
                 if dataset.interface.gridded:
                     mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=True)
