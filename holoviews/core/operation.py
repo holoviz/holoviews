@@ -134,13 +134,14 @@ class Operation(param.ParameterizedFunction):
             ret = hook(self, ret, **kwargs)
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
-                and isinstance(element, Dataset)):
-            ret._dataset = element.dataset.clone()
+            and isinstance(element, Dataset)):
+            ret._dataset = element.dataset
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
                 ],
             )
+            ret._transforms = element._transforms
         return ret
 
 
