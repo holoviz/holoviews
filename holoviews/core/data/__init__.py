@@ -395,7 +395,7 @@ class Dataset(Element):
                 dataset._binned = self._binned
             return dataset
         elif not isinstance(self._dataset, Dataset):
-            return Dataset(self, **self._dataset)
+            return Dataset(self, _validate_vdims=False, **self._dataset)
         return self._dataset
 
 
