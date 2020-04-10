@@ -314,20 +314,20 @@ class ServerCallback(MessageCallback):
     The ServerCallback supports three different throttling modes:
 
     - adaptive (default): The callback adapts the throttling timeout
-      depending on the time taken to process each message. 
-    - throttle: Uses the fixed throttle_timeout as the minimum amount
+      depending on the rolling mean of the time taken to process each
+      message. The rolling window is controlled by the `adaptive_window`
+      value.
+    - throttle: Uses the fixed `throttle_timeout` as the minimum amount
       of time between events.
     - debounce: Processes the message only when no new event has been
-      received within the throttle_timeout duration.
+      received within the `throttle_timeout` duration.
     """
 
-    # Timeout before the first event is processed
+    adaptive_window = 3
+
     throttle_timeout = 50
 
-    # The 
     throttling_scheme = 'adaptive'
-
-    _batched = []
 
     def __init__(self, plot, streams, source, **params):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
@@ -429,7 +429,9 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
-        self._history = self._history[-9:] + [dt.datetime.now().timestamp()-self._last_event]
+        w = self.adaptive_window-1
+        diff = dt.datetime.now().timestamp()-self._last_event
+        self._history = self._history[-w:] + [diff]
         self._schedule_callback(self.process_on_event)
 
     @gen.coroutine
@@ -461,7 +463,9 @@ class ServerCallback(MessageCallback):
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
-            self._history = self._history[-9:] + [dt.datetime.now().timestamp()-self._last_event]
+            w = self.adaptive_window-1
+            diff = dt.datetime.now().timestamp()-self._last_event
+            self._history = self._history[-w:] + [diff]
             self._prev_msg = msg
 
         self._schedule_callback(self.process_on_change)
@@ -849,8 +853,6 @@ class RangeXYCallback(Callback):
                   'y1': 'y_range.attributes.end'}
     models = ['x_range', 'y_range']
     on_changes = ['start', 'end']
-
-    _batched = on_changes
 
     def _process_msg(self, msg):
         data = {}
