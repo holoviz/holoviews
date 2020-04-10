@@ -324,7 +324,7 @@ class ServerCallback(MessageCallback):
 
     adaptive_window = 3
 
-    throttle_timeout = 50
+    throttle_timeout = 100
 
     throttling_scheme = 'adaptive'
 
