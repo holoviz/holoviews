@@ -358,14 +358,19 @@ class ServerCallback(MessageCallback):
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
 
-    def _schedule_callback(self, cb, timeout=None):
+    def _schedule_callback(self, cb, timeout=None, offset=True):
         if timeout is not None:
             pass
-        elif self._history and self.throttling_scheme == 'adaptive':
-            timeout = np.array(self._history).mean()*1000
         else:
-            timeout = self.throttle_timeout
-        pn.state.curdoc.add_timeout_callback(cb, timeout)
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = int(np.array(self._history).mean()*1000)
+            else:
+                timeout = self.throttle_timeout
+            if self.throttling_scheme != 'debounce' and offset:
+                # Subtract the time taken since event started
+                diff = time.time()-self._last_event
+                timeout = max(timeout-(diff*1000), 50)
+        pn.state.curdoc.add_timeout_callback(cb, int(timeout))
 
     def on_change(self, attr, old, new):
         """
@@ -375,7 +380,7 @@ class ServerCallback(MessageCallback):
         self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
             self._active = True
-            self._schedule_callback(self.process_on_change)
+            self._schedule_callback(self.process_on_change, offset=False)
 
     def on_event(self, event):
         """
@@ -385,7 +390,7 @@ class ServerCallback(MessageCallback):
         self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
             self._active = True
-            self._schedule_callback(self.process_on_event)
+            self._schedule_callback(self.process_on_event, offset=False)
 
     def throttled(self):
         now = time.time()
@@ -414,7 +419,7 @@ class ServerCallback(MessageCallback):
             return
         throttled = self.throttled()
         if throttled:
-            self._schedule_callback(self._process_on_event, throttled)
+            self._schedule_callback(self.process_on_event, throttled)
             return
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
