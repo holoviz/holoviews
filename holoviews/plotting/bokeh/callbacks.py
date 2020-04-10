@@ -1,6 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
-import datetime as dt
+import time
 
 from collections import defaultdict
 from functools import partial
@@ -332,7 +332,7 @@ class ServerCallback(MessageCallback):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
         self._prev_msg = None
-        self._last_event = dt.datetime.now().timestamp()
+        self._last_event = time.time()
         self._history = []
 
     @classmethod
@@ -372,7 +372,7 @@ class ServerCallback(MessageCallback):
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((attr, old, new, dt.datetime.now().timestamp()))
+        self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_change)
@@ -382,13 +382,13 @@ class ServerCallback(MessageCallback):
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((event, dt.datetime.now().timestamp()))
+        self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
             self._active = True
             self._schedule_callback(self.process_on_event)
 
     def throttled(self):
-        now = dt.datetime.now().timestamp()
+        now = time.time()
         timeout = self.throttle_timeout/1000.
         if self.throttling_scheme in ('throttle', 'adaptive'):
             diff = (now-self._last_event)
@@ -401,7 +401,7 @@ class ServerCallback(MessageCallback):
             diff = (now-prev_event)
             if diff < timeout:
                 return self.throttle_timeout
-        self._last_event = dt.datetime.now().timestamp()
+        self._last_event = time.time()
         return False
 
     @gen.coroutine
@@ -429,7 +429,7 @@ class ServerCallback(MessageCallback):
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
         w = self.adaptive_window-1
-        diff = dt.datetime.now().timestamp()-self._last_event
+        diff = time.time()-self._last_event
         self._history = self._history[-w:] + [diff]
         self._schedule_callback(self.process_on_event)
 
@@ -463,7 +463,7 @@ class ServerCallback(MessageCallback):
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
             w = self.adaptive_window-1
-            diff = dt.datetime.now().timestamp()-self._last_event
+            diff = time.time()-self._last_event
             self._history = self._history[-w:] + [diff]
             self._prev_msg = msg
 
