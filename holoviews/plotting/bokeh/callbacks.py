@@ -1,10 +1,13 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import time
+
 from collections import defaultdict
 from functools import partial
 
-import param
 import numpy as np
+import panel as pn
+import param
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, ToolbarBox, Range1d,
@@ -12,7 +15,6 @@ from bokeh.models import (
     FreehandDrawTool, PointDrawTool
 )
 from panel.io.state import state
-from panel.callbacks import PeriodicCallback
 from pyviz_comms import JS_CALLBACK
 from tornado import gen
 
@@ -102,7 +104,6 @@ class MessageCallback(object):
                 pass
         Callback._callbacks = {k: cb for k, cb in Callback._callbacks.items()
                                if cb is not self}
-
 
     def reset(self):
         if self.handle_ids:
@@ -308,18 +309,31 @@ class ServerCallback(MessageCallback):
     resolves the requested attributes on the Python end and then hands
     the msg off to the general on_msg handler, which will update the
     Stream(s) attached to the callback.
+
+    The ServerCallback supports three different throttling modes:
+
+    - adaptive (default): The callback adapts the throttling timeout
+      depending on the rolling mean of the time taken to process each
+      message. The rolling window is controlled by the `adaptive_window`
+      value.
+    - throttle: Uses the fixed `throttle_timeout` as the minimum amount
+      of time between events.
+    - debounce: Processes the message only when no new event has been
+      received within the `throttle_timeout` duration.
     """
 
-    # Timeout before the first event is processed
-    debounce = 50
+    adaptive_window = 3
 
-    _batched = []
+    throttle_timeout = 100
+
+    throttling_scheme = 'adaptive'
 
     def __init__(self, plot, streams, source, **params):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
         self._prev_msg = None
-
+        self._last_event = time.time()
+        self._history = []
 
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
@@ -344,28 +358,56 @@ class ServerCallback(MessageCallback):
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
 
-    def _schedule_callback(self, cb):
-        PeriodicCallback(callback=cb, period=self.debounce, count=1).start()
+    def _schedule_callback(self, cb, timeout=None, offset=True):
+        if timeout is not None:
+            pass
+        else:
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = int(np.array(self._history).mean()*1000)
+            else:
+                timeout = self.throttle_timeout
+            if self.throttling_scheme != 'debounce' and offset:
+                # Subtract the time taken since event started
+                diff = time.time()-self._last_event
+                timeout = max(timeout-(diff*1000), 50)
+        pn.state.curdoc.add_timeout_callback(cb, int(timeout))
 
     def on_change(self, attr, old, new):
         """
         Process change events adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append((attr, old, new))
+        self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
             self._active = True
-            self._schedule_callback(self.process_on_change)
+            self._schedule_callback(self.process_on_change, offset=False)
 
     def on_event(self, event):
         """
         Process bokeh UIEvents adding timeout to process multiple concerted
         value change at once rather than firing off multiple plot updates.
         """
-        self._queue.append(event)
+        self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
             self._active = True
-            self._schedule_callback(self.process_on_event)
+            self._schedule_callback(self.process_on_event, offset=False)
+
+    def throttled(self):
+        now = time.time()
+        timeout = self.throttle_timeout/1000.
+        if self.throttling_scheme in ('throttle', 'adaptive'):
+            diff = (now-self._last_event)
+            if self._history and self.throttling_scheme == 'adaptive':
+                timeout = np.array(self._history).mean()
+            if diff < timeout:
+                return int((timeout-diff)*1000)
+        else:
+            prev_event = self._queue[-1][-1]
+            diff = (now-prev_event)
+            if diff < timeout:
+                return self.throttle_timeout
+        self._last_event = time.time()
+        return False
 
     @gen.coroutine
     def process_on_event(self):
@@ -375,9 +417,13 @@ class ServerCallback(MessageCallback):
         if not self._queue:
             self._active = False
             return
+        throttled = self.throttled()
+        if throttled:
+            self._schedule_callback(self.process_on_event, throttled)
+            return
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
-                                   for event in self._queue]).values())
+                                   for event, dt in self._queue]).values())
         self._queue = []
 
         # Process event types
@@ -387,6 +433,9 @@ class ServerCallback(MessageCallback):
                 model_obj = self.plot_handles.get(self.models[0])
                 msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
+        w = self.adaptive_window-1
+        diff = time.time()-self._last_event
+        self._history = self._history[-w:] + [diff]
         self._schedule_callback(self.process_on_event)
 
     @gen.coroutine
@@ -394,9 +443,10 @@ class ServerCallback(MessageCallback):
         if not self._queue:
             self._active = False
             return
-        elif self._batched and not all(b in [q[0] for q in self._queue] for b in self._batched):
-            self._schedule_callback(self.process_on_change)
-            return # Skip until all batched events have arrived
+        throttled = self.throttled()
+        if throttled:
+            self._schedule_callback(self.process_on_change, throttled)
+            return
         self._queue = []
 
         msg = {}
@@ -414,12 +464,15 @@ class ServerCallback(MessageCallback):
             equal = msg == self._prev_msg
         except Exception:
             equal = False
+
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
+            w = self.adaptive_window-1
+            diff = time.time()-self._last_event
+            self._history = self._history[-w:] + [diff]
             self._prev_msg = msg
 
         self._schedule_callback(self.process_on_change)
-
 
     def set_server_callback(self, handle):
         """
@@ -804,8 +857,6 @@ class RangeXYCallback(Callback):
                   'y1': 'y_range.attributes.end'}
     models = ['x_range', 'y_range']
     on_changes = ['start', 'end']
-
-    _batched = on_changes
 
     def _process_msg(self, msg):
         data = {}
