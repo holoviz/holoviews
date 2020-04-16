@@ -1266,7 +1266,7 @@ def is_number(obj):
 
 
 def is_int(obj, int_like=False):
-    real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', None) in 'ui'
+    real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', 'o') in 'ui'
     if real_int or (int_like and hasattr(obj, 'is_integer') and obj.is_integer()):
         return True
     return False
