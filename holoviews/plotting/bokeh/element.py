@@ -1615,7 +1615,7 @@ class ColorbarPlot(ElementPlot):
         An explicit override of the color bar label, if set takes precedence
         over the title key in colorbar_opts.""")
 
-    clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
+    clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
@@ -1723,8 +1723,16 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         if eldim:
             # check if there's an actual value (not np.nan)
-            if dim_name in ranges:
+            if all(util.isfinite(cl) for cl in self.clim):
+                low, high = self.clim
+            elif dim_name in ranges:
                 low, high = ranges[dim_name]['combined']
+                dlow, dhigh = ranges[dim_name]['data']
+                if (util.is_int(low, int_like=True) and
+                    util.is_int(high, int_like=True) and
+                    util.is_int(dlow) and
+                    util.is_int(dhigh)):
+                    low, high = int(low), int(high)
             elif isinstance(eldim, dim):
                 low, high = np.nan, np.nan
             else:
@@ -1732,10 +1740,8 @@ class ColorbarPlot(ElementPlot):
             if self.symmetric:
                 sym_max = max(abs(low), high)
                 low, high = -sym_max, sym_max
-            if util.isfinite(self.clim[0]):
-                low = self.clim[0]
-            if util.isfinite(self.clim[1]):
-                high = self.clim[1]
+            low = self.clim[0] if util.isfinite(self.clim[0]) else low
+            high = self.clim[1] if util.isfinite(self.clim[1]) else high
         else:
             low, high = None, None
 
@@ -1832,7 +1838,20 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
-            colormapper = LogColorMapper if self.logz else LinearColorMapper
+            if self.logz:
+                colormapper = LogColorMapper
+                if util.is_int(low) and util.is_int(high) and low == 0:
+                    low = 1
+                    if 'min' not in colors:
+                        colors['min'] = 'rgba(0, 0, 0, 0)'
+                elif util.is_number(low) and low == 0:
+                    self.param.warning(
+                        "Log color mapper lower bound is 0, ensure you "
+                        "set a non-zero lower bound on the color dimension "
+                        "or using the `clim` option."
+                    )
+            else:
+                colormapper = LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)

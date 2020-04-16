@@ -1265,6 +1265,12 @@ def is_number(obj):
     else: return False
 
 
+def is_int(obj, int_like=False):
+    real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype'), 'kind') in 'ui'
+    if real_int or (int_like and hasattr(obj, 'is_integer') and obj.is_integer()):
+        return True
+    return False
+
 class ProgressIndicator(param.Parameterized):
     """
     Baseclass for any ProgressIndicator that indicates progress
