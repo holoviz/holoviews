@@ -98,6 +98,9 @@ class Renderer(Exporter):
     and the Renderer turns the final plotting state into output.
     """
 
+    center = param.Boolean(default=True, doc="""
+        Whether to center the plot""")
+
     backend = param.String(doc="""
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
@@ -416,7 +419,7 @@ class Renderer(Exporter):
             widget_type = 'individual'
             widget_location = self_or_cls.widget_location or 'right'
 
-        layout = HoloViewsPane(plot, widget_type=widget_type, center=True,
+        layout = HoloViewsPane(plot, widget_type=widget_type, center=self_or_cls.center,
                                widget_location=widget_location, renderer=self_or_cls)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):

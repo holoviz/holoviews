@@ -226,11 +226,11 @@ class DictInterface(Interface):
 
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
-        masked = OrderedDict()
-        for k, v in dataset.data.items():
-            new_array = np.copy(dataset.data[k])
+        masked = OrderedDict(dataset.data)
+        for vd in dataset.vdims:
+            new_array = np.copy(dataset.data[vd.name])
             new_array[mask] = mask_value
-            masked[k] = new_array
+            masked[vd.name] = new_array
         return masked
 
 

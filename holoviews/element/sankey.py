@@ -11,7 +11,7 @@ from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
 from ..core.util import OrderedDict, unique_array, RecursionError, get_param_values
-from .graphs import Graph, Nodes, EdgePaths, redim_graph
+from .graphs import Graph, Nodes, EdgePaths
 from .util import quadratic_bezier
 
 
@@ -361,7 +361,6 @@ class Sankey(Graph):
             self._edgepaths = edgepaths
             self._sankey = sankey_graph
         self._validate()
-        self.redim = redim_graph(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):

@@ -263,7 +263,8 @@ class PandasInterface(Interface):
     @classmethod
     def mask(cls, dataset, mask, mask_value=np.nan):
         masked = dataset.data.copy()
-        masked[mask] = mask_value
+        cols = [vd.name for vd in dataset.vdims]
+        masked.loc[mask, cols] = mask_value
         return masked
 
 

@@ -853,10 +853,18 @@ class Dimensioned(LabelledData):
         self._settings = None
 
         # Instantiate accessors
-        self.apply = Apply(self)
-        self.opts = Opts(self)
-        self.redim = Redim(self)
 
+    @property
+    def apply(self):
+        return Apply(self)
+
+    @property
+    def opts(self):
+        return Opts(self)
+
+    @property
+    def redim(self):
+        return Redim(self)
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input

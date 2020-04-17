@@ -210,13 +210,14 @@ class chain(Operation):
 
     operations = param.List(default=[], class_=Operation, doc="""
        A list of Operations (or Operation instances)
-       that are applied on the input from left to right..""")
+       that are applied on the input from left to right.""")
 
     def _process(self, view, key=None):
         processed = view
-        for operation in self.p.operations:
-            processed = operation.process_element(processed, key,
-                                                  input_ranges=self.p.input_ranges)
+        for i, operation in enumerate(self.p.operations):
+            processed = operation.process_element(
+                processed, key, input_ranges=self.p.input_ranges
+            )
 
         if not self.p.group:
             return processed

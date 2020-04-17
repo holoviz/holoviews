@@ -39,8 +39,10 @@ class HoloMap(UniformNdMapping, Overlayable):
 
     def __init__(self, initial_items=None, kdims=None, group=None, label=None, **params):
         super(HoloMap, self).__init__(initial_items, kdims, group, label, **params)
-        self.opts = Opts(self, mode='holomap')
 
+    @property
+    def opts(self):
+        return Opts(self, mode='holomap')
 
     def overlay(self, dimensions=None, **kwargs):
         """Group by supplied dimension(s) and overlay each group
@@ -892,8 +894,6 @@ class DynamicMap(HoloMap):
 
         super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
 
-        self.opts = Opts(self, mode='dynamicmap')
-
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
@@ -911,8 +911,15 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
-        self.redim = Redim(self, mode='dynamic')
         self.periodic = periodic(self)
+
+    @property
+    def opts(self):
+        return Opts(self, mode='dynamicmap')
+
+    @property
+    def redim(self):
+        return Redim(self, mode='dynamic')
 
     @property
     def unbounded(self):
