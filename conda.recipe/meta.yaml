@@ -29,9 +29,9 @@ requirements:
     {% for dep in sdata.get('install_requires',{}) %}
     {% if "panel" not in dep %}
     - {{ dep }}
-	{% endif %}
+    {% endif %}
     {% endfor %}
-    - panel >=0.7
+    - panel >=0.8
     {% for dep in sdata['extras_require']['recommended'] %}
     - {{ dep }}
     {% endfor %}
