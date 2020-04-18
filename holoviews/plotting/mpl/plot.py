@@ -761,6 +761,9 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
+    suptitle_y = param.Number(default=0.98, doc="""
+        The y location of the layout title in figure coordinates.""")
+
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
 
     # Whether to enable fix for non-square figures
@@ -1097,7 +1100,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         title_obj = None
         title = self._format_title(key)
         if self.show_title and len(self.coords) > 1 and title:
-            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'),
+                                                     y=self.suptitle_y)
             self.handles['title'] = title_obj
             self.handles['bbox_extra_artists'] += [title_obj]
 
