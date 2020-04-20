@@ -22,7 +22,10 @@ requirements:
   build:
     - python {{ sdata['python_requires'] }}
     {% for dep in sdata['extras_require']['build'] %}
-    - {{ dep }}
+    {% if "python_version<" not in dep %}
+    {% set dep_parts = dep.split(';') %}
+    - {{ dep_parts[0]|trim }}
+    {% endif %}
     {% endfor %}
   run:
     - python {{ sdata['python_requires'] }}
@@ -33,7 +36,10 @@ requirements:
     {% endif %}
     {% endfor %}
     {% for dep in sdata['extras_require']['recommended'] %}
-    - {{ dep }}
+    {% if "python_version<" not in dep %}
+    {% set dep_parts = dep.split(';') %}
+    - {{ dep_parts[0]|trim }}
+    {% endif %}
     {% endfor %}
 
 test:
