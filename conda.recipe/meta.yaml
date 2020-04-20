@@ -29,7 +29,7 @@ requirements:
     {% for dep in sdata.get('install_requires',{}) %}
     {% if "python_version<" not in dep %}
     {% set dep_parts = dep.split(';') %}
-    - {{ dep_parts[0] }}
+    - {{ dep_parts[0]|trim }}
     {% endif %}
     {% endfor %}
     {% for dep in sdata['extras_require']['recommended'] %}
