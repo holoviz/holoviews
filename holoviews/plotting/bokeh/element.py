@@ -1843,6 +1843,7 @@ class ColorbarPlot(ElementPlot):
                 if util.is_int(low) and util.is_int(high) and low == 0:
                     low = 1
                     if 'min' not in colors:
+                        # Make integer 0 be transparent
                         colors['min'] = 'rgba(0, 0, 0, 0)'
                 elif util.is_number(low) and low == 0:
                     self.param.warning(

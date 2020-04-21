@@ -1266,6 +1266,18 @@ def is_number(obj):
 
 
 def is_int(obj, int_like=False):
+    """
+    Checks for int types including the native Python type and NumPy-like objects
+
+    Args:
+        obj: Object to check for integer type
+        int_like (boolean): Check for float types with integer value
+
+    Returns:
+         Boolean indicating whether the supplied value is of integer type.
+"""
+    
+    
     real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', 'o') in 'ui'
     if real_int or (int_like and hasattr(obj, 'is_integer') and obj.is_integer()):
         return True
