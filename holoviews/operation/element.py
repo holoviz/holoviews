@@ -169,8 +169,11 @@ class apply_when(param.ParameterizedFunction):
             return selected.iloc[:0]
 
     def __call__(self, obj, **params):
-        self.set_param(**params)
-        streams = [RangeXY()]
+        if 'streams' in params:
+            streams = params.pop('streams')
+        else:
+            streams = [RangeXY()]
+        self.param.set_param(**params)
         if not self.predicate:
             raise ValueError(
                 'Must provide a predicate function to determine when '
