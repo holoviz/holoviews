@@ -30,7 +30,7 @@ renderer = hv.renderer('bokeh')
 opts.defaults(
     opts.Curve(xaxis=None, yaxis=None, show_grid=False, show_frame=False,
                color='orangered', framewise=True, width=100),
-    opts.Image(width=800, height=400, shared_axes=False, logz=True,
+    opts.Image(width=800, height=400, shared_axes=False, logz=True, colorbar=True,
                xaxis=None, yaxis=None, axiswise=True, bgcolor='black'),
     opts.HLine(color='white', line_width=1),
     opts.Layout(shared_axes=False),
