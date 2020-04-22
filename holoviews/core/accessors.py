@@ -153,7 +153,9 @@ class Apply(object):
             if not len(samples):
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
-                apply_function, streams, link_inputs, dynamic, **kwargs)
+                apply_function, streams, link_inputs, link_dataset,
+                dynamic, per_element, **kwargs
+            )
 
         if isinstance(apply_function, util.basestring):
             args = kwargs.pop('_method_args', ())

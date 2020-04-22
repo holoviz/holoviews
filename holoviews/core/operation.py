@@ -195,6 +195,7 @@ class Operation(param.ParameterizedFunction):
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
         kwargs['per_element'] = self._per_element
+        kwargs['link_dataset'] = self._propagate_dataset
         return element.apply(self, **kwargs)
 
 

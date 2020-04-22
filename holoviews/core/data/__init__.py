@@ -1169,11 +1169,9 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        new_dataset = super(Dataset, self).clone(
+        return super(Dataset, self).clone(
             data, shared_data, new_type, *args, **overrides
         )
-
-        return new_dataset
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support
