@@ -92,9 +92,7 @@ class _base_link_selections(param.ParameterizedFunction):
         self.param.set_param(**kwargs)
 
         # Perform transform
-        hvobj_selection = self._selection_transform(hvobj.clone(link=False))
-
-        return hvobj_selection
+        return self._selection_transform(hvobj.clone())
 
     def _selection_transform(self, hvobj, operations=()):
         """
