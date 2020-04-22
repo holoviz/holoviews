@@ -679,6 +679,12 @@ class Params(Stream):
             for _, group in groupby(sorted(parameters, key=keyfn)):
                 group = list(group)
                 group[0].owner.param.watch(self._watcher, [p.name for p in group])
+        if watch == False:
+            # Subscribe to parameters
+            keyfn = lambda x: id(x.owner)
+            for _, group in groupby(sorted(parameters, key=keyfn)):
+                group = list(group)
+                group[0].owner.param.watch(self._watcher, [p.name for p in group])
 
     @classmethod
     def from_params(cls, params, **kwargs):
