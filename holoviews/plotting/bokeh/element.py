@@ -1838,6 +1838,7 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
+            colormapper = LinearColorMapper
             if self.logz:
                 colormapper = LogColorMapper
                 if util.is_int(low) and util.is_int(high) and low == 0:
@@ -1845,14 +1846,13 @@ class ColorbarPlot(ElementPlot):
                     if 'min' not in colors:
                         # Make integer 0 be transparent
                         colors['min'] = 'rgba(0, 0, 0, 0)'
-                elif util.is_number(low) and low == 0:
+                elif util.is_number(low) and low <= 0:
                     self.param.warning(
-                        "Log color mapper lower bound is 0, ensure you "
-                        "set a non-zero lower bound on the color dimension "
-                        "or using the `clim` option."
+                        "Log color mapper lower bound <= 0 and will not "
+                        "render corrrectly. Ensure you set a positive "
+                        "lower bound on the color dimension or using "
+                        "the `clim` option."
                     )
-            else:
-                colormapper = LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)
