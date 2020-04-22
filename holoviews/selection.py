@@ -11,7 +11,6 @@ from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
 from .streams import SelectionExpr, PlotReset, Stream
-from .operation.element import function, method
 from .util import DynamicMap
 from .util.transform import dim
 
