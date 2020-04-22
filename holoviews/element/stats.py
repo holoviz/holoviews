@@ -45,10 +45,12 @@ class StatisticsElement(Dataset, Element2D):
         from . import Dataset
         if self._dataset is None:
             datatype = list(unique_iterator(self.datatype+Dataset.datatype))
-            dataset = Dataset(self, vdims=[], datatype=datatype)
+            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
+                              vdims=[], datatype=datatype)
             return dataset
-        else:
-            return self._dataset
+        elif not isinstance(self._dataset, Dataset):
+            return Dataset(self, _validate_vdims=False, **self._dataset)
+        return self._dataset
 
 
     def range(self, dim, data_range=True, dimension_range=True):
