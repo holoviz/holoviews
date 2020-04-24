@@ -81,13 +81,13 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         else:
             self.assertEqual(yaxis.axis_label_text_font_size, '26px')
             self.assertEqual(yaxis.major_label_text_font_size, '22px')
-        
+
     def test_element_xaxis_top(self):
         curve = Curve(range(10)).options(xaxis='top')
         plot = bokeh_renderer.get_plot(curve)
         xaxis = plot.handles['xaxis']
         self.assertTrue(xaxis in plot.state.above)
-        
+
     def test_element_xaxis_bare(self):
         curve = Curve(range(10)).options(xaxis='bare')
         plot = bokeh_renderer.get_plot(curve)
@@ -772,7 +772,7 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
 
 
 
-class TestColorbarPlot(TestBokehPlot):
+class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
 
     def test_colormapper_symmetric(self):
         img = Image(np.array([[0, 1], [2, 3]])).options(symmetric=True)
@@ -780,6 +780,21 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, -3)
         self.assertEqual(cmapper.high, 3)
+
+    def test_colormapper_logz_int_zero_bound(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(logz=True)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low, 1)
+        self.assertEqual(cmapper.high, 3)
+
+    def test_colormapper_logz_float_zero_bound(self):
+        img = Image(np.array([[0, 1], [2, 3.]])).options(logz=True)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 3)
+        self.log_handler.assertContains('WARNING', "Log color mapper lower bound <= 0")
 
     def test_colormapper_color_levels(self):
         cmap = process_cmap('viridis', provider='bokeh')

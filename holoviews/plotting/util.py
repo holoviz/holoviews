@@ -884,6 +884,8 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
 
     if isinstance(cmap, Cycle):
         palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
+    elif isinstance(cmap, tuple):
+        palette = list(cmap)
     elif isinstance(cmap, list):
         palette = cmap
     elif isinstance(cmap, basestring):
