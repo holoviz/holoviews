@@ -877,7 +877,7 @@ def isfinite(val):
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
-    elif isinstance(val, basestring):
+    elif isinstance(val, (basestring, bytes)):
         return True
     finite = np.isfinite(val)
     if pd and pandas_version >= '1.0.0':

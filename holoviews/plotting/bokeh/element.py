@@ -371,12 +371,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if xdims is not None and any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
             categorical_x = True
         else:
-            categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
+            categorical_x = any(isinstance(x, (util.basestring, bytes)) for x in (l, r))
 
         if ydims is not None and any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
             categorical_y = True
         else:
-            categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
+            categorical_y = any(isinstance(y, (util.basestring, bytes)) for y in (b, t))
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]

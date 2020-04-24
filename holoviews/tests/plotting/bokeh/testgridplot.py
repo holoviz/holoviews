@@ -11,6 +11,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 try:
     from bokeh.layouts import Column
     from bokeh.models import Div, ToolbarBox
+    from holoviews.plotting.bokeh.util import bokeh_version
 except:
     pass
 
@@ -65,7 +66,10 @@ class TestGridPlot(TestBokehPlot):
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        self.assertEqual(size, (318, 310))
+        if bokeh_version < '2.0.2':
+            self.assertEqual(size, (318, 310))
+        else:
+            self.assertEqual(size, (320, 311))
 
     def test_grid_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
