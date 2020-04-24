@@ -794,7 +794,7 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 3)
-        self.log_handler.assertContains('WARNING', "Log color mapper lower bound is 0")
+        self.log_handler.assertContains('WARNING', "Log color mapper lower bound <= 0")
 
     def test_colormapper_color_levels(self):
         cmap = process_cmap('viridis', provider='bokeh')
