@@ -30,7 +30,7 @@ from ..plot import (
     CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
-from .callbacks import LinkCallback
+from .links import LinkCallback
 from .util import (
     filter_toolboxes, make_axis, update_shared_sources, empty_plot,
     decode_bytes, theme_attr_json, cds_column_replace, get_default

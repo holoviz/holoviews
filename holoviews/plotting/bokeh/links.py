@@ -4,7 +4,7 @@ import numpy as np
 
 from bokeh.models import CustomJS, ToolbarBox
 
-from ...util import isscalar
+from ...core.util import isscalar
 from ..links import (
     Link, RectanglesTableLink, DataLink, RangeToolLink,
     SelectionLink, VertexTableLink
