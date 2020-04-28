@@ -306,7 +306,7 @@ class dim(object):
     def params(self):
         params = {}
         for op in self.ops:
-            op_args = list(op['args'])+list(op['kwargs'].items())
+            op_args = list(op['args'])+list(op['kwargs'].values())
             for op_arg in op_args:
                 if 'panel' in sys.modules:
                     from panel.widgets.base import Widget
