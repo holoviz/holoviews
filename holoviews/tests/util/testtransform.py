@@ -11,6 +11,7 @@ from unittest import skipIf
 
 import numpy as np
 import pandas as pd
+import param
 
 try:
     import dask.dataframe as dd
@@ -29,6 +30,11 @@ xr_skip = skipIf(xr is None, "xarray not available")
 from holoviews.core.data import Dataset
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.util.transform import dim
+
+
+class Params(param.Parameterized):
+
+    a = param.Number(default=0)
 
 
 class TestDimTransforms(ComparisonTestCase):
@@ -482,4 +488,28 @@ class TestDimTransforms(ComparisonTestCase):
         expr = dim('z').xr.coarsen({'x': 4}).mean()
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.coarsen({'x': 4}).mean())
 
-    
+    # Dynamic arguments
+
+    def test_dynamic_mul(self):
+        p = Params(a=1)
+        expr = dim('float') * p.param.a
+        self.assertEqual(list(expr.params.values()), [p.param.a])
+        self.assert_apply(expr, self.linear_floats)
+        p.a = 2
+        self.assert_apply(expr, self.linear_floats*2)
+
+    def test_dynamic_arg(self):
+        p = Params(a=1)
+        expr = dim('float').round(p.param.a)
+        self.assertEqual(list(expr.params.values()), [p.param.a])
+        self.assert_apply(expr, np.round(self.linear_floats, 1))
+        p.a = 2
+        self.assert_apply(expr, np.round(self.linear_floats, 2))
+
+    def test_dynamic_kwarg(self):
+        p = Params(a=1)
+        expr = dim('float').round(decimals=p.param.a)
+        self.assertEqual(list(expr.params.values()), [p.param.a])
+        self.assert_apply(expr, np.round(self.linear_floats, 1))
+        p.a = 2
+        self.assert_apply(expr, np.round(self.linear_floats, 2))
