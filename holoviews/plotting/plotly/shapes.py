@@ -65,6 +65,20 @@ class PathShapePlot(ShapePlot):
         return [dict(path=path, xref='x', yref='y')]
 
 
+class PathsPlot(ShapePlot):
+    _shape_type = 'path'
+
+    def get_data(self, element, ranges, style):
+        paths = []
+        for el in element.split():
+            xdim, ydim = (1, 0) if self.invert_axes else (0, 1)
+            xs = el.dimension_values(xdim)
+            ys = el.dimension_values(ydim)
+            path = ShapePlot.build_path(xs, ys)
+            paths.append(dict(path=path, xref='x', yref='y'))
+        return paths
+
+
 class HVLinePlot(ShapePlot):
 
     apply_ranges = param.Boolean(default=False, doc="""
