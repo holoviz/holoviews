@@ -369,7 +369,8 @@ class Selection1DExpr(Selection2DExpr):
             bbox[self.kdims[0].name] = cats
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            selection_expr = self._get_index_expr(index_cols, bbox)
+            selection = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
+            selection_expr = self._get_index_expr(index_cols, selection)
             region_element = None
         else:
             if isinstance(cats, list) and xdim in self.kdims[:1]:
