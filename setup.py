@@ -26,7 +26,7 @@ extras_require['recommended'] = extras_require['notebook'] + [
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=4.0',
     'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
-    'cftime', 'netcdf4', 'bzip2', 'dask', 'scipy']
+    'cftime', 'netcdf4', 'bzip2', 'dask', 'scipy', 'spatialpandas']
 
 if sys.version_info.major > 2:
     extras_require['examples'].append('spatialpandas')
