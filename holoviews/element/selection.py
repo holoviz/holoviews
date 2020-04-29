@@ -109,7 +109,7 @@ def spatial_bounds_select(xvals, yvals, bounds):
                       (x1>=np.nanmax(xs)) & (y1>=np.nanmax(ys)))
                      for xs, ys in zip(xvals, yvals)])
 
-    
+
 class Selection2DExpr(object):
     """
     Mixin class for Cartesian 2D elements to add basic support for
@@ -341,7 +341,7 @@ class Selection1DExpr(Selection2DExpr):
             cat_kwarg = 'y_selection'
         else:
             cat_kwarg = 'x_selection'
-            
+
         if self._inverted_expr:
             if ydim is not None: xdim = ydim
             x0, x1 = y0, y1
