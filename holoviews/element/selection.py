@@ -146,10 +146,9 @@ class Selection2DExpr(object):
 
         return (x0, x1), xcats, (y0, y1), ycats
 
-    def _get_index_expr(self, index_cols, bbox):
+    def _get_index_expr(self, index_cols, sel):
         get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
         index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
-        sel = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
         vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
             sel, expanded=True, flat=True
         )
@@ -165,7 +164,8 @@ class Selection2DExpr(object):
         bbox = {xdim.name: xsel, ydim.name: ysel}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            selection_expr = self._get_index_expr(index_cols, bbox)
+            selection = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
+            selection_expr = self._get_index_expr(index_cols, selection)
             region_element = None
         else:
             if xcats:
@@ -184,6 +184,11 @@ class Selection2DExpr(object):
         from .path import Path
         bbox = {xdim.name: geometry[:, 0], ydim.name: geometry[:, 1]}
         expr = dim.pipe(spatial_select, xdim, dim(ydim), geometry=geometry)
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            selection = self[expr.apply(self)]
+            selection_expr = self._get_index_expr(index_cols, selection)
+            return selection_expr, bbox, None
         return expr, bbox, Path([np.concatenate([geometry, geometry[:1]])])
 
     def _get_selection_dims(self):
@@ -247,7 +252,8 @@ class SelectionGeomExpr(Selection2DExpr):
         bbox = {x0dim.name: xsel, y0dim.name: ysel, x1dim.name: xsel, y1dim.name: ysel}
         index_cols = kwargs.get('index_cols')
         if index_cols:
-            selection_expr = self._get_index_expr(index_cols, bbox)
+            selection = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
+            selection_expr = self._get_index_expr(index_cols, selection)
             region_element = None
         else:
             x0expr = (dim(x0dim) >= x0) & (dim(x0dim) <= x1)
@@ -266,6 +272,11 @@ class SelectionGeomExpr(Selection2DExpr):
             x1dim.name: geometry[:, 0], y1dim.name: geometry[:, 1]
         }
         expr = dim.pipe(spatial_geom_select, x0dim, dim(y0dim), dim(x1dim), dim(y1dim), geometry=geometry)
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            selection = self[expr.apply(self)]
+            selection_expr = self._get_index_expr(index_cols, selection)
+            return selection_expr, bbox, None
         return expr, bbox, Path([np.concatenate([geometry, geometry[:1]])])
 
 
@@ -290,6 +301,11 @@ class SelectionPolyExpr(Selection2DExpr):
         from .path import Path
         bbox = {xdim.name: geometry[:, 0], ydim.name: geometry[:, 1]}
         expr = dim.pipe(spatial_poly_select, xdim, dim(ydim), geometry=geometry)
+        index_cols = kwargs.get('index_cols')
+        if index_cols:
+            selection = self[expr.apply(self, expanded=False)]
+            selection_expr = self._get_index_expr(index_cols, selection)
+            return selection_expr, bbox, None
         return expr, bbox, Path([np.concatenate([geometry, geometry[:1]])])
 
 
