@@ -31,7 +31,7 @@ except:
     shapely = None
 
 
-shapelib_available = skipIf(shapely is None and spatialpandas is None,
+shapelib_available = skipIf(shapely is None and spd is None,
                             'Neither shapely nor spatialpandas are available')
 shapely_available = skipIf(shapely is None, 'shapely is not available')
 ds_available = skipIf(ds is None, 'datashader not available')
