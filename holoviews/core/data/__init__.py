@@ -357,6 +357,8 @@ class Dataset(Element):
         if input_pipeline is None:
             input_pipeline = chain_op.instance()
 
+        kwargs['kdims'] = self.kdims
+        kwargs['vdims'] = self.vdims
         init_op = factory.instance(
             output_type=type(self),
             args=[],
@@ -1164,15 +1166,12 @@ argument to specify a selection specification""")
                 data = self
                 if link:
                     overrides['plot_id'] = self._plot_id
-        elif self._in_method:
-            if 'dataset' not in overrides:
-                overrides['dataset'] = self.dataset
+        elif self._in_method and 'dataset' not in overrides:
+            overrides['dataset'] = self.dataset
 
-        new_dataset = super(Dataset, self).clone(
+        return super(Dataset, self).clone(
             data, shared_data, new_type, *args, **overrides
         )
-
-        return new_dataset
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support

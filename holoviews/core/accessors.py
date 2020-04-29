@@ -97,8 +97,8 @@ class Apply(object):
     def __init__(self, obj, mode=None):
         self._obj = obj
 
-    def __call__(self, apply_function, streams=[], link_inputs=True, dynamic=None,
-                 per_element=False, **kwargs):
+    def __call__(self, apply_function, streams=[], link_inputs=True,
+                 link_dataset=True, dynamic=None, per_element=False, **kwargs):
         """Applies a function to all (Nd)Overlay or Element objects.
 
         Any keyword arguments are passed through to the function. If
@@ -118,6 +118,8 @@ class Apply(object):
             link_inputs (bool, optional): Whether to link the inputs
                 Determines whether Streams and Links attached to
                 original object will be inherited.
+            link_dataset (bool, optional): Whether to link the dataset
+                Determines whether the dataset will be inherited.
             dynamic (bool, optional): Whether to make object dynamic
                 By default object is made dynamic if streams are
                 supplied, an instance parameter is supplied as a
@@ -135,6 +137,7 @@ class Apply(object):
             A new object where the function was applied to all
             contained (Nd)Overlay or Element objects.
         """
+        from .data import Dataset
         from .dimension import ViewableElement
         from .element import Element
         from .spaces import HoloMap, DynamicMap
@@ -150,7 +153,9 @@ class Apply(object):
             if not len(samples):
                 return self._obj[samples]
             return HoloMap(self._obj[samples]).apply(
-                apply_function, streams, link_inputs, dynamic, **kwargs)
+                apply_function, streams, link_inputs, link_dataset,
+                dynamic, per_element, **kwargs
+            )
 
         if isinstance(apply_function, util.basestring):
             args = kwargs.pop('_method_args', ())
@@ -190,17 +195,23 @@ class Apply(object):
 
         if (applies or isinstance(self._obj, HoloMap)) and is_dynamic:
             return Dynamic(self._obj, operation=apply_function, streams=streams,
-                           kwargs=kwargs, link_inputs=link_inputs)
+                           kwargs=kwargs, link_inputs=link_inputs,
+                           link_dataset=link_dataset)
         elif applies:
             inner_kwargs = util.resolve_dependent_kwargs(kwargs)
             if hasattr(apply_function, 'dynamic'):
                 inner_kwargs['dynamic'] = False
-            return apply_function(self._obj, **inner_kwargs)
+            new_obj = apply_function(self._obj, **inner_kwargs)
+            if (link_dataset and isinstance(self._obj, Dataset) and
+                isinstance(new_obj, Dataset) and new_obj._dataset is None):
+                new_obj._dataset = self._obj.dataset
+            return new_obj
         elif self._obj._deep_indexable:
             mapped = []
             for k, v in self._obj.data.items():
                 new_val = v.apply(apply_function, dynamic=dynamic, streams=streams,
-                                  link_inputs=link_inputs, **kwargs)
+                                  link_inputs=link_inputs, link_dataset=link_dataset,
+                                  **kwargs)
                 if new_val is not None:
                     mapped.append((k, new_val))
             return self._obj.clone(mapped, link=link_inputs)

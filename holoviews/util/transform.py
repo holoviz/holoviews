@@ -633,7 +633,7 @@ class dim(object):
         if not self.applies(dataset) and (not isinstance(dataset, Graph) or not self.applies(dataset.nodes)):
             raise KeyError("One or more dimensions in the expression %r "
                            "could not resolve on '%s'. Ensure all "
-                           "dimensions referenced by the expression are"
+                           "dimensions referenced by the expression are "
                            "present on the supplied object." % (self, dataset))
         if not self.interface_applies(dataset, coerce=self.coerce):
             if self.coerce:

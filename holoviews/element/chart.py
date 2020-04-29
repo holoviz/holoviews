@@ -182,6 +182,9 @@ class Histogram(Chart):
 
     _selection_streams = (SelectionXY,)
 
+    def _empty_region(self):
+        return self.clone([])
+
     def __init__(self, data, edges=None, **params):
         if data is None:
             data = []

@@ -506,8 +506,15 @@ class XArrayInterface(GridInterface):
         else:
             orig_mask = mask
             for vd in dataset.vdims:
-                data_coords = list(dataset.data[vd.name].dims)
+                dims = list(dataset.data[vd.name].dims)
+                if any(cls.irregular(dataset, kd) for kd in dataset.kdims):
+                    data_coords = dims
+                else:
+                    data_coords = [kd.name for kd in dataset.kdims][::-1]
                 mask = cls.canonicalize(dataset, orig_mask, data_coords)
+                if data_coords != dims:
+                    inds = [dims.index(d) for d in data_coords]
+                    mask = mask.transpose(inds)
                 masked[vd.name] = marr = masked[vd.name].astype('float')
                 marr.values[mask] = mask_val
         return masked

@@ -127,15 +127,16 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
-        element_pipeline = getattr(element, '_pipeline', None)
 
+        element_pipeline = getattr(element, '_pipeline', None)
         ret = self._process(element, key)
+
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
             and isinstance(element, Dataset)):
-            ret._dataset = element.dataset
+            ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
@@ -194,6 +195,7 @@ class Operation(param.ParameterizedFunction):
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
         kwargs['per_element'] = self._per_element
+        kwargs['link_dataset'] = self._propagate_dataset
         return element.apply(self, **kwargs)
 
 

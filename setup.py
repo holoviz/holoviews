@@ -26,7 +26,7 @@ extras_require['recommended'] = extras_require['notebook'] + [
 extras_require['examples'] = extras_require['recommended'] + [
     'networkx', 'pillow', 'xarray>=0.10.4', 'plotly>=4.0',
     'datashader', 'selenium', 'phantomjs', 'ffmpeg', 'streamz>=0.5.0',
-    'cftime', 'netcdf4', 'bzip2', 'dask', 'scipy']
+    'cftime', 'netcdf4', 'bzip2', 'dask', 'scipy', 'shapely']
 
 if sys.version_info.major > 2:
     extras_require['examples'].append('spatialpandas')
@@ -37,7 +37,7 @@ extras_require['extras'] = extras_require['examples']+[
 
 # Test requirements
 extras_require['tests'] = [
-    'nose', 'mock', 'flake8==3.6.0', 'coveralls', 'path.py',
+    'nose', 'mock', 'flake8==3.6.0', 'coveralls', 'path.py', 
     'matplotlib>=2.2,<3.1', 'nbsmoke >=0.2.0', 'pytest-cov ==2.5.1']
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
