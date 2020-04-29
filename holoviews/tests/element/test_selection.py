@@ -30,7 +30,7 @@ try:
 except:
     shapely = None
 
-
+spd_available = skipIf(spd is None, "spatialpandas is not available")
 shapelib_available = skipIf(shapely is None and spd is None,
                             'Neither shapely nor spatialpandas are available')
 shapely_available = skipIf(shapely is None, 'shapely is not available')
@@ -342,6 +342,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]) * Path([]))
 
     @ds_available
+    @spd_available
     def test_img_selection_geom(self):
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3)))
         geom = np.array([(-0.4, -0.1), (0.6, -0.1), (0.4, 1.7), (-0.1, 1.7)])
