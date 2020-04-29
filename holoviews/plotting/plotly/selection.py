@@ -23,8 +23,6 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         merged_opts = dict(shared_opts)
 
-        print(layer_color)
-
         if 'opacity' in allowed:
             merged_opts['opacity'] = layer_alpha
         elif 'alpha' in allowed:
