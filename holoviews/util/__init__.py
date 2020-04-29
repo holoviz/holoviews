@@ -18,6 +18,7 @@ from ..core import (
 )
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
+from ..core.overlay import Overlay
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core import util
@@ -1017,7 +1018,10 @@ class Dynamic(param.ParameterizedFunction):
         an equivalent DynamicMap from the HoloMap.
         """
         if isinstance(hmap, ViewableElement):
-            return DynamicMap(dynamic_fn, streams=streams)
+            dmap = DynamicMap(dynamic_fn, streams=streams)
+            if isinstance(hmap, Overlay):
+                dmap.callback.inputs[:] = list(hmap)
+            return dmap
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
         kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in

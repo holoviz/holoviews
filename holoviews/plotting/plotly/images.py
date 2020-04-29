@@ -1,9 +1,12 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from holoviews.core.util import VersionError
-from .element import ElementPlot
 import numpy as np
+
 from plotly.graph_objs.layout import Image as _Image
+
+from ...core.util import VersionError
+from .element import ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class RGBPlot(ElementPlot):
@@ -11,6 +14,8 @@ class RGBPlot(ElementPlot):
     style_opts = ['opacity']
 
     apply_ranges = True
+
+    selection_display = PlotlyOverlaySelectionDisplay()
 
     def init_graph(self, datum, options, index=0):
         image = dict(datum, **options)

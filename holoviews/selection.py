@@ -101,7 +101,7 @@ class _base_link_selections(param.ParameterizedFunction):
         from .plotting.util import initialize_dynamic
         if isinstance(hvobj, DynamicMap):
             callback = hvobj.callback
-            if len(callback.inputs) == 2:
+            if len(callback.inputs) > 1:
                 return Overlay([
                     self._selection_transform(el) for el in callback.inputs
                 ]).collate()
@@ -440,9 +440,10 @@ class OverlaySelectionDisplay(SelectionDisplay):
         pipeline = element.pipeline
         if cmap is not None:
             pipeline = self._inject_cmap_in_pipeline(pipeline, cmap)
-        if element is not selection:
+        if element is selection:
+            return pipeline(element.dataset)
+        else:
             return pipeline(selection)
-        return element
 
     def _apply_style_callback(self, element, layer_number, colors, cmap, alpha, **kwargs):
         opts = {}

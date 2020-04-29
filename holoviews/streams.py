@@ -1029,7 +1029,7 @@ class Lasso(LinkedStream):
     array of coordinates.
     """
 
-    geometry = param.Array(doc="""
+    geometry = param.Array(constant=True, doc="""
         The coordinates of the lasso geometry as a two-column array.""")
 
 

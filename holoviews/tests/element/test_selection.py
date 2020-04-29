@@ -10,7 +10,7 @@ from holoviews.core import NdOverlay
 from holoviews.core.options import Store
 from holoviews.element import (
     Area, BoxWhisker, Curve, Distribution, HSpan, Image, Points,
-    Rectangles, RGB, Scatter, Segments, Violin, VSpan
+    Rectangles, RGB, Scatter, Segments, Violin, VSpan, Path
 )
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -216,14 +216,14 @@ class TestSelection2DExpr(ComparisonTestCase):
         expr, bbox, region = points._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
         self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
         self.assertEqual(expr.apply(points), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]))
+        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]) * Path([]))
 
     def test_points_selection_numeric_inverted(self):
         points = Points([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = points._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
         self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
         self.assertEqual(expr.apply(points), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
     def test_points_selection_categorical(self):
         points = Points((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
@@ -232,7 +232,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         )
         self.assertEqual(bbox, {'x': ['B', 'A', 'C'], 'y': (1, 3)})
         self.assertEqual(expr.apply(points), np.array([True, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
     def test_points_selection_numeric_index_cols(self):
         points = Points([3, 2, 1, 3, 2])
@@ -248,14 +248,14 @@ class TestSelection2DExpr(ComparisonTestCase):
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(1, 0, 3, 2))
         self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
         self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]))
+        self.assertEqual(region, Rectangles([(1, 0, 3, 2)]) * Path([]))
 
     def test_scatter_selection_numeric_inverted(self):
         scatter = Scatter([3, 2, 1, 3, 4]).opts(invert_axes=True)
         expr, bbox, region = scatter._get_selection_expr_for_stream_value(bounds=(0, 1, 2, 3))
         self.assertEqual(bbox, {'x': (1, 3), 'y': (0, 2)})
         self.assertEqual(expr.apply(scatter), np.array([False, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
     def test_scatter_selection_categorical(self):
         scatter = Scatter((['B', 'A', 'C', 'D', 'E'], [3, 2, 1, 3, 4]))
@@ -264,7 +264,7 @@ class TestSelection2DExpr(ComparisonTestCase):
         )
         self.assertEqual(bbox, {'x': ['B', 'A', 'C'], 'y': (1, 3)})
         self.assertEqual(expr.apply(scatter), np.array([True, True, True, False, False]))
-        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]))
+        self.assertEqual(region, Rectangles([(0, 1, 2, 3)]) * Path([]))
 
     def test_scatter_selection_numeric_index_cols(self):
         scatter = Scatter([3, 2, 1, 3, 2])
@@ -285,7 +285,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [False, True, True],
             [False, True, True]
         ]))
-        self.assertEqual(region, Rectangles([(0.5, 1.5, 2.1, 3.1)]))
+        self.assertEqual(region, Rectangles([(0.5, 1.5, 2.1, 3.1)]) * Path([]))
 
     def test_image_selection_numeric_inverted(self):
         img = Image(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3))).opts(invert_axes=True)
@@ -297,7 +297,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [False, True, True],
             [False, True, True]
         ]))
-        self.assertEqual(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]))
+        self.assertEqual(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]) * Path([]))
 
     def test_rgb_selection_numeric(self):
         img = RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3)))
@@ -309,7 +309,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [False, True, True],
             [False, True, True]
         ]))
-        self.assertEqual(region, Rectangles([(0.5, 1.5, 2.1, 3.1)]))
+        self.assertEqual(region, Rectangles([(0.5, 1.5, 2.1, 3.1)]) * Path([]))
 
     def test_rgb_selection_numeric_inverted(self):
         img = RGB(([0, 1, 2], [0, 1, 2, 3], np.random.rand(4, 3, 3))).opts(invert_axes=True)
@@ -321,7 +321,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             [False, True, True],
             [False, True, True]
         ]))
-        self.assertEqual(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]))
+        self.assertEqual(region, Rectangles([(1.5, 0.5, 3.1, 2.1)]) * Path([]))
 
 
 
@@ -344,41 +344,41 @@ class TestSelectionGeomExpr(ComparisonTestCase):
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.5, 0.9, 3.4, 4.9))
         self.assertEqual(bbox, {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([False, True, False]))
-        self.assertEqual(region, Rectangles([(0.5, 0.9, 3.4, 4.9)]))
+        self.assertEqual(region, Rectangles([(0.5, 0.9, 3.4, 4.9)]) * Path([]))
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0, 0.9, 3.5, 4.9))
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([True, True, True]))
-        self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]))
+        self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]) * Path([]))
 
     def test_rect_selection_numeric_inverted(self):
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
         self.assertEqual(bbox, {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([False, True, False]))
-        self.assertEqual(region, Rectangles([(0.9, 0.5, 4.9, 3.4)]))
+        self.assertEqual(region, Rectangles([(0.9, 0.5, 4.9, 3.4)]) * Path([]))
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0, 4.9, 3.5))
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([True, True, True]))
-        self.assertEqual(region, Rectangles([(0.9, 0, 4.9, 3.5)]))
+        self.assertEqual(region, Rectangles([(0.9, 0, 4.9, 3.5)]) * Path([]))
 
     def test_segments_selection_numeric(self):
         segs = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)])
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.5, 0.9, 3.4, 4.9))
         self.assertEqual(bbox, {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([False, True, False]))
-        self.assertEqual(region, Rectangles([(0.5, 0.9, 3.4, 4.9)]))
+        self.assertEqual(region, Rectangles([(0.5, 0.9, 3.4, 4.9)]) * Path([]))
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0, 0.9, 3.5, 4.9))
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([True, True, True]))
-        self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]))
+        self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]) * Path([]))
 
     def test_segs_selection_numeric_inverted(self):
         segs = Segments([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
         self.assertEqual(bbox, {'x0': (0.5, 3.4), 'y0': (0.9, 4.9), 'x1': (0.5, 3.4), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([False, True, False]))
-        self.assertEqual(region, Rectangles([(0.9, 0.5, 4.9, 3.4)]))
+        self.assertEqual(region, Rectangles([(0.9, 0.5, 4.9, 3.4)]) * Path([]))
         expr, bbox, region = segs._get_selection_expr_for_stream_value(bounds=(0.9, 0, 4.9, 3.5))
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(segs), np.array([True, True, True]))
-        self.assertEqual(region, Rectangles([(0.9, 0, 4.9, 3.5)]))
+        self.assertEqual(region, Rectangles([(0.9, 0, 4.9, 3.5)]) * Path([]))
