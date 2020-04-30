@@ -1100,8 +1100,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         title_obj = None
         title = self._format_title(key)
         if self.show_title and len(self.coords) > 1 and title:
-            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'),
-                                                     y=self.suptitle_y)
+            title_obj = self.handles['fig'].suptitle(title, y=self.suptitle_y,
+                                                     **self._fontsize('title'))
             self.handles['title'] = title_obj
             self.handles['bbox_extra_artists'] += [title_obj]
 
