@@ -548,7 +548,6 @@ class Renderer(Exporter):
 
         with StoreOptions.options(obj, options, **kwargs):
             plot, fmt = self_or_cls._validate(obj, fmt)
-
         if isinstance(plot, Viewable):
             from bokeh.resources import CDN, INLINE, Resources
             if isinstance(resources, Resources):
@@ -557,6 +556,11 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
+            if fmt not in ["html", "png", "auto"]:
+                raise ValueError("Format for exporting panel not supported: %s" % fmt)
+            fmt = 'html' if fmt == 'auto' else fmt
+            if basename.split('.')[-1] not in ('html', 'png'):
+                basename = "%s.%s" % (basename, fmt)
             plot.layout.save(basename, embed=True, resources=resources)
             return
 
