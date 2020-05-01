@@ -22,7 +22,7 @@ from bokeh.io import curdoc
 from bokeh.embed import file_html
 from bokeh.resources import CDN, INLINE
 from panel import config
-from panel.io.notebook import load_notebook, render_model, render_mimebundle
+from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
@@ -375,13 +375,17 @@ class Renderer(Exporter):
                     for src, streams in registry for s in streams
                 )
             embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
-            comm = self.comm_manager.get_server_comm() if comm else None
-            doc = Document()
-            with config.set(embed=embed):
-                model = plot.layout._render_model(doc, comm)
-            if embed:
-                return render_model(model, comm)
-            else:
+
+            # This part should be factored out in Panel and then imported
+            # here for HoloViews 2.0, which will be able to require a
+            # recent Panel version.
+            if embed or config.comms == 'default':
+                comm = self.comm_manager.get_server_comm() if comm else None
+                doc = Document()
+                with config.set(embed=embed):
+                    model = plot.layout._render_model(doc, comm)
+                if embed:
+                    return render_model(model, comm)
                 args = (model, doc, comm)
                 if panel_version > '0.9.3':
                     from panel.models.comm_manager import CommManager
@@ -395,6 +399,29 @@ class Renderer(Exporter):
                     manager.client_comm_id = client_comm.id
                     args = args + (manager,)
                 return render_mimebundle(*args)
+
+            # Handle rendering object as ipywidget
+            widget = ipywidget(plot)
+            if hasattr(widget, '_repr_mimebundle_'):
+                return widget._repr_mimebundle(include, exclude)
+            plaintext = repr(widget)
+            if len(plaintext) > 110:
+                plaintext = plaintext[:110] + '…'
+            data = {
+                'text/plain': plaintext,
+            }
+            if widget._view_name is not None:
+                data['application/vnd.jupyter.widget-view+json'] = {
+                    'version_major': 2,
+                    'version_minor': 0,
+                    'model_id': widget._model_id
+                }
+            if config.comms == 'vscode':
+                # Unfortunately VSCode does not yet handle _repr_mimebundle_
+                from IPython.display import display
+                display(data, raw=True)
+                return {'text/html': '<div style="display: none"></div>'}, {}
+            return data
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
         data['text/html'] = html
