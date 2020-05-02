@@ -128,7 +128,7 @@ class NotebookArchive(FileArchive):
             print("\n"+self.traceback)
 
 
-    def auto(self, enabled=True, clear=True, **kwargs):
+    def auto(self, enabled=True, clear=False, **kwargs):
         """
         Method to enable or disable automatic capture, allowing you to
         simultaneously set the instance parameters.
@@ -142,11 +142,11 @@ class NotebookArchive(FileArchive):
         cmd = (kernel + nbname + nbcmd + "kernel.execute(name_cmd); ")
         display(Javascript(cmd))
         time.sleep(0.5)
-        self._auto=clear
         self._auto=enabled
         self.param.set_param(**kwargs)
-
         tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
+        if clear:
+            FileArchive.clear(self)
         print("Automatic capture is now %s.%s"
               % ('enabled' if enabled else 'disabled',
                  tstamp if enabled else ''))
