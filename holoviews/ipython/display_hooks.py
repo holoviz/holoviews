@@ -154,7 +154,7 @@ def display_hook(fn):
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                if type(holoviews.archive) is not FileArchive:
+                if type(holoviews.archive) is not FileArchive and 'text/html' in mime_data:
                     holoviews.archive.add(element, html=mime_data['text/html'])
             filename = OutputSettings.options['filename']
             if filename:

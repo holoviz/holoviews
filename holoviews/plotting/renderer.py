@@ -401,7 +401,7 @@ class Renderer(Exporter):
                 return render_mimebundle(*args)
 
             # Handle rendering object as ipywidget
-            widget = ipywidget(plot)
+            widget = ipywidget(plot, combine_events=True)
             if hasattr(widget, '_repr_mimebundle_'):
                 return widget._repr_mimebundle(include, exclude)
             plaintext = repr(widget)
@@ -421,7 +421,7 @@ class Renderer(Exporter):
                 from IPython.display import display
                 display(data, raw=True)
                 return {'text/html': '<div style="display: none"></div>'}, {}
-            return data
+            return data, {}
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
         data['text/html'] = html
