@@ -559,6 +559,8 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
+            if isinstance(basename, basestring) and fmt in MIME_TYPES:
+                basename = '.'.join([basename, fmt])
             plot.layout.save(basename, embed=True, resources=resources)
             return
 
