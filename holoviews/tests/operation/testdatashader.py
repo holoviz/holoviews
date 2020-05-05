@@ -625,9 +625,12 @@ class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_categorical_images_xarray(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['xarray'], vdims='z Count'),
-                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count'),
-                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count')},
+        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count'),
+                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count'),
+                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
         r = [[228, 255], [66, 255]]
@@ -640,9 +643,12 @@ class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_categorical_images_grid(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['grid'], vdims='z Count'),
-                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count'),
-                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count')},
+        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count'),
+                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count'),
+                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
         r = [[228, 255], [66, 255]]
@@ -920,7 +926,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
         self.assertEqual(spreaded, RGB(arr))
 
     def test_spread_img_1px(self):
-        if ds_version <= '0.10.0':
+        if ds_version < '0.12.0':
             raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
