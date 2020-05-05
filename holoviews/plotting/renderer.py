@@ -32,7 +32,7 @@ from pyviz_comms import CommManager, JupyterCommManager
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions, LooseVersion
+from ..core.util import basestring, unbound_dimensions, LooseVersion
 from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
@@ -319,6 +319,8 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt, **kwargs)
+        if isinstance(resources, basestring):
+            resources = resources.lower()
         if css is None: css = self.css
 
         if isinstance(plot, Viewable):
