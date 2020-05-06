@@ -20,7 +20,9 @@ from tornado import gen
 
 from ...core import OrderedDict
 from ...core.options import CallbackError
-from ...core.util import dimension_sanitizer, isscalar, dt64_to_dt
+from ...core.util import (
+    datetime_types, dimension_sanitizer, isscalar, dt64_to_dt
+)
 from ...element import Table
 from ...streams import (
     Stream, PointerXY, RangeXY, Selection1D, RangeX, RangeY, PointerX,
@@ -863,16 +865,20 @@ class RangeXYCallback(Callback):
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
             if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
-                x0 = convert_timestamp(x0)
-                x1 = convert_timestamp(x1)
+                if not isinstance(x0, datetime_types):
+                    x0 = convert_timestamp(x0)
+                if not isinstance(x1, datetime_types):
+                    x1 = convert_timestamp(x1)
             if self.plot.invert_xaxis:
                 x0, x1 = x1, x0
             data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
             y0, y1 = msg['y0'], msg['y1']
             if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
-                y0 = convert_timestamp(y0)
-                y1 = convert_timestamp(y1)
+                if not isinstance(y0, datetime_types):
+                    y0 = convert_timestamp(y0)
+                if not isinstance(y1, datetime_types):
+                    y1 = convert_timestamp(y1)
             if self.plot.invert_yaxis:
                 y0, y1 = y1, y0
             data['y_range'] = (y0, y1)
