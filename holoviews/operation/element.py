@@ -761,7 +761,8 @@ class histogram(Operation):
                     hist_mean, _ = histogram(data, density=False, bins=self.p.num_bins)
                     hist /= hist_mean
         else:
-            hist = np.zeros(self.p.num_bins)
+            nbins = self.p.num_bins if self.p.bins is None else len(self.p.bins)-1
+            hist = np.zeros(nbins)
         hist[np.isnan(hist)] = 0
         if datetimes:
             edges = (edges/1e3).astype('datetime64[us]')

@@ -147,6 +147,13 @@ class OperationTests(ComparisonTestCase):
                          vdims=('x_frequency', 'Frequency'))
         self.assertEqual(op_hist, hist)
 
+    def test_dataset_histogram_empty_explicit_bins(self):
+        ds = Dataset([np.nan, np.nan], ['x'])
+        op_hist = histogram(ds, bins=[0, 1, 2])
+
+        hist = Histogram(([0, 1, 2], [0, 0]), vdims=('x_frequency', 'Frequency'))
+        self.assertEqual(op_hist, hist)
+
     @da_skip
     def test_dataset_histogram_dask(self):
         import dask.array as da
