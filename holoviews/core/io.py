@@ -857,7 +857,7 @@ class FileArchive(Archive):
 
     def clear(self):
         "Clears the file archive"
-        return self._files.clear()
+        self._files.clear()
 
     
 
