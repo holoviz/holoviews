@@ -134,4 +134,5 @@ class TestFileArchive(ComparisonTestCase):
         archive = FileArchive(export_name=export_name, pack=False)
         archive.add(self.image1)
         archive.add(self.image2)
-        self.assertEqual(None, FileArchive.clear(archive))
+        archive.clear()
+        self.assertEqual(archive._files, {})
