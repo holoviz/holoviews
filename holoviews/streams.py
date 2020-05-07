@@ -680,6 +680,7 @@ class Params(Stream):
                 group = list(group)
                 group[0].owner.param.watch(self._watcher, [p.name for p in group])
 
+
     @classmethod
     def from_params(cls, params, **kwargs):
         """Returns Params streams given a dictionary of parameters

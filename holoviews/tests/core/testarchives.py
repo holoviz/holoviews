@@ -124,3 +124,15 @@ class TestFileArchive(ComparisonTestCase):
             raise AssertionError("No file %r created on export." % fname)
         self.assertEqual(json.load(open(fname, 'r')), data)
         self.assertEqual(archive.listing(), [])
+
+    """
+    A test case that examines the clear() method of
+    FileArchives of io.py
+    """
+    def test_filearchive_clear_file(self):
+        export_name = "archive_for_clear"
+        archive = FileArchive(export_name=export_name, pack=False)
+        archive.add(self.image1)
+        archive.add(self.image2)
+        archive.clear()
+        self.assertEqual(archive._files, {})
