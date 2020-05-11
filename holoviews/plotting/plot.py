@@ -25,6 +25,7 @@ from pyviz_comms import JupyterComm
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
+from ..core.data import Dataset
 from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
@@ -745,6 +746,9 @@ class DimensionedPlot(Plot):
                     data_range = ('', '')
                 elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
                     data_range = el.nodes.range(2, dimension_range=False)
+                elif el_dim.values:
+                    ds = Dataset(el_dim.values, el_dim)
+                    data_range = ds.range(el_dim, dimension_range=False)
                 else:
                     data_range = el.range(el_dim, dimension_range=False)
 
