@@ -673,12 +673,20 @@ class Params(Stream):
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
+        self._watchers = []
         if watch:
             # Subscribe to parameters
             keyfn = lambda x: id(x.owner)
             for _, group in groupby(sorted(parameters, key=keyfn)):
                 group = list(group)
-                group[0].owner.param.watch(self._watcher, [p.name for p in group])
+                watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
+                self._watchers.append(watcher)
+
+    def unwatch(self):
+        """Stop watching parameters."""
+        for watcher in self._watchers:
+            watcher.inst.param.unwatch(watcher)
+        self._watchers.clear()
 
 
     @classmethod
