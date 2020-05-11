@@ -100,7 +100,7 @@ class iloc(Accessor):
         data = dataset.interface.iloc(dataset, (rows, cols))
         kdims = dataset.kdims
         vdims = dataset.vdims
-        if np.isscalar(data):
+        if util.isscalar(data):
             return data
         elif cols == slice(None):
             pass
