@@ -5,6 +5,7 @@ import numpy as np
 
 from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store
+from holoviews.core.util import pd
 from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
@@ -462,7 +463,16 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(resolved, {'id': cds.ref['id'],
                                     'value': points.columns()})
 
-
+    def test_rangexy_datetime(self):
+        curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
+        stream = RangeXY(source=curve)
+        plot = bokeh_server_renderer.get_plot(curve)
+        callback = plot.callbacks[0]
+        callback.on_msg({"x0": curve.iloc[0, 0], 'x1': curve.iloc[3, 0],
+                         "y0": 0.2, 'y1': 0.8})
+        self.assertEqual(stream.x_range[0], curve.iloc[0, 0])
+        self.assertEqual(stream.x_range[1], curve.iloc[3, 0])
+        self.assertEqual(stream.y_range, (0.2, 0.8))
 
 
 class TestBokehCustomJSCallbacks(CallbackTestCase):
