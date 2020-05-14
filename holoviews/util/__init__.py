@@ -782,6 +782,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
+    obj.options(toolbar=None)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
@@ -828,6 +829,7 @@ def render(obj, backend=None, **kwargs):
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
+    obj.options(toolbar=None)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
