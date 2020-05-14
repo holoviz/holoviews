@@ -750,7 +750,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
     """
     Saves the supplied object to file.
 
@@ -782,8 +782,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
-    if toolbar is None:
-        obj.options(toolbar=None)
+    obj.options(toolbar=None)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
@@ -801,7 +800,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
     return renderer_obj.save(obj, filename, fmt=fmt, resources=resources)
 
 
-def render(obj, backend=None, toolbar=None, **kwargs):
+def render(obj, backend=None, **kwargs):
     """
     Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
@@ -830,8 +829,7 @@ def render(obj, backend=None, toolbar=None, **kwargs):
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
-    if toolbar is None:
-        obj.options(toolbar=None)
+    obj.options(toolbar=None)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
