@@ -782,8 +782,8 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
-    if toolbar is None:
-        obj.options(toolbar=None)
+    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
+        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
@@ -830,8 +830,8 @@ def render(obj, backend=None, toolbar=None, **kwargs):
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
-    if toolbar is None:
-        obj.options(toolbar=None)
+    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
+        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
