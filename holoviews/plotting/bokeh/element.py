@@ -29,7 +29,7 @@ from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph, VectorField, Path, Contours, Tiles
-from ...streams import Stream, Buffer, PlotSize
+from ...streams import Stream, Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
@@ -807,6 +807,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = self.aspect
                 else:
                     frame_aspect = plot.frame_height/plot.frame_width
+
+                range_stream = [s for s in self.streams if isinstance(s, RangeXY)]
+                if range_stream and range_stream[0]._triggering:
+                    # If the event was triggered by a RangeXY stream
+                    # event we want to get the latest range span
+                    # values so we do not accidentally trigger a
+                    # loop of events
+                    xspan = (plot.x_range.end-plot.x_range.start)
+                    yspan = (plot.y_range.end-plot.y_range.start)
 
                 desired_xspan = yspan*(ratio/frame_aspect)
                 desired_yspan = xspan/(ratio/frame_aspect)
