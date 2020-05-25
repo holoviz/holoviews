@@ -67,7 +67,8 @@ class cuDFInterface(PandasInterface):
             data, _, _ = PandasInterface.init(eltype, data, kdims, vdims)
             data = cudf.from_pandas(data)
 
-        ncols = len(data.columns)
+        columns = list(data.columns)
+        ncols = len(columns)
         index_names = [data.index.name]
         if index_names == [None]:
             index_names = ['index']
@@ -80,21 +81,21 @@ class cuDFInterface(PandasInterface):
             ndim = None
         nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
         if kdims and vdims is None:
-            vdims = [c for c in data.columns if c not in kdims]
+            vdims = [c for c in columns if c not in kdims]
         elif vdims and kdims is None:
-            kdims = [c for c in data.columns if c not in vdims][:ndim]
+            kdims = [c for c in columns if c not in vdims][:ndim]
         elif kdims is None:
-            kdims = list(data.columns[:ndim])
+            kdims = list(columns[:ndim])
             if vdims is None:
-                vdims = [d for d in data.columns[ndim:((ndim+nvdim) if nvdim else None)]
+                vdims = [d for d in columns[ndim:((ndim+nvdim) if nvdim else None)]
                          if d not in kdims]
         elif kdims == [] and vdims is None:
-            vdims = list(data.columns[:nvdim if nvdim else None])
+            vdims = list(columns[:nvdim if nvdim else None])
 
         # Handle reset of index if kdims reference index by name
         for kd in kdims:
             kd = dimension_name(kd)
-            if kd in data.columns:
+            if kd in columns:
                 continue
             if any(kd == ('index' if name is None else name)
                    for name in index_names):
@@ -106,13 +107,13 @@ class cuDFInterface(PandasInterface):
 
         if kdims:
             kdim = dimension_name(kdims[0])
-            if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+            if eltype._auto_indexable_1d and ncols == 1 and kdim not in columns:
                 data = data.copy()
                 data.insert(0, kdim, np.arange(len(data)))
 
         for d in kdims+vdims:
             d = dimension_name(d)
-            if len([c for c in data.columns if c == d]) > 1:
+            if len([c for c in columns if c == d]) > 1:
                 raise DataError('Dimensions may not reference duplicated DataFrame '
                                 'columns (found duplicate %r columns). If you want to plot '
                                 'a column against itself simply declare two dimensions '
@@ -136,12 +137,12 @@ class cuDFInterface(PandasInterface):
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-            return data.to_array() if compute else data
+            return data.to_array() if compute else data.values
         elif keep_index:
             return data
         elif compute:
             return data.to_array()
-        return data
+        return data.values
 
 
     @classmethod
