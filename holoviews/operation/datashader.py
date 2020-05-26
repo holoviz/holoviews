@@ -252,7 +252,7 @@ class AggregationOperation(ResamplingOperation):
             agg = self._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
-        if add_field and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+        if add_field and getattr(agg, 'column', False) is None and not isinstance(agg, (rd.count, rd.any)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % type(self).__name__)
@@ -291,6 +291,10 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
+        category = None
+        if hasattr(agg_fn, 'reduction'):
+            category = agg_fn.cat_column
+            agg_fn = agg_fn.reduction
         column = agg_fn.column if agg_fn else None
         if column:
             dims = [d for d in element.dimensions('ranges') if d == column]
@@ -300,6 +304,8 @@ class AggregationOperation(ResamplingOperation):
                                  "dimension." % (column,element))
             name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
             vdims = [dims[0].clone(name)]
+        elif category:
+            vdims = Dimension('%s Count' % category)
         else:
             vdims = Dimension('Count')
         params['vdims'] = vdims
@@ -331,7 +337,6 @@ class aggregate(AggregationOperation):
     will automatically be set to match the inner dimensions of
     the linked plot.
     """
-
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
@@ -409,7 +414,10 @@ class aggregate(AggregationOperation):
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
-        category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+        if hasattr(agg_fn, 'cat_column'):
+            category = agg_fn.cat_column
+        else:
+            category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
         if overlay_aggregate.applies(element, agg_fn):
             params = dict(

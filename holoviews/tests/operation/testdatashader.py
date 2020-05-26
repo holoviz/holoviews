@@ -3,10 +3,12 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
                        Spread, Area, Segments, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
+from numpy import nan
 
 try:
     import datashader as ds
@@ -33,6 +35,8 @@ except:
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
 cudf_skip = skipIf(cudf is None, "cuDF not available")
+
+
 
 
 class DatashaderAggregateTests(ComparisonTestCase):
@@ -620,6 +624,36 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
 
 
+class DatashaderCatAggregateTests(ComparisonTestCase):
+
+    def setUp(self):
+        if ds_version < '0.11.0':
+            raise SkipTest('Regridding operations require datashader>=0.11.0')
+
+    def test_aggregate_points_categorical(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('z', ds.count()))
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims='z Count'),
+                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count'),
+                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count')},
+                             kdims=['z'])
+        self.assertEqual(img, expected)
+
+
+    def test_aggregate_points_categorical_mean(self):
+        points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('cat', ds.mean('z')))
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        expected = NdOverlay({'A': Image((xs, ys, [[0.1, nan], [nan, nan]]), vdims='z'),
+                              'B': Image((xs, ys, [[nan, nan], [0.2, nan]]), vdims='z'),
+                              'C': Image((xs, ys, [[nan, nan], [0.3, nan]]), vdims='z')},
+                             kdims=['cat'])
+        self.assertEqual(img, expected)
+        
+
 
 class DatashaderShadeTests(ComparisonTestCase):
 
@@ -633,9 +667,9 @@ class DatashaderShadeTests(ComparisonTestCase):
                                      datatype=['xarray'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
-        r = [[228, 255], [66, 255]]
-        g = [[26, 255], [150, 255]]
-        b = [[28, 255], [129, 255]]
+        r = [[228, 120], [66, 120]]
+        g = [[26, 109], [150, 109]]
+        b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
@@ -651,9 +685,9 @@ class DatashaderShadeTests(ComparisonTestCase):
                                      datatype=['grid'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
-        r = [[228, 255], [66, 255]]
-        g = [[26, 255], [150, 255]]
-        b = [[28, 255], [129, 255]]
+        r = [[228, 120], [66, 120]]
+        g = [[26, 109], [150, 109]]
+        b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
