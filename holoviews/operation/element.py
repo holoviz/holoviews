@@ -640,7 +640,7 @@ class histogram(Operation):
     bin_range = param.NumericTuple(default=None, length=2,  doc="""
       Specifies the range within which to compute the bins.""")
 
-    bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple), doc="""
+    bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple, str), doc="""
       An explicit set of bin edges.""")
 
     cumulative = param.Boolean(default=False, doc="""
