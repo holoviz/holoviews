@@ -1059,6 +1059,8 @@ class LassoCallback(Callback):
         if isinstance(ys, dict):
             ys = ((int(i), y) for i, y in ys.items())
             ys = [y for _, y in sorted(ys)]
+        if xs is None or ys is None:
+            return {}
         return {'geometry': np.column_stack([xs, ys])}
 
 
