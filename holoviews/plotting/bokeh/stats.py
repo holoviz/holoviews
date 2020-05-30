@@ -13,7 +13,8 @@ from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator, unique_array, isfinite)
+                          unique_iterator, unique_array, isfinite,
+                          is_dask_array, is_cupy_array)
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from .chart import AreaPlot
@@ -139,11 +140,23 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
 
     def _box_stats(self, vals):
-        vals = vals[isfinite(vals)]
+        is_finite = isfinite
+        is_dask = is_dask_array(vals)
+        is_cupy = is_cupy_array(vals)
+        if is_cupy:
+            import cupy
+            percentile = cupy.percentile
+            is_finite = cupy.isfinite
+        elif is_dask:
+            import dask.array as da
+            percentile = da.percentile
+        else:
+            percentile = np.percentile
+
+        vals = vals[is_finite(vals)]
 
         if len(vals):
-            q1, q2, q3 = (np.percentile(vals, q=q)
-                          for q in range(25, 100, 25))
+            q1, q2, q3 = (percentile(vals, q=q) for q in range(25, 100, 25))
             iqr = q3 - q1
             upper = vals[vals <= q3 + 1.5*iqr].max()
             lower = vals[vals >= q1 - 1.5*iqr].min()
@@ -151,7 +164,14 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             q1, q2, q3 = 0, 0, 0
             upper, lower = 0, 0
         outliers = vals[(vals > upper) | (vals < lower)]
-        return q1, q2, q3, upper, lower, outliers
+
+        if is_cupy:
+            return (q1.item(), q2.item(), q3.item(), upper.item(),
+                    lower.item(), cupy.asnumpy(outliers))
+        elif is_dask:
+            return da.compute(q1, q2, q3, upper, lower, outliers)
+        else:
+            return q1, q2, q3, upper, lower, outliers
 
     def get_data(self, element, ranges, style):
         if element.kdims:
@@ -191,6 +211,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cdim, cidx = None, None
 
         factors = []
+        vdim = g.vdims[0].name
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
@@ -208,7 +229,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors.append(label)
 
             # Compute statistics
-            vals = g.dimension_values(g.vdims[0])
+            vals = data = element.interface.values(element, vdim, compute=False)
             q1, q2, q3, upper, lower, outliers = self._box_stats(vals)
 
             # Add to CDS data
