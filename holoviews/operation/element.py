@@ -4,8 +4,6 @@ examples.
 """
 from __future__ import division
 
-import sys
-
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -756,7 +754,7 @@ class histogram(Operation):
         elif isinstance(self.p.bins, (list, np.ndarray)):
             edges = self.p.bins
             if isdatetime(edges):
-                bins = bins.astype('datetime64[ns]').astype('int64')
+                edges = edges.astype('datetime64[ns]').astype('int64')
         else:
             hist_range = self.p.bin_range or element.range(selected_dim)
             # Avoids range issues including zero bin range and empty bins

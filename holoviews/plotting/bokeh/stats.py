@@ -211,7 +211,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cdim, cidx = None, None
 
         factors = []
-        vdim = g.vdims[0].name
+        vdim = element.vdims[0].name
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
@@ -229,7 +229,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors.append(label)
 
             # Compute statistics
-            vals = data = element.interface.values(element, vdim, compute=False)
+            vals = element.interface.values(element, vdim, compute=False)
             q1, q2, q3, upper, lower, outliers = self._box_stats(vals)
 
             # Add to CDS data
