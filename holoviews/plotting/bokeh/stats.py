@@ -229,7 +229,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors.append(label)
 
             # Compute statistics
-            vals = element.interface.values(g, vdim, compute=False)
+            vals = g.interface.values(g, vdim, compute=False)
             q1, q2, q3, upper, lower, outliers = self._box_stats(vals)
 
             # Add to CDS data
