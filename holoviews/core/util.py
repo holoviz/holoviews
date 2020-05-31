@@ -1491,6 +1491,13 @@ def is_dask_array(data):
     return (da is not None and isinstance(data, da.Array))
 
 
+def is_cupy_array(data):
+    if 'cupy' in sys.modules:
+        import cupy
+        return isinstance(data, cupy.ndarray)
+    return False
+
+
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)

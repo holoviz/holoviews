@@ -4,9 +4,11 @@ examples.
 """
 from __future__ import division
 
-import numpy as np
+from distutils.version import LooseVersion
 
+import numpy as np
 import param
+
 from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
@@ -14,7 +16,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int,
-                         isdatetime, is_dask_array)
+                         isdatetime, is_dask_array, is_cupy_array)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -641,7 +643,10 @@ class histogram(Operation):
       Specifies the range within which to compute the bins.""")
 
     bins = param.ClassSelector(default=None, class_=(np.ndarray, list, tuple, str), doc="""
-      An explicit set of bin edges.""")
+      An explicit set of bin edges or a method to find the optimal
+      set of bin edges, e.g. 'auto', 'fd', 'scott' etc. For more
+      documentation on these approaches see the np.histogram_bin_edges
+      documentation.""")
 
     cumulative = param.Boolean(default=False, doc="""
       Whether to compute the cumulative histogram""")
@@ -690,6 +695,7 @@ class histogram(Operation):
             self.p.groupby = None
             return grouped.map(self._process, Dataset)
 
+        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
@@ -701,16 +707,36 @@ class histogram(Operation):
         else:
             data = element.dimension_values(selected_dim)
 
+        is_datetime = isdatetime(data)
+        if is_datetime:
+            data = data.astype('datetime64[ns]').astype('int64')
+
+        # Handle different datatypes
+        is_finite = isfinite
+        is_cupy = is_cupy_array(data)
+        if is_cupy:
+            import cupy
+            full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
+            if not full_cupy_support and (normed or self.p.weight_dimension): 
+                data = cupy.asnumpy(data)
+                is_cupy = False
         if is_dask_array(data):
             import dask.array as da
             histogram = da.histogram
+        elif is_cupy:
+            import cupy
+            histogram = cupy.histogram
+            is_finite = cupy.isfinite
         else:
             histogram = np.histogram
 
-        mask = isfinite(data)
+        # Mask data
+        mask = is_finite(data)
         if self.p.nonzero:
             mask = mask & (data > 0)
         data = data[mask]
+
+        # Compute weights
         if self.p.weight_dimension:
             if hasattr(element, 'interface'):
                 weights = element.interface.values(element, self.p.weight_dimension, compute=False)
@@ -721,35 +747,36 @@ class histogram(Operation):
         else:
             weights = None
 
-        hist_range = self.p.bin_range or element.range(selected_dim)
-        # Avoids range issues including zero bin range and empty bins
-        if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
-            hist_range = (0, 1)
-
-        datetimes = False
-        bins = None if self.p.bins is None else np.asarray(self.p.bins)
-        steps = self.p.num_bins + 1
-        start, end = hist_range
-        if isdatetime(data):
-            start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
-            datetimes = True
-            data = data.astype('datetime64[ns]').astype('int64')
-            if bins is not None:
-                bins = bins.astype('datetime64[ns]').astype('int64')
-            else:
-                hist_range = start, end
-
-        if self.p.bins:
-            edges = bins
-        elif self.p.log:
-            bin_min = max([abs(start), data[data>0].min()])
-            edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
+        # Compute bins
+        if isinstance(self.p.bins, str):
+            bin_data = cupy.asnumpy(data) if is_cupy else data
+            edges = np.histogram_bin_edges(bin_data, bins=self.p.bins)
+        elif isinstance(self.p.bins, (list, np.ndarray)):
+            edges = self.p.bins
+            if isdatetime(edges):
+                edges = edges.astype('datetime64[ns]').astype('int64')
         else:
-            edges = np.linspace(start, end, steps)
-        normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
+            hist_range = self.p.bin_range or element.range(selected_dim)
+            # Avoids range issues including zero bin range and empty bins
+            if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
+                hist_range = (0, 1)
+            steps = self.p.num_bins + 1
+            start, end = hist_range
+            if is_datetime:
+                start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
+            if self.p.log:
+                bin_min = max([abs(start), data[data>0].min()])
+                edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
+            else:
+                edges = np.linspace(start, end, steps)
+
+        if is_cupy:
+            edges = cupy.asarray(edges)
 
         if is_dask_array(data) or len(data):
-            if normed:
+            if is_cupy and not full_cupy_support:
+               hist, _ = histogram(data, bins=edges)
+            elif normed:
                 # This covers True, 'height', 'integral'
                 hist, edges = histogram(data, density=True,
                                         weights=weights, bins=edges)
@@ -763,8 +790,13 @@ class histogram(Operation):
         else:
             nbins = self.p.num_bins if self.p.bins is None else len(self.p.bins)-1
             hist = np.zeros(nbins)
+
+        if is_cupy_array(hist):
+            edges = cupy.asnumpy(edges) 
+            hist = cupy.asnumpy(hist)
+
         hist[np.isnan(hist)] = 0
-        if datetimes:
+        if is_datetime:
             edges = (edges/1e3).astype('datetime64[us]')
 
         params = {}
