@@ -627,6 +627,7 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
+            
             # Only compute ranges if not axiswise on a composite plot
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
@@ -687,6 +688,7 @@ class DimensionedPlot(Plot):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        prev_range = ranges.get(group, {})
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
@@ -699,7 +701,7 @@ class DimensionedPlot(Plot):
                     continue
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
-                    if dim_name in ranges.get(group, {}) and not framewise:
+                    if dim_name in prev_range:
                         continue
                     values = v.apply(el, expanded=False, all_values=True)
                     factors = None
@@ -728,7 +730,7 @@ class DimensionedPlot(Plot):
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
                 dim_name = el_dim.name
-                if dim_name in ranges.get(group, {}) and not framewise:
+                if dim_name in prev_range:
                     continue
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
