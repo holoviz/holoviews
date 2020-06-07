@@ -701,7 +701,7 @@ class DimensionedPlot(Plot):
                     dim_name = repr(v)
                     if dim_name in ranges.get(group, {}) and not framewise:
                         continue
-                    values = v.apply(el, expanded=False, all_values=True)
+                    values = v.apply(el, all_values=True)
                     factors = None
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
