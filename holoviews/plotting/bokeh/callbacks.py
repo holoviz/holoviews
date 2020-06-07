@@ -80,15 +80,15 @@ class MessageCallback(object):
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
-        if plot.renderer.mode != 'server':
+        if plot.renderer.mode == 'server' or pn.config.comms != 'default':
+            self.comm = None
+        else:
             if plot.pane:
                 on_error = partial(plot.pane._on_error, plot.root)
             else:
                 on_error = None
             self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
             self.comm._on_error = on_error
-        else:
-            self.comm = None
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()
@@ -361,9 +361,7 @@ class ServerCallback(MessageCallback):
         return {'id': model.ref['id'], 'value': resolved}
 
     def _schedule_callback(self, cb, timeout=None, offset=True):
-        if timeout is not None:
-            pass
-        else:
+        if timeout is None:
             if self._history and self.throttling_scheme == 'adaptive':
                 timeout = int(np.array(self._history).mean()*1000)
             else:
@@ -372,7 +370,11 @@ class ServerCallback(MessageCallback):
                 # Subtract the time taken since event started
                 diff = time.time()-self._last_event
                 timeout = max(timeout-(diff*1000), 50)
-        pn.state.curdoc.add_timeout_callback(cb, int(timeout))
+        if not pn.state.curdoc:
+            from tornado.ioloop import IOLoop
+            IOLoop.current().call_later(int(timeout)/1000., cb)
+        else:
+            cb()
 
     def on_change(self, attr, old, new):
         """
@@ -571,7 +573,7 @@ class Callback(CustomJSCallback, ServerCallback):
                     cb.handle_ids[k].update(v)
                 continue
 
-            if self.plot.renderer.mode == 'server':
+            if self.comm is None:
                 self.set_server_callback(handle)
             else:
                 js_callback = self.get_customjs(handles, plot_id=plot_id)
@@ -654,7 +656,7 @@ class PointerXYCallback(Callback):
         if 'y' in msg and isinstance(yaxis, DatetimeAxis):
             msg['y'] = convert_timestamp(msg['y'])
 
-        server_mode = self.plot.renderer.mode == 'server'
+        server_mode = self.comm is None
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
             msg['x'] = x_range.factors[int(msg['x'])]
         elif 'x' in msg and isinstance(x_range, (Range1d, DataRange1d)) and server_mode:
