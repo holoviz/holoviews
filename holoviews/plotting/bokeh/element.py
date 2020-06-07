@@ -10,7 +10,9 @@ import bokeh.plotting
 
 from bokeh.core.properties import value
 from bokeh.document.events import ModelChangedEvent
-from bokeh.models import Renderer, Title, Legend, ColorBar, tools
+from bokeh.models import (
+    ColorBar, ColorMapper, Legend, Renderer, Title, tools
+)
 from bokeh.models.axes import CategoricalAxis, DatetimeAxis
 from bokeh.models.formatters import (
     FuncTickFormatter, TickFormatter, MercatorTickFormatter
@@ -1714,16 +1716,21 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         if eldim is None and colors is None:
             return None
-        dim_name = dim_range_key(eldim)
+        dim_name = str(eldim) if isinstance(eldim, dim) else dim_range_key(eldim)
 
         # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:
-            cmapper_name = dim_name+name
-            cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get(name, x.handles.get(cmapper_name))))
-            cmappers = [cmap for cdim, cmap in cmappers if cdim == eldim]
+            cmappers = self.adjoined.traverse(
+                lambda x: (x.handles.get('color_dim'),
+                           x.handles.get(name),
+                           [v for v in x.handles.values()
+                            if isinstance(v, ColorMapper)])
+                )
+            cmappers = [(cmap, mappers) for cdim, cmap, mappers in cmappers
+                        if cdim == eldim]
             if cmappers:
-                cmapper = cmappers[0]
+                cmapper, mappers  = cmappers[0]
+                cmapper = cmapper if cmapper else mappers[0]
                 self.handles['color_mapper'] = cmapper
                 return cmapper
             else:
