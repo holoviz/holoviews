@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
