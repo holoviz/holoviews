@@ -30,7 +30,7 @@ class PathPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
     def get_data(self, element, ranges, style):
-        cdim = element.get_dimension(self.color_index or style.get('color'))
+        cdim = element.get_dimension(self.color_index)
 
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
