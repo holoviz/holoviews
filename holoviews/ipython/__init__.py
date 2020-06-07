@@ -83,11 +83,6 @@ class notebook_extension(extension):
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
-    comms = param.ObjectSelector(
-        default='default', objects=['default', 'ipywidgets', 'vscode'], doc="""
-        Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""")
-
     inline = param.Boolean(default=True, doc="""
         Whether to inline JS and CSS resources. 
         If disabled, resources are loaded from CDN if one is available.""")
@@ -117,6 +112,7 @@ class notebook_extension(extension):
     _loaded = False
 
     def __call__(self, *args, **params):
+        comms = params.pop('comms', None)
         super(notebook_extension, self).__call__(*args, **params)
         # Abort if IPython not found
         try:
@@ -184,7 +180,8 @@ class notebook_extension(extension):
         if len(resources) == 0: return
 
         from panel import config
-        config.comms = p.comms
+        if hasattr(config, 'comms') and comms:
+            config.comms = comms
 
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
