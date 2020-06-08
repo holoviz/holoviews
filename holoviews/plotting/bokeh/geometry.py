@@ -61,7 +61,12 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         x0, y0, x1, y1 = (element.dimension_values(kd) for kd in inds)
         x0, x1 = np.min([x0, x1], axis=0), np.max([x0, x1], axis=0)
         y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
-        data = {'x': (x1+x0)/2., 'y': (y1+y0)/2., 'width': x1-x0, 'height': y1-y0}
+        data = {
+            'x': x0+(x1-x0)/2.,
+            'y': x0+(x1-x0)/2.,
+            'width': x1-x0,
+            'height': y1-y0
+        }
         mapping = {'x': 'x', 'y': 'y', 'width': 'width', 'height': 'height'}
         self._get_hover_data(data, element)
         return data, mapping, style
