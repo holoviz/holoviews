@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
 import warnings
 from types import FunctionType
 
@@ -1616,7 +1617,8 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
-    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+    color_levels = param.ClassSelector(default=None, class_=(
+        (int, list) + ((range,) if sys.version_info.major > 2 else ())), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
