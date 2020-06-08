@@ -65,6 +65,9 @@ class PlotlyOverlaySelectionDisplay(OverlaySelectionDisplay):
             # Darken unselected color
             if unselected_color:
                 region_color = linear_gradient(unselected_color, "#000000", 9)[3]
+            if "Span" in el1_name:
+                unselected_color = unselected_color or "#e6e9ec"
+                region_color = linear_gradient(unselected_color, "#000000", 9)[1]
             if "line_width" in allowed_keywords:
                 options["line_width"] = 1
         else:

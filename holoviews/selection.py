@@ -357,6 +357,52 @@ class SelectionDisplay(object):
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
         raise NotImplementedError()
 
+    @staticmethod
+    def _select(element, selection_expr, cache={}):
+        from .element import Curve, Spread
+        from .util.transform import dim
+        if isinstance(selection_expr, dim):
+            dataset = element.dataset
+            mask = None
+            if dataset._plot_id in cache:
+                ds_cache = cache[dataset._plot_id]
+                if selection_expr in ds_cache:
+                    mask = ds_cache[selection_expr]
+                else:
+                    ds_cache.clear()
+            else:
+                ds_cache = cache[dataset._plot_id] = {}
+            try:
+                if dataset.interface.gridded:
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=False)
+                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
+                elif dataset.interface.multi:
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, expanded=False, flat=False, strict=False)
+                    selection = dataset.iloc[mask]
+                elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, compute=False, strict=False)
+                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
+                else:
+                    if mask is None:
+                        mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=False)
+                    selection = dataset.select(selection_mask=mask)
+            except KeyError as e:
+                key_error = str(e).replace('"', '').replace('.', '')
+                raise CallbackError("linked_selection aborted because it could not "
+                                    "display selection for all elements: %s on '%r'."
+                                    % (key_error, element))
+            except Exception as e:
+                raise CallbackError("linked_selection aborted because it could not "
+                                    "display selection for all elements: %s." % e)
+            ds_cache[selection_expr] = mask
+        else:
+            selection = element
+        return selection
+
+
 
 class NoOpSelectionDisplay(SelectionDisplay):
     """
@@ -468,51 +514,6 @@ class OverlaySelectionDisplay(SelectionDisplay):
 
     def _style_region_element(self, region_element, unselected_cmap):
         raise NotImplementedError()
-
-    @staticmethod
-    def _select(element, selection_expr, cache={}):
-        from .element import Curve, Spread
-        from .util.transform import dim
-        if isinstance(selection_expr, dim):
-            dataset = element.dataset
-            mask = None
-            if dataset._plot_id in cache:
-                ds_cache = cache[dataset._plot_id]
-                if selection_expr in ds_cache:
-                    mask = ds_cache[selection_expr]
-                else:
-                    ds_cache.clear()
-            else:
-                ds_cache = cache[dataset._plot_id] = {}
-            try:
-                if dataset.interface.gridded:
-                    if mask is None:
-                        mask = selection_expr.apply(dataset, expanded=True, flat=False, strict=False)
-                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
-                elif dataset.interface.multi:
-                    if mask is None:
-                        mask = selection_expr.apply(dataset, expanded=False, flat=False, strict=False)
-                    selection = dataset.iloc[mask]
-                elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
-                    if mask is None:
-                        mask = selection_expr.apply(dataset, compute=False, strict=False)
-                    selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
-                else:
-                    if mask is None:
-                        mask = selection_expr.apply(dataset, compute=False, keep_index=True, strict=False)
-                    selection = dataset.select(selection_mask=mask)
-            except KeyError as e:
-                key_error = str(e).replace('"', '').replace('.', '')
-                raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s on '%r'."
-                                    % (key_error, element))
-            except Exception as e:
-                raise CallbackError("linked_selection aborted because it could not "
-                                    "display selection for all elements: %s." % e)
-            ds_cache[selection_expr] = mask
-        else:
-            selection = element
-        return selection
 
 
 class ColorListSelectionDisplay(SelectionDisplay):
