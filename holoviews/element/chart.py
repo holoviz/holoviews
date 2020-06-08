@@ -4,7 +4,6 @@ import param
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from ..streams import SelectionXY
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
 from .selection import Selection1DExpr, Selection2DExpr
 
