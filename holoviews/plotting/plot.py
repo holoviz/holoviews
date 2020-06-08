@@ -812,6 +812,8 @@ class DimensionedPlot(Plot):
                 for g, drange in dranges.items():
                     prange = prev_ranges.get(d, {}).get(g, None)
                     if prange is None:
+                        if d not in prev_ranges:
+                            prev_ranges[d] = {}
                         prev_ranges[d][g] = drange
                     else:
                         prev_ranges[d][g] = util.max_range([drange, prange],
