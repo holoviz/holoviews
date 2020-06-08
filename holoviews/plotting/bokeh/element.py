@@ -1,6 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import warnings
+
+from ast import literal_eval
 from types import FunctionType
 
 import param
@@ -83,6 +85,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         width and height may also be passed. To control the aspect
         ratio between the axis scales use the data_aspect option
         instead.""")
+
+    custom_opts = param.Dict(default={}, doc="""
+        A dictionary of custom options to apply to the plot or
+        subcomponents of the plot. The keys in the dictionary mirrors
+        attribute access on the underlying models stored in the plot's
+        handles, e.g. {'colorbar.margin': 10} will index the colorbar
+        in the Plot.hanldes and then set the margin to 10.""")
 
     data_aspect = param.Number(default=None, doc="""
         Defines the aspect of the axis scaling, i.e. the ratio of
@@ -708,6 +717,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_labels(key, plot, element)
         self._update_title(key, plot, element)
         self._update_grid(plot)
+        self._update_custom_opts(plot)
 
 
     def _update_labels(self, key, plot, element):
@@ -730,6 +740,64 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.title.update(**self._title_properties(key, plot, element))
         else:
             plot.title = Title(**self._title_properties(key, plot, element))
+
+
+    def _update_custom_opts(self, plot):
+        for opt, value in self.custom_opts.items():
+            accessors = opt.split('.')
+            model_accessor = accessors[0]
+            attr_accessor = accessors[-1]
+            if model_accessor in self.handles:
+                model = self.handles[model_accessor]
+            elif hasattr(plot, model_accessor):
+                model = getattr(plot, model_accessor)
+            else:
+                self.param.warning("%s model could be resolved on %s plot. "
+                                   "Ensure the '%s' custom option spec "
+                                   "references a valid model in the "
+                                   "plot.handles or on the underlying bokeh "
+                                   "figure object." % (model_accessor,
+                                                       type(self).__name__,
+                                                       opt))
+                continue
+
+            for acc in accessors[1:-1]:
+                if '[' in acc and acc.endswith(']'):
+                    getitem_index = acc.index('[')
+                    getitem_spec = acc[getitem_index+1:-1]
+                    try:
+                        getitem_acc = literal_eval()
+                    except Exception:
+                        self.param.warning("Could not evaluate getitem "
+                                           "'%s' in custom option spec "
+                                           "'%s'." % (getitem_spec, opt))
+                        model = None
+                        break
+                    acc = acc[:getitem_index]
+                else:
+                    getitem_acc = None
+                if not hasattr(model, acc):
+                    self.param.warning("Could not resolve '%s' attribute "
+                                       "on %s model. Ensure the custom "
+                                       "option spec you provided references "
+                                       "a valid submodel." %
+                                       (acc, type(model).__name__))
+                    model = None
+                    break
+                model = getattr(model, acc)
+                if getitem_acc:
+                    model = model.__getitem__(getitem_acc)
+
+            if model is None:
+                continue
+            if attr_accessor not in model.properties():
+                self.param.warning("Could not find '%s' property on %s "
+                                   "model. Ensure the custom option spec "
+                                   "'%s' you provided references a "
+                                   "valid attribute on the specified model." %
+                                   (attr_accessor, type(model).__name__, opt))
+                continue
+            setattr(model, attr_accessor, value)
 
 
     def _update_grid(self, plot):
