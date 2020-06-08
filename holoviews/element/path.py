@@ -429,13 +429,13 @@ class Box(BaseShape):
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
-        (l,b,r,t) = (x-half_width, y-half_height, x+half_width, y+half_height)
-
+        (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                         [np.sin(self.orientation), np.cos(self.orientation)]])
 
-        self.data = [np.tensordot(rot, box.T, axes=[1,0]).T]
+        xs, ys = np.tensordot(rot, box.T, axes=[1,0])
+        self.data = [np.column_stack([xs+x, ys+y])]
 
 
 class Ellipse(BaseShape):
