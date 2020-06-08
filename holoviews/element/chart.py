@@ -4,7 +4,6 @@ import param
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from ..streams import SelectionXY
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
 from .selection import Selection1DExpr, Selection2DExpr
 
@@ -159,7 +158,7 @@ class Bars(Chart):
 
 
 
-class Histogram(Chart):
+class Histogram(Selection1DExpr, Chart):
     """
     Histogram is a Chart element representing a number of bins in a 1D
     coordinate system. The key dimension represents the binned values,
@@ -180,11 +179,6 @@ class Histogram(Chart):
 
     _binned = True
 
-    _selection_streams = (SelectionXY,)
-
-    def _empty_region(self):
-        return self.clone([])
-
     def __init__(self, data, edges=None, **params):
         if data is None:
             data = []
@@ -198,103 +192,6 @@ class Histogram(Chart):
             data = data[::-1]
 
         super(Histogram, self).__init__(data, **params)
-
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from ..util.transform import dim
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
-        ds = self.dataset
-        if kwargs.get('bounds', None) is None:
-            el = ds.clone([]) if ds.interface.gridded else ds.iloc[:0]
-            return None, None, self.pipeline(el)
-
-        if invert_axes:
-            y0, x0, y1, x1 = kwargs['bounds']
-        else:
-            x0, y0, x1, y1 = kwargs['bounds']
-
-        # Handle invert_xaxis/invert_yaxis
-        if y0 > y1:
-            y0, y1 = y1, y0
-        if x0 > x1:
-            x0, x1 = x1, x0
-
-        xdim = self.kdims[0]
-        ydim = self.vdims[0]
-
-        edges = self.edges
-        centers = self.dimension_values(xdim)
-        heights = self.dimension_values(ydim)
-
-        selected_mask = (
-            (centers >= x0) & (centers <= x1) &
-            (heights >= y0) & (heights <= y1)
-        )
-
-        selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
-        if not selected_bins:
-            el = ds.clone([]) if ds.interface.gridded else ds.iloc[:0]
-            return None, None, self.pipeline(el)
-
-        bbox = {
-            xdim.name: (
-                edges[max(0, min(selected_bins) - 1)],
-                edges[min(len(edges - 1), max(selected_bins))],
-            ),
-        }
-        index_cols = kwargs.get('index_cols')
-        if index_cols:
-            shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
-            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
-            sel = self.dataset.clone(datatype=['dataframe', 'dictionary']).select(**bbox)
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                sel, expanded=True, flat=True
-            )
-            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
-            selection_expr = dim(contains, np.reshape, shape)
-            region = None
-        else:
-            selection_expr = dim(xdim).digitize(edges).isin(selected_bins)
-            if selected_bins[-1] == len(centers):
-                # Handle values exactly on the upper boundary
-                selection_expr = selection_expr | (dim(xdim) == edges[-1])
-            if ds.interface.gridded:
-                mask = selection_expr.apply(ds, expanded=True, flat=False)
-                ds = ds.clone(ds.interface.mask(ds, mask))
-            else:
-                ds = ds.select(selection_expr)
-            region = self.pipeline(ds)
-        return selection_expr, bbox, region
-
-    @staticmethod
-    def _merge_regions(region1, region2, operation):
-        if region1 is None:
-            if operation == 'inverse':
-                return region2.clone(data=(
-                    (region2.edges,
-                     np.zeros_like(region2.dimension_values(1)))
-                ))
-            else:
-                return region2
-
-        if operation == 'overwrite':
-            return region2
-        elif operation == 'inverse':
-            y = region1.dimension_values(1).copy()
-            y[region2.dimension_values(1) > 0] = 0
-            return region1.clone(data=(region1.edges, y))
-        elif operation == 'intersect':
-            op = np.min
-        elif operation == 'union':
-            op = np.max
-
-        return region1.clone(data=(
-            region1.edges,
-            op(np.stack([region1.dimension_values(1),
-                         region2.dimension_values(1)], axis=1), axis=1)
-        ))
-
     def __setstate__(self, state):
         """
         Ensures old-style Histogram types without an interface can be unpickled.

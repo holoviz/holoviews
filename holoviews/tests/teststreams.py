@@ -970,7 +970,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertEqual(len(expr_stream._source_streams), 2)
         self.assertIsInstance(expr_stream._source_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -980,9 +980,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(1.5, 2.5, 4.6, 6))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+            repr((dim('x')>=1.5)&(dim('x')<=4.6))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.6)})
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
@@ -990,10 +990,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(2.5, -10, 8, 10))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
-                 (dim('x') == hist.edges[-1]))
+            repr((dim('x')>=2.5)&(dim('x')<=8))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 8)})
 
     def test_selection_expr_stream_hist_invert_axes(self):
         # Create SelectionExpr on element
@@ -1003,7 +1002,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertEqual(len(expr_stream._source_streams), 2)
         self.assertIsInstance(expr_stream._source_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -1013,9 +1012,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(2.5, 1.5, 6, 4.6))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+            repr((dim('x')>=1.5)&(dim('x')<=4.6))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.6)})
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
@@ -1023,10 +1022,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(-10, 2.5, 10, 8))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
-                 (dim('x') == hist.edges[-1]))
+            repr((dim('x')>=2.5)&(dim('x')<=8))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 8)})
 
     def test_selection_expr_stream_hist_invert_xaxis_yaxis(self):
         # Create SelectionExpr on element
@@ -1037,7 +1035,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream._source_streams), 1)
+        self.assertEqual(len(expr_stream._source_streams), 2)
         self.assertIsInstance(expr_stream._source_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -1047,9 +1045,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(4.6, 6, 1.5, 2.5))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr(dim('x').digitize(hist.edges).isin([2, 4]))
+            repr((dim('x')>=1.5)&(dim('x')<=4.6))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (1.5, 4.6)})
 
         # Select third, forth, and fifth bar.  Make sure there is special
         # handling when last bar is selected to include values exactly on the
@@ -1057,10 +1055,9 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream._source_streams[0].event(bounds=(8, 10, 2.5, -10))
         self.assertEqual(
             repr(expr_stream.selection_expr),
-            repr((dim('x').digitize(hist.edges).isin([3, 4, 5])) |
-                 (dim('x') == hist.edges[-1]))
+            repr((dim('x')>=2.5)&(dim('x')<=8))
         )
-        self.assertEqual(expr_stream.bbox, {'x': (2.5, 5.5)})
+        self.assertEqual(expr_stream.bbox, {'x': (2.5, 8)})
 
     def test_selection_expr_stream_dynamic_map(self):
         for element_type in [Scatter, Points]:
