@@ -1286,6 +1286,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['selected'] = source.selected
 
         properties = self._glyph_properties(plot, style_element, source, ranges, style)
+        if 'legend_label' in properties and 'legend_field' in mapping:
+            mapping.pop('legend_field')
+
         with abbreviated_exception():
             renderer, glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph'] = glyph
