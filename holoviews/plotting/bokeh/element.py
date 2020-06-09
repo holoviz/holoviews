@@ -1716,7 +1716,7 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         if eldim is None and colors is None:
             return None
-        dim_name = str(eldim) if isinstance(eldim, dim) else dim_range_key(eldim)
+        dim_name = dim_range_key(eldim)
 
         # Attempt to find matching colormapper on the adjoined plot
         if self.adjoined:
