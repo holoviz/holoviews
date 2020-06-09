@@ -48,7 +48,8 @@ extras_require['examples'] = extras_require['recommended'] + [
     'bzip2',
     'dask',
     'scipy',
-    'shapely'
+    'shapely',
+    'scikit-image'
 ]
 
 if sys.version_info.major > 2:

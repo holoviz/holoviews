@@ -14,7 +14,7 @@ Version 1.13
 ~~~~~~~~~~~~
 
 Version 1.13.2
-==============
+**************
 
 This is a minor patch release fixing a number of regressions
 introduced as part of the 1.13.x releases. Many thanks to the
