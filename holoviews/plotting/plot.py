@@ -627,11 +627,12 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
+            
             # Only compute ranges if not axiswise on a composite plot
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
-                self._compute_group_range(group, elements, ranges, framewise)
+                self._compute_group_range(group, elements, ranges, framewise, self.top_level)
         self.ranges.update(ranges)
         return ranges
 
@@ -683,10 +684,11 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges, framewise):
+    def _compute_group_range(cls, group, elements, ranges, framewise, top_level):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        prev_ranges = ranges.get(group, {})
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
@@ -697,9 +699,10 @@ class DimensionedPlot(Plot):
             for k, v in dict(opts.kwargs, **plot_opts.kwargs).items():
                 if not isinstance(v, dim) or ('color' not in k and k != 'magnitude'):
                     continue
+
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
-                    if dim_name in ranges.get(group, {}) and not framewise:
+                    if dim_name in prev_ranges and not framewise:
                         continue
                     values = v.apply(el, expanded=False, all_values=True)
                     factors = None
@@ -718,6 +721,7 @@ class DimensionedPlot(Plot):
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+    
                     if factors is not None:
                         if 'factors' not in group_ranges[dim_name]:
                             group_ranges[dim_name]['factors'] = []
@@ -728,7 +732,7 @@ class DimensionedPlot(Plot):
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
                 dim_name = el_dim.name
-                if dim_name in ranges.get(group, {}) and not framewise:
+                if dim_name in prev_ranges and not framewise:
                     continue
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
@@ -803,10 +807,19 @@ class DimensionedPlot(Plot):
                 dranges['factors'] = util.unique_array([
                     v for fctrs in values['factors'] for v in fctrs])
             dim_ranges.append((gdim, dranges))
-        if group not in ranges:
-            ranges[group] = OrderedDict(dim_ranges)
+        if prev_ranges and not (framewise and top_level):
+            for d, dranges in dim_ranges:
+                for g, drange in dranges.items():
+                    prange = prev_ranges.get(d, {}).get(g, None)
+                    if prange is None:
+                        if d not in prev_ranges:
+                            prev_ranges[d] = {}
+                        prev_ranges[d][g] = drange
+                    else:
+                        prev_ranges[d][g] = util.max_range([drange, prange],
+                                                           combined=g=='hard')            
         else:
-            ranges[group].update(OrderedDict(dim_ranges))
+            ranges[group] = OrderedDict(dim_ranges)
 
 
     @classmethod

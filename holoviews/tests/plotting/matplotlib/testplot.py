@@ -32,7 +32,7 @@ class TestMPLPlot(ComparisonTestCase):
         mpl_renderer.comm_manager = comms.CommManager
         if not mpl_renderer:
             raise SkipTest("Matplotlib required to test plot instantiation")
-        Store.current_backend = 'matplotlib'
+        Store.set_current_backend('matplotlib')
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
             self._padding[plot] = plot.padding

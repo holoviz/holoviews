@@ -36,6 +36,18 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertFalse(subplot1.handles['glyph_renderer'].visible)
         self.assertTrue(subplot2.handles['glyph_renderer'].visible)
 
+    def test_layout_framewise_norm(self):
+        img1 = Image(np.mgrid[0:5, 0:5][0]).opts(framewise=True)
+        img2 = Image(np.mgrid[0:5, 0:5][0]*10).opts(framewise=True)
+        plot = bokeh_renderer.get_plot(img1+img2)
+        img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        img1_cmapper = img1_plot.handles['color_mapper']
+        img2_cmapper = img2_plot.handles['color_mapper']
+        self.assertEqual(img1_cmapper.low, 0)
+        self.assertEqual(img2_cmapper.low, 0)
+        self.assertEqual(img1_cmapper.high, 40)
+        self.assertEqual(img2_cmapper.high, 40)
+
     def test_layout_title(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})

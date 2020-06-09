@@ -38,7 +38,7 @@ class TestBokehPlot(ComparisonTestCase):
         bokeh_renderer.comm_manager = comms.CommManager
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
-        Store.current_backend = 'bokeh'
+        Store.set_current_backend('bokeh')
         self._padding = {}
         for plot in concrete_descendents(ElementPlot).values():
             self._padding[plot] = plot.padding
