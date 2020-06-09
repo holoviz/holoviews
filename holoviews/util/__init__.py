@@ -786,10 +786,10 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
-    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
-        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
+    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
+        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
     if Path is not None and isinstance(filename, Path):
