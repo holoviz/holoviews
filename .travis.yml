@@ -92,7 +92,7 @@ jobs:
       script:
         - conda install $CHANS_DEV firefox geckodriver 
         - bokeh sampledata
-        - conda install $CHANS_DEV matplotlibsampledata
+        - conda install -c pyviz matplotlibsampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
         - python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
         - nbsite build --what=html --output=builtdocs
@@ -106,6 +106,7 @@ jobs:
       script:
         - conda install $CHANS_DEV firefox geckodriver
         - bokeh sampledata
+        - conda install -c pyviz matplotlibsampledata
         - aws s3 sync --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
         - nbsite build --what=html --output=builtdocs
