@@ -6,32 +6,27 @@ with custom bokeh widgets to deploy an app.
 import pandas as pd
 import numpy as np
 import holoviews as hv
+import panel as pn
 
-from bokeh.io import curdoc
-from bokeh.layouts import layout
-from bokeh.models import Slider, Button
 from bokeh.sampledata import gapminder
 from holoviews import dim, opts
 
 renderer = hv.renderer('bokeh')
 
 # Declare dataset
-panel = pd.Panel({'Fertility': gapminder.fertility,
-                  'Population': gapminder.population,
-                  'Life expectancy': gapminder.life_expectancy})
-gapminder_df = panel.to_frame().reset_index().rename(columns={'minor': 'Year'})
-gapminder_df = gapminder_df.merge(gapminder.regions.reset_index(), on='Country')
-gapminder_df['Country'] = gapminder_df['Country'].astype('str')
-gapminder_df['Group'] = gapminder_df['Group'].astype('str')
-gapminder_df.Year = gapminder_df.Year.astype('f')
+fertility = gapminder.fertility.reset_index().melt(id_vars='Country', var_name='Year', value_name='Fertility')
+population = gapminder.population.reset_index().melt(id_vars='Country', var_name='Year', value_name='Population')
+life_expectancy = gapminder.life_expectancy.reset_index().melt(id_vars='Country', var_name='Year', value_name='Life Expectancy')
+gapminder_df = pd.merge(pd.merge(pd.merge(fertility, population), life_expectancy), gapminder.regions, on='Country')
+gapminder_df.Year = gapminder_df.Year.astype('int')
 ds = hv.Dataset(gapminder_df)
 
 # Apply dimension labels and ranges
-kdims = ['Fertility', 'Life expectancy']
+kdims = ['Fertility', 'Life Expectancy']
 vdims = ['Country', 'Population', 'Group']
 dimensions = {
     'Fertility' : dict(label='Children per woman (total fertility)', range=(0, 10)),
-    'Life expectancy': dict(label='Life expectancy at birth (years)', range=(15, 100)),
+    'Life Expectancy': dict(label='Life expectancy at birth (years)', range=(15, 100)),
     'Population': ('population', 'Population')
 }
 
@@ -46,45 +41,46 @@ text = gapminder_ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
 # Combine Points and Text
 hvgapminder = (gapminder_ds * text).opts(
     opts.Points(alpha=0.6, color='Group', cmap='Set1', line_color='black', 
-                size=np.sqrt(dim('Population'))*0.005, width=1000, height=600,
-                tools=['hover'], title='Gapminder Demo'),
-    opts.Text(text_font_size='52pt', text_color='lightgray'))
-
+                size=np.sqrt(dim('Population'))*0.005, 
+                tools=['hover'], title='Gapminder Demo', responsive=True,
+                show_grid=True),
+    opts.Text(text_font_size='52pt', text_color='lightgray')
+)
 
 # Define custom widgets
 def animate_update():
     year = slider.value + 1
     if year > end:
-        year = start
+        year = int(start)
     slider.value = year
 
 # Update the holoviews plot by calling update with the new year.
-def slider_update(attrname, old, new):
-    hvplot.update((new,))
+def slider_update(event):
+    hvplot.update((event.new,))
 
-callback_id = None
-
-def animate():
-    global callback_id
-    if button.label == '► Play':
-        button.label = '❚❚ Pause'
-        callback_id = doc.add_periodic_callback(animate_update, 200)
+def animate(event):
+    if button.name == '► Play':
+        button.name = '❚❚ Pause'
+        callback.start()
     else:
-        button.label = '► Play'
-        doc.remove_periodic_callback(callback_id)
+        button.name = '► Play'
+        callback.stop()
 
 start, end = ds.range('Year')
-slider = Slider(start=start, end=end, value=start, step=1, title="Year")
-slider.on_change('value', slider_update)
+slider = pn.widgets.IntSlider(start=int(start), end=int(end), value=int(start), name="Year")
+slider.param.watch(slider_update, 'value')
 
-button = Button(label='► Play', width=60)
+button = pn.widgets.Button(name='► Play', width=60, align='end')
 button.on_click(animate)
+callback = button.add_periodic_callback(animate_update, 200, start=False)
 
 # Get HoloViews plot and attach document
-doc = curdoc()
-hvplot = renderer.get_plot(hvgapminder, doc)
+hvplot = renderer.get_plot(hvgapminder)
 hvplot.update((1964,))
 
-# Make a bokeh layout and add it as the Document root
-plot = layout([[hvplot.state], [slider, button]], sizing_mode='fixed')
-doc.add_root(plot)
+# Create a Panel layout and make it servable
+pn.Column(
+    hvplot.state,
+    pn.Row(slider, button),
+    sizing_mode='stretch_both'
+).servable('Gapminder Demo')

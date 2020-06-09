@@ -975,8 +975,9 @@ def max_range(ranges, combined=True):
                     if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             elif arr.dtype.kind in 'M':
-                return ((arr.min(), arr.max()) if combined else
-                        (arr[:, 0].min(), arr[:, 1].min()))
+                drange = ((arr.min(), arr.max()) if combined else
+                          (arr[:, 0].min(), arr[:, 1].max()))
+                return drange
 
             if combined:
                 return (np.nanmin(arr), np.nanmax(arr))

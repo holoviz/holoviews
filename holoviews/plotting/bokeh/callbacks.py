@@ -374,7 +374,7 @@ class ServerCallback(MessageCallback):
             from tornado.ioloop import IOLoop
             IOLoop.current().call_later(int(timeout)/1000., cb)
         else:
-            cb()
+            pn.state.curdoc.add_timeout_callback(cb, int(timeout))
 
     def on_change(self, attr, old, new):
         """

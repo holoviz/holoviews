@@ -669,8 +669,9 @@ def renderer(name):
     """
     try:
         if name not in Store.renderers:
-            if Store.current_backend:
-                prev_backend = Store.current_backend
+            prev_backend = Store.current_backend
+            if Store.current_backend not in Store.renderers:
+                prev_backend = None
             extension(name)
             if prev_backend:
                 Store.set_current_backend(prev_backend)
@@ -834,8 +835,6 @@ def render(obj, backend=None, toolbar=None, **kwargs):
         The rendered representation of the HoloViews object, e.g.
         if backend='matplotlib' a matplotlib Figure or FuncAnimation
     """
-    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
-        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
     if kwargs:
