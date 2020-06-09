@@ -815,9 +815,11 @@ class DimensionedPlot(Plot):
                         if d not in prev_ranges:
                             prev_ranges[d] = {}
                         prev_ranges[d][g] = drange
+                    elif g == 'factors':
+                        prev_ranges[d][g] = drange
                     else:
-                        prev_ranges[d][g] = util.max_range([drange, prange],
-                                                           combined=g=='hard')            
+                        prev_ranges[d][g] = util.max_range([prange, drange],
+                                                           combined=g=='hard')
         else:
             ranges[group] = OrderedDict(dim_ranges)
 
