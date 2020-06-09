@@ -100,6 +100,7 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
 
+        data = None
         if fmt == 'gif':
             from bokeh.io.export import get_screenshot_as_png
             from bokeh.io.webdriver import webdriver_control
@@ -140,7 +141,7 @@ class BokehRenderer(Renderer):
             div = tag.format(src=src, mime_type=mime_type, css='')
 
         plot.document = doc
-        if as_script:
+        if as_script or data is None:
             return div
         else:
             return data
