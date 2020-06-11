@@ -95,7 +95,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'nbsite >0.5.2',
     'sphinx',
     'sphinx_holoviz_theme',
-    'mpl_sample_data >=3.2.1',
+    'mpl_sample_data >=3.1.3',
     'awscli',
     'pscript',
     'graphviz'
