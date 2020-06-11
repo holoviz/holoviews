@@ -755,7 +755,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
     """
     Saves the supplied object to file.
 
@@ -783,6 +783,10 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Bokeh resources used to load bokehJS components. Defaults to
         CDN, to embed resources inline for offline usage use 'inline'
         or bokeh.resources.INLINE.
+    toolbar: bool
+        Whether to include toolbars in the exported plot
+    title: string
+        Custom title for exported HTML file
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
@@ -803,7 +807,8 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
             fmt = formats[-1]
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
-    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources)
+    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources,
+                             title=title)
 
 
 def render(obj, backend=None, toolbar=None, **kwargs):
