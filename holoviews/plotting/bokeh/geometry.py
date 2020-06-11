@@ -63,7 +63,7 @@ class RectanglesPlot(GeomMixin, LegendPlot, ColorbarPlot):
         y0, y1 = np.min([y0, y1], axis=0), np.max([y0, y1], axis=0)
         data = {
             'x': x0+(x1-x0)/2.,
-            'y': x0+(x1-x0)/2.,
+            'y': y0+(y1-y0)/2.,
             'width': x1-x0,
             'height': y1-y0
         }
