@@ -6,6 +6,7 @@ regardless of plotting package or backend.
 from __future__ import unicode_literals, absolute_import
 
 import base64
+import os
 
 from io import BytesIO
 try:
@@ -568,13 +569,19 @@ class Renderer(Exporter):
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
-             options=None, resources='inline', **kwargs):
+             options=None, resources='inline', title=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
+
+        if kwargs:
+            param.main.warning("Supplying plot, style or norm options "
+                               "as keyword arguments to the Renderer.save "
+                               "method is deprecated and will error in "
+                               "the next minor release.")
 
         with StoreOptions.options(obj, options, **kwargs):
             plot, fmt = self_or_cls._validate(obj, fmt)
@@ -587,9 +594,12 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
-            if isinstance(basename, basestring) and fmt in MIME_TYPES:
-                basename = '.'.join([basename, fmt])
-            plot.layout.save(basename, embed=True, resources=resources)
+            if isinstance(basename, basestring):
+                if title is None:
+                    title = os.path.basename(basename)
+                if fmt in MIME_TYPES:
+                    basename = '.'.join([basename, fmt])
+            plot.layout.save(basename, embed=True, resources=resources, title=title)
             return
 
         rendered = self_or_cls(plot, fmt)
