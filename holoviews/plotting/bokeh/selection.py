@@ -72,6 +72,7 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             if 'alpha' in opt_name:
                 options[opt_name] = 1.0
 
+        print(el2_name)
         if el1_name != "Histogram":
             # Darken unselected color
             if unselected_color:
@@ -99,5 +100,5 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         region = region_element.opts(el1_name, clone=True, **options)
         if el2_name and el2_name == 'Path':
-            region = region.opts(el2_name, backend='bokeh', color='black')
+            region = region.opts(el2_name, backend='bokeh', color='black', line_dash='dotted')
         return region
