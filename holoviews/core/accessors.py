@@ -495,12 +495,13 @@ class Opts(object):
         self._obj = obj
 
 
-    def get(self, group=None, backend=None):
+    def get(self, group=None, backend=None, defaults=True):
         """Returns the corresponding Options object.
 
         Args:
             group: The options group. Flattens across groups if None.
             backend: Current backend if None otherwise chosen backend.
+            defaults: Whether to include default option values
 
         Returns:
             Options object associated with the object containing the
@@ -511,7 +512,8 @@ class Opts(object):
         groups = Options._option_groups if group is None else [group]
         backend = backend if backend else Store.current_backend
         for group in groups:
-            optsobj = Store.lookup_options(backend, self._obj, group)
+            optsobj = Store.lookup_options(backend, self._obj, group,
+                                           defaults=defaults)
             keywords = dict(keywords, **optsobj.kwargs)
         return Options(**keywords)
 

@@ -1257,10 +1257,10 @@ class Store(object):
         if obj.id in cls._custom_options[backend]:
             return cls._custom_options[backend][obj.id].closest(
                 obj, group, defaults, backend=backend)
-        elif defaults:
-            return cls._options[backend].closest(obj, group, defaults, backend=backend)
+        elif not defaults:
+            return Options()
         else:
-            return OptionTree(groups=cls._options[backend].groups)
+            return cls._options[backend].closest(obj, group, defaults, backend=backend)
 
     @classmethod
     def lookup(cls, backend, obj):
