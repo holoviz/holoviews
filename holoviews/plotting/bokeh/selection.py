@@ -99,5 +99,5 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
 
         region = region_element.opts(el1_name, clone=True, **options)
         if el2_name and el2_name == 'Path':
-            region = region.opts(el2_name, backend='bokeh', color='black')
+            region = region.opts(el2_name, backend='bokeh', color='black', line_dash='dotted')
         return region
