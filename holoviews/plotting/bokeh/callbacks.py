@@ -364,16 +364,10 @@ class ServerCallback(MessageCallback):
         return {'id': model.ref['id'], 'value': resolved}
 
     def skip_event(self, event):
-        for skip in self.skip_events:
-            if skip(event):
-                return True
-        return False
+        return any(skip(event) for skip in self.skip_events)
 
     def skip_change(self, msg):
-        for skip in self.skip_changes:
-            if skip(msg):
-                return True
-        return False
+        return any(skip(msg) for skip in self.skip_changes)
 
     def _schedule_callback(self, cb, timeout=None, offset=True):
         if timeout is None:
@@ -958,8 +952,8 @@ class BoundsCallback(Callback):
     models = ['plot']
     extra_models = ['box_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
 
+    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
     skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
@@ -1031,8 +1025,8 @@ class BoundsXCallback(Callback):
     models = ['plot']
     extra_models = ['xbox_select']
     on_events = ['selectiongeometry']
-    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
 
+    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
     skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
@@ -1058,7 +1052,6 @@ class BoundsYCallback(Callback):
     on_events = ['selectiongeometry']
 
     skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
-
     skip_events = [lambda event: event.geometry['type'] != 'rect',
                    lambda event: not event.final]
 
