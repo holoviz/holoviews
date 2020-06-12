@@ -1,3 +1,63 @@
+Version 1.13.3
+==============
+
+This version introduces a number of enhancements of existing
+functionality, particularly for features introduced in 1.13.0,
+e.g. cuDF support and linked selections. In addition it introduces a
+number of important bug fixes. Many thanks for contribution by
+@kebowen730, @maximlt, @pretros1999, @alexbraditsas, @lelatbones,
+@flothesof and the core maintainers @jbednar and @philippjfr.
+
+Enhancements:
+
+- Expose `center` as an output rendering option
+  ([#4365](https://github.com/holoviz/holoviews/pull/4365))
+- Configurable throttling schemes for linked streams on the server
+  ([#4372](https://github.com/holoviz/holoviews/pull/4372))
+- Add support for lasso tool in linked selections
+  ([#4362](https://github.com/holoviz/holoviews/pull/4362))
+- Add support for unwatching on `Params` stream
+  ([#4417](https://github.com/holoviz/holoviews/pull/4417))
+- Optimizations for the cuDF interface
+  ([#4436](https://github.com/holoviz/holoviews/pull/4436))
+- Add support for `by` aggregator in datashader operations
+  ([#4438](https://github.com/holoviz/holoviews/pull/4438))
+- Add support for cupy and dask histogram and box-whisker calculations
+  ([#4447](https://github.com/holoviz/holoviews/pull/4447))
+- Allow rendering HoloViews output as an ipywidget
+  ([#4404](https://github.com/holoviz/holoviews/pull/4404))
+- Allow `DynamicMap` callback to accept key dimension values as
+  variable kwargs
+  ([#4462](https://github.com/holoviz/holoviews/pull/4462))
+- Delete toolbar by default when rendering bokeh plot to PNG
+  ([#4422](https://github.com/holoviz/holoviews/pull/4422))
+- Ensure `Bounds` and `Lasso` events only trigger on mouseup
+  ([#4478](https://github.com/holoviz/holoviews/pull/4478))
+
+Bug fixes:
+
+- Eliminate circular references to allow immediate garbage collection
+  ([#4368](https://github.com/holoviz/holoviews/pull/4368),
+  [#4377](https://github.com/holoviz/holoviews/pull/4377))
+- Allow bytes as categories
+  ([#4392](https://github.com/holoviz/holoviews/pull/4392))
+- Fix handling of zero as log colormapper lower bound
+  ([#4383](https://github.com/holoviz/holoviews/pull/4383))
+- Do not compute data ranges if Dimension.values is supplied
+  ([#4416](https://github.com/holoviz/holoviews/pull/4416))
+- Fix RangeXY updates when zooming on only one axis
+  ([#4413](https://github.com/holoviz/holoviews/pull/4413))
+- Ensure that ranges do not bounce when data_aspect is set
+  ([#4431](https://github.com/holoviz/holoviews/pull/4431))
+- Fix bug specifying a rotation for Box element
+  ([#4460](https://github.com/holoviz/holoviews/pull/4460))
+- Fix handling of datetimes in bokeh RectanglesPlot
+  ([#4461](https://github.com/holoviz/holoviews/pull/4461))
+- Fix bug normalizing ranges across multiple plots when framewise=True
+  ([#4450](https://github.com/holoviz/holoviews/pull/4450))
+- Fix bug coloring adjoined histograms
+  ([#4458](https://github.com/holoviz/holoviews/pull/4458))
+
 Version 1.13.2
 ==============
 
