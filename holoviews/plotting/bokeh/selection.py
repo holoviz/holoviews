@@ -72,7 +72,6 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
             if 'alpha' in opt_name:
                 options[opt_name] = 1.0
 
-        print(el2_name)
         if el1_name != "Histogram":
             # Darken unselected color
             if unselected_color:
