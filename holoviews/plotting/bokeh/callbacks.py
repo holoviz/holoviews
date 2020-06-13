@@ -330,6 +330,9 @@ class ServerCallback(MessageCallback):
 
     throttling_scheme = 'adaptive'
 
+    skip_events  = []
+    skip_changes = []
+
     def __init__(self, plot, streams, source, **params):
         super(ServerCallback, self).__init__(plot, streams, source, **params)
         self._active = False
@@ -359,6 +362,12 @@ class ServerCallback(MessageCallback):
             else:
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
+
+    def skip_event(self, event):
+        return any(skip(event) for skip in self.skip_events)
+
+    def skip_change(self, msg):
+        return any(skip(msg) for skip in self.skip_changes)
 
     def _schedule_callback(self, cb, timeout=None, offset=True):
         if timeout is None:
@@ -432,6 +441,8 @@ class ServerCallback(MessageCallback):
 
         # Process event types
         for event in events:
+            if self.skip_event(event):
+                continue
             msg = {}
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
@@ -464,10 +475,13 @@ class ServerCallback(MessageCallback):
             cb_obj = self.plot_handles.get(obj_handle)
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
-        try:
-            equal = msg == self._prev_msg
-        except Exception:
-            equal = False
+        if self.skip_change(msg):
+            equal = True
+        else:
+            try:
+                equal = msg == self._prev_msg
+            except Exception:
+                equal = False
 
         if not equal or any(s.transient for s in self.streams):
             self.on_msg(msg)
@@ -938,7 +952,10 @@ class BoundsCallback(Callback):
     models = ['plot']
     extra_models = ['box_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -1008,7 +1025,10 @@ class BoundsXCallback(Callback):
     models = ['plot']
     extra_models = ['xbox_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'x1']):
@@ -1030,7 +1050,10 @@ class BoundsYCallback(Callback):
     models = ['plot']
     extra_models = ['ybox_select']
     on_events = ['selectiongeometry']
-    skip = ["cb_obj.geometry.type != 'rect'"]
+
+    skip = ["(cb_obj.geometry.type != 'rect') || (!cb_obj.final)"]
+    skip_events = [lambda event: event.geometry['type'] != 'rect',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['y0', 'y1']):
@@ -1050,6 +1073,9 @@ class LassoCallback(Callback):
     extra_models = ['lasso_select']
     on_events = ['selectiongeometry']
     skip = ["(cb_obj.geometry.type != 'poly') || (!cb_obj.final)"]
+
+    skip_events = [lambda event: event.geometry['type'] != 'poly',
+                   lambda event: not event.final]
 
     def _process_msg(self, msg):
         if not all(c in msg for c in ('xs', 'ys')):
