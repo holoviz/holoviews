@@ -820,6 +820,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     xspan = (plot.x_range.end-plot.x_range.start)
                     yspan = (plot.y_range.end-plot.y_range.start)
 
+                size_stream = [s for s in self.streams if isinstance(s, PlotSize)]
+                if size_stream and size_stream[0]._triggering:
+                    # Do not trigger on frame size changes, this can
+                    # trigger event loops if the tick labels change
+                    # the canvas size
+                    return
+
                 desired_xspan = yspan*(ratio/frame_aspect)
                 desired_yspan = xspan/(ratio/frame_aspect)
                 if ((np.allclose(desired_xspan, xspan, rtol=0.05) and
