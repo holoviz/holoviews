@@ -138,9 +138,21 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
             data = OrderedDict([(k, self._selection_transform(v, operations))
                                  for k, v in hvobj.items()])
-            new_hvobj = hvobj.clone(data)
-            if hasattr(new_hvobj, 'collate'):
-                new_hvobj = new_hvobj.collate()
+            if isinstance(hvobj, NdOverlay):
+                def compose(*args, **kwargs):
+                    new = []
+                    for k, v in data.items():
+                        for i, el in enumerate(v[()]):
+                            if i == len(new):
+                                new.append([])
+                            new[i].append((k, el))
+                    return Overlay([hvobj.clone(n) for n in new])
+                new_hvobj = DynamicMap(compose)
+                new_hvobj.callback.inputs[:] = list(data.values())
+            else:
+                new_hvobj = hvobj.clone(data)
+                if hasattr(new_hvobj, 'collate'):
+                    new_hvobj = new_hvobj.collate()
             return new_hvobj
         else:
              # Unsupported object
