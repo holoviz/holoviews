@@ -392,7 +392,7 @@ class ViolinPlot(BoxWhiskerPlot):
             xfactors, yfactors = factors, []
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
-    def _kde_data(self, element, el, key, split_dim, **kwargs):
+    def _kde_data(self, element, el, key, split_dim, split_cats, **kwargs):
         vdims = el.vdims
         vdim = vdims[0]
         if self.clip:
@@ -402,24 +402,29 @@ class ViolinPlot(BoxWhiskerPlot):
         if split_dim is not None:
             el = el.clone(kdims=element.kdims)
             all_cats = split_dim.apply(el)
-            bin_cats = unique_array(all_cats)
-            if len(bin_cats) > 2:
+            if len(split_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
                     'greater than 2! Found {0} categories: {1}'.format(
-                        len(bin_cats), ', '.join(bin_cats)))
+                        len(bin_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
 
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
             scale = 4
         else:
-            kdes = [univariate_kde(el, dimension=vdim.name, **kwargs)] * 2
+            split_cats = [None, None]
+            kde = [univariate_kde(el, dimension=vdim.name, **kwargs)]
+            kdes = {None: kde}
             scale = 2
 
         x_range = el.range(vdim)
         xs, fill_xs, ys, fill_ys = [], [], [], []
-        for i, kde in enumerate(kdes):
-            _xs, _ys = (kde.dimension_values(i) for i in range(2))
+        for i, cat in enumerate(split_cats):
+            kde = kdes.get(cat)
+            if kde is None:
+                _xs, _ys = np.array([]), np.array([])
+            else:
+                _xs, _ys = (kde.dimension_values(idim) for idim in range(2))
             mask = isfinite(_ys) & (_ys>0) # Mask out non-finite and zero values
             _xs, _ys = _xs[mask], _ys[mask]
 
@@ -458,8 +463,9 @@ class ViolinPlot(BoxWhiskerPlot):
             kde = {'ys': fill_xs, 'xs': fill_ys}
         else:
             kde = line
+
         if isinstance(kdes, NdOverlay):
-            kde[repr(split_dim)] = [str(k) for k in kdes.keys()]
+            kde[repr(split_dim)] = [str(k) for k in split_cats]
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
@@ -508,6 +514,15 @@ class ViolinPlot(BoxWhiskerPlot):
         else:
             groups = dict([((element.label,), element)])
 
+        if split_dim:
+            split_name = split_dim.dimension.name
+            if split_name in ranges and not split_dim.ops:
+                split_cats = ranges[split_name].get('factors')
+            elif split_dim:
+                split_cats = unique_iterator(split_dim.apply(element))
+        else:
+            split_cats = None
+
         # Define glyph-data mapping
         if self.invert_axes:
             bar_map = {'y': 'x', 'left': 'bottom',
@@ -535,7 +550,7 @@ class ViolinPlot(BoxWhiskerPlot):
         kde_data, line_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(5))
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
-            kde, line, segs, bars, scatter = self._kde_data(element, g, key, split_dim, **kwargs)
+            kde, line, segs, bars, scatter = self._kde_data(element, g, key, split_dim, split_cats, **kwargs)
             for k, v in segs.items():
                 seg_data[k] += v
             for k, v in bars.items():
