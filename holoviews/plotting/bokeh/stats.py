@@ -409,13 +409,11 @@ class ViolinPlot(BoxWhiskerPlot):
                     'greater than 2! Found {0} categories: {1}'.format(
                         len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
-
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
             scale = 4
         else:
             split_cats = [None, None]
-            kde = [univariate_kde(el, dimension=vdim.name, **kwargs)]
-            kdes = {None: kde}
+            kdes = {None: univariate_kde(el, dimension=vdim.name, **kwargs)}
             scale = 2
 
         x_range = el.range(vdim)
