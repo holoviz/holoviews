@@ -429,9 +429,13 @@ class ViolinPlot(BoxWhiskerPlot):
                 _ys = _ys[::-1]
                 _xs = _xs[::-1]
 
-            if split_dim and len(_xs):
-                fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
-                fill_ys.append([0]+list(_ys)+[0])
+            if split_dim:
+                if len(_xs):
+                    fill_xs.append([x_range[0]]+list(_xs)+[x_range[-1]])
+                    fill_ys.append([0]+list(_ys)+[0])
+                else:
+                    fill_xs.append([])
+                    fill_ys.append([])
             x_range = x_range[::-1]
 
             xs += list(_xs)
@@ -443,8 +447,10 @@ class ViolinPlot(BoxWhiskerPlot):
         # this scales the width
         if split_dim:
             fill_xs = [np.asarray(x) for x in fill_xs]
-            fill_ys = [[key + (y,) for y in (fy/ys.max())*(self.violin_width/scale)] for fy in fill_ys]
-        ys = (ys/ys.max())*(self.violin_width/scale) if len(ys) else []
+            fill_ys = [[key + (y,) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
+                       if len(fy) else [] for fy in fill_ys]
+        old_ys = ys
+        ys = (ys/np.nanmax(np.abs(ys)))*(self.violin_width/scale) if len(ys) else []
         ys = [key + (y,) for y in ys]
 
         line = {'ys': xs, 'xs': ys}
@@ -488,6 +494,7 @@ class ViolinPlot(BoxWhiskerPlot):
             bars['top'].append(q3)
             scatter['x'] = xpos
             scatter['y'] = q2
+
         return kde, line, segments, bars, scatter
 
 
