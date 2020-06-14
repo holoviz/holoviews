@@ -454,7 +454,6 @@ class ViolinPlot(BoxWhiskerPlot):
             fill_xs = [np.asarray(x) for x in fill_xs]
             fill_ys = [[key + (y,) for y in (fy/np.abs(ys).max())*(self.violin_width/scale)]
                        if len(fy) else [] for fy in fill_ys]
-        old_ys = ys
         ys = (ys/np.nanmax(np.abs(ys)))*(self.violin_width/scale) if len(ys) else []
         ys = [key + (y,) for y in ys]
 
