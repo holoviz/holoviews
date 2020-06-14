@@ -12,9 +12,10 @@ from .selection import BokehOverlaySelectionDisplay
 from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
-from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
-                          unique_iterator, unique_array, isfinite,
-                          is_dask_array, is_cupy_array)
+from ...core.util import (
+    basestring, dimension_sanitizer, wrap_tuple, unique_iterator,
+    isfinite, is_dask_array, is_cupy_array
+)
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
 from .chart import AreaPlot
@@ -406,7 +407,7 @@ class ViolinPlot(BoxWhiskerPlot):
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
                     'greater than 2! Found {0} categories: {1}'.format(
-                        len(bin_cats), ', '.join(split_cats)))
+                        len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
 
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
