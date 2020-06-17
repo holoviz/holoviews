@@ -37,12 +37,12 @@ stages:
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: pip_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
-  - name: docs
-    if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: gallery
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
-  - name: docs_dev
-    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
+  - name: website_dev
+    if: tag =~ ^v(\d+|\.)+[a-z]\d+$ OR tag = website_dev
+  - name: website_release
+    if: tag =~ ^v(\d+|\.)+[^a-z]\d+$ OR tag = website
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: docs_daily
@@ -87,8 +87,8 @@ jobs:
 
     - &doc_build
       <<: *default
-      stage: docs_dev
-      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      stage: website_dev
+      env: DESC="website" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
       script:
         - conda install $CHANS_DEV firefox geckodriver mpl_sample_data
         - bokeh sampledata
@@ -120,7 +120,7 @@ jobs:
       env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
 
     - <<: *doc_build
-      stage: docs
+      stage: website
 
     - <<: *gallery_build
       stage: gallery
