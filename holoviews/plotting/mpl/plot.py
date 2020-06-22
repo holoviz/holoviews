@@ -1105,8 +1105,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
             and self.v17_layout_format):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in self.traverse(traverse_fn)
+                                    if artists is not None)
+            )
             fix_aspect(fig, self.rows, self.cols,
                        title_obj, extra_artists,
                        vspace=self.vspace*self.fig_scale,
