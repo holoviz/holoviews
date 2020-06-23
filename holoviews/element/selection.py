@@ -288,14 +288,13 @@ class SelectionPolyExpr(Selection2DExpr):
 
         bbox = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         index_cols = kwargs.get('index_cols')
+        expr = dim.pipe(spatial_bounds_select, xdim, dim(ydim),
+                                  bounds=(x0, y0, x1, y1))
         if index_cols:
-            selection_expr = self._get_index_expr(index_cols, bbox)
-            region_element = None
-        else:
-            selection_expr = dim.pipe(spatial_bounds_select, xdim, dim(ydim),
-                                      bounds=(x0, y0, x1, y1))
-            region_element = Rectangles([(x0, y0, x1, y1)])
-        return selection_expr, bbox, region_element
+            selection = self[expr.apply(self, expanded=False)]
+            selection_expr = self._get_index_expr(index_cols, selection)
+            return selection_expr, bbox, None
+        return expr, bbox, Rectangles([(x0, y0, x1, y1)])
 
     def _get_lasso_selection(self, xdim, ydim, geometry, **kwargs):
         from .path import Path
