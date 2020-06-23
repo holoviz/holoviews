@@ -22,7 +22,8 @@ functionality, particularly for features introduced in 1.13.0,
 e.g. cuDF support and linked selections. In addition it introduces a
 number of important bug fixes. Many thanks for contribution by
 @kebowen730, @maximlt, @pretros1999, @alexbraditsas, @lelatbones,
-@flothesof and the core maintainers @jbednar and @philippjfr.
+@flothesof, @ruoyu0088, @cool-PR and the core maintainers @jbednar and
+@philippjfr.
 
 Enhancements:
 
