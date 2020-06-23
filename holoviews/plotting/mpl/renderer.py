@@ -150,8 +150,10 @@ class MPLRenderer(Renderer):
             fig = plot.state
 
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in plot.traverse(traverse_fn)
+                                    if artists is not None)
+            )
 
             kw = dict(
                 format=fmt,
