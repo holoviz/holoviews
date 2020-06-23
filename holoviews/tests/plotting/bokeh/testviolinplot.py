@@ -167,7 +167,8 @@ class TestBokehViolinPlot(TestBokehPlot):
         source = plot.handles['patches_1_source']
         glyph = plot.handles['patches_1_glyph']
         cmapper = plot.handles['violin_color_mapper']
-        self.assertEqual(source.data["dim('b')>2"], ['False', 'False', 'False', 'True', 'True'])
+        values = ['False', 'True', 'False', 'True', 'False', 'True', 'False', 'True', 'False', 'True']
+        self.assertEqual(source.data["dim('b')>2"], values)
         self.assertEqual(glyph.fill_color, {'field': "dim('b')>2", 'transform': cmapper})
 
     def test_violin_split_op_single(self):
