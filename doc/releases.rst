@@ -4,6 +4,7 @@ Releases
 Announcements
 -------------
 
+* `Version 1.13 <http://blog.pyviz.org/release_1.13.html>`__ (June 23, 2020)
 * `Version 1.10 <http://blog.pyviz.org/release_1.10.html>`__ (April 11, 2018)
 
 
@@ -31,6 +32,8 @@ Enhancements:
   (`#4372 <https://github.com/holoviz/holoviews/pull/4372>`_)
 * Add support for lasso tool in linked selections
   (`#4362 <https://github.com/holoviz/holoviews/pull/4362>`_)
+- Add support for NdOverlay in linked selections
+  (`#4481 <https://github.com/holoviz/holoviews/pull/4481>`_)
 * Add support for unwatching on ``Params`` stream
   (`#4417 <https://github.com/holoviz/holoviews/pull/4417>`_)
 * Optimizations for the cuDF interface
@@ -48,6 +51,12 @@ Enhancements:
   (`#4422 <https://github.com/holoviz/holoviews/pull/4422>`_)
 * Ensure ``Bounds`` and ``Lasso`` events only trigger on mouseup
   (`#4478 <https://github.com/holoviz/holoviews/pull/4478>`_)
+* Fix issues with ranges bouncing when PlotSize stream is attached
+  (`#4480 <https://github.com/holoviz/holoviews/pull/4480>`_)
+* Fix bug with hv.extension(inline=False)
+  (`#4491 <https://github.com/holoviz/holoviews/pull/4491>`_)
+* Handle missing categories on split Violin plot
+  (`#4482 <https://github.com/holoviz/holoviews/pull/4482>`_)
 
 Bug fixes:
 
@@ -993,9 +1002,9 @@ Fixes:
 
 - Various fixes for QuadMesh support including support for contours,
   nan coordinates and inverted coordinates
-  (`#2691 <https://github.com/pyviz/holoviews/pull/2691),
-  [#2702 <https://github.com/pyviz/holoviews/pull/2702),
-  [#2771 <https://github.com/pyviz/holoviews/pull/2771>`_)
+  (`#2691 <https://github.com/pyviz/holoviews/pull/2691>`_,
+  `#2702 <https://github.com/pyviz/holoviews/pull/2702>`_,
+  `#2771 <https://github.com/pyviz/holoviews/pull/2771>`_)
 - Fixed bugs laying out complex layouts in bokeh
   (`#2740 <https://github.com/pyviz/holoviews/pull/2740>`_)
 - Fix for adding value dimensions to an xarray dataset

@@ -16,6 +16,8 @@ Enhancements:
   ([#4372](https://github.com/holoviz/holoviews/pull/4372))
 - Add support for lasso tool in linked selections
   ([#4362](https://github.com/holoviz/holoviews/pull/4362))
+- Add support for NdOverlay in linked selections
+  ([#4481](https://github.com/holoviz/holoviews/pull/4481))
 - Add support for unwatching on `Params` stream
   ([#4417](https://github.com/holoviz/holoviews/pull/4417))
 - Optimizations for the cuDF interface
@@ -57,6 +59,12 @@ Bug fixes:
   ([#4450](https://github.com/holoviz/holoviews/pull/4450))
 - Fix bug coloring adjoined histograms
   ([#4458](https://github.com/holoviz/holoviews/pull/4458))
+- Fix issues with ranges bouncing when PlotSize stream is attached
+  ([#4480](https://github.com/holoviz/holoviews/pull/4480))
+- Fix bug with hv.extension(inline=False)
+  ([#4491](https://github.com/holoviz/holoviews/pull/4491))
+- Handle missing categories on split Violin plot
+  ([#4482](https://github.com/holoviz/holoviews/pull/4482))
 
 Version 1.13.2
 ==============
