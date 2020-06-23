@@ -1152,8 +1152,12 @@ class CDSCallback(Callback):
         msg['data'] = dict(msg['data'])
         for col, values in msg['data'].items():
             if isinstance(values, dict):
+                shape = values.pop('shape', None)
+                dtype = values.pop('dtype', None)
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
+                if dtype is not None:
+                    values = np.array(values, dtype=dtype).reshape(shape)
             elif isinstance(values, list) and values and isinstance(values[0], dict):
                 new_values = []
                 for vals in values:
