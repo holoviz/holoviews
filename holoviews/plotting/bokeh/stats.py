@@ -517,7 +517,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if split_name in ranges and not split_dim.ops:
                 split_cats = ranges[split_name].get('factors')
             elif split_dim:
-                split_cats = unique_iterator(split_dim.apply(element))
+                split_cats = list(unique_iterator(split_dim.apply(element)))
         else:
             split_cats = None
 
