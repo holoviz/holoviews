@@ -10,6 +10,7 @@ import copy
 
 import numpy as np
 import param
+import pandas as pd # noqa
 
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
@@ -21,57 +22,24 @@ from ..dimension import (
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
-from .interface import Interface, iloc, ndloc
-from .array import ArrayInterface
-from .dictionary import DictInterface
-from .grid import GridInterface
+
+from .array import ArrayInterface             # noqa (API import)
+from .cudf import cuDFInterface               # noqa (API import)
+from .dask import DaskInterface               # noqa (API import)
+from .dictionary import DictInterface         # noqa (API import)
+from .grid import GridInterface               # noqa (API import)
+from .ibis import IbisInterface               # noqa (API import)
+from .interface import Interface, iloc, ndloc # noqa (API import)
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
+from .pandas import PandasInterface           # noqa (API import)
+from .spatialpandas import SpatialPandasInterface # noqa (API import)
+from .xarray import XArrayInterface           # noqa (API import)
 
-default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid']
+default_datatype = 'dataframe'
 
-try:
-    import pandas as pd # noqa (Availability import)
-    from .pandas import PandasInterface
-    default_datatype = 'dataframe'
-    datatypes.insert(0, 'dataframe')
-    DFColumns = PandasInterface
-except ImportError:
-    pd = None
-except Exception as e:
-    pd = None
-    param.main.param.warning('Pandas interface failed to import with '
-                             'following error: %s' % e)
-
-try:
-    from .spatialpandas import SpatialPandasInterface # noqa (API import)
-    datatypes.append('spatialpandas')
-except ImportError:
-    pass
-
-try:
-    from .xarray import XArrayInterface # noqa (Conditional API import)
-    datatypes.append('xarray')
-except ImportError:
-    pass
-
-try:
-    from .cudf import cuDFInterface   # noqa (Conditional API import)
-    datatypes.append('cuDF')
-except ImportError:
-    pass
-
-try:
-    from .dask import DaskInterface   # noqa (Conditional API import)
-    datatypes.append('dask')
-except ImportError:
-    pass
-
-if 'array' not in datatypes:
-    datatypes.append('array')
-if 'multitabular' not in datatypes:
-    datatypes.append('multitabular')
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
+             'cuDF', 'spatialpandas', 'array', 'multitabular']
 
 
 def concat(datasets, datatype=None):
@@ -1241,10 +1209,3 @@ argument to specify a selection specification""")
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
         return ndloc(self)
-
-
-# Aliases for pickle backward compatibility
-Columns      = Dataset
-ArrayColumns = ArrayInterface
-DictColumns  = DictInterface
-GridColumns  = GridInterface
