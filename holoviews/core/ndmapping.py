@@ -486,6 +486,7 @@ class MultiDimensionalMapping(Dimensioned):
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
+        return info_str
 
 
     def update(self, other):
