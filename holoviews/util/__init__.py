@@ -755,7 +755,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=True, title=None, **kwargs):
     """
     Saves the supplied object to file.
 
@@ -811,7 +811,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
                              title=title)
 
 
-def render(obj, backend=None, toolbar=None, **kwargs):
+def render(obj, backend=None, **kwargs):
     """
     Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
