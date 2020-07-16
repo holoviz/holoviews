@@ -14,6 +14,13 @@ Release notes
 Version 1.13
 ~~~~~~~~~~~~
 
+Version 1.13.4
+**************
+
+Bug fixes:
+* Fix regression in ``save`` method with toolbars
+  (`#4518 <https://github.com/holoviz/holoviews/pull/4518>`_)
+
 Version 1.13.3
 **************
 

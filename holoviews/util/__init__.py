@@ -783,8 +783,11 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         Bokeh resources used to load bokehJS components. Defaults to
         CDN, to embed resources inline for offline usage use 'inline'
         or bokeh.resources.INLINE.
-    toolbar: bool
-        Whether to include toolbars in the exported plot
+    toolbar: bool or None
+        Whether to include toolbars in the exported plot. If None,
+        display the toolbar unless fmt is `png` and backend is `bokeh`.
+        If `True`, always include the toolbar.  If `False`, do not include the
+        toolbar.
     title: string
         Custom title for exported HTML file
     **kwargs: dict
@@ -793,8 +796,14 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
     """
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
-    if (backend == 'bokeh' or (backend is None and Store.current_backend == 'bokeh')) and toolbar is None:
-        obj = obj.opts(toolbar=None, backend='bokeh', clone=True)
+    if (
+        not toolbar
+        and backend == "bokeh"
+        and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
+    ):
+        obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
+    elif toolbar is not None and not toolbar:
+        obj = obj.opts(toolbar=None)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
     if Path is not None and isinstance(filename, Path):
@@ -811,7 +820,7 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
                              title=title)
 
 
-def render(obj, backend=None, toolbar=None, **kwargs):
+def render(obj, backend=None, **kwargs):
     """
     Renders the HoloViews object to the corresponding object in the
     specified backend, e.g. a Matplotlib or Bokeh figure.
