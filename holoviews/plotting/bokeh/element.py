@@ -253,6 +253,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             t for t in cb_tools + self.default_tools + self.tools
             if t not in tool_names]
 
+        for tool in tool_list:
+            if tool in ['vline', 'hline']:
+                tool_list.append(
+                    tools.HoverTool(
+                        tooltips=tooltips,
+                        tags=['hv_created'],
+                        mode=tool, **hover_opts
+                    )
+                )
+                tool_list.remove(tool)
+
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
