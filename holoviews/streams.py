@@ -786,7 +786,7 @@ class Derived(Stream):
     a result that is a pure function of the input stream values.
     """
     trigger_index = param.Integer(
-        None, allow_None=True,
+        None, allow_None=True, constant=True,
         doc="""Index into input_streams of most recently updated stream"""
     )
 
