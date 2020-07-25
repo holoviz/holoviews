@@ -78,7 +78,7 @@ class DynamicMapConstructor(ComparisonTestCase):
             DynamicMap(foo, streams=[PointerXY()])
 
 
-class DynamicMapPositionStreamSrgs(ComparisonTestCase):
+class DynamicMapPositionalStreamArgs(ComparisonTestCase):
     def test_positional_stream_args_without_streams(self):
         fn = lambda i: Curve([i, i])
         dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
