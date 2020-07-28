@@ -951,7 +951,7 @@ class DynamicMap(HoloMap):
         for kdim in self.kdims:
             if str(kdim) in stream_params:
                 key.append(None)
-            elif kdim.default:
+            elif kdim.default is not None:
                 key.append(kdim.default)
             elif kdim.values:
                 if all(util.isnumeric(v) for v in kdim.values):
