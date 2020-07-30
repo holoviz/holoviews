@@ -4,6 +4,7 @@ import typing
 import holoviews
 
 from .interface import Interface
+from . import pandas
 
 
 class IbisInterface(Interface):
@@ -86,11 +87,11 @@ class IbisInterface(Interface):
         return data.execute() if keep_index else data.execute().values
 
     @classmethod
-    def shape(cls, dataset: holoviews.Dataset) -> typing.Tuple[int, int]:
+    def shape(cls, dataset) -> typing.Tuple[int, int]:
         return cls.length(dataset), len(dataset.data)
 
     @classmethod
-    def array(cls, dataset: holoviews.Dataset, dimensions: holoviews.Dimension):
+    def array(cls, dataset, dimensions):
         return dataset.data[
             [dataset.get_dimension_index(d) for d in dimensions]
             if dimensions
@@ -109,8 +110,47 @@ class IbisInterface(Interface):
     def redim(cls, dataset, dimensions):
         return dataset.data.mutate(**{k: v.name for k, v in dimensions.items()})
 
-    validate = holoviews.core.data.pandas.PandasInterface.validate
-    reindex = holoviews.core.data.pandas.PandasInterface.reindex
+    validate = pandas.PandasInterface.validate
+    reindex = pandas.PandasInterface.reindex
+
+    @classmethod
+    def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
+        # aggregate the necesary dimensions
+        index_dims: typing.List[str] = [
+            dataset.get_dimension(d, strict=True) for d in dimensions
+        ]
+        element_dims: typing.List[str] = [
+            kdim for kdim in dataset.kdims if kdim not in index_dims
+        ]
+
+        # some metdata shit
+        group_kwargs: dict = {}
+        if group_type != "raw" and issubclass(group_type, Element):
+            group_kwargs = dict(util.get_param_values(dataset), kdims=element_dims)
+        group_kwargs.update(kwargs)
+        group_kwargs["dataset"] = dataset.dataset
+
+        group_by: typing.List[str] = [d.name for d in index_dims]
+
+        # execute a query against the table to find the unique groups.
+        groups: "pd.DataFrame" = dataset.data.groupby(group_by).aggregate().execute()
+
+        # filter each group based on the predicate defined.
+        data: typing.List[typing.Tuple[str, group_type]] = [
+            (
+                tuple(s.value.tolist()),
+                group_type(
+                    v.filter([v[k] == v for k, v in s.to_dict().items()]),
+                    **group_kwargs
+                ),
+            )
+            for i, s in groups.iterrows()
+        ]
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(data, kdims=index_dims)
+        else:
+            return container_type(data)
 
 
 Interface.register(IbisInterface)
