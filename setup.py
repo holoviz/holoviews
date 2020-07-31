@@ -49,11 +49,14 @@ extras_require['examples'] = extras_require['recommended'] + [
     'dask',
     'scipy',
     'shapely',
-    'scikit-image'
+    'scikit-image',
 ]
 
 if sys.version_info.major > 2:
-    extras_require['examples'].append('spatialpandas')
+    extras_require['examples'].extend([
+        'spatialpandas',
+        'pyarrow <1.0' # spatialpandas incompatibility
+    ])
 
 # Extra third-party libraries
 extras_require['extras'] = extras_require['examples']+[
