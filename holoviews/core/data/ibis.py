@@ -191,6 +191,16 @@ class IbisInterface(Interface):
         return dataset.data.mutate(**new_data)
 
     @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        data = dataset.data
+        if dimension.name not in data.columns:
+            if not numpy.isscalar(values):
+                err = "ibis dataframe does not support assigning " "non-scalar value."
+                raise NotImplementedError(err)
+            data = data.mutate(**{dimension.name: values})
+        return data
+
+    @classmethod
     def isscalar(cls, dataset, dim):
         return (
             dataset.data[dataset.get_dimension(dim, strict=True).name]
