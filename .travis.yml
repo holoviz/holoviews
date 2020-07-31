@@ -5,7 +5,7 @@
 git:
   depth: 100
 
-language: generic
+language: python
 
 os:
   - linux
@@ -18,7 +18,6 @@ notifications:
 
 env:
   global:
-    - PYENV_VERSION=3.7
     - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
     - CHANS="-c pyviz"
