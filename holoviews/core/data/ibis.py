@@ -1,6 +1,6 @@
 import sys
 import typing
-
+import numpy
 import holoviews
 
 from .interface import Interface
@@ -28,40 +28,40 @@ class IbisInterface(Interface):
         return isinstance(obj, Expr)
 
     @classmethod
-    def init(cls, eltype, data, kdims, vdims):
-        element_params = eltype.param.objects()
-        kdim_param = element_params["kdims"]
-        vdim_param = element_params["vdims"]
+    def init(cls, eltype, data, keys, values):
+        params = eltype.param.objects()
+        index = params["kdims"]
+        columns = params["vdims"]
 
-        ncols = len(data.columns)
-
-        if isinstance(kdim_param.bounds[1], int):
-            ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
+        if isinstance(index.bounds[1], int):
+            ndim = min([index.bounds[1], len(index.default)])
         else:
             ndim = None
-        nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
-        if kdims and vdims is None:
-            vdims = [c for c in data.columns if c not in kdims]
-        elif vdims and kdims is None:
-            kdims = [c for c in data.columns if c not in vdims][:ndim]
-        elif kdims is None:
-            kdims = list(data.columns[:ndim])
-            if vdims is None:
-                vdims = [
+        nvdim = columns.bounds[1] if isinstance(columns.bounds[1], int) else None
+        if keys and values is None:
+            values = [c for c in data.columns if c not in keys]
+        elif values and keys is None:
+            keys = [c for c in data.columns if c not in values][:ndim]
+        elif keys is None:
+            keys = list(data.columns[:ndim])
+            if values is None:
+                values = [
                     d
-                    for d in data.columns[ndim : ((ndim + nvdim) if nvdim else None)]
-                    if d not in kdims
+                    for key in data.columns[ndim : ((ndim + nvdim) if nvdim else None)]
+                    if key not in keys
                 ]
-        elif kdims == [] and vdims is None:
-            vdims = list(data.columns[: nvdim if nvdim else None])
-        return data, {"kdims": kdims, "vdims": vdims}, {}
+        elif keys == [] and values is None:
+            values = list(data.columns[: nvdim if nvdim else None])
+        return data, dict(kdims=keys, vdims=values), {}
 
     @classmethod
     def length(self, dataset):
+        # Get the length by counting the length of an empty query.
         return getattr(dataset, "length", dataset.data[[]].count().execute())
 
     @classmethod
     def nonzero(cls, dataset):
+        # Make an empty query to see if a row is returned.
         return bool(len(dataset.data[[]].head(1).execute()))
 
     @classmethod
@@ -73,30 +73,28 @@ class IbisInterface(Interface):
 
     @classmethod
     def values(
-        cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False
-    ):
-        dim = dataset.get_dimension(dim, strict=True)
-        data = dataset.data[dim.name]
+        cls,
+        dataset,
+        dimension,
+        expanded=True,
+        flat=True,
+        compute=True,
+        keep_index=False,
+    ) -> numpy.ndarray:
+        dimension = dataset.get_dimension(dimension, strict=True)
+        data = dataset.data[dimension.name]
         if not expanded:
-            return data.distinct().execute()
-        return data if keep_index else data.execute()
+            return data.distinct().execute().values
+        return data if keep_index else data.execute().values
 
-        data = dataset.data[dataset.get_dimension(dim, strict=True).name]
+        data = dataset.data[dataset.get_dimension(dimension, strict=True).name]
         if not expanded:
             data = data.distinct()
-        return data.execute() if keep_index else data.execute().values
+        return data.execute().values if keep_index else data.execute().values
 
     @classmethod
     def shape(cls, dataset) -> typing.Tuple[int, int]:
-        return cls.length(dataset), len(dataset.data)
-
-    @classmethod
-    def array(cls, dataset, dimensions):
-        return dataset.data[
-            [dataset.get_dimension_index(d) for d in dimensions]
-            if dimensions
-            else slice(None)
-        ]
+        return cls.length(dataset), len(dataset.data.columns)
 
     @classmethod
     def dtype(cls, dataset, dimension):
@@ -107,11 +105,47 @@ class IbisInterface(Interface):
         return dataset.data.sort_by([(x, reverse) for x in by])
 
     @classmethod
-    def redim(cls, dataset, dimensions):
-        return dataset.data.mutate(**{k: v.name for k, v in dimensions.items()})
+    def redim(cls, dataset, dimensions: dict):
+        return dataset.data.mutate(
+            **{k: dataset.data[v.name] for k, v in dimensions.items()}
+        )
 
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, columns = index
+        scalar = False
+        data_columns = list(dataset.data.columns)
+        if isinstance(columns, slice):
+            columns = [d.name for d in dataset.dimensions()][columns]
+        elif np.isscalar(cols):
+            columns = [dataset.get_dimension(columns).name]
+        else:
+            columns: typing.List[str] = [
+                dataset.get_dimension(d).name for d in index[1]
+            ]
+        columns = [data_columns.index(c) for c in columns]
+
+        if scalar:
+            data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
+            return dataset.data[[columns[0]]].filter([data.hv_row_id__ == rows[0]])
+
+        data = dataset.data[columns]
+
+        if isinstance(rows, slice):
+            if any(x is not None for x in (rows.start, rows.stop, rows.step)):
+                predicates = []
+                data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+
+                if rows.start:
+                    predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
+                if rows.stop:
+                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
+
+                return data.filter(predicates).drop(["hv_row_id__"])
+        return data
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -151,6 +185,20 @@ class IbisInterface(Interface):
                 return container_type(data, kdims=index_dims)
         else:
             return container_type(data)
+
+    @classmethod
+    def assign(cls, dataset, new_data: typing.Dict[str, "ibis.Expr"]):
+        return dataset.data.mutate(**new_data)
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        return (
+            dataset.data[dataset.get_dimension(dim, strict=True).name]
+            .distinct()
+            .count()
+            .compute()
+            == 1
+        )
 
 
 Interface.register(IbisInterface)
