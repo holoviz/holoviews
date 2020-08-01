@@ -124,6 +124,16 @@ class DynamicMapPositionalStreamArgs(ComparisonTestCase):
         y_stream.event(y=6)
         self.assertEqual(dmap[3, 4], Points([3, 4]) + Curve([5, 6]))
 
+    def test_initialize_with_overlapping_stream_params(self):
+        fn = lambda xy0, xy1: \
+             Points([xy0['x'], xy0['y']]) + Curve([xy1['x'], xy1['y']])
+        xy_stream0 = XY(x=1, y=2)
+        xy_stream1 = XY(x=3, y=4)
+        dmap = DynamicMap(
+            fn, streams=[xy_stream0, xy_stream1], positional_stream_args=True
+        )
+        self.assertEqual(dmap[()], Points([1, 2]) + Curve([3, 4]))
+
 
 class DynamicMapMethods(ComparisonTestCase):
 

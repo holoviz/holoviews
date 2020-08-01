@@ -276,7 +276,11 @@ class Renderer(Exporter):
         dynamic = any(isinstance(m, DynamicMap) for m in holomaps)
 
         if fmt in ['auto', None]:
-            if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
+            if any(len(o) > 1 or (isinstance(o, DynamicMap) and
+                                  unbound_dimensions(
+                                      o.streams,
+                                      o.kdims,
+                                      no_duplicates=not o.positional_stream_args))
                    for o in holomaps):
                 fmt = holomap_formats[0] if self.holomap in ['auto', None] else self.holomap
             else:
