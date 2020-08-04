@@ -2,7 +2,9 @@ import sys
 import typing
 import numpy
 import holoviews
+import ibis
 
+from .. import util
 from .interface import Interface
 from . import pandas
 
@@ -135,6 +137,8 @@ class IbisInterface(Interface):
         data = dataset.data[columns]
 
         if isinstance(rows, slice):
+            # We should use a pseudo column for the row number but i think that is still awaiting
+            # a pr on ibis
             if any(x is not None for x in (rows.start, rows.stop, rows.step)):
                 predicates = []
                 data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
@@ -209,6 +213,59 @@ class IbisInterface(Interface):
             .compute()
             == 1
         )
+
+    @classmethod
+    def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            return dataset.data.filter(selection_mask)
+
+        selection_mask = cls.select_mask(dataset, selection)
+        indexed = cls.indexed(dataset, selection)
+        data = (
+            dataset.data
+            if selection_mask is None
+            else dataset.data.filter(selection_mask)
+        )
+        if indexed and data.count().execute() == 1 and len(dataset.vdims) == 1:
+            return data[dataset.vdims[0].name].execute().iloc[0]
+        return data
+
+    @classmethod
+    def select_mask(cls, dataset, selection):
+        """
+        Given a Dataset object and a dictionary with dimension keys and
+        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        return a boolean mask over the rows in the Dataset object that
+        have been selected.
+        """
+        predicates = []
+        for dim, object in selection.items():
+            if isinstance(object, tuple):
+                object = slice(*object)
+            alias = dataset.get_dimension(dim).name
+            column = dataset.data[alias]
+            if isinstance(object, slice):
+                if object.start is not None:
+                    # Workaround for dask issue #3392
+                    bound = util.numpy_scalar_to_python(object.start)
+                    predicates.append(bound <= column)
+                if object.stop is not None:
+                    bound = util.numpy_scalar_to_python(object.stop)
+                    predicates.append(column < bound)
+            elif isinstance(object, (set, list)):
+                # rowid conditions
+                condition = None
+                for id in object:
+                    predicate = column == id
+                    condition = (
+                        predicate if condition is None else condition | predicate
+                    )
+                predicates.append(condition)
+            elif callable(object):
+                predicates.append(object(column))
+            else:
+                predicates.append(column == object)
+        return predicates
 
 
 Interface.register(IbisInterface)
