@@ -1512,7 +1512,7 @@ class SpreadingOperation(LinkableOperation):
     """
 
     how = param.ObjectSelector(default='source',
-            objects=['source', 'over', 'saturate', 'add'], doc="""
+            objects=['source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
         pixels.""")
 
