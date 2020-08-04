@@ -4,6 +4,7 @@ import numpy
 import holoviews
 import ibis
 
+
 from .. import util
 from .interface import Interface
 from . import pandas
@@ -122,7 +123,7 @@ class IbisInterface(Interface):
         data_columns = list(dataset.data.columns)
         if isinstance(columns, slice):
             columns = [d.name for d in dataset.dimensions()][columns]
-        elif np.isscalar(cols):
+        elif numpy.isscalar(cols):
             columns = [dataset.get_dimension(columns).name]
         else:
             columns: typing.List[str] = [
@@ -266,6 +267,17 @@ class IbisInterface(Interface):
             else:
                 predicates.append(column == object)
         return predicates
+
+    @classmethod
+    def sample(cls, dataset, samples=[]):
+        data = dataset.data
+        predicates = []
+        for sample in samples:
+            if numpy.isscalar(sample):
+                sample = [sample]
+            for i, v in enumerate(sample):
+                predicates.append(data[data.columns[i]] == v)
+        return data.filter(predicates) if predicates else data
 
 
 Interface.register(IbisInterface)
