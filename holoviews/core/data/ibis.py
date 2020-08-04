@@ -233,12 +233,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        """
-        Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
-        return a boolean mask over the rows in the Dataset object that
-        have been selected.
-        """
         predicates = []
         for dim, object in selection.items():
             if isinstance(object, tuple):
