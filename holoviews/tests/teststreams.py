@@ -880,16 +880,16 @@ class TestBufferDataFrameStream(ComparisonTestCase):
 class Sum(Derived):
     v = param.Number()
 
-    def __init__(self, val_streams, base=0):
+    def __init__(self, val_streams, exclusive=False, base=0):
         self.base = base
-        super(Sum, self).__init__(input_streams=val_streams)
+        super(Sum, self).__init__(input_streams=val_streams, exclusive=exclusive)
 
     @property
     def constants(self):
         return dict(base=self.base)
 
     @classmethod
-    def transform_function(cls, stream_values, trigger_index, constants):
+    def transform_function(cls, stream_values, constants):
         v = sum([val["v"] for val in stream_values if val["v"]])
         return dict(v=v + constants['base'])
 
@@ -908,17 +908,14 @@ class TestDerivedStream(ComparisonTestCase):
 
         # Check outputs
         self.assertEqual(s0.v, 3.0)
-        self.assertIsNone(s0.trigger_index)
 
         # Update v0
         v0.event(v=7.0)
         self.assertEqual(s0.v, 9.0)
-        self.assertEqual(s0.trigger_index, 0)
 
         # Update v1
         v1.event(v=-8.0)
         self.assertEqual(s0.v, -1.0)
-        self.assertEqual(s0.trigger_index, 1)
 
     def test_nested_derived_stream(self):
         v0 = Val(v=1.0)
@@ -935,12 +932,10 @@ class TestDerivedStream(ComparisonTestCase):
         # Update top-level value
         v2.event(v=8.0)
         self.assertEqual(s0.v, 13.0)
-        self.assertEqual(s0.trigger_index, 1)
 
         # Update nested value
         v1.event(v=5.0,)
         self.assertEqual(s0.v, 14.0)
-        self.assertEqual(s0.trigger_index, 0)
 
     def test_derived_stream_constants(self):
         v0 = Val(v=1.0)
@@ -956,7 +951,27 @@ class TestDerivedStream(ComparisonTestCase):
         # Update value
         v2.event(v=8.0)
         self.assertEqual(s0.v, 113.0)
-        self.assertEqual(s0.trigger_index, 2)
+
+    def test_exclusive_derived_stream(self):
+        # Define input streams
+        v0 = Val()
+        v1 = Val(v=2.0)
+
+        # Build exclusive Sum stream
+        # In this case, all streams except the most recently updated will be reset on
+        # update
+        s0 = Sum([v0, v1], exclusive=True)
+
+        # Check outputs
+        self.assertEqual(s0.v, 2.0)
+
+        # Update v0
+        v0.event(v=7.0)
+        self.assertEqual(s0.v, 7.0)
+
+        # Update v1
+        v1.event(v=-8.0)
+        self.assertEqual(s0.v, -8.0)
 
 
 class TestExprSelectionStream(ComparisonTestCase):

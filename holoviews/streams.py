@@ -784,15 +784,13 @@ class Derived(Stream):
     """
     A Stream that watches the parameters of one or more input streams and produces
     a result that is a pure function of the input stream values.
-    """
-    trigger_index = param.Integer(
-        None, allow_None=True, constant=True,
-        doc="""Index into input_streams of most recently updated stream"""
-    )
 
-    def __init__(self, input_streams, **params):
+    If exclusive=True, then all streams except the most recently updated are cleared.
+    """
+    def __init__(self, input_streams, exclusive=False, **params):
         super(Derived, self).__init__(**params)
         self.input_streams = input_streams
+        self.exclusive = exclusive
         self._register_input_streams()
         self.update()
 
@@ -802,7 +800,12 @@ class Derived(Stream):
         """
         for i, stream in enumerate(self.input_streams):
             def perform_update(stream_index=i, **kwargs):
-                self.event(trigger_index=stream_index)
+                # If exlcusive, reset other stream values before triggering event
+                if self.exclusive:
+                    for j, input_stream in enumerate(self.input_streams):
+                        if stream_index != j:
+                            input_stream.reset()
+                self.event()
             stream.add_subscriber(perform_update)
 
     def _unregister_input_streams(self):
@@ -828,10 +831,10 @@ class Derived(Stream):
 
     def transform(self):
         stream_values = [s.contents for s in self.input_streams]
-        return self.transform_function(stream_values, self.trigger_index, self.constants)
+        return self.transform_function(stream_values, self.constants)
 
     @classmethod
-    def transform_function(cls, stream_values, trigger_index, constants):
+    def transform_function(cls, stream_values, constants):
         """
         Pure function that transforms input stream param values into the param values
         of this Derived stream.
@@ -839,8 +842,6 @@ class Derived(Stream):
         Args:
             stream_values: list of dict
                 Current values of the stream params for each input_stream
-            trigger_index: int
-                Index into streams_values of the most recently updated stream value
             constants: dict
                 Constants as returned by the constants property of an instance of this
                 stream type.
@@ -882,7 +883,7 @@ class SelectionExpr(Derived):
 
         input_streams = self._build_selection_streams(source)
         super(SelectionExpr, self).__init__(
-            source=source, input_streams=input_streams, **params
+            source=source, input_streams=input_streams, exclusive=True, **params
         )
 
     def _build_selection_streams(self, source):
@@ -904,15 +905,8 @@ class SelectionExpr(Derived):
         }
 
     @classmethod
-    def transform_function(cls, stream_values, trigger_index, constants):
+    def transform_function(cls, stream_values, constants):
         from holoviews.core.spaces import DynamicMap
-
-        if trigger_index is None:
-            return dict(
-                selection_expr=None,
-                bbox=None,
-                region_element=None,
-            )
 
         hvobj = constants["source"]
         if isinstance(hvobj, DynamicMap):
@@ -920,9 +914,15 @@ class SelectionExpr(Derived):
         else:
             element = hvobj
 
-        params = dict(stream_values[trigger_index], index_cols=constants["index_cols"])
-        selection_expr, bbox, region_element = \
-            element._get_selection_expr_for_stream_value(**params)
+        selection_expr = None
+        bbox = None
+        region_element = None
+        for stream_value in stream_values:
+            params = dict(stream_value, index_cols=constants["index_cols"])
+            selection_expr, bbox, region_element = \
+                element._get_selection_expr_for_stream_value(**params)
+            if selection_expr is not None:
+                break
 
         for expr_transform in element._transforms[::-1]:
             if selection_expr is not None:
