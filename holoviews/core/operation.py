@@ -129,13 +129,20 @@ class Operation(param.ParameterizedFunction):
 
 
         element_pipeline = getattr(element, '_pipeline', None)
+
+        if hasattr(element, '_in_method'):
+            in_method = element._in_method
+            if not in_method:
+                element._in_method = True
         ret = self._process(element, key)
+        if hasattr(element, '_in_method') and not in_method:
+            element._in_method = in_method
 
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
-            and isinstance(element, Dataset)):
+            and isinstance(element, Dataset) and not in_method):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
