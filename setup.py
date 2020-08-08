@@ -73,7 +73,8 @@ extras_require['tests'] = [
     'path.py', 
     'matplotlib >=2.2,<3.1',
     'nbsmoke >=0.2.0',
-    'pytest-cov ==2.5.1'
+    'pytest-cov ==2.5.1',
+    'pytest <6.0'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
