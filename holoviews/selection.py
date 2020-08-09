@@ -5,12 +5,13 @@ import param
 
 from param.parameterized import bothmethod
 
+from .core.data import Dataset
 from .core.dimension import OrderedDict
 from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .streams import SelectionExpr, PlotReset, Stream, SelectMode
+from .streams import SelectionExpr, Pipe, PlotReset, Stream, SelectMode
 from .util import DynamicMap
 from .util.transform import dim
 
@@ -135,7 +136,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
-                    self._region_streams.get(hvobj, None),
+                    self._region_streams.get(hvobj, None), cache=self._cache
                 )
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
@@ -148,7 +149,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 self._register(element)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
-                    self._region_streams.get(element, None),
+                    self._region_streams.get(element, None), cache=self._cache
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
@@ -246,7 +247,44 @@ class link_selections(_base_link_selections):
         inst._obj_regions = {}
         inst._reset_regions = True
 
+        # _datasets caches
+        inst._datasets = []
+        inst._cache = {}
+
         return inst
+
+    @param.depends('selection_expr', watch=True)
+    def _update_pipes(self):
+        sel_expr = self.selection_expr
+        for pipe, ds in self._datasets:
+            ref = ds._plot_id
+            self._cache[ref] = ds_cache = self._cache.get(ref, {})
+            if sel_expr in ds_cache:
+                data = ds_cache[sel_expr]
+                return pipe.event(data=data.data)
+            else:
+                ds_cache.clear()
+            sel_ds = SelectionDisplay._select(ds, sel_expr, self._cache)
+            ds_cache[sel_expr] = sel_ds
+            pipe.event(data=sel_ds.data)
+
+    def pipe(self, data):
+        """
+        Returns a parameter which reflects the current selection
+        when applied to the supplied data, making it easy to create
+        a callback which reflects the current selection.
+
+        Args:
+            data: A Dataset type or data which can be cast to a Dataset
+
+        Returns:
+            A parameter which reflects the current selection
+        """
+        if not isinstance(data, Dataset):
+            data = Dataset(data)
+        pipe = Pipe(data=data.data)
+        self._datasets.append((pipe, data))
+        return pipe.param.data
 
     @classmethod
     def _build_selection_streams(cls, inst):
@@ -382,7 +420,7 @@ class SelectionDisplay(object):
     def __call__(self, element):
         return self
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
         raise NotImplementedError()
 
     @staticmethod
@@ -455,13 +493,12 @@ class OverlaySelectionDisplay(SelectionDisplay):
             self.color_props = color_prop
         self.is_cmap = is_cmap
         self.supports_region = supports_region
-        self._cache = {}
 
     def _get_color_kwarg(self, color):
         return {color_prop: [color] if self.is_cmap else color
                 for color_prop in self.color_props}
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
         from .element import Histogram
 
         num_layers = len(selection_streams.style_stream.colors)
@@ -475,7 +512,7 @@ class OverlaySelectionDisplay(SelectionDisplay):
             cmap_stream = selection_streams.cmap_streams[layer_number]
             layer = obj.apply(
                 self._build_layer_callback, streams=[cmap_stream]+streams,
-                layer_number=layer_number, per_element=True
+                layer_number=layer_number, cache=cache, per_element=True
             )
             layers.append(layer)
 
@@ -516,8 +553,8 @@ class OverlaySelectionDisplay(SelectionDisplay):
             operations.append(op)
         return pipeline.instance(operations=operations)
 
-    def _build_layer_callback(self, element, exprs, layer_number, cmap, **kwargs):
-        selection = self._select(element, exprs[layer_number], self._cache)
+    def _build_layer_callback(self, element, exprs, layer_number, cmap, cache, **kwargs):
+        selection = self._select(element, exprs[layer_number], cache)
         pipeline = element.pipeline
         if cmap is not None:
             pipeline = self._inject_cmap_in_pipeline(pipeline, cmap)
@@ -555,7 +592,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
         self.alpha_props = [alpha_prop]
         self.backend = backend
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache={}):
         def _build_selection(el, colors, alpha, exprs, **kwargs):
             from .plotting.util import linear_gradient
             ds = el.dataset
@@ -582,7 +619,7 @@ class ColorListSelectionDisplay(SelectionDisplay):
             return el.pipeline(ds).opts(backend=self.backend, clone=True, **color_opts)
 
         sel_streams = [selection_streams.style_stream, selection_streams.exprs_stream]
-        hvobj = hvobj.apply(_build_selection, streams=sel_streams, per_element=True)
+        hvobj = hvobj.apply(_build_selection, streams=sel_streams, per_element=True, cache=cache)
 
         for op in operations:
             hvobj = op(hvobj)
