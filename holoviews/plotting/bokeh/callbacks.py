@@ -15,7 +15,6 @@ from bokeh.models import (
     FreehandDrawTool, PointDrawTool
 )
 from panel.io.state import state
-from panel.util import edit_readonly
 from pyviz_comms import JS_CALLBACK
 from tornado import gen
 
@@ -375,7 +374,9 @@ class ServerCallback(MessageCallback):
         Sets panel.state to busy if available.
         """
         if 'busy' not in state.param:
-            return
+            return # Check if busy state is supported
+
+        from panel.util import edit_readonly
         with edit_readonly(state):
             state.busy = busy
 
