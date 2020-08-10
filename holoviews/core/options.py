@@ -742,8 +742,8 @@ class OptionTree(AttrTree):
 
         for child in path:
             escaped_child = sanitize_identifier(child, escape=False)
-            matching_children = [c for c in item.children
-                                 if child.endswith(c) or escaped_child.endswith(c)]
+            matching_children = (c for c in item.children
+                                 if child.endswith(c) or escaped_child.endswith(c))
             matching_children = sorted(matching_children, key=lambda x: -len(x))
             if matching_children:
                 item = item[matching_children[0]]
@@ -764,10 +764,9 @@ class OptionTree(AttrTree):
         components = (obj.__class__.__name__,
                       group_sanitizer(obj.group),
                       label_sanitizer(obj.label))
-        target = '.'.join([c for c in components if c])
-        return self.find(components).options(group, target=target,
-                                             defaults=defaults, backend=backend)
-
+        target = '.'.join((c for c in components if c))
+        return self.find(components).options(
+            group, target=target, defaults=defaults, backend=backend)
 
 
     def options(self, group, target=None, defaults=True, backend=None):
@@ -1625,28 +1624,36 @@ class StoreOptions(object):
         obj_ids = cls.get_object_ids(obj)
         offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
+
+        used_obj_types = [(opt.split('.')[0],) for opt in options]
+        available_options = Store.options()
+        used_options = {}
+        for obj_type in available_options:
+            if obj_type in used_obj_types:
+                opts_groups = available_options[obj_type].groups
+                used_options[obj_type] = {
+                    grp: Options(allowed_keywords=opt.allowed_keywords)
+                    for (grp, opt) in opts_groups.items()
+                }
+
+        custom_options = Store.custom_options()
         for tree_id in obj_ids:
-            if tree_id is not None and tree_id in Store.custom_options():
-                original = Store.custom_options()[tree_id]
+            if tree_id is not None and tree_id in custom_options:
+                original = custom_options[tree_id]
                 clone = OptionTree(items = original.items(),
                                    groups = original.groups)
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clone = OptionTree(groups=Store.options().groups)
+                clone = OptionTree(groups=available_options.groups)
                 clones[offset] = clone
                 id_mapping.append((tree_id, offset))
 
-           # Nodes needed to ensure allowed_keywords is respected
-            for k in Store.options():
-                if k in [(opt.split('.')[0],) for opt in options]:
-                    group = {grp:Options(
-                        allowed_keywords=opt.allowed_keywords)
-                             for (grp, opt) in
-                             Store.options()[k].groups.items()}
-                    clone[k] = group
+            # Nodes needed to ensure allowed_keywords is respected
+            for obj_type, opts in used_options.items():
+                clone[obj_type] = opts
 
-        return {k:cls.apply_customizations(options, t) if options else t
+        return {k: cls.apply_customizations(options, t) if options else t
                 for k,t in clones.items()}, id_mapping
 
 
@@ -1818,7 +1825,7 @@ class StoreOptions(object):
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
-        
+
         # Propagate ids to the objects
         not_used = []
         for (match_id, new_id) in id_mapping:
