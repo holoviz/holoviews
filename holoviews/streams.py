@@ -780,9 +780,82 @@ class ParamMethod(Params):
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
 
 
+class Derived(Stream):
+    """
+    A Stream that watches the parameters of one or more input streams and produces
+    a result that is a pure function of the input stream values.
 
-class SelectionExpr(Stream):
+    If exclusive=True, then all streams except the most recently updated are cleared.
+    """
+    def __init__(self, input_streams, exclusive=False, **params):
+        super(Derived, self).__init__(**params)
+        self.input_streams = input_streams
+        self.exclusive = exclusive
+        self._register_input_streams()
+        self.update()
 
+    def _register_input_streams(self):
+        """
+        Register callbacks to watch for changes to input streams
+        """
+        for i, stream in enumerate(self.input_streams):
+            def perform_update(stream_index=i, **kwargs):
+                # If exlcusive, reset other stream values before triggering event
+                if self.exclusive:
+                    for j, input_stream in enumerate(self.input_streams):
+                        if stream_index != j:
+                            input_stream.reset()
+                self.event()
+            stream.add_subscriber(perform_update)
+
+    def _unregister_input_streams(self):
+        """
+        Unregister callbacks on input streams and clear input streams list
+        """
+        for stream in self.input_streams:
+            stream.source = None
+            stream.clear()
+        self.input_streams.clear()
+
+    @property
+    def constants(self):
+        """
+        Dict of constants for this instance that should be passed to transform_function
+
+        Constant values must not change in response to changes in the values of the
+        input streams. They may, however, change in response to other stream property
+        updates. For example, these values may change if the Stream's source element
+        changes
+        """
+        return {}
+
+    def transform(self):
+        stream_values = [s.contents for s in self.input_streams]
+        return self.transform_function(stream_values, self.constants)
+
+    @classmethod
+    def transform_function(cls, stream_values, constants):
+        """
+        Pure function that transforms input stream param values into the param values
+        of this Derived stream.
+
+        Args:
+            stream_values: list of dict
+                Current values of the stream params for each input_stream
+            constants: dict
+                Constants as returned by the constants property of an instance of this
+                stream type.
+
+        Returns: dict
+            dict of new Stream values where the keys match this stream's params
+        """
+        raise NotImplementedError
+
+    def __del__(self):
+        self._unregister_input_streams()
+
+
+class SelectionExpr(Derived):
     selection_expr = param.Parameter(default=None, constant=True)
 
     bbox = param.Dict(default=None, constant=True)
@@ -799,12 +872,8 @@ class SelectionExpr(Stream):
         if isinstance(source, DynamicMap):
             initialize_dynamic(source)
 
-        if ((isinstance(source, DynamicMap) and issubclass(source.type, Element)) or
-            isinstance(source, Element)):
-            self._source_streams = []
-            super(SelectionExpr, self).__init__(source=source, **params)
-            self._register_chart(source)
-        else:
+        if not ((isinstance(source, DynamicMap) and issubclass(source.type, Element))
+                or isinstance(source, Element)):
             raise ValueError(
                 "The source of SelectionExpr must be an instance of an "
                 "Element subclass or a DynamicMap that returns such an "
@@ -812,44 +881,58 @@ class SelectionExpr(Stream):
                     typ=type(source), val=source)
             )
 
-    def _register_chart(self, hvobj):
-        from .core.spaces import DynamicMap
+        input_streams = self._build_selection_streams(source)
+        super(SelectionExpr, self).__init__(
+            source=source, input_streams=input_streams, exclusive=True, **params
+        )
 
-        if isinstance(hvobj, DynamicMap):
-            element_type = hvobj.type
+    def _build_selection_streams(self, source):
+        from holoviews.core.spaces import DynamicMap
+        if isinstance(source, DynamicMap):
+            element_type = source.type
         else:
-            element_type = hvobj
+            element_type = source
+        input_streams = [
+            stream(source=source) for stream in element_type._selection_streams
+        ]
+        return input_streams
 
-        selection_streams = element_type._selection_streams
+    @property
+    def constants(self):
+        return {
+            "source": self.source,
+            "index_cols": self._index_cols
+        }
 
-        def _set_expr(**params):
-            if isinstance(hvobj, DynamicMap):
-                element = hvobj.values()[-1]
-            else:
-                element = hvobj
-            params = dict(params, index_cols=self._index_cols)
+    @classmethod
+    def transform_function(cls, stream_values, constants):
+        from holoviews.core.spaces import DynamicMap
+
+        hvobj = constants["source"]
+        if isinstance(hvobj, DynamicMap):
+            element = hvobj.values()[-1]
+        else:
+            element = hvobj
+
+        selection_expr = None
+        bbox = None
+        region_element = None
+        for stream_value in stream_values:
+            params = dict(stream_value, index_cols=constants["index_cols"])
             selection_expr, bbox, region_element = \
                 element._get_selection_expr_for_stream_value(**params)
-            for expr_transform in element._transforms[::-1]:
-                if selection_expr is not None:
-                    selection_expr = expr_transform(selection_expr)
+            if selection_expr is not None:
+                break
 
-            self.event(
-                selection_expr=selection_expr,
-                bbox=bbox,
-                region_element=region_element,
-            )
+        for expr_transform in element._transforms[::-1]:
+            if selection_expr is not None:
+                selection_expr = expr_transform(selection_expr)
 
-        for stream_type in selection_streams:
-            stream = stream_type(source=hvobj)
-            self._source_streams.append(stream)
-            stream.add_subscriber(_set_expr)
-
-    def _unregister_chart(self):
-        for stream in self._source_streams:
-            stream.source = None
-            stream.clear()
-        self._source_streams.clear()
+        return dict(
+            selection_expr=selection_expr,
+            bbox=bbox,
+            region_element=region_element,
+        )
 
     @property
     def source(self):
@@ -857,11 +940,25 @@ class SelectionExpr(Stream):
 
     @source.setter
     def source(self, value):
-        self._unregister_chart()
+        # Unregister old selection streams
+        self._unregister_input_streams()
+
+        # Set new source
         Stream.source.fset(self, value)
 
-    def __del__(self):
-        self._unregister_chart()
+        # Build selection input streams for new source element
+        self.input_streams = self._build_selection_streams(self.source)
+
+        # Clear current selection expression state
+        self.update(
+            selection_expr=None,
+            bbox=None,
+            region_element=None,
+        )
+
+        # Register callbacks on input streams
+        self._register_input_streams()
+
 
 class LinkedStream(Stream):
     """
