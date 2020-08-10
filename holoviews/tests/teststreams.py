@@ -878,7 +878,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
 
 
 class Sum(Derived):
-    v = param.Number()
+    v = param.Number(constant=True)
 
     def __init__(self, val_streams, exclusive=False, base=0):
         self.base = base
