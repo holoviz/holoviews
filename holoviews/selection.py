@@ -166,7 +166,7 @@ class _base_link_selections(param.ParameterizedFunction):
         """
         raise NotImplementedError()
 
-    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
+    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element, **kwargs):
         """
         Called when one of the registered HoloViews objects produces a new
         selection expression.  Subclasses should override this method, and
@@ -291,7 +291,7 @@ class link_selections(_base_link_selections):
         """
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
 
-    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element):
+    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element, **kwargs):
         if selection_expr:
             if self.cross_filter_mode == "overwrite":
                 # clear other regions and selections
