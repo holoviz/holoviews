@@ -273,5 +273,38 @@ class IbisInterface(Interface):
                 predicates.append(data[data.columns[i]] == v)
         return data.filter(predicates) if predicates else data
 
+    @classmethod
+    def aggregate(cls, dataset, dimensions, function, **kwargs):
+        data = dataset.data
+        columns = [d.name for d in dataset.kdims if d in dimensions]
+        values = dataset.dimensions("value", label="name")
+        new = data[columns + values]
+
+        function = {
+            numpy.min: ibis.expr.operations.Min,
+            numpy.max: ibis.expr.operations.Max,
+            numpy.mean: ibis.expr.operations.Mean,
+            numpy.std: ibis.expr.operations.StandardDev,
+            numpy.sum: ibis.expr.operations.Sum,
+            numpy.var: ibis.expr.operations.Variance,
+        }.get(function, function)
+
+        if len(dimensions):
+            selection = new.groupby(columns)
+            aggregation = selection.aggregate(
+                **{
+                    x: function(new[x]).to_expr()
+                    for x in new.columns
+                    if x not in columns
+                }
+            )
+        else:
+            aggregation = new.aggregate(
+                **{x: function(new[x]).to_expr() for x in new.columns}
+            )
+
+        dropped = [x for v in values if v not in data.columns]
+        return aggregation, dropped
+
 
 Interface.register(IbisInterface)
