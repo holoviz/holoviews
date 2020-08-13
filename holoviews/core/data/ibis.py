@@ -119,11 +119,10 @@ class IbisInterface(Interface):
     @classmethod
     def iloc(cls, dataset, index):
         rows, columns = index
-        scalar = False
         data_columns = list(dataset.data.columns)
         if isinstance(columns, slice):
             columns = [d.name for d in dataset.dimensions()][columns]
-        elif numpy.isscalar(cols):
+        elif util.isscalar(columns):
             columns = [dataset.get_dimension(columns).name]
         else:
             columns: typing.List[str] = [
@@ -131,25 +130,30 @@ class IbisInterface(Interface):
             ]
         columns = [data_columns.index(c) for c in columns]
 
-        if scalar:
+        if util.isscalar(rows) and len(columns) == 1:
             data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
             return dataset.data[[columns[0]]].filter([data.hv_row_id__ == rows[0]])
 
         data = dataset.data[columns]
 
-        if isinstance(rows, slice):
+        if isinstance(rows, slice) and any(x is not None for x in (rows.start, rows.stop, rows.step)):
             # We should use a pseudo column for the row number but i think that is still awaiting
             # a pr on ibis
-            if any(x is not None for x in (rows.start, rows.stop, rows.step)):
-                predicates = []
-                data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+            predicates = []
+            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
 
-                if rows.start:
-                    predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
-                if rows.stop:
-                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
+            if rows.start:
+                predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
+            if rows.stop:
+                predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
 
-                return data.filter(predicates).drop(["hv_row_id__"])
+            return data.filter(predicates).drop(["hv_row_id__"])
+        elif isinstance(rows, list):
+            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+            return data.filter(data.hv_row_id__.isin(rows)).drop(["hv_row_id__"])
+        elif util.isscalar(rows):
+            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+            return data.filter(data.hv_row_id__ == ibis.literal(rows)).drop(["hv_row_id__"])
         return data
 
     @classmethod

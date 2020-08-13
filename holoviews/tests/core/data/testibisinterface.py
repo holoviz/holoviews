@@ -1,6 +1,8 @@
 import sys
 import sqlite3
 
+from unittest import SkipTest
+
 from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 
@@ -34,6 +36,14 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     data_type = (ibis.expr.types.Expr,)
 
     __test__ = True
+
+    def setUp(self):
+        self.init_column_data()
+        self.init_grid_data()
+        self.init_data()
+
+    def tearDown(self):
+        pass
 
     def init_column_data(self):
         # Create heterogeneously typed table
@@ -79,3 +89,51 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.dataset_hm = Dataset(hm_db.table('hm'), kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset(hm_db.table('hm'), kdims=[('x', 'X')], vdims=[('y', 'Y')])
 
+
+    def test_dataset_array_init_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_array_init_hm_tuple_dims(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_odict_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_odict_init_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_simple_zip_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_simple_zip_init_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_zip_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_zip_init_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_tuple_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_tuple_init_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_implicit_indexing_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_dict_init(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_dataframe_init_hm(self):
+        raise SkipTest("Not supported")
+    
+    def test_dataset_dataframe_init_hm_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_dataframe_init_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_dataframe_init_ht_alias(self):
+        raise SkipTest("Not supported")
