@@ -256,7 +256,7 @@ class link_selections(_base_link_selections):
     @param.depends('selection_expr', watch=True)
     def _update_pipes(self):
         sel_expr = self.selection_expr
-        for pipe, ds in self._datasets:
+        for pipe, ds, raw in self._datasets:
             ref = ds._plot_id
             self._cache[ref] = ds_cache = self._cache.get(ref, {})
             if sel_expr in ds_cache:
@@ -266,13 +266,13 @@ class link_selections(_base_link_selections):
                 ds_cache.clear()
             sel_ds = SelectionDisplay._select(ds, sel_expr, self._cache)
             ds_cache[sel_expr] = sel_ds
-            pipe.event(data=sel_ds.data)
+            pipe.event(data=sel_ds.data if raw else sel_ds)
 
-    def pipe(self, data):
+    def selection_param(self, data):
         """
         Returns a parameter which reflects the current selection
         when applied to the supplied data, making it easy to create
-        a callback which reflects the current selection.
+        a callback which depends on the current selection.
 
         Args:
             data: A Dataset type or data which can be cast to a Dataset
@@ -280,10 +280,12 @@ class link_selections(_base_link_selections):
         Returns:
             A parameter which reflects the current selection
         """
+        raw = False
         if not isinstance(data, Dataset):
+            raw = True
             data = Dataset(data)
         pipe = Pipe(data=data.data)
-        self._datasets.append((pipe, data))
+        self._datasets.append((pipe, data, raw))
         return pipe.param.data
 
     @classmethod
