@@ -126,34 +126,35 @@ class IbisInterface(Interface):
         elif util.isscalar(columns):
             columns = [dataset.get_dimension(columns).name]
         else:
-            columns: typing.List[str] = [
+            columns = [
                 dataset.get_dimension(d).name for d in index[1]
             ]
         columns = [data_columns.index(c) for c in columns]
 
-        if util.isscalar(rows) and len(columns) == 1:
-            data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
-            return dataset.data[[columns[0]]].filter([data.hv_row_id__ == rows])
+        if rows is None:
+            return dataset.data[columns]
 
-        if isinstance(rows, slice) and any(x is not None for x in (rows.start, rows.stop, rows.step)):
+        data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+        data = data[columns+['hv_row_id__']]
+
+        if util.isscalar(rows):
+            data = data.filter([data.hv_row_id__ == rows])
+            if len(columns) == 1:
+                return data.execute().iat[0, 0]
+        elif isinstance(rows, slice) and any(x is not None for x in (rows.start, rows.stop, rows.step)):
             # We should use a pseudo column for the row number but i think that is still awaiting
             # a pr on ibis
             predicates = []
-            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
-
             if rows.start:
                 predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
             if rows.stop:
                 predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
-
-            return data.filter(predicates).drop(["hv_row_id__"])
+            data = data.filter(predicates)
         elif isinstance(rows, list):
-            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
-            return data.filter(data.hv_row_id__.isin(rows)).drop(["hv_row_id__"])
+            data = data.filter(data.hv_row_id__.isin(rows))
         elif util.isscalar(rows):
-            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
-            return data.filter(data.hv_row_id__ == ibis.literal(rows)).drop(["hv_row_id__"])
-        return data
+            data = data.filter(data.hv_row_id__ == ibis.literal(rows))
+        return data.drop(["hv_row_id__"])
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
