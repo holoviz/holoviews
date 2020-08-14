@@ -516,9 +516,10 @@ def process_ellipses(obj, key, vdim_selection=False):
     if getattr(getattr(key, 'dtype', None), 'kind', None) == 'b':
         return key
     wrapped_key = wrap_tuple(key)
-    if wrapped_key.count(Ellipsis)== 0:
+    ellipse_count = sum(1 for k in wrapped_key if k is Ellipsis)
+    if ellipse_count == 0:
         return key
-    if wrapped_key.count(Ellipsis)!=1:
+    elif ellipse_count != 1:
         raise Exception("Only one ellipsis allowed at a time.")
     dim_count = len(obj.dimensions())
     index = wrapped_key.index(Ellipsis)

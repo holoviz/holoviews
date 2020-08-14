@@ -6,6 +6,8 @@ import ibis
 
 
 from .. import util
+from ..element import Element
+from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import Interface
 from . import pandas
 
@@ -83,7 +85,7 @@ class IbisInterface(Interface):
         flat=True,
         compute=True,
         keep_index=False,
-    ) -> numpy.ndarray:
+    ):
         dimension = dataset.get_dimension(dimension, strict=True)
         data = dataset.data[dimension.name]
         if not expanded:
@@ -96,22 +98,21 @@ class IbisInterface(Interface):
         return data.execute().values if keep_index else data.execute().values
 
     @classmethod
-    def shape(cls, dataset) -> typing.Tuple[int, int]:
+    def shape(cls, dataset):
         return cls.length(dataset), len(dataset.data.columns)
 
     @classmethod
     def dtype(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        return dataset.data.sort_by([(x, reverse) for x in by])
+        return dataset.data.sort_by([x.name for x in by])
 
     @classmethod
-    def redim(cls, dataset, dimensions: dict):
-        return dataset.data.mutate(
-            **{k: dataset.data[v.name] for k, v in dimensions.items()}
-        )
+    def redim(cls, dataset, dimensions):
+        return dataset.data.relabel({k: v.name for k, v in dimensions.items()})
 
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
@@ -132,9 +133,7 @@ class IbisInterface(Interface):
 
         if util.isscalar(rows) and len(columns) == 1:
             data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
-            return dataset.data[[columns[0]]].filter([data.hv_row_id__ == rows[0]])
-
-        data = dataset.data[columns]
+            return dataset.data[[columns[0]]].filter([data.hv_row_id__ == rows])
 
         if isinstance(rows, slice) and any(x is not None for x in (rows.start, rows.stop, rows.step)):
             # We should use a pseudo column for the row number but i think that is still awaiting
@@ -157,6 +156,16 @@ class IbisInterface(Interface):
         return data
 
     @classmethod
+    def unpack_scalar(cls, dataset, data):
+        """
+        Given a dataset object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if len(data.columns) > 1 or data[[]].count().execute() != 1:
+            return data
+        return data.execute().iat[0,0]
+
+    @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
         # aggregate the necesary dimensions
         index_dims: typing.List[str] = [
@@ -173,17 +182,18 @@ class IbisInterface(Interface):
         group_kwargs.update(kwargs)
         group_kwargs["dataset"] = dataset.dataset
 
-        group_by: typing.List[str] = [d.name for d in index_dims]
+        group_by = [d.name for d in index_dims]
 
         # execute a query against the table to find the unique groups.
-        groups: "pd.DataFrame" = dataset.data.groupby(group_by).aggregate().execute()
+        groups = dataset.data.groupby(group_by).aggregate().execute()
+
 
         # filter each group based on the predicate defined.
-        data: typing.List[typing.Tuple[str, group_type]] = [
+        data = [
             (
-                tuple(s.value.tolist()),
+                tuple(s.values.tolist()),
                 group_type(
-                    v.filter([v[k] == v for k, v in s.to_dict().items()]),
+                    dataset.data.filter([dataset.data[k] == v for k, v in s.to_dict().items()]),
                     **group_kwargs
                 ),
             )
@@ -196,7 +206,7 @@ class IbisInterface(Interface):
             return container_type(data)
 
     @classmethod
-    def assign(cls, dataset, new_data: typing.Dict[str, "ibis.Expr"]):
+    def assign(cls, dataset, new_data):
         return dataset.data.mutate(**new_data)
 
     @classmethod
@@ -268,14 +278,30 @@ class IbisInterface(Interface):
 
     @classmethod
     def sample(cls, dataset, samples=[]):
+        dims = dataset.dimensions()
         data = dataset.data
-        predicates = []
+        if all(util.isscalar(s) or len(s) == 1 for s in samples):
+            items = [s[0] if isinstance(s, tuple) else s for s in samples]
+            return data[data[dims[0].name].isin(items)]
+
+        predicates = None
         for sample in samples:
-            if numpy.isscalar(sample):
+            if util.isscalar(sample):
                 sample = [sample]
+            if not sample:
+                continue
+            predicate = None
             for i, v in enumerate(sample):
-                predicates.append(data[data.columns[i]] == v)
-        return data.filter(predicates) if predicates else data
+                p = data[dims[i].name] == ibis.literal(util.numpy_scalar_to_python(v))
+                if predicate is None:
+                    predicate = p
+                else:
+                    predicate &= p
+            if predicates is None:
+                predicates = predicate
+            else:
+                predicates |= predicate
+        return data if predicates is None else data.filter(predicates)
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):

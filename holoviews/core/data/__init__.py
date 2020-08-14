@@ -409,7 +409,7 @@ class Dataset(Element):
         if xs.dtype.kind in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs]
+        return [type(s)(xs[idx]) for s, idx in zip(coords, idxs)]
 
 
     def sort(self, by=None, reverse=False):
@@ -562,15 +562,13 @@ argument to specify a selection specification""")
         # Handle selection dim expression
         if selection_expr is not None:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
-            dataset = self[mask]
-        else:
-            dataset = self
+            selection = {'selection_mask': mask}
 
         # Handle selection kwargs
         if selection:
-            data = dataset.interface.select(dataset, **selection)
+            data = self.interface.select(self, **selection)
         else:
-            data = dataset.data
+            data = self.data
 
         if np.isscalar(data):
             return data
@@ -646,7 +644,7 @@ argument to specify a selection specification""")
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.select(selection_mask=slices))
-        elif slices in [(), Ellipsis]:
+        elif (isinstance(slices, ()) and len(slices) == 1) or slices is Ellipsis:
             return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
@@ -738,7 +736,7 @@ argument to specify a selection specification""")
         # may be replaced with more general handling
         # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
-        datatype = ['dataframe', 'dictionary', 'dask']
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
