@@ -200,6 +200,24 @@ class Overlay(ViewableTree, CompositeOverlay):
         """
         return reduce(lambda x,y: x*y, self.values())
 
+    def uncollate(self):
+        """Packs Overlay of DynamicMaps into a single DynamicMap that returns an Overlay
+
+        Uncollation allows packing an Overlay of DynamicMaps into a single DynamicMap
+        that returns an Overlay of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns an Overlay
+        """
+        from .uncollate import uncollate
+        return uncollate(self)
+
     @property
     def group(self):
         if self._group:
@@ -292,6 +310,25 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
 
     def __init__(self, overlays=None, kdims=None, **params):
         super(NdOverlay, self).__init__(overlays, kdims=kdims, **params)
+
+    def uncollate(self):
+        """Packs NdOverlay of DynamicMaps into a single DynamicMap that returns an
+        NdOverlay
+
+        Uncollation allows packing a NdOverlay of DynamicMaps into a single DynamicMap
+        that returns an NdOverlay of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns an NdOverlay
+        """
+        from .uncollate import uncollate
+        return uncollate(self)
 
 
 __all__ = list(set([_k for _k, _v in locals().items()
