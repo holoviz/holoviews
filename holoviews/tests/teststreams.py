@@ -1009,14 +1009,14 @@ class TestHistoryStream(ComparisonTestCase):
         self.assertEqual(callback_input, [])
 
         # Perform updates on val stream and make sure history callback is triggered
-        callback_input.clear()
+        del callback_input[:]
         val.event(v=2.0)
         self.assertEqual(
             callback_input[0],
             {"values": [{"v": 1.0}, {"v": 2.0}]}
         )
 
-        callback_input.clear()
+        del callback_input[:]
         val.event(v=3.0)
         self.assertEqual(
             callback_input[0],
@@ -1024,7 +1024,7 @@ class TestHistoryStream(ComparisonTestCase):
         )
 
         # clearing history should trigger callback
-        callback_input.clear()
+        del callback_input[:]
         history.clear_history()
         self.assertEqual(
             callback_input[0],
@@ -1032,7 +1032,7 @@ class TestHistoryStream(ComparisonTestCase):
         )
 
         # Update after clearing
-        callback_input.clear()
+        del callback_input[:]
         val.event(v=4.0)
         self.assertEqual(
             callback_input[0],
