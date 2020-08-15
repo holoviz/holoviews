@@ -871,7 +871,7 @@ class History(Stream):
         self.input_stream.event()
 
     def clear_history(self):
-        self.values.clear()
+        del self.values[:]
         self.event()
 
     def _register_input_stream(self):
@@ -887,7 +887,7 @@ class History(Stream):
     def __del__(self):
         self.input_stream.source = None
         self.input_stream.clear()
-        self.values.clear()
+        del self.values[:]
 
 
 class SelectionExpr(Derived):
