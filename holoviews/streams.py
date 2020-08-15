@@ -855,6 +855,41 @@ class Derived(Stream):
         self._unregister_input_streams()
 
 
+class History(Stream):
+    """
+    A Stream that maintains a history of the values of a single input stream
+    """
+    values = param.List(constant=True, doc="""
+        List containing the historical values of the input stream""")
+
+    def __init__(self, input_stream, **params):
+        super(History, self).__init__(**params)
+        self.input_stream = input_stream
+        self._register_input_stream()
+        # Trigger event on input stream after registering so that current value is
+        # added to our values list
+        self.input_stream.event()
+
+    def clear_history(self):
+        self.values.clear()
+        self.event()
+
+    def _register_input_stream(self):
+        """
+        Register callback on input_stream to watch for changes
+        """
+        def perform_update(**kwargs):
+            self.values.append(kwargs)
+            self.event()
+
+        self.input_stream.add_subscriber(perform_update)
+
+    def __del__(self):
+        self.input_stream.source = None
+        self.input_stream.clear()
+        self.values.clear()
+
+
 class SelectionExpr(Derived):
     selection_expr = param.Parameter(default=None, constant=True)
 
