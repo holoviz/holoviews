@@ -1967,8 +1967,10 @@ class LegendPlot(ElementPlot):
             else:
                 legend.location = pos
 
-            # Apply muting
+            # Apply muting and misc legend opts
             for leg in plot.legend:
+                for opt, val in self.legend_opts.items():
+                    setattr(leg, opt, val)
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
@@ -2116,8 +2118,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 
-        # Apply muting
+        # Apply muting and misc legend opts
         for leg in plot.legend:
+            for opt, val in self.legend_opts.items():
+                setattr(leg, opt, val)
             for item in leg.items:
                 for r in item.renderers:
                     r.muted = self.legend_muted
