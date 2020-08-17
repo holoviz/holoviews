@@ -369,6 +369,17 @@ class ServerCallback(MessageCallback):
     def skip_change(self, msg):
         return any(skip(msg) for skip in self.skip_changes)
 
+    def _set_busy(self, busy):
+        """
+        Sets panel.state to busy if available.
+        """
+        if 'busy' not in state.param:
+            return # Check if busy state is supported
+
+        from panel.util import edit_readonly
+        with edit_readonly(state):
+            state.busy = busy
+
     def _schedule_callback(self, cb, timeout=None, offset=True):
         if timeout is None:
             if self._history and self.throttling_scheme == 'adaptive':
@@ -393,6 +404,7 @@ class ServerCallback(MessageCallback):
         self._queue.append((attr, old, new, time.time()))
         if not self._active and self.plot.document:
             self._active = True
+            self._set_busy(True)
             self._schedule_callback(self.process_on_change, offset=False)
 
     def on_event(self, event):
@@ -403,6 +415,7 @@ class ServerCallback(MessageCallback):
         self._queue.append((event, time.time()))
         if not self._active and self.plot.document:
             self._active = True
+            self._set_busy(True)
             self._schedule_callback(self.process_on_event, offset=False)
 
     def throttled(self):
@@ -429,6 +442,7 @@ class ServerCallback(MessageCallback):
         """
         if not self._queue:
             self._active = False
+            self._set_busy(False)
             return
         throttled = self.throttled()
         if throttled:
@@ -457,6 +471,7 @@ class ServerCallback(MessageCallback):
     def process_on_change(self):
         if not self._queue:
             self._active = False
+            self._set_busy(False)
             return
         throttled = self.throttled()
         if throttled:

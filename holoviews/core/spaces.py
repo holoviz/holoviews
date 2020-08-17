@@ -873,6 +873,14 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
+    positional_stream_args = param.Boolean(default=False, constant=True, doc="""
+       If False, stream parameters are passed to the callback as keyword arguments.
+       If True, stream parameters are passed to callback as positional arguments.
+       Each positional argument is a dict containing the contents of a stream.
+       The positional stream arguments follow the positional arguments for each kdim,
+       and they are ordered to match the order of the DynamicMap's streams list. 
+    """)
+
     def __init__(self, callback, initial_items=None, streams=None, **params):
         streams = (streams or [])
 
@@ -901,12 +909,16 @@ class DynamicMap(HoloMap):
             if len(self.streams)> 1:
                 raise Exception(prefix + ' must have either streams=[] or a single, '
                                 + 'stream instance without any stream parameters')
-            if util.stream_parameters(self.streams) != []:
+            if self._stream_parameters() != []:
                 raise Exception(prefix + ' cannot accept any stream parameters')
 
-        self._posarg_keys = util.validate_dynamic_argspec(self.callback,
-                                                          self.kdims,
-                                                          self.streams)
+        if self.positional_stream_args:
+            self._posarg_keys = None
+        else:
+            self._posarg_keys = util.validate_dynamic_argspec(
+                self.callback, self.kdims, self.streams
+            )
+
         # Set source to self if not already specified
         for stream in self.streams:
             if stream.source is None:
@@ -930,7 +942,7 @@ class DynamicMap(HoloMap):
         """
         unbounded_dims = []
         # Dimensioned streams do not need to be bounded
-        stream_params = set(util.stream_parameters(self.streams))
+        stream_params = set(self._stream_parameters())
         for kdim in self.kdims:
             if str(kdim) in stream_params:
                 continue
@@ -940,6 +952,11 @@ class DynamicMap(HoloMap):
                 unbounded_dims.append(str(kdim))
         return unbounded_dims
 
+    def _stream_parameters(self):
+        return util.stream_parameters(
+            self.streams, no_duplicates=not self.positional_stream_args
+        )
+
     def _initial_key(self):
         """
         Construct an initial key for based on the lower range bounds or
@@ -947,11 +964,11 @@ class DynamicMap(HoloMap):
         """
         key = []
         undefined = []
-        stream_params = set(util.stream_parameters(self.streams))
+        stream_params = set(self._stream_parameters())
         for kdim in self.kdims:
             if str(kdim) in stream_params:
                 key.append(None)
-            elif kdim.default:
+            elif kdim.default is not None:
                 key.append(kdim.default)
             elif kdim.values:
                 if all(util.isnumeric(v) for v in kdim.values):
@@ -1010,7 +1027,7 @@ class DynamicMap(HoloMap):
                                'will have no effect')
             return
 
-        stream_params = set(util.stream_parameters(self.streams))
+        stream_params = set(self._stream_parameters())
         invalid = [k for k in kwargs.keys() if k not in stream_params]
         if invalid:
             msg = 'Key(s) {invalid} do not correspond to stream parameters'
@@ -1049,7 +1066,10 @@ class DynamicMap(HoloMap):
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
 
-        if self._posarg_keys:
+        if self.positional_stream_args:
+            kwargs = {}
+            args = args + tuple([s.contents for s in self.streams])
+        elif self._posarg_keys:
             kwargs = dict(flattened, **dict(zip(self._posarg_keys, args)))
             args = ()
         else:
@@ -1256,6 +1276,11 @@ class DynamicMap(HoloMap):
         elif isinstance(key, (list, set)) and all(isinstance(v, tuple) for v in key):
             map_slice, data_slice = key, ()
             sample = True
+        elif self.positional_stream_args:
+            # First positional args are dynamic map kdim indices, remaining args
+            # are stream values, not data_slice values
+            map_slice, _ = self._split_index(key)
+            data_slice = ()
         else:
             map_slice, data_slice = self._split_index(key)
         tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
@@ -1270,7 +1295,7 @@ class DynamicMap(HoloMap):
         try:
             dimensionless = util.dimensionless_contents(get_nested_streams(self),
                                                         self.kdims, no_duplicates=False)
-            empty = util.stream_parameters(self.streams) == [] and self.kdims==[]
+            empty = self._stream_parameters() == [] and self.kdims==[]
             if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
@@ -1354,7 +1379,8 @@ class DynamicMap(HoloMap):
         """
         Request that a key/value pair be considered for caching.
         """
-        cache_size = (1 if util.dimensionless_contents(self.streams, self.kdims)
+        cache_size = (1 if util.dimensionless_contents(
+            self.streams, self.kdims, no_duplicates=not self.positional_stream_args)
                       else self.cache_size)
         if len(self) >= cache_size:
             first_key = next(k for k in self.data)

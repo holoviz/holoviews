@@ -159,8 +159,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if len(vals):
             q1, q2, q3 = (percentile(vals, q=q) for q in range(25, 100, 25))
             iqr = q3 - q1
-            upper = vals[vals <= q3 + 1.5*iqr].max()
-            lower = vals[vals >= q1 - 1.5*iqr].min()
+            upper = max(vals[vals <= q3 + 1.5*iqr].max(), q3)
+            lower = min(vals[vals >= q1 - 1.5*iqr].min(), q1)
         else:
             q1, q2, q3 = 0, 0, 0
             upper, lower = 0, 0
