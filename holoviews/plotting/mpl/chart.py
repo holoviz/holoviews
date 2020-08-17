@@ -1018,7 +1018,8 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if self.show_legend and any(len(l) for l in labels) and (sdim or not self.multi_level):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            axis.legend(title=title, **leg_spec)
+            self.legend_opts.update(**leg_spec)
+            axis.legend(title=title, **self.legend_opts)
 
         return bars, xticks, ax_dims
 

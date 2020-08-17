@@ -987,6 +987,9 @@ class LegendPlot(ElementPlot):
         'bottom', 'top', 'left', 'best', 'top_right', 'top_left',
         'bottom_right' and 'bottom_left' are supported.""")
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     legend_specs = {'inner': {},
                     'best': {},
                     'left':   dict(bbox_to_anchor=(-.15, 1), loc=1),
@@ -1017,7 +1020,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'data_aspect', 'fontscale']
+                          'xformatter', 'yformatter', 'data_aspect', 'fontscale',
+                          'legend_opts']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
@@ -1072,16 +1076,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         else:
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+            self.legend_opts.update(
+                **dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, scatterpoints=1,
-                              **dict(leg_spec, **self._fontsize('legend')))
+                              title=title, **self.legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])
-            frame = leg.get_frame()
-            frame.set_facecolor('1.0')
-            frame.set_edgecolor('0.0')
-            frame.set_linewidth('1.0')
             leg.set_zorder(10e6)
             self.handles['legend'] = leg
             self.handles['bbox_extra_artists'].append(leg)
