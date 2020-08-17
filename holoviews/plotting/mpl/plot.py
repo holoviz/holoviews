@@ -113,6 +113,9 @@ class MPLPlot(DimensionedPlot):
     show_frame = param.Boolean(default=False, doc="""
         Whether or not to show a complete frame around the plot.""")
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the legend.""")
+
     _close_figures = True
 
     def __init__(self, fig=None, axis=None, **params):
