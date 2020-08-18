@@ -108,11 +108,11 @@ class IbisInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        return dataset.data.sort_by([x.name for x in by])
+        return dataset.data.sort_by([dataset.get_dimension(x).name for x in by])
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return dataset.data.relabel({k: v.name for k, v in dimensions.items()})
+        return dataset.data.relabel({v.name: k for k, v in dimensions.items()})
 
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
@@ -121,35 +121,41 @@ class IbisInterface(Interface):
     def iloc(cls, dataset, index):
         rows, columns = index
         scalar = False
-        data_columns = list(dataset.data.columns)
+
         if isinstance(columns, slice):
-            columns = [d.name for d in dataset.dimensions()][columns]
+            columns = [x.name for x in dataset.dimensions()[columns]]
         elif numpy.isscalar(columns):
             columns = [dataset.get_dimension(columns).name]
         else:
-            columns = [
-                dataset.get_dimension(d).name for d in columns
-            ]
-        columns = [data_columns.index(c) for c in columns]
+            columns = [dataset.get_dimension(d).name for d in columns]
 
         if scalar:
-            data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
-            return data.filter([data.hv_row_id__ == rows[0]]).execute().iloc[0,0]
+            data = data.mutate(hv_row_id__=1)
+            data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum())
+
+            # data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_id())
+            return dataset.data[[columns[0]]].head(1).execute().iloc[0, 0]
 
         data = dataset.data[columns]
 
+        if isinstance(rows, slice):
             # We should use a pseudo column for the row number but i think that is still awaiting
             # a pr on ibis
             if any(x is not None for x in (rows.start, rows.stop, rows.step)):
                 predicates = []
-                data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+                data = data.mutate(hv_row_id__=1)
+                data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum())
+                # data = data.mutate(hv_row_id__=ibis.row_id())
 
                 if rows.start:
-                    predicates += [data.hv_row_id__ >= ibis.literal(rows.start)]
+                    predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
                 if rows.stop:
                     predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
 
                 return data.filter(predicates).drop(["hv_row_id__"])
+        else:
+            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+            data = data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
         return data
 
     @classmethod
@@ -160,7 +166,7 @@ class IbisInterface(Interface):
         """
         if len(data.columns) > 1 or data[[]].count().execute() != 1:
             return data
-        return data.execute().iat[0,0]
+        return data.execute().iat[0, 0]
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -184,13 +190,14 @@ class IbisInterface(Interface):
         # execute a query against the table to find the unique groups.
         groups = dataset.data.groupby(group_by).aggregate().execute()
 
-
         # filter each group based on the predicate defined.
         data = [
             (
                 tuple(s.values.tolist()),
                 group_type(
-                    dataset.data.filter([dataset.data[k] == v for k, v in s.to_dict().items()]),
+                    dataset.data.filter(
+                        [dataset.data[k] == v for k, v in s.to_dict().items()]
+                    ),
                     **group_kwargs
                 ),
             )
