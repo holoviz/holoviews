@@ -120,41 +120,37 @@ class IbisInterface(Interface):
     @classmethod
     def iloc(cls, dataset, index):
         rows, columns = index
+        scalar = False
         data_columns = list(dataset.data.columns)
         if isinstance(columns, slice):
             columns = [d.name for d in dataset.dimensions()][columns]
-        elif util.isscalar(columns):
+        elif numpy.isscalar(columns):
             columns = [dataset.get_dimension(columns).name]
         else:
             columns = [
-                dataset.get_dimension(d).name for d in index[1]
+                dataset.get_dimension(d).name for d in columns
             ]
         columns = [data_columns.index(c) for c in columns]
 
-        if rows is None:
-            return dataset.data[columns]
+        if scalar:
+            data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_number())
+            return data.filter([data.hv_row_id__ == rows[0]]).execute().iloc[0,0]
 
-        data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
-        data = data[columns+['hv_row_id__']]
+        data = dataset.data[columns]
 
-        if util.isscalar(rows):
-            data = data.filter([data.hv_row_id__ == rows])
-            if len(columns) == 1:
-                return data.execute().iat[0, 0]
-        elif isinstance(rows, slice) and any(x is not None for x in (rows.start, rows.stop, rows.step)):
             # We should use a pseudo column for the row number but i think that is still awaiting
             # a pr on ibis
-            predicates = []
-            if rows.start:
-                predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
-            if rows.stop:
-                predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
-            data = data.filter(predicates)
-        elif isinstance(rows, list):
-            data = data.filter(data.hv_row_id__.isin(rows))
-        elif util.isscalar(rows):
-            data = data.filter(data.hv_row_id__ == ibis.literal(rows))
-        return data.drop(["hv_row_id__"])
+            if any(x is not None for x in (rows.start, rows.stop, rows.step)):
+                predicates = []
+                data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
+
+                if rows.start:
+                    predicates += [data.hv_row_id__ >= ibis.literal(rows.start)]
+                if rows.stop:
+                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
+
+                return data.filter(predicates).drop(["hv_row_id__"])
+        return data
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
