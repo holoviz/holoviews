@@ -340,7 +340,7 @@ class IbisInterface(Interface):
         return aggregation, dropped
 
     @classmethod
-    def mask(cls, dataset, mask, mask_value=np.nan):
+    def mask(cls, dataset, mask, mask_value=numpy.nan):
         masked = dataset.data.copy()
         cols = [vd.name for vd in dataset.vdims]
         masked.loc[mask, cols] = mask_value
