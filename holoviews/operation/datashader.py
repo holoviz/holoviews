@@ -1585,7 +1585,9 @@ class spread(SpreadingOperation):
         Number of pixels to spread on all sides.""")
 
     def _apply_spreading(self, array):
-        return tf.spread(array, px=self.p.px, how=self.p.how, shape=self.p.shape)
+        replace_none_how = ds_version <= '0.11.1' and (self.p.how is None)
+        how = 'source' if replace_none_how else self.p.how
+        return tf.spread(array, px=self.p.px, how=how, shape=self.p.shape)
 
 
 class dynspread(SpreadingOperation):
@@ -1612,9 +1614,11 @@ class dynspread(SpreadingOperation):
         allowed.""")
 
     def _apply_spreading(self, array):
+        replace_none_how = ds_version <= '0.11.1' and (self.p.how is None)
+        how = 'source' if replace_none_how else self.p.how
         return tf.dynspread(
             array, max_px=self.p.max_px, threshold=self.p.threshold,
-            how=self.p.how, shape=self.p.shape
+            how=how, shape=self.p.shape
         )
 
 
