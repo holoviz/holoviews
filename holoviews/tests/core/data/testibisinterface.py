@@ -1,9 +1,7 @@
-import sys
 import sqlite3
 
 from unittest import SkipTest
 
-from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 
 try:
@@ -33,7 +31,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     Test of the generic dictionary interface.
     """
 
-    datatype = 'ibis'
+    datatype = "ibis"
     data_type = (ibis.expr.types.Expr,)
 
     __test__ = True
@@ -48,47 +46,58 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def init_column_data(self):
         # Create heterogeneously typed table
-        self.kdims = ['Gender', 'Age']
-        self.vdims = ['Weight', 'Height']
-        self.gender, self.age = np.array(['M','M','F']), np.array([10,16,12])
-        self.weight, self.height = np.array([15,18,10]), np.array([0.8,0.6,0.8])
+        self.kdims = ["Gender", "Age"]
+        self.vdims = ["Weight", "Height"]
+        self.gender, self.age = np.array(["M", "M", "F"]), np.array([10, 16, 12])
+        self.weight, self.height = np.array([15, 18, 10]), np.array([0.8, 0.6, 0.8])
 
-        hetero_df  = pd.DataFrame(
-            {'Gender':self.gender, 'Age':self.age,
-             'Weight':self.weight, 'Height':self.height},
-            columns=['Gender', 'Age', 'Weight', 'Height']
+        hetero_df = pd.DataFrame(
+            {
+                "Gender": self.gender,
+                "Age": self.age,
+                "Weight": self.weight,
+                "Height": self.height,
+            },
+            columns=["Gender", "Age", "Weight", "Height"],
         )
-        hetero_db = create_temp_db(hetero_df, 'hetero')
-        self.table = Dataset(hetero_db.table('hetero'),
-                             kdims=self.kdims, vdims=self.vdims)
+        hetero_db = create_temp_db(hetero_df, "hetero")
+        self.table = Dataset(
+            hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
+        )
 
         # Create table with aliased dimenion names
-        self.alias_kdims = [('gender', 'Gender'), ('age', 'Age')]
-        self.alias_vdims = [('weight', 'Weight'), ('height', 'Height')]
+        self.alias_kdims = [("gender", "Gender"), ("age", "Age")]
+        self.alias_vdims = [("weight", "Weight"), ("height", "Height")]
         alias_df = pd.DataFrame(
-            {'gender':self.gender, 'age':self.age,
-             'weight':self.weight, 'height':self.height},
-            columns=['gender', 'age', 'weight', 'height']
+            {
+                "gender": self.gender,
+                "age": self.age,
+                "weight": self.weight,
+                "height": self.height,
+            },
+            columns=["gender", "age", "weight", "height"],
         )
-        alias_db = create_temp_db(alias_df, 'alias')
+        alias_db = create_temp_db(alias_df, "alias")
         self.alias_table = Dataset(
-            alias_db.table('alias'), kdims=self.alias_kdims, vdims=self.alias_vdims
+            alias_db.table("alias"), kdims=self.alias_kdims, vdims=self.alias_vdims
         )
 
         self.xs = np.array(range(11))
-        self.xs_2 = self.xs**2
-        self.y_ints = self.xs*2
+        self.xs_2 = self.xs ** 2
+        self.y_ints = self.xs * 2
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
 
-        ht_df = pd.DataFrame({'x': self.xs, 'y': self.ys}, columns=['x', 'y'])
-        ht_db = create_temp_db(ht_df, 'ht')
-        self.dataset_ht = Dataset(ht_db.table('ht'), kdims=['x'], vdims=['y'])
+        ht_df = pd.DataFrame({"x": self.xs, "y": self.ys}, columns=["x", "y"])
+        ht_db = create_temp_db(ht_df, "ht")
+        self.dataset_ht = Dataset(ht_db.table("ht"), kdims=["x"], vdims=["y"])
 
-        hm_df = pd.DataFrame({'x': self.xs, 'y': self.y_ints}, columns=['x', 'y'])
-        hm_db = create_temp_db(hm_df, 'hm')
-        self.dataset_hm = Dataset(hm_db.table('hm'), kdims=['x'], vdims=['y'])
-        self.dataset_hm_alias = Dataset(hm_db.table('hm'), kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        hm_df = pd.DataFrame({"x": self.xs, "y": self.y_ints}, columns=["x", "y"])
+        hm_db = create_temp_db(hm_df, "hm")
+        self.dataset_hm = Dataset(hm_db.table("hm"), kdims=["x"], vdims=["y"])
+        self.dataset_hm_alias = Dataset(
+            hm_db.table("hm"), kdims=[("x", "X")], vdims=[("y", "Y")]
+        )
 
     def test_dataset_array_init_hm(self):
         raise SkipTest("Not supported")
@@ -131,7 +140,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_dataframe_init_hm(self):
         raise SkipTest("Not supported")
-    
+
     def test_dataset_dataframe_init_hm_alias(self):
         raise SkipTest("Not supported")
 
@@ -149,45 +158,70 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype('object'))
-        self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype('int32'))
-        self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype('int32'))
-        self.assertEqual(ds.interface.dtype(ds, 'Height'), np.dtype('float64'))
+        self.assertEqual(ds.interface.dtype(ds, "Gender"), np.dtype("object"))
+        self.assertEqual(ds.interface.dtype(ds, "Age"), np.dtype("int32"))
+        self.assertEqual(ds.interface.dtype(ds, "Weight"), np.dtype("int32"))
+        self.assertEqual(ds.interface.dtype(ds, "Height"), np.dtype("float64"))
 
     def test_dataset_dtypes(self):
-        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'x'), np.dtype('int32'))
-        self.assertEqual(self.dataset_hm.interface.dtype(self.dataset_hm, 'y'), np.dtype('int32'))
+        self.assertEqual(
+            self.dataset_hm.interface.dtype(self.dataset_hm, "x"), np.dtype("int32")
+        )
+        self.assertEqual(
+            self.dataset_hm.interface.dtype(self.dataset_hm, "y"), np.dtype("int32")
+        )
 
     def test_dataset_reduce_ht(self):
-        reduced = Dataset({'Age':self.age, 'Weight':self.weight, 'Height':self.height},
-                          kdims=self.kdims[1:], vdims=self.vdims)
-        self.assertEqual(self.table.reduce(['Gender'], np.mean).sort(), reduced.sort())
-        
+        reduced = Dataset(
+            {"Age": self.age, "Weight": self.weight, "Height": self.height},
+            kdims=self.kdims[1:],
+            vdims=self.vdims,
+        )
+        self.assertEqual(self.table.reduce(["Gender"], np.mean).sort(), reduced.sort())
+
     def test_dataset_aggregate_ht(self):
-        aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
-                             kdims=self.kdims[:1], vdims=self.vdims)
-        self.compare_dataset(self.table.aggregate(['Gender'], np.mean).sort(), aggregated.sort())
+        aggregated = Dataset(
+            {"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]},
+            kdims=self.kdims[:1],
+            vdims=self.vdims,
+        )
+        self.compare_dataset(
+            self.table.aggregate(["Gender"], np.mean).sort(), aggregated.sort()
+        )
 
     def test_dataset_aggregate_ht_alias(self):
-        aggregated = Dataset({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]},
-                             kdims=self.alias_kdims[:1], vdims=self.alias_vdims)
-        self.compare_dataset(self.alias_table.aggregate('Gender', np.mean).sort(), aggregated.sort())
+        aggregated = Dataset(
+            {"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]},
+            kdims=self.alias_kdims[:1],
+            vdims=self.alias_vdims,
+        )
+        self.compare_dataset(
+            self.alias_table.aggregate("Gender", np.mean).sort(), aggregated.sort()
+        )
 
     def test_dataset_groupby(self):
-        group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
-        group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
-        grouped = HoloMap([('M', Dataset(group1, kdims=['Age'], vdims=self.vdims)),
-                           ('F', Dataset(group2, kdims=['Age'], vdims=self.vdims))],
-                          kdims=['Gender'])
-        self.assertEqual(self.table.groupby(['Gender']).apply('sort'), grouped.apply('sort'))
+        group1 = {"Age": [10, 16], "Weight": [15, 18], "Height": [0.8, 0.6]}
+        group2 = {"Age": [12], "Weight": [10], "Height": [0.8]}
+        grouped = HoloMap(
+            [
+                ("M", Dataset(group1, kdims=["Age"], vdims=self.vdims)),
+                ("F", Dataset(group2, kdims=["Age"], vdims=self.vdims)),
+            ],
+            kdims=["Gender"],
+        )
+        self.assertEqual(
+            self.table.groupby(["Gender"]).apply("sort"), grouped.apply("sort")
+        )
 
     def test_dataset_groupby_alias(self):
-        group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
-        group2 = {'age':[12], 'weight':[10], 'height':[0.8]}
-        grouped = HoloMap([('M', Dataset(group1, kdims=[('age', 'Age')],
-                                         vdims=self.alias_vdims)),
-                           ('F', Dataset(group2, kdims=[('age', 'Age')],
-                                         vdims=self.alias_vdims))],
-                          kdims=[('gender', 'Gender')])
-        self.assertEqual(self.alias_table.groupby('Gender').apply('sort'),
-                         grouped)
+        group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
+        group2 = {"age": [12], "weight": [10], "height": [0.8]}
+        grouped = HoloMap(
+            [
+                ("M", Dataset(group1, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+                ("F", Dataset(group2, kdims=[("age", "Age")], vdims=self.alias_vdims)),
+            ],
+            kdims=[("gender", "Gender")],
+        )
+        self.assertEqual(self.alias_table.groupby("Gender").apply("sort"), grouped)
+

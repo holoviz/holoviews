@@ -1,7 +1,6 @@
 import sys
 import typing
 import numpy
-import holoviews
 import ibis
 
 
@@ -51,7 +50,7 @@ class IbisInterface(Interface):
             keys = list(data.columns[:ndim])
             if values is None:
                 values = [
-                    d
+                    key
                     for key in data.columns[ndim : ((ndim + nvdim) if nvdim else None)]
                     if key not in keys
                 ]
@@ -129,14 +128,14 @@ class IbisInterface(Interface):
         else:
             columns = [dataset.get_dimension(d).name for d in columns]
 
+        data = dataset.data[columns]
+
         if scalar:
             data = data.mutate(hv_row_id__=1)
             data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum())
 
             # data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_id())
             return dataset.data[[columns[0]]].head(1).execute().iloc[0, 0]
-
-        data = dataset.data[columns]
 
         if isinstance(rows, slice):
             # We should use a pseudo column for the row number but i think that is still awaiting
@@ -337,8 +336,15 @@ class IbisInterface(Interface):
                 **{x: function(new[x]).to_expr() for x in new.columns}
             )
 
-        dropped = [x for v in values if v not in data.columns]
+        dropped = [x for x in values if x not in data.columns]
         return aggregation, dropped
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = dataset.data.copy()
+        cols = [vd.name for vd in dataset.vdims]
+        masked.loc[mask, cols] = mask_value
+        return masked
 
 
 Interface.register(IbisInterface)
