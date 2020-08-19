@@ -48,7 +48,11 @@ class IbisInterface(Interface):
             keys = [c for c in data.columns if c not in values][:ndim]
         elif keys is None:
             keys = list(data.columns[:ndim])
-            if values is None:schemata.impl.null
+            if values is None:
+                values = [
+                    key
+                    for key in data.columns[ndim : ((ndim + nvdim) if nvdim else None)]
+                    if key not in keys
                 ]
         elif keys == [] and values is None:
             values = list(data.columns[: nvdim if nvdim else None])
@@ -336,7 +340,7 @@ class IbisInterface(Interface):
         return aggregation, dropped
 
     @classmethod
-    def mask(cls, dataset, mask, mask_value=numpy.nan):
+    def mask(cls, dataset, mask, mask_value=np.nan):
         masked = dataset.data.copy()
         cols = [vd.name for vd in dataset.vdims]
         masked.loc[mask, cols] = mask_value
