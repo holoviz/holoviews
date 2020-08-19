@@ -62,6 +62,7 @@ jobs:
       stage: tests
       env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
+        - pyenv install 3.7.1
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
