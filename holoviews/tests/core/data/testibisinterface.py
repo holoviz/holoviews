@@ -20,7 +20,7 @@ from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
 
 def create_temp_db(df, name, index=False):
-    file_obj = NamedTemporaryFile()
+    file_obj = NamedTemporaryFile(dir='.')
     con = sqlite3.Connection(file_obj.name)
     df.to_sql(name, con, index=index)
     return sqlite.connect(file_obj.name)
@@ -34,13 +34,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     datatype = "ibis"
     data_type = (ibis.expr.types.Expr,)
 
-    __test__ = True
-
-    def setUp(self):
-        self.init_column_data()
-        self.init_grid_data()
-        self.init_data()
-
+    __test__ = Truesqlite3.OperationalError: unable to open database file
     def tearDown(self):
         pass
 
