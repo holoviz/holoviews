@@ -21,6 +21,10 @@ notifications:
 
 env:
   global:
+<<<<<<< HEAD
+=======
+    - PYENV_VERSION=3.7.1
+>>>>>>> pyenv
     - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c bokeh"
     - CHANS="-c pyviz"
@@ -62,7 +66,6 @@ jobs:
       stage: tests
       env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
-        - pyenv install 3.7.1
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
         - conda config --set always_yes True
