@@ -1511,7 +1511,7 @@ class SpreadingOperation(LinkableOperation):
     to make sparse plots more visible.
     """
 
-    how = param.ObjectSelector(default=None,
+    how = param.ObjectSelector(default='source' if ds_version <= '0.11.1' else None,
             objects=[None, 'source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
         pixels. Default of None uses 'over' operator for RGB elements
@@ -1585,9 +1585,7 @@ class spread(SpreadingOperation):
         Number of pixels to spread on all sides.""")
 
     def _apply_spreading(self, array):
-        replace_none_how = ds_version <= '0.11.1' and (self.p.how is None)
-        how = 'source' if replace_none_how else self.p.how
-        return tf.spread(array, px=self.p.px, how=how, shape=self.p.shape)
+        return tf.spread(array, px=self.p.px, how=self.p.how, shape=self.p.shape)
 
 
 class dynspread(SpreadingOperation):
@@ -1614,11 +1612,9 @@ class dynspread(SpreadingOperation):
         allowed.""")
 
     def _apply_spreading(self, array):
-        replace_none_how = ds_version <= '0.11.1' and (self.p.how is None)
-        how = 'source' if replace_none_how else self.p.how
         return tf.dynspread(
             array, max_px=self.p.max_px, threshold=self.p.threshold,
-            how=how, shape=self.p.shape
+            how=self.p.how, shape=self.p.shape
         )
 
 
