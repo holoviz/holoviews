@@ -20,10 +20,11 @@ from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
 
 def create_temp_db(df, name, index=False):
-    file_obj = NamedTemporaryFile(dir=".")
-    con = sqlite3.Connection(file_obj.name)
+    with tempfile.NamedTemporaryFile(delete=False) as my_file:
+        filename = my_file.name
+    con = sqlite3.Connection(filename)
     df.to_sql(name, con, index=index)
-    return sqlite.connect(file_obj.name)
+    return sqlite.connect(filename)
 
 
 class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests):
