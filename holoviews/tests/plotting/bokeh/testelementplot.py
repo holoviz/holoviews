@@ -888,8 +888,8 @@ class TestOverlayPlot(TestBokehPlot):
         ).options(legend_opts={'background_fill_alpha': 0.5, 'background_fill_color': 'red'})
         plot = bokeh_renderer.get_plot(overlay)
         legend = plot.state.legend
-        assertEqual(legend.background_fill_alpha, 0.5)
-        assertEqual(legend.background_fill_color, 'red')
+        self.assertEqual(legend.background_fill_alpha, 0.5)
+        self.assertEqual(legend.background_fill_color, 'red')
 
     def test_active_tools_drag(self):
         curve = Curve([1, 2, 3])
