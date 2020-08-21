@@ -1944,6 +1944,9 @@ class LegendPlot(ElementPlot):
     legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
                     'bottom': 'below'}
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
         if not plot.legend:
@@ -1967,8 +1970,9 @@ class LegendPlot(ElementPlot):
             else:
                 legend.location = pos
 
-            # Apply muting
+            # Apply muting and misc legend opts
             for leg in plot.legend:
+                leg.update(**self.legend_opts)
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
@@ -2116,8 +2120,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 
-        # Apply muting
+        # Apply muting and misc legend opts
         for leg in plot.legend:
+            leg.update(**self.legend_opts)
             for item in leg.items:
                 for r in item.renderers:
                     r.muted = self.legend_muted

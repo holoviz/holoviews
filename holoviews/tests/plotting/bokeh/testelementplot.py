@@ -881,6 +881,16 @@ class TestOverlayPlot(TestBokehPlot):
         for sp in plot.subplots.values():
             self.assertTrue(sp.handles['glyph_renderer'].muted)
 
+    def test_overlay_legend_opts(self):
+        overlay = (
+            Curve(np.random.randn(10).cumsum(), label='A') *
+            Curve(np.random.randn(10).cumsum(), label='B')
+        ).options(legend_opts={'background_fill_alpha': 0.5, 'background_fill_color': 'red'})
+        plot = bokeh_renderer.get_plot(overlay)
+        legend = plot.state.legend
+        self.assertEqual(legend.background_fill_alpha, 0.5)
+        self.assertEqual(legend.background_fill_color, 'red')
+
     def test_active_tools_drag(self):
         curve = Curve([1, 2, 3])
         scatter = Scatter([1, 2, 3])
