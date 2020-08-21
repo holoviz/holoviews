@@ -1511,10 +1511,11 @@ class SpreadingOperation(LinkableOperation):
     to make sparse plots more visible.
     """
 
-    how = param.ObjectSelector(default='source',
-            objects=['source', 'over', 'saturate', 'add'], doc="""
+    how = param.ObjectSelector(default='source' if ds_version <= '0.11.1' else None,
+            objects=[None, 'source', 'over', 'saturate', 'add', 'max', 'min'], doc="""
         The name of the compositing operator to use when combining
-        pixels.""")
+        pixels. Default of None uses 'over' operator for RGB elements
+        and 'add' operator for aggregate arrays.""")
 
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
