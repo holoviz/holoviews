@@ -20,7 +20,7 @@ from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
 
 def create_temp_db(df, name, index=False):
-    with tempfile.NamedTemporaryFile(delete=False) as my_file:
+    with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
     con = sqlite3.Connection(filename)
     df.to_sql(name, con, index=index)
