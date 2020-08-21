@@ -144,7 +144,7 @@ class TestElementPlot(TestMPLPlot):
         zformatter = zaxis.get_major_formatter()
         self.assertIs(zformatter, formatter)
 
-        
+
 
 class TestColorbarPlot(TestMPLPlot):
 
@@ -202,3 +202,16 @@ class TestColorbarPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'color')
+
+
+class TestOverlayPlot(TestMPLPlot):
+
+    def test_overlay_legend_opts(self):
+        overlay = (
+            Curve(np.random.randn(10).cumsum(), label='A') *
+            Curve(np.random.randn(10).cumsum(), label='B')
+        ).options(legend_opts={'framealpha': 0.5, 'facecolor': 'red'})
+        plot = mpl_renderer.get_plot(overlay)
+        legend_frame = plot.handles['legend'].get_frame()
+        self.assertEquals(legend_frame.get_alpha(), 0.5)
+        self.assertEquals(legend_frame.get_facecolor(), (1.0, 0.0, 0.0, 0.5))

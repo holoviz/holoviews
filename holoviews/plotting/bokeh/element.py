@@ -1972,8 +1972,7 @@ class LegendPlot(ElementPlot):
 
             # Apply muting and misc legend opts
             for leg in plot.legend:
-                for opt, val in self.legend_opts.items():
-                    setattr(leg, opt, val)
+                leg.update(**self.legend_opts)
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
@@ -2123,8 +2122,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         # Apply muting and misc legend opts
         for leg in plot.legend:
-            for opt, val in self.legend_opts.items():
-                setattr(leg, opt, val)
+            leg.update(**self.legend_opts)
             for item in leg.items:
                 for r in item.renderers:
                     r.muted = self.legend_muted
