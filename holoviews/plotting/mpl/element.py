@@ -1079,7 +1079,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             legend_opts = self.legend_opts.copy()
             legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, **self.legend_opts)
+                              title=title, **legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])
