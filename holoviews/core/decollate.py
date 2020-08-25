@@ -229,9 +229,9 @@ def expr_to_fn_of_stream_contents(expr, nkdims):
     return expr_fn
 
 
-def uncollate(hvobj):
+def decollate(hvobj):
     """
-    Uncollate transforms a potentially nested dynamic HoloViews object into single
+    Decollate transforms a potentially nested dynamic HoloViews object into single
     DynamicMap that returns a non-dynamic HoloViews object. All nested streams in the
     input object are copied and attached to the resulting DynamicMap.
 

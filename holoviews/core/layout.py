@@ -436,10 +436,10 @@ class Layout(ViewableTree):
         self.__dict__['_max_cols'] = 4
         super(Layout, self).__init__(items, identifier, parent, **kwargs)
 
-    def uncollate(self):
+    def decollate(self):
         """Packs Layout of DynamicMaps into a single DynamicMap that returns a Layout
 
-        Uncollation allows packing a Layout of DynamicMaps into a single DynamicMap
+        Decollation allows packing a Layout of DynamicMaps into a single DynamicMap
         that returns a Layout of simple (non-dynamic) elements. All nested streams are
         lifted to the resulting DynamicMap, and are available in the `streams`
         property.  The `callback` property of the resulting DynamicMap is a pure,
@@ -451,8 +451,8 @@ class Layout(ViewableTree):
         Returns:
             DynamicMap that returns a Layout
         """
-        from .uncollate import uncollate
-        return uncollate(self)
+        from .decollate import decollate
+        return decollate(self)
 
     @property
     def shape(self):

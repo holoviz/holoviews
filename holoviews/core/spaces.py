@@ -350,11 +350,11 @@ class HoloMap(UniformNdMapping, Overlayable):
         return Collator(self, merge_type=merge_type, drop=drop,
                         drop_constant=drop_constant)()
 
-    def uncollate(self):
+    def decollate(self):
         """Packs HoloMap of DynamicMaps into a single DynamicMap that returns an
         HoloMap
 
-        Uncollation allows packing a HoloMap of DynamicMaps into a single DynamicMap
+        Decollation allows packing a HoloMap of DynamicMaps into a single DynamicMap
         that returns an HoloMap of simple (non-dynamic) elements. All nested streams
         are lifted to the resulting DynamicMap, and are available in the `streams`
         property.  The `callback` property of the resulting DynamicMap is a pure,
@@ -366,8 +366,8 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             DynamicMap that returns an HoloMap
         """
-        from .uncollate import uncollate
-        return uncollate(self)
+        from .decollate import decollate
+        return decollate(self)
 
 
     def sample(self, samples=[], bounds=None, **sample_values):
@@ -1507,11 +1507,11 @@ class DynamicMap(HoloMap):
             dmaps.append(dmap)
         return keys, dmaps
 
-    def uncollate(self):
+    def decollate(self):
         """Packs DynamicMap of nested DynamicMaps into a single DynamicMap that
         returns a non-dynamic element
 
-        Uncollation allows packing a DynamicMap of nested DynamicMaps into a single
+        Decollation allows packing a DynamicMap of nested DynamicMaps into a single
         DynamicMap that returns a simple (non-dynamic) element. All nested streams are
         lifted to the resulting DynamicMap, and are available in the `streams`
         property.  The `callback` property of the resulting DynamicMap is a pure,
@@ -1523,8 +1523,8 @@ class DynamicMap(HoloMap):
         Returns:
             DynamicMap that returns a non-dynamic element
         """
-        from .uncollate import uncollate
-        return uncollate(self)
+        from .decollate import decollate
+        return decollate(self)
 
     def collate(self):
         """Unpacks DynamicMap into container of DynamicMaps
@@ -1973,11 +1973,11 @@ class GridSpace(UniformNdMapping):
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
-    def uncollate(self):
+    def decollate(self):
         """Packs GridSpace of DynamicMaps into a single DynamicMap that returns a
         GridSpace
 
-        Uncollation allows packing a GridSpace of DynamicMaps into a single DynamicMap
+        Decollation allows packing a GridSpace of DynamicMaps into a single DynamicMap
         that returns a GridSpace of simple (non-dynamic) elements. All nested streams
         are lifted to the resulting DynamicMap, and are available in the `streams`
         property.  The `callback` property of the resulting DynamicMap is a pure,
@@ -1989,8 +1989,8 @@ class GridSpace(UniformNdMapping):
         Returns:
             DynamicMap that returns a GridSpace
         """
-        from .uncollate import uncollate
-        return uncollate(self)
+        from .decollate import decollate
+        return decollate(self)
 
 
 class GridMatrix(GridSpace):
