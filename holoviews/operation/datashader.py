@@ -306,9 +306,9 @@ class AggregationOperation(ResamplingOperation):
             name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
             vdims = [dims[0].clone(name)]
         elif category:
-            vdims = Dimension('%s Count' % category)
+            vdims = Dimension('%s Count' % category, range=(1, None))
         else:
-            vdims = Dimension('Count')
+            vdims = Dimension('Count', range=(1, None))
         params['vdims'] = vdims
         return params
 
