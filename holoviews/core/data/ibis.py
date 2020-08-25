@@ -147,9 +147,9 @@ class IbisInterface(Interface):
                 # data = data.mutate(hv_row_id__=ibis.row_id())
 
                 if rows.start:
-                    predicates += [data.hv_row_id__ > ibis.literal(rows.start)]
+                    predicates += [data.hv_row_id__ - 1 >= ibis.literal(rows.start)]
                 if rows.stop:
-                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
+                    predicates += [data.hv_row_id__ - 1 < ibis.literal(rows.stop)]
 
                 return data.filter(predicates).drop(["hv_row_id__"])
         else:
