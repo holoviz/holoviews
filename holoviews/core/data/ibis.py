@@ -122,7 +122,7 @@ class IbisInterface(Interface):
     @classmethod
     def iloc(cls, dataset, index):
         rows, columns = index
-        scalar = False
+        scalar = all(map(util.isscalar, index))
 
         if isinstance(columns, slice):
             columns = [x.name for x in dataset.dimensions()[columns]]
@@ -132,33 +132,31 @@ class IbisInterface(Interface):
             columns = [dataset.get_dimension(d).name for d in columns]
 
         data = dataset.data[columns]
+        data = data.mutate(hv_row_id__=1)
+        data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum() - 1)
 
         if scalar:
-            data = data.mutate(hv_row_id__=1)
-            data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum())
-
-            # data = dataset.data[[columns[0]]].mutate(hv_row_id__=ibis.row_id())
-            return dataset.data[[columns[0]]].head(1).execute().iloc[0, 0]
+            return (
+                data.filter(data.hv_row_id__ == rows)[columns]
+                .head(1)
+                .execute()
+                .iloc[0, 0]
+            )
 
         if isinstance(rows, slice):
             # We should use a pseudo column for the row number but i think that is still awaiting
             # a pr on ibis
             if any(x is not None for x in (rows.start, rows.stop, rows.step)):
                 predicates = []
-                data = data.mutate(hv_row_id__=1)
-                data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum())
-                # data = data.mutate(hv_row_id__=ibis.row_id())
-
                 if rows.start:
-                    predicates += [data.hv_row_id__ - 1 >= ibis.literal(rows.start)]
+                    predicates += [data.hv_row_id__ >= ibis.literal(rows.start)]
                 if rows.stop:
-                    predicates += [data.hv_row_id__ - 1 < ibis.literal(rows.stop)]
+                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
 
                 return data.filter(predicates).drop(["hv_row_id__"])
         else:
             if not isinstance(rows, typing.Iterable):
                 rows = [rows]
-            data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
             data = data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
         return data
 
