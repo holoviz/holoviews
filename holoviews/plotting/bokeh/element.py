@@ -817,9 +817,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = plot.frame_height/plot.frame_width
 
                 range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
-                current_l, current_r = plot.x_range.start, plot.x_range.end
-                current_b, current_t = plot.y_range.start, plot.y_range.end
-                current_xspan, current_yspan = (current_r-current_l), (current_t-current_b)
+                if self.drawn:
+                    current_l, current_r = plot.x_range.start, plot.x_range.end
+                    current_b, current_t = plot.y_range.start, plot.y_range.end
+                    current_xspan, current_yspan = (current_r-current_l), (current_t-current_b)
+                else:
+                    current_l, current_r, current_b, current_t = l, r, b, t
+                    current_xspan, current_yspan = xspan, yspan
 
                 if any(rs._triggering for rs in range_streams):
                     # If the event was triggered by a RangeXY stream
