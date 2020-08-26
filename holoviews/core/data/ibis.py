@@ -156,6 +156,8 @@ class IbisInterface(Interface):
 
                 return data.filter(predicates).drop(["hv_row_id__"])
         else:
+            if not isinstance(rows, typing.Iterable):
+                rows = [rows]
             data = cls.assign(dataset, dict(hv_row_id__=ibis.row_number()))
             data = data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
         return data
