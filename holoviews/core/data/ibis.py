@@ -111,7 +111,10 @@ class IbisInterface(Interface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return dataset.data.relabel({v.name: k for k, v in dimensions.items()})
+        print(dimensions)
+        return dataset.data.mutate(
+            **{v.name: dataset.data[k] for k, v in dimensions.items()}
+        )
 
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
