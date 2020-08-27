@@ -161,8 +161,8 @@ class IbisInterface(Interface):
         else:
             if not isinstance(rows, typing.Iterable):
                 rows = [rows]
-            data = data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
-        return data
+            return data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
+        return data.drop(["hv_row_id__"])
 
     @classmethod
     def unpack_scalar(cls, dataset, data):
