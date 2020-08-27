@@ -253,6 +253,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             t for t in cb_tools + self.default_tools + self.tools
             if t not in tool_names]
 
+        tool_list = [
+            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts)
+            if tool in ['vline', 'hline'] else tool for tool in tool_list
+        ]
+
         copied_tools = []
         for tool in tool_list:
             if isinstance(tool, tools.Tool):
@@ -811,17 +816,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     frame_aspect = plot.frame_height/plot.frame_width
 
-                range_stream = [s for s in self.streams if isinstance(s, RangeXY)]
-                if range_stream and range_stream[0]._triggering:
+                range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
+                if self.drawn:
+                    current_l, current_r = plot.x_range.start, plot.x_range.end
+                    current_b, current_t = plot.y_range.start, plot.y_range.end
+                    current_xspan, current_yspan = (current_r-current_l), (current_t-current_b)
+                else:
+                    current_l, current_r, current_b, current_t = l, r, b, t
+                    current_xspan, current_yspan = xspan, yspan
+
+                if any(rs._triggering for rs in range_streams):
                     # If the event was triggered by a RangeXY stream
                     # event we want to get the latest range span
                     # values so we do not accidentally trigger a
                     # loop of events
-                    xspan = (plot.x_range.end-plot.x_range.start)
-                    yspan = (plot.y_range.end-plot.y_range.start)
-
-                size_stream = [s for s in self.streams if isinstance(s, PlotSize)]
-                if size_stream and size_stream[0]._triggering:
+                    l, r, b, t = current_l, current_r, current_b, current_t
+                    xspan, yspan = current_xspan, current_yspan
+                    
+                size_streams = [s for s in self.streams if isinstance(s, PlotSize)]
+                if any(ss._triggering for ss in size_streams):
                     # Do not trigger on frame size changes, this can
                     # trigger event loops if the tick labels change
                     # the canvas size
@@ -834,10 +847,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     not (util.isfinite(xspan) and util.isfinite(yspan))):
                     pass
                 elif desired_yspan >= yspan:
+                    desired_yspan = current_xspan/(ratio/frame_aspect)
                     ypad = (desired_yspan-yspan)/2.
                     b, t = b-ypad, t+ypad
                     yupdate = True
                 else:
+                    desired_xspan = current_yspan*(ratio/frame_aspect)
                     xpad = (desired_xspan-xspan)/2.
                     l, r = l-xpad, r+xpad
                     xupdate = True
@@ -1944,6 +1959,9 @@ class LegendPlot(ElementPlot):
     legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
                     'bottom': 'below'}
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
         if not plot.legend:
@@ -1967,8 +1985,9 @@ class LegendPlot(ElementPlot):
             else:
                 legend.location = pos
 
-            # Apply muting
+            # Apply muting and misc legend opts
             for leg in plot.legend:
+                leg.update(**self.legend_opts)
                 for item in leg.items:
                     for r in item.renderers:
                         r.muted = self.legend_muted
@@ -2116,8 +2135,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             legend.location = self.legend_offset
             plot.add_layout(legend, pos)
 
-        # Apply muting
+        # Apply muting and misc legend opts
         for leg in plot.legend:
+            leg.update(**self.legend_opts)
             for item in leg.items:
                 for r in item.renderers:
                     r.muted = self.legend_muted

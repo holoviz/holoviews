@@ -975,6 +975,72 @@ class TestDerivedStream(ComparisonTestCase):
         self.assertEqual(s0.v, -8.0)
 
 
+class TestHistoryStream(ComparisonTestCase):
+    def test_initial_history_stream_values(self):
+        # Check values list is initialized with initial contents of input stream
+        val = Val(v=1.0)
+        history = History(val)
+        self.assertEqual(history.contents, {"values": [val.contents]})
+
+    def test_history_stream_values_appended(self):
+        val = Val(v=1.0)
+        history = History(val)
+        # Perform a few updates on val stream
+        val.event(v=2.0)
+        val.event(v=3.0)
+        self.assertEqual(
+            history.contents,
+            {"values": [{"v": 1.0}, {"v": 2.0}, {"v": 3.0}]}
+        )
+
+        # clear
+        history.clear_history()
+        self.assertEqual(history.contents, {"values": []})
+
+    def test_history_stream_trigger_callbacks(self):
+        # Construct history stream
+        val = Val(v=1.0)
+        history = History(val)
+
+        # Register callback
+        callback_input = []
+        def cb(**kwargs):
+            callback_input.append(kwargs)
+        history.add_subscriber(cb)
+        self.assertEqual(callback_input, [])
+
+        # Perform updates on val stream and make sure history callback is triggered
+        del callback_input[:]
+        val.event(v=2.0)
+        self.assertEqual(
+            callback_input[0],
+            {"values": [{"v": 1.0}, {"v": 2.0}]}
+        )
+
+        del callback_input[:]
+        val.event(v=3.0)
+        self.assertEqual(
+            callback_input[0],
+            {"values": [{"v": 1.0}, {"v": 2.0}, {"v": 3.0}]}
+        )
+
+        # clearing history should trigger callback
+        del callback_input[:]
+        history.clear_history()
+        self.assertEqual(
+            callback_input[0],
+            {"values": []}
+        )
+
+        # Update after clearing
+        del callback_input[:]
+        val.event(v=4.0)
+        self.assertEqual(
+            callback_input[0],
+            {"values": [{"v": 4.0}]}
+        )
+
+
 class TestExprSelectionStream(ComparisonTestCase):
 
     def setUp(self):

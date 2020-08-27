@@ -206,6 +206,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
+    legend_opts = param.Parameter(precedence=-1)
     legend_limit = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
@@ -248,7 +249,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             ykeys = [None]
         self._xkeys = list(dict.fromkeys(xkeys))
         self._ykeys = list(dict.fromkeys(ykeys))
-        
+
         self._xticks, self._yticks = [], []
         self.rows, self.cols = layout.shape
         self.fig_inches = self._get_size()

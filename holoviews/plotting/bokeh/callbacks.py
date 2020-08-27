@@ -1169,6 +1169,7 @@ class CDSCallback(Callback):
             if isinstance(values, dict):
                 shape = values.pop('shape', None)
                 dtype = values.pop('dtype', None)
+                values.pop('dimension', None)
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
                 if dtype is not None:
