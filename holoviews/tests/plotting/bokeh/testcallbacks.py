@@ -340,9 +340,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         point_plot = plot.subplots[(0, 0)].subplots['main']
         table_plot = plot.subplots[(0, 1)].subplots['main']
         self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
-        self.assertIn(plot.id, point_plot.callbacks[0].callbacks[0].code)
-        self.assertNotIn('PLACEHOLDER_PLOT_ID', point_plot.callbacks[0].callbacks[0].code)
-
 
 
 class TestServerCallbacks(CallbackTestCase):
@@ -510,6 +507,3 @@ class TestBokehCustomJSCallbacks(CallbackTestCase):
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
         self.assertIn(selection, plot.callbacks[0].streams)
-        callbacks = plot.handles['selected'].js_property_callbacks
-        self.assertIn('change:indices', callbacks)
-        self.assertIn(plot.id, callbacks['change:indices'][0].code)
