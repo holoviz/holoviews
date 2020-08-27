@@ -100,22 +100,6 @@ def to_expr_extract_streams(
             fn = hvobj.callback.callable
             args.extend(kdim_args)
 
-        # Process streams
-        def get_stream_index(stream):
-            # Compute stream index
-            if stream in original_streams:
-                # Reuse index to existing stream
-                stream_index = StreamIndex(index=original_streams.index(stream))
-            else:
-                # Add new stream
-                stream_index = StreamIndex(index=len(streams))
-                cloned_stream = type(stream)(**stream.contents)
-                original_streams.append(stream)
-                streams.append(cloned_stream)
-                if container_key is not None:
-                    stream_mapping.setdefault(container_key, []).append(cloned_stream)
-            return stream_index
-
         for dm_stream in dm_streams:
             stream_arg = to_expr_extract_streams(
                 dm_stream, kdims, streams,  original_streams,
