@@ -6,7 +6,6 @@ from collections import defaultdict
 
 import numpy as np
 import panel as pn
-import param
 
 from bokeh.models import (
     CustomJS, FactorRange, DatetimeAxis, Range1d, DataRange1d,
@@ -20,7 +19,7 @@ from tornado import gen
 from ...core import OrderedDict
 from ...core.options import CallbackError
 from ...core.util import (
-    datetime_types, dimension_sanitizer, isscalar, dt64_to_dt
+    datetime_types, dimension_sanitizer, dt64_to_dt
 )
 from ...element import Table
 from ...streams import (
@@ -30,7 +29,6 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import bokeh_version, convert_timestamp
 
@@ -38,7 +36,6 @@ if bokeh_version >= '2.3.0':
     CUSTOM_TOOLTIP = 'description'
 else:
     CUSTOM_TOOLTIP = 'custom_tooltip'
-
 
 
 class Callback(object):
@@ -545,10 +542,6 @@ class PointerXCallback(PointerXYCallback):
     """
 
     attributes = {'x': 'cb_obj.x'}
-<<<<<<< HEAD
-    extra_models= ['x_range']
-=======
->>>>>>> Removed custom js code
 
 
 class PointerYCallback(PointerXYCallback):
@@ -562,7 +555,6 @@ class PointerYCallback(PointerXYCallback):
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
     models = ['plot']
-    extra_models=['pan', 'box_zoom', 'x_range', 'y_range']
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
 
     def __init__(self, *args, **kwargs):
@@ -1315,4 +1307,3 @@ callbacks[CurveEdit]   = CurveEditCallback
 callbacks[FreehandDraw]= FreehandDrawCallback
 callbacks[PolyDraw]    = PolyDrawCallback
 callbacks[PolyEdit]    = PolyEditCallback
-
