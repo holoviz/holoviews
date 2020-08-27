@@ -2355,6 +2355,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self.drawn = True
         self.handles['plots'] = plots
 
+        self._update_callbacks(plot)
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
             self.handles['xaxis'] = plot.xaxis[0]
