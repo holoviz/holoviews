@@ -893,6 +893,7 @@ class Sum(Derived):
         v = sum([val["v"] for val in stream_values if val["v"]])
         return dict(v=v + constants['base'])
 
+
 Val = Stream.define("Val", v=0.0)
 
 

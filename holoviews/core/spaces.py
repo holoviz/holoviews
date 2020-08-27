@@ -350,6 +350,25 @@ class HoloMap(UniformNdMapping, Overlayable):
         return Collator(self, merge_type=merge_type, drop=drop,
                         drop_constant=drop_constant)()
 
+    def decollate(self):
+        """Packs HoloMap of DynamicMaps into a single DynamicMap that returns an
+        HoloMap
+
+        Decollation allows packing a HoloMap of DynamicMaps into a single DynamicMap
+        that returns an HoloMap of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns an HoloMap
+        """
+        from .decollate import decollate
+        return decollate(self)
+
 
     def sample(self, samples=[], bounds=None, **sample_values):
         """Samples element values at supplied coordinates.
@@ -1488,6 +1507,24 @@ class DynamicMap(HoloMap):
             dmaps.append(dmap)
         return keys, dmaps
 
+    def decollate(self):
+        """Packs DynamicMap of nested DynamicMaps into a single DynamicMap that
+        returns a non-dynamic element
+
+        Decollation allows packing a DynamicMap of nested DynamicMaps into a single
+        DynamicMap that returns a simple (non-dynamic) element. All nested streams are
+        lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns a non-dynamic element
+        """
+        from .decollate import decollate
+        return decollate(self)
 
     def collate(self):
         """Unpacks DynamicMap into container of DynamicMaps
@@ -1936,6 +1973,24 @@ class GridSpace(UniformNdMapping):
             return (len(keys), 1)
         return len(set(k[0] for k in keys)), len(set(k[1] for k in keys))
 
+    def decollate(self):
+        """Packs GridSpace of DynamicMaps into a single DynamicMap that returns a
+        GridSpace
+
+        Decollation allows packing a GridSpace of DynamicMaps into a single DynamicMap
+        that returns a GridSpace of simple (non-dynamic) elements. All nested streams
+        are lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns a GridSpace
+        """
+        from .decollate import decollate
+        return decollate(self)
 
 
 class GridMatrix(GridSpace):

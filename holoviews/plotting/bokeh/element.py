@@ -254,8 +254,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if t not in tool_names]
 
         tool_list = [
-            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tool, **hover_opts)
-            if tool in ['vline', 'hline'] else tool for tool in tool_list
+            tools.HoverTool(tooltips=tooltips, tags=['hv_created'], mode=tl, **hover_opts)
+            if tl in ['vline', 'hline'] else tl for tl in tool_list
         ]
 
         copied_tools = []
