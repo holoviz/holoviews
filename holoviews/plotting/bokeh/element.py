@@ -567,9 +567,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
-    def _update_size(self, width, height, scale):
-        self.state.frame_width = width
-        self.state.frame_height = height
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
