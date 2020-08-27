@@ -1274,36 +1274,35 @@ class PolyEditCallback(PolyDrawCallback):
         CDSCallback.initialize(self, plot_id)
 
 
-
-callbacks = Stream._callbacks['bokeh']
-
-callbacks[PointerXY]   = PointerXYCallback
-callbacks[PointerX]    = PointerXCallback
-callbacks[PointerY]    = PointerYCallback
-callbacks[Tap]         = TapCallback
-callbacks[SingleTap]   = SingleTapCallback
-callbacks[DoubleTap]   = DoubleTapCallback
-callbacks[PressUp]     = PressUpCallback
-callbacks[PanEnd]      = PanEndCallback
-callbacks[MouseEnter]  = MouseEnterCallback
-callbacks[MouseLeave]  = MouseLeaveCallback
-callbacks[RangeXY]     = RangeXYCallback
-callbacks[RangeX]      = RangeXCallback
-callbacks[RangeY]      = RangeYCallback
-callbacks[BoundsXY]    = BoundsCallback
-callbacks[BoundsX]     = BoundsXCallback
-callbacks[BoundsY]     = BoundsYCallback
-callbacks[Lasso]       = LassoCallback
-callbacks[Selection1D] = Selection1DCallback
-callbacks[PlotSize]    = PlotSizeCallback
-callbacks[SelectMode]  = SelectModeCallback
-callbacks[SelectionXY] = SelectionXYCallback
-callbacks[Draw]        = DrawCallback
-callbacks[PlotReset]   = ResetCallback
-callbacks[CDSStream]   = CDSCallback
-callbacks[BoxEdit]     = BoxEditCallback
-callbacks[PointDraw]   = PointDrawCallback
-callbacks[CurveEdit]   = CurveEditCallback
-callbacks[FreehandDraw]= FreehandDrawCallback
-callbacks[PolyDraw]    = PolyDrawCallback
-callbacks[PolyEdit]    = PolyEditCallback
+Stream._callbacks['bokeh'].update({
+    PointerXY   : PointerXYCallback,
+    PointerX    : PointerXCallback,
+    PointerY    : PointerYCallback,
+    Tap         : TapCallback,
+    SingleTap   : SingleTapCallback,
+    DoubleTap   : DoubleTapCallback,
+    PressUp     : PressUpCallback,
+    PanEnd      : PanEndCallback,
+    MouseEnter  : MouseEnterCallback,
+    MouseLeave  : MouseLeaveCallback,
+    RangeXY     : RangeXYCallback,
+    RangeX      : RangeXCallback,
+    RangeY      : RangeYCallback,
+    BoundsXY    : BoundsCallback,
+    BoundsX     : BoundsXCallback,
+    BoundsY     : BoundsYCallback,
+    Lasso       : LassoCallback,
+    Selection1D : Selection1DCallback,
+    PlotSize    : PlotSizeCallback,
+    SelectionXY : SelectionXYCallback,
+    Draw        : DrawCallback,
+    PlotReset   : ResetCallback,
+    CDSStream   : CDSCallback,
+    BoxEdit     : BoxEditCallback,
+    PointDraw   : PointDrawCallback,
+    CurveEdit   : CurveEditCallback,
+    FreehandDraw: FreehandDrawCallback,
+    PolyDraw    : PolyDrawCallback,
+    PolyEdit    : PolyEditCallback,
+    SelectMode  : SelectModeCallback
+})
