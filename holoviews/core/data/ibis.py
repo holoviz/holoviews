@@ -119,6 +119,13 @@ class IbisInterface(Interface):
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
 
+    @staticmethod
+    def _index_ibis_table(data):
+        if "hv_row_id__" in data.columns:
+            return data
+        data = data.mutate(hv_row_id__=1)
+        return data.mutate(hv_row_id__=data.hv_row_id__.cumsum() - 1)
+
     @classmethod
     def iloc(cls, dataset, index):
         rows, columns = index
@@ -131,9 +138,7 @@ class IbisInterface(Interface):
         else:
             columns = [dataset.get_dimension(d).name for d in columns]
 
-        data = dataset.data[columns]
-        data = data.mutate(hv_row_id__=1)
-        data = data.mutate(hv_row_id__=data.hv_row_id__.cumsum() - 1)
+        data = cls._index_ibis_table(dataset.data[columns])
 
         if scalar:
             return (
