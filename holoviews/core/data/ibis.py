@@ -111,7 +111,6 @@ class IbisInterface(Interface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        print(dimensions)
         return dataset.data.mutate(
             **{v.name: dataset.data[k] for k, v in dimensions.items()}
         )
@@ -242,16 +241,23 @@ class IbisInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        if selection_mask is not None:
-            return dataset.data.filter(selection_mask)
 
-        selection_mask = cls.select_mask(dataset, selection)
+        if selection_mask is None:
+            selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
-        data = (
-            dataset.data
-            if selection_mask is None
-            else dataset.data.filter(selection_mask)
-        )
+        data = dataset.data
+
+        if selection_mask is not None:
+            if isinstance(selection_mask, numpy.ndarray):
+                data = cls._index_ibis_table(data)
+                if selection_mask.dtype == numpy.dtype("bool"):
+                    selection_mask = numpy.where(selection_mask)[0]
+                data = data.filter(
+                    data["hv_row_id__"].isin(list(map(int, selection_mask)))
+                ).drop(["hv_row_id__"])
+            else:
+                data = data.filter(selection_mask)
+
         if indexed and data.count().execute() == 1 and len(dataset.vdims) == 1:
             return data[dataset.vdims[0].name].execute().iloc[0]
         return data
@@ -283,6 +289,8 @@ class IbisInterface(Interface):
                 predicates.append(condition)
             elif callable(object):
                 predicates.append(object(column))
+            elif isinstance(object, ibis.Expr):
+                predicates.append(object)
             else:
                 predicates.append(column == object)
         return predicates
