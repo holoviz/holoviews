@@ -9,7 +9,7 @@ from ..streams import Stream, Derived
 
 from ..plotting.util import initialize_dynamic
 
-HoloViewsExpr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
+Expr = namedtuple("HoloviewsExpr", ["fn", "args", "kwargs"])
 StreamIndex = namedtuple("StreamIndex", ["index"])
 KDimIndex = namedtuple("KDim", ["index"])
 
@@ -127,9 +127,9 @@ def to_expr_extract_streams(
                 kwargs.append(stream_arg)
 
         if expand_kwargs:
-            expr = HoloViewsExpr(fn, args, kwargs)
+            expr = Expr(fn, args, kwargs)
         else:
-            expr = HoloViewsExpr(fn, args, [{"kwargs": HoloViewsExpr(dict, [], kwargs)}])
+            expr = Expr(fn, args, [{"kwargs": Expr(dict, [], kwargs)}])
         return expr
 
     elif isinstance(hvobj, Stream):
@@ -144,7 +144,7 @@ def to_expr_extract_streams(
                     )
                 )
             constants = hvobj.constants
-            return HoloViewsExpr(
+            return Expr(
                 stream_arg_fn, [stream_indexes, constants], []
             )
         else:
@@ -188,7 +188,7 @@ def to_expr_extract_streams(
             data_expr = ViewableTree._process_items(data_expr)
 
         kwargs = [{"data": data_expr}]
-        return HoloViewsExpr(fn, args, kwargs)
+        return Expr(fn, args, kwargs)
     elif isinstance(hvobj, Element):
         return hvobj.clone(link=False)
     else:
@@ -197,7 +197,7 @@ def to_expr_extract_streams(
 
 def expr_to_fn_of_stream_contents(expr, nkdims):
     def eval_expr(expr, kdim_values, stream_values):
-        if isinstance(expr, HoloViewsExpr):
+        if isinstance(expr, Expr):
             fn = expr.fn
             args = [eval_expr(arg, kdim_values, stream_values) for arg in expr.args]
             kwargs_list = [eval_expr(kwarg, kdim_values, stream_values) for kwarg in
