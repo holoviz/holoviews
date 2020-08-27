@@ -894,8 +894,7 @@ class Sum(Derived):
         return dict(v=v + constants['base'])
 
 
-class Val(Stream):
-    v = param.Number(constant=True)
+Val = Stream.define("Val", v=0.0)
 
 
 class TestDerivedStream(ComparisonTestCase):

@@ -11,12 +11,9 @@ class XY(Stream):
     y = param.Number(constant=True)
 
 
-class Z(Stream):
-    z = param.Number(constant=True)
+Z = Stream.define("Z", z=0.0)
 
-
-class PX(Stream):
-    px = param.Integer(constant=True)
+PX = Stream.define("PX", px=1)
 
 
 class TestDecollation(ComparisonTestCase):
