@@ -140,7 +140,7 @@ def to_expr_extract_streams(
             else:
                 # Add new stream
                 stream_index = StreamIndex(index=len(streams))
-                cloned_stream = type(hvobj)(**hvobj.contents)
+                cloned_stream = hvobj.clone()
                 original_streams.append(hvobj)
                 streams.append(cloned_stream)
                 if container_key is not None:

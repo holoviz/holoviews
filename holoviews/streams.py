@@ -264,6 +264,9 @@ class Stream(param.Parameterized):
             else:
                 self.registry[source] = [self]
 
+    def clone(self):
+        """Return new stream with identical properties and no subscribers"""
+        return type(self)(**self.contents)
 
     @property
     def subscribers(self):
@@ -870,6 +873,9 @@ class History(Stream):
         # added to our values list
         self.input_stream.event()
 
+    def clone(self):
+        return type(self)(self.input_stream.clone(), **self.contents)
+
     def clear_history(self):
         del self.values[:]
         self.event()
@@ -920,6 +926,9 @@ class SelectionExpr(Derived):
         super(SelectionExpr, self).__init__(
             source=source, input_streams=input_streams, exclusive=True, **params
         )
+
+    def clone(self):
+        return type(self)(self.source, **self.contents)
 
     def _build_selection_streams(self, source):
         from holoviews.core.spaces import DynamicMap
