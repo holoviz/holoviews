@@ -26,7 +26,6 @@ from bokeh.resources import CDN, INLINE
 from panel import config
 from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
-from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable

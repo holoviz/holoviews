@@ -32,8 +32,9 @@ from ..plot import (
 from ..util import attach_streams, displayable, collate
 from .links import LinkCallback
 from .util import (
-    filter_toolboxes, make_axis, update_shared_sources, empty_plot,
-    decode_bytes, theme_attr_json, cds_column_replace, get_default
+    TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
+    empty_plot, decode_bytes, theme_attr_json, cds_column_replace,
+    get_default
 )
 
 
@@ -614,10 +615,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
+        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
-        self._update_callbacks(plot)
         if self.top_level:
             self.init_links()
 
@@ -987,10 +988,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
+        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
-        self._update_callbacks(plot)
         if self.top_level:
             self.init_links()
 
