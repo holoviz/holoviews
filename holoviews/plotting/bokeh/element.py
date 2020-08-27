@@ -816,6 +816,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+        range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
 
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
@@ -838,7 +839,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     frame_aspect = plot.frame_height/plot.frame_width
 
-                range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
                 if self.drawn:
                     current_l, current_r = plot.x_range.start, plot.x_range.end
                     current_b, current_t = plot.y_range.start, plot.y_range.end
@@ -907,6 +907,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 box_zoom.match_aspect = True
             if scroll_zoom:
                 scroll_zoom.zoom_on_axis = False
+        elif any(rs._triggering for rs in range_streams):
+            xupdate, yupdate = False, False
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
