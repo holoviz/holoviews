@@ -900,7 +900,6 @@ class History(Stream):
 
     def clear_history(self):
         del self.values[:]
-        self.event()
 
     def _register_input_stream(self):
         """
