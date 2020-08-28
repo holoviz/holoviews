@@ -792,24 +792,40 @@ class Derived(Stream):
     """
     def __init__(self, input_streams, exclusive=False, **params):
         super(Derived, self).__init__(**params)
-        self.input_streams = input_streams
+        self.input_streams = []
+        self._updating = set()
+        self._register_streams(input_streams)
         self.exclusive = exclusive
-        self._register_input_streams()
         self.update()
 
-    def _register_input_streams(self):
+    def _register_streams(self, streams):
         """
         Register callbacks to watch for changes to input streams
         """
-        for i, stream in enumerate(self.input_streams):
-            def perform_update(stream_index=i, **kwargs):
-                # If exlcusive, reset other stream values before triggering event
-                if self.exclusive:
-                    for j, input_stream in enumerate(self.input_streams):
-                        if stream_index != j:
-                            input_stream.reset()
-                self.event()
-            stream.add_subscriber(perform_update)
+        for stream in streams:
+            self._register_stream(stream)
+
+    def _register_stream(self, stream):
+        i = len(self.input_streams)
+
+        def perform_update(stream_index=i, **kwargs):
+            if stream_index in self._updating:
+                return
+
+            # If exclusive, reset other stream values before triggering event
+            if self.exclusive:
+                for j, input_stream in enumerate(self.input_streams):
+                    if stream_index != j:
+                        input_stream.reset()
+                        self._updating.add(j)
+                        try:
+                            input_stream.event()
+                        finally:
+                            self._updating.remove(j)
+            self.event()
+
+        stream.add_subscriber(perform_update)
+        self.input_streams.append(stream)
 
     def _unregister_input_streams(self):
         """
@@ -819,6 +835,12 @@ class Derived(Stream):
             stream.source = None
             stream.clear()
         self.input_streams.clear()
+
+    def append_input_stream(self, stream):
+        """
+        Add a new input stream
+        """
+        self._register_stream(stream)
 
     @property
     def constants(self):
