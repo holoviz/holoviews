@@ -924,12 +924,13 @@ class SelectionExpr(Derived):
 
     region_element = param.Parameter(default=None, constant=True)
 
-    def __init__(self, source, **params):
+    def __init__(self, source, include_region=True, **params):
         from .element import Element
         from .core.spaces import DynamicMap
         from .plotting.util import initialize_dynamic
 
         self._index_cols = params.pop('index_cols', None)
+        self.include_region = include_region
 
         if isinstance(source, DynamicMap):
             initialize_dynamic(source)
@@ -957,23 +958,34 @@ class SelectionExpr(Derived):
             element_type = source.type
         else:
             element_type = source
-        input_streams = [
-            stream(source=source) for stream in element_type._selection_streams
-        ]
-        return input_streams
+        if element_type:
+            input_streams = [
+                stream(source=source) for stream in element_type._selection_streams
+            ]
+            return input_streams
+        else:
+            return []
 
     @property
     def constants(self):
         return {
             "source": self.source,
-            "index_cols": self._index_cols
+            "index_cols": self._index_cols,
+            "include_region": self.include_region,
         }
 
     @classmethod
     def transform_function(cls, stream_values, constants):
-        from holoviews.core.spaces import DynamicMap
-
         hvobj = constants["source"]
+        include_region = constants["include_region"]
+
+        if hvobj is None:
+            # source is None
+            return dict(selection_expr=None, bbox=None, region_element=None,)
+
+        from holoviews.core.spaces import DynamicMap
+        # Import after checking for hvobj None to avoid "sys.meta_path is None"
+        # error on shutdown
         if isinstance(hvobj, DynamicMap):
             element = hvobj.values()[-1]
         else:
@@ -996,7 +1008,7 @@ class SelectionExpr(Derived):
         return dict(
             selection_expr=selection_expr,
             bbox=bbox,
-            region_element=region_element,
+            region_element=region_element if include_region else None,
         )
 
     @property
@@ -1012,7 +1024,10 @@ class SelectionExpr(Derived):
         Stream.source.fset(self, value)
 
         # Build selection input streams for new source element
-        self.input_streams = self._build_selection_streams(self.source)
+        if self.source is not None:
+            input_streams = self._build_selection_streams(self.source)
+        else:
+            input_streams = []
 
         # Clear current selection expression state
         self.update(
