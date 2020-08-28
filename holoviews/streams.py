@@ -1037,7 +1037,160 @@ class SelectionExpr(Derived):
         )
 
         # Register callbacks on input streams
-        self._register_input_streams()
+        self._register_streams(input_streams)
+
+
+class SelectionExprSequence(Derived):
+    selection_expr = param.Parameter(default=None, constant=True)
+    region_element = param.Parameter(default=None, constant=True)
+
+    def __init__(
+            self, source, mode="overwrite", resetable=True,
+            include_region=True, **params
+    ):
+        self._resetable = resetable
+        self.mode = mode
+        self.include_region = include_region
+        self._resetable = resetable
+        self.history_stream = History(SelectionExpr(source, **params))
+        if resetable:
+            self.plot_reset_stream = PlotReset(source=source)
+            input_streams = [self.history_stream, self.plot_reset_stream]
+        else:
+            self.plot_reset_stream = None
+            input_streams = [self.history_stream]
+
+        super(SelectionExprSequence, self).__init__(
+            source=source, input_streams=input_streams, **params
+        )
+
+    @property
+    def constants(self):
+        return {
+            "resetable": self._resetable,
+            "source": self.source,
+            "mode": self.mode,
+            "include_region": self.include_region,
+        }
+
+    def reset(self):
+        self.input_streams[0].clear_history()
+        super(SelectionExprSequence, self).reset()
+
+    @classmethod
+    def transform_function(cls, stream_values, constants):
+        from .core.spaces import DynamicMap
+        mode = constants["mode"]
+        source = constants["source"]
+        resetable = constants["resetable"]
+        include_region = constants["include_region"]
+
+        # Handle Reset stream
+        if resetable and stream_values[1]["resetting"]:
+            return dict(
+                selection_expr=None, region_element=None
+            )
+
+        combined_selection_expr = None
+        combined_region_element = None
+
+        for selection_contents in stream_values[0]["values"]:
+            selection_expr = selection_contents['selection_expr']
+            if not selection_expr:
+                continue
+            region_element = selection_contents['region_element']
+
+            # Update combined selection expression
+            if combined_selection_expr is None or mode == "overwrite":
+                if mode == "inverse":
+                    combined_selection_expr = ~selection_expr
+                else:
+                    combined_selection_expr = selection_expr
+            else:
+                if mode == "intersect":
+                    combined_selection_expr &= selection_expr
+                elif mode == "union":
+                    combined_selection_expr |= selection_expr
+                else:  # inverse
+                    combined_selection_expr &= ~selection_expr
+
+            # Update region
+            if isinstance(source, DynamicMap):
+                el_type = source.type
+            else:
+                el_type = source
+
+            combined_region_element = el_type._merge_regions(
+                combined_region_element, region_element, mode
+            )
+
+        return dict(
+            selection_expr=combined_selection_expr,
+            region_element=combined_region_element if include_region else None
+        )
+
+
+class CrossFilterSet(Derived):
+    selection_expr = param.Parameter(default=None, constant=True)
+
+    def __init__(self, selection_streams=(), mode="intersection", index_cols=None, **params):
+        self._mode = mode
+        self._index_cols = index_cols
+        input_streams = list(selection_streams)
+        exclusive = mode == "overwrite"
+        super(CrossFilterSet, self).__init__(
+            input_streams, exclusive=exclusive, **params
+        )
+
+    @property
+    def mode(self):
+        return self._mode
+
+    @mode.setter
+    def mode(self, v):
+        if v != self._mode:
+            self._mode = v
+            self.reset()
+            self.exclusive = self._mode == "overwrite"
+
+    @property
+    def constants(self):
+        return {
+            "mode": self.mode,
+            "index_cols": self._index_cols
+        }
+
+    def reset(self):
+        super(CrossFilterSet, self).reset()
+        for stream in self.input_streams:
+            stream.reset()
+
+    @classmethod
+    def transform_function(cls, stream_values, constants):
+        from .util.transform import dim
+
+        index_cols = constants["index_cols"]
+
+        # Get non-none selection expressions
+        selection_exprs = [sv["selection_expr"] for sv in stream_values]
+        selection_exprs = [expr for expr in selection_exprs if expr is not None]
+        selection_expr = None
+        if len(selection_exprs) > 0:
+            if index_cols:
+                if len(selection_exprs) > 1:
+                    vals = set.intersection(
+                        *(set(expr.ops[2]['args'][0]) for expr in selection_exprs))
+                    old = selection_exprs[0]
+                    selection_expr = dim('new')
+                    selection_expr.dimension = old.dimension
+                    selection_expr.ops = list(old.ops)
+                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
+            else:
+                selection_expr = selection_exprs[0]
+                for expr in selection_exprs[1:]:
+                    selection_expr = selection_expr & expr
+
+        return dict(selection_expr=selection_expr)
 
 
 class LinkedStream(Stream):
