@@ -65,7 +65,7 @@ class Scatter3DPlot(Chart3DPlot, ScatterPlot):
         'visible', 'marker', 'color', 'cmap', 'alpha', 'opacity', 'size', 'sizemin'
     ]
 
-    selection_display = PlotlyOverlaySelectionDisplay()
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
 
 
 class Path3DPlot(Chart3DPlot, CurvePlot):
