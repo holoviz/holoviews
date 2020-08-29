@@ -9,7 +9,7 @@ from ...core import util
 from ...element import Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
-from .element import ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
@@ -129,7 +129,9 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
         zorders = self._updated_zorders(element)
         for (key, el), zorder in zip(element.data.items(), zorders):
-            self.param.set_param(**self.lookup_options(el, 'plot').options)
+            el_opts = self.lookup_options(el, 'plot').options
+            self.param.set_param(**{k: v for k, v in el_opts.items()
+                                    if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             self.overlay_dims = dict(zip(element.kdims, key))
