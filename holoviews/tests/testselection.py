@@ -50,7 +50,7 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(base_points.data, data)
 
     @staticmethod
-    def get_value_with_key_type(d: dict, hvtype):
+    def get_value_with_key_type(d, hvtype):
         for k, v in d.items():
             if isinstance(k, hvtype) or \
                     isinstance(k, hv.DynamicMap) and k.type == hvtype:
