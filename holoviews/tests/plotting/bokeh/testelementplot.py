@@ -860,6 +860,13 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual([p.projection for p in plot.subplots.values()], ['custom', 'custom'])
 
+    def test_overlay_propagates_batched(self):
+        overlay = NdOverlay({
+            i: Curve([1, 2, 3]).opts(yformatter='%.1f') for i in range(10)
+        }).opts(yformatter='%.3f', legend_limit=1)
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual(plot.state.yaxis.formatter.format, '%.3f')
+
     def test_overlay_gridstyle_applies(self):
         grid_style = {'grid_line_color': 'blue', 'grid_line_width': 2}
         overlay = (Scatter([(10,10)]).options(gridstyle=grid_style, show_grid=True, size=20)
