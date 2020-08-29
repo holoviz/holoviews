@@ -9,7 +9,7 @@ from ...core import util
 from ...element import Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
-from .element import ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
