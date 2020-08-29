@@ -1045,20 +1045,13 @@ class SelectionExprSequence(Derived):
     region_element = param.Parameter(default=None, constant=True)
 
     def __init__(
-            self, source, mode="overwrite", resetable=True,
+            self, source, mode="overwrite",
             include_region=True, **params
     ):
-        self._resetable = resetable
         self.mode = mode
         self.include_region = include_region
-        self._resetable = resetable
         self.history_stream = History(SelectionExpr(source, **params))
-        if resetable:
-            self.plot_reset_stream = PlotReset(source=source)
-            input_streams = [self.history_stream, self.plot_reset_stream]
-        else:
-            self.plot_reset_stream = None
-            input_streams = [self.history_stream]
+        input_streams = [self.history_stream]
 
         super(SelectionExprSequence, self).__init__(
             source=source, input_streams=input_streams, **params
@@ -1067,7 +1060,6 @@ class SelectionExprSequence(Derived):
     @property
     def constants(self):
         return {
-            "resetable": self._resetable,
             "source": self.source,
             "mode": self.mode,
             "include_region": self.include_region,
@@ -1082,14 +1074,7 @@ class SelectionExprSequence(Derived):
         from .core.spaces import DynamicMap
         mode = constants["mode"]
         source = constants["source"]
-        resetable = constants["resetable"]
         include_region = constants["include_region"]
-
-        # Handle Reset stream
-        if resetable and stream_values[1]["resetting"]:
-            return dict(
-                selection_expr=None, region_element=None
-            )
 
         combined_selection_expr = None
         combined_region_element = None

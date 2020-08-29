@@ -10,7 +10,7 @@ from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .streams import Stream, SelectionExprSequence, CrossFilterSet, Derived
+from .streams import Stream, SelectionExprSequence, CrossFilterSet, Derived, PlotReset
 from .util import DynamicMap
 
 
@@ -77,6 +77,7 @@ class _base_link_selections(param.ParameterizedFunction):
         inst._cross_filter_stream = CrossFilterSet(mode=inst.cross_filter_mode)
         inst._selection_override = _SelectionExprOverride()
         inst._selection_expr_streams = {}
+        inst._plot_reset_streams = {}
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
@@ -95,12 +96,15 @@ class _base_link_selections(param.ParameterizedFunction):
         self._selection_expr_streams[hvobj] = selection_expr_seq
         self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
 
+        self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
+
         # Register reset
         def clear_stream_history(resetting, stream=selection_expr_seq.history_stream):
             if resetting:
                 stream.clear_history()
+                stream.event()
 
-        selection_expr_seq.plot_reset_stream.param.watch(
+        self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
         )
 
