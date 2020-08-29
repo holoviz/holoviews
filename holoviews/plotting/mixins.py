@@ -24,9 +24,15 @@ class GeomMixin(object):
             for kdim in [kdim0, kdim1]:
                 # for good measure, update ranges for both start and end kdim
                 for r in ranges[kdim]:
-                    # combine (x0, x1) and (y0, y1) in range calculation
-                    new_range[r] = util.max_range([ranges[kd][r]
-                                                   for kd in [kdim0, kdim1]])
+                    if r == 'factors':
+                        new_range[r] = list(
+                            util.unique_iterator(list(ranges[kdim0][r])+
+                                                 list(ranges[kdim1][r]))
+                        )
+                    else:
+                        # combine (x0, x1) and (y0, y1) in range calculation
+                        new_range[r] = util.max_range([ranges[kd][r]
+                                                       for kd in [kdim0, kdim1]])
             ranges[kdim0] = new_range
             ranges[kdim1] = new_range
         return super(GeomMixin, self).get_extents(element, ranges, range_type)
