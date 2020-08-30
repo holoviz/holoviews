@@ -52,6 +52,7 @@ Your browser does not support the video tag.
 </video>"""
 PDF_TAG = "<iframe src='{src}' style='width:100%; margin: auto; display: block; {css}'></iframe>"
 HTML_TAG = "{src}"
+INVALID_TAG = "<div>Cannot render {mime_type} in HTML</div>"
 
 HTML_TAGS = {
     'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
@@ -61,7 +62,8 @@ HTML_TAGS = {
     'webm': VIDEO_TAG,
     'mp4':  VIDEO_TAG,
     'pdf':  PDF_TAG,
-    'html': HTML_TAG
+    'html': HTML_TAG,
+    'pgf':  INVALID_TAG
 }
 
 MIME_TYPES = {
@@ -71,6 +73,7 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
+    'pgf':  'text/pgf',
     'html': 'text/html',
     'json': 'text/json',
     'js':   'application/javascript',
