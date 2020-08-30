@@ -55,7 +55,8 @@ class MPLRenderer(Renderer):
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'pgf',
+                                        'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
@@ -71,7 +72,7 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'html', None, 'auto'],
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],
                     'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
                                 'html', None, 'auto']}
 
