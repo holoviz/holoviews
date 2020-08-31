@@ -46,14 +46,23 @@ class PlotlyCallback(object):
 
     @classmethod
     def update_streams_from_property_update(cls, property_value, fig_dict):
-        raise NotImplementedError()
+        event_data = cls.get_event_data_from_property_update(property_value, fig_dict)
+        for trace_uid, stream_data in event_data.items():
+            if trace_uid in cls.instances:
+                cb = cls.instances[trace_uid]
+                for stream in cb.streams:
+                    stream.event(**stream_data)
+
+    @classmethod
+    def get_event_data_from_property_update(cls, property_value, fig_dict):
+        raise NotImplementedError
 
 
 class Selection1DCallback(PlotlyCallback):
     callback_property = "selected_data"
 
     @classmethod
-    def update_streams_from_property_update(cls, selected_data, fig_dict):
+    def get_event_data_from_property_update(cls, selected_data, fig_dict):
 
         traces = fig_dict.get('data', [])
 
@@ -66,13 +75,13 @@ class Selection1DCallback(PlotlyCallback):
                 point_inds.setdefault(point['curveNumber'], [])
                 point_inds[point['curveNumber']].append(point['pointNumber'])
 
+        event_data = {}
         for trace_ind, trace in enumerate(traces):
             trace_uid = trace.get('uid', None)
-            if trace_uid in cls.instances:
-                cb = cls.instances[trace_uid]
-                new_index = point_inds.get(trace_ind, [])
-                for stream in cb.streams:
-                    stream.event(index=new_index)
+            new_index = point_inds.get(trace_ind, [])
+            event_data[trace_uid] = dict(index=new_index)
+
+        return event_data
 
 
 class BoundsCallback(PlotlyCallback):
@@ -81,7 +90,7 @@ class BoundsCallback(PlotlyCallback):
     boundsy = False
 
     @classmethod
-    def update_streams_from_property_update(cls, selected_data, fig_dict):
+    def get_event_data_from_property_update(cls, selected_data, fig_dict):
 
         traces = fig_dict.get('data', [])
 
@@ -96,15 +105,13 @@ class BoundsCallback(PlotlyCallback):
             yref = [ref for ref in axis_refs if ref.startswith('y')][0]
 
         # Process traces
+        event_data = {}
         for trace_ind, trace in enumerate(traces):
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
-            if (trace_uid not in cls.instances or
-                    _trace_to_subplot.get(trace_type, None) != ['xaxis', 'yaxis']):
+            if _trace_to_subplot.get(trace_type, None) != ['xaxis', 'yaxis']:
                 continue
-
-            cb = cls.instances[trace_uid]
 
             if (box and trace.get('xaxis', 'x') == xref and
                     trace.get('yaxis', 'y') == yref):
@@ -112,28 +119,28 @@ class BoundsCallback(PlotlyCallback):
                 new_bounds = (box[xref][0], box[yref][0], box[xref][1], box[yref][1])
 
                 if cls.boundsx and cls.boundsy:
-                    event_kwargs = dict(bounds=new_bounds)
+                    stream_data = dict(bounds=new_bounds)
                 elif cls.boundsx:
-                    event_kwargs = dict(boundsx=(new_bounds[0], new_bounds[2]))
+                    stream_data = dict(boundsx=(new_bounds[0], new_bounds[2]))
                 elif cls.boundsy:
-                    event_kwargs = dict(boundsy=(new_bounds[1], new_bounds[3]))
+                    stream_data = dict(boundsy=(new_bounds[1], new_bounds[3]))
                 else:
-                    event_kwargs = dict()
+                    stream_data = dict()
 
-                for stream in cb.streams:
-                    stream.event(**event_kwargs)
+                event_data[trace_uid] = stream_data
             else:
                 if cls.boundsx and cls.boundsy:
-                    event_kwargs = dict(bounds=None)
+                    stream_data = dict(bounds=None)
                 elif cls.boundsx:
-                    event_kwargs = dict(boundsx=None)
+                    stream_data = dict(boundsx=None)
                 elif cls.boundsy:
-                    event_kwargs = dict(boundsy=None)
+                    stream_data = dict(boundsy=None)
                 else:
-                    event_kwargs = dict()
+                    stream_data = dict()
 
-                for stream in cb.streams:
-                    stream.event(**event_kwargs)
+                event_data[trace_uid] = stream_data
+
+        return event_data
 
 
 class BoundsXYCallback(BoundsCallback):
@@ -155,17 +162,17 @@ class RangeCallback(PlotlyCallback):
     y_range = False
 
     @classmethod
-    def update_streams_from_property_update(cls, viewport, fig_dict):
+    def get_event_data_from_property_update(cls, viewport, fig_dict):
 
         traces = fig_dict.get('data', [])
 
         # Process traces
+        event_data = {}
         for trace_ind, trace in enumerate(traces):
             trace_type = trace.get('type', 'scatter')
             trace_uid = trace.get('uid', None)
 
-            if (trace_uid not in cls.instances or
-                    _trace_to_subplot.get(trace_type, None) != ['xaxis', 'yaxis']):
+            if _trace_to_subplot.get(trace_type, None) != ['xaxis', 'yaxis']:
                 continue
 
             xaxis = trace.get('xaxis', 'x').replace('x', 'xaxis')
@@ -180,16 +187,16 @@ class RangeCallback(PlotlyCallback):
                 x_range = tuple(viewport[xprop])
                 y_range = tuple(viewport[yprop])
 
-            stream_kwargs = {}
+            stream_data = {}
             if cls.x_range:
-                stream_kwargs['x_range'] = x_range
+                stream_data['x_range'] = x_range
 
             if cls.y_range:
-                stream_kwargs['y_range'] = y_range
+                stream_data['y_range'] = y_range
 
-            cb = cls.instances[trace_uid]
-            for stream in cb.streams:
-                stream.event(**stream_kwargs)
+            event_data[trace_uid] = stream_data
+
+        return event_data
 
 
 class RangeXYCallback(RangeCallback):
