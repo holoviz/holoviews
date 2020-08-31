@@ -5,6 +5,7 @@ Unit tests for dim transforms
 from __future__ import division
 
 import sys
+import pickle
 
 from collections import OrderedDict
 from unittest import skipIf
@@ -481,7 +482,7 @@ class TestDimTransforms(ComparisonTestCase):
     def test_xarray_roll_method(self):
         expr = dim('z').xr.roll({'x': 1}, roll_coords=False)
         self.assert_apply_xarray(expr, self.dataset_xarray.data.z.roll({'x': 1}, roll_coords=False))
-        
+
     @xr_skip
     @py2_skip
     def test_xarray_coarsen_method(self):
@@ -513,3 +514,8 @@ class TestDimTransforms(ComparisonTestCase):
         self.assert_apply(expr, np.round(self.linear_floats, 1))
         p.a = 2
         self.assert_apply(expr, np.round(self.linear_floats, 2))
+
+    def test_pickle(self):
+        expr = (((dim('float')-2)*3)**2)
+        expr2 = pickle.loads(pickle.dumps(expr))
+        self.assertEqual(expr, expr2)
