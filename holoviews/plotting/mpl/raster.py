@@ -37,7 +37,11 @@ class RasterBasePlot(ElementPlot):
             if isinstance(element, Image):
                 return element.bounds.lbrt()
             else:
-                return element.extents
+                xvals = element.dimension_values(0, expanded=False)
+                yvals = element.dimension_values(1, expanded=False)
+                l, r = 0, len(xvals)
+                b, t = 0, len(yvals)
+                return (l, b, r, t)
 
     def _compute_ticks(self, element, ranges):
         return None, None
@@ -63,19 +67,17 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
 
         data = get_raster_array(element)
         if type(element) is Raster:
-            l, b, r, t = element.extents
-            if self.invert_axes:
-                data = data[:, ::-1]
-            else:
-                data = data[::-1]
+            xvals = element.dimension_values(0, expanded=False)
+            yvals = element.dimension_values(1, expanded=False)
+            l, r = 0, len(xvals)
+            b, t = 0, len(yvals)
         else:
             l, b, r, t = element.bounds.lbrt()
-            if self.invert_axes:
-                data = data[::-1, ::-1]
 
         if self.invert_axes:
-            data = data.transpose([1, 0, 2]) if isinstance(element, RGB) else data.T
+            data = data[::-1, ::-1]
             l, b, r, t = b, l, t, r
+            data = data.transpose([1, 0, 2]) if isinstance(element, RGB) else data.T
 
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
