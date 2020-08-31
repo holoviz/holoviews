@@ -1,5 +1,5 @@
 import sqlite3
-
+import pathlib
 from unittest import SkipTest
 
 from tempfile import NamedTemporaryFile
@@ -22,6 +22,7 @@ from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 def create_temp_db(df, name, index=False):
     with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
+    print(filename)
     con = sqlite3.Connection(filename)
     df.to_sql(name, con, index=index)
     return sqlite.connect(filename)
@@ -62,6 +63,8 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["Gender", "Age", "Weight", "Height"],
         )
         hetero_db = create_temp_db(hetero_df, "hetero")
+        print(hetero_db)
+        print(hetero_db.list_tables())
         self.table = Dataset(
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
