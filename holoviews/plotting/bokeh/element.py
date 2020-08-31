@@ -793,7 +793,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         fixed_width = (self.frame_width or options.get('width'))
         fixed_height = (self.frame_height or options.get('height'))
         constrained_width = options.get('min_width') or options.get('max_width')
-        constrained_width = options.get('min_height') or options.get('max_height')
+        constrained_height = options.get('min_height') or options.get('max_height')
 
         data_aspect = (self.aspect == 'equal' or self.data_aspect)
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
