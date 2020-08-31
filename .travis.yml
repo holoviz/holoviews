@@ -21,10 +21,6 @@ notifications:
 
 env:
   global:
-<<<<<<< HEAD
-=======
-    - PYENV_VERSION=3.7.1
->>>>>>> pyenv
     - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
     - CHANS_DEV="-c pyviz/label/dev -c bokeh"
     - CHANS="-c pyviz"
