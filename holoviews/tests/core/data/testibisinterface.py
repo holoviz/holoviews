@@ -1,5 +1,4 @@
 import sqlite3
-import pathlib
 from unittest import SkipTest
 
 from tempfile import NamedTemporaryFile
