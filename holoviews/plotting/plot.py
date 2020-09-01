@@ -699,7 +699,7 @@ class DimensionedPlot(Plot):
                         dtype = np.array([el.level]).dtype # Remove when deprecating level
                     else:
                         dtype = el.interface.dtype(el, el_dim)
-                elif len(el):
+                elif hasattr(el, '__len__') and len(el):
                     dtype = el.dimension_values(el_dim).dtype
                 else:
                     dtype = None
