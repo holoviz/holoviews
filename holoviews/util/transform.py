@@ -242,6 +242,12 @@ class dim(object):
                           'reverse': kwargs.pop('reverse', False)}]
         self.ops = ops
 
+    def __getstate__(self):
+        return self.__dict__
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
     @property
     def _current_accessor(self):
         if self.ops and self.ops[-1]['kwargs'].get('accessor'):
