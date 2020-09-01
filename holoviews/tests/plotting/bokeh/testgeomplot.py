@@ -1,20 +1,13 @@
-import datetime as dt
 from unittest import SkipTest
 
-import numpy as np
-
 from holoviews.core import NdOverlay
-from holoviews.core.options import Cycle
 from holoviews.core.util import pd
 from holoviews.element import Segments
-from holoviews.streams import Stream
 
 from .testplot import TestBokehPlot, bokeh_renderer
-from ..utils import ParamLogStream
 
 try:
-    from bokeh.models import FactorRange, LinearColorMapper, CategoricalColorMapper
-    from bokeh.models import Scatter
+    from bokeh.models import FactorRange
 except:
     pass
 
@@ -77,7 +70,7 @@ class TestSegmentPlot(TestBokehPlot):
         formatters = {'@{x0}': "datetime", '@{x1}': "datetime"}
         self._test_hover_info(obj, tooltips, formatters=formatters)
 
-    def test_segments_categorical_yaxis(self):
+    def test_segments_categorical_xaxis(self):
         segments = Segments((['A', 'B', 'C'], [1, 2, 3], ['A', 'B', 'C'], [4, 5, 6]))
         plot = bokeh_renderer.get_plot(segments)
         x_range = plot.handles['x_range']
