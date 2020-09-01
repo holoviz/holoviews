@@ -213,6 +213,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
 
+        # Flag to check whether plot has been updated
+        self._updated = False
+
 
     def _hover_opts(self, element):
         if self.batched:
@@ -789,6 +792,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         options = self._traverse_options(element, 'plot', ['width', 'height'], defaults=False)
         fixed_width = (self.frame_width or options.get('width'))
         fixed_height = (self.frame_height or options.get('height'))
+        constrained_width = options.get('min_width') or options.get('max_width')
+        constrained_height = options.get('min_height') or options.get('max_height')
 
         data_aspect = (self.aspect == 'equal' or self.data_aspect)
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
@@ -805,7 +810,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xspan = r-l if util.is_number(l) and util.is_number(r) else None
             yspan = t-b if util.is_number(b) and util.is_number(t) else None
 
-            if self.drawn or (fixed_width and fixed_height):
+            if self.drawn or (fixed_width and fixed_height) or (constrained_width or constrained_height):
                 # After initial draw or if aspect is explicit
                 # adjust range to match the plot dimension aspect
                 ratio = self.data_aspect or 1
@@ -832,12 +837,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     # loop of events
                     l, r, b, t = current_l, current_r, current_b, current_t
                     xspan, yspan = current_xspan, current_yspan
-                    
+
                 size_streams = [s for s in self.streams if isinstance(s, PlotSize)]
-                if any(ss._triggering for ss in size_streams):
-                    # Do not trigger on frame size changes, this can
-                    # trigger event loops if the tick labels change
-                    # the canvas size
+                if any(ss._triggering for ss in size_streams) and self._updated:
+                    # Do not trigger on frame size changes, except for
+                    # the initial one which can be important if width
+                    # and/or height constraints have forced different
+                    # aspect. After initial event we skip because size
+                    # changes can trigger event loops if the tick
+                    # labels change the canvas size
                     return
 
                 desired_xspan = yspan*(ratio/frame_aspect)
@@ -1457,6 +1465,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
             self._set_active_tools(plot)
+            self._updated = True
 
         if 'hover' in self.handles:
             self._update_hover(element)
@@ -2358,5 +2367,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._update_plot(key, plot, element)
             self._set_active_tools(plot)
 
+        self._updated = True
         self._process_legend(element)
         self._execute_hooks(element)

@@ -20,7 +20,7 @@ from ...operation import interpolate_curve
 from ...util.transform import dim
 from ..mixins import AreaMixin, BarsMixin, SpikesMixin
 from ..util import compute_sizes, get_min_distance
-from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
@@ -143,7 +143,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
         # marker in certain cases
         has_angles = False
         for (key, el), zorder in zip(element.data.items(), zorders):
-            self.param.set_param(**self.lookup_options(el, 'plot').options)
+            el_opts = self.lookup_options(el, 'plot').options
+            self.param.set_param(**{k: v for k, v in el_opts.items()
+                                    if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(element.last, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)
@@ -379,7 +381,9 @@ class CurvePlot(ElementPlot):
 
         zorders = self._updated_zorders(overlay)
         for (key, el), zorder in zip(overlay.data.items(), zorders):
-            self.param.set_param(**self.lookup_options(el, 'plot').options)
+            el_opts = self.lookup_options(el, 'plot').options
+            self.param.set_param(**{k: v for k, v in el_opts.items()
+                                    if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             eldata, elmapping, style = self.get_data(el, ranges, style)

@@ -495,6 +495,8 @@ class dim(object):
 
         if isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
+        elif self.dimension.name == '*':
+            applies = True
         else:
             lookup = self.dimension if strict else self.dimension.name
             applies = dataset.get_dimension(lookup) is not None
@@ -660,18 +662,22 @@ class dim(object):
             compute_for_compute = compute
             keep_index_for_compute = keep_index
 
-        lookup = dimension if strict else dimension.name
-        eldim = dataset.get_dimension(lookup)
-        data = dataset.interface.values(
-            dataset, lookup, expanded=expanded, flat=flat,
-            compute=compute_for_compute, keep_index=keep_index_for_compute
-        )
+        if dimension.name == '*':
+            data = dataset.data
+            eldim = None
+        else:
+            lookup = dimension if strict else dimension.name
+            eldim = dataset.get_dimension(lookup).name
+            data = dataset.interface.values(
+                dataset, lookup, expanded=expanded, flat=flat,
+                compute=compute_for_compute, keep_index=keep_index_for_compute
+            )
         for op in self.ops:
             fn, fn_name, args, kwargs, accessor = self._resolve_op(
                 op, dataset, data, flat, expanded, ranges, all_values,
                 keep_index_for_compute, compute_for_compute, strict
             )
-            drange = ranges.get(eldim.name, {})
+            drange = ranges.get(eldim, {})
             drange = drange.get('combined', drange)
             data = self._apply_fn(dataset, data, fn, fn_name, args,
                                   kwargs, accessor, drange)
