@@ -114,43 +114,55 @@ class TestCallbacks(TestCase):
         self.assertNotIn(plot3.trace_uid, BoundsXYCallback.instances)
 
     def testRangeXYCallbackEventData(self):
-        viewport = {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]}
-        event_data = RangeXYCallback.get_event_data_from_property_update(
-            viewport, self.fig_dict
-        )
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeXYCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
 
-        self.assertEqual(event_data, {
-            'first': {'x_range': (1, 4), 'y_range': (-1, 5)},
-            'second': {'x_range': (1, 4), 'y_range': (-1, 5)},
-            'third': {'x_range': None, 'y_range': None},
-            'forth': {'x_range': None, 'y_range': None}
-        })
+            self.assertEqual(event_data, {
+                'first': {'x_range': (1, 4), 'y_range': (-1, 5)},
+                'second': {'x_range': (1, 4), 'y_range': (-1, 5)},
+                'third': {'x_range': None, 'y_range': None},
+                'forth': {'x_range': None, 'y_range': None}
+            })
 
     def testRangeXCallbackEventData(self):
-        viewport = {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]}
-        event_data = RangeXCallback.get_event_data_from_property_update(
-            viewport, self.fig_dict
-        )
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeXCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
 
-        self.assertEqual(event_data, {
-            'first': {'x_range': (1, 4)},
-            'second': {'x_range': (1, 4)},
-            'third': {'x_range': None},
-            'forth': {'x_range': None}
-        })
+            self.assertEqual(event_data, {
+                'first': {'x_range': (1, 4)},
+                'second': {'x_range': (1, 4)},
+                'third': {'x_range': None},
+                'forth': {'x_range': None}
+            })
 
     def testRangeYCallbackEventData(self):
-        viewport = {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]}
-        event_data = RangeYCallback.get_event_data_from_property_update(
-            viewport, self.fig_dict
-        )
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeYCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
 
-        self.assertEqual(event_data, {
-            'first': {'y_range': (-1, 5)},
-            'second': {'y_range': (-1, 5)},
-            'third': {'y_range': None},
-            'forth': {'y_range': None}
-        })
+            self.assertEqual(event_data, {
+                'first': {'y_range': (-1, 5)},
+                'second': {'y_range': (-1, 5)},
+                'third': {'y_range': None},
+                'forth': {'y_range': None}
+            })
 
     def testRangeCallbacks(self):
 

@@ -180,12 +180,19 @@ class RangeCallback(PlotlyCallback):
             xprop = '{xaxis}.range'.format(xaxis=xaxis)
             yprop = '{yaxis}.range'.format(yaxis=yaxis)
 
-            if not viewport or xprop not in viewport or yprop not in viewport:
+            if not viewport:
                 x_range = None
                 y_range = None
-            else:
+            elif xprop in viewport and yprop in viewport:
                 x_range = tuple(viewport[xprop])
                 y_range = tuple(viewport[yprop])
+            elif xprop + "[0]" in viewport and xprop + "[1]" in viewport and \
+                    yprop + "[0]" in viewport and yprop + "[1]" in viewport :
+                x_range = (viewport[xprop + "[0]"], viewport[xprop + "[1]"])
+                y_range = (viewport[yprop + "[0]"], viewport[yprop + "[1]"])
+            else:
+                x_range = None
+                y_range = None
 
             stream_data = {}
             if cls.x_range:
