@@ -1420,11 +1420,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_datasource(source, data)
 
 
+    def _reset_ranges(self):
+        """
+        Resets RangeXY streams if norm option is set to framewise
+        """
+        if self.overlaid:
+            return
+        for el, stream in self.traverse(lambda x: (x.current_frame, x.streams)):
+            norm = self.lookup_options(el, 'norm').options
+            if norm.get('framewise'):
+                for s in self.streams:
+                    if isinstance(s, RangeXY):
+                        s.reset()
+
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
         if not reused and element is None:
             element = self._get_frame(key)
@@ -2302,6 +2316,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
         if not reused and element is None:
             element = self._get_frame(key)
