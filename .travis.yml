@@ -22,7 +22,7 @@ notifications:
 env:
   global:
     - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
-    - CHANS_DEV: "-c pyviz/label/dev -c conda-forge -c bokeh/label/dev"
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
     - PYTHON_VERSION=3.7
