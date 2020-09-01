@@ -31,7 +31,7 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField, Path, Contours, Tiles
+from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
 from ...streams import Stream, Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -350,7 +350,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
-        el = element.traverse(lambda x: x, [Element])
+        el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
 
         dims = self._get_axis_dims(el)
