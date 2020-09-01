@@ -1426,12 +1426,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         if self.overlaid:
             return
-        for el, stream in self.traverse(lambda x: (x.current_frame, x.streams)):
-            norm = self.lookup_options(el, 'norm').options
-            if norm.get('framewise'):
-                for s in self.streams:
-                    if isinstance(s, RangeXY):
-                        s.reset()
+        for el, callbacks in self.traverse(lambda x: (x.current_frame, x.callbacks)):
+            if el is None:
+                continue
+            for callback in callbacks:
+                norm = self.lookup_options(el, 'norm').options
+                if norm.get('framewise'):
+                    for s in callback.streams:
+                        if isinstance(s, RangeXY):
+                            s.reset()
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
