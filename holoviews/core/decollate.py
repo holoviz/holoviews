@@ -64,9 +64,10 @@ def to_expr_extract_streams(
         # Record all key dimensions
         kdim_args = []
         for kdim in hvobj.kdims:
-            if kdim in kdims:
+            current_kdim_names = [k.name for k in kdims]
+            if kdim.name in current_kdim_names:
                 # Find index to existing kdim
-                idx = kdims.index(kdim)
+                idx = current_kdim_names.index(kdim.name)
                 kdim_index = KDimIndex(index=idx)
 
                 # Overwrite so that we end up with dimension object highest in the
