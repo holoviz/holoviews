@@ -2209,7 +2209,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for k, sp in self.subplots.items():
             el = overlay.data.get(k)
             if el is not None:
-                xfs, yfs = sp._get_factors(el, ranges)
+                elranges = util.match_spec(el, ranges)
+                xfs, yfs = sp._get_factors(el, elranges)
                 xfactors.append(xfs)
                 yfactors.append(yfs)
         if xfactors:
