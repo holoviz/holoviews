@@ -70,6 +70,12 @@ def get_old_rcparams():
         'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
         'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
         'datapath', # deprecated in MPL 3.2.1, to be removed in 3.3
+        'text.latex.preview', # deprecated in MPL 3.3.1
+        'animation.avconv_args', # deprecated in MPL 3.3.1
+        'animation.avconv_path', # deprecated in MPL 3.3.1
+        'animation.html_args', # deprecated in MPL 3.3.1
+        'keymap.all_axes', # deprecated in MPL 3.3.1
+        'savefig.jpeg_quality' # deprecated in MPL 3.3.1
     ]
     old_rcparams = {
         k: v for k, v in matplotlib.rcParams.items()
