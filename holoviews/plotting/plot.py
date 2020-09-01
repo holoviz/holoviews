@@ -688,6 +688,41 @@ class DimensionedPlot(Plot):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        data_ranges = {}
+        categorical_dims = []
+        for el in elements:
+            for el_dim in el.dimensions('ranges'):
+                if hasattr(el, 'interface'):
+                    if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
+                        dtype = el.nodes.interface.dtype(el.nodes, el_dim)
+                    elif isinstance(el, Contours) and el.level is not None:
+                        dtype = np.array([el.level]).dtype # Remove when deprecating level
+                    else:
+                        dtype = el.interface.dtype(el, el_dim)
+                elif len(el):
+                    dtype = el.dimension_values(el_dim).dtype
+                else:
+                    dtype = None
+
+                if all(util.isfinite(r) for r in el_dim.range):
+                    data_range = (None, None)
+                elif dtype is not None and dtype.kind in 'SU':
+                    data_range = ('', '')
+                elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                    data_range = el.nodes.range(2, dimension_range=False)
+                elif el_dim.values:
+                    ds = Dataset(el_dim.values, el_dim)
+                    data_range = ds.range(el_dim, dimension_range=False)
+                else:
+                    data_range = el.range(el_dim, dimension_range=False)
+
+                data_ranges[(el, el_dim)] = data_range
+
+                if (any(isinstance(r, util.basestring) for r in data_range) or
+                    (el_dim.type is not None and issubclass(el_dim.type, util.basestring)) or
+                    (dtype is not None and dtype.kind in 'SU')):
+                    categorical_dims.append(el_dim)
+
         prev_ranges = ranges.get(group, {})
         group_ranges = OrderedDict()
         for el in elements:
@@ -734,35 +769,13 @@ class DimensionedPlot(Plot):
                 dim_name = el_dim.name
                 if dim_name in prev_ranges and not framewise:
                     continue
-                if hasattr(el, 'interface'):
-                    if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
-                        dtype = el.nodes.interface.dtype(el.nodes, el_dim)
-                    elif isinstance(el, Contours) and el.level is not None:
-                        dtype = np.array([el.level]).dtype # Remove when deprecating level
-                    else:
-                        dtype = el.interface.dtype(el, el_dim)
-                else:
-                    dtype = None
-
-                if all(util.isfinite(r) for r in el_dim.range):
-                    data_range = (None, None)
-                elif dtype is not None and dtype.kind in 'SU':
-                    data_range = ('', '')
-                elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
-                    data_range = el.nodes.range(2, dimension_range=False)
-                elif el_dim.values:
-                    ds = Dataset(el_dim.values, el_dim)
-                    data_range = ds.range(el_dim, dimension_range=False)
-                else:
-                    data_range = el.range(el_dim, dimension_range=False)
-
+                data_range = data_ranges[(el, el_dim)]
                 if dim_name not in group_ranges:
                     group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
                 group_ranges[dim_name]['data'].append(data_range)
                 group_ranges[dim_name]['hard'].append(el_dim.range)
                 group_ranges[dim_name]['soft'].append(el_dim.soft_range)
-                if (any(isinstance(r, util.basestring) for r in data_range) or
-                    el_dim.type is not None and issubclass(el_dim.type, util.basestring)):
+                if el_dim in categorical_dims:
                     if 'factors' not in group_ranges[dim_name]:
                         group_ranges[dim_name]['factors'] = []
                     if el_dim.values not in ([], None):
