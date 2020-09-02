@@ -463,8 +463,8 @@ class SideHistogramPlot(HistogramPlot):
         doc="A list of plugin tools to use on the plot.")
 
     _callback = """
-    color_mapper.low = cb_data['geometry']['{axis}0'];
-    color_mapper.high = cb_data['geometry']['{axis}1'];
+    color_mapper.low = cb_obj['geometry']['{axis}0'];
+    color_mapper.high = cb_obj['geometry']['{axis}1'];
     source.change.emit()
     main_source.change.emit()
     """
@@ -510,14 +510,13 @@ class SideHistogramPlot(HistogramPlot):
                  if isinstance(t, BoxSelectTool)]
         if not tools or not sources:
             return
-        box_select, main_source = tools[0], sources[0]
+        main_source = sources[0]
         handles = {'color_mapper': self.handles['color_mapper'],
                    'source': self.handles['source'],
                    'cds': self.handles['source'],
                    'main_source': main_source}
-        axis = 'y' if self.invert_axes else 'x'
-        callback = self._callback.format(axis=axis)
-        box_select.js_on_event("selectiongeometry", CustomJS(args=handles, code=callback))
+        callback = self._callback.format(axis='y' if self.invert_axes else 'x')
+        self.state.js_on_event("selectiongeometry", CustomJS(args=handles, code=callback))
         return ret
 
 
