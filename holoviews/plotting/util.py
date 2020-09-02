@@ -11,7 +11,7 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, NdOverlay)
+                    Overlay, GridSpace, NdLayout, NdOverlay, AdjointLayout)
 from ..core.options import CallbackError, Cycle
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
@@ -27,7 +27,7 @@ def displayable(obj):
     Predicate that returns whether the object is displayable or not
     (i.e whether the object obeys the nesting hierarchy
     """
-    if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace))
+    if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace, AdjointLayout))
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
@@ -46,7 +46,7 @@ display_warning = Warning(name='Warning')
 def collate(obj):
     if isinstance(obj, Overlay):
         nested_type = [type(o).__name__ for o in obj
-                       if isinstance(o, (HoloMap, GridSpace))][0]
+                       if isinstance(o, (HoloMap, GridSpace, AdjointLayout))][0]
         display_warning.param.warning(
             "Nesting %ss within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
