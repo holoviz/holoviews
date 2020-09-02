@@ -32,3 +32,4 @@ dependencies:
   - bzip2
   - dask
   - scipy
+  - ibis-framework >= 1.3
