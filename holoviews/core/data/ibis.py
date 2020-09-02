@@ -19,6 +19,9 @@ class IbisInterface(Interface):
 
     default_partitions = 100
 
+    # the rowid is needed until ibis updates versions
+    has_rowid = hasattr(ibis, "rowid")
+
     @classmethod
     def loaded(cls):
         return "ibis" in sys.modules
@@ -118,12 +121,17 @@ class IbisInterface(Interface):
     validate = pandas.PandasInterface.validate
     reindex = pandas.PandasInterface.reindex
 
-    @staticmethod
-    def _index_ibis_table(data):
+    @classmethod
+    def _index_ibis_table(cls, data):
+        if not cls.has_rowid:
+            raise ValueError(
+                "iloc expressions are not supported for ibis version %s."
+                % ibis.__version__
+            )
+
         if "hv_row_id__" in data.columns:
             return data
-        data = data.mutate(hv_row_id__=1)
-        return data.mutate(hv_row_id__=data.hv_row_id__.cumsum() - 1)
+        return data.mutate(hv_row_id__=ibis.rowid())
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -153,9 +161,9 @@ class IbisInterface(Interface):
             if any(x is not None for x in (rows.start, rows.stop, rows.step)):
                 predicates = []
                 if rows.start:
-                    predicates += [data.hv_row_id__ >= ibis.literal(rows.start)]
+                    predicates += [data.hv_row_id__ >= rows.start]
                 if rows.stop:
-                    predicates += [data.hv_row_id__ < ibis.literal(rows.stop)]
+                    predicates += [data.hv_row_id__ < rows.stop]
 
                 return data.filter(predicates).drop(["hv_row_id__"])
         else:

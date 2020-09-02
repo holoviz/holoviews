@@ -14,6 +14,7 @@ import pandas as pd
 
 from holoviews.core.data import Dataset
 from holoviews.core.spaces import HoloMap
+from holoviews.core.data.ibis import IbisInterface
 
 from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
@@ -21,7 +22,6 @@ from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 def create_temp_db(df, name, index=False):
     with NamedTemporaryFile(delete=False) as my_file:
         filename = my_file.name
-    print(filename)
     con = sqlite3.Connection(filename)
     df.to_sql(name, con, index=index)
     return sqlite.connect(filename)
@@ -62,8 +62,6 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             columns=["Gender", "Age", "Weight", "Height"],
         )
         hetero_db = create_temp_db(hetero_df, "hetero")
-        print(hetero_db)
-        print(hetero_db.list_tables())
         self.table = Dataset(
             hetero_db.table("hetero"), kdims=self.kdims, vdims=self.vdims
         )
@@ -227,4 +225,66 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             kdims=[("gender", "Gender")],
         )
         self.assertEqual(self.alias_table.groupby("Gender").apply("sort"), grouped)
+
+    def test_dataset_groupby_second_dim(self):
+        group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
+        group2 = {"Gender": ["M"], "Weight": [18], "Height": [0.6]}
+        group3 = {"Gender": ["F"], "Weight": [10], "Height": [0.8]}
+        grouped = HoloMap(
+            [
+                (10, Dataset(group1, kdims=["Gender"], vdims=self.vdims)),
+                (16, Dataset(group2, kdims=["Gender"], vdims=self.vdims)),
+                (12, Dataset(group3, kdims=["Gender"], vdims=self.vdims)),
+            ],
+            kdims=["Age"],
+            sort=True,
+        )
+        self.assertEqual(self.table.groupby(["Age"]), grouped)
+
+    if not IbisInterface.has_rowid:
+
+        def test_dataset_iloc_slice_rows_slice_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_slice_rows_list_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_slice_rows_index_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_slice_rows(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_rows_slice_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_rows_list_cols_by_name(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_rows_list_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_rows(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_cols_by_name(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_list_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_index_rows_slice_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_index_rows_index_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_ellipsis_list_cols_by_name(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_iloc_ellipsis_list_cols(self):
+            raise SkipTest("Not supported")
+
+        def test_dataset_boolean_index(self):
+            raise SkipTest("Not supported")
 
