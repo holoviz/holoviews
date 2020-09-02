@@ -39,30 +39,30 @@ If you have any `issues <https://github.com/holoviz/holoviews/issues>`_ or wish 
 
    <div>
    <div >
-     <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
-       <img src="http://holoviews.org/_images/iris_splom_example.png" width='24%'>    </img> </a>
-     <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
+     <a href="https://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
+       <img src="https://holoviews.org/_images/iris_splom_example.png" width='24%'>    </img> </a>
+     <a href="https://holoviews.org/getting_started/Gridded_Datasets.html">
        <img src="https://assets.holoviews.org/collage/cells.png" width='27%'> </img>  </a>
-     <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-       <img src="http://holoviews.org/_images/scatter_economic.png" width='47%'> </img>    </a>
+     <a href="https://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
+       <img src="https://holoviews.org/_images/scatter_economic.png" width='47%'> </img>    </a>
    </div>
 
    <div >
-     <a href="http://holoviews.org/gallery/demos/bokeh/square_limit.html">
-       <img src="http://holoviews.org/_images/square_limit.png" width='24%'> </a>
-     <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
-       <img src="http://holoviews.org/_images/bars_economic.png" width='24%'> </a>
-     <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-       <img src="http://holoviews.org/_images/texas_choropleth_example.png"    width='24%'> </a>
-     <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
-       <img src="http://holoviews.org/_images/verhulst_mandelbrot.png" width='24%'>    </a>
+     <a href="https://holoviews.org/gallery/demos/bokeh/square_limit.html">
+       <img src="https://holoviews.org/_images/square_limit.png" width='24%'> </a>
+     <a href="https://holoviews.org/gallery/demos/bokeh/bars_economic.html">
+       <img src="https://holoviews.org/_images/bars_economic.png" width='24%'> </a>
+     <a href="https://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
+       <img src="https://holoviews.org/_images/texas_choropleth_example.png"    width='24%'> </a>
+     <a href="https://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
+       <img src="https://holoviews.org/_images/verhulst_mandelbrot.png" width='24%'>    </a>
    </div>
    <div >
-       <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
+       <a href="https://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
          <img src="https://assets.holoviews.org/collage/dropdown.gif" width='33%'> </a>
-       <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
+       <a href="https://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
          <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='30%'> </a>
-       <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
+       <a href="https://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
          <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='33%'> </a>
    </div>
    </div>
@@ -74,14 +74,14 @@ ____________
 |CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
 
-HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/holoviz/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/holoviz/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <https://jupyter.org>`_.
 
-The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
+The recommended way to install HoloViews is using the `conda <https://conda.pydata.org/docs/>`_ command provided by `Anaconda <https://docs.continuum.io/anaconda/install>`_ or `Miniconda <https://conda.pydata.org/miniconda.html>`_::
 
   conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
-directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://param.holoviz.org/>`_.
+directly depends only on `Numpy <https://numpy.org>`_ and `Param <https://param.holoviz.org/>`_.
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 
