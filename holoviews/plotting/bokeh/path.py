@@ -72,7 +72,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
             ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
-            not (v == color and s == 'color')}
+            not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
         if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
