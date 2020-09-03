@@ -156,6 +156,7 @@ jobs:
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
@@ -166,6 +167,7 @@ jobs:
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
