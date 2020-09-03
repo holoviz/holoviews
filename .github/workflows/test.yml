@@ -23,7 +23,7 @@ jobs:
     env:
       DESC: "Python 3.6 tests"  # f strings? is this even necessary?
       HV_REQUIREMENTS: "unit_tests"
-      PYTHON_VERSION: ${{ matrix.os }}
+      PYTHON_VERSION: ${{ matrix.python-version }}
       PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       CHANS: "-c pyviz"
@@ -36,14 +36,9 @@ jobs:
       - name: pre_install
         run: |
           python -m pip install --upgrade pip
-          echo "install wheel"
           pip install wheel
-          echo "install pyctdev"
           pip install pyctdev
-          pip list
-          echo "first doit use"
           doit miniconda_install
-          echo "miniconda installed"
           pip uninstall -y doit pyctdev
       - name: conda setup
         run: |
@@ -53,8 +48,11 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           echo "second doit use"
           doit ecosystem_setup
+      - name: conda list
+        run: conda list
       - name: install
         run: |
+          pip list
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
           source activate test-environment
           doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
