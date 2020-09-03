@@ -32,15 +32,16 @@ jobs:
       - uses: actions/checkout@v2
       - name: pre_install
         run: |
+          python -m pip install --upgrade pip
           echo "install wheel"
           pip install wheel
           echo "install pyctdev"
           pip install pyctdev
+          pip list
           echo "first doit use"
           doit miniconda_install
           echo "miniconda installed"
           pip uninstall -y doit pyctdev
-          pip list
       - name: conda setup
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
