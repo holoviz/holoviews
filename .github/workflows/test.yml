@@ -28,7 +28,6 @@ jobs:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
-      PYTHON_VERSION: 3.7
     steps:
       - uses: actions/checkout@v2
       - name: pre_install
