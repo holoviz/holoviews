@@ -4,7 +4,9 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import BoxAnnotation, Span, Arrow, Div as BkDiv, Slope
+
+from bokeh.models import BoxAnnotation, Span, Arrow, Slope
+from panel.models import HTML
 
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
@@ -365,6 +367,45 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
 
     width = param.Number(default=300)
 
+    sizing_mode = param.ObjectSelector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None], doc="""
+
+        How the component should size itself.
+
+        * "fixed" :
+          Component is not responsive. It will retain its original
+          width and height regardless of any subsequent browser window
+          resize events.
+        * "stretch_width"
+          Component will responsively resize to stretch to the
+          available width, without maintaining any aspect ratio. The
+          height of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_height"
+          Component will responsively resize to stretch to the
+          available height, without maintaining any aspect ratio. The
+          width of the component depends on the type of the component
+          and may be fixed or fit to component's contents.
+        * "stretch_both"
+          Component is completely responsive, independently in width
+          and height, and will occupy all the available horizontal and
+          vertical space, even if this changes the aspect ratio of the
+          component.
+        * "scale_width"
+          Component will responsively resize to stretch to the
+          available width, while maintaining the original or provided
+          aspect ratio.
+        * "scale_height"
+          Component will responsively resize to stretch to the
+          available height, while maintaining the original or provided
+          aspect ratio.
+        * "scale_both"
+          Component will responsively resize to both the available
+          width and height, while maintaining the original or provided
+          aspect ratio.
+    """)
+
     finalize_hooks = param.HookList(default=[], doc="""
         Deprecated; use hooks options instead.""")
 
@@ -384,7 +425,6 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
     def get_data(self, element, ranges, style):
         return element.data, {}, style
 
-
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
         Initializes a new plot object with the last available frame.
@@ -396,12 +436,12 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         self.current_key = key
 
         data, _, _ = self.get_data(element, ranges, {})
-        div = BkDiv(text=data, width=self.width, height=self.height)
+        div = HTML(text=data, width=self.width, height=self.height,
+                   sizing_mode=self.sizing_mode)
         self.handles['plot'] = div
         self._execute_hooks(element)
         self.drawn = True
         return div
-
 
     def update_frame(self, key, ranges=None, plot=None):
         """
@@ -410,4 +450,4 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         """
         element = self._get_frame(key)
         text, _, _ = self.get_data(element, ranges, {})
-        self.handles['plot'].text = text
+        self.state.update(text=text, sizing_mode=self.sizing_mode)
