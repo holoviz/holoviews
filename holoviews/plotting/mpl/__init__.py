@@ -3,7 +3,8 @@ from __future__ import absolute_import, division, unicode_literals
 import os
 
 from matplotlib import rc_params_from_file
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from matplotlib.cm import register_cmap
 from param import concrete_descendents
 
 from ...core import Layout, Collator, GridMatrix, config
@@ -12,6 +13,7 @@ from ...core.overlay import NdOverlay, Overlay
 from ...core.util import LooseVersion, pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
+from ..util import fire_colors
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
@@ -210,6 +212,12 @@ if config.no_padding:
 for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
                   QuadMeshPlot, HeatMapPlot, PolygonPlot]:
     framedcls.show_frame = True
+
+fire_cmap   = LinearSegmentedColormap.from_list("fire",   fire_colors, N=len(fire_colors))
+fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_colors)),
+                                                N=len(fire_colors))
+register_cmap("fire", cmap=fire_cmap)
+register_cmap("fire_r", cmap=fire_r_cmap)
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = 'fire'
