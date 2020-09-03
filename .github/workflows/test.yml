@@ -50,7 +50,7 @@ jobs:
       - name: install
         run: |
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-          source activate test-environment
+          conda activate test-environment
           doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
           doit env_capture
       - name: conda config
