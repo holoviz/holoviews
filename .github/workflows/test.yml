@@ -39,11 +39,11 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
       - name: install
-          run: |
-            doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-            source activate test-environment
-            doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
-            doit env_capture
+        run: |
+          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+          source activate test-environment
+          doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+          doit env_capture
       - name: conda config
         shell: bash -l {0}
         run: conda config --show
