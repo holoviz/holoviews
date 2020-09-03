@@ -38,7 +38,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyctdev
           doit miniconda_install
-          pip uninstall -y doit pyctdev
       - name: conda setup
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
