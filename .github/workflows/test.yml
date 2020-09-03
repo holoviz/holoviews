@@ -11,12 +11,6 @@ on:
     branches:
     - '*'
 jobs:
-  env:
-    PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
-    CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-    CHANS: "-c pyviz"
-    MPLBACKEND: "Agg"
-    PYTHON_VERSION: 3.7
   default:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -30,6 +24,11 @@ jobs:
       DESC: "Python 3.6 tests"  # f strings? is this even necessary?
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.os }}
+      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      CHANS: "-c pyviz"
+      MPLBACKEND: "Agg"
+      PYTHON_VERSION: 3.7
     steps:
       - uses: actions/checkout@v2
       - name: pre_install
