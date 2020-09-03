@@ -1,0 +1,56 @@
+# things not included
+# git depth (not an issue with gh actions)
+# languaage
+# notifications - no email notifications set up
+# completely lost on stages name/if section
+
+
+name: pytest
+on:
+  pull_request:
+    branches:
+    - '*'
+jobs:
+  env:
+    PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+    CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+    CHANS: "-c pyviz"
+    MPLBACKEND: "Agg"
+    PYTHON_VERSION: 3.7
+  default:
+    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest']
+        python-version: [3.7]
+    timeout-minutes: 30
+    env:
+      DESC: "Python 3.6 tests"  # f strings? is this even necessary?
+      HV_REQUIREMENTS: "unit_tests"
+      PYTHON_VERSION: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: pre_install
+        run: |
+          pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
+          export PATH="$HOME/miniconda/bin:$PATH" && hash -r
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5" && doit ecosystem_setup
+      - name: install
+          run: |
+            doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+            source activate test-environment
+            doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+            doit env_capture
+      - name: conda config
+        shell: bash -l {0}
+        run: conda config --show
+      - name: conda list
+        shell: bash -l {0}
+        run: conda list
+      - name: test_all_recommended
+        run: doit test_all_recommended
+      - name: coveralls  # todo add if statement - if success coveralls, if fail, sleep 10 
+        run: coveralls
