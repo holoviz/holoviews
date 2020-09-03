@@ -36,10 +36,10 @@ jobs:
       - name: pre_install
         run: |
           python -m pip install --upgrade pip
-          pip install wheel
           pip install pyctdev
           doit miniconda_install
           pip uninstall -y doit pyctdev
+          which doit
       - name: conda setup
         run: |
           export PATH="$HOME/miniconda/bin:$PATH"
@@ -47,12 +47,13 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           echo "second doit use"
+          which doit
           doit ecosystem_setup
       - name: conda list
         run: conda list
       - name: install
         run: |
-          pip list
+          which doit
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
           source activate test-environment
           doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
