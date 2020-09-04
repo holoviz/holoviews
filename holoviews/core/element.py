@@ -71,7 +71,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
 
     def __getitem__(self, key):
-        if key is ():
+        if key == ():
             return self
         else:
             raise NotImplementedError("%s currently does not support getitem" %

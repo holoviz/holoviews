@@ -222,7 +222,7 @@ class AdjointLayout(Dimensioned):
 
     def __getitem__(self, key):
         "Index into the AdjointLayout by index or label"
-        if key is ():
+        if key == ():
             return self
 
         data_slice = None
