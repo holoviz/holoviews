@@ -53,15 +53,17 @@ jobs:
 
           doit develop_install ${CHANS_DEV} -o ${HV_REQUIREMENTS}
           doit env_capture
-      - name: conda list
-        shell: bash -l {0}
-        run: conda list
+          conda list
 
       - name: flake8
         run: doit test_flakes
 
       - name: unit tests
-        run: doit test_unit
+        run: |
+          conda list
+          conda activate test-environment
+          conda list
+          doit test_unit
       - name: test examples
         run: doit test_examples
     #   - name: test_all_recommended
