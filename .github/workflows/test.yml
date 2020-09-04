@@ -45,8 +45,6 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           echo "second doit use"
           doit ecosystem_setup
-      - name: conda list
-        run: conda list
       - name: install
         run: |
           doit env_create $CHANS_DEV --python=$PYTHON_VERSION
@@ -55,13 +53,18 @@ jobs:
 
           doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
           doit env_capture
-      - name: conda config
-        shell: bash -l {0}
-        run: conda config --show
       - name: conda list
         shell: bash -l {0}
         run: conda list
-      - name: test_all_recommended
-        run: doit test_all_recommended
+
+      - name: flake8
+        run: doit test_flakes
+
+      - name: unit tests
+        run: doit test_unit
+      - name: test examples
+        run: doit test_examples
+    #   - name: test_all_recommended
+    #     run: doit test_all_recommended
       - name: coveralls  # todo add if statement - if success coveralls, if fail, sleep 10 
         run: coveralls
