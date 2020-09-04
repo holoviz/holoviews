@@ -45,8 +45,7 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           echo "second doit use"
           doit ecosystem_setup
-      - name: install
-        run: |
+
           doit env_create ${CHANS_DEV} --python=${{ matrix.python-version }}
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -55,14 +54,12 @@ jobs:
           doit env_capture
           conda list
 
-      - name: flake8
-        run: doit test_flakes
 
-      - name: unit tests
-        run: |
-          conda list
-          conda activate test-environment
-          conda list
+          doit test_flakes
+
+
+        #   conda activate test-environment
+        #   conda list
           doit test_unit
       - name: test examples
         run: doit test_examples
