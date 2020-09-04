@@ -42,6 +42,9 @@ class _base_link_selections(param.ParameterizedFunction):
     whether they are combined with prior selections
     """
 
+    link_inputs = param.Boolean(default=False, doc="""
+        Whether to link any streams on the input to the output.""")
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super(_base_link_selections, self_or_cls).instance(**params)
@@ -128,7 +131,7 @@ class _base_link_selections(param.ParameterizedFunction):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
             if getattr(chart, 'selection_display', None):
-                element = hvobj.clone(link=False)
+                element = hvobj.clone(link=self.link_inputs)
                 self._register(element)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
