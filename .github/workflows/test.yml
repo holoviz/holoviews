@@ -57,13 +57,8 @@ jobs:
 
           doit test_flakes
 
-
-        #   conda activate test-environment
-        #   conda list
           doit test_unit
       - name: test examples
         run: doit test_examples
-    #   - name: test_all_recommended
-    #     run: doit test_all_recommended
       - name: coveralls  # todo add if statement - if success coveralls, if fail, sleep 10 
         run: coveralls
