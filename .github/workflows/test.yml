@@ -40,7 +40,7 @@ jobs:
           doit miniconda_install
       - name: conda setup
         run: |
-          export PATH="$HOME/miniconda/bin:$PATH"
+          export PATH="$HOME/miniconda/bin:$PATH" && hash -r
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           echo "second doit use"
