@@ -490,7 +490,7 @@ def callable_name(callable_obj):
             if sys.version_info < (3,0):
                 owner =  meth.im_class if meth.im_self is None else meth.im_self
             else:
-                return meth.__func__.__qualname__
+                return meth.__func__.__qualname__.replace('__call__', '')
             if meth.__name__ == '__call__':
                 return type(owner).__name__
             return '.'.join([owner.__name__, meth.__name__])
