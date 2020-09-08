@@ -108,6 +108,8 @@ class IbisInterface(Interface):
         dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
 
+    dimension_type = dtype
+
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
         return dataset.data.sort_by([dataset.get_dimension(x).name for x in by])
@@ -188,8 +190,7 @@ class IbisInterface(Interface):
         index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims if kdim not in index_dims]
 
-        # some metdata shit
-        group_kwargs: dict = {}
+        group_kwargs = {}
         if group_type != "raw" and issubclass(group_type, Element):
             group_kwargs = dict(util.get_param_values(dataset), kdims=element_dims)
         group_kwargs.update(kwargs)
