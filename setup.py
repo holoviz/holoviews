@@ -42,7 +42,6 @@ extras_require["examples"] = extras_require["recommended"] + [
     "cftime",
     "netcdf4",
     "dask",
-    "ibis-framework >=1.3",
     "scipy",
     "shapely",
     "scikit-image",
@@ -50,7 +49,11 @@ extras_require["examples"] = extras_require["recommended"] + [
 
 if sys.version_info.major > 2:
     extras_require["examples"].extend(
-        ["spatialpandas", "pyarrow <1.0"]  # spatialpandas incompatibility
+        [
+            "spatialpandas",
+            "pyarrow <1.0",
+            "ibis-framework >=1.3",
+        ]  # spatialpandas incompatibility
     )
 
 # Extra third-party libraries
