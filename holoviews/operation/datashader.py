@@ -1565,7 +1565,8 @@ class SpreadingOperation(LinkableOperation):
             new_data[tuple(vd.name for vd in vdims)] = img
         else:
             new_data = array
-        return element.clone(new_data, **kwargs)
+        return element.clone(new_data, xdensity=element.xdensity,
+                             ydensity=element.ydensity, **kwargs)
 
 
 
