@@ -17,9 +17,70 @@ Version 1.13
 Version 1.13.4
 **************
 
+This version fixes a large number of bugs particularly relating to
+linked selections. Additionally it introduces some enhancements laying
+the groundwork for future functionality. Many thanks for contribution
+by @ruoyu0088, @hamogu, @Dr-Irv, @jonmmease, @justinbois, @ahuang11,
+and the core maintainer @philippjfr.
+
 Bug fixes:
-* Fix regression in ``save`` method with toolbars
+
+- Fix the `.info` property to return the info
+  (`#4513 <https://github.com/holoviz/holoviews/pull/4513>`_)
+- Set `toolbar=True` the default in `save()`
   (`#4518 <https://github.com/holoviz/holoviews/pull/4518>`_)
+- Fix bug when the default value is 0
+  (`#4537 <https://github.com/holoviz/holoviews/pull/4537>`_)
+- Ensure operations do not recursively accumulate pipelines
+  (`#4544 <https://github.com/holoviz/holoviews/pull/4544>`_)
+- Fixed whiskers for `BoxWhisker` so that they never point inwards
+  (`#4548 <https://github.com/holoviz/holoviews/pull/4548>`_)
+- Fix issues with boomeranging events when aspect is set
+  (`#4569 <https://github.com/holoviz/holoviews/pull/4569>`_)
+- Fix aspect if width/height has been constrained
+  (`#4579 <https://github.com/holoviz/holoviews/pull/4579>`_)
+- Fixed categorical handling in Geom plot types
+  (`#4575 <https://github.com/holoviz/holoviews/pull/4575>`_)
+- Do not attempt linking axes on annotations
+  (`#4584 <https://github.com/holoviz/holoviews/pull/4584>`_)
+- Reset `RangeXY` when `framewise` is set
+  (`#4585 <https://github.com/holoviz/holoviews/pull/4585>`_)
+- Add automatic collate for `Overlay` of `AdjointLayout`s
+  (`#4586 <https://github.com/holoviz/holoviews/pull/4586>`_)
+- Fixed color-ranging after box select on side histogram
+  (`#4587 <https://github.com/holoviz/holoviews/pull/4587>`_)
+- Use HTTPS throughout on homepage
+  (`#4588 <https://github.com/holoviz/holoviews/pull/4588>`_)
+
+Compatibility:
+
+- Compatibility with bokeh 2.2 for CDSCallback
+  (`#4568 <https://github.com/holoviz/holoviews/pull/4568>`_)
+- Handle `rcParam` deprecations in matplotlib 3.3
+  (`#4583 <https://github.com/holoviz/holoviews/pull/4583>`_)
+
+Enhancements:
+
+- Optimize options machinery
+  (`#4545 <https://github.com/holoviz/holoviews/pull/4545>`_)
+- Add new `Derived` stream class
+  (`#4532 <https://github.com/holoviz/holoviews/pull/4532>`_)
+- Set Panel state to busy during callbacks
+  (`#4546 <https://github.com/holoviz/holoviews/pull/4546>`_)
+- Support positional stream args in `DynamicMap` callback
+  (`#4534 <https://github.com/holoviz/holoviews/pull/4534>`_)
+- `legend_opts` implemented
+  (`#4558 <https://github.com/holoviz/holoviews/pull/4558>`_)
+- Add `History` stream
+  (`#4554 <https://github.com/holoviz/holoviews/pull/4554>`_)
+- Updated spreading operation to support aggregate arrays
+  (`#4562 <https://github.com/holoviz/holoviews/pull/4562>`_)
+- Add ability to supply `dim` transforms for all dimensions
+  (`#4578 <https://github.com/holoviz/holoviews/pull/4578>`_)
+- Add 'vline' and 'hline' Hover mode
+  (`#4527 <https://github.com/holoviz/holoviews/pull/4527>`_)
+- Allow rendering to pgf in matplotlib
+  (`#4577 <https://github.com/holoviz/holoviews/pull/4577>`_)
 
 Version 1.13.3
 **************
