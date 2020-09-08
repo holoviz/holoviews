@@ -101,7 +101,9 @@ extras_require['doc'] = extras_require['examples'] + [
     'pscript',
     'graphviz',
     'selenium',
-    'bokeh <2.2'
+    'bokeh <2.2',
+    'firefox',
+    'geckodriver'
 ]
 
 extras_require['build'] = [
