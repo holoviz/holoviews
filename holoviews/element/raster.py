@@ -195,19 +195,19 @@ class Raster(Element2D):
             params.pop('extents', None)
             return Table(data, **params)
 
-
     @property
     def depth(self):
         return len(self.vdims)
-
 
     @property
     def _zdata(self):
         return self.data
 
-
     def _coord2matrix(self, coord):
         return int(round(coord[1])), int(round(coord[0]))
+
+    def __len__(self):
+        return np.product(self._zdata.shape)
 
 
 

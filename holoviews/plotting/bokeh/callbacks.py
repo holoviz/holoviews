@@ -29,7 +29,7 @@ from ...streams import (
     PointerY, BoundsX, BoundsY, Tap, SingleTap, DoubleTap, MouseEnter,
     MouseLeave, PressUp, PanEnd, PlotSize, Draw, BoundsXY, PlotReset,
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
-    CurveEdit, SelectionXY, Lasso,
+    CurveEdit, SelectionXY, Lasso, SelectMode
 )
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -956,6 +956,26 @@ class PlotSizeCallback(Callback):
             return {}
 
 
+class SelectModeCallback(Callback):
+
+    attributes = {'box_mode': 'box_select.mode',
+                  'lasso_mode': 'lasso_select.mode'}
+    models = ['box_select', 'lasso_select']
+    on_changes = ['mode']
+
+    def _process_msg(self, msg):
+        stream = self.streams[0]
+        if 'box_mode' in msg:
+            mode = msg.pop('box_mode')
+            if mode != stream.mode:
+                msg['mode'] = mode
+        if 'lasso_mode' in msg:
+            mode = msg.pop('lasso_mode')
+            if mode != stream.mode:
+                msg['mode'] = mode
+        return msg
+
+
 class BoundsCallback(Callback):
     """
     Returns the bounds of a box_select tool.
@@ -1440,7 +1460,6 @@ class PolyEditCallback(PolyDrawCallback):
         CDSCallback.initialize(self, plot_id)
 
 
-
 callbacks = Stream._callbacks['bokeh']
 
 callbacks[PointerXY]   = PointerXYCallback
@@ -1462,6 +1481,7 @@ callbacks[BoundsY]     = BoundsYCallback
 callbacks[Lasso]       = LassoCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+callbacks[SelectMode]  = SelectModeCallback
 callbacks[SelectionXY] = SelectionXYCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback

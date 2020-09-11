@@ -26,6 +26,7 @@ from .annotation import (
     DivPlot, LabelsPlot, SlopePlot
 )
 from ..plot import PlotSelector
+from ..util import fire
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
@@ -158,6 +159,8 @@ Cycle.default_cycles.update({name: p[max(p.keys())] for name, p in all_palettes.
                              if max(p.keys()) < 256})
 
 dflt_cmap = 'fire'
+all_palettes['fire'] = {len(fire): fire}
+
 options = Store.options(backend='bokeh')
 
 # Charts

@@ -1,9 +1,18 @@
+from unittest import skipIf
+
+import param
+
 from holoviews.core import HoloMap, NdOverlay, Overlay, GridSpace, DynamicMap
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream, PlotSize, RangeXY
-from holoviews.operation.datashader import spread, datashade
-import param
+
+try:
+    from holoviews.operation.datashader import spread, datashade
+except:
+    spread = datashade = None
+
+datashade_skip = skipIf(datashade is None, "datashade is not available")
 
 
 class XY(Stream):
@@ -44,15 +53,6 @@ class TestDecollation(ComparisonTestCase):
             lambda z: Points([z, z]), streams=[self.z_stream]
         )
 
-        # dmap produced by chained datashade and shade
-        self.px_stream = PX()
-        self.dmap_spread_points = spread(
-            datashade(Points([0.0, 1.0])), streams=[self.px_stream]
-        )
-
-        # data shaded with kdims: a, b
-        self.dmap_datashade_kdim_points = datashade(self.dmap_ab)
-
         # DynamicMap of a derived stream
         self.stream_val1 = Val()
         self.stream_val2 = Val()
@@ -63,6 +63,19 @@ class TestDecollation(ComparisonTestCase):
                 Sum([self.stream_val1, Sum([self.stream_val2, self.stream_val3])])
             ]
         )
+
+        if datashade is None:
+            return
+
+        # dmap produced by chained datashade and shade
+        self.px_stream = PX()
+        self.dmap_spread_points = spread(
+            datashade(Points([0.0, 1.0])), streams=[self.px_stream]
+        )
+
+        # data shaded with kdims: a, b
+        self.dmap_datashade_kdim_points = datashade(self.dmap_ab)
+
 
     def test_decollate_layout_kdims(self):
         layout = self.dmap_ab + self.dmap_b
@@ -114,6 +127,7 @@ class TestDecollation(ComparisonTestCase):
             Points([1.0, 2.0]) + Points([3.0, 4.0])
         )
 
+    @datashade_skip
     def test_decollate_spread(self):
         decollated = self.dmap_spread_points.decollate()
         self.assertIsInstance(decollated, DynamicMap)
@@ -140,6 +154,7 @@ class TestDecollation(ComparisonTestCase):
 
         self.assertEqual(expected, result)
 
+    @datashade_skip
     def test_decollate_datashade_kdims(self):
         decollated = self.dmap_datashade_kdim_points.decollate()
         self.assertIsInstance(decollated, DynamicMap)
@@ -169,6 +184,8 @@ class TestDecollation(ComparisonTestCase):
 
         self.assertEqual(expected, result)
 
+
+    @datashade_skip
     def test_decollate_datashade_kdims_layout(self):
         layout = self.dmap_datashade_kdim_points + self.dmap_b
 

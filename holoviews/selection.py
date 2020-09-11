@@ -10,7 +10,9 @@ from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .streams import Stream, SelectionExprSequence, CrossFilterSet, Derived, PlotReset
+from .streams import (
+    Stream, SelectionExprSequence, CrossFilterSet, Derived, PlotReset, SelectMode
+)
 from .util import DynamicMap
 
 
@@ -66,6 +68,9 @@ class _base_link_selections(param.ParameterizedFunction):
     whether they are combined with prior selections
     """
 
+    link_inputs = param.Boolean(default=False, doc="""
+        Whether to link any streams on the input to the output.""")
+
     show_regions = param.Boolean(default=True, doc="""
         Whether to highlight the selected regions.""")
 
@@ -83,6 +88,16 @@ class _base_link_selections(param.ParameterizedFunction):
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
 
         return inst
+
+    def _update_mode(self, event):
+        if event.new == 'replace':
+            self.selection_mode = 'overwrite'
+        elif event.new == 'append':
+            self.selection_mode = 'union'
+        elif event.new == 'intersect':
+            self.selection_mode = 'intersect'
+        elif event.new == 'subtract':
+            self.selection_mode = 'inverse'
 
     def _register(self, hvobj):
         """
@@ -103,6 +118,9 @@ class _base_link_selections(param.ParameterizedFunction):
             if resetting:
                 stream.clear_history()
                 stream.event()
+
+        mode_stream = SelectMode(source=hvobj)
+        mode_stream.param.watch(self._update_mode, 'mode')
 
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
@@ -150,7 +168,7 @@ class _base_link_selections(param.ParameterizedFunction):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
             if getattr(chart, 'selection_display', None) is not None:
-                element = hvobj.clone(link=False)
+                element = hvobj.clone(link=self.link_inputs)
                 self._register(element)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,

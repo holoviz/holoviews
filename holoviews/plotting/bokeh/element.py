@@ -31,7 +31,7 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Graph, VectorField, Path, Contours, Tiles
+from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
 from ...streams import Stream, Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -276,6 +276,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
+
+        box_tools = [t for t in copied_tools if isinstance(t, tools.BoxSelectTool)]
+        if box_tools:
+            self.handles['box_select'] = box_tools[0]
+        lasso_tools = [t for t in copied_tools if isinstance(t, tools.LassoSelectTool)]
+        if lasso_tools:
+            self.handles['lasso_select'] = lasso_tools[0]
+
+        # Link the selection properties between tools
+        if box_tools and lasso_tools:
+            box_tools[0].js_link('mode', lasso_tools[0], 'mode')
+            lasso_tools[0].js_link('mode', box_tools[0], 'mode')
+
         return copied_tools
 
     def _update_hover(self, element):
@@ -350,7 +363,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
-        el = element.traverse(lambda x: x, [Element])
+        el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
 
         dims = self._get_axis_dims(el)
@@ -1420,11 +1433,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_datasource(source, data)
 
 
+    def _reset_ranges(self):
+        """
+        Resets RangeXY streams if norm option is set to framewise
+        """
+        if self.overlaid:
+            return
+        for el, callbacks in self.traverse(lambda x: (x.current_frame, x.callbacks)):
+            if el is None:
+                continue
+            for callback in callbacks:
+                norm = self.lookup_options(el, 'norm').options
+                if norm.get('framewise'):
+                    for s in callback.streams:
+                        if isinstance(s, RangeXY):
+                            s.reset()
+
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
         if not reused and element is None:
             element = self._get_frame(key)
@@ -2209,7 +2239,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for k, sp in self.subplots.items():
             el = overlay.data.get(k)
             if el is not None:
-                xfs, yfs = sp._get_factors(el, ranges)
+                elranges = util.match_spec(el, ranges)
+                xfs, yfs = sp._get_factors(el, elranges)
                 xfactors.append(xfs)
                 yfactors.append(yfs)
         if xfactors:
@@ -2301,6 +2332,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
+        self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
         if not reused and element is None:
             element = self._get_frame(key)

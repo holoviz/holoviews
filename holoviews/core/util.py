@@ -489,16 +489,16 @@ def callable_name(callable_obj):
             meth = callable_obj
             if sys.version_info < (3,0):
                 owner =  meth.im_class if meth.im_self is None else meth.im_self
+                if meth.__name__ == '__call__':
+                    return type(owner).__name__
+                return '.'.join([owner.__name__, meth.__name__])
             else:
-                owner =  meth.__self__
-            if meth.__name__ == '__call__':
-                return type(owner).__name__
-            return '.'.join([owner.__name__, meth.__name__])
+                return meth.__func__.__qualname__.replace('.__call__', '')
         elif isinstance(callable_obj, types.GeneratorType):
             return callable_obj.__name__
         else:
             return type(callable_obj).__name__
-    except:
+    except Exception:
         return str(callable_obj)
 
 

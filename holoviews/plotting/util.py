@@ -11,7 +11,7 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, NdOverlay)
+                    Overlay, GridSpace, NdLayout, NdOverlay, AdjointLayout)
 from ..core.options import CallbackError, Cycle
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
@@ -27,7 +27,7 @@ def displayable(obj):
     Predicate that returns whether the object is displayable or not
     (i.e whether the object obeys the nesting hierarchy
     """
-    if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace))
+    if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace, AdjointLayout))
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
@@ -46,7 +46,7 @@ display_warning = Warning(name='Warning')
 def collate(obj):
     if isinstance(obj, Overlay):
         nested_type = [type(o).__name__ for o in obj
-                       if isinstance(o, (HoloMap, GridSpace))][0]
+                       if isinstance(o, (HoloMap, GridSpace, AdjointLayout))][0]
         display_warning.param.warning(
             "Nesting %ss within an Overlay makes it difficult to "
             "access your data or control how it appears; we recommend "
@@ -587,7 +587,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
 
     # Handle categorical colormaps to avoid interpolation
     categories = ['accent', 'category', 'dark', 'colorblind', 'pastel',
-                   'set1', 'set2', 'set3', 'paired']
+                  'set1', 'set2', 'set3', 'paired']
     cmap_categorical = any(cat in cmap.lower() for cat in categories)
     reverse = False
     if cmap.endswith('_r'):
@@ -605,7 +605,10 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         cmap = cmap.replace('tab', 'Category')
 
     # Process as bokeh palette
-    palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
+    if cmap in palettes.all_palettes:
+        palette = palettes.all_palettes[cmap]
+    else:
+        palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
     elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
@@ -1241,14 +1244,3 @@ fire_colors = linear_kryw_0_100_c71 = [\
 # Bokeh palette
 fire = [str('#{0:02x}{1:02x}{2:02x}'.format(int(r*255),int(g*255),int(b*255)))
         for r,g,b in fire_colors]
-
-# Matplotlib colormap
-try:
-    from matplotlib.colors import LinearSegmentedColormap
-    from matplotlib.cm import register_cmap
-    fire_cmap   = LinearSegmentedColormap.from_list("fire",   fire_colors, N=len(fire_colors))
-    fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_colors)), N=len(fire_colors))
-    register_cmap("fire", cmap=fire_cmap)
-    register_cmap("fire_r", cmap=fire_r_cmap)
-except ImportError:
-    pass

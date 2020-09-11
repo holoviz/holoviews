@@ -87,7 +87,7 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       script:
         - conda install $CHANS_DEV firefox geckodriver mpl_sample_data
         - bokeh sampledata
@@ -100,7 +100,7 @@ jobs:
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       script:
         - conda install $CHANS_DEV firefox geckodriver mpl_sample_data
         - bokeh sampledata
@@ -116,14 +116,14 @@ jobs:
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
 
     - <<: *doc_build
       stage: docs
 
     - <<: *gallery_build
       stage: gallery
-      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       after_success:
         - aws s3 sync ./builtdocs s3://holoviews.org/
 
@@ -155,6 +155,8 @@ jobs:
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
@@ -164,6 +166,8 @@ jobs:
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
         - doit ecosystem=pip package_build
