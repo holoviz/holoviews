@@ -45,6 +45,9 @@ Compatibility:
 
 Enhancements:
 
+- Allow toggling the `selection_mode` on `link_selections` from the
+  context menu in the bokeh toolbar
+  ([#4604](https://github.com/holoviz/holoviews/pull/4604))
 - Optimize options machinery
   ([#4545](https://github.com/holoviz/holoviews/pull/4545))
 - Add new `Derived` stream class
