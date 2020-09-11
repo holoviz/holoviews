@@ -109,7 +109,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         self.assertEqual(img, expected)
 
     def test_aggregate_curve(self):
-        curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)]).
+        curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
                          vdims=['Count']).redim.range(z=(1,None))
         img = aggregate(curve, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
