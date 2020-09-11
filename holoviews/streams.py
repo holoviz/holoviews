@@ -1132,6 +1132,16 @@ class PlotSize(LinkedStream):
                 'height': int(self.height * self.scale)}
 
 
+class SelectMode(LinkedStream):
+
+    mode = param.ObjectSelector(default="replace", objects=[
+        "replace", "append", "intersect", "subtract"], doc="""
+        Defines what should happen when a new selection is made. The
+        default is to replace the existing selection. Other options
+        are to append to theselection, intersect with it or subtract
+        from it.""")
+
+
 class RangeXY(LinkedStream):
     """
     Axis ranges along x- and y-axis in data coordinates.

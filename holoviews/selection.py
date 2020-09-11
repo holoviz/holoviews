@@ -10,7 +10,7 @@ from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .streams import SelectionExpr, PlotReset, Stream
+from .streams import SelectionExpr, PlotReset, Stream, SelectMode
 from .util import DynamicMap
 from .util.transform import dim
 
@@ -61,6 +61,16 @@ class _base_link_selections(param.ParameterizedFunction):
 
         return inst
 
+    def _update_mode(self, event):
+        if event.new == 'replace':
+            self.selection_mode = 'overwrite'
+        elif event.new == 'append':
+            self.selection_mode = 'union'
+        elif event.new == 'intersect':
+            self.selection_mode = 'intersect'
+        elif event.new == 'subtract':
+            self.selection_mode = 'inverse'
+
     def _register(self, hvobj):
         """
         Register an Element of DynamicMap that may be capable of generating
@@ -81,6 +91,9 @@ class _base_link_selections(param.ParameterizedFunction):
             lambda **kwargs: self._expr_stream_updated(hvobj, **kwargs)
         )
         self._selection_expr_streams.append(expr_stream)
+
+        mode_stream = SelectMode(source=hvobj)
+        mode_stream.param.watch(self._update_mode, 'mode')
 
         # Create PlotReset stream
         reset_stream = PlotReset(source=hvobj)
