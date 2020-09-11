@@ -1134,7 +1134,7 @@ class PlotSize(LinkedStream):
 
 class SelectMode(LinkedStream):
 
-    mode = param.ObjectSelector(default="replace", objects=[
+    mode = param.ObjectSelector(default="replace", constant=True, objects=[
         "replace", "append", "intersect", "subtract"], doc="""
         Defines what should happen when a new selection is made. The
         default is to replace the existing selection. Other options
