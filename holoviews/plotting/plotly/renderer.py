@@ -157,8 +157,10 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        import panel.models.plotly # noqa
+        import panel.models.plotly # noqa        
         cls._loaded = True
+        if 'plotly' not in getattr(pn.extension, '_loaded_extensions', ['plotly']):
+            pn.extension._loaded_extensions.append('plotly')
 
 
 def _activate_plotly_backend(renderer):
