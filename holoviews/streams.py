@@ -674,6 +674,8 @@ class Params(Stream):
 
         self._watch_only = watch_only
         super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        self._triggered_actions = {p.name:False for p in parameters
+                                   if isinstance(p, param.Action)}
         self._memoize_counter = 0
         self._events = []
         self._watchers = []
@@ -727,6 +729,9 @@ class Params(Stream):
 
     def _watcher(self, *events):
         try:
+            action_set = list(self._triggered_actions.keys())
+            for action in action_set:
+                self._triggered_actions[action] = (action in [e.name for e in events])
             self._events = list(events)
             self.trigger([self])
         except:
@@ -758,8 +763,10 @@ class Params(Stream):
         if self._watch_only:
             return {}
         filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
-        return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
-                if self._rename.get((o, n), True) is not None}
+        contents = {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
+                    if self._rename.get((o, n), True) is not None}
+        contents.update(self._triggered_actions)
+        return contents
 
 
 
