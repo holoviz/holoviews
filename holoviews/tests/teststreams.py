@@ -256,6 +256,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         inner = self.inner_action()
         stream = Params(inner, ['action'])
         self.assertEqual(set(stream.parameters), {inner.param.action})
+        self.assertEqual(stream.contents, {'action': False})
 
         values = []
         def subscriber(**kwargs):
