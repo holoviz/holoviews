@@ -45,9 +45,9 @@ stages:
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: docs_daily
-    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/)))
   - name: gallery_daily
-    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/)))
 
 jobs:
   include:
@@ -66,6 +66,7 @@ jobs:
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
         - doit env_capture
+        - hash -r
       script:
         - doit test_all_recommended
       after_success: coveralls
