@@ -764,7 +764,10 @@ class Params(Stream):
                 continue
             name = self._rename.get(key, p.name)
             if isinstance(p, param.Action):
-                value = any(p.owner in (event.obj, event.cls) and p.name == event.name
+                # Special handling for param.Action, mapping value to True if triggered otherwise False
+
+                value = any(p.owner in (event.obj, event.cls) and
+                            p.name == event.name
                             for event in self._events)
             else:
                 value = getattr(p.owner, p.name)

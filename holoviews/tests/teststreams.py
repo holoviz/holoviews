@@ -265,7 +265,7 @@ class TestParamsStream(LoggingComparisonTestCase):
 
         stream.add_subscriber(subscriber)
         inner.action(inner)
-        self.assertEqual(values, [{'action': inner.action}])
+        self.assertEqual(values, [{'action': True}])
 
     def test_param_stream_memoization(self):
         inner = self.inner_action()
@@ -282,7 +282,7 @@ class TestParamsStream(LoggingComparisonTestCase):
         stream.add_subscriber(subscriber)
         inner.action(inner)
         inner.x = 0
-        self.assertEqual(values, [{'action': inner.action, 'x': 0}])
+        self.assertEqual(values, [{'action': True, 'x': 0}])
 
 
 
