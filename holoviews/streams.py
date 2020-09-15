@@ -757,10 +757,19 @@ class Params(Stream):
     def contents(self):
         if self._watch_only:
             return {}
-        filtered = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
-        return {self._rename.get((o, n), n): v for (o, n), v in filtered.items()
-                if self._rename.get((o, n), True) is not None}
-
+        contents = {}
+        for p in self.parameters:
+            key = (p.owner, p.name)
+            if key in self._rename and self._rename[key] is None:
+                continue
+            name = self._rename.get(key, p.name)
+            if isinstance(p, param.Action):
+                value = any(p.owner in (event.obj, event.cls) and p.name == event.name
+                            for event in self._events)
+            else:
+                value = getattr(p.owner, p.name)
+            contents[name] = value
+        return contents
 
 
 class ParamMethod(Params):
