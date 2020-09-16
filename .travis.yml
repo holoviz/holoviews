@@ -13,9 +13,6 @@ os:
 dist: xenial
 
 addons:
-  apt:
-    packages:
-      - chromium-chromedriver
   firefox: latest
 
 notifications:
@@ -52,9 +49,9 @@ stages:
   - name: gallery_dev
     if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: docs_daily
-    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/)))
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
   - name: gallery_daily
-    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/)))
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
 
 jobs:
   include:
@@ -97,8 +94,6 @@ jobs:
       stage: docs_dev
       env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       before-script:
-        - ln -s /usr/lib/chromium-browser/chromedriver ~/bin/chromedriver
-        - chromedriver --version
         - conda install -c conda-forge geckodriver selenium
       script:
         - bokeh sampledata
