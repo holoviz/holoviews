@@ -102,7 +102,6 @@ extras_require['doc'] = extras_require['examples'] + [
     'graphviz',
     'selenium',
     'bokeh <2.2',
-    'python-chromedriver-binary',
     'nbconvert <6.0',
     'mpl_sample_data'
 ]
