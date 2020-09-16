@@ -12,6 +12,9 @@ os:
 
 dist: xenial
 
+addons:
+  firefox: "49.0"
+
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
