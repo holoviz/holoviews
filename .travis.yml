@@ -16,6 +16,7 @@ addons:
   apt:
     packages:
       - chromium-chromedriver
+  firefox: latest
 
 notifications:
   email:
@@ -28,6 +29,7 @@ env:
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
     - PYTHON_VERSION=3.7
+    - MOZ_HEADLESS=1
 
 stages:
   - test
@@ -96,7 +98,8 @@ jobs:
       env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       before-script:
         - ln -s /usr/lib/chromium-browser/chromedriver ~/bin/chromedriver
-        - google-chrome --headless --no-sandbox --remote-debugging-port=9222 &
+        - chromedriver --version
+        - conda install -c conda-forge geckodriver selenium
       script:
         - bokeh sampledata
         - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
