@@ -13,7 +13,7 @@ os:
 dist: xenial
 
 addons:
-  firefox: "49.0"
+  chrome: stable
 
 notifications:
   email:
