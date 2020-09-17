@@ -1544,10 +1544,16 @@ def resolve_dependent_value(value):
        A new dictionary where any parameter dependencies have been
        resolved.
     """
+    range_widget = False
     if 'panel' in sys.modules:
-        from panel.widgets.base import Widget
-        if isinstance(value, Widget):
-            value = value.param.value
+        from panel.widgets import RangeSlider, Widget
+        range_widget = isinstance(value, RangeSlider)
+        try:
+            from panel.depends import param_value_if_widget
+            value = param_value_if_widget(value)
+        except Exception:
+            if isinstance(value, Widget):
+                value = value.param.value
     if is_param_method(value, has_deps=True):
         value = value()
     elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
@@ -1557,6 +1563,8 @@ def resolve_dependent_value(value):
         args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
         kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
         value = value(*args, **kwargs)
+    if isinstance(value, tuple) and range_widget:
+        value = slice(*value)
     return value
 
 
