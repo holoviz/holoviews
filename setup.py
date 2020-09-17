@@ -63,7 +63,6 @@ extras_require['extras'] = extras_require['examples']+[
 
 # Test requirements
 extras_require['tests'] = [
-    'nose',
     'mock',
     'flake8 ==3.6.0',
     'coveralls',
@@ -83,7 +82,6 @@ extras_require['basic_tests'] = extras_require['tests']+[
 ] + extras_require['notebook']
 
 extras_require['nbtests'] = extras_require['recommended'] + [
-    'nose',
     'awscli',
     'deepdiff',
     'nbconvert ==5.3.1',
@@ -112,7 +110,7 @@ extras_require['build'] = [
     'python <3.8'
 ]
 
-# Everything including cyordereddict (optimization) and nosetests
+# Everything including tests
 extras_require['all'] = list(set(extras_require['unit_tests']) | set(extras_require['nbtests']))
 
 
