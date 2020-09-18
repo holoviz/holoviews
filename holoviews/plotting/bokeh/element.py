@@ -276,6 +276,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
+
+        box_tools = [t for t in copied_tools if isinstance(t, tools.BoxSelectTool)]
+        if box_tools:
+            self.handles['box_select'] = box_tools[0]
+        lasso_tools = [t for t in copied_tools if isinstance(t, tools.LassoSelectTool)]
+        if lasso_tools:
+            self.handles['lasso_select'] = lasso_tools[0]
+
+        # Link the selection properties between tools
+        if box_tools and lasso_tools:
+            box_tools[0].js_link('mode', lasso_tools[0], 'mode')
+            lasso_tools[0].js_link('mode', box_tools[0], 'mode')
+
         return copied_tools
 
     def _update_hover(self, element):
@@ -1366,6 +1379,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         for cb in self.callbacks:
             cb.initialize()
+
+        if self.top_level:
+            self.init_links()
 
         if not self.overlaid:
             self._set_active_tools(plot)

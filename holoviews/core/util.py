@@ -489,16 +489,16 @@ def callable_name(callable_obj):
             meth = callable_obj
             if sys.version_info < (3,0):
                 owner =  meth.im_class if meth.im_self is None else meth.im_self
+                if meth.__name__ == '__call__':
+                    return type(owner).__name__
+                return '.'.join([owner.__name__, meth.__name__])
             else:
-                owner =  meth.__self__
-            if meth.__name__ == '__call__':
-                return type(owner).__name__
-            return '.'.join([owner.__name__, meth.__name__])
+                return meth.__func__.__qualname__.replace('.__call__', '')
         elif isinstance(callable_obj, types.GeneratorType):
             return callable_obj.__name__
         else:
             return type(callable_obj).__name__
-    except:
+    except Exception:
         return str(callable_obj)
 
 
@@ -1544,10 +1544,16 @@ def resolve_dependent_value(value):
        A new dictionary where any parameter dependencies have been
        resolved.
     """
+    range_widget = False
     if 'panel' in sys.modules:
-        from panel.widgets.base import Widget
-        if isinstance(value, Widget):
-            value = value.param.value
+        from panel.widgets import RangeSlider, Widget
+        range_widget = isinstance(value, RangeSlider)
+        try:
+            from panel.depends import param_value_if_widget
+            value = param_value_if_widget(value)
+        except Exception:
+            if isinstance(value, Widget):
+                value = value.param.value
     if is_param_method(value, has_deps=True):
         value = value()
     elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
@@ -1557,6 +1563,8 @@ def resolve_dependent_value(value):
         args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
         kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
         value = value(*args, **kwargs)
+    if isinstance(value, tuple) and range_widget:
+        value = slice(*value)
     return value
 
 

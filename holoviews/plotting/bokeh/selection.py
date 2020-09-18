@@ -10,7 +10,8 @@ class TabularSelectionDisplay(SelectionDisplay):
     def _build_selection(self, el, exprs, **kwargs):
         opts = {}
         if exprs[1]:
-            opts['selected'] = np.where(exprs[1].apply(el.dataset, expanded=True, flat=True))[0]
+            mask = exprs[1].apply(el.dataset, expanded=True, flat=True)
+            opts['selected'] = list(np.where(mask)[0])
         return el.opts(clone=True, backend='bokeh', **opts)
 
     def build_selection(self, selection_streams, hvobj, operations, region_stream=None):

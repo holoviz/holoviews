@@ -159,6 +159,8 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+        if 'plotly' not in getattr(pn.extension, '_loaded_extensions', ['plotly']):
+            pn.extension._loaded_extensions.append('plotly')
 
 
 def _activate_plotly_backend(renderer):
