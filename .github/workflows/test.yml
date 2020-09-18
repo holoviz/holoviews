@@ -40,6 +40,7 @@ jobs:
           pip install pyctdev flake8 nose
           doit miniconda_install
           conda init
+          eval "$(conda shell.bash hook)"
       - name: conda setup
         shell: bash -l {0}
         run: |
@@ -48,7 +49,6 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create ${CHANS_DEV} --python=${{ matrix.python-version }}
-          eval "$(conda shell.bash hook)"
           conda activate test-environment
       - name: doit develop_install
         shell: bash -l {0}
