@@ -1,9 +1,6 @@
 # things not included
-# git depth (not an issue with gh actions)
-# languaage
+# language
 # notifications - no email notifications set up
-# completely lost on stages name/if section
-
 
 name: pytest
 on:
@@ -11,7 +8,7 @@ on:
     branches:
     - '*'
 jobs:
-  default:
+  test_suite:
     name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -20,6 +17,9 @@ jobs:
         os: ['ubuntu-latest']
         python-version: [3.7]
     timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash -l {0} 
     env:
       DESC: "Python 3.6 tests"  # f strings? is this even necessary?
       HV_REQUIREMENTS: "unit_tests"
