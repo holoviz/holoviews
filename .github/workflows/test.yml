@@ -39,6 +39,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyctdev flake8 nose
           doit miniconda_install
+          conda init
       - name: conda setup
         shell: bash -l {0}
         run: |
@@ -52,43 +53,29 @@ jobs:
       - name: doit develop_install
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           conda list
           doit develop_install ${CHANS_DEV} -o ${HV_REQUIREMENTS}
       - name: doit env_capture
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           doit env_capture
       - name: conda list
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           conda list
       - name: doit test_flakes
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           doit test_flakes
       - name: doit test_unit
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           doit test_unit
       - name: test examples
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           doit test_examples
       - name: coveralls
         shell: bash -l {0}
         run: |
-          echo "::add-path::$HOME/miniconda3/bin"
-          conda activate test-environment
           coveralls
