@@ -19,7 +19,10 @@ from types import FunctionType
 import numpy as np
 import param
 
-from collections import OrderedDict
+try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
 
 # Python3 compatibility
 if sys.version_info.major >= 3:
