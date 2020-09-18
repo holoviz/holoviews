@@ -128,7 +128,7 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, ".version")
     try:
         from param import version
-    except:
+    except ImportError:
         version = None
     if version is not None:
         return version.Version.setup_version(
