@@ -49,37 +49,37 @@ jobs:
           conda activate test-environment
       - name: doit develop_install
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           conda list
           doit develop_install ${CHANS_DEV} -o ${HV_REQUIREMENTS}
       - name: doit env_capture
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           doit env_capture
       - name: conda list
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           conda list
       - name: doit test_flakes
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           doit test_flakes
       - name: doit test_unit
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           doit test_unit
       - name: test examples
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           doit test_examples
       - name: coveralls
         run: |
-          ##vso[task.prependpath]($HOME)/miniconda/bin
+          echo "::add-path::$HOME/miniconda3/bin"
           conda activate test-environment
           coveralls
