@@ -64,7 +64,7 @@ class IbisInterface(Interface):
     @classmethod
     def length(self, dataset):
         # Get the length by counting the length of an empty query.
-        return getattr(dataset, "length", dataset.data[[]].count().execute())
+        return dataset.data[[]].count().execute()
 
     @classmethod
     def nonzero(cls, dataset):
@@ -91,13 +91,8 @@ class IbisInterface(Interface):
         dimension = dataset.get_dimension(dimension, strict=True)
         data = dataset.data[dimension.name]
         if not expanded:
-            return data.distinct().execute().values
-        return data if keep_index else data.execute().values
-
-        data = dataset.data[dataset.get_dimension(dimension, strict=True).name]
-        if not expanded:
             data = data.distinct()
-        return data.execute().values if keep_index else data.execute().values
+        return data if keep_index else data.execute().values
 
     @classmethod
     def shape(cls, dataset):
@@ -112,7 +107,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[], reverse=False):
-        return dataset.data.sort_by([dataset.get_dimension(x).name for x in by])
+        return dataset.data.sort_by([(dataset.get_dimension(x).name, not reverse) for x in by])
 
     @classmethod
     def redim(cls, dataset, dimensions):
@@ -228,9 +223,10 @@ class IbisInterface(Interface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         data = dataset.data
         if dimension.name not in data.columns:
-            if not numpy.isscalar(values):
-                err = "ibis dataframe does not support assigning " "non-scalar value."
-                raise NotImplementedError(err)
+            if not isinstance(values, ibis.Expr) and not numpy.isscalar(values):
+                raise ValueError("Cannot assign %s type as a Ibis table column, "
+                                 "expecting either ibis.Expr or scalar."
+                                 % type(values).__name__)
             data = data.mutate(**{dimension.name: values})
         return data
 
@@ -336,11 +332,17 @@ class IbisInterface(Interface):
 
         function = {
             numpy.min: ibis.expr.operations.Min,
+            numpy.nanmin: ibis.expr.operations.Min,
             numpy.max: ibis.expr.operations.Max,
+            numpy.nanmax: ibis.expr.operations.Max,
             numpy.mean: ibis.expr.operations.Mean,
+            numpy.nanmean: ibis.expr.operations.Mean,
             numpy.std: ibis.expr.operations.StandardDev,
+            numpy.nanstd: ibis.expr.operations.StandardDev,
             numpy.sum: ibis.expr.operations.Sum,
+            numpy.nansum: ibis.expr.operations.Sum,
             numpy.var: ibis.expr.operations.Variance,
+            numpy.nanvar: ibis.expr.operations.Variance,
         }.get(function, function)
 
         if len(dimensions):
