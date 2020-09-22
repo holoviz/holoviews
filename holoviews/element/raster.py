@@ -291,9 +291,10 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
 
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar."
+            raise DataError("%s type expects gridded data, %s is columnar. "
                             "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data." %
+                            "element or aggregate the data (e.g. using rasterize "
+                            "or np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
@@ -783,9 +784,10 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
             data = ([], [], np.zeros((0, 0)))
         super(QuadMesh, self).__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
-            raise DataError("%s type expects gridded data, %s is columnar."
+            raise DataError("%s type expects gridded data, %s is columnar. "
                             "To display columnar data as gridded use the HeatMap "
-                            "element or aggregate the data." %
+                            "element or aggregate the data (e.g. using "
+                            "np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
 
 
