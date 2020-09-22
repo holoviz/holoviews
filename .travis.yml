@@ -97,7 +97,7 @@ jobs:
         - conda install -c conda-forge geckodriver selenium
       script:
         - bokeh sampledata
-        - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
+        - nbsite generate-rst --org holoviz --project-name holoviews --skip ^reference
         - python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
         - nbsite build --what=html --output=builtdocs
       after_success:
