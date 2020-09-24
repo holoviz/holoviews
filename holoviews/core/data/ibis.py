@@ -369,5 +369,8 @@ class IbisInterface(Interface):
         masked.loc[mask, cols] = mask_value
         return masked
 
+    @classmethod
+    def dframe(cls, dataset, dimensions):
+        return dataset.data[dimensions].execute()
 
 Interface.register(IbisInterface)
