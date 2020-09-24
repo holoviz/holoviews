@@ -881,7 +881,13 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-        self.gridded = categorical_aggregate2d(self)
+        self._gridded = None
+
+    @property
+    def gridded(self):
+        if self._gridded is None:
+            self._gridded = categorical_aggregate2d(self)
+        return self._gridded
 
     @property
     def _unique(self):
