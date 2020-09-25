@@ -1380,6 +1380,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for cb in self.callbacks:
             cb.initialize()
 
+        if self.top_level:
+            self.init_links()
+
         if not self.overlaid:
             self._set_active_tools(plot)
             self._process_legend()

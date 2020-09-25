@@ -100,10 +100,9 @@ extras_require['doc'] = extras_require['examples'] + [
     'awscli',
     'pscript',
     'graphviz',
-    'selenium',
     'bokeh <2.2',
-    'firefox',
-    'geckodriver'
+    'nbconvert <6.0',
+    'mpl_sample_data'
 ]
 
 extras_require['build'] = [
