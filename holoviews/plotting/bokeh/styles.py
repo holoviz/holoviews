@@ -126,7 +126,6 @@ def validate(style, value, scalar=False):
        The style value to validate
     scalar: bool
 
-
     Returns
     -------
     valid: boolean or None
@@ -138,7 +137,7 @@ def validate(style, value, scalar=False):
     if isinstance(value, arraylike_types+(list,)):
         if scalar:
             return False
-        return all(validator(v) for v in value)
+        return len(value) and all(validator(v) for v in value)
     return validator(value)
 
 # Utilities
