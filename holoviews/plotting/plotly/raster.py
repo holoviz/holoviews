@@ -13,8 +13,8 @@ class RasterPlot(ColorbarPlot):
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
-    nodata = param.Integer(default=None,
-                           doc="Missing data (NaN) value for integer data", allow_None=True)
+    nodata = param.Integer(default=None, doc="""
+        Missing data (NaN) value for integer data""")
 
     style_opts = ['visible', 'cmap', 'alpha']
 
@@ -111,7 +111,7 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 
 class QuadMeshPlot(RasterPlot):
 
-    nodata = param.Integer(default=None, allow_None=True, doc="""
+    nodata = param.Integer(default=None, doc="""
         Missing data (NaN) value for integer data""")
 
     def get_data(self, element, ranges, style, **kwargs):

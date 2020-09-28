@@ -135,8 +135,8 @@ class RGBPlot(RasterBasePlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
-    nodata = param.Integer(default=None,
-                           doc="Missing data (NaN) value for integer data", allow_None=True)
+    nodata = param.Integer(default=None, doc="""
+        Missing data (NaN) value for integer data""")
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
