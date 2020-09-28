@@ -826,7 +826,7 @@ class DimensionedPlot(Plot):
                 if dtype is not None:
                     try:
                         # Try to keep the same dtype
-                        expanded = np.array(expanded, dtype=factor_dtype)
+                        expanded = np.array(expanded, dtype=dtype)
                     except Exception:
                         pass
                 dranges['factors'] = util.unique_array(expanded)
