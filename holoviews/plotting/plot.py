@@ -820,9 +820,16 @@ class DimensionedPlot(Plot):
                        'soft': soft_range, 'combined': combined}
             if 'factors' in values:
                 all_factors = values['factors']
-                factor_dtype = all_factors[0].dtype if all_factors else None
-                dranges['factors'] = util.unique_array(np.array([
-                    v for fctrs in all_factors for v in fctrs], dtype=factor_dtype))
+                factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
+                dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+                expanded = [v for fctrs in all_factors for v in fctrs]
+                if dtype is not None:
+                    try:
+                        # Try to keep the same dtype
+                        expanded = np.array(expanded, dtype=factor_dtype)
+                    except Exception:
+                        pass
+                dranges['factors'] = util.unique_array(expanded)
             dim_ranges.append((gdim, dranges))
         if prev_ranges and not (framewise and top_level):
             for d, dranges in dim_ranges:
