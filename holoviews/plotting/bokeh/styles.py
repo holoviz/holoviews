@@ -137,7 +137,7 @@ def validate(style, value, scalar=False):
     if isinstance(value, arraylike_types+(list,)):
         if scalar:
             return False
-        return len(value) and all(validator(v) for v in value)
+        return all(validator(v) for v in value)
     return validator(value)
 
 # Utilities

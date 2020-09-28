@@ -1114,8 +1114,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
+            colormap = style.get(prefix+'cmap')
             if ('color' in k and isinstance(val, util.arraylike_types) and
-                (numeric or not validate('color', val))):
+                (numeric or not validate('color', val) or isinstance(colormap, dict))):
                 kwargs = {}
                 if val.dtype.kind not in 'ifMu':
                     range_key = dim_range_key(v)
