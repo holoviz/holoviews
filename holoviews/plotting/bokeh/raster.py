@@ -122,9 +122,7 @@ class RasterPlot(ColorbarPlot):
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
             nodata = plot_opts.kwargs.get('nodata')
-            if nodata is not None:
-                if img.dtype.kind  == 'f':
-                    raise ValueError('The nodata plot option can only be applied to integer raster data.')
+            if nodata is not None and (img.dtype.kind  == 'i'):
                 img = img.astype(np.float64)
                 img[img == nodata] = np.NaN
 
@@ -254,9 +252,7 @@ class QuadMeshPlot(ColorbarPlot):
         zdata = element.dimension_values(z, flat=False)
         plot_opts = element.opts.get('plot', 'bokeh')
         nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None:
-            if zdata.dtype.kind  == 'f':
-                raise ValueError('The nodata plot option can only be applied to integer raster data.')
+        if nodata is not None and (zdata.dtype.kind  == 'i'):
             zdata = zdata.astype(np.float64)
             zdata[zdata == nodata] = np.NaN
 

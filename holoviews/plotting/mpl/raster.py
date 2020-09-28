@@ -87,9 +87,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
 
         plot_opts = element.opts.get('plot', 'matplotlib')
         nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None:
-            if data.dtype.kind  == 'f':
-                raise ValueError('The nodata plot option can only be applied to integer raster data.')
+        if nodata is not None and (data.dtype.kind  == 'i'):
             data = data.astype(np.float64)
             data[data == nodata] = np.NaN
 
@@ -158,9 +156,7 @@ class QuadMeshPlot(ColorbarPlot):
 
         plot_opts = element.opts.get('plot', 'matplotlib')
         nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None:
-            if data.dtype.kind  == 'f':
-                raise ValueError('The nodata plot option can only be applied to integer raster data.')
+        if nodata is not None and (data.dtype.kind  == 'i'):
             data = data.astype(np.float64)
             data[data == nodata] = np.NaN
 
