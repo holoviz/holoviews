@@ -1834,8 +1834,7 @@ class ColorbarPlot(ElementPlot):
         cmap = colors or style.get(prefix+'cmap', style.get('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
-            if factors is None:
-                factors = list(cmap)
+            factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
             if isinstance(eldim, dim):
                 if eldim.dimension in element:
