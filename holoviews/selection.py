@@ -11,16 +11,43 @@ from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
 from .core.spaces import GridSpace
-from .streams import SelectionExpr, Pipe, PlotReset, Stream, SelectMode
+from .streams import (
+    Stream, SelectionExprSequence, CrossFilterSet,
+    Derived, PlotReset, SelectMode, Pipe
+)
 from .util import DynamicMap
-from .util.transform import dim
 
 
 class _Cmap(Stream):
-    cmap = param.Parameter(default=None, allow_None=True)
+    cmap = param.Parameter(default=None, allow_None=True, constant=True)
 
 
-_Exprs = Stream.define('Exprs', exprs=[])
+class _SelectionExprOverride(Stream):
+    selection_expr = param.Parameter(default=None, constant=True, doc="""
+            dim expression of the current selection override""")
+
+
+class _SelectionExprLayers(Derived):
+    exprs = param.List(constant=True)
+
+    def __init__(self, expr_override, cross_filter_set, **params):
+        super(_SelectionExprLayers, self).__init__(
+            [expr_override, cross_filter_set], exclusive=True, **params
+        )
+
+    @classmethod
+    def transform_function(cls, stream_values, constants):
+        override_expr_values = stream_values[0]
+        cross_filter_set_values = stream_values[1]
+
+        if override_expr_values.get('selection_expr', None) is not None:
+            return {"exprs": [True, override_expr_values["selection_expr"]]}
+        else:
+            return {"exprs": [True, cross_filter_set_values["selection_expr"]]}
+
+
+
+
 _Styles = Stream.define('Styles', colors=[], alpha=1.)
 _RegionElement = Stream.define("RegionElement", region_element=None)
 
@@ -46,19 +73,21 @@ class _base_link_selections(param.ParameterizedFunction):
     link_inputs = param.Boolean(default=False, doc="""
         Whether to link any streams on the input to the output.""")
 
+    show_regions = param.Boolean(default=True, doc="""
+        Whether to highlight the selected regions.""")
+
     @bothmethod
     def instance(self_or_cls, **params):
         inst = super(_base_link_selections, self_or_cls).instance(**params)
 
         # Init private properties
-        inst._selection_expr_streams = []
-        inst._reset_streams = []
+        inst._cross_filter_stream = CrossFilterSet(mode=inst.cross_filter_mode)
+        inst._selection_override = _SelectionExprOverride()
+        inst._selection_expr_streams = {}
+        inst._plot_reset_streams = {}
 
         # Init selection streams
         inst._selection_streams = self_or_cls._build_selection_streams(inst)
-
-        # Init dict of region streams
-        inst._region_streams = {}
 
         return inst
 
@@ -74,34 +103,30 @@ class _base_link_selections(param.ParameterizedFunction):
 
     def _register(self, hvobj):
         """
-        Register an Element of DynamicMap that may be capable of generating
+        Register an Element or DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
         """
         # Create stream that produces element that displays region of selection
-        if isinstance(hvobj, DynamicMap):
-            eltype = hvobj.type
-        else:
-            eltype = type(hvobj)
-
-        if getattr(eltype, "_selection_streams", ()):
-            self._region_streams[hvobj] = _RegionElement()
-
-        # Create SelectionExpr stream
-        expr_stream = SelectionExpr(source=hvobj, index_cols=self.index_cols)
-        expr_stream.add_subscriber(
-            lambda **kwargs: self._expr_stream_updated(hvobj, **kwargs)
+        selection_expr_seq = SelectionExprSequence(
+            hvobj, mode=self.selection_mode, include_region=self.show_regions
         )
-        self._selection_expr_streams.append(expr_stream)
+        self._selection_expr_streams[hvobj] = selection_expr_seq
+        self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
+
+        self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
+
+        # Register reset
+        def clear_stream_history(resetting, stream=selection_expr_seq.history_stream):
+            if resetting:
+                stream.clear_history()
+                stream.event()
 
         mode_stream = SelectMode(source=hvobj)
         mode_stream.param.watch(self._update_mode, 'mode')
 
-        # Create PlotReset stream
-        reset_stream = PlotReset(source=hvobj)
-        reset_stream.add_subscriber(
-            lambda **kwargs: setattr(self, 'selection_expr', None)
+        self._plot_reset_streams[hvobj].param.watch(
+            clear_stream_history, ['resetting']
         )
-        self._reset_streams.append(reset_stream)
 
     def __call__(self, hvobj, **kwargs):
         # Apply kwargs as params
@@ -136,7 +161,7 @@ class _base_link_selections(param.ParameterizedFunction):
                 chart = Store.registry[Store.current_backend][hvobj.type]
                 return chart.selection_display(hvobj).build_selection(
                     self._selection_streams, hvobj, operations,
-                    self._region_streams.get(hvobj, None), cache=self._cache
+                    self._selection_expr_streams.get(hvobj, None), cache=self._cache
                 )
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
@@ -144,12 +169,12 @@ class _base_link_selections(param.ParameterizedFunction):
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
             chart = Store.registry[Store.current_backend][type(hvobj)]
-            if getattr(chart, 'selection_display', None):
+            if getattr(chart, 'selection_display', None) is not None:
                 element = hvobj.clone(link=self.link_inputs)
                 self._register(element)
                 return chart.selection_display(element).build_selection(
                     self._selection_streams, element, operations,
-                    self._region_streams.get(element, None), cache=self._cache
+                    self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
         elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
@@ -229,9 +254,6 @@ class link_selections(_base_link_selections):
         Determines how to combine successive selections on the same
         element.""")
 
-    show_regions = param.Boolean(default=True, doc="""
-        Whether to highlight the selected regions.""")
-
     unselected_alpha = param.Magnitude(default=0.1, doc="""
         Alpha of unselected data.""")
 
@@ -250,6 +272,8 @@ class link_selections(_base_link_selections):
         # _datasets caches
         inst._datasets = []
         inst._cache = {}
+
+        self_or_cls._install_param_callbacks(inst)
 
         return inst
 
@@ -288,6 +312,68 @@ class link_selections(_base_link_selections):
         self._datasets.append((pipe, data, raw))
         return pipe.param.data
 
+    @bothmethod
+    def _install_param_callbacks(self_or_cls, inst):
+        def update_selection_mode(*_):
+            # Reset selection state of streams
+            for stream in inst._selection_expr_streams.values():
+                stream.reset()
+                stream.mode = inst.selection_mode
+
+        inst.param.watch(
+            update_selection_mode, ['selection_mode']
+        )
+
+        def update_cross_filter_mode(*_):
+            inst._cross_filter_stream.reset()
+            inst._cross_filter_stream.mode = inst.cross_filter_mode
+
+        inst.param.watch(
+            update_cross_filter_mode, ['cross_filter_mode']
+        )
+
+        def update_show_region(*_):
+            for stream in inst._selection_expr_streams.values():
+                stream.include_region = inst.show_regions
+                stream.event()
+
+        inst.param.watch(
+            update_show_region, ['show_regions']
+        )
+
+        def update_selection_expr(*_):
+            new_selection_expr = inst.selection_expr
+            current_selection_expr = inst._cross_filter_stream.selection_expr
+            if repr(new_selection_expr) != repr(current_selection_expr):
+                # Disable regions if setting selection_expr directly
+                if inst.show_regions:
+                    inst.show_regions = False
+                inst._selection_override.event(selection_expr=new_selection_expr)
+
+        inst.param.watch(
+            update_selection_expr, ['selection_expr']
+        )
+
+        def selection_expr_changed(*_):
+            new_selection_expr = inst._cross_filter_stream.selection_expr
+            if repr(inst.selection_expr) != repr(new_selection_expr):
+                inst.selection_expr = new_selection_expr
+
+        inst._cross_filter_stream.param.watch(
+            selection_expr_changed, ['selection_expr']
+        )
+
+        # Clear selection expr sequence history on plot reset
+        for stream in inst._selection_expr_streams.values():
+            def clear_stream_history(resetting, stream=stream):
+                if resetting:
+                    stream.clear_history()
+            print("registering reset for ", stream)
+            stream.plot_reset_stream.param.watch(
+                clear_stream_history, ['resetting']
+            )
+
+
     @classmethod
     def _build_selection_streams(cls, inst):
         # Colors stream
@@ -312,18 +398,9 @@ class link_selections(_base_link_selections):
         inst.param.watch(update_colors,['unselected_color', 'selected_color', 'unselected_alpha'])
 
         # Exprs stream
-        exprs_stream = _Exprs(exprs=[True, None])
-
-        def update_exprs(*_):
-            exprs_stream.event(exprs=[True, inst.selection_expr])
-            # Reset regions
-            if inst._reset_regions:
-                for k, v in inst._region_streams.items():
-                    inst._region_streams[k].event(region_element=None)
-                inst._obj_selections.clear()
-                inst._obj_regions.clear()
-
-        inst.param.watch(update_exprs, ['selection_expr'])
+        exprs_stream = _SelectionExprLayers(
+            inst._selection_override, inst._cross_filter_stream
+        )
 
         return _SelectionStreams(
             style_stream=style_stream,
@@ -346,69 +423,6 @@ class link_selections(_base_link_selections):
         The datashader colormap for selected data
         """
         return None if self.selected_color is None else _color_to_cmap(self.selected_color)
-
-    def _expr_stream_updated(self, hvobj, selection_expr, bbox, region_element, **kwargs):
-        if selection_expr:
-            if self.cross_filter_mode == "overwrite":
-                # clear other regions and selections
-                for k, v in self._region_streams.items():
-                    if k is not hvobj:
-                        self._region_streams[k].event(region_element=None)
-                        self._obj_regions.pop(k, None)
-                        self._obj_selections.pop(k, None)
-
-            # Update selection expression
-            if hvobj not in self._obj_selections or self.selection_mode == "overwrite":
-                if self.selection_mode == "inverse":
-                    self._obj_selections[hvobj] = ~selection_expr
-                else:
-                    self._obj_selections[hvobj] = selection_expr
-            else:
-                if self.selection_mode == "intersect":
-                    self._obj_selections[hvobj] &= selection_expr
-                elif self.selection_mode == "union":
-                    self._obj_selections[hvobj] |= selection_expr
-                else:  # inverse
-                    self._obj_selections[hvobj] &= ~selection_expr
-
-            # Update region
-            if self.show_regions:
-                if isinstance(hvobj, DynamicMap):
-                    el_type = hvobj.type
-                else:
-                    el_type = hvobj
-
-                region_element = el_type._merge_regions(
-                    self._obj_regions.get(hvobj, None), region_element, self.selection_mode
-                )
-                self._obj_regions[hvobj] = region_element
-            else:
-                region_element = None
-
-            # build combined selection
-            selection_exprs = list(self._obj_selections.values())
-            if self.index_cols:
-                if len(selection_exprs) > 1:
-                    vals = set.intersection(*(set(expr.ops[2]['args'][0]) for expr in selection_exprs))
-                    old = selection_exprs[0]
-                    selection_expr = dim('new')
-                    selection_expr.dimension = old.dimension
-                    selection_expr.ops = list(old.ops)
-                    selection_expr.ops[2] = dict(selection_expr.ops[2], args=(list(vals),))
-            else:
-                selection_expr = selection_exprs[0]
-                for expr in selection_exprs[1:]:
-                    selection_expr = selection_expr & expr
-
-            # Set _reset_regions to False so that plot regions aren't automatically
-            # cleared when self.selection_expr is set.
-            self._reset_regions = False
-            self.selection_expr = selection_expr
-            self._reset_regions = True
-
-            # update this region stream
-            if self._region_streams.get(hvobj, None) is not None:
-                self._region_streams[hvobj].event(region_element=region_element)
 
 
 class SelectionDisplay(object):

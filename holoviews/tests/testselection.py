@@ -50,6 +50,15 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(base_points.data, data)
 
     @staticmethod
+    def get_value_with_key_type(d, hvtype):
+        for k, v in d.items():
+            if isinstance(k, hvtype) or \
+                    isinstance(k, hv.DynamicMap) and k.type == hvtype:
+                return v
+
+        raise KeyError("No key with type {typ}".format(typ=hvtype))
+
+    @staticmethod
     def expected_selection_color(element, lnk_sel):
         if lnk_sel.selected_color is not None:
             expected_color = lnk_sel.selected_color
@@ -87,9 +96,12 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_overlay_points_like(selected, lnk_sel, self.data)
 
         # Perform selection of second and third point
-        boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        self.assertIsInstance(boundsxy, hv.streams.SelectionXY)
-        boundsxy.event(bounds=(0, 1, 5, 5))
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
+        selectionxy.event(bounds=(0, 1, 5, 5))
         unselected, selected, region, region2 = linked[()].values()
 
         # Check that base layer is unchanged
@@ -136,8 +148,11 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Select first and third point
-        boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        boundsxy.event(bounds=(0, 0, 4, 2))
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+
+        selectionxy.event(bounds=(0, 0, 4, 2))
         current_obj = linked[()]
 
         # Check base points
@@ -181,8 +196,10 @@ class TestLinkSelections(ComparisonTestCase):
         self.check_overlay_points_like(current_obj.ErrorBars.II, lnk_sel, self.data)
 
         # Select first and third point
-        boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        boundsxy.event(bounds=(0, 0, 4, 2))
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        selectionxy.event(bounds=(0, 0, 4, 2))
 
         current_obj = linked[()]
 
@@ -228,9 +245,12 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # Perform selection of second and third point
-        boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        self.assertIsInstance(boundsxy, SelectionXY)
-        boundsxy.event(bounds=(0, 1, 5, 5))
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(selectionxy, SelectionXY)
+        selectionxy.event(bounds=(0, 1, 5, 5))
         current_obj = linked[()]
 
         # Check that base points layer is unchanged
@@ -265,9 +285,11 @@ class TestLinkSelections(ComparisonTestCase):
         linked = lnk_sel(points)
 
         # Perform selection of first and (future) third point
-        boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        self.assertIsInstance(boundsxy, hv.streams.SelectionXY)
-        boundsxy.event(bounds=(0, 0, 4, 2))
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        self.assertIsInstance(selectionxy, hv.streams.SelectionXY)
+        selectionxy.event(bounds=(0, 0, 4, 2))
         current_obj = linked[()]
 
         # Check initial base layer
@@ -350,9 +372,11 @@ class TestLinkSelections(ComparisonTestCase):
         self.assertEqual(region_hist.data, [None, None])
 
         # (1) Perform selection on points of points [1, 2]
-        points_boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        self.assertIsInstance(points_boundsxy, SelectionXY)
-        points_boundsxy.event(bounds=(1, 1, 4, 4))
+        points_selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+        self.assertIsInstance(points_selectionxy, SelectionXY)
+        points_selectionxy.event(bounds=(1, 1, 4, 4))
 
         # Get current object
         current_obj = linked[()]
@@ -378,9 +402,12 @@ class TestLinkSelections(ComparisonTestCase):
             )
 
         # (2) Perform selection on histogram bars [0, 1]
-        hist_boundsxy = lnk_sel._selection_expr_streams[1].input_streams[0]
-        self.assertIsInstance(hist_boundsxy, SelectionXY)
-        hist_boundsxy.event(bounds=(0, 0, 2.5, 2))
+        hist_selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Histogram
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(hist_selectionxy, SelectionXY)
+        hist_selectionxy.event(bounds=(0, 0, 2.5, 2))
 
         points_unsel, points_sel, points_region, points_region_poly = current_obj[0][()].values()
 
@@ -414,9 +441,12 @@ class TestLinkSelections(ComparisonTestCase):
         )
 
         # (3) Perform selection on points points [0, 2]
-        points_boundsxy = lnk_sel._selection_expr_streams[0].input_streams[0]
-        self.assertIsInstance(points_boundsxy, SelectionXY)
-        points_boundsxy.event(bounds=(0, 0, 4, 2.5))
+        points_selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(points_selectionxy, SelectionXY)
+        points_selectionxy.event(bounds=(0, 0, 4, 2.5))
 
         # Check selection overlay points contains only second point
         self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,
@@ -440,9 +470,12 @@ class TestLinkSelections(ComparisonTestCase):
             self.assertEqual(region_hist.data, [0, 2.5])
 
         # (4) Perform selection of bars [1, 2]
-        hist_boundsxy = lnk_sel._selection_expr_streams[1].input_streams[0]
-        self.assertIsInstance(hist_boundsxy, SelectionXY)
-        hist_boundsxy.event(bounds=(1.5, 0, 3.5, 2))
+        hist_selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Histogram
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(hist_selectionxy, SelectionXY)
+        hist_selectionxy.event(bounds=(1.5, 0, 3.5, 2))
 
         # Check points selection overlay
         self.check_overlay_points_like(current_obj[0][()].Points.II, lnk_sel,

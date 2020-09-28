@@ -113,6 +113,57 @@ class TestCallbacks(TestCase):
         self.assertNotIn(plot3.trace_uid, RangeXYCallback.instances)
         self.assertNotIn(plot3.trace_uid, BoundsXYCallback.instances)
 
+    def testRangeXYCallbackEventData(self):
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeXYCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
+
+            self.assertEqual(event_data, {
+                'first': {'x_range': (1, 4), 'y_range': (-1, 5)},
+                'second': {'x_range': (1, 4), 'y_range': (-1, 5)},
+                'third': {'x_range': None, 'y_range': None},
+                'forth': {'x_range': None, 'y_range': None}
+            })
+
+    def testRangeXCallbackEventData(self):
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeXCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
+
+            self.assertEqual(event_data, {
+                'first': {'x_range': (1, 4)},
+                'second': {'x_range': (1, 4)},
+                'third': {'x_range': None},
+                'forth': {'x_range': None}
+            })
+
+    def testRangeYCallbackEventData(self):
+        for viewport in [
+            {'xaxis.range': [1, 4], 'yaxis.range': [-1, 5]},
+            {'xaxis.range[0]': 1, 'xaxis.range[1]': 4,
+             'yaxis.range[0]': -1, 'yaxis.range[1]': 5},
+        ]:
+            event_data = RangeYCallback.get_event_data_from_property_update(
+                viewport, self.fig_dict
+            )
+
+            self.assertEqual(event_data, {
+                'first': {'y_range': (-1, 5)},
+                'second': {'y_range': (-1, 5)},
+                'third': {'y_range': None},
+                'forth': {'y_range': None}
+            })
+
     def testRangeCallbacks(self):
 
         # Build callbacks
@@ -192,6 +243,45 @@ class TestCallbacks(TestCase):
             xystream.event.assert_not_called()
             xstream.event.assert_not_called()
             ystream.event.assert_not_called()
+
+    def testBoundsXYCallbackEventData(self):
+        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        event_data = BoundsXYCallback.get_event_data_from_property_update(
+            selected_data1, self.fig_dict
+        )
+
+        self.assertEqual(event_data, {
+            'first': {'bounds': (1, -1, 4, 5)},
+            'second': {'bounds': (1, -1, 4, 5)},
+            'third': {'bounds': None},
+            'forth': {'bounds': None}
+        })
+
+    def testBoundsXCallbackEventData(self):
+        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        event_data = BoundsXCallback.get_event_data_from_property_update(
+            selected_data1, self.fig_dict
+        )
+
+        self.assertEqual(event_data, {
+            'first': {'boundsx': (1, 4)},
+            'second': {'boundsx': (1, 4)},
+            'third': {'boundsx': None},
+            'forth': {'boundsx': None}
+        })
+
+    def testBoundsYCallbackEventData(self):
+        selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
+        event_data = BoundsYCallback.get_event_data_from_property_update(
+            selected_data1, self.fig_dict
+        )
+
+        self.assertEqual(event_data, {
+            'first': {'boundsy': (-1, 5)},
+            'second': {'boundsy': (-1, 5)},
+            'third': {'boundsy': None},
+            'forth': {'boundsy': None}
+        })
 
     def testBoundsCallbacks(self):
 
@@ -286,6 +376,23 @@ class TestCallbacks(TestCase):
             xystream.event.assert_not_called()
             xstream.event.assert_not_called()
             ystream.event.assert_not_called()
+
+    def testSelection1DCallbackEventData(self):
+        selected_data1 = {'points': [
+            {"pointNumber": 0, "curveNumber": 0},
+            {"pointNumber": 2, "curveNumber": 0},
+        ]}
+
+        event_data = Selection1DCallback.get_event_data_from_property_update(
+            selected_data1, self.fig_dict
+        )
+
+        self.assertEqual(event_data, {
+            'first': {'index': [0, 2]},
+            'second': {'index': []},
+            'third': {'index': []},
+            'forth': {'index': []}
+        })
 
     def testSelection1DCallback(self):
         plots, streamss, callbacks = build_callback_set(
