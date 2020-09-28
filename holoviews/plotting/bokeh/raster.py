@@ -15,6 +15,9 @@ from .util import colormesh
 
 class RasterPlot(ColorbarPlot):
 
+    nodata = param.Integer(default=None,
+                           doc="Missing data (NaN) value for integer data", allow_None=True)
+
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
@@ -101,6 +104,7 @@ class RasterPlot(ColorbarPlot):
             b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
+        plot_opts = element.opts.get('plot', 'bokeh')
         for i, vdim in enumerate(element.vdims, 2):
             if i > 2 and 'hover' not in self.handles:
                 break
@@ -117,6 +121,11 @@ class RasterPlot(ColorbarPlot):
             if self.invert_yaxis:
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
+            nodata = plot_opts.kwargs.get('nodata')
+            if nodata is not None:
+                img = img if (img.dtype.kind  == 'f') else img.astype(np.float64)
+                img[img == nodata] = np.NaN
+
             data[key] = [img]
 
         return (data, mapping, style)
@@ -175,7 +184,7 @@ class RGBPlot(ElementPlot):
         if self.invert_axes:
             img = img.T
             l, b, r, t = b, l, t, r
-            
+
         dh, dw = t-b, r-l
         if self.invert_xaxis:
             l, r = r, l
@@ -200,6 +209,9 @@ class HSVPlot(RGBPlot):
 
 
 class QuadMeshPlot(ColorbarPlot):
+
+    nodata = param.Integer(default=None,
+                           doc="Missing data (NaN) value for integer data", allow_None=True)
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
@@ -238,6 +250,12 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+        plot_opts = element.opts.get('plot', 'bokeh')
+        nodata = plot_opts.kwargs.get('nodata')
+        if nodata is not None:
+            zdata = zdata if (zdata.dtype.kind  == 'f') else zdata.astype(np.float64)
+            zdata[zdata == nodata] = np.NaN
+
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]
