@@ -1114,8 +1114,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
             # If color is not valid colorspec add colormapper
             numeric = isinstance(val, util.arraylike_types) and val.dtype.kind in 'uifMmb'
+            colormap = style.get(prefix+'cmap')
             if ('color' in k and isinstance(val, util.arraylike_types) and
-                (numeric or not validate('color', val))):
+                (numeric or not validate('color', val) or isinstance(colormap, dict))):
                 kwargs = {}
                 if val.dtype.kind not in 'ifMu':
                     range_key = dim_range_key(v)
@@ -1834,8 +1835,7 @@ class ColorbarPlot(ElementPlot):
         cmap = colors or style.get(prefix+'cmap', style.get('cmap', 'viridis'))
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict):
-            if factors is None:
-                factors = list(cmap)
+            factors = list(cmap)
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
             if isinstance(eldim, dim):
                 if eldim.dimension in element:

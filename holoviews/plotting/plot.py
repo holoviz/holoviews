@@ -745,6 +745,8 @@ class DimensionedPlot(Plot):
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
                         drange = values, values
+                    elif values.dtype.kind in 'US':
+                        factors = util.unique_array(values)
                     elif len(values) == 0:
                         drange = np.NaN, np.NaN
                     else:
@@ -756,7 +758,7 @@ class DimensionedPlot(Plot):
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
-    
+
                     if factors is not None:
                         if 'factors' not in group_ranges[dim_name]:
                             group_ranges[dim_name]['factors'] = []
@@ -817,8 +819,17 @@ class DimensionedPlot(Plot):
             dranges = {'data': data_range, 'hard': hard_range,
                        'soft': soft_range, 'combined': combined}
             if 'factors' in values:
-                dranges['factors'] = util.unique_array([
-                    v for fctrs in values['factors'] for v in fctrs])
+                all_factors = values['factors']
+                factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
+                dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+                expanded = [v for fctrs in all_factors for v in fctrs]
+                if dtype is not None:
+                    try:
+                        # Try to keep the same dtype
+                        expanded = np.array(expanded, dtype=dtype)
+                    except Exception:
+                        pass
+                dranges['factors'] = util.unique_array(expanded)
             dim_ranges.append((gdim, dranges))
         if prev_ranges and not (framewise and top_level):
             for d, dranges in dim_ranges:
