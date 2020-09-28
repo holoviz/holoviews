@@ -14,8 +14,8 @@ from .util import get_raster_array, mpl_version
 
 class RasterBasePlot(ElementPlot):
 
-    nodata = param.Integer(default=None,
-                           doc="Missing data (NaN) value for integer data", allow_None=True)
+    nodata = param.Integer(default=None, doc="""
+        Missing data (NaN) value for integer data""")
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
