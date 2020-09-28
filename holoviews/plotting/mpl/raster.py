@@ -14,6 +14,9 @@ from .util import get_raster_array, mpl_version
 
 class RasterBasePlot(ElementPlot):
 
+    nodata = param.Integer(default=None,
+                           doc="Missing data (NaN) value for integer data", allow_None=True)
+
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
         Images by default but may be set to an explicit
@@ -82,6 +85,12 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
 
+        plot_opts = element.opts.get('plot', 'matplotlib')
+        nodata = plot_opts.kwargs.get('nodata')
+        if nodata is not None:
+            data = data if (data.dtype.kind  == 'f') else data.astype(np.float64)
+            data[data == nodata] = np.NaN
+
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -126,6 +135,9 @@ class RGBPlot(RasterBasePlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
+    nodata = param.Integer(default=None,
+                           doc="Missing data (NaN) value for integer data", allow_None=True)
+
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
@@ -141,6 +153,13 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
+
+        plot_opts = element.opts.get('plot', 'matplotlib')
+        nodata = plot_opts.kwargs.get('nodata')
+        if nodata is not None:
+            data = data if (data.dtype.kind  == 'f') else data.astype(np.float64)
+            data[data == nodata] = np.NaN
+
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
         coords = [element.interface.coords(element, d, ordered=True,
