@@ -70,7 +70,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         both 'pan' and 'box_zoom' are drag tools, so if both are
         listed only the last one will be active.""")
 
-    align = param.ObjectSelector(default=None, objects=['start', 'center', 'end'], doc="""
+    align = param.ObjectSelector(default='start', objects=['start', 'center', 'end'], doc="""
         Alignment (vertical or horizontal) of the plot in a layout.""")
 
     border = param.Number(default=10, doc="""
