@@ -39,7 +39,6 @@ extras_require['examples'] = extras_require['recommended'] + [
     'xarray >=0.10.4',
     'plotly >=4.0',
     'dash >=1.16',
-    'dash-table >=4.10',
     'streamz >=0.5.0',
     'datashader',
     'ffmpeg',
