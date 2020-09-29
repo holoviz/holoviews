@@ -14,7 +14,8 @@ class RasterPlot(ColorbarPlot):
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     nodata = param.Integer(default=None, doc="""
-        Missing data (NaN) value for integer data""")
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
 
     style_opts = ['visible', 'cmap', 'alpha']
 
