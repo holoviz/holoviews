@@ -1697,7 +1697,7 @@ class ColorbarPlot(ElementPlot):
         Formatter for ticks along the colorbar axis.""")
 
     clabel = param.String(default=None, doc="""
-        An explicit override of the color bar label, if set takes precedence
+        An explicit override of the color bar label. If set, takes precedence
         over the title key in colorbar_opts.""")
 
     clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
@@ -1714,7 +1714,7 @@ class ColorbarPlot(ElementPlot):
         Formatter for ticks along the colorbar axis.""")
 
     cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eqhist'], doc="""
-        Color normalization applied during colormapping.""")
+        Color normalization to be applied during colormapping.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")

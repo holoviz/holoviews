@@ -15,7 +15,8 @@ from .util import get_raster_array, mpl_version
 class RasterBasePlot(ElementPlot):
 
     nodata = param.Integer(default=None, doc="""
-        Missing data (NaN) value for integer data""")
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
@@ -136,7 +137,8 @@ class RGBPlot(RasterBasePlot):
 class QuadMeshPlot(ColorbarPlot):
 
     nodata = param.Integer(default=None, doc="""
-        Missing data (NaN) value for integer data""")
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 

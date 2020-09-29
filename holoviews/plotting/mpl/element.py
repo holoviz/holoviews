@@ -690,7 +690,7 @@ class ColorbarPlot(ElementPlot):
         intervals defining the range of values to map each color to.""")
 
     cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eqhist'], doc="""
-        Color normalization applied during colormapping.""")
+        Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows

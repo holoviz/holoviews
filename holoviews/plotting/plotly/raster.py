@@ -112,7 +112,8 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 class QuadMeshPlot(RasterPlot):
 
     nodata = param.Integer(default=None, doc="""
-        Missing data (NaN) value for integer data""")
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
 
     def get_data(self, element, ranges, style, **kwargs):
         x, y, z = element.dimensions()[:3]
