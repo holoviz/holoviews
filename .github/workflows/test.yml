@@ -39,7 +39,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyctdev flake8 nose
           doit miniconda_install
-          conda init
+          conda init bash
+          source ~/.bashrc
           eval "$(conda shell.bash hook)"
       - name: conda setup
         shell: bash -l {0}
