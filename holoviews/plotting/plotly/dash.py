@@ -219,7 +219,7 @@ def encode_store_data(store_data):
     Encode store_data dict into a JSON serializable dict
 
     This is currently done by pickling store_data and converting to a base64 encoded
-    string. If HoloViews support JSON serialization in the future, this method could
+    string. If HoloViews supports JSON serialization in the future, this method could
     be updated to use this approach instead
 
     Args:
