@@ -88,10 +88,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     custom_opts = param.Dict(default={}, doc="""
         A dictionary of custom options to apply to the plot or
-        subcomponents of the plot. The keys in the dictionary mirrors
+        subcomponents of the plot. The keys in the dictionary mirror
         attribute access on the underlying models stored in the plot's
         handles, e.g. {'colorbar.margin': 10} will index the colorbar
-        in the Plot.hanldes and then set the margin to 10.""")
+        in the Plot.handles and then set the margin to 10.""")
 
     data_aspect = param.Number(default=None, doc="""
         Defines the aspect of the axis scaling, i.e. the ratio of
