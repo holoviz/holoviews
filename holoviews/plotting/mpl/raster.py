@@ -17,7 +17,8 @@ class RasterBasePlot(ElementPlot):
 
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
-        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
@@ -134,7 +135,8 @@ class QuadMeshPlot(ColorbarPlot):
 
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
-        If non-None, data with this value will be replaced with NaN so that it is transparent when plotted.""")
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
