@@ -7,6 +7,7 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
+from ..util import apply_nodata
 from .element import ElementPlot, ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array, mpl_version
@@ -86,12 +87,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
 
-        plot_opts = element.opts.get('plot', 'matplotlib')
-        nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None and (data.dtype.kind  == 'i'):
-            data = data.astype(np.float64)
-            data[data == nodata] = np.NaN
-
+        data = apply_nodata(element.opts.get('plot', 'matplotlib'), data)
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -156,12 +152,7 @@ class QuadMeshPlot(ColorbarPlot):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
 
-        plot_opts = element.opts.get('plot', 'matplotlib')
-        nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None and (data.dtype.kind  == 'i'):
-            data = data.astype(np.float64)
-            data[data == nodata] = np.NaN
-
+        data = apply_nodata(element.opts.get('plot', 'matplotlib'), data)
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
         coords = [element.interface.coords(element, d, ordered=True,

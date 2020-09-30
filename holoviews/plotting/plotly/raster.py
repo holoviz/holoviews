@@ -6,6 +6,7 @@ import param
 from ...core.options import SkipRendering
 from ...element import Image, Raster
 from ..mixins import HeatMapMixin
+from ..util import apply_nodata
 from .element import ColorbarPlot
 
 
@@ -46,12 +47,7 @@ class RasterPlot(ColorbarPlot):
             x0, y0, dx, dy = y0, x0, dy, dx
             array = array.T
 
-        plot_opts = element.opts.get('plot', 'plotly')
-        nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None and (array.dtype.kind  == 'i'):
-            array = array.astype(np.float64)
-            array[array == nodata] = np.NaN
-
+        array = apply_nodata(element.opts.get('plot', 'plotly'), array)
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
@@ -129,10 +125,5 @@ class QuadMeshPlot(RasterPlot):
             y, x = 'x', 'y'
             zdata = zdata.T
 
-        plot_opts = element.opts.get('plot', 'plotly')
-        nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None and (zdata.dtype.kind  == 'i'):
-            zdata = zdata.astype(np.float64)
-            zdata[zdata == nodata] = np.NaN
-
+        zdata = apply_nodata(element.opts.get('plot', 'plotly'), zdata)
         return [{x: xc, y: yc, 'z': zdata}]

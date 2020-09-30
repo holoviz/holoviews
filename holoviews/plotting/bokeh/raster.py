@@ -7,6 +7,7 @@ from bokeh.models import DatetimeAxis, CustomJSHover
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
+from ..util import apply_nodata
 from .element import ElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
@@ -105,7 +106,6 @@ class RasterPlot(ColorbarPlot):
             b, t = t, b
         data = dict(x=[l], y=[b], dw=[dw], dh=[dh])
 
-        plot_opts = element.opts.get('plot', 'bokeh')
         for i, vdim in enumerate(element.vdims, 2):
             if i > 2 and 'hover' not in self.handles:
                 break
@@ -122,11 +122,7 @@ class RasterPlot(ColorbarPlot):
             if self.invert_yaxis:
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
-            nodata = plot_opts.kwargs.get('nodata')
-            if nodata is not None and (img.dtype.kind  == 'i'):
-                img = img.astype(np.float64)
-                img[img == nodata] = np.NaN
-
+            img = apply_nodata(element.opts.get('plot', 'bokeh'), img)
             data[key] = [img]
 
         return (data, mapping, style)
@@ -251,11 +247,7 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
-        plot_opts = element.opts.get('plot', 'bokeh')
-        nodata = plot_opts.kwargs.get('nodata')
-        if nodata is not None and (zdata.dtype.kind  == 'i'):
-            zdata = zdata.astype(np.float64)
-            zdata[zdata == nodata] = np.NaN
+        zdata = apply_nodata(element.opts.get('plot', 'bokeh'), zdata)
 
         if irregular:
             dims = element.kdims

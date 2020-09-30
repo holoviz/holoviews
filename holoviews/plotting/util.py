@@ -1095,6 +1095,15 @@ def hex2rgb(hex):
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
+def apply_nodata(opts, data):
+    "Replace `nodata` value in data with NaN, if specified in opts"
+    nodata = opts.kwargs.get('nodata')
+    if nodata is not None and (data.dtype.kind  == 'i'):
+        data = data.astype(np.float64)
+        data[data == nodata] = np.NaN
+        return data
+    return data
+
 
 RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
 
