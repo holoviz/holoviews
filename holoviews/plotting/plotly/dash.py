@@ -244,7 +244,7 @@ def decode_store_data(store_data):
     return pickle.loads(base64.b64decode(store_data["pickled"]))
 
 
-def holoviews_to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
+def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
 

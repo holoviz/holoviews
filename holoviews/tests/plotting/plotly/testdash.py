@@ -2,7 +2,7 @@ from dash._callback_context import CallbackContext
 
 from .testplot import TestPlotlyPlot
 from holoviews.plotting.plotly.dash import (
-    holoviews_to_dash, DashComponents, encode_store_data, decode_store_data
+    to_dash, DashComponents, encode_store_data, decode_store_data
 )
 from holoviews import Scatter, DynamicMap, Bounds
 from holoviews.streams import BoundsXY, RangeXY, Selection1D
@@ -31,7 +31,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         scatter = Scatter([0, 0])
 
         # Convert to Dash
-        components = holoviews_to_dash(self.app, [scatter])
+        components = to_dash(self.app, [scatter])
 
         # Check returned components
         self.assertIsInstance(components, DashComponents)
@@ -65,7 +65,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         )
 
         # Convert to Dash
-        components = holoviews_to_dash(self.app, [scatter, dmap], reset_button=True)
+        components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
         self.assertIsInstance(components, DashComponents)
@@ -211,7 +211,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         dmap = DynamicMap(dmap_fn, streams=[rangexy])
 
         # Convert to Dash
-        components = holoviews_to_dash(self.app, [scatter, dmap], reset_button=True)
+        components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
         self.assertIsInstance(components, DashComponents)
@@ -300,7 +300,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         )
 
         # Convert to Dash
-        components = holoviews_to_dash(self.app, [scatter, dmap], reset_button=True)
+        components = to_dash(self.app, [scatter, dmap], reset_button=True)
 
         # Check returned components
         self.assertIsInstance(components, DashComponents)
@@ -436,7 +436,7 @@ class TestHoloViewsDash(TestPlotlyPlot):
         ).redim.values(kdim1=[1, 2, 3, 4])
 
         # Convert to Dash
-        components = holoviews_to_dash(self.app, [dmap])
+        components = to_dash(self.app, [dmap])
 
         # Check returned components
         self.assertIsInstance(components, DashComponents)
