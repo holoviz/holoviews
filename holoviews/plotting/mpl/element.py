@@ -689,7 +689,7 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
-    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eqhist'], doc="""
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
@@ -897,7 +897,7 @@ class ColorbarPlot(ElementPlot):
         else:
             categorical = values.dtype.kind not in 'uif'
 
-        if self.cnorm == 'eqhist':
+        if self.cnorm == 'eq_hist':
             opts[prefix+'norm'] = EqHistNormalize(
                 vmin=clim[0], vmax=clim[1])
         if self.cnorm == 'log' or self.logz:

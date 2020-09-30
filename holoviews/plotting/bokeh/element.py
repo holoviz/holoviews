@@ -1713,7 +1713,7 @@ class ColorbarPlot(ElementPlot):
         default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
 
-    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eqhist'], doc="""
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
         Color normalization to be applied during colormapping.""")
 
     colorbar = param.Boolean(default=False, doc="""
@@ -1954,7 +1954,7 @@ class ColorbarPlot(ElementPlot):
                         "lower bound on the color dimension or using "
                         "the `clim` option."
                     )
-            elif self.cnorm == 'eqhist':
+            elif self.cnorm == 'eq_hist':
                 from bokeh.models import EqHistColorMapper
                 colormapper = EqHistColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)

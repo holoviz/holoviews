@@ -459,7 +459,7 @@ class EqHistNormalize(Normalize):
 
     def inverse(self, value):
         if self._bin_edges is None:
-            raise ValueError("Not invertible until eqhist has been computed")
+            raise ValueError("Not invertible until eq_hist has been computed")
         return np.interp([value], self._color_bins, self._bin_edges)[0]
 
 
