@@ -849,7 +849,7 @@ argument to specify a selection specification""")
 
         # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
-        if not len(self):
+        if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
                 vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
