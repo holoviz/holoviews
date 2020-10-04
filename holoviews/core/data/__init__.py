@@ -318,6 +318,7 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
+        cache = kwargs.pop('persist', None)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
@@ -337,6 +338,9 @@ class Dataset(Element):
             output_type=type(self),
         )
         self._transforms = input_transforms or []
+
+        # For lazy interfaces this keeps an evaluated version of the dataset in memory
+        self._cached = cache
 
         # Handle initializing the dataset property.
         self._dataset = input_dataset

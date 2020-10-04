@@ -32,6 +32,26 @@ def is_dask(array):
         return False
     return da and isinstance(array, da.Array)
 
+def cache(compute_cache=False):
+    def cached_dataset(method):
+        """
+        Decorates an Interface method and using a cached version
+        """
+        def cached(*args, **kwargs):
+            cache = getattr(args[1], '_cached')
+            if cache is None and compute_cache:
+                try:
+                    args[1]._cached = cache = args[0].persist(args[1])
+                except NotImplementedError:
+                    pass
+            if cache is None or cache is False:
+                return method(*args, **kwargs)
+            else:
+                args = (cache,)+args[2:]
+                return getattr(cache.interface, method.__name__)(*args, **kwargs)
+        return cached
+    return cached_dataset
+
 
 class DataError(ValueError):
     "DataError is raised when the data cannot be interpreted"
@@ -304,6 +324,9 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
+    @classmethod
+    def persist(cls, dataset):
+        raise NotImplementedError
 
     @classmethod
     def expanded(cls, arrays):
