@@ -73,6 +73,8 @@ class IbisInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
+        if cls.dtype(dataset, dimension).kind in 'SUO':
+            return None, None
         column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
         return tuple(
             dataset.data.aggregate([column.min(), column.max()]).execute().values[0, :]
