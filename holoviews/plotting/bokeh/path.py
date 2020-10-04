@@ -20,6 +20,10 @@ from .util import bokeh_version, multi_polygons_data
 
 class PathPlot(LegendPlot, ColorbarPlot):
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
