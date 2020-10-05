@@ -393,7 +393,7 @@ class Dataset(Element):
         Returns:
             Dataset with the data stored in in-memory format
         """
-        computed = self.interface.compute(self)
+        return self.interface.compute(self)
 
     def persist(self):
         """
