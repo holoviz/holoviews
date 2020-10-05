@@ -414,7 +414,7 @@ class GridInterface(DictInterface):
         return {k: v.persist() if da and isinstance(v, da.Array) else v
                 for k, v in dataset.data.items()}
 
-    @classmethods
+    @classmethod
     def compute(cls, dataset):
         return {k: v.compute() if da and isinstance(v, da.Array) else v
                 for k, v in dataset.data.items()}
