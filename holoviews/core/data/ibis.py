@@ -105,7 +105,19 @@ class IbisInterface(Interface):
         data = dataset.data[dimension.name]
         if not expanded:
             data = data.distinct()
-        return data if keep_index else data.execute().values
+        return data if keep_index or not compute else data.execute().values
+
+    @classmethod
+    def histogram(cls, expr, bins, density=True, weights=None):
+        bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
+        binned = expr.bucket(bins).name('bucket')
+        hist = binned.value_counts().sort_by('bucket').execute()['count'].values
+        if weights is not None:
+            raise NotImplementedError("Weighted histograms currently "
+                                      "not implemented for IbisInterface.")
+        if density:
+            hist = hist/expr.count().execute()
+        return hist, bins
 
     @classmethod
     @cached

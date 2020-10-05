@@ -1502,6 +1502,13 @@ def is_cupy_array(data):
     return False
 
 
+def is_ibis_expr(data):
+    if 'ibis' in sys.modules:
+        import ibis
+        return isinstance(data, ibis.expr.types.ColumnExpr)
+    return False
+
+
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)

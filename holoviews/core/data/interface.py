@@ -476,6 +476,22 @@ class Interface(param.Parameterized):
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
 
     @classmethod
+    def histogram(cls, array, bins, density=True, weights=None):
+        if util.is_dask_array(array):
+            import dask.array as da
+            histogram = da.histogram
+        elif util.is_cupy_array(array):
+            import cupy
+            histogram = cupy.histogram
+        else:
+            histogram = np.histogram
+        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        if util.is_cupy_array(hist):
+            edges = cupy.asnumpy(edges)
+            hist = cupy.asnumpy(hist)
+        return hist, edges
+
+    @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):
         kdims = [kdim for kdim in dataset.kdims if kdim not in reduce_dims]
         return cls.aggregate(dataset, kdims, function, **kwargs)
