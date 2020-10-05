@@ -71,6 +71,14 @@ class DaskInterface(PandasInterface):
         return data, dims, extra
 
     @classmethod
+    def compute(cls, dataset):
+        return dataset.clone(dataset.data.compute())
+
+    @classmethod
+    def persiste(cls, dataset):
+        return dataset.clone(dataset.data.persist())
+
+    @classmethod
     def shape(cls, dataset):
         return (len(dataset.data), len(dataset.data.columns))
 

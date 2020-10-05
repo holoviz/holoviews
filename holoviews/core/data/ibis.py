@@ -7,7 +7,7 @@ import ibis
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .interface import Interface, cache
+from .interface import Interface, cached
 from . import pandas
 
 
@@ -61,23 +61,27 @@ class IbisInterface(Interface):
         return data, dict(kdims=keys, vdims=values), {}
 
     @classmethod
-    def persist(cls, dataset):
+    def compute(cls, dataset):
         return dataset.clone(dataset.data.execute())
 
     @classmethod
-    @cache()
+    def persist(cls, dataset):
+        return cls.compute(dataset)
+
+    @classmethod
+    @cached
     def length(self, dataset):
         # Get the length by counting the length of an empty query.
         return dataset.data[[]].count().execute()
 
     @classmethod
-    @cache()
+    @cached
     def nonzero(cls, dataset):
         # Make an empty query to see if a row is returned.
         return bool(len(dataset.data[[]].head(1).execute()))
 
     @classmethod
-    @cache(True)
+    @cached
     def range(cls, dataset, dimension):
         if cls.dtype(dataset, dimension).kind in 'SUO':
             return None, None
@@ -87,7 +91,7 @@ class IbisInterface(Interface):
         )
 
     @classmethod
-    @cache(True)
+    @cached
     def values(
         cls,
         dataset,
@@ -104,12 +108,12 @@ class IbisInterface(Interface):
         return data if keep_index else data.execute().values
 
     @classmethod
-    @cache()
+    @cached
     def shape(cls, dataset):
         return cls.length(dataset), len(dataset.data.columns)
 
     @classmethod
-    @cache()
+    @cached
     def dtype(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension)
         return dataset.data.head(0).execute().dtypes[dimension.name]
@@ -127,7 +131,7 @@ class IbisInterface(Interface):
         )
 
     validate = pandas.PandasInterface.validate
-    reindex = cache()(pandas.PandasInterface.reindex)
+    reindex = pandas.PandasInterface.reindex
 
     @classmethod
     def _index_ibis_table(cls, data):
@@ -242,7 +246,7 @@ class IbisInterface(Interface):
         return data
 
     @classmethod
-    @cache()
+    @cached
     def isscalar(cls, dataset, dim):
         return (
             dataset.data[dataset.get_dimension(dim, strict=True).name]
@@ -381,12 +385,12 @@ class IbisInterface(Interface):
         return aggregation, dropped
 
     @classmethod
-    @cache(True)
+    @cached
     def mask(cls, dataset, mask, mask_value=numpy.nan):
         raise NotImplementedError('Mask is not implemented for IbisInterface.')
 
     @classmethod
-    @cache()
+    @cached
     def dframe(cls, dataset, dimensions):
         return dataset.data[dimensions].execute()
 

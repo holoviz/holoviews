@@ -32,25 +32,18 @@ def is_dask(array):
         return False
     return da and isinstance(array, da.Array)
 
-def cache(compute_cache=False):
-    def cached_dataset(method):
-        """
-        Decorates an Interface method and using a cached version
-        """
-        def cached(*args, **kwargs):
-            cache = getattr(args[1], '_cached')
-            if cache is None and compute_cache:
-                try:
-                    args[1]._cached = cache = args[0].persist(args[1])
-                except NotImplementedError:
-                    pass
-            if cache is None or cache is False:
-                return method(*args, **kwargs)
-            else:
-                args = (cache,)+args[2:]
-                return getattr(cache.interface, method.__name__)(*args, **kwargs)
-        return cached
-    return cached_dataset
+def cached(method):
+    """
+    Decorates an Interface method and using a cached version
+    """
+    def cached(*args, **kwargs):
+        cache = getattr(args[1], '_cached')
+        if cache is None:
+            return method(*args, **kwargs)
+        else:
+            args = (cache,)+args[2:]
+            return getattr(cache.interface, method.__name__)(*args, **kwargs)
+    return cached
 
 
 class DataError(ValueError):
@@ -326,12 +319,21 @@ class Interface(param.Parameterized):
 
     @classmethod
     def persist(cls, dataset):
-        raise NotImplementedError
+        """
+        Should return a persisted version of the Dataset.
+        """
+        return dataset
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Should return a computed version of the Dataset.
+        """
+        return dataset
 
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
-
 
     @classmethod
     def isscalar(cls, dataset, dim):

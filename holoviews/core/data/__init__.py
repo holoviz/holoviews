@@ -318,7 +318,6 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        cache = kwargs.pop('persist', None)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
@@ -339,8 +338,9 @@ class Dataset(Element):
         )
         self._transforms = input_transforms or []
 
-        # For lazy interfaces this keeps an evaluated version of the dataset in memory
-        self._cached = cache
+        # On lazy interfaces this allows keeping an evaluated version
+        # of the dataset in memory
+        self._cached = None
 
         # Handle initializing the dataset property.
         self._dataset = input_dataset
@@ -375,7 +375,6 @@ class Dataset(Element):
             return Dataset(self, _validate_vdims=False, **self._dataset)
         return self._dataset
 
-
     @property
     def pipeline(self):
         """
@@ -384,6 +383,34 @@ class Dataset(Element):
         dataset property
         """
         return self._pipeline
+
+    def compute(self):
+        """
+        Computes the data to a data format that stores the daata in
+        memory, e.g. a Dask dataframe or array is converted to a
+        Pandas DataFrame or NumPy array.
+
+        Returns:
+            Dataset with the data stored in in-memory format
+        """
+        computed = self.interface.compute(self)
+
+    def persist(self):
+        """
+        Persists the results of a lazy data interface to memory to
+        speed up data manipulation and visualization. If the
+        particular data backend already holds the data in memory
+        this is a no-op. Unlike the compute method this maintains
+        the same data type.
+
+        Returns:
+            Dataset with the data persisted to memory
+        """
+        persisted = self.interface.persist(self)
+        if persisted.interface is self.interface:
+            return persisted
+        self._cached = persisted
+        return self
 
     def closest(self, coords=[], **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
