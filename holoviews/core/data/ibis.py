@@ -111,7 +111,10 @@ class IbisInterface(Interface):
     def histogram(cls, expr, bins, density=True, weights=None):
         bins = [int(v) if bins.dtype.kind in 'iu' else float(v) for v in bins]
         binned = expr.bucket(bins).name('bucket')
-        hist = binned.value_counts().sort_by('bucket').execute()['count'].values
+        hist = numpy.zeros(len(bins)-1)
+        hist_bins = binned.value_counts().sort_by('bucket').execute()
+        for b, v in zip(hist_bins['bucket'], hist_bins['count']):
+            hist[b] = v
         if weights is not None:
             raise NotImplementedError("Weighted histograms currently "
                                       "not implemented for IbisInterface.")
