@@ -7,9 +7,6 @@ on:
   pull_request:
     branches:
     - '*'
-  push:
-    branches:
-    - '*'
 
 jobs:
   test_suite:
