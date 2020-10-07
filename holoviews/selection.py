@@ -492,7 +492,7 @@ class NoOpSelectionDisplay(SelectionDisplay):
     elements that don't support displaying selections.
     """
 
-    def build_selection(self, selection_streams, hvobj, operations, region_stream=None):
+    def build_selection(self, selection_streams, hvobj, operations, region_stream=None, cache=None):
         return hvobj
 
 

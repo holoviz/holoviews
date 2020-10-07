@@ -792,7 +792,7 @@ class DimensionedPlot(Plot):
                         values = el.nodes.dimension_values(el_dim, expanded=False)
                     if (isinstance(values, np.ndarray) and values.dtype.kind == 'O' and
                         all(isinstance(v, (np.ndarray)) for v in values)):
-                        values = np.concatenate(values)
+                        values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)
                     group_ranges[dim_name]['factors'].append(factors)
 
