@@ -281,16 +281,15 @@ class IbisInterface(Interface):
         indexed = cls.indexed(dataset, selection)
         data = dataset.data
 
-        if selection_mask is not None:
-            if isinstance(selection_mask, numpy.ndarray):
-                data = cls._index_ibis_table(data)
-                if selection_mask.dtype == numpy.dtype("bool"):
-                    selection_mask = numpy.where(selection_mask)[0]
-                data = data.filter(
-                    data["hv_row_id__"].isin(list(map(int, selection_mask)))
-                ).drop(["hv_row_id__"])
-            else:
-                data = data.filter(selection_mask)
+        if isinstance(selection_mask, numpy.ndarray):
+            data = cls._index_ibis_table(data)
+            if selection_mask.dtype == numpy.dtype("bool"):
+                selection_mask = numpy.where(selection_mask)[0]
+            data = data.filter(
+                data["hv_row_id__"].isin(list(map(int, selection_mask)))
+            ).drop(["hv_row_id__"])
+        elif selection_mask is not None and not (isinstance(selection_mask, list) and not selection_mask):
+            data = data.filter(selection_mask)
 
         if indexed and data.count().execute() == 1 and len(dataset.vdims) == 1:
             return data[dataset.vdims[0].name].execute().iloc[0]
@@ -320,7 +319,8 @@ class IbisInterface(Interface):
                     condition = (
                         predicate if condition is None else condition | predicate
                     )
-                predicates.append(condition)
+                if condition is not None:
+                    predicates.append(condition)
             elif callable(object):
                 predicates.append(object(column))
             elif isinstance(object, ibis.Expr):
