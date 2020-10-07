@@ -126,7 +126,6 @@ def validate(style, value, scalar=False):
        The style value to validate
     scalar: bool
 
-
     Returns
     -------
     valid: boolean or None

@@ -90,10 +90,16 @@ class HVLinePlot(ShapePlot):
         if ((isinstance(element, HLine) and self.invert_axes) or
             (isinstance(element, VLine) and not self.invert_axes)):
             x = element.data
-            return [dict(x0=x, x1=x, y0=0, y1=1, xref='x', yref="paper")]
+            visible = x is not None
+            return [dict(
+                x0=x, x1=x, y0=0, y1=1, xref='x', yref="paper", visible=visible
+            )]
         else:
             y = element.data
-            return [dict(x0=0.0, x1=1.0, y0=y, y1=y, xref="paper", yref='y')]
+            visible = y is not None
+            return [dict(
+                x0=0.0, x1=1.0, y0=y, y1=y, xref="paper", yref='y', visible=visible
+            )]
 
 
 class HVSpanPlot(ShapePlot):
@@ -108,7 +114,13 @@ class HVSpanPlot(ShapePlot):
         if ((isinstance(element, HSpan) and self.invert_axes) or
             (isinstance(element, VSpan) and not self.invert_axes)):
             x0, x1 = element.data
-            return [dict(x0=x0, x1=x1, y0=0, y1=1, xref='x', yref="paper")]
+            visible = not (x0 is None and x1 is None)
+            return [dict(
+                x0=x0, x1=x1, y0=0, y1=1, xref='x', yref="paper", visible=visible
+            )]
         else:
             y0, y1 = element.data
-            return [dict(x0=0.0, x1=1.0, y0=y0, y1=y1, xref="paper", yref='y')]
+            visible = not (y0 is None and y1 is None)
+            return [dict(
+                x0=0.0, x1=1.0, y0=y0, y1=y1, xref="paper", yref='y', visible=visible
+            )]

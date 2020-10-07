@@ -1200,8 +1200,14 @@ class CDSCallback(Callback):
                 new_values = []
                 for vals in values:
                     if isinstance(vals, dict):
+                        
+                        shape = vals.pop('shape', None)
+                        dtype = vals.pop('dtype', None)
+                        vals.pop('dimension', None)
                         vals = sorted([(int(k), v) for k, v in vals.items()])
                         vals = [v for k, v in vals]
+                        if dtype is not None:
+                            vals = np.array(vals, dtype=dtype).reshape(shape)
                     new_values.append(vals)
                 values = new_values
             elif any(isinstance(v, (int, float)) for v in values):

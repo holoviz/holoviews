@@ -1027,6 +1027,7 @@ class TestHistoryStream(ComparisonTestCase):
         # clearing history should trigger callback
         del callback_input[:]
         history.clear_history()
+        history.event()
         self.assertEqual(
             callback_input[0],
             {"values": []}

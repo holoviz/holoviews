@@ -163,7 +163,7 @@ class cuDFInterface(PandasInterface):
         group_kwargs['dataset'] = dataset.dataset
 
         # Find all the keys along supplied dimensions
-        keys = product(*(dataset.data[dimensions[0]].unique() for d in dimensions))
+        keys = product(*(dataset.data[dimensions[0]].unique().values_host for d in dimensions))
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []

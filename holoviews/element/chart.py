@@ -143,7 +143,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Chart):
+class Bars(Selection1DExpr, Chart):
     """
     Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
