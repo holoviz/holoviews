@@ -35,7 +35,9 @@ hv.extension("plotly")
 
 # Named tuples definitions
 StreamCallback = namedtuple("StreamCallback", ["input_ids", "fn", "output_id"])
-DashComponents = namedtuple("DashComponents", ["graphs", "kdims", "store", "resets"])
+DashComponents = namedtuple(
+    "DashComponents", ["graphs", "kdims", "store", "resets", "children"]
+)
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
 
 
@@ -268,6 +270,8 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
             - kdims: Dict from kdim names to Dash Components that can be used to
                 set the corresponding kdim value.
             - store: dcc.Store the must be included in the app layout
+            - children: Single list of all components above. The order is graphs,
+                kdims, resets, and then the store.
     """
     # Number of figures
     num_figs = len(hvobjs)
@@ -542,7 +546,13 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         graphs=graph_components,
         kdims=kdim_components,
         resets=reset_components,
-        store=store
+        store=store,
+        children=(
+                graph_components +
+                list(kdim_components.values()) +
+                reset_components +
+                [store]
+        )
     )
 
     return components
