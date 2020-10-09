@@ -395,11 +395,11 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         slider_label_id = kdim_name + "-label-" + slider_uuid
         kdim_uuids.append(slider_uuid)
 
-        html_lable = html.Label(id=slider_label_id, children=kdim_label)
+        html_label = html.Label(id=slider_label_id, children=kdim_label)
         if isinstance(kdim_range, list):
             # list of slider values
             slider = html.Div(children=[
-                html_lable,
+                html_label,
                 dcc.Slider(
                     id=slider_id,
                     min=kdim_range[0],
@@ -413,7 +413,7 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         else:
             # Range of slider values
             slider = html.Div(children=[
-                html_lable,
+                html_label,
                 dcc.Slider(
                     id=slider_id,
                     min=kdim_range[0],
@@ -530,10 +530,10 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
     for i, kdim_name in enumerate(all_kdims):
         kdim_label = all_kdims[kdim_name][0]
         kdim_slider_id = kdim_name + "-" + kdim_uuids[i]
-        kdim_lable_id = kdim_name + "-label-" + kdim_uuids[i]
+        kdim_label_id = kdim_name + "-label-" + kdim_uuids[i]
 
         @app.callback(
-            Output(component_id=kdim_lable_id, component_property="children"),
+            Output(component_id=kdim_label_id, component_property="children"),
             [Input(component_id=kdim_slider_id, component_property="value")]
         )
         def update_kdim_label(value, kdim_label=kdim_label):
