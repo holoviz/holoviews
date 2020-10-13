@@ -1050,7 +1050,11 @@ class SelectionExprSequence(Derived):
     ):
         self.mode = mode
         self.include_region = include_region
-        self.history_stream = History(SelectionExpr(source, **params))
+        sel_expr = SelectionExpr(
+            source, index_cols=params.pop('index_cols'),
+            **params
+        )
+        self.history_stream = History(sel_expr)
         input_streams = [self.history_stream]
 
         super(SelectionExprSequence, self).__init__(

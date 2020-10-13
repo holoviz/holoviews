@@ -20,7 +20,7 @@ class SelectionIndexExpr(object):
     def _empty_region(self):
         return None
 
-    def _get_selection_expr_for_stream_value(self, **kwargs):
+    def _get_index_selection(self, **kwargs):
         index = kwargs.get('index')
         index_cols = kwargs.get('index_cols')
         if index is None or index_cols is None:
@@ -34,6 +34,9 @@ class SelectionIndexExpr(object):
             contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
             expr = dim(contains, np.reshape, get_shape)
         return expr, None, None
+
+    def _get_selection_expr_for_stream_value(self, **kwargs):
+        return self._get_index_selection(**kwargs)
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
@@ -110,7 +113,7 @@ def spatial_bounds_select(xvals, yvals, bounds):
                      for xs, ys in zip(xvals, yvals)])
 
 
-class Selection2DExpr(object):
+class Selection2DExpr(SelectionIndexExpr):
     """
     Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
@@ -118,7 +121,7 @@ class Selection2DExpr(object):
 
     _selection_dims = 2
 
-    _selection_streams = (SelectionXY, Lasso)
+    _selection_streams = (SelectionXY, Lasso, Selection1D)
 
     def _empty_region(self):
         from .geom import Rectangles
@@ -208,12 +211,14 @@ class Selection2DExpr(object):
         from .path import Path
 
         if (kwargs.get('bounds') is None and kwargs.get('x_selection') is None
-            and kwargs.get('geometry') is None):
+            and kwargs.get('geometry') is None and kwargs.get('index') is None):
             return None, None, Rectangles([]) * Path([])
 
         dims = self._get_selection_dims()
-
-        if 'bounds' in kwargs:
+        if 'index' in kwargs and kwargs.get('index_cols') is not None:
+            expr, _, _ = self._get_index_selection(**kwargs)
+            return expr, None, self._empty_region()
+        elif 'bounds' in kwargs:
             expr, bbox, region = self._get_bounds_selection(*dims, **kwargs)
             return expr, bbox, None if region is None else region * Path([])
         elif 'geometry' in kwargs:
