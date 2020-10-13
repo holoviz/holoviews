@@ -1200,7 +1200,6 @@ class CDSCallback(Callback):
                 new_values = []
                 for vals in values:
                     if isinstance(vals, dict):
-                        
                         shape = vals.pop('shape', None)
                         dtype = vals.pop('dtype', None)
                         vals.pop('dimension', None)
@@ -1334,21 +1333,30 @@ class PolyDrawCallback(GlyphDrawCallback):
         self._update_cds_vdims()
         super(PolyDrawCallback, self).initialize(plot_id)
 
-    def _update_cds_vdims(self):
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super(PolyDrawCallback, self)._process_msg(msg)
+
+    def _update_cds_vdims(self, data=None):
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
         element = self.plot.current_frame
+        stream = self.streams[0]
         cds = self.plot.handles['cds']
         interface = element.interface
         scalar_kwargs = {'per_geom': True} if interface.multi else {}
+        data = cds.data if data is None else data
         for d in element.vdims:
             scalar = element.interface.isunique(element, d, **scalar_kwargs)
             dim = dimension_sanitizer(d.name)
-            if dim not in cds.data:
+            if dim not in data:
                 if scalar:
-                    cds.data[dim] = element.dimension_values(d, not scalar)
+                    values = element.dimension_values(d, not scalar)
                 else:
-                    cds.data[dim] = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
+                    values = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])] 
+                if len(values) != len(data['xs']):
+                    values = np.concatenate([values, [stream.empty_value]])
+                data[dim] = values
 
 
 class FreehandDrawCallback(PolyDrawCallback):
