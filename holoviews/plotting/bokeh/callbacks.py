@@ -1244,6 +1244,22 @@ class GlyphDrawCallback(CDSCallback):
                             'length_var': length_var})
         cds.js_on_change('data', cb)
 
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
+        element = self.plot.current_frame
+        stream = self.streams[0]
+        for d in element.vdims:
+            dim = dimension_sanitizer(d.name)
+            if dim in data:
+                continue
+            values = element.dimension_values(d)
+            if len(values) != len(list(data.values())[0]):
+                values = np.concatenate([values, [stream.empty_value]])
+            data[dim] = values
+
 
 class PointDrawCallback(GlyphDrawCallback):
 
@@ -1269,22 +1285,6 @@ class PointDrawCallback(GlyphDrawCallback):
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
         super(PointDrawCallback, self).initialize(plot_id)
-
-    def _update_cds_vdims(self, data):
-        """
-        Add any value dimensions not already in the data ensuring the
-        element can be reconstituted in entirety.
-        """
-        element = self.plot.current_frame
-        stream = self.streams[0]
-        for d in element.vdims:
-            dim = dimension_sanitizer(d.name)
-            if dim in data:
-                continue
-            values = element.dimension_values(d)
-            if len(values) != len(list(data.values())[0]):
-                values = np.concatenate([values, [stream.empty_value]])
-            data[dim] = values
 
     def _process_msg(self, msg):
         self._update_cds_vdims(msg['data'])
@@ -1330,7 +1330,6 @@ class CurveEditCallback(GlyphDrawCallback):
             dim = dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
-
 
 
 class PolyDrawCallback(GlyphDrawCallback):
@@ -1391,9 +1390,11 @@ class FreehandDrawCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
         plot = self.plot
+        cds = plot.handles['cds']
+        glyph = plot.handles['glyph']
         stream = self.streams[0]
         if stream.styles:
-            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
+            self._create_style_callback(cds, glyph, 'xs')
         kwargs = {}
         if stream.tooltip:
             kwargs['custom_tooltip'] = stream.tooltip
@@ -1404,7 +1405,7 @@ class FreehandDrawCallback(PolyDrawCallback):
             **kwargs
         )
         plot.state.tools.append(poly_tool)
-        self._update_cds_vdims()
+        self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
 
 
@@ -1459,6 +1460,7 @@ class BoxEditCallback(GlyphDrawCallback):
             self._create_style_callback(cds, renderer.glyph, 'x')
         box_tool = BoxEditTool(renderers=[renderer], **kwargs)
         self.plot.state.tools.append(box_tool)
+        self._update_cds_vdims(cds.data)
         super(CDSCallback, self).initialize()
 
     def _process_msg(self, msg):
@@ -1478,6 +1480,7 @@ class BoxEditCallback(GlyphDrawCallback):
                 continue
             values[col] = data[col]
         msg = {'data': dict(values, x0=x0s, x1=x1s, y0=y0s, y1=y1s)}
+        self._update_cds_vdims(msg['data'])
         return self._transform(msg)
 
 
@@ -1485,6 +1488,7 @@ class PolyEditCallback(PolyDrawCallback):
 
     def initialize(self, plot_id=None):
         plot = self.plot
+        cds = plot.handles['cds']
         vertex_tool = None
         if all(s.shared for s in self.streams):
             tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
@@ -1500,8 +1504,9 @@ class PolyEditCallback(PolyDrawCallback):
             vertex_tool = PolyEditTool(vertex_renderer=r1, **kwargs)
             plot.state.tools.append(vertex_tool)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
-        self._update_cds_vdims()
+        self._update_cds_vdims(cds.data)
         CDSCallback.initialize(self, plot_id)
+
 
 
 callbacks = Stream._callbacks['bokeh']
