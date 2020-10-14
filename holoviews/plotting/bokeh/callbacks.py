@@ -1250,29 +1250,45 @@ class PointDrawCallback(GlyphDrawCallback):
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
-        renderers = [self.plot.handles['glyph_renderer']]
+        cds = plot.handles['source']
+        glyph = plot.handles['glyph']
+        renderers = [plot.handles['glyph_renderer']]
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
             kwargs['custom_tooltip'] = stream.tooltip
         if stream.styles:
-            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'x')
+            self._create_style_callback(cds, glyph, 'x')
         point_tool = PointDrawTool(
             add=all(s.add for s in self.streams),
             drag=all(s.drag for s in self.streams),
             empty_value=stream.empty_value, renderers=renderers, **kwargs)
         self.plot.state.tools.append(point_tool)
-        source = self.plot.handles['source']
-
+        self._update_cds_vdims(cds.data)
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
+        super(PointDrawCallback, self).initialize(plot_id)
+
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
         element = self.plot.current_frame
+        stream = self.streams[0]
         for d in element.vdims:
             dim = dimension_sanitizer(d.name)
-            if dim not in source.data:
-                source.data[dim] = element.dimension_values(d)
-        super(PointDrawCallback, self).initialize(plot_id)
+            if dim in data:
+                continue
+            values = element.dimension_values(d)
+            if len(values) != len(list(data.values())[0]):
+                values = np.concatenate([values, [stream.empty_value]])
+            data[dim] = values
+
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super(PointDrawCallback, self)._process_msg(msg)
 
 
 class CurveEditCallback(GlyphDrawCallback):
@@ -1297,16 +1313,24 @@ class CurveEditCallback(GlyphDrawCallback):
         cds.selected.js_on_change('indices', show_vertices)
 
         self.plot.state.tools.append(point_tool)
-        source = self.plot.handles['source']
+        self._update_cds_vdims(cds.data)
+        super(CurveEditCallback, self).initialize(plot_id)
 
-        # Add any value dimensions not already in the CDS data
-        # ensuring the element can be reconstituted in entirety
+    def _process_msg(self, msg):
+        self._update_cds_vdims(msg['data'])
+        return super(CurveEditCallback, self)._process_msg(msg)
+
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
         element = self.plot.current_frame
         for d in element.vdims:
             dim = dimension_sanitizer(d.name)
-            if dim not in source.data:
-                source.data[dim] = element.dimension_values(d)
-        super(CurveEditCallback, self).initialize(plot_id)
+            if dim not in data:
+                data[dim] = element.dimension_values(d)
+
 
 
 class PolyDrawCallback(GlyphDrawCallback):
@@ -1314,6 +1338,9 @@ class PolyDrawCallback(GlyphDrawCallback):
     def initialize(self, plot_id=None):
         plot = self.plot
         stream = self.streams[0]
+        cds = self.plot.handles['cds']
+        glyph = self.plot.handles['glyph']
+        renderers = [plot.handles['glyph_renderer']]
         kwargs = {}
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
@@ -1322,30 +1349,31 @@ class PolyDrawCallback(GlyphDrawCallback):
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
         if stream.styles:
-            self._create_style_callback(plot.handles['cds'], plot.handles['glyph'], 'xs')
+            self._create_style_callback(cds, glyph, 'xs')
         if stream.tooltip:
             kwargs['custom_tooltip'] = stream.tooltip
-        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
-                                 empty_value=stream.empty_value,
-                                 renderers=[plot.handles['glyph_renderer']],
-                                 **kwargs)
+        poly_tool = PolyDrawTool(
+            drag=all(s.drag for s in self.streams),
+            empty_value=stream.empty_value, renderers=renderers,
+            **kwargs
+        )
         plot.state.tools.append(poly_tool)
-        self._update_cds_vdims()
+        self._update_cds_vdims(cds.data)
         super(PolyDrawCallback, self).initialize(plot_id)
 
     def _process_msg(self, msg):
         self._update_cds_vdims(msg['data'])
         return super(PolyDrawCallback, self)._process_msg(msg)
 
-    def _update_cds_vdims(self, data=None):
-        # Add any value dimensions not already in the CDS data
-        # ensuring the element can be reconstituted in entirety
+    def _update_cds_vdims(self, data):
+        """
+        Add any value dimensions not already in the data ensuring the
+        element can be reconstituted in entirety.
+        """
         element = self.plot.current_frame
         stream = self.streams[0]
-        cds = self.plot.handles['cds']
         interface = element.interface
         scalar_kwargs = {'per_geom': True} if interface.multi else {}
-        data = cds.data if data is None else data
         for d in element.vdims:
             scalar = element.interface.isunique(element, d, **scalar_kwargs)
             dim = dimension_sanitizer(d.name)
@@ -1353,7 +1381,7 @@ class PolyDrawCallback(GlyphDrawCallback):
                 if scalar:
                     values = element.dimension_values(d, not scalar)
                 else:
-                    values = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])] 
+                    values = [arr[:, 0] for arr in element.split(datatype='array', dimensions=[dim])]
                 if len(values) != len(data['xs']):
                     values = np.concatenate([values, [stream.empty_value]])
                 data[dim] = values
