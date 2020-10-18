@@ -1673,6 +1673,8 @@ class GenericOverlayPlot(GenericElementPlot):
                         _, el = temp_items.pop(idx)
                         continue
             found = True
+        if idx is not None:
+            idx = items.index(temp_items.pop(idx))
         return idx, spec, exact
 
     def _create_dynamic_subplots(self, key, items, ranges, **init_kwargs):
