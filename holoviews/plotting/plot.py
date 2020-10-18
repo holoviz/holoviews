@@ -1656,11 +1656,11 @@ class GenericOverlayPlot(GenericElementPlot):
         return plottype(obj, **plotopts)
 
 
-    def _match_subplot(self, k, subplot, items, element):
+    def _match_subplot(self, key, subplot, items, element):
         found = False
         temp_items = list(items)
         while not found:
-            idx, spec, exact = dynamic_update(self, subplot, k, element, temp_items)
+            idx, spec, exact = dynamic_update(self, subplot, key, element, temp_items)
             if idx is not None:
                 if not exact:
                     exact_matches = [
