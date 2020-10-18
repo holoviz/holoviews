@@ -36,11 +36,13 @@ from ..core.util import stream_parameters, isfinite
 from ..element import Table, Graph, Contours
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
-from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
-                   attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders, get_nested_plot_frame,
-                   split_dmap_overlay, get_axis_padding, get_range,
-                   get_minimum_span, get_plot_frame, scale_fontsize)
+from .util import (
+    get_dynamic_mode, initialize_unbounded, dim_axis_label,
+    attach_streams, traverse_setter, get_nested_streams,
+    compute_overlayable_zorders, get_nested_plot_frame,
+    split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
+    get_plot_frame, scale_fontsize, dynamic_update
+)
 
 
 class Plot(param.Parameterized):
@@ -1653,6 +1655,27 @@ class GenericOverlayPlot(GenericElementPlot):
                         zorder=zorder, root=self.root, **passed_handles)
         return plottype(obj, **plotopts)
 
+
+    def _match_subplot(self, key, subplot, items, element):
+        found = False
+        temp_items = list(items)
+        while not found:
+            idx, spec, exact = dynamic_update(self, subplot, key, element, temp_items)
+            if idx is not None:
+                if not exact:
+                    exact_matches = [
+                        dynamic_update(self, subplot, k, element, temp_items)
+                        for k in self.subplots
+                    ]
+                    exact_matches = [m for m in exact_matches if m[-1]]
+                    if exact_matches:
+                        idx = exact_matches[0][0]
+                        _, el = temp_items.pop(idx)
+                        continue
+            found = True
+        if idx is not None:
+            idx = items.index(temp_items.pop(idx))
+        return idx, spec, exact
 
     def _create_dynamic_subplots(self, key, items, ranges, **init_kwargs):
         """
