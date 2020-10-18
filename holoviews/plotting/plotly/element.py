@@ -651,7 +651,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             # If in Dynamic mode propagate elements to subplots
             if not (isinstance(self.hmap, DynamicMap) and element is not None):
                 continue
-            idx, _, _ = dynamic_update(self, subplot, k, element, items)
+            idx, _, _ = self._match_subplot(k, subplot, items, element)
             if idx is not None:
                 items.pop(idx)
         if isinstance(self.hmap, DynamicMap) and items:
