@@ -20,7 +20,7 @@ from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
 from .util import mpl_version, validate, wrap_formatter
 
@@ -1131,7 +1131,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = None if empty else element.get(k, None)
             if isinstance(self.hmap, DynamicMap) and not empty:
-                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                idx, spec, exact = self._match_subplot(k, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                     if not exact:
