@@ -406,7 +406,7 @@ class ViolinPlot(BoxWhiskerPlot):
             if len(split_cats) > 2:
                 raise ValueError(
                     'The number of categories for split violin plots cannot be '
-                    'greater than 2! Found {0} categories: {1}'.format(
+                    'greater than 2. Found {0} categories: {1}'.format(
                         len(split_cats), ', '.join(split_cats)))
             el = el.add_dimension(repr(split_dim), len(el.kdims), all_cats)
             kdes = univariate_kde(el, dimension=vdim.name, groupby=repr(split_dim), **kwargs)
@@ -545,12 +545,16 @@ class ViolinPlot(BoxWhiskerPlot):
 
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
         mapping, data = {}, {}
-        kde_data, line_data, seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(5))
+        kde_data, line_data, seg_data, bar_data, scatter_data = (
+            defaultdict(list) for i in range(5)
+        )
         for i, (key, g) in enumerate(groups.items()):
             key = decode_bytes(key)
             if element.kdims:
                 key = tuple(d.pprint_value(k) for d, k in zip(element.kdims, key))
-            kde, line, segs, bars, scatter = self._kde_data(element, g, key, split_dim, split_cats, **kwargs)
+            kde, line, segs, bars, scatter = self._kde_data(
+                element, g, key, split_dim, split_cats, **kwargs
+            )
             for k, v in segs.items():
                 seg_data[k] += v
             for k, v in bars.items():
@@ -584,7 +588,7 @@ class ViolinPlot(BoxWhiskerPlot):
             mapping['scatter_1'] = scatter_map
 
         if split_dim:
-            factors = [str(v) for v in unique_iterator(split_dim.apply(element))]
+            factors = [str(v) for v in split_cats]
             cmapper = self._get_colormapper(
                 split_dim, element, ranges, dict(style), name='violin_color_mapper',
                 group='violin', factors=factors)
