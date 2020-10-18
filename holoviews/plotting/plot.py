@@ -1664,7 +1664,7 @@ class GenericOverlayPlot(GenericElementPlot):
             if idx is not None:
                 if not exact:
                     exact_matches = [
-                        dynamic_update(self, subplot, k, element, items)
+                        dynamic_update(self, subplot, k, element, temp_items)
                         for k in self.subplots
                     ]
                     exact_matches = [m for m in exact_matches if m[-1]]
