@@ -35,7 +35,7 @@ from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
 from ...streams import Stream, Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from ..util import process_cmap, color_intervals, dim_range_key
 from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
@@ -2365,7 +2365,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         # Determine which stream (if any) triggered the update
         triggering = [stream for stream in self.streams if stream._triggering]
-
         for k, subplot in self.subplots.items():
             el = None
 
@@ -2376,7 +2375,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                    idx, spec, exact = self._match_subplot(k, subplot, items, element)
                     if idx is not None:
                         _, el = items.pop(idx)
                         if not exact:

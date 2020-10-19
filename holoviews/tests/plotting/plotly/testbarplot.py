@@ -15,7 +15,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['type'], 'bar')
         self.assertEqual(state['layout']['xaxis']['range'], [None, None])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'x')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 3])
+        self.assertEqual(state['layout']['yaxis']['range'], [0, 3.2])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_plot_inverted(self):
@@ -24,7 +24,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['data'][0]['y'], ['0', '1', '2'])
         self.assertEqual(state['data'][0]['x'], [3, 2, 1])
         self.assertEqual(state['data'][0]['type'], 'bar')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 3])
+        self.assertEqual(state['layout']['xaxis']['range'], [0, 3.2])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
         self.assertEqual(state['layout']['yaxis']['range'], [None, None])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'x')
@@ -39,7 +39,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['barmode'], 'group')
         self.assertEqual(state['layout']['xaxis']['range'], [None, None])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'A, B')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 4])
+        self.assertEqual(state['layout']['yaxis']['range'], [0, 4.3])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_grouped_inverted(self):
@@ -52,7 +52,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['barmode'], 'group')
         self.assertEqual(state['layout']['yaxis']['range'], [None, None])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'A, B')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 4])
+        self.assertEqual(state['layout']['xaxis']['range'], [0, 4.3])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
 
     def test_bars_stacked(self):
@@ -68,7 +68,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['barmode'], 'stack')
         self.assertEqual(state['layout']['xaxis']['range'], [None, None])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'A')
-        self.assertEqual(state['layout']['yaxis']['range'], [0, 7])
+        self.assertEqual(state['layout']['yaxis']['range'], [0, 7.6])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'y')
 
     def test_bars_stacked_inverted(self):
@@ -84,7 +84,7 @@ class TestBarsPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['barmode'], 'stack')
         self.assertEqual(state['layout']['yaxis']['range'], [None, None])
         self.assertEqual(state['layout']['yaxis']['title']['text'], 'A')
-        self.assertEqual(state['layout']['xaxis']['range'], [0, 7.0])
+        self.assertEqual(state['layout']['xaxis']['range'], [0, 7.6])
         self.assertEqual(state['layout']['xaxis']['title']['text'], 'y')
 
     def test_visible(self):
