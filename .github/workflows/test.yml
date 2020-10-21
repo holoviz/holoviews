@@ -29,7 +29,6 @@ jobs:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -88,6 +87,8 @@ jobs:
           conda activate test-environment
           doit test_examples
       - name: run coveralls
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -96,4 +97,3 @@ jobs:
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
