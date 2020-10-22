@@ -87,7 +87,7 @@ jobs:
           conda activate test-environment
           doit test_examples
       - name: run coveralls
-        with:
+        env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
         run: |
           eval "$(conda shell.bash hook)"
