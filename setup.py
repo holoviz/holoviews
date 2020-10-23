@@ -72,7 +72,7 @@ extras_require['tests'] = [
     'nbsmoke >=0.2.0',
     'pytest-cov ==2.5.1',
     'pytest <6.0',
-    'nbconvert ==5.3.1'
+    'nbconvert <6'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
@@ -101,7 +101,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'awscli',
     'pscript',
     'graphviz',
-    'bokeh <2.2',
+    'bokeh >2.2',
     'nbconvert <6.0',
     'mpl_sample_data'
 ]

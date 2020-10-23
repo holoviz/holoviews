@@ -164,8 +164,8 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
-        - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit pip_on_conda
+        - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
