@@ -69,6 +69,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3; fi;
         - doit env_capture
         - hash -r
       script:
