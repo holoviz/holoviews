@@ -17,23 +17,30 @@ class SelectionIndexExpr(object):
 
     _selection_streams = (Selection1D,)
 
+    def __init__(self, *args, **kwargs):
+        super(SelectionIndexExpr, self).__init__(*args, **kwargs)
+        self._index_skip = False
+
     def _empty_region(self):
         return None
+
+    def _get_index_selection(self, index, index_cols):
+        self._index_skip = True
+        get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
+        index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
+        vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
+            self.iloc[index], expanded=True, flat=True
+        )
+        contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
+        expr = dim(contains, np.reshape, get_shape)
+        return expr, None, None
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
         index = kwargs.get('index')
         index_cols = kwargs.get('index_cols')
         if index is None or index_cols is None:
-            expr = None
-        else:
-            get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
-            index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
-            vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                self.iloc[index], expanded=True, flat=True
-            )
-            contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
-            expr = dim(contains, np.reshape, get_shape)
-        return expr, None, None
+            return None, None, None
+        return self._get_index_selection(index, index_cols)
 
     @staticmethod
     def _merge_regions(region1, region2, operation):
@@ -110,7 +117,7 @@ def spatial_bounds_select(xvals, yvals, bounds):
                      for xs, ys in zip(xvals, yvals)])
 
 
-class Selection2DExpr(object):
+class Selection2DExpr(SelectionIndexExpr):
     """
     Mixin class for Cartesian 2D elements to add basic support for
     SelectionExpr streams.
@@ -118,7 +125,7 @@ class Selection2DExpr(object):
 
     _selection_dims = 2
 
-    _selection_streams = (SelectionXY, Lasso)
+    _selection_streams = (SelectionXY, Lasso, Selection1D)
 
     def _empty_region(self):
         from .geom import Rectangles
@@ -203,17 +210,29 @@ class Selection2DExpr(object):
             xdim, ydim = ydim, xdim
         return (xdim, ydim)
 
+    def _skip(self, **kwargs):
+        skip = kwargs.get('index_cols') and self._index_skip
+        if skip:
+            self._index_skip = False
+        return skip
+
     def _get_selection_expr_for_stream_value(self, **kwargs):
         from .geom import Rectangles
         from .path import Path
 
         if (kwargs.get('bounds') is None and kwargs.get('x_selection') is None
-            and kwargs.get('geometry') is None):
+            and kwargs.get('geometry') is None and not kwargs.get('index')):
             return None, None, Rectangles([]) * Path([])
 
-        dims = self._get_selection_dims()
+        index_cols = kwargs.get('index_cols')
 
-        if 'bounds' in kwargs:
+        dims = self._get_selection_dims()
+        if kwargs.get('index') is not None and index_cols is not None:
+            expr, _, _ = self._get_index_selection(kwargs['index'], index_cols)
+            return expr, None, self._empty_region()
+        elif self._skip(**kwargs):
+            return None
+        elif 'bounds' in kwargs:
             expr, bbox, region = self._get_bounds_selection(*dims, **kwargs)
             return expr, bbox, None if region is None else region * Path([])
         elif 'geometry' in kwargs:
@@ -281,6 +300,16 @@ class SelectionGeomExpr(Selection2DExpr):
 
 
 class SelectionPolyExpr(Selection2DExpr):
+
+    def _skip(self, **kwargs):
+        """
+        Do not skip geometry selections until polygons support returning
+        indexes on lasso based selections.
+        """
+        skip = kwargs.get('index_cols') and self._index_skip and 'geometry' not in kwargs
+        if skip:
+            self._index_skip = False
+        return skip
 
     def _get_bounds_selection(self, xdim, ydim, **kwargs):
         from .geom import Rectangles

@@ -959,9 +959,12 @@ class SelectionExpr(Derived):
         else:
             element_type = source
         if element_type:
-            input_streams = [
-                stream(source=source) for stream in element_type._selection_streams
-            ]
+            input_streams = []
+            for stream in element_type._selection_streams:
+                kwargs = dict(source=source)
+                if isinstance(stream, Selection1D):
+                    kwargs['index'] = None
+                input_streams.append(stream(**kwargs))
             return input_streams
         else:
             return []
@@ -973,6 +976,14 @@ class SelectionExpr(Derived):
             "index_cols": self._index_cols,
             "include_region": self.include_region,
         }
+
+    def transform(self):
+        # Skip index streams if no index_cols are provided
+        for stream in self.input_streams:
+            if (isinstance(stream, Selection1D) and stream._triggering
+                and not self._index_cols):
+                return
+        return super(SelectionExpr, self).transform()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
@@ -996,8 +1007,12 @@ class SelectionExpr(Derived):
         region_element = None
         for stream_value in stream_values:
             params = dict(stream_value, index_cols=constants["index_cols"])
-            selection_expr, bbox, region_element = \
-                element._get_selection_expr_for_stream_value(**params)
+            selection = element._get_selection_expr_for_stream_value(**params)
+            if selection is None:
+                return
+
+            selection_expr, bbox, region_element = selection
+                
             if selection_expr is not None:
                 break
 
@@ -1050,7 +1065,11 @@ class SelectionExprSequence(Derived):
     ):
         self.mode = mode
         self.include_region = include_region
-        self.history_stream = History(SelectionExpr(source, **params))
+        sel_expr = SelectionExpr(
+            source, index_cols=params.pop('index_cols'),
+            **params
+        )
+        self.history_stream = History(sel_expr)
         input_streams = [self.history_stream]
 
         super(SelectionExprSequence, self).__init__(
@@ -1412,7 +1431,7 @@ class Selection1D(LinkedStream):
     A stream representing a 1D selection of objects by their index.
     """
 
-    index = param.List(default=[], constant=True, doc="""
+    index = param.List(default=[], allow_None=True, constant=True, doc="""
         Indices into a 1D datastructure.""")
 
 

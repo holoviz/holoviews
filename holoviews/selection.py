@@ -108,7 +108,8 @@ class _base_link_selections(param.ParameterizedFunction):
         """
         # Create stream that produces element that displays region of selection
         selection_expr_seq = SelectionExprSequence(
-            hvobj, mode=self.selection_mode, include_region=self.show_regions
+            hvobj, mode=self.selection_mode, include_region=self.show_regions,
+            index_cols=self.index_cols
         )
         self._selection_expr_streams[hvobj] = selection_expr_seq
         self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
