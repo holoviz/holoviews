@@ -71,7 +71,8 @@ extras_require['tests'] = [
     'matplotlib >=2.2,<3.1',
     'nbsmoke >=0.2.0',
     'pytest-cov ==2.5.1',
-    'pytest <6.0'
+    'pytest <6.0',
+    'nbconvert ==5.3.1'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
