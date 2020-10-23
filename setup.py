@@ -72,7 +72,8 @@ extras_require['tests'] = [
     'nbsmoke >=0.2.0',
     'pytest-cov ==2.5.1',
     'pytest <6.0',
-    'nbconvert <6'
+    'nbconvert <6',
+    'twine'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
