@@ -486,7 +486,7 @@ class TestServerCallbacks(CallbackTestCase):
         stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
         curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
                            kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
-        plot = bokeh_server_renderer.get_plot(curve.opts(framewise=True
+        bokeh_server_renderer.get_plot(curve.opts(framewise=True
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
