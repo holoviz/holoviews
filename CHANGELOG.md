@@ -13,11 +13,11 @@ Bug fixes:
   ([#4646](https://github.com/holoviz/holoviews/pull/4646))
 - Fixed bug resetting ranges
   ([#4654](https://github.com/holoviz/holoviews/pull/4654))
-- Fix bug matching elements to subplots in DynamicMap (#4649)
+- Fix bug matching elements to subplots in `DynamicMap` (#4649)
   ([#4649](https://github.com/holoviz/holoviews/pull/4649))
-- Ensure consistent split Violin color assignment
+- Ensure consistent split `Violin` color assignment
   ([#4650](https://github.com/holoviz/holoviews/pull/4650))
-- Ensure PolyDrawCallback always has vdim data
+- Ensure `PolyDrawCallback` always has vdim data
   ([#4644](https://github.com/holoviz/holoviews/pull/4644))
 - Set default align in bokeh correctly
   ([#4637](https://github.com/holoviz/holoviews/pull/4637))
@@ -30,12 +30,12 @@ Enhancements:
   ([#4572](https://github.com/holoviz/holoviews/pull/4572))
 - Add ability to listen to dataset linked_selection
   ([#4547](https://github.com/holoviz/holoviews/pull/4547))
-- Added selected parameter to Bokeh PathPlot
+- Added `selected` parameter to Bokeh PathPlot
   ([#4641](https://github.com/holoviz/holoviews/pull/4641))
 
 Documentation:
 
-- Improved Bars reference example, demonstrating the dataframe constructor
+- Improved `Bars` reference example, demonstrating the dataframe constructor
   ([#4656](https://github.com/holoviz/holoviews/pull/4656))
 - Various documentation fixes
   ([#4628](https://github.com/holoviz/holoviews/pull/4628))
