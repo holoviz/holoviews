@@ -14,6 +14,50 @@ Release notes
 Version 1.13
 ~~~~~~~~~~~~
 
+Version 1.13.5
+**************
+
+This version contains numerous bug fixes and a number of enhancements.
+Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
+@jonmmease, @kcpevey and @philippjfr.
+
+Bug fixes:
+
+- Improvements to iteration over Series in CuDF data backend
+  (`#4624]<https://github.com/holoviz/holoviews/pull/4624`_)
+- Added .values_host calls needed for iteraction in CuDF backend
+  (`#4646]<https://github.com/holoviz/holoviews/pull/4646`_)
+- Fixed bug resetting ranges
+  (`#4654]<https://github.com/holoviz/holoviews/pull/4654`_)
+- Fix bug matching elements to subplots in `DynamicMap` (#4649)
+  (`#4649]<https://github.com/holoviz/holoviews/pull/4649`_)
+- Ensure consistent split `Violin` color assignment
+  (`#4650]<https://github.com/holoviz/holoviews/pull/4650`_)
+- Ensure `PolyDrawCallback` always has vdim data
+  (`#4644]<https://github.com/holoviz/holoviews/pull/4644`_)
+- Set default align in bokeh correctly
+  (`#4637]<https://github.com/holoviz/holoviews/pull/4637`_)
+- Fixed deserialization of polygon/multi_line CDS data in bokeh backend
+  (`#4631]<https://github.com/holoviz/holoviews/pull/4631`_)
+
+Enhancements:
+
+- Refactor of link selections streams
+  (`#4572]<https://github.com/holoviz/holoviews/pull/4572`_)
+- Add ability to listen to dataset linked_selection
+  (`#4547]<https://github.com/holoviz/holoviews/pull/4547`_)
+- Added `selected` parameter to Bokeh PathPlot
+  (`#4641]<https://github.com/holoviz/holoviews/pull/4641`_)
+
+Documentation:
+
+- Improved `Bars` reference example, demonstrating the dataframe constructor
+  (`#4656]<https://github.com/holoviz/holoviews/pull/4656`_)
+- Various documentation fixes
+  (`#4628]<https://github.com/holoviz/holoviews/pull/4628`_)
+
+  
+
 Version 1.13.4
 **************
 
