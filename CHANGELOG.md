@@ -5,7 +5,6 @@ This version contains numerous bug fixes and a number of enhancements.
 Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
 @jonmmease, @kcpevey and @philippjfr.
 
-
 Bug fixes:
 
 - Improvements to iteration over Series in CuDF data backend
