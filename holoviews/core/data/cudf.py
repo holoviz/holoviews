@@ -282,8 +282,8 @@ class cuDFInterface(PandasInterface):
             if not hasattr(reindexed, agg):
                 raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
             agg = getattr(reindexed, agg)()
-            data = dict(((col, [v]) for col, v in zip(agg.index, agg.to_array())))
-            df = util.pd.DataFrame(data, columns=list(agg.index))
+            data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
+            df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:
