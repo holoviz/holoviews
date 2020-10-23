@@ -56,8 +56,6 @@ Documentation:
 - Various documentation fixes
   (`#4628]<https://github.com/holoviz/holoviews/pull/4628`_)
 
-  
-
 Version 1.13.4
 **************
 
@@ -504,7 +502,7 @@ Bug fixes:
 * Ensure elements cannot be constructed with wrong number of columns
   (`#4040 <https://github.com/pyviz/holoviews/issues/#4040>`_)
 * Ensure streaming data works on bokeh server
-  (`#4041 <https://github.com/pyviz/holoviews/issues/4041>`_) 
+  (`#4041 <https://github.com/pyviz/holoviews/issues/4041>`_)
 
 Compatibility:
 
@@ -617,7 +615,7 @@ Bug fixes:
 - Ensure that bokeh backend handles Cycle of markers
   (`#3706 <https://github.com/pyviz/holoviews/issues/3706>`_)
 - Fix for using opts method on DynamicMap
-  (`#3691 <https://github.com/pyviz/holoviews/issues/3691>`_) 
+  (`#3691 <https://github.com/pyviz/holoviews/issues/3691>`_)
 - Ensure that bokeh backend handles DynamicMaps with variable length
   NdOverlay (`#3696 <https://github.com/pyviz/holoviews/issues/3696>`_)
 - Fix default width/height setting for HeatMap
