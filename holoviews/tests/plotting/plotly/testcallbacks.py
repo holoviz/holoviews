@@ -12,6 +12,10 @@ try:
 except:
     go = None
 
+from holoviews.streams import (
+    BoundsXY, BoundsX, BoundsY, RangeXY, RangeX, RangeY, Selection1D
+)
+
 try:
     from holoviews.plotting.plotly.callbacks import (
         RangeXYCallback, RangeXCallback, RangeYCallback,
@@ -32,7 +36,7 @@ def mock_plot(trace_uid=None):
     return plot
 
 
-def build_callback_set(callback_cls, trace_uids, num_streams=2):
+def build_callback_set(callback_cls, trace_uids, stream_type, num_streams=2):
     """
     Build a collection of plots, callbacks, and streams for a given callback class and
     a list of trace_uids
@@ -40,16 +44,26 @@ def build_callback_set(callback_cls, trace_uids, num_streams=2):
     plots = []
     streamss = []
     callbacks = []
+    eventss = []
     for trace_uid in trace_uids:
         plot = mock_plot(trace_uid)
-        streams = [Mock() for _ in range(num_streams)]
+        streams, event_list = [], []
+        for _ in range(num_streams):
+            events = []
+            stream = stream_type()
+            def cb(events=events, **kwargs):
+                events.append(kwargs)
+            stream.add_subscriber(cb)
+            streams.append(stream)
+            event_list.append(events)
         callback = callback_cls(plot, streams, None)
 
         plots.append(plot)
         streamss.append(streams)
         callbacks.append(callback)
+        eventss.append(event_list)
 
-    return plots, streamss, callbacks
+    return plots, streamss, callbacks, eventss
 
 
 class TestCallbacks(TestCase):
@@ -169,16 +183,19 @@ class TestCallbacks(TestCase):
         # Build callbacks
         range_classes = [RangeXYCallback, RangeXCallback, RangeYCallback]
 
-        xyplots, xystreamss, xycallbacks = build_callback_set(
-            RangeXYCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+            RangeXYCallback, ['first', 'second', 'third', 'forth', 'other'],
+            RangeXY, 2
         )
 
-        xplots, xstreamss, xcallbacks = build_callback_set(
-            RangeXCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+            RangeXCallback, ['first', 'second', 'third', 'forth', 'other'],
+            RangeX, 2
         )
 
-        yplots, ystreamss, ycallbacks = build_callback_set(
-            RangeYCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+            RangeYCallback, ['first', 'second', 'third', 'forth', 'other'],
+            RangeY, 2
         )
 
         # Sanity check the length of the streams lists
@@ -196,9 +213,10 @@ class TestCallbacks(TestCase):
                 xstreamss[0] + xstreamss[1],
                 ystreamss[0] + ystreamss[1],
         ):
-            xystream.event.assert_called_once_with(x_range=(1, 4), y_range=(-1, 5))
-            xstream.event.assert_called_once_with(x_range=(1, 4))
-            ystream.event.assert_called_once_with(y_range=(-1, 5))
+            assert xystream.x_range == (1, 4)
+            assert xystream.y_range == (-1, 5)
+            assert xstream.x_range == (1, 4)
+            assert ystream.y_range == (-1, 5)
 
         # And that no other streams were triggered
         for xystream, xstream, ystream in zip(
@@ -206,9 +224,10 @@ class TestCallbacks(TestCase):
                 xstreamss[2] + xstreamss[3],
                 ystreamss[2] + ystreamss[3],
         ):
-            xystream.event.assert_called_with(x_range=None, y_range=None)
-            xstream.event.assert_called_with(x_range=None)
-            ystream.event.assert_called_with(y_range=None)
+            assert xystream.x_range is None
+            assert xystream.y_range is None
+            assert xstream.x_range is None
+            assert ystream.y_range is None
 
         # Change viewport on second set of axes
         viewport2 = {'xaxis2.range': [2, 5], 'yaxis2.range': [0, 6]}
@@ -219,9 +238,10 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[2], xstreamss[2], ystreamss[2]
         ):
-            xystream.event.assert_called_with(x_range=(2, 5), y_range=(0, 6))
-            xstream.event.assert_called_with(x_range=(2, 5))
-            ystream.event.assert_called_with(y_range=(0, 6))
+            assert xystream.x_range == (2, 5)
+            assert xystream.y_range == (0, 6)
+            assert xstream.x_range == (2, 5)
+            assert ystream.y_range == (0, 6)
 
         # Change viewport on third set of axes
         viewport3 = {'xaxis3.range': [3, 6], 'yaxis3.range': [1, 7]}
@@ -232,17 +252,18 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[3], xstreamss[3], ystreamss[3]
         ):
-            xystream.event.assert_called_with(x_range=(3, 6), y_range=(1, 7))
-            xstream.event.assert_called_with(x_range=(3, 6))
-            ystream.event.assert_called_with(y_range=(1, 7))
+            assert xystream.x_range == (3, 6)
+            assert xystream.y_range == (1, 7)
+            assert xstream.x_range == (3, 6)
+            assert ystream.y_range == (1, 7)
 
         # Check that streams attached to a trace not in this plot are not triggered
-        for xystream, xstream, ystream in zip(
-                xystreamss[4], xstreamss[4], ystreamss[4],
+        for xyevent, xevent, yevent in zip(
+                xyevents[4], xevents[4], yevents[4]
         ):
-            xystream.event.assert_not_called()
-            xstream.event.assert_not_called()
-            ystream.event.assert_not_called()
+            assert len(xyevent) == 0
+            assert len(yevent) == 0
+            assert len(yevent) == 0
 
     def testBoundsXYCallbackEventData(self):
         selected_data1 = {'range': {'x': [1, 4], 'y': [-1, 5]}}
@@ -288,16 +309,19 @@ class TestCallbacks(TestCase):
         # Build callbacks
         bounds_classes = [BoundsXYCallback, BoundsXCallback, BoundsYCallback]
 
-        xyplots, xystreamss, xycallbacks = build_callback_set(
-            BoundsXYCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        xyplots, xystreamss, xycallbacks, xyevents = build_callback_set(
+            BoundsXYCallback, ['first', 'second', 'third', 'forth', 'other'],
+            BoundsXY, 2
         )
 
-        xplots, xstreamss, xcallbacks = build_callback_set(
-            BoundsXCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        xplots, xstreamss, xcallbacks, xevents = build_callback_set(
+            BoundsXCallback, ['first', 'second', 'third', 'forth', 'other'],
+            BoundsX, 2
         )
 
-        yplots, ystreamss, ycallbacks = build_callback_set(
-            BoundsYCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        yplots, ystreamss, ycallbacks, yevents = build_callback_set(
+            BoundsYCallback, ['first', 'second', 'third', 'forth', 'other'],
+            BoundsY, 2
         )
 
         # box selection on first set of axes
@@ -311,9 +335,9 @@ class TestCallbacks(TestCase):
                 xstreamss[0] + xstreamss[1],
                 ystreamss[0] + ystreamss[1],
         ):
-            xystream.event.assert_called_once_with(bounds=(1, -1, 4, 5))
-            xstream.event.assert_called_once_with(boundsx=(1, 4))
-            ystream.event.assert_called_once_with(boundsy=(-1, 5))
+            assert xystream.bounds == (1, -1, 4, 5)
+            assert xstream.boundsx == (1, 4)
+            assert ystream.boundsy == (-1, 5)
 
         # Check that streams attached to plots in other subplots are called with None
         # to clear their bounds
@@ -322,9 +346,9 @@ class TestCallbacks(TestCase):
                 xstreamss[2] + xstreamss[3],
                 ystreamss[2] + ystreamss[3],
         ):
-            xystream.event.assert_called_once_with(bounds=None)
-            xstream.event.assert_called_once_with(boundsx=None)
-            ystream.event.assert_called_once_with(boundsy=None)
+            assert xystream.bounds is None
+            assert xstream.boundsx is None
+            assert ystream.boundsy is None
 
         # box select on second set of axes
         selected_data2 = {'range': {'x2': [2, 5], 'y2': [0, 6]}}
@@ -335,9 +359,9 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[2], xstreamss[2], ystreamss[2],
         ):
-            xystream.event.assert_called_with(bounds=(2, 0, 5, 6))
-            xstream.event.assert_called_with(boundsx=(2, 5))
-            ystream.event.assert_called_with(boundsy=(0, 6))
+            assert xystream.bounds == (2, 0, 5, 6)
+            assert xstream.boundsx == (2, 5)
+            assert ystream.boundsy == (0, 6)
 
         # box select on third set of axes
         selected_data3 = {'range': {'x3': [3, 6], 'y3': [1, 7]}}
@@ -348,9 +372,9 @@ class TestCallbacks(TestCase):
         for xystream, xstream, ystream in zip(
                 xystreamss[3], xstreamss[3], ystreamss[3],
         ):
-            xystream.event.assert_called_with(bounds=(3, 1, 6, 7))
-            xstream.event.assert_called_with(boundsx=(3, 6))
-            ystream.event.assert_called_with(boundsy=(1, 7))
+            assert xystream.bounds == (3, 1, 6, 7)
+            assert xstream.boundsx == (3, 6)
+            assert ystream.boundsy == (1, 7)
 
         # lasso select on first set of axes should clear all bounds
         selected_data_lasso = {'lassoPoints': {'x': [1, 4, 2], 'y': [-1, 5, 2]}}
@@ -365,17 +389,17 @@ class TestCallbacks(TestCase):
                 xstreamss[0] + xstreamss[1] + xstreamss[2] + xstreamss[3],
                 ystreamss[0] + ystreamss[1] + ystreamss[2] + ystreamss[3],
         ):
-            xystream.event.assert_called_with(bounds=None)
-            xstream.event.assert_called_with(boundsx=None)
-            ystream.event.assert_called_with(boundsy=None)
+            assert xystream.bounds is None
+            assert xstream.boundsx is None
+            assert ystream.boundsy is None
 
         # Check that streams attached to plots not in this figure are not called
-        for xystream, xstream, ystream in zip(
-                xystreamss[4], xstreamss[4], ystreamss[4]
+        for xyevent, xevent, yevent in zip(
+                xyevents[4], xevents[4], yevents[4]
         ):
-            xystream.event.assert_not_called()
-            xstream.event.assert_not_called()
-            ystream.event.assert_not_called()
+            assert xyevent == []
+            assert xevent == []
+            assert yevent == []
 
     def testSelection1DCallbackEventData(self):
         selected_data1 = {'points': [
@@ -395,8 +419,9 @@ class TestCallbacks(TestCase):
         })
 
     def testSelection1DCallback(self):
-        plots, streamss, callbacks = build_callback_set(
-            Selection1DCallback, ['first', 'second', 'third', 'forth', 'other'], 2
+        plots, streamss, callbacks, sel_events = build_callback_set(
+            Selection1DCallback, ['first', 'second', 'third', 'forth', 'other'],
+            Selection1D, 2
         )
 
         # Select points from the 'first' plot (first set of axes)
@@ -408,13 +433,14 @@ class TestCallbacks(TestCase):
             selected_data1, self.fig_dict)
 
         # Check that all streams attached to the 'first' plots were triggered
-        for stream in streamss[0]:
-            stream.event.assert_called_once_with(index=[0, 2])
+        for stream, events in zip(streamss[0], sel_events[0]):
+            assert stream.index == [0, 2]
+            assert len(events) == 1
 
         # Check that all streams attached to other plots in this figure were triggered
         # with empty selection
         for stream in streamss[1] + streamss[2] + streamss[3]:
-            stream.event.assert_called_once_with(index=[])
+            assert stream.index == []
 
         # Select points from the 'first' and 'second' plot (first set of axes)
         selected_data1 = {'points': [
@@ -428,16 +454,16 @@ class TestCallbacks(TestCase):
 
         # Check that all streams attached to the 'first' plot were triggered
         for stream in streamss[0]:
-            stream.event.assert_called_with(index=[0, 1])
+            assert stream.index == [0, 1]
 
         # Check that all streams attached to the 'second' plot were triggered
         for stream in streamss[1]:
-            stream.event.assert_called_with(index=[1, 2])
+            assert stream.index == [1, 2]
 
         # Check that all streams attached to other plots in this figure were triggered
         # with empty selection
         for stream in streamss[2] + streamss[3]:
-            stream.event.assert_called_with(index=[])
+            assert stream.index == []
 
         # Select points from the 'forth' plot (third set of axes)
         selected_data1 = {'points': [
@@ -448,9 +474,9 @@ class TestCallbacks(TestCase):
             selected_data1, self.fig_dict)
 
         # Check that all streams attached to the 'forth' plot were triggered
-        for stream in streamss[3]:
-            stream.event.assert_called_with(index=[0, 2])
+        for stream, events in zip(streamss[3], sel_events[3]):
+            assert stream.index == [0, 2]
 
         # Check that streams attached to plots not in this figure are not called
-        for stream in streamss[4]:
-            stream.event.assert_not_called()
+        for stream, events in zip(streamss[4], sel_events[4]):
+            assert len(events) == 0

@@ -1054,9 +1054,10 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream = SelectionExpr(element)
 
             # Check stream properties
-            self.assertEqual(len(expr_stream.input_streams), 2)
+            self.assertEqual(len(expr_stream.input_streams), 3)
             self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
             self.assertIsInstance(expr_stream.input_streams[1], Lasso)
+            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
             self.assertIsNone(expr_stream.bbox)
             self.assertIsNone(expr_stream.selection_expr)
 
@@ -1080,9 +1081,10 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream = SelectionExpr(element)
 
             # Check stream properties
-            self.assertEqual(len(expr_stream.input_streams), 2)
+            self.assertEqual(len(expr_stream.input_streams), 3)
             self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
             self.assertIsInstance(expr_stream.input_streams[1], Lasso)
+            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
             self.assertIsNone(expr_stream.bbox)
             self.assertIsNone(expr_stream.selection_expr)
 
@@ -1110,9 +1112,10 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream = SelectionExpr(element)
 
             # Check stream properties
-            self.assertEqual(len(expr_stream.input_streams), 2)
+            self.assertEqual(len(expr_stream.input_streams), 3)
             self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
             self.assertIsInstance(expr_stream.input_streams[1], Lasso)
+            self.assertIsInstance(expr_stream.input_streams[2], Selection1D)
             self.assertIsNone(expr_stream.bbox)
             self.assertIsNone(expr_stream.selection_expr)
 
@@ -1135,7 +1138,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream.input_streams), 2)
+        self.assertEqual(len(expr_stream.input_streams), 3)
         self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -1167,7 +1170,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream.input_streams), 2)
+        self.assertEqual(len(expr_stream.input_streams), 3)
         self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -1200,7 +1203,7 @@ class TestExprSelectionStream(ComparisonTestCase):
         expr_stream = SelectionExpr(hist)
 
         # Check stream properties
-        self.assertEqual(len(expr_stream.input_streams), 2)
+        self.assertEqual(len(expr_stream.input_streams), 3)
         self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
         self.assertIsNone(expr_stream.bbox)
         self.assertIsNone(expr_stream.selection_expr)
@@ -1231,7 +1234,7 @@ class TestExprSelectionStream(ComparisonTestCase):
             expr_stream = SelectionExpr(dmap)
 
             # Check stream properties
-            self.assertEqual(len(expr_stream.input_streams), 2)
+            self.assertEqual(len(expr_stream.input_streams), 3)
             self.assertIsInstance(expr_stream.input_streams[0], SelectionXY)
             self.assertIsNone(expr_stream.bbox)
             self.assertIsNone(expr_stream.selection_expr)
