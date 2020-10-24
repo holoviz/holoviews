@@ -73,7 +73,9 @@ extras_require['tests'] = [
     'pytest-cov ==2.5.1',
     'pytest <6.0',
     'nbconvert <6',
-    'twine'
+    'twine',
+    'rfc3986',
+    'keyring'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
