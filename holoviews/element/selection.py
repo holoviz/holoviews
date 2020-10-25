@@ -347,6 +347,8 @@ class Selection1DExpr(Selection2DExpr):
 
     _inverted_expr = False
 
+    _selection_streams = (SelectionXY,)
+
     def _empty_region(self):
         invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
         if ((invert_axes and not self._inverted_expr) or (not invert_axes and self._inverted_expr)):
