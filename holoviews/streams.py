@@ -21,6 +21,8 @@ from .core.ndmapping import UniformNdMapping
 # Types supported by Pointer derived streams
 pointer_types = (Number, util.basestring, tuple)+util.datetime_types
 
+class _SkipTrigger(): pass
+
 
 @contextmanager
 def triggering_streams(streams):
@@ -408,8 +410,9 @@ class Stream(param.Parameterized):
         """
         Update the stream parameters and trigger an event.
         """
-        self.update(**kwargs)
-        self.trigger([self])
+        skip = self.update(**kwargs)
+        if skip is not _SkipTrigger:
+            self.trigger([self])
 
     def update(self, **kwargs):
         """
@@ -422,8 +425,9 @@ class Stream(param.Parameterized):
         """
         self._set_stream_parameters(**kwargs)
         transformed = self.transform()
-        if transformed:
-            self._set_stream_parameters(**transformed)
+        if transformed is None:
+            return _SkipTrigger
+        self._set_stream_parameters(**transformed)
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -629,7 +633,7 @@ class Buffer(Pipe):
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
-        super(Buffer, self).update(**kwargs)
+        return super(Buffer, self).update(**kwargs)
 
 
     @property
@@ -989,7 +993,6 @@ class SelectionExpr(Derived):
     def transform_function(cls, stream_values, constants):
         hvobj = constants["source"]
         include_region = constants["include_region"]
-
         if hvobj is None:
             # source is None
             return dict(selection_expr=None, bbox=None, region_element=None,)
