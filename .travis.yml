@@ -69,6 +69,7 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit env_capture
         - hash -r
       script:
@@ -164,16 +165,11 @@ jobs:
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
+        - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
     - <<: *pip_pkg
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
-      install:
-        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-        - source activate test-environment
-        - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
-        - doit pip_on_conda
-        - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}

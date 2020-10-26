@@ -71,7 +71,11 @@ extras_require['tests'] = [
     'matplotlib >=2.2,<3.1',
     'nbsmoke >=0.2.0',
     'pytest-cov ==2.5.1',
-    'pytest <6.0'
+    'pytest <6.0',
+    'nbconvert <6',
+    'twine',
+    'rfc3986',
+    'keyring'
 ]
 
 extras_require['unit_tests'] = extras_require['examples']+extras_require['tests']
@@ -100,7 +104,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'awscli',
     'pscript',
     'graphviz',
-    'bokeh <2.2',
+    'bokeh >2.2',
     'nbconvert <6.0',
     'mpl_sample_data'
 ]

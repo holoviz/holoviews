@@ -1450,7 +1450,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 norm = self.lookup_options(el, 'norm').options
                 if norm.get('framewise'):
                     for s in callback.streams:
-                        if isinstance(s, RangeXY):
+                        if isinstance(s, RangeXY) and not s._triggering:
                             s.reset()
 
     def update_frame(self, key, ranges=None, plot=None, element=None):

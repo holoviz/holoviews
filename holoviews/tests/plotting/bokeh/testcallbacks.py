@@ -482,6 +482,16 @@ class TestServerCallbacks(CallbackTestCase):
         plot.update((1,))
         self.assertEqual(stream.y_range, None)
 
+    def test_rangexy_framewise_not_reset_if_triggering(self):
+        stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
+        curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
+                           kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
+        bokeh_server_renderer.get_plot(curve.opts(framewise=True
+        ))
+        stream.event(x_range=(0, 3))
+        self.assertEqual(stream.x_range, (0, 3))
+
+
 
 class TestBokehCustomJSCallbacks(CallbackTestCase):
 
@@ -521,7 +531,6 @@ class TestBokehCustomJSCallbacks(CallbackTestCase):
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
         self.assertIn(selection, plot.callbacks[0].streams)
-
 
     def test_callback_on_table_is_attached(self):
         table = Table([1, 2, 3], 'x')
