@@ -408,8 +408,9 @@ class Stream(param.Parameterized):
         """
         Update the stream parameters and trigger an event.
         """
-        self.update(**kwargs)
-        self.trigger([self])
+        updated = self.update(**kwargs)
+        if updated:
+            self.trigger([self])
 
     def update(self, **kwargs):
         """
@@ -422,8 +423,11 @@ class Stream(param.Parameterized):
         """
         self._set_stream_parameters(**kwargs)
         transformed = self.transform()
-        if transformed:
+        if transformed is None:
+            return False
+        else:
             self._set_stream_parameters(**transformed)
+            return True
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -989,7 +993,6 @@ class SelectionExpr(Derived):
     def transform_function(cls, stream_values, constants):
         hvobj = constants["source"]
         include_region = constants["include_region"]
-
         if hvobj is None:
             # source is None
             return dict(selection_expr=None, bbox=None, region_element=None,)
