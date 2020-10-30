@@ -15,8 +15,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
-        python-version: [3.7]
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: [3.6 3.7 3.8]
     timeout-minutes: 30
     defaults:
       run:
@@ -50,6 +50,7 @@ jobs:
           doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
           eval "$(conda shell.bash hook)"
           conda activate test-environment
+          conda uninstall matplotlib matplotlib-base --force; conda install -c conda-forge matplotlib=3.0.3 --no-deps;
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
