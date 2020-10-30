@@ -22,10 +22,10 @@ jobs:
       run:
         shell: bash -l {0} 
     env:
-      DESC: "Python 3.7 tests"  # is this even necessary ?
+      DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+      PKG_TEST_PYTHON: echo --test-python=py${{ matrix.python-version }} | tr -d '.'
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
