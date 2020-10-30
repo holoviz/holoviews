@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        os: ['ubuntu-latest']
         python-version: [3.6, 3.7, 3.8]
     timeout-minutes: 30
     defaults:
@@ -89,7 +89,7 @@ jobs:
           doit test_examples
       - name: run coveralls
         env:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
@@ -97,4 +97,4 @@ jobs:
       - name: coveralls
         uses: coverallsapp/github-action@master
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
