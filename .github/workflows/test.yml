@@ -36,7 +36,7 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: goanpeca/setup-miniconda@v2
+      - uses: goanpeca/setup-miniconda@v1
         with:
           miniconda-version: "latest"
       - name: Fetch unshallow
