@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['ubuntu-latest']
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
         python-version: [2.7, 3.6, 3.7]
     timeout-minutes: 30
     defaults:
