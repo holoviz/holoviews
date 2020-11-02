@@ -51,7 +51,7 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
       - name: matplotlib patch
-        if: startsWith(matrix.python-version, "3.")
+        if: startsWith(matrix.python-version, 3.)
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
