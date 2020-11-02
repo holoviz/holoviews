@@ -49,12 +49,6 @@ jobs:
           doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-      - name: matplotlib patch
-        if: startsWith(matrix.python-version, 3.)
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda uninstall matplotlib matplotlib-base --force; conda install -c conda-forge matplotlib=3.0.3 --no-deps;
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
@@ -66,6 +60,12 @@ jobs:
           git describe
           echo "======"
           conda list
+      - name: matplotlib patch
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda uninstall matplotlib matplotlib-base --force; conda install -c conda-forge matplotlib=3.0.3 --no-deps;
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
