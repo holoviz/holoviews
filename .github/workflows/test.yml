@@ -40,10 +40,11 @@ jobs:
         run: git fetch --prune --tags --unshallow
       - name: pre_install
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install pyctdev flake8 nose
+          python -m pip install --upgrade --user pip
+          python -m pip install --user pyctdev flake8 nose
       - name: conda setup
         run: |
+          doit miniconda_install
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
