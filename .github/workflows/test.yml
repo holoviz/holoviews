@@ -30,6 +30,8 @@ jobs:
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+      COVERALLS_SERVICE_NAME: "Github Actions"
+      COVERALLS_GIT_BRANCH: ${{ github.ref }}
     steps:
       - uses: actions/checkout@v2
         with:
