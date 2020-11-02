@@ -29,7 +29,6 @@ env:
     - MOZ_HEADLESS=1
 
 stages:
-  - test
   - name: extra_tests
     if: type = cron
   - name: conda_dev_package
@@ -58,8 +57,6 @@ jobs:
     ########## Test Stage ##########
 
     - &default
-      stage: test
-      env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
         - export PATH="$HOME/miniconda/bin:$PATH" && hash -r
@@ -72,21 +69,16 @@ jobs:
         - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit env_capture
         - hash -r
-      script:
-        - doit test_all_recommended
       after_success: coveralls
       after_failure: sleep 10
-
-    - <<: *default
-      env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
 
     - &basic_deps
       <<: *default
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
-      after_success: echo "Success"
       script:
         - doit test_unit
+      after_success: echo "Success"
 
     ########## DOCS ##########
 
