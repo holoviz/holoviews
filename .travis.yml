@@ -71,6 +71,8 @@ jobs:
         - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit env_capture
         - hash -r
+      script:
+        - doit test_flakes
       after_success: coveralls
       after_failure: sleep 10
 
