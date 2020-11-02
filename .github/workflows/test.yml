@@ -29,9 +29,6 @@ jobs:
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
-      COVERALLS_SERVICE_NAME: "Github Actions"
-      COVERALLS_GIT_BRANCH: ${{ github.ref }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -98,6 +95,7 @@ jobs:
       - name: run coveralls
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        if: startsWith(matrix.python-version, 3.)
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
