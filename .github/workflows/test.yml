@@ -1,0 +1,99 @@
+# things not included
+# language
+# notifications - no email notifications set up
+
+name: pytest
+on:
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  test_suite:
+    name: Pytest on ${{ matrix.python-version }}, ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
+        python-version: [2.7, 3.6, 3.7]
+        exclude:
+          - os: windows-latest
+            python-version: 2.7
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash -l {0} 
+    env:
+      DESC: "Python ${{ matrix.python-version }} tests"
+      HV_REQUIREMENTS: "unit_tests"
+      PYTHON_VERSION: ${{ matrix.python-version }}
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      CHANS: "-c pyviz"
+      MPLBACKEND: "Agg"
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: "100"
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: goanpeca/setup-miniconda@v1
+        with:
+          miniconda-version: "latest"
+      - name: Fetch unshallow
+        run: git fetch --prune --tags --unshallow
+      - name: conda setup
+        run: |
+          conda config --set always_yes True
+          conda install -c pyviz "pyctdev>=0.5"
+          doit ecosystem_setup
+          doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
+      - name: doit develop_install
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda list
+          doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
+          echo "======"
+          conda list
+      - name: matplotlib patch
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda uninstall matplotlib matplotlib-base --force
+          conda install matplotlib=3.0.3 --no-deps
+          python -c "import matplotlib; print(matplotlib.__version__);"
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
+      - name: doit test_flakes
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_flakes
+      - name: doit test_unit
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_unit
+      - name: test examples
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit test_examples
+      - name: run coveralls
+        env:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          coveralls

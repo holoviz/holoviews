@@ -57,7 +57,7 @@ class ItemTable(Element):
         """
         Get the value associated with the given heading (key).
         """
-        if heading is ():
+        if heading == ():
             return self
         if heading not in self.vdims:
             raise KeyError("%r not in available headings." % heading)

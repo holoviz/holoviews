@@ -29,7 +29,6 @@ env:
     - MOZ_HEADLESS=1
 
 stages:
-  - test
   - name: extra_tests
     if: type = cron
   - name: conda_dev_package
@@ -58,7 +57,7 @@ jobs:
     ########## Test Stage ##########
 
     - &default
-      stage: test
+      stage: env_setup
       env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
@@ -73,20 +72,17 @@ jobs:
         - doit env_capture
         - hash -r
       script:
-        - doit test_all_recommended
+        - doit test_flakes
       after_success: coveralls
       after_failure: sleep 10
-
-    - <<: *default
-      env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
 
     - &basic_deps
       <<: *default
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
-      after_success: echo "Success"
       script:
         - doit test_unit
+      after_success: echo "Success"
 
     ########## DOCS ##########
 
