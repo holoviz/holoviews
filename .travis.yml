@@ -29,7 +29,6 @@ env:
     - MOZ_HEADLESS=1
 
 stages:
-  - test
   - name: extra_tests
     if: type = cron
   - name: conda_dev_package
@@ -58,7 +57,7 @@ jobs:
     ########## Test Stage ##########
 
     - &default
-      stage: test
+      stage: env_setup
       env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
@@ -69,23 +68,21 @@ jobs:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit env_capture
         - hash -r
       script:
-        - doit test_all_recommended
+        - doit test_flakes
       after_success: coveralls
       after_failure: sleep 10
-
-    - <<: *default
-      env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
 
     - &basic_deps
       <<: *default
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
-      after_success: echo "Success"
       script:
         - doit test_unit
+      after_success: echo "Success"
 
     ########## DOCS ##########
 
@@ -164,16 +161,11 @@ jobs:
         - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
+        - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
     - <<: *pip_pkg
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
-      install:
-        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
-        - source activate test-environment
-        - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
-        - doit pip_on_conda
-        - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}

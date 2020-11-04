@@ -35,6 +35,8 @@ class TextPlot(ElementPlot, AnnotationPlot):
     style_opts = text_properties+['color', 'angle', 'visible']
     _plot_methods = dict(single='text', batched='text')
 
+    selection_display = None
+    
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y', text='text')
         if self.static_source:
@@ -143,6 +145,8 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='Span')
 
+    selection_display = None
+
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
         dim = 'width' if isinstance(element, HLine) else 'height'
@@ -185,6 +189,8 @@ class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
     _allow_implicit_categories = False
     _plot_methods = dict(single='BoxAnnotation')
 
+    selection_display = None
+
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
         kwd_dim1 = 'left' if isinstance(element, VSpan) else 'bottom'
@@ -214,6 +220,8 @@ class SlopePlot(ElementPlot, AnnotationPlot):
     style_opts = line_properties + ['level']
 
     _plot_methods = dict(single='Slope')
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -249,6 +257,8 @@ class SplinePlot(ElementPlot, AnnotationPlot):
     style_opts = line_properties + ['visible']
     _plot_methods = dict(single='bezier')
 
+    selection_display = None
+
     def get_data(self, element, ranges, style):
         if self.invert_axes:
             data_attrs = ['y0', 'x0', 'cy0', 'cx0', 'cy1', 'cx1', 'y1', 'x1']
@@ -282,6 +292,8 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
     _style_groups = {'arrow': 'arrow', 'text': 'text'}
 
     _draw_order = ['arrow_1', 'text_1']
+
+    selection_display = None
 
     def get_data(self, element, ranges, style):
         plot = self.state
@@ -415,6 +427,8 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
         other plotting handles can be accessed via plot.handles.""")
 
     _stream_data = False
+
+    selection_display = None
 
     def __init__(self, element, plot=None, **params):
         super(DivPlot, self).__init__(element, **params)

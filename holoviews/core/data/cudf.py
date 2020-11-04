@@ -142,8 +142,10 @@ class cuDFInterface(PandasInterface):
             return data
         elif compute:
             return data.to_array()
-        return data.values
-
+        try:
+            return data.values
+        except Exception:
+            return data.values_host
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -194,7 +196,7 @@ class cuDFInterface(PandasInterface):
         for dim, sel in selection.items():
             if isinstance(sel, tuple):
                 sel = slice(*sel)
-            arr = cls.values(dataset, dim, compute=False)
+            arr = cls.values(dataset, dim, keep_index=True)
             if util.isdatetime(arr) and util.pd:
                 try:
                     sel = util.parse_datetime_selection(sel)
@@ -282,8 +284,8 @@ class cuDFInterface(PandasInterface):
             if not hasattr(reindexed, agg):
                 raise ValueError('%s aggregation is not supported on cudf DataFrame.' % agg)
             agg = getattr(reindexed, agg)()
-            data = dict(((col, [v]) for col, v in zip(agg.index, agg.to_array())))
-            df = util.pd.DataFrame(data, columns=list(agg.index))
+            data = dict(((col, [v]) for col, v in zip(agg.index.values_host, agg.to_array())))
+            df = util.pd.DataFrame(data, columns=list(agg.index.values_host))
 
         dropped = []
         for vd in vdims:

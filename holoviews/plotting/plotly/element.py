@@ -11,7 +11,7 @@ from ...core.spaces import DynamicMap
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dim_range_key, dynamic_update
+from ..util import dim_range_key
 from .plot import PlotlyPlot
 from .util import (
     STYLE_ALIASES, get_colorscale, merge_figure, legend_trace_types)
@@ -616,7 +616,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         figure = None
         for okey, subplot in self.subplots.items():
             if element is not None and subplot.drawn:
-                idx, spec, exact = dynamic_update(self, subplot, okey, element, items)
+                idx, spec, exact = self._match_subplot(okey, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                 else:
@@ -651,7 +651,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             # If in Dynamic mode propagate elements to subplots
             if not (isinstance(self.hmap, DynamicMap) and element is not None):
                 continue
-            idx, _, _ = dynamic_update(self, subplot, k, element, items)
+            idx, _, _ = self._match_subplot(k, subplot, items, element)
             if idx is not None:
                 items.pop(idx)
         if isinstance(self.hmap, DynamicMap) and items:
