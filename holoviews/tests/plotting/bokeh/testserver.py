@@ -18,7 +18,7 @@ try:
     from bokeh.application import Application
     from bokeh.client import pull_session
     from bokeh.document import Document
-    from bokeh.io import curdoc
+    from bokeh.io.doc import curdoc, set_curdoc
     from bokeh.models import ColumnDataSource
     from bokeh.server.server import Server
 
@@ -41,6 +41,8 @@ class TestBokehServerSetup(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
+        self.doc = curdoc()
+        set_curdoc(Document())
         self.nbcontext = Renderer.notebook_context
         with param.logging_level('ERROR'):
             Renderer.notebook_context = False
@@ -53,6 +55,7 @@ class TestBokehServerSetup(ComparisonTestCase):
             Renderer.notebook_context = self.nbcontext
         state.curdoc = None
         curdoc().clear()
+        set_curdoc(self.doc)
         time.sleep(1)
 
     def test_render_server_doc_element(self):
@@ -97,7 +100,7 @@ class TestBokehServerSetup(ComparisonTestCase):
 
 
 
-class TestBokehServerRun(ComparisonTestCase):
+class TestBokehServer(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend

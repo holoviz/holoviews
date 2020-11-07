@@ -89,6 +89,7 @@ Store.register({Points: ScatterPlot,
                 Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 Layout: LayoutPlot,
+                AdjointLayout: AdjointLayoutPlot,
                 NdLayout: LayoutPlot,
                 GridSpace: GridPlot,
                 GridMatrix: GridPlot}, backend='plotly')

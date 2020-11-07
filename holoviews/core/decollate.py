@@ -3,7 +3,7 @@ from .operation import OperationCallable
 from .. import (
     Layout, DynamicMap, Element, Callable, Overlay, GridSpace, NdOverlay, HoloMap
 )
-from . import ViewableTree
+from . import ViewableTree, AdjointLayout
 from collections import namedtuple
 from ..streams import Stream, Derived
 
@@ -148,7 +148,7 @@ def to_expr_extract_streams(
                     stream_mapping.setdefault(container_key, []).append(cloned_stream)
             return stream_index
 
-    elif isinstance(hvobj, (Layout, GridSpace, NdOverlay, HoloMap, Overlay)):
+    elif isinstance(hvobj, (Layout, GridSpace, NdOverlay, HoloMap, Overlay, AdjointLayout)):
         fn = hvobj.clone(data={}).clone
         args = []
         data_expr = []
