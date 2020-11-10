@@ -744,9 +744,13 @@ class Params(Stream):
 
     @property
     def hashkey(self):
-        hashkey = {(p.owner, p.name): getattr(p.owner, p.name) for p in self.parameters}
-        hashkey = {' '.join([o.name, self._rename.get((o, n), n)]): v for (o, n), v in hashkey.items()
-                   if self._rename.get((o, n), True) is not None}
+        hashkey = {}
+        for p in self.parameters:
+            pkey = (p.owner, p.name)
+            pname = self._rename.get(pkey, p.name)
+            key = ' '.join([p.owner.name, pname])
+            if self._rename.get(pkey, True) is not None:
+                hashkey[key] = getattr(p.owner, p.name)
         hashkey['_memoize_key'] = self._memoize_counter
         return hashkey
 
@@ -783,6 +787,7 @@ class ParamMethod(Params):
         parameterized = util.get_method_owner(parameterized)
         if not parameters:
             parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
+
         params['watch_only'] = True
         super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
 
