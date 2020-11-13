@@ -164,6 +164,11 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_streams, hvobj, operations,
                     self._selection_expr_streams.get(hvobj, None), cache=self._cache
                 )
+            elif issubclass(hvobj.type, Overlay):
+                return Overlay([
+                    self._selection_transform(el, operations=operations)
+                    for el in callback.inputs
+                ]).collate()
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
                 return hvobj
