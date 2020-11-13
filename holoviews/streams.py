@@ -1020,7 +1020,7 @@ class SelectionExpr(Derived):
                 return
 
             selection_expr, bbox, region_element = selection
-                
+
             if selection_expr is not None:
                 break
 
@@ -1107,6 +1107,8 @@ class SelectionExprSequence(Derived):
         combined_region_element = None
 
         for selection_contents in stream_values[0]["values"]:
+            if selection_contents is None:
+                continue
             selection_expr = selection_contents['selection_expr']
             if not selection_expr:
                 continue
