@@ -54,6 +54,77 @@ class Tiles(Element2D):
     def dimension_values(self, dimension, expanded=True, flat=True):
         return np.array([])
 
+    @staticmethod
+    def lon_lat_to_easting_northing(longitude, latitude):
+        """
+        Projects the given longitude, latitude values into Web Mercator
+        (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+        Longitude and latitude can be provided as scalars, Pandas columns,
+        or Numpy arrays, and will be returned in the same form.  Lists
+        or tuples will be converted to Numpy arrays.
+
+        Args:
+            longitude
+            latitude
+
+        Returns:
+            (easting, northing)
+
+        Examples:
+           easting, northing = lon_lat_to_easting_northing(-74,40.71)
+
+           easting, northing = lon_lat_to_easting_northing(
+               np.array([-74]),np.array([40.71])
+           )
+
+           df=pandas.DataFrame(dict(longitude=np.array([-74]),latitude=np.array([40.71])))
+           df.loc[:, 'longitude'], df.loc[:, 'latitude'] = lon_lat_to_easting_northing(
+               df.longitude,df.latitude
+           )
+        """
+        if isinstance(longitude, (list, tuple)):
+            longitude = np.array(longitude)
+        if isinstance(latitude, (list, tuple)):
+            latitude = np.array(latitude)
+
+        origin_shift = np.pi * 6378137
+        easting = longitude * origin_shift / 180.0
+        with np.errstate(divide='ignore', invalid='ignore'):
+            northing = np.log(
+                np.tan((90 + latitude) * np.pi / 360.0)
+            ) * origin_shift / np.pi
+        return easting, northing
+
+    @staticmethod
+    def easting_northing_to_lon_lat(easting, northing):
+        """
+        Projects the given easting, northing values into
+        longitude, latitude coordinates.
+
+        easting and northing values are assumed to be in Web Mercator
+        (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+        Args:
+            easting
+            northing
+
+        Returns:
+            (longitude, latitude)
+        """
+        if isinstance(easting, (list, tuple)):
+            easting = np.array(easting)
+        if isinstance(northing, (list, tuple)):
+            northing = np.array(northing)
+
+        origin_shift = np.pi * 6378137
+        longitude = easting * 180.0 / origin_shift
+        with np.errstate(divide='ignore'):
+            latitude = np.arctan(
+                np.exp(northing * np.pi / origin_shift)
+            ) * 360.0 / np.pi - 90
+        return longitude, latitude
+
 
 # Mapping between patterns to match specified as tuples and tuples containing attributions
 _ATTRIBUTIONS = {
