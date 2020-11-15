@@ -113,7 +113,10 @@ legend_trace_types = {
 # Aliases - map common style options to more common names
 
 STYLE_ALIASES = {'alpha': 'opacity',
-                 'cell_height': 'height', 'marker': 'symbol'}
+                 'cell_height': 'height',
+                 'marker': 'symbol',
+                 "max_zoom": "maxzoom",
+                 "min_zoom": "minzoom",}
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
@@ -587,8 +590,14 @@ def _merge_layout_objs(obj, subobj):
             # append
             obj[prop].extend(val)
         else:
-            # init/overwrite
-            obj[prop] = copy.deepcopy(val)
+            # Handle special cases
+            if prop == "style" and val == "white-bg" and obj.get("style", None):
+                # Don't let layout.mapbox.style of "white-bg" override other
+                # background
+                pass
+            elif val is not None:
+                # init/overwrite
+                obj[prop] = copy.deepcopy(val)
 
 
 def _compute_subplot_domains(widths, spacing):

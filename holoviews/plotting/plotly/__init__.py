@@ -15,6 +15,7 @@ from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
 from .annotation import *            # noqa (API import)
+from .tiles import *                 # noqa (API import)
 from .element import *               # noqa (API import)
 from .chart import *                 # noqa (API import)
 from .chart3d import *               # noqa (API import)
@@ -72,6 +73,7 @@ Store.register({Points: ScatterPlot,
 
                 # Annotations
                 Labels: LabelPlot,
+                Tiles: TilePlot,
 
                 # Shapes
                 Box: PathShapePlot,
