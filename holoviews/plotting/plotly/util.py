@@ -562,10 +562,10 @@ def merge_figure(fig, subfig):
 
     # layout
     layout = fig.setdefault('layout', {})
-    _merge_layout_objs(layout, subfig.get('layout', {}))
+    merge_layout(layout, subfig.get('layout', {}))
 
 
-def _merge_layout_objs(obj, subobj):
+def merge_layout(obj, subobj):
     """
     Merge layout objects recursively
 
@@ -582,7 +582,7 @@ def _merge_layout_objs(obj, subobj):
     for prop, val in subobj.items():
         if isinstance(val, dict) and prop in obj:
             # recursion
-            _merge_layout_objs(obj[prop], val)
+            merge_layout(obj[prop], val)
         elif (isinstance(val, list) and
               obj.get(prop, None) and
               isinstance(obj[prop][0], dict)):
