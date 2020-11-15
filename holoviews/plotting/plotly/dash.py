@@ -475,31 +475,39 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
             graph_id = graph_ids[fig_ind]
             # plotly_stream_types
             for plotly_stream_type, uid_to_streams_for_type in uid_to_stream_ids.items():
-                panel_prop = plotly_stream_type.callback_property
-                if panel_prop == "selected_data":
-                    if graph_id + ".selectedData" in triggered_prop_ids:
-                        # Only update selectedData values that just changed.
-                        # This way we don't the the may have been cleared in the
-                        # store above
-                        stream_event_data = plotly_stream_type.get_event_data_from_property_update(
-                            selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
-                        )
-                        for uid, event_data in stream_event_data.items():
-                            if uid in uid_to_streams_for_type:
-                                for stream_id in uid_to_streams_for_type[uid]:
-                                    store_data["streams"][stream_id] = event_data
-                elif panel_prop == "viewport":
-                    if graph_id + ".relayoutData" in triggered_prop_ids:
-                        stream_event_data = plotly_stream_type.get_event_data_from_property_update(
-                            relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
-                        )
-
-                        for uid, event_data in stream_event_data.items():
-                            if event_data["x_range"] is not None or event_data["y_range"] is not None:
+                for panel_prop in plotly_stream_type.callback_properties:
+                    if panel_prop == "selected_data":
+                        if graph_id + ".selectedData" in triggered_prop_ids:
+                            # Only update selectedData values that just changed.
+                            # This way we don't the the may have been cleared in the
+                            # store above
+                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
+                                panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            )
+                            for uid, event_data in stream_event_data.items():
                                 if uid in uid_to_streams_for_type:
                                     for stream_id in uid_to_streams_for_type[uid]:
-                                        store_data["streams"][
-                                            stream_id] = event_data
+                                        store_data["streams"][stream_id] = event_data
+                    elif panel_prop == "viewport":
+                        if graph_id + ".relayoutData" in triggered_prop_ids:
+                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
+                                panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            )
+
+                            for uid, event_data in stream_event_data.items():
+                                if event_data["x_range"] is not None or event_data["y_range"] is not None:
+                                    if uid in uid_to_streams_for_type:
+                                        for stream_id in uid_to_streams_for_type[uid]:
+                                            store_data["streams"][stream_id] = event_data
+                    elif panel_prop == "relayout_data":
+                        if graph_id + ".relayoutData" in triggered_prop_ids:
+                            stream_event_data = plotly_stream_type.get_event_data_from_property_update(
+                                panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
+                            )
+                            for uid, event_data in stream_event_data.items():
+                                if uid in uid_to_streams_for_type:
+                                    for stream_id in uid_to_streams_for_type[uid]:
+                                        store_data["streams"][stream_id] = event_data
 
         # Update store with derived/history stream values
         for output_id in reversed(stream_callbacks):
