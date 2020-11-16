@@ -60,6 +60,5 @@ class TilePlot(ElementPlot):
     def generate_plot(self, key, ranges, element=None, is_geo=False):
         """
         Override to force is_geo to True
-
         """
         return super(TilePlot, self).generate_plot(key, ranges, element, is_geo=True)
