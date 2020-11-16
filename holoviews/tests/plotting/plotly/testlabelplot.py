@@ -99,7 +99,6 @@ class TestMapboxLabelsPlot(TestPlotlyPlot):
         self.assertIn("invert_axes", str(e.exception))
 
     def test_labels_size(self):
-        size = 23
         labels = Tiles("") * Labels([(0, 3, 0), (0, 2, 1), (0, 1, 1)]).options(size=23)
         state = self._get_plot_state(labels)
         self.assertEqual(state['data'][1]['textfont']['size'], 23)
