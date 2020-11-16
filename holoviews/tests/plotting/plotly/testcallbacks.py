@@ -107,7 +107,7 @@ class TestCallbacks(TestCase):
             }
         }).to_dict()
 
-        # Precompue pair so lat/lon, easting/northing, mapbox coord values
+        # Precompute pair so lat/lon, easting/northing, mapbox coord values
         self.lon_range1, self.lat_range1 = (10, 30), (20, 40)
         self.easting_range1, self.northing_range1 = Tiles.lon_lat_to_easting_northing(
             self.lon_range1, self.lat_range1
