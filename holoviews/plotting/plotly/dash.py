@@ -479,8 +479,8 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
                     if panel_prop == "selected_data":
                         if graph_id + ".selectedData" in triggered_prop_ids:
                             # Only update selectedData values that just changed.
-                            # This way we don't the the may have been cleared in the
-                            # store above
+                            # This way we don't save values that may have been cleared
+                            # from the store above by the reset button.
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
