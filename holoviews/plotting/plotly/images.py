@@ -37,7 +37,7 @@ class RGBPlot(ElementPlot):
             # Create a dummy invisible scatter trace for this image.
             # This serves two purposes
             #  1. The two points placed on the corners of the image are used by the
-            #     autoscale logic to allow using the autoscale button to property center
+            #     autoscale logic to allow using the autoscale button to properly center
             #     the image.
             #  2. This trace will be given a UID, and this UID will make it possible to
             #     associate callbacks with the image element. This is needed, in particular
