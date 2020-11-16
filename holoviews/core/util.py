@@ -1666,7 +1666,7 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
     return mapped_kwargs
 
 
-def stream_parameters(streams, no_duplicates=True, exclude=['name']):
+def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_key']):
     """
     Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
@@ -1675,30 +1675,35 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     parameter name clashes across the streams.
     """
     from ..streams import Params
-    param_groups = []
+    param_groups = {}
     for s in streams:
-        if isinstance(s, Params):
-            continue
         if not s.contents and isinstance(s.hashkey, dict):
-            param_groups.append(list(s.hashkey))
+            param_groups[s] = list(s.hashkey)
         else:
-            param_groups.append(list(s.contents))
-    names = [name for group in param_groups for name in group
-             if name != '_memoize_key']
+            param_groups[s] = list(s.contents)
 
     if no_duplicates:
-        clashes = sorted(set([n for n in names if names.count(n) > 1]))
+        seen, clashes = {}, []
         clash_streams = []
         for s in streams:
-            for c in clashes:
-                if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
+            if isinstance(s, Params):
+                continue
+            for c in param_groups[s]:
+                if c in seen:
+                    clashes.append(c)
+                    if seen[c] not in clash_streams:
+                        clash_streams.append(seen[c])
                     clash_streams.append(s)
+                else:
+                    seen[c] = s
+        clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
                             'clash on the following parameters: %r'
                             % (clashing, clash_streams[-1], clashes))
-    return [name for name in names if name not in exclude]
+    return [name for group in param_groups.values() for name in group
+            if name not in exclude]
 
 
 def dimensionless_contents(streams, kdims, no_duplicates=True):
