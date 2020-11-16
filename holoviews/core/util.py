@@ -1677,24 +1677,22 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     from ..streams import Params
     param_groups = []
     for s in streams:
+        if isinstance(s, Params):
+            continue
         if not s.contents and isinstance(s.hashkey, dict):
             param_groups.append(list(s.hashkey))
         else:
             param_groups.append(list(s.contents))
-    names = [name for group in param_groups for name in group]
+    names = [name for group in param_groups for name in group
+             if name != '_memoize_key']
 
     if no_duplicates:
         clashes = sorted(set([n for n in names if names.count(n) > 1]))
         clash_streams = []
-        filtered_clashes = []
         for s in streams:
-            if isinstance(s, Params):
-                continue
-            filtered_clashes.extend(clashes)
             for c in clashes:
                 if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
                     clash_streams.append(s)
-        clashes = [c for c in filtered_clashes if c != '_memoize_key']
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
