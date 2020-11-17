@@ -137,11 +137,11 @@ class cuDFInterface(PandasInterface):
         data = dataset.data[dim.name]
         if not expanded:
             data = data.unique()
-            return data.to_array() if compute else data.values
+            return data.values_host if compute else data.values
         elif keep_index:
             return data
         elif compute:
-            return data.to_array()
+            return data.values_host
         try:
             return data.values
         except Exception:
