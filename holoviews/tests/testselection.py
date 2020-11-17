@@ -278,6 +278,71 @@ class TestLinkSelections(ComparisonTestCase):
             )[()]
         )
 
+    @ds_skip
+    def test_datashade_in_overlay_selection(self):
+        points = Points(self.data)
+        layout = points * dynspread(datashade(points))
+
+        lnk_sel = link_selections.instance(unselected_color='#ff0000')
+        linked = lnk_sel(layout)
+        current_obj = linked[()]
+
+        # Check base points layer
+        self.check_base_points_like(current_obj[()].Points.I, lnk_sel)
+
+        # Check selection layer
+        self.check_overlay_points_like(current_obj[()].Points.II, lnk_sel, self.data)
+
+        # Check RGB base layer
+        self.assertEqual(
+            current_obj[()].RGB.I,
+            dynspread(
+                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
+            )[()]
+        )
+
+        # Check RGB selection layer
+        self.assertEqual(
+            current_obj[()].RGB.II,
+            dynspread(
+                datashade(points, cmap=lnk_sel.selected_cmap, alpha=255)
+            )[()]
+        )
+
+        # Perform selection of second and third point
+        selectionxy = TestLinkSelections.get_value_with_key_type(
+            lnk_sel._selection_expr_streams, hv.Points
+        ).input_streams[0].input_stream.input_streams[0]
+
+        self.assertIsInstance(selectionxy, SelectionXY)
+        selectionxy.event(bounds=(0, 1, 5, 5))
+        current_obj = linked[()]
+
+        # Check that base points layer is unchanged
+        self.check_base_points_like(current_obj[()].Points.I, lnk_sel)
+
+        # Check points selection layer
+        self.check_overlay_points_like(current_obj[()].Points.II, lnk_sel,
+                                       self.data.iloc[1:])
+
+        # Check that base RGB layer is unchanged
+        self.assertEqual(
+            current_obj[()].RGB.I,
+            dynspread(
+                datashade(points, cmap=lnk_sel.unselected_cmap, alpha=255)
+            )[()]
+        )
+
+        # Check selection RGB layer
+        self.assertEqual(
+            current_obj[()].RGB.II,
+            dynspread(
+                datashade(
+                    points.iloc[1:], cmap=lnk_sel.selected_cmap, alpha=255
+                )
+            )[()]
+        )
+
     def test_points_selection_streaming(self):
         buffer = hv.streams.Buffer(self.data.iloc[:2], index=False)
         points = hv.DynamicMap(Points, streams=[buffer])
