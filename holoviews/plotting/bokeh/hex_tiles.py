@@ -11,7 +11,7 @@ except:
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
-from ...core.util import basestring, isfinite
+from ...core.util import basestring, isfinite, max_range
 from ...element import HexTiles
 from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
@@ -83,14 +83,15 @@ class hex_binning(Operation):
         # Construct aggregate
         data = coords + values
         xd, yd = (element.get_dimension(i) for i in indexes)
-        xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
-        kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
+        xdn, ydn = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
+        kdims = [ydn, xdn] if self.p.invert_axes else [xdn, ydn]
         agg = (
             element.clone(data, kdims=kdims, vdims=vdims)
             .aggregate(function=aggregator)
         )
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
+        agg.cdims = {xd.name: xdn, yd.name: ydn}
         return agg
 
 
@@ -156,11 +157,14 @@ class HexTilesPlot(ColorbarPlot):
         xdim, ydim = element.kdims[:2]
         ranges[xdim.name]['data'] = xdim.range
         ranges[ydim.name]['data'] = ydim.range
-        xdim, ydim = element.dataset.kdims[:2]
-        if xdim.name in ranges:
-            ranges[xdim.name]['hard'] = xdim.range
-        if ydim.name in ranges:
-            ranges[ydim.name]['hard'] = ydim.range
+        xd = element.cdims.get(xdim.name)
+        if xd and xdim.name in ranges:
+            ranges[xdim.name]['hard'] = xd.range
+            ranges[xdim.name]['soft'] = max_range([xd.soft_range, ranges[xdim.name]['soft']])
+        yd = element.cdims.get(ydim.name)
+        if yd and ydim.name in ranges:
+            ranges[ydim.name]['hard'] = yd.range
+            ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
         return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
