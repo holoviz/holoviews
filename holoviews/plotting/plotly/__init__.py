@@ -15,6 +15,7 @@ from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
 from .annotation import *            # noqa (API import)
+from .tiles import *                 # noqa (API import)
 from .element import *               # noqa (API import)
 from .chart import *                 # noqa (API import)
 from .chart3d import *               # noqa (API import)
@@ -72,6 +73,7 @@ Store.register({Points: ScatterPlot,
 
                 # Annotations
                 Labels: LabelPlot,
+                Tiles: TilePlot,
 
                 # Shapes
                 Box: PathShapePlot,
@@ -102,6 +104,7 @@ if config.no_padding:
         plot.padding = 0
 
 dflt_cmap = 'fire'
+dflt_shape_line_color = '#2a3f5f'  # Line color of default plotly template
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
@@ -129,3 +132,10 @@ options.Scatter3D = Options('style', color=Cycle(), size=6)
 # Annotations
 options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+
+# Shapes
+options.Rectangles = Options('style', line_color=dflt_shape_line_color)
+options.Bounds = Options('style', line_color=dflt_shape_line_color)
+options.Path = Options('style', line_color=dflt_shape_line_color)
+options.Segments = Options('style', line_color=dflt_shape_line_color)
+options.Box = Options('style', line_color=dflt_shape_line_color)

@@ -36,10 +36,14 @@ def _PlotlyHoloviewsPane(fig_dict, **kwargs):
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
-        plotly_pane.param.watch(
-            lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
-            callback_cls.callback_property,
-        )
+        for callback_prop in callback_cls.callback_properties:
+            plotly_pane.param.watch(
+                lambda event, cls=callback_cls, prop=callback_prop:
+                    cls.update_streams_from_property_update(
+                        prop, event.new, event.obj.object
+                    ),
+                callback_prop,
+            )
     return plotly_pane
 
 
@@ -87,7 +91,6 @@ class PlotlyRenderer(Renderer):
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
         return fig_dict
-
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':

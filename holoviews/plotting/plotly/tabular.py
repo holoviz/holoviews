@@ -12,22 +12,24 @@ class TablePlot(ElementPlot):
 
     width = param.Number(default=400)
 
-    trace_kwargs = {'type': 'table'}
-
     style_opts = ['visible', 'line', 'fill', 'align', 'font', 'cell_height']
 
     _style_key = 'cells'
 
     selection_display = ColorListSelectionDisplay(color_prop='fill', backend='plotly')
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'table'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         header = dict(values=[d.pprint_label for d in element.dimensions()])
         cells = dict(values=[[d.pprint_value(v) for v in element.dimension_values(d)]
                               for d in element.dimensions()])
         return [{'header': header, 'cells': cells}]
 
-    def graph_options(self, element, ranges, style):
-        opts = super(TablePlot, self).graph_options(element, ranges, style)
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super(TablePlot, self).graph_options(element, ranges, style, **kwargs)
 
         # Transpose fill_color array so values apply by rows not column
         if 'fill' in opts.get('cells', {}):
@@ -38,7 +40,7 @@ class TablePlot(ElementPlot):
 
         return opts
 
-    def init_layout(self, key, element, ranges):
+    def init_layout(self, key, element, ranges, **kwargs):
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),
                     plot_bgcolor=self.bgcolor)

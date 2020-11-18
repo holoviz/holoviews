@@ -5,18 +5,32 @@ import param
 from .selection import PlotlyOverlaySelectionDisplay
 from ...core import util
 from ...operation import interpolate_curve
+from ...element import Tiles
 from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
 
 
 class ChartPlot(ElementPlot):
 
-    trace_kwargs = {'type': 'scatter'}
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter'}
 
-    def get_data(self, element, ranges, style):
-        x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
-        return [{x: element.dimension_values(0),
-                 y: element.dimension_values(1)}]
+    def get_data(self, element, ranges, style, is_geo=False, **kwargs):
+        if is_geo:
+            if self.invert_axes:
+                x = element.dimension_values(1)
+                y = element.dimension_values(0)
+            else:
+                x = element.dimension_values(0)
+                y = element.dimension_values(1)
+
+            lon, lat = Tiles.easting_northing_to_lon_lat(x, y)
+            return [{"lon": lon, "lat": lat}]
+        else:
+            x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
+            return [{x: element.dimension_values(0),
+                     y: element.dimension_values(1)}]
 
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
@@ -38,14 +52,21 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
 
     _nonvectorized_styles = ['visible', 'cmap', 'alpha', 'sizemin', 'selectedpoints']
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'markers'}
-
     _style_key = 'marker'
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
-    def graph_options(self, element, ranges, style):
-        opts = super(ScatterPlot, self).graph_options(element, ranges, style)
+    _supports_geo = True
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        if is_geo:
+            return {'type': 'scattermapbox', 'mode': 'markers'}
+        else:
+            return {'type': 'scatter', 'mode': 'markers'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super(ScatterPlot, self).graph_options(element, ranges, style, **kwargs)
         cdim = element.get_dimension(self.color_index)
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
@@ -69,18 +90,27 @@ class CurvePlot(ChartPlot, ColorbarPlot):
 
     padding = param.ClassSelector(default=(0, 0.1), class_=(int, float, tuple))
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
-
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
     _nonvectorized_styles = style_opts
 
+    unsupported_geo_style_opts = ["dash"]
+
     _style_key = 'line'
 
-    def get_data(self, element, ranges, style):
+    _supports_geo = True
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        if is_geo:
+            return {'type': 'scattermapbox', 'mode': 'lines'}
+        else:
+            return {'type': 'scatter', 'mode': 'lines'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return super(CurvePlot, self).get_data(element, ranges, style)
+        return super(CurvePlot, self).get_data(element, ranges, style, **kwargs)
 
 
 class AreaPlot(AreaMixin, ChartPlot):
@@ -89,14 +119,16 @@ class AreaPlot(AreaMixin, ChartPlot):
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
-
     _style_key = 'line'
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
-            kwargs = super(AreaPlot, self).get_data(element, ranges, style)[0]
+            kwargs = super(AreaPlot, self).get_data(element, ranges, style, **kwargs)[0]
             kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
@@ -112,11 +144,13 @@ class SpreadPlot(ChartPlot):
 
     style_opts = ['visible', 'color', 'dash', 'line_width']
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines'}
-
     _style_key = 'line'
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
@@ -131,8 +165,6 @@ class SpreadPlot(ChartPlot):
 
 class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
-    trace_kwargs = {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
-
     style_opts = ['visible', 'color', 'dash', 'line_width', 'thickness']
 
     _nonvectorized_styles = style_opts
@@ -141,7 +173,11 @@ class ErrorBarsPlot(ChartPlot, ColorbarPlot):
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter', 'mode': 'lines', 'line': {'width': 0}}
+
+    def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         error_k = 'error_' + x if element.horizontal else 'error_' + y
         neg_error = element.dimension_values(2)
@@ -168,9 +204,11 @@ class BarPlot(BarsMixin, ElementPlot):
 
     style_opts = ['visible']
 
-    trace_kwargs = {'type': 'bar'}
-
     selection_display = PlotlyOverlaySelectionDisplay()
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'bar'}
 
     def _get_axis_dims(self, element):
         if element.ndims > 1 and not self.stacked:
@@ -185,7 +223,7 @@ class BarPlot(BarsMixin, ElementPlot):
             return x0, y0, x1, y1
         return (None, y0, None, y1)
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
         vdim = element.vdims[0]
@@ -245,7 +283,7 @@ class BarPlot(BarsMixin, ElementPlot):
                 y: element.dimension_values(vdim)})
         return bars
 
-    def init_layout(self, key, element, ranges):
+    def init_layout(self, key, element, ranges, **kwargs):
         layout = super(BarPlot, self).init_layout(key, element, ranges)
         stack_dim = None
         if element.ndims > 1 and self.stacked:
@@ -256,8 +294,6 @@ class BarPlot(BarsMixin, ElementPlot):
 
 class HistogramPlot(ElementPlot):
 
-    trace_kwargs = {'type': 'bar'}
-
     style_opts = [
         'visible', 'color', 'line_color', 'line_width', 'opacity', 'selectedpoints'
     ]
@@ -266,7 +302,11 @@ class HistogramPlot(ElementPlot):
 
     selection_display = PlotlyOverlaySelectionDisplay()
 
-    def get_data(self, element, ranges, style):
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'bar'}
+
+    def get_data(self, element, ranges, style, **kwargs):
         xdim = element.kdims[0]
         ydim = element.vdims[0]
         values = element.interface.coords(element, ydim)
@@ -286,7 +326,7 @@ class HistogramPlot(ElementPlot):
             orientation = 'v'
         return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
 
-    def init_layout(self, key, element, ranges):
+    def init_layout(self, key, element, ranges, **kwargs):
         layout = super(HistogramPlot, self).init_layout(key, element, ranges)
         layout['barmode'] = 'overlay'
         return layout
