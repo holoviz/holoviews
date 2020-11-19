@@ -717,7 +717,7 @@ class histogram(Operation):
         if is_cupy:
             import cupy
             full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
-            if not full_cupy_support and (normed or self.p.weight_dimension):
+            if not full_cupy_support and (normed or self.p.weight_dimension): 
                 data = cupy.asnumpy(data)
                 is_cupy = False
         if is_dask_array(data):
@@ -783,7 +783,7 @@ class histogram(Operation):
                 if normed == 'height':
                     hist /= hist.max()
             else:
-                hist, edges = histogram(data, density=False, weights=weights, bins=edges)
+                hist, edges = histogram(data, normed=normed, weights=weights, bins=edges)
                 if self.p.weight_dimension and self.p.mean_weighted:
                     hist_mean, _ = histogram(data, density=False, bins=self.p.num_bins)
                     hist /= hist_mean
@@ -792,7 +792,7 @@ class histogram(Operation):
             hist = np.zeros(nbins)
 
         if is_cupy_array(hist):
-            edges = cupy.asnumpy(edges)
+            edges = cupy.asnumpy(edges) 
             hist = cupy.asnumpy(hist)
 
         hist[np.isnan(hist)] = 0
