@@ -16,7 +16,8 @@ try:
     from bokeh.document import Document
     from bokeh.models import tools
     from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
-                              NumeralTickFormatter, LogTicker)
+                              NumeralTickFormatter, LogTicker,
+                              LinearColorMapper, LogColorMapper)
     from holoviews.plotting.bokeh.util import bokeh_version
 except:
     pass
@@ -809,6 +810,29 @@ class TestColorbarPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.nan_color, 'rgba(0, 0, 0, 0)')
+
+    def test_colormapper_cnorm_linear(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(cnorm='linear')
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertTrue(cmapper, LinearColorMapper)
+
+    def test_colormapper_cnorm_log(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(cnorm='log')
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertTrue(cmapper, LogColorMapper)
+
+    def test_colormapper_cnorm_eqhist(self):
+        try:
+            from bokeh.models import EqHistColorMapper
+        except:
+            raise SkipTest("Option cnorm='eq_hist' requires EqHistColorMapper")
+        img = Image(np.array([[0, 1], [2, 3]])).options(cnorm='eq_hist')
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertTrue(cmapper, EqHistColorMapper)
+
 
     def test_colormapper_min_max_colors(self):
         img = Image(np.array([[0, 1], [2, 3]])).options(clipping_colors={'min': 'red', 'max': 'blue'})
