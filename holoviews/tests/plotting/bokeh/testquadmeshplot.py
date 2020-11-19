@@ -48,3 +48,13 @@ class TestQuadMeshPlot(TestBokehPlot):
         self.assertEqual(source.data['right'], np.array([0.5, 0.5, 0.5, 1.5, 1.5, 1.5, 2.5, 2.5, 2.5]))
         self.assertEqual(source.data['top'], np.array([0.5, 1.5, 2.5, 0.5, 1.5, 2.5, 0.5, 1.5, 2.5]))
         self.assertEqual(source.data['bottom'], np.array([-0.5, 0.5, 1.5, -0.5, 0.5, 1.5, -0.5, 0.5, 1.5]))
+
+    def test_quadmesh_nodata(self):
+        xs = [0, 1, 2]
+        ys = [2, 1, 0]
+        data = np.array([[0,1,2], [3,4,5], [6,7,8]])
+        flattened = np.array([6, 3, np.NaN, 7, 4, 1, 8, 5, 2])
+        qmesh = QuadMesh((xs, ys, data)).opts(nodata=0)
+        plot = bokeh_renderer.get_plot(qmesh)
+        source = plot.handles['source']
+        self.assertEqual(source.data['z'], flattened)

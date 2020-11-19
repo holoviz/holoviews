@@ -20,6 +20,17 @@ class TestRasterPlot(TestMPLPlot):
         self.assertEqual(artist.get_array().data, arr.T[::-1])
         self.assertEqual(artist.get_extent(), [0, 2, 0, 3])
 
+    def test_raster_nodata(self):
+        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        expected = np.array([[3, 4, 5],
+                             [np.NaN, 1, 2]])
+
+        raster = Raster(arr).opts(nodata=0)
+        plot = mpl_renderer.get_plot(raster)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_array().data, expected)
+
+
     def test_image_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
         raster = Image(arr).opts(invert_axes=True)
