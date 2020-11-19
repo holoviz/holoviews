@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import param
+import numpy as np
 
 from .selection import PlotlyOverlaySelectionDisplay
 from ...core import util
@@ -309,8 +310,8 @@ class HistogramPlot(ElementPlot):
     def get_data(self, element, ranges, style, **kwargs):
         xdim = element.kdims[0]
         ydim = element.vdims[0]
-        values = element.interface.coords(element, ydim)
-        edges = element.interface.coords(element, xdim)
+        values = np.asarray(element.interface.coords(element, ydim))
+        edges = np.asarray(element.interface.coords(element, xdim))
         if len(edges) < 2:
             binwidth = 0
         else:
