@@ -9,6 +9,7 @@ import base64
 
 # Holoviews imports
 import holoviews as hv
+from dash.exceptions import PreventUpdate
 from holoviews.plotting.plotly import PlotlyRenderer, DynamicMap
 from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.core.decollate import (
@@ -41,7 +42,7 @@ DashComponents = namedtuple(
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
 
 
-def plot_to_figure(plot, reset_nclicks=0):
+def plot_to_figure(plot, reset_nclicks=0, responsive=True):
     """
     Convert a HoloViews plotly plot to a plotly.py Figure.
 
@@ -66,8 +67,10 @@ def plot_to_figure(plot, reset_nclicks=0):
             fig_dict['layout'][k].pop('range', None)
 
     # Remove figure width height, let container decide
-    fig_dict['layout'].pop('width', None)
-    fig_dict['layout'].pop('height', None)
+    if responsive:
+        fig_dict['layout'].pop('width', None)
+        fig_dict['layout'].pop('height', None)
+        fig_dict['layout'].pop('autosize', None)
 
     # Pass to figure constructor to expand magic underscore notation
     return go.Figure(fig_dict)
@@ -246,7 +249,10 @@ def decode_store_data(store_data):
     return pickle.loads(base64.b64decode(store_data["pickled"]))
 
 
-def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
+def to_dash(
+        app, hvobjs, reset_button=False, graph_class=dcc.Graph,
+        button_class=html.Button, responsive=True,
+):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
 
@@ -258,7 +264,11 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
             objects to their initial values. Defaults to False.
         graph_class: Class to use when creating Graph components, one of dcc.Graph
             (default) or ddk.Graph.
-
+        button_class: Class to use when creating reset button component.
+            E.g. html.Button (default) or dbc.Button
+        responsive: If True (default) graphs will fill their containers responsively.
+            If False, graphs will have a fixed size based on the HoloViews
+            width and height parameters.
     Returns:
         DashComponents named tuple with properties:
             - graphs: List of graph components (with type matching the input
@@ -316,7 +326,7 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         plot = PlotlyRenderer.get_plot(hvobj)
         plots.append(plot)
 
-        fig = plot_to_figure(plot, reset_nclicks=0).to_dict()
+        fig = plot_to_figure(plot, reset_nclicks=0, responsive=responsive).to_dict()
         initial_fig_dicts.append(fig)
 
         # Build graphs
@@ -325,7 +335,7 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         graph = graph_class(
             id=graph_id,
             figure=fig,
-            config={"scrollZoom": True}
+            config={"scrollZoom": True},
         )
         graph_components.append(graph)
 
@@ -427,7 +437,7 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
     # Add reset button
     if reset_button:
         reset_id = 'reset-' + str(uuid.uuid4())
-        reset_button = html.Button(id=reset_id, children="Reset")
+        reset_button = button_class(id=reset_id, children="Reset")
         inputs.append(Input(
             component_id=reset_id, component_property='n_clicks'
         ))
@@ -444,15 +454,8 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
         selected_dicts = [args[j] or {} for j in range(0, num_figs * 2, 2)]
         relayout_dicts = [args[j] or {} for j in range(1, num_figs * 2, 2)]
 
-        # Get kdim values
-        kdim_values = {}
-        for i, kdim in zip(
-                range(num_figs * 2, num_figs * 2 + len(all_kdims)),
-                all_kdims
-        ):
-            kdim_values[kdim] = args[i]
-
         # Get store
+        any_change = False
         store_data = decode_store_data(args[-1])
         reset_nclicks = 0
         if reset_button:
@@ -465,10 +468,21 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
                 store_data["streams"] = copy.deepcopy(initial_stream_contents)
                 selected_dicts = [None for _ in selected_dicts]
                 relayout_dicts = [None for _ in relayout_dicts]
+                any_change = True
 
-        # Init store data
+        # Init store data if needed
         if store_data is None:
             store_data = {"streams": {}}
+
+        # Get kdim values
+        store_data.setdefault("kdims", {})
+        for i, kdim in zip(
+                range(num_figs * 2, num_figs * 2 + len(all_kdims)),
+                all_kdims
+        ):
+            if kdim not in store_data["kdims"] or store_data["kdims"][kdim] != args[i]:
+                store_data["kdims"][kdim] = args[i]
+                any_change = True
 
         # Update store_data with interactive stream values
         for fig_ind, fig_dict in enumerate(initial_fig_dicts):
@@ -484,30 +498,36 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
-                            for uid, event_data in stream_event_data.items():
-                                if uid in uid_to_streams_for_type:
-                                    for stream_id in uid_to_streams_for_type[uid]:
-                                        store_data["streams"][stream_id] = event_data
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
+
                     elif panel_prop == "viewport":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
 
-                            for uid, event_data in stream_event_data.items():
-                                if event_data["x_range"] is not None or event_data["y_range"] is not None:
-                                    if uid in uid_to_streams_for_type:
-                                        for stream_id in uid_to_streams_for_type[uid]:
-                                            store_data["streams"][stream_id] = event_data
+                            stream_event_data = {
+                                uid: event_data
+                                for uid, event_data in stream_event_data.items()
+                                if event_data["x_range"] is not None
+                                or event_data[ "y_range"] is not None
+                            }
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
                     elif panel_prop == "relayout_data":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
-                            for uid, event_data in stream_event_data.items():
-                                if uid in uid_to_streams_for_type:
-                                    for stream_id in uid_to_streams_for_type[uid]:
-                                        store_data["streams"][stream_id] = event_data
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
+
+        if not any_change:
+            raise PreventUpdate
 
         # Update store with derived/history stream values
         for output_id in reversed(stream_callbacks):
@@ -522,13 +542,15 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
 
         figs = [None] * num_figs
         for fig_ind, (fn, stream_ids) in fig_to_fn_stream_ids.items():
-            fig_kdim_values = [kdim_values[kd] for kd in kdims_per_fig[fig_ind]]
+            fig_kdim_values = [store_data["kdims"][kd] for kd in kdims_per_fig[fig_ind]]
             stream_values = [
                 store_data["streams"][stream_id] for stream_id in stream_ids
             ]
             hvobj = fn(*(fig_kdim_values + stream_values))
             plot = PlotlyRenderer.get_plot(hvobj)
-            fig = plot_to_figure(plot, reset_nclicks=reset_nclicks).to_dict()
+            fig = plot_to_figure(
+                plot, reset_nclicks=reset_nclicks, responsive=responsive
+            ).to_dict()
             figs[fig_ind] = fig
 
         return figs + [encode_store_data(store_data)]
@@ -564,3 +586,27 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
     )
 
     return components
+
+
+def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_for_type):
+    """
+    Update the store with values of streams for a single type
+
+    Args:
+        store_data: Current store dictionary
+        stream_event_data:  Potential stream data for current plotly event and
+            traces in figures
+        uid_to_streams_for_type: Mapping from trace UIDs to HoloViews streams of
+            a particular type
+    Returns:
+        any_change: Whether any stream value has been updated
+    """
+    any_change = False
+    for uid, event_data in stream_event_data.items():
+        if uid in uid_to_streams_for_type:
+            for stream_id in uid_to_streams_for_type[uid]:
+                if stream_id not in store_data["streams"] or \
+                        store_data["streams"][stream_id] != event_data:
+                    store_data["streams"][stream_id] = event_data
+                    any_change = True
+    return any_change

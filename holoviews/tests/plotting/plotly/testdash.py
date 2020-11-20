@@ -40,18 +40,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertIsInstance(components.store, Store)
         self.assertEqual(len(components.resets), 0)
 
-        callback_fn = self.app.callback.return_value.call_args[0][0]
-
-        # Check registered callbacks
-        self.assertEqual(self.app.callback.call_count, 1)
-        self.assertEqual(self.decorator.call_count, 1)
-
-        store_value = encode_store_data({})
-
-        with patch.object(CallbackContext, "triggered", []):
-            [fig, new_store] = callback_fn({}, store_value)
-
-        # Check figure returned by callback
+        # Check initial figure
+        fig = components.graphs[0].figure
         self.assertEqual(len(fig["data"]), 1)
         self.assertEqual(fig["data"][0]["type"], "scatter")
 
@@ -107,18 +97,9 @@ class TestHoloViewsDash(TestPlotlyPlot):
             expected_state,
         )
 
-        # Get callback function
-        callback_fn = self.app.callback.return_value.call_args[0][0]
-
-        # mimic initial callback invocation
-        store_value = encode_store_data({
-            "streams": {id(boundsxy): boundsxy.contents}
-        })
-        with patch.object(CallbackContext, "triggered", []):
-            [fig1, fig2, new_store] = callback_fn(
-                {}, {}, {}, {}, None, store_value
-            )
-        # First figure is the scatter trace
+        # Check initial figures
+        fig1 = components.graphs[0].figure
+        fig2 = components.graphs[1].figure
         self.assertEqual(fig1["data"][0]["type"], "scatter")
 
         # Second figure holds the bounds element
@@ -129,14 +110,16 @@ class TestHoloViewsDash(TestPlotlyPlot):
             "M0 0L0 0L0 0L0 0L0 0Z"
         )
 
-        # Check updated store
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(boundsxy): {"bounds": None}}}
-        )
+        # Get callback function
+        callback_fn = self.app.callback.return_value.call_args[0][0]
 
-        # Update store, then mimick a box selection on scatter figure
-        store_value = new_store
+        # # mimic initial callback invocation
+        store_value = encode_store_data({
+            "streams": {id(boundsxy): boundsxy.contents}
+        })
+
+        # Update store, then mimic a box selection on scatter figure
+        # store_value = new_store
         with patch.object(
                 CallbackContext, "triggered",
                 [{"prop_id": inputs[0].component_id + ".selectedData"}]
@@ -160,7 +143,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check that store was updated
         self.assertEqual(
             decode_store_data(new_store),
-            {"streams": {id(boundsxy): {"bounds": (1, 3, 2, 4)}}}
+            {"streams": {id(boundsxy): {"bounds": (1, 3, 2, 4)}},
+             "kdims": {}}
         )
 
         # Click reset button
@@ -189,7 +173,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(
             decode_store_data(new_store),
             {"streams": {id(boundsxy): {"bounds": None}},
-             "reset_nclicks": 1}
+             "reset_nclicks": 1,
+             "kdims": {}}
         )
 
     def test_rangexy_dynamic_map(self):
@@ -286,7 +271,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check updated store
         self.assertEqual(
             decode_store_data(new_store),
-            {"streams": {id(rangexy): {'x_range': (1, 3), 'y_range': (2, 4)}}}
+            {"streams": {id(rangexy): {'x_range': (1, 3), 'y_range': (2, 4)}},
+             "kdims": {}}
         )
 
     def test_selection1d_dynamic_map(self):
@@ -342,17 +328,9 @@ class TestHoloViewsDash(TestPlotlyPlot):
             expected_state,
         )
 
-        # Get callback function
-        callback_fn = self.app.callback.return_value.call_args[0][0]
-
-        # mimic initial callback invocation
-        store_value = encode_store_data({
-            "streams": {id(selection1d): selection1d.contents}
-        })
-        with patch.object(CallbackContext, "triggered", []):
-            [fig1, fig2, new_store] = callback_fn(
-                {}, {}, None, store_value
-            )
+        # Check initial figures
+        fig1 = components.graphs[0].figure
+        fig2 = components.graphs[1].figure
 
         # Figure holds the scatter trace
         self.assertEqual(len(fig2["data"]), 1)
@@ -362,14 +340,16 @@ class TestHoloViewsDash(TestPlotlyPlot):
         self.assertEqual(list(fig2["data"][0]["x"]), [])
         self.assertEqual(list(fig2["data"][0]["y"]), [])
 
-        # Check updated store
-        self.assertEqual(
-            decode_store_data(new_store),
-            {"streams": {id(selection1d): {"index": []}}}
-        )
+        # Get callback function
+        callback_fn = self.app.callback.return_value.call_args[0][0]
+
+        # mimic initial callback invocation
+        store_value = encode_store_data({
+            "streams": {id(selection1d): selection1d.contents}
+        })
 
         # Update store, then mimick a selection on scatter figure
-        store_value = new_store
+        # store_value = new_store
         with patch.object(
                 CallbackContext, "triggered",
                 [{"prop_id": inputs[0].component_id + ".selectedData"}]
@@ -401,7 +381,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check that store was updated
         self.assertEqual(
             decode_store_data(new_store),
-            {"streams": {id(selection1d): {"index": [0, 2]}}}
+            {"streams": {id(selection1d): {"index": [0, 2]}},
+             "kdims": {}}
         )
 
         # Click reset button
@@ -425,7 +406,8 @@ class TestHoloViewsDash(TestPlotlyPlot):
         # Check that store was updated
         self.assertEqual(
             decode_store_data(new_store),
-            {"streams": {id(selection1d): {"index": []}}, 'reset_nclicks': 1},
+            {"streams": {id(selection1d): {"index": []}}, 'reset_nclicks': 1,
+             "kdims": {}},
         )
 
     def test_kdims_dynamic_map(self):
