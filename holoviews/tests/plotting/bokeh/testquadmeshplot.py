@@ -58,3 +58,13 @@ class TestQuadMeshPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(qmesh)
         source = plot.handles['source']
         self.assertEqual(source.data['z'], flattened)
+
+    def test_quadmesh_nodata_uint(self):
+        xs = [0, 1, 2]
+        ys = [2, 1, 0]
+        data = np.array([[0,1,2], [3,4,5], [6,7,8]], dtype='uint32')
+        flattened = np.array([6, 3, np.NaN, 7, 4, 1, 8, 5, 2])
+        qmesh = QuadMesh((xs, ys, data)).opts(nodata=0)
+        plot = bokeh_renderer.get_plot(qmesh)
+        source = plot.handles['source']
+        self.assertEqual(source.data['z'], flattened)
