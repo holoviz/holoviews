@@ -10,6 +10,7 @@ import copy
 
 import numpy as np
 import param
+import pandas as pd # noqa
 
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
@@ -21,57 +22,24 @@ from ..dimension import (
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
-from .interface import Interface, iloc, ndloc
-from .array import ArrayInterface
-from .dictionary import DictInterface
-from .grid import GridInterface
+
+from .array import ArrayInterface             # noqa (API import)
+from .cudf import cuDFInterface               # noqa (API import)
+from .dask import DaskInterface               # noqa (API import)
+from .dictionary import DictInterface         # noqa (API import)
+from .grid import GridInterface               # noqa (API import)
+from .ibis import IbisInterface               # noqa (API import)
+from .interface import Interface, iloc, ndloc # noqa (API import)
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
+from .pandas import PandasInterface           # noqa (API import)
+from .spatialpandas import SpatialPandasInterface # noqa (API import)
+from .xarray import XArrayInterface           # noqa (API import)
 
-default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid']
+default_datatype = 'dataframe'
 
-try:
-    import pandas as pd # noqa (Availability import)
-    from .pandas import PandasInterface
-    default_datatype = 'dataframe'
-    datatypes.insert(0, 'dataframe')
-    DFColumns = PandasInterface
-except ImportError:
-    pd = None
-except Exception as e:
-    pd = None
-    param.main.param.warning('Pandas interface failed to import with '
-                             'following error: %s' % e)
-
-try:
-    from .spatialpandas import SpatialPandasInterface # noqa (API import)
-    datatypes.append('spatialpandas')
-except ImportError:
-    pass
-
-try:
-    from .xarray import XArrayInterface # noqa (Conditional API import)
-    datatypes.append('xarray')
-except ImportError:
-    pass
-
-try:
-    from .cudf import cuDFInterface   # noqa (Conditional API import)
-    datatypes.append('cuDF')
-except ImportError:
-    pass
-
-try:
-    from .dask import DaskInterface   # noqa (Conditional API import)
-    datatypes.append('dask')
-except ImportError:
-    pass
-
-if 'array' not in datatypes:
-    datatypes.append('array')
-if 'multitabular' not in datatypes:
-    datatypes.append('multitabular')
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
+             'cuDF', 'spatialpandas', 'array', 'multitabular', 'ibis']
 
 
 def concat(datasets, datatype=None):
@@ -370,6 +338,10 @@ class Dataset(Element):
         )
         self._transforms = input_transforms or []
 
+        # On lazy interfaces this allows keeping an evaluated version
+        # of the dataset in memory
+        self._cached = None
+
         # Handle initializing the dataset property.
         self._dataset = input_dataset
         if self._dataset is None and isinstance(input_data, Dataset) and not dataset_provided:
@@ -403,7 +375,6 @@ class Dataset(Element):
             return Dataset(self, _validate_vdims=False, **self._dataset)
         return self._dataset
 
-
     @property
     def pipeline(self):
         """
@@ -412,6 +383,34 @@ class Dataset(Element):
         dataset property
         """
         return self._pipeline
+
+    def compute(self):
+        """
+        Computes the data to a data format that stores the daata in
+        memory, e.g. a Dask dataframe or array is converted to a
+        Pandas DataFrame or NumPy array.
+
+        Returns:
+            Dataset with the data stored in in-memory format
+        """
+        return self.interface.compute(self)
+
+    def persist(self):
+        """
+        Persists the results of a lazy data interface to memory to
+        speed up data manipulation and visualization. If the
+        particular data backend already holds the data in memory
+        this is a no-op. Unlike the compute method this maintains
+        the same data type.
+
+        Returns:
+            Dataset with the data persisted to memory
+        """
+        persisted = self.interface.persist(self)
+        if persisted.interface is self.interface:
+            return persisted
+        self._cached = persisted
+        return self
 
     def closest(self, coords=[], **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
@@ -441,7 +440,7 @@ class Dataset(Element):
         if xs.dtype.kind in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs]
+        return [type(s)(xs[idx]) for s, idx in zip(coords, idxs)]
 
 
     def sort(self, by=None, reverse=False):
@@ -594,15 +593,13 @@ argument to specify a selection specification""")
         # Handle selection dim expression
         if selection_expr is not None:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
-            dataset = self[mask]
-        else:
-            dataset = self
+            selection = {'selection_mask': mask}
 
         # Handle selection kwargs
         if selection:
-            data = dataset.interface.select(dataset, **selection)
+            data = self.interface.select(self, **selection)
         else:
-            data = dataset.data
+            data = self.data
 
         if np.isscalar(data):
             return data
@@ -678,7 +675,7 @@ argument to specify a selection specification""")
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.select(selection_mask=slices))
-        elif slices in [(), Ellipsis]:
+        elif (isinstance(slices, ()) and len(slices) == 1) or slices is Ellipsis:
             return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
@@ -770,7 +767,7 @@ argument to specify a selection specification""")
         # may be replaced with more general handling
         # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
-        datatype = ['dataframe', 'dictionary', 'dask']
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
@@ -879,7 +876,7 @@ argument to specify a selection specification""")
 
         # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
-        if not len(self):
+        if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
                 vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
@@ -905,7 +902,9 @@ argument to specify a selection specification""")
             for i, d in enumerate(vdims):
                 dim = d.clone('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, flat=False)
-                combined = combined.add_dimension(dim, ndims+i, dvals, True)
+                idx = vdims.index(d)
+                combined = combined.add_dimension(dim, idx+1, dvals, True)
+                vdims = combined.vdims
             return combined.clone(new_type=Dataset if generic_type else type(self))
 
         if np.isscalar(aggregated):
@@ -1241,10 +1240,3 @@ argument to specify a selection specification""")
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
         return ndloc(self)
-
-
-# Aliases for pickle backward compatibility
-Columns      = Dataset
-ArrayColumns = ArrayInterface
-DictColumns  = DictInterface
-GridColumns  = GridInterface

@@ -236,6 +236,13 @@ class XArrayInterface(GridInterface):
                                 "non-matching array dimensions:\n\n%s"
                                 % ('\n'.join(nonmatching)), cls)
 
+    @classmethod
+    def compute(cls, dataset):
+        return dataset.clone(dataset.data.compute())
+
+    @classmethod
+    def persist(cls, dataset):
+        return dataset.clone(dataset.data.persist())
 
     @classmethod
     def range(cls, dataset, dimension):

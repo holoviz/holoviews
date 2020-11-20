@@ -20,6 +20,8 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 2.7
+          - os: macos-latest
+            python-version: 3.7
     timeout-minutes: 30
     defaults:
       run:
@@ -28,7 +30,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      CHANS_DEV: "-c pyviz/label/dev"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -61,6 +63,12 @@ jobs:
           git describe
           echo "======"
           conda list
+      - name: bokeh update
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install "bokeh>=2.2"
       - name: matplotlib patch
         if: startsWith(matrix.python-version, 3.)
         run: |

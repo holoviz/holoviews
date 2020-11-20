@@ -32,6 +32,19 @@ def is_dask(array):
         return False
     return da and isinstance(array, da.Array)
 
+def cached(method):
+    """
+    Decorates an Interface method and using a cached version
+    """
+    def cached(*args, **kwargs):
+        cache = getattr(args[1], '_cached')
+        if cache is None:
+            return method(*args, **kwargs)
+        else:
+            args = (cache,)+args[2:]
+            return getattr(cache.interface, method.__name__)(*args, **kwargs)
+    return cached
+
 
 class DataError(ValueError):
     "DataError is raised when the data cannot be interpreted"
@@ -304,11 +317,23 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
+    @classmethod
+    def persist(cls, dataset):
+        """
+        Should return a persisted version of the Dataset.
+        """
+        return dataset
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Should return a computed version of the Dataset.
+        """
+        return dataset
 
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
-
 
     @classmethod
     def isscalar(cls, dataset, dim):
@@ -449,6 +474,22 @@ class Interface(param.Parameterized):
         data = list(zip(keys, datasets)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
+
+    @classmethod
+    def histogram(cls, array, bins, density=True, weights=None):
+        if util.is_dask_array(array):
+            import dask.array as da
+            histogram = da.histogram
+        elif util.is_cupy_array(array):
+            import cupy
+            histogram = cupy.histogram
+        else:
+            histogram = np.histogram
+        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        if util.is_cupy_array(hist):
+            edges = cupy.asnumpy(edges)
+            hist = cupy.asnumpy(hist)
+        return hist, edges
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):

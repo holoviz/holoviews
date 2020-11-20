@@ -409,6 +409,17 @@ class GridInterface(DictInterface):
             selected[d.name] = arr[tuple(adjusted_inds)]
         return tuple(selected[d.name] for d in dataset.dimensions())
 
+    @classmethod
+    def persist(cls, dataset):
+        da = dask_array_module()
+        return {k: v.persist() if da and isinstance(v, da.Array) else v
+                for k, v in dataset.data.items()}
+
+    @classmethod
+    def compute(cls, dataset):
+        da = dask_array_module()
+        return {k: v.compute() if da and isinstance(v, da.Array) else v
+                for k, v in dataset.data.items()}
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True, compute=True,
