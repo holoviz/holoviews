@@ -44,7 +44,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "dask",
     "scipy",
     "shapely",
-    "scikit-image",
+    "scikit-image"
 ]
 
 if sys.version_info.major > 2:
@@ -69,6 +69,7 @@ extras_require['tests'] = [
     'flake8 ==3.6.0',
     'coveralls',
     'path.py',
+    'bokeh >=2.2',
     'matplotlib >=2.2,<3.1',
     'nbsmoke >=0.2.0',
     'pytest-cov ==2.5.1',
