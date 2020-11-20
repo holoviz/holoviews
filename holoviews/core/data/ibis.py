@@ -1,8 +1,8 @@
 import sys
-import typing
 import numpy
 import ibis
 
+from collections.abc import Iterable
 
 from .. import util
 from ..element import Element
@@ -197,7 +197,7 @@ class IbisInterface(Interface):
 
                 return data.filter(predicates).drop(["hv_row_id__"])
         else:
-            if not isinstance(rows, typing.Iterable):
+            if not isinstance(rows, Iterable):
                 rows = [rows]
             return data.filter([data.hv_row_id__.isin(rows)]).drop(["hv_row_id__"])
         return data.drop(["hv_row_id__"])
