@@ -569,7 +569,7 @@ class TriMesh(Graph):
         try:
             from scipy.spatial import Delaunay
         except:
-            raise ImportError("Generating triangles from points requires, "
+            raise ImportError("Generating triangles from points requires "
                               "SciPy to be installed.")
         if not isinstance(data, Points):
             data = Points(data)
