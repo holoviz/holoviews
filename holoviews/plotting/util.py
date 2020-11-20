@@ -1097,18 +1097,19 @@ def hex2rgb(hex):
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
 
-def replace_value(data, value):
-    "Replace `nodata` value in data with NaN, if specified in opts"
-    data[data == value] = np.NaN
-    return data
-
-
 class apply_nodata(Operation):
 
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
         that it is transparent (by default) when plotted.""")
+
+    def _replace_value(self, data):
+        "Replace `nodata` value in data with NaN, if specified in opts"
+        data = data.astype('float64')
+        if hasattr(data, 'where'):
+            return data.where(data!=self.p.nodata, np.NaN)
+        return np.where(data==self.p.nodata, data, np.NaN)
 
     def _process(self, element, key=None):
         if self.p.nodata is None:
@@ -1118,7 +1119,7 @@ class apply_nodata(Operation):
             dtype = element.interface.dtype(element, vdim)
             if dtype.kind not in 'iu':
                 return element
-            transform = dim(dim(vdim).astype('float64'), replace_value, self.p.nodata)
+            transform = dim(vdim, self._replace_value)
             return element.transform(**{vdim.name: transform})
         else:
             array = element.dimension_values(2)
