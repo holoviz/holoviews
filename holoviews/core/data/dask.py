@@ -75,7 +75,7 @@ class DaskInterface(PandasInterface):
         return dataset.clone(dataset.data.compute())
 
     @classmethod
-    def persiste(cls, dataset):
+    def persist(cls, dataset):
         return dataset.clone(dataset.data.persist())
 
     @classmethod
