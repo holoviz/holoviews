@@ -20,6 +20,8 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 2.7
+          - os: macos-latest
+            python-version: 3.7
     timeout-minutes: 30
     defaults:
       run:
