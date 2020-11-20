@@ -41,7 +41,7 @@ DashComponents = namedtuple(
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
 
 
-def plot_to_figure(plot, reset_nclicks=0):
+def plot_to_figure(plot, reset_nclicks=0, responsive=True):
     """
     Convert a HoloViews plotly plot to a plotly.py Figure.
 
@@ -66,9 +66,10 @@ def plot_to_figure(plot, reset_nclicks=0):
             fig_dict['layout'][k].pop('range', None)
 
     # Remove figure width height, let container decide
-    fig_dict['layout'].pop('width', None)
-    fig_dict['layout'].pop('height', None)
-    fig_dict['layout'].pop('autosize', None)
+    if responsive:
+        fig_dict['layout'].pop('width', None)
+        fig_dict['layout'].pop('height', None)
+        fig_dict['layout'].pop('autosize', None)
 
     # Pass to figure constructor to expand magic underscore notation
     return go.Figure(fig_dict)
@@ -249,7 +250,7 @@ def decode_store_data(store_data):
 
 def to_dash(
         app, hvobjs, reset_button=False, graph_class=dcc.Graph,
-        button_class=html.Button
+        button_class=html.Button, responsive=True,
 ):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
@@ -264,6 +265,9 @@ def to_dash(
             (default) or ddk.Graph.
         button_class: Class to use when creating reset button component.
             E.g. html.Button (default) or dbc.Button
+        responsive: If True (default) graphs will fill their containers responsively.
+            If False, graphs will have a fixed size based on the HoloViews
+            width and height parameters.
     Returns:
         DashComponents named tuple with properties:
             - graphs: List of graph components (with type matching the input
@@ -321,7 +325,7 @@ def to_dash(
         plot = PlotlyRenderer.get_plot(hvobj)
         plots.append(plot)
 
-        fig = plot_to_figure(plot, reset_nclicks=0).to_dict()
+        fig = plot_to_figure(plot, reset_nclicks=0, responsive=responsive).to_dict()
         initial_fig_dicts.append(fig)
 
         # Build graphs
@@ -330,7 +334,7 @@ def to_dash(
         graph = graph_class(
             id=graph_id,
             figure=fig,
-            config={"scrollZoom": True}
+            config={"scrollZoom": True},
         )
         graph_components.append(graph)
 
@@ -533,7 +537,9 @@ def to_dash(
             ]
             hvobj = fn(*(fig_kdim_values + stream_values))
             plot = PlotlyRenderer.get_plot(hvobj)
-            fig = plot_to_figure(plot, reset_nclicks=reset_nclicks).to_dict()
+            fig = plot_to_figure(
+                plot, reset_nclicks=reset_nclicks, responsive=responsive
+            ).to_dict()
             figs[fig_ind] = fig
 
         return figs + [encode_store_data(store_data)]
