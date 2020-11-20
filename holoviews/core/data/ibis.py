@@ -2,7 +2,10 @@ import sys
 import numpy
 import ibis
 
-from collections.abc import Iterable
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 from .. import util
 from ..element import Element
