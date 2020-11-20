@@ -1126,7 +1126,7 @@ class apply_nodata(Operation):
             if array.dtype.kind not in 'iu':
                 return element
             array = array.astype('float64')
-            return element.clone(replace_value(array, self.p.nodata))
+            return element.clone(self._replace_value(array))
 
 
 RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')
