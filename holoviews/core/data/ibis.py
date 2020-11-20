@@ -386,8 +386,11 @@ class IbisInterface(Interface):
             numpy.nansum: ibis.expr.operations.Sum,
             numpy.var: ibis.expr.operations.Variance,
             numpy.nanvar: ibis.expr.operations.Variance,
-            numpy.cumsum: ibis.expr.operations.CumulativeSum
+            numpy.cumsum: ibis.expr.operations.CumulativeSum,
+            len: ibis.expr.operations.Count,
         }.get(function, function)
+
+        from ibis.expr import operations
 
         if len(dimensions):
             selection = new.groupby(columns)
