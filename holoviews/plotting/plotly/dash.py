@@ -68,6 +68,7 @@ def plot_to_figure(plot, reset_nclicks=0):
     # Remove figure width height, let container decide
     fig_dict['layout'].pop('width', None)
     fig_dict['layout'].pop('height', None)
+    fig_dict['layout'].pop('autosize', None)
 
     # Pass to figure constructor to expand magic underscore notation
     return go.Figure(fig_dict)
