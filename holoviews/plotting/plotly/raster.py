@@ -6,18 +6,17 @@ import param
 from ...core.options import SkipRendering
 from ...element import Image, Raster
 from ..mixins import HeatMapMixin
-from ..util import apply_nodata
 from .element import ColorbarPlot
 
 
 class RasterPlot(ColorbarPlot):
 
-    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
-
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
         that it is transparent (by default) when plotted.""")
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     style_opts = ['visible', 'cmap', 'alpha']
 
@@ -48,7 +47,6 @@ class RasterPlot(ColorbarPlot):
             x0, y0, dx, dy = y0, x0, dy, dx
             array = array.T
 
-        array = apply_nodata(element.opts.get('plot', 'plotly'), array)
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
@@ -127,5 +125,4 @@ class QuadMeshPlot(RasterPlot):
             y, x = 'x', 'y'
             zdata = zdata.T
 
-        zdata = apply_nodata(element.opts.get('plot', 'plotly'), zdata)
         return [{x: xc, y: yc, 'z': zdata}]

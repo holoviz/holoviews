@@ -7,7 +7,6 @@ from bokeh.models import DatetimeAxis, CustomJSHover
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
-from ..util import apply_nodata
 from .element import ElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
@@ -16,12 +15,12 @@ from .util import colormesh
 
 class RasterPlot(ColorbarPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
         that it is transparent (by default) when plotted.""")
-
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -123,7 +122,6 @@ class RasterPlot(ColorbarPlot):
             if self.invert_yaxis:
                 img = img[::-1]
             key = 'image' if i == 2 else dimension_sanitizer(vdim.name)
-            img = apply_nodata(element.opts.get('plot', 'bokeh'), img)
             data[key] = [img]
 
         return (data, mapping, style)
@@ -208,12 +206,12 @@ class HSVPlot(RGBPlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
         that it is transparent (by default) when plotted.""")
-
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -250,7 +248,6 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
-        zdata = apply_nodata(element.opts.get('plot', 'bokeh'), zdata)
 
         if irregular:
             dims = element.kdims

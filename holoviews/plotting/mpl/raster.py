@@ -7,7 +7,6 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
-from ..util import apply_nodata
 from .element import ElementPlot, ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array, mpl_version
@@ -15,15 +14,15 @@ from .util import get_raster_array, mpl_version
 
 class RasterBasePlot(ElementPlot):
 
-    nodata = param.Integer(default=None, doc="""
-        Optional missing-data value for integer data.
-        If non-None, data with this value will be replaced with NaN so
-        that it is transparent (by default) when plotted.""")
-
     aspect = param.Parameter(default='equal', doc="""
         Raster elements respect the aspect ratio of the
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -88,7 +87,6 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
 
-        data = apply_nodata(element.opts.get('plot', 'matplotlib'), data)
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -133,12 +131,12 @@ class RGBPlot(RasterBasePlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
     nodata = param.Integer(default=None, doc="""
         Optional missing-data value for integer data.
         If non-None, data with this value will be replaced with NaN so
         that it is transparent (by default) when plotted.""")
-
-    clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -154,7 +152,6 @@ class QuadMeshPlot(ColorbarPlot):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
 
-        data = apply_nodata(element.opts.get('plot', 'matplotlib'), data)
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
         coords = [element.interface.coords(element, d, ordered=True,
