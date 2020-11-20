@@ -14,6 +14,7 @@ from param import _is_number
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
+from ..core.data.interface import dask_array_module
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int,
                          isdatetime, is_dask_array, is_cupy_array,
@@ -738,7 +739,8 @@ class histogram(Operation):
             if self.p.nonzero:
                 mask = mask & (data != 0)
             data = data[mask]
-            no_data = not len(data)
+            da = dask_array_module()
+            no_data = False if da and isinstance(data, da.Array) else not len(data)
 
         # Compute weights
         if self.p.weight_dimension:
@@ -746,8 +748,7 @@ class histogram(Operation):
                 weights = element.interface.values(element, self.p.weight_dimension, compute=False)
             else:
                 weights = element.dimension_values(self.p.weight_dimension)
-            if self.p.nonzero:
-                weights = weights[mask]
+            weights = weights[mask]
         else:
             weights = None
 
