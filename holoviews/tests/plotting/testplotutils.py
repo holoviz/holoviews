@@ -468,7 +468,7 @@ class TestMPLColormapUtils(ComparisonTestCase):
     def setUp(self):
         try:
             import matplotlib.cm # noqa
-            import holoviews.plotting.mpl
+            import holoviews.plotting.mpl # noqa
         except:
             raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
 
