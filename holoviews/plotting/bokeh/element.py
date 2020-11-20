@@ -1955,7 +1955,12 @@ class ColorbarPlot(ElementPlot):
                         "the `clim` option."
                     )
             elif self.cnorm == 'eq_hist':
-                from bokeh.models import EqHistColorMapper
+                try:
+                    from bokeh.models import EqHistColorMapper
+                except ImportError:
+                    raise ImportError("Could not import bokeh.models.EqHistColorMapper. "
+                                      "Note that the option cnorm='eq_hist' requires "
+                                      "bokeh 2.2.3 or higher.")
                 colormapper = EqHistColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
