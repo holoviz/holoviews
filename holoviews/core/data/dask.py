@@ -271,9 +271,11 @@ class DaskInterface(PandasInterface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
-                err = ('Dask dataframe does not support assigning '
-                       'non-scalar value.')
-                raise NotImplementedError(err)
+                if len(values):
+                    err = ('Dask dataframe does not support assigning '
+                           'non-scalar value.')
+                    raise NotImplementedError(err)
+                values = None
             data = data.assign(**{dimension.name: values})
         return data
 

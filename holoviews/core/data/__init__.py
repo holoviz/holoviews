@@ -902,7 +902,9 @@ argument to specify a selection specification""")
             for i, d in enumerate(vdims):
                 dim = d.clone('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, flat=False)
-                combined = combined.add_dimension(dim, ndims+i, dvals, True)
+                idx = vdims.index(d)
+                combined = combined.add_dimension(dim, idx+1, dvals, True)
+                vdims = combined.vdims
             return combined.clone(new_type=Dataset if generic_type else type(self))
 
         if np.isscalar(aggregated):
