@@ -241,7 +241,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
         self.assertEqual(self.table.groupby(["Age"]), grouped)
 
-    if not IbisInterface.has_rowid:
+    if not IbisInterface.has_rowid():
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
             raise SkipTest("Not supported")
