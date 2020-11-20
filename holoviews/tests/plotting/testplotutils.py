@@ -528,6 +528,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
     def setUp(self):
         try:
             import bokeh.palettes # noqa
+            import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest('Bokeh required to test bokeh palette utilities')
 
