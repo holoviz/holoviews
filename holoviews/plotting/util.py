@@ -595,7 +595,8 @@ def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
         reverse = True
 
     # Some colormaps are inverted compared to matplotlib
-    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl)
+    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl
+                and not cmap.startswith('fire'))
     if inverted:
         reverse=not reverse
     ncolors = ncolors or 256
