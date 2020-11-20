@@ -9,6 +9,7 @@ import base64
 
 # Holoviews imports
 import holoviews as hv
+from dash.exceptions import PreventUpdate
 from holoviews.plotting.plotly import PlotlyRenderer, DynamicMap
 from holoviews.plotting.plotly.util import clean_internal_figure_properties
 from holoviews.core.decollate import (
@@ -453,15 +454,8 @@ def to_dash(
         selected_dicts = [args[j] or {} for j in range(0, num_figs * 2, 2)]
         relayout_dicts = [args[j] or {} for j in range(1, num_figs * 2, 2)]
 
-        # Get kdim values
-        kdim_values = {}
-        for i, kdim in zip(
-                range(num_figs * 2, num_figs * 2 + len(all_kdims)),
-                all_kdims
-        ):
-            kdim_values[kdim] = args[i]
-
         # Get store
+        any_change = False
         store_data = decode_store_data(args[-1])
         reset_nclicks = 0
         if reset_button:
@@ -474,10 +468,21 @@ def to_dash(
                 store_data["streams"] = copy.deepcopy(initial_stream_contents)
                 selected_dicts = [None for _ in selected_dicts]
                 relayout_dicts = [None for _ in relayout_dicts]
+                any_change = True
 
-        # Init store data
+        # Init store data if needed
         if store_data is None:
             store_data = {"streams": {}}
+
+        # Get kdim values
+        store_data.setdefault("kdims", {})
+        for i, kdim in zip(
+                range(num_figs * 2, num_figs * 2 + len(all_kdims)),
+                all_kdims
+        ):
+            if kdim not in store_data["kdims"] or store_data["kdims"][kdim] != args[i]:
+                store_data["kdims"][kdim] = args[i]
+                any_change = True
 
         # Update store_data with interactive stream values
         for fig_ind, fig_dict in enumerate(initial_fig_dicts):
@@ -493,30 +498,36 @@ def to_dash(
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, selected_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
-                            for uid, event_data in stream_event_data.items():
-                                if uid in uid_to_streams_for_type:
-                                    for stream_id in uid_to_streams_for_type[uid]:
-                                        store_data["streams"][stream_id] = event_data
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
+
                     elif panel_prop == "viewport":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
 
-                            for uid, event_data in stream_event_data.items():
-                                if event_data["x_range"] is not None or event_data["y_range"] is not None:
-                                    if uid in uid_to_streams_for_type:
-                                        for stream_id in uid_to_streams_for_type[uid]:
-                                            store_data["streams"][stream_id] = event_data
+                            stream_event_data = {
+                                uid: event_data
+                                for uid, event_data in stream_event_data.items()
+                                if event_data["x_range"] is not None
+                                or event_data[ "y_range"] is not None
+                            }
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
                     elif panel_prop == "relayout_data":
                         if graph_id + ".relayoutData" in triggered_prop_ids:
                             stream_event_data = plotly_stream_type.get_event_data_from_property_update(
                                 panel_prop, relayout_dicts[fig_ind], initial_fig_dicts[fig_ind]
                             )
-                            for uid, event_data in stream_event_data.items():
-                                if uid in uid_to_streams_for_type:
-                                    for stream_id in uid_to_streams_for_type[uid]:
-                                        store_data["streams"][stream_id] = event_data
+                            any_change = update_stream_values_for_type(
+                                store_data, stream_event_data, uid_to_streams_for_type
+                            ) or any_change
+
+        if not any_change:
+            raise PreventUpdate
 
         # Update store with derived/history stream values
         for output_id in reversed(stream_callbacks):
@@ -531,7 +542,7 @@ def to_dash(
 
         figs = [None] * num_figs
         for fig_ind, (fn, stream_ids) in fig_to_fn_stream_ids.items():
-            fig_kdim_values = [kdim_values[kd] for kd in kdims_per_fig[fig_ind]]
+            fig_kdim_values = [store_data["kdims"][kd] for kd in kdims_per_fig[fig_ind]]
             stream_values = [
                 store_data["streams"][stream_id] for stream_id in stream_ids
             ]
@@ -575,3 +586,27 @@ def to_dash(
     )
 
     return components
+
+
+def update_stream_values_for_type(store_data, stream_event_data, uid_to_streams_for_type):
+    """
+    Update the store with values of streams for a single type
+
+    Args:
+        store_data: Current store dictionary
+        stream_event_data:  Potential stream data for current plotly event and
+            traces in figures
+        uid_to_streams_for_type: Mapping from trace UIDs to HoloViews streams of
+            a particular type
+    Returns:
+        any_change: Whether any stream value has been updated
+    """
+    any_change = False
+    for uid, event_data in stream_event_data.items():
+        if uid in uid_to_streams_for_type:
+            for stream_id in uid_to_streams_for_type[uid]:
+                if stream_id not in store_data["streams"] or \
+                        store_data["streams"][stream_id] != event_data:
+                    store_data["streams"][stream_id] = event_data
+                    any_change = True
+    return any_change
