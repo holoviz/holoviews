@@ -468,17 +468,26 @@ class TestMPLColormapUtils(ComparisonTestCase):
     def setUp(self):
         try:
             import matplotlib.cm # noqa
+            import holoviews.plotting.mpl
         except:
             raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
 
+    def test_mpl_colormap_fire(self):
+        colors = process_cmap('fire', 3, provider='matplotlib')
+        self.assertEqual(colors, ['#000000', '#ed1400', '#ffffff'])
+
+    def test_mpl_colormap_fire_r(self):
+        colors = process_cmap('fire_r', 3, provider='matplotlib')
+        self.assertEqual(colors, ['#ffffff', '#eb1300', '#000000'])
+
     def test_mpl_colormap_name_palette(self):
-        colors = process_cmap('Greys', 3)
+        colors = process_cmap('Greys', 3, provider='matplotlib')
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
     def test_mpl_colormap_instance(self):
         from matplotlib.cm import get_cmap
         cmap = get_cmap('Greys')
-        colors = process_cmap(cmap, 3)
+        colors = process_cmap(cmap, 3, provider='matplotlib')
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
     def test_mpl_colormap_categorical(self):
@@ -528,6 +537,14 @@ class TestBokehPaletteUtils(ComparisonTestCase):
                        'pastel2', 'set1', 'set2', 'set3', 'paired')
         for cat in categorical:
             self.assertTrue(len(set(bokeh_palette_to_palette(cat))) <= 20)
+
+    def test_bokeh_colormap_fire(self):
+        colors = process_cmap('fire', 3, provider='bokeh')
+        self.assertEqual(colors, ['#000000', '#eb1300', '#ffffff'])
+
+    def test_bokeh_colormap_fire_r(self):
+        colors = process_cmap('fire_r', 3, provider='bokeh')
+        self.assertEqual(colors, ['#ffffff', '#ed1400', '#000000'])
 
     def test_bokeh_palette_categorical(self):
         colors = bokeh_palette_to_palette('Category20', 3)
