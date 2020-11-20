@@ -61,6 +61,12 @@ jobs:
           git describe
           echo "======"
           conda list
+      - name: bokeh update
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install "bokeh>=2.2"
       - name: matplotlib patch
         if: startsWith(matrix.python-version, 3.)
         run: |
