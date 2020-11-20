@@ -241,6 +241,22 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
         self.assertEqual(self.table.groupby(["Age"]), grouped)
 
+    def test_aggregation_operations(self):
+        for agg in [
+            np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
+            np.sum, np.nansum, len,
+            # TODO: var-based operations failing this test
+            # np.std, np.nanstd, np.var, np.nanvar
+        ]:
+            data = self.table.dframe()
+            expected = self.table.clone(
+                data=data
+            ).aggregate("Gender", agg).sort()
+
+            result = self.table.aggregate("Gender", agg).sort()
+
+            self.compare_dataset(expected, result, msg=str(agg))
+
     if not IbisInterface.has_rowid:
 
         def test_dataset_iloc_slice_rows_slice_cols(self):
