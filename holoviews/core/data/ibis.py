@@ -383,8 +383,6 @@ class IbisInterface(Interface):
             len: ibis.expr.operations.Count,
         }.get(function, function)
 
-        from ibis.expr import operations
-
         if len(dimensions):
             selection = new.groupby(columns)
             if function is numpy.count_nonzero:
