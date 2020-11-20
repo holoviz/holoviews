@@ -1098,7 +1098,7 @@ def hex2rgb(hex):
 def apply_nodata(opts, data):
     "Replace `nodata` value in data with NaN, if specified in opts"
     nodata = opts.kwargs.get('nodata')
-    if nodata is not None and (data.dtype.kind  == 'i'):
+    if nodata is not None and (data.dtype.kind  in ['i', 'u']):
         data = data.astype(np.float64)
         data[data == nodata] = np.NaN
         return data
