@@ -247,7 +247,10 @@ def decode_store_data(store_data):
     return pickle.loads(base64.b64decode(store_data["pickled"]))
 
 
-def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
+def to_dash(
+        app, hvobjs, reset_button=False, graph_class=dcc.Graph,
+        button_class=html.Button
+):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
 
@@ -259,7 +262,8 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
             objects to their initial values. Defaults to False.
         graph_class: Class to use when creating Graph components, one of dcc.Graph
             (default) or ddk.Graph.
-
+        button_class: Class to use when creating reset button component.
+            E.g. html.Button (default) or dbc.Button
     Returns:
         DashComponents named tuple with properties:
             - graphs: List of graph components (with type matching the input
@@ -428,7 +432,7 @@ def to_dash(app, hvobjs, reset_button=False, graph_class=dcc.Graph):
     # Add reset button
     if reset_button:
         reset_id = 'reset-' + str(uuid.uuid4())
-        reset_button = html.Button(id=reset_id, children="Reset")
+        reset_button = button_class(id=reset_id, children="Reset")
         inputs.append(Input(
             component_id=reset_id, component_property='n_clicks'
         ))
