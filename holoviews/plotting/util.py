@@ -1123,7 +1123,7 @@ class apply_nodata(Operation):
             transform = dim(vdim, self._replace_value)
             return element.transform(**{vdim.name: transform})
         else:
-            array = element.dimension_values(2)
+            array = element.dimension_values(2, flat=False)
             if array.dtype.kind not in 'iu':
                 return element
             array = array.astype('float64')

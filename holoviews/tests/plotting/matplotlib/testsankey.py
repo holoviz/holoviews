@@ -13,7 +13,7 @@ class TestSankeyPlot(TestMPLPlot):
             ('A', 'X', 5), ('A', 'Y', 7), ('A', 'Z', 6),
             ('B', 'X', 2), ('B', 'Y', 9), ('B', 'Z', 4)]
         )
-        plot = list(mpl_renderer.get_plot(sankey).subplots.values())[0]
+        plot = mpl_renderer.get_plot(sankey)
 
         rects = plot.handles['rects']
         labels = plot.handles['labels']
@@ -45,7 +45,7 @@ class TestSankeyPlot(TestMPLPlot):
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
         ).options(label_index='label')
-        plot = list(mpl_renderer.get_plot(sankey).subplots.values())[0]
+        plot = mpl_renderer.get_plot(sankey)
         labels = plot.handles['labels']
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
