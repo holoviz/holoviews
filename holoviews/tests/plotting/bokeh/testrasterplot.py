@@ -26,7 +26,7 @@ class TestRasterPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
         source = plot.handles['source']
-        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.low, 1)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(source.data['image'][0],
                          np.array([[2, np.NaN], [np.NaN, 1]]))
@@ -36,7 +36,7 @@ class TestRasterPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(img)
         cmapper = plot.handles['color_mapper']
         source = plot.handles['source']
-        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.low, 1)
         self.assertEqual(cmapper.high, 2)
         self.assertEqual(source.data['image'][0],
                          np.array([[2, np.NaN], [np.NaN, 1]]))

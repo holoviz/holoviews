@@ -47,57 +47,57 @@ class TestHexTilesPlot(TestBokehPlot):
 
     def test_hex_tiles_empty(self):
         tiles = HexTiles([])
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         self.assertEqual(plot.handles['source'].data, {'q': [], 'r': []})
 
     def test_hex_tiles_only_nans(self):
         tiles = HexTiles([(np.NaN, 0), (1, np.NaN)])
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         self.assertEqual(plot.handles['source'].data, {'q': [], 'r': []})
 
     def test_hex_tiles_zero_min_count(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(min_count=0)
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(plot.state.background_fill_color, cmapper.palette[0])
 
     def test_hex_tiles_gridsize_tuple(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(gridsize=(5, 10))
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.size, 0.066666666666666666)
         self.assertEqual(glyph.aspect_scale, 0.5)
 
     def test_hex_tiles_gridsize_tuple_flat_orientation(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(gridsize=(5, 10), orientation='flat')
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.size, 0.13333333333333333)
         self.assertEqual(glyph.aspect_scale, 0.5)
 
     def test_hex_tiles_scale(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(size_index=2, gridsize=3)
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         source = plot.handles['source']
         self.assertEqual(source.data['scale'], np.array([0.45, 0.45, 0.9]))
 
     def test_hex_tiles_scale_all_equal(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(size_index=2)
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         source = plot.handles['source']
         self.assertEqual(source.data['scale'], np.array([0.9, 0.9, 0.9, 0.9]))
 
     def test_hex_tiles_hover_count(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(tools=['hover'])
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         dims, opts = plot._hover_opts(tiles)
         self.assertEqual(dims, [Dimension('Count')])
         self.assertEqual(opts, {})
 
     def test_hex_tiles_hover_weighted(self):
         tiles = HexTiles([(0, 0, 0.1), (0.5, 0.5, 0.2), (-0.5, -0.5, 0.3)], vdims='z').options(aggregator=np.mean)
-        plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(tiles)
         dims, opts = plot._hover_opts(tiles)
         self.assertEqual(dims, [Dimension('z')])
         self.assertEqual(opts, {})
@@ -108,18 +108,18 @@ class TestHexTilesPlot(TestBokehPlot):
 
     def test_hex_tile_line_width_op(self):
         hextiles = HexTiles(np.random.randn(1000, 2)).options(line_width='Count')
-        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_width, {'field': 'line_width'})
 
     def test_hex_tile_alpha_op(self):
         hextiles = HexTiles(np.random.randn(1000, 2)).options(alpha='Count')
-        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.fill_alpha, {'field': 'alpha'})
 
     def test_hex_tile_scale_op(self):
         hextiles = HexTiles(np.random.randn(1000, 2)).options(scale='Count')
-        plot = list(bokeh_renderer.get_plot(hextiles).subplots.values())[0]
+        plot = bokeh_renderer.get_plot(hextiles)
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.scale, {'field': 'scale'})
