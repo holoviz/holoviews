@@ -928,6 +928,8 @@ class Compositor(param.Parameterized):
                 sliced = overlay.clone(values[start:stop])
             items = sliced.traverse(lambda x: x, [Element])
             if applicable_op and all(el in processed[applicable_op] for el in items):
+                if unpack and len(overlay) == 1:
+                    return overlay.values()[0]
                 return overlay
             result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
