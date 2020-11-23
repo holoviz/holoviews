@@ -1107,9 +1107,10 @@ class apply_nodata(Operation):
     def _replace_value(self, data):
         "Replace `nodata` value in data with NaN, if specified in opts"
         data = data.astype('float64')
+        mask = data!=self.p.nodata
         if hasattr(data, 'where'):
-            return data.where(data!=self.p.nodata, np.NaN)
-        return np.where(data==self.p.nodata, data, np.NaN)
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
 
     def _process(self, element, key=None):
         if self.p.nodata is None:
