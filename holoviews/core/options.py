@@ -1098,7 +1098,7 @@ class Compositor(param.Parameterized):
                                if k in self.operation.param})
 
         transformed = self.operation(value, input_ranges=input_ranges, **kwargs)
-        if self.transfer_options:
+        if self.transfer_options and value is not transformed:
             Store.transfer_options(value, transformed, backend)
         return transformed
 
