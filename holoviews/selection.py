@@ -472,7 +472,7 @@ class SelectionDisplay(object):
                     selection = dataset.iloc[mask]
                 elif isinstance(element, (Curve, Spread)) and hasattr(dataset.interface, 'mask'):
                     if mask is None:
-                        mask = selection_expr.apply(dataset, compute=False, strict=False)
+                        mask = selection_expr.apply(dataset, keep_index=True, strict=False)
                     selection = dataset.clone(dataset.interface.mask(dataset, ~mask))
                 else:
                     if mask is None:
