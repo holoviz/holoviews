@@ -29,8 +29,8 @@ from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, isfinite, get_param_values, max_range)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
-                       QuadMesh, Contours, Spikes, Area, Spread,
-                       Segments, Scatter, Points, Polygons)
+                       QuadMesh, Contours, Spikes, Area, Rectangles,
+                       Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
 from ..streams import RangeXY, PlotSize
 
@@ -725,10 +725,16 @@ class spikes_aggregate(AggregationOperation):
         return self.p.element_type(agg, **params)
 
 
-class segments_aggregate(AggregationOperation):
+
+class geom_aggregate(AggregationOperation):
     """
-    Aggregates Segments elements.
+    Baseclass for aggregation of Geom elements.
     """
+
+    __abstract = True
+
+    def _aggregate(self, cvs, df, x0, y0, x1, y1, agg):
+        raise NotImplementedError
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
@@ -747,8 +753,13 @@ class segments_aggregate(AggregationOperation):
 
         if isinstance(agg_fn, (ds.count, ds.any)):
             vdim = type(agg_fn).__name__
+        elif isinstance(agg_fn, ds.count_cat):
+            vdim = '%s Count' % agg_fn.column
         else:
             vdim = element.get_dimension(agg_fn.column)
+
+        if isinstance(agg_fn, ds.count_cat):
+            df[agg_fn.column] = df[agg_fn.column].astype('category')
 
         params = dict(get_param_values(element), kdims=[x0d, y0d], vdims=vdim,
                       datatype=['xarray'], bounds=(x0, y0, x1, y1))
@@ -759,7 +770,8 @@ class segments_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        agg = cvs.line(df, [x0d.name, x1d.name], [y0d.name, y1d.name], agg_fn, axis=1)
+        agg = self._aggregate(cvs, df, x0d.name, y0d.name, x1d.name, y1d.name, agg_fn)
+
         xdim, ydim = list(agg.dims)[:2][::-1]
         if xtype == "datetime":
             agg[xdim] = (agg[xdim]/1e3).astype('datetime64[us]')
@@ -768,7 +780,35 @@ class segments_aggregate(AggregationOperation):
 
         params['kdims'] = [xdim, ydim]
 
-        return self.p.element_type(agg, **params)
+        if agg.ndim == 2:
+            # Replacing x and y coordinates to avoid numerical precision issues
+            eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
+            return self.p.element_type(eldata, **params)
+        else:
+            layers = {}
+            for c in agg.coords[agg_fn.column].data:
+                cagg = agg.sel(**{agg_fn.column: c})
+                eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
+                layers[c] = self.p.element_type(eldata, **params)
+            return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
+
+
+class segments_aggregate(geom_aggregate):
+    """
+    Aggregates Segments elements.
+    """
+
+    def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
+        return cvs.line(df, [x0, x1], [y0, y1], agg_fn, axis=1)
+
+
+class rectangle_aggregate(geom_aggregate):
+    """
+    Aggregates Rectangle elements.
+    """
+
+    def _aggregate(self, cvs, df, x0, y0, x1, y1, agg_fn):
+        return cvs.area(df, x=[x0, x1], y=y0, y_stack=y1, agg=agg_fn, axis=1)
 
 
 
@@ -1388,6 +1428,7 @@ class rasterize(AggregationOperation):
                    (Area, area_aggregate),
                    (Spread, spread_aggregate),
                    (Segments, segments_aggregate),
+                   (Rectangles, rectangle_aggregate),
                    (Contours, contours_rasterize),
                    (Graph, aggregate),
                    (Scatter, aggregate),
