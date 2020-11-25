@@ -754,7 +754,12 @@ class geom_aggregate(AggregationOperation):
         if isinstance(agg_fn, (ds.count, ds.any)):
             vdim = type(agg_fn).__name__
         else:
-            vdim = element.get_dimension(agg_fn.column)
+            column = agg_fn.column
+            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
+            vdim = element.get_dimension(name)
+
+        if isinstance(agg_fn, ds.count_cat):
+            df[agg_fn.column] = df[agg_fn.column].astype('category')
 
         params = dict(get_param_values(element), kdims=[x0d, y0d], vdims=vdim,
                       datatype=['xarray'], bounds=(x0, y0, x1, y1))
@@ -775,7 +780,17 @@ class geom_aggregate(AggregationOperation):
 
         params['kdims'] = [xdim, ydim]
 
-        return self.p.element_type(agg, **params)
+        if agg.ndim == 2:
+            # Replacing x and y coordinates to avoid numerical precision issues
+            eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
+            return self.p.element_type(eldata, **params)
+        else:
+            layers = {}
+            for c in agg.coords[agg_fn.column].data:
+                cagg = agg.sel(**{agg_fn.column: c})
+                eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
+                layers[c] = self.p.element_type(eldata, **params)
+            return NdOverlay(layers, kdims=[element.get_dimension(agg_fn.column)])
 
 
 class segments_aggregate(geom_aggregate):
