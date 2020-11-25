@@ -753,10 +753,10 @@ class geom_aggregate(AggregationOperation):
 
         if isinstance(agg_fn, (ds.count, ds.any)):
             vdim = type(agg_fn).__name__
+        elif isinstance(agg_fn, ds.count_cat):
+            vdim = '%s Count' % agg_fn.column
         else:
-            column = agg_fn.column
-            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
-            vdim = element.get_dimension(name)
+            vdim = element.get_dimension(agg_fn.column)
 
         if isinstance(agg_fn, ds.count_cat):
             df[agg_fn.column] = df[agg_fn.column].astype('category')
