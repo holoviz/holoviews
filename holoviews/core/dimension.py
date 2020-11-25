@@ -191,8 +191,13 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
-    value_format = param.Callable(default=None, doc="""
-        Formatting function applied to each value before display.""")
+    default = param.Parameter(default=None, doc="""
+        Default value of the Dimension which may be useful for widget
+        or other situations that require an initial or default value.""")
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN.""")
 
     range = param.Tuple(default=(None, None), doc="""
         Specifies the minimum and maximum allowed values for a
@@ -202,24 +207,23 @@ class Dimension(param.Parameterized):
         Specifies a minimum and maximum reference value, which
         may be overridden by the data.""")
 
-    type = param.Parameter(default=None, doc="""
-        Optional type associated with the Dimension values. The type
-        may be an inbuilt constructor (such as int, str, float) or a
-        custom class object.""")
-
-    default = param.Parameter(default=None, doc="""
-        Default value of the Dimension which may be useful for widget
-        or other situations that require an initial or default value.""")
-
     step = param.Number(default=None, doc="""
         Optional floating point step specifying how frequently the
         underlying space should be sampled. May be used to define a
         discrete sampling over the range.""")
 
+    type = param.Parameter(default=None, doc="""
+        Optional type associated with the Dimension values. The type
+        may be an inbuilt constructor (such as int, str, float) or a
+        custom class object.""")
+
     unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
+
+    value_format = param.Callable(default=None, doc="""
+        Formatting function applied to each value before display.""")
 
     values = param.List(default=[], doc="""
         Optional specification of the allowed value set for the

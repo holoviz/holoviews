@@ -303,12 +303,17 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
-            vdims = [dims[0].clone(name)]
+            if isinstance(agg_fn, ds.count_cat):
+                vdims = dims[0].clone('%s Count' % column, nodata=0)
+            else:
+                vdims = dims[0].clone(column)
         elif category:
-            vdims = Dimension('%s Count' % category)
+            agg_name = type(agg_fn).__name__.title()
+            vdims = Dimension('%s %s' % (category, agg_name))
+            if agg_name == 'Count':
+                vdims.nodata = 0
         else:
-            vdims = Dimension('Count')
+            vdims = Dimension('Count', nodata=0)
         params['vdims'] = vdims
         return params
 
@@ -615,8 +620,7 @@ class area_aggregate(AggregationOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
@@ -705,13 +709,7 @@ class spikes_aggregate(AggregationOperation):
         if xtype == 'datetime':
             df[x.name] = df[x.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
-        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
@@ -752,18 +750,10 @@ class geom_aggregate(AggregationOperation):
             df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
             df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        elif isinstance(agg_fn, ds.count_cat):
-            vdim = '%s Count' % agg_fn.column
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
         if isinstance(agg_fn, ds.count_cat):
             df[agg_fn.column] = df[agg_fn.column].astype('category')
 
-        params = dict(get_param_values(element), kdims=[x0d, y0d], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x0d, y0d, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x0d, y0d, width, height, xs, ys, agg_fn, **params)
@@ -1243,8 +1233,14 @@ class shade(LinkableOperation):
             return element
         data = tuple(element.dimension_values(kd, expanded=False)
                      for kd in element.kdims)
-        data += tuple(element.dimension_values(vd, flat=False)
-                      for vd in element.vdims)
+        vdims = list(element.vdims)
+        # Override nodata temporarily
+        element.vdims[:] = [vd.clone(nodata=None) for vd in element.vdims]
+        try:
+            data += tuple(element.dimension_values(vd, flat=False)
+                          for vd in element.vdims)
+        finally:
+            element.vdims[:] = vdims
         dtypes = [dt for dt in element.datatype if dt != 'xarray']
         return element.clone(data, datatype=['xarray']+dtypes,
                              bounds=element.bounds,

@@ -1067,8 +1067,10 @@ argument to specify a selection specification""")
             NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dimension, strict=True)
-        return self.interface.values(self, dim, expanded, flat)
-
+        values = self.interface.values(self, dim, expanded, flat)
+        if dim.nodata is not None:
+            values = np.where(values==dim.nodata, np.NaN, values)
+        return values
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
