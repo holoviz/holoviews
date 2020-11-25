@@ -612,11 +612,6 @@ class area_aggregate(AggregationOperation):
 
         df = PandasInterface.as_dframe(element)
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
