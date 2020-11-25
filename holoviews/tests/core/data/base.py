@@ -79,7 +79,7 @@ class InterfaceTests(ComparisonTestCase):
         pass
 
 
-            
+
 class HomogeneousColumnTests(object):
     """
     Tests for data formats that require all dataset to have the same
@@ -405,7 +405,7 @@ class HomogeneousColumnTests(object):
         expected = Dataset((self.xs, self.y_ints, self.y_ints*2), 'x', ['y', 'y2'])
         self.assertEqual(transformed, expected)
 
-        
+
 
 class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
@@ -514,7 +514,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
         ds = Dataset(dt64, [Dimension('Date', range=(dt64[0], dt64[-1]))])
         self.assertEqual(ds.range('Date'), (dt64[0], dt64[-1]))
-        
+
     # Operations
 
     @pd_skip
@@ -539,7 +539,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
 
     def test_dataset_sort_string_ht(self):
         dataset_sorted = Dataset({'Gender':['F', 'M', 'M'], 'Age':[12, 10, 16],
-                                  'Weight':[10,15,18], 'Height':[0.8,0.8,0.6]},
+                                  'Weight':[10,15,0], 'Height':[0.8,0.8,0.6]},
                                  kdims=self.kdims, vdims=self.vdims)
         self.assertEqual(self.table.sort(), dataset_sorted)
 
@@ -556,7 +556,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         self.assertEqual(self.dataset_ht.reduce('x', np.mean), np.float64(0.5))
 
     def test_dataset_2D_reduce_ht(self):
-        reduced = Dataset({'Weight':[14.333333333333334], 'Height':[0.73333333333333339]},
+        reduced = Dataset({'Weight':[8.333333], 'Height':[0.73333333333333339]},
                           kdims=[], vdims=self.vdims)
         self.assertEqual(self.table.reduce(function=np.mean), reduced)
 
@@ -692,21 +692,21 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_index_rows_gender_male(self):
         row = self.table['M',:]
         indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
-                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                           'Weight':[15,0], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(row, indexed)
 
     def test_dataset_select_rows_gender_male(self):
         row = self.table.select(Gender='M')
         indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
-                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                           'Weight':[15,0], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(row, indexed)
 
     def test_dataset_select_rows_gender_male_expr(self):
         row = self.table.select(selection_expr=dim('Gender') == 'M')
         indexed = Dataset({'Gender': ['M', 'M'], 'Age': [10, 16],
-                           'Weight': [15, 18], 'Height': [0.8,0.6]},
+                           'Weight': [15, 0], 'Height': [0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(row, indexed)
 
@@ -714,7 +714,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         row = self.alias_table.select(Gender='M')
         alias_row = self.alias_table.select(gender='M')
         indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
-                           'weight':[15,18], 'height':[0.8,0.6]},
+                           'weight':[15,0], 'height':[0.8,0.6]},
                           kdims=self.alias_kdims, vdims=self.alias_vdims)
         self.assertEquals(row, indexed)
         self.assertEquals(alias_row, indexed)
@@ -750,7 +750,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     def test_dataset_value_dim_index(self):
         row = self.table[:, :, 'Weight']
         indexed = Dataset({'Gender':['M', 'M', 'F'], 'Age':[10, 16, 12],
-                           'Weight':[15,18, 10]},
+                           'Weight':[15,0, 10]},
                           kdims=self.kdims, vdims=self.vdims[:1])
         self.assertEquals(row, indexed)
 

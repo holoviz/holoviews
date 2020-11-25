@@ -182,7 +182,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_aggregate_ht(self):
         aggregated = Dataset(
-            {"Gender": ["M", "F"], "Weight": [16.5, 10], "Height": [0.7, 0.8]},
+            {"Gender": ["M", "F"], "Weight": [7.5, 10], "Height": [0.7, 0.8]},
             kdims=self.kdims[:1],
             vdims=self.vdims,
         )
@@ -192,7 +192,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_aggregate_ht_alias(self):
         aggregated = Dataset(
-            {"gender": ["M", "F"], "weight": [16.5, 10], "height": [0.7, 0.8]},
+            {"gender": ["M", "F"], "weight": [7.5, 10], "height": [0.7, 0.8]},
             kdims=self.alias_kdims[:1],
             vdims=self.alias_vdims,
         )
@@ -201,7 +201,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
     def test_dataset_groupby(self):
-        group1 = {"Age": [10, 16], "Weight": [15, 18], "Height": [0.8, 0.6]}
+        group1 = {"Age": [10, 16], "Weight": [15, 0], "Height": [0.8, 0.6]}
         group2 = {"Age": [12], "Weight": [10], "Height": [0.8]}
         grouped = HoloMap(
             [
@@ -215,7 +215,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         )
 
     def test_dataset_groupby_alias(self):
-        group1 = {"age": [10, 16], "weight": [15, 18], "height": [0.8, 0.6]}
+        group1 = {"age": [10, 16], "weight": [15, 0], "height": [0.8, 0.6]}
         group2 = {"age": [12], "weight": [10], "height": [0.8]}
         grouped = HoloMap(
             [
@@ -228,7 +228,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_groupby_second_dim(self):
         group1 = {"Gender": ["M"], "Weight": [15], "Height": [0.8]}
-        group2 = {"Gender": ["M"], "Weight": [18], "Height": [0.6]}
+        group2 = {"Gender": ["M"], "Weight": [0], "Height": [0.6]}
         group3 = {"Gender": ["F"], "Weight": [10], "Height": [0.8]}
         grouped = HoloMap(
             [
