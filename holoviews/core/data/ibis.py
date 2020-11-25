@@ -384,19 +384,13 @@ class IbisInterface(Interface):
 
         if len(dimensions):
             selection = new.groupby(columns)
-            if function is numpy.count_nonzero:
-                counted = selection.count()
-                aggregation = counted.mutate(
-                    **{d.name: counted['count'] for d in dataset.vdims}
-                )
-            else:
-                aggregation = selection.aggregate(
-                    **{
-                        x: function(new[x]).to_expr()
-                        for x in new.columns
-                        if x not in columns
-                    }
-                )
+            aggregation = selection.aggregate(
+                **{
+                    x: function(new[x]).to_expr()
+                    for x in new.columns
+                    if x not in columns
+                }
+            )
         else:
             aggregation = new.aggregate(
                 **{x: function(new[x]).to_expr() for x in new.columns}
