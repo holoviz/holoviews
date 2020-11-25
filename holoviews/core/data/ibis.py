@@ -1,6 +1,5 @@
 import sys
 import numpy
-import ibis
 
 try:
     from collections.abc import Iterable
@@ -23,7 +22,10 @@ class IbisInterface(Interface):
     default_partitions = 100
 
     # the rowid is needed until ibis updates versions
-    has_rowid = hasattr(ibis, "rowid")
+    @classmethod
+    def has_rowid(cls):
+        import ibis
+        return hasattr(ibis, "rowid")
 
     @classmethod
     def loaded(cls):
@@ -156,7 +158,8 @@ class IbisInterface(Interface):
 
     @classmethod
     def _index_ibis_table(cls, data):
-        if not cls.has_rowid:
+        import ibis
+        if not cls.has_rowid():
             raise ValueError(
                 "iloc expressions are not supported for ibis version %s."
                 % ibis.__version__
@@ -257,6 +260,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        import ibis
         data = dataset.data
         if dimension.name not in data.columns:
             if not isinstance(values, ibis.Expr) and not numpy.isscalar(values):
@@ -300,6 +304,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def select_mask(cls, dataset, selection):
+        import ibis
         predicates = []
         for dim, object in selection.items():
             if isinstance(object, tuple):
@@ -334,6 +339,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def sample(cls, dataset, samples=[]):
+        import ibis
         dims = dataset.dimensions()
         data = dataset.data
         if all(util.isscalar(s) or len(s) == 1 for s in samples):
@@ -361,6 +367,7 @@ class IbisInterface(Interface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
+        import ibis.expr.operations
         data = dataset.data
         columns = [d.name for d in dataset.kdims if d in dimensions]
         values = dataset.dimensions("value", label="name")
