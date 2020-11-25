@@ -50,7 +50,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
         self.kdims = ["Gender", "Age"]
         self.vdims = ["Weight", "Height"]
         self.gender, self.age = np.array(["M", "M", "F"]), np.array([10, 16, 12])
-        self.weight, self.height = np.array([15, 18, 10]), np.array([0.8, 0.6, 0.8])
+        self.weight, self.height = np.array([15, 0, 10]), np.array([0.8, 0.6, 0.8])
 
         hetero_df = pd.DataFrame(
             {
@@ -244,7 +244,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
     def test_aggregation_operations(self):
         for agg in [
             np.min, np.nanmin, np.max, np.nanmax, np.mean, np.nanmean,
-            np.sum, np.nansum, len,
+            np.sum, np.nansum, len, np.count_nonzero,
             # TODO: var-based operations failing this test
             # np.std, np.nanstd, np.var, np.nanvar
         ]:
@@ -254,7 +254,7 @@ class IbisDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
             ).aggregate("Gender", agg).sort()
 
             result = self.table.aggregate("Gender", agg).sort()
-
+            print(result.dframe())
             self.compare_dataset(expected, result, msg=str(agg))
 
     if not IbisInterface.has_rowid:
