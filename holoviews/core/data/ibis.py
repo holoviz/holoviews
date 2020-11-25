@@ -379,7 +379,6 @@ class IbisInterface(Interface):
             numpy.nansum: ibis.expr.operations.Sum,
             numpy.var: ibis.expr.operations.Variance,
             numpy.nanvar: ibis.expr.operations.Variance,
-            numpy.cumsum: ibis.expr.operations.CumulativeSum,
             len: ibis.expr.operations.Count,
         }.get(function, function)
 
