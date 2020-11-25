@@ -6,7 +6,7 @@ import numpy as np
 
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
-                       Spread, Area, Segments, Polygons)
+                       Spread, Area, Rectangles, Segments, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
 
@@ -35,7 +35,6 @@ except:
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
 cudf_skip = skipIf(cudf is None, "cuDF not available")
-
 
 
 
@@ -359,6 +358,80 @@ class DatashaderAggregateTests(ComparisonTestCase):
             [0, 0, 1, 0, 0]
         ])
         expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_count(self):
+        rects = Rectangles([(0, 0, 1, 2), (1, 1, 3, 2)])
+        agg = rasterize(rects, width=4, height=4, dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        arr = np.array([
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [1, 2, 1, 1],
+            [0, 0, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_count_cat(self):
+        rects = Rectangles([(0, 0, 1, 2, 'A'), (1, 1, 3, 2, 'B')], vdims=['cat'])
+        agg = rasterize(rects, width=4, height=4, aggregator=ds.count_cat('cat'),
+                        dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        arr1 = np.array([
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [0, 0, 0, 0]
+        ])
+        arr2 = np.array([
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 1, 1, 1],
+            [0, 0, 0, 0]
+        ])
+        expected1 = Image((xs, ys, arr1), vdims='cat Count')
+        expected2 = Image((xs, ys, arr2), vdims='cat Count')
+        expected = NdOverlay({'A': expected1, 'B': expected2}, kdims=['cat'])
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_sum(self):
+        rects = Rectangles([(0, 0, 1, 2, 0.5), (1, 1, 3, 2, 1.5)], vdims=['value'])
+        agg = rasterize(rects, width=4, height=4, aggregator='sum', dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        nan = np.nan
+        arr = np.array([
+            [0.5, 0.5, nan, nan],
+            [0.5, 0.5, nan, nan],
+            [0.5, 2. , 1.5, 1.5],
+            [nan, nan, nan, nan]
+        ])
+        expected = Image((xs, ys, arr), vdims='value')
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_dt_count(self):
+        rects = Rectangles([
+            (0, dt.datetime(2016, 1, 2), 4, dt.datetime(2016, 1, 3)),
+            (1, dt.datetime(2016, 1, 1), 2, dt.datetime(2016, 1, 5))
+        ])
+        agg = rasterize(rects, width=4, height=4, dynamic=False)
+        xs = [0.5, 1.5, 2.5, 3.5]
+        ys = [
+            np.datetime64('2016-01-01T12:00:00'), np.datetime64('2016-01-02T12:00:00'),
+            np.datetime64('2016-01-03T12:00:00'), np.datetime64('2016-01-04T12:00:00')
+        ]
+        arr = np.array([
+            [0, 1, 1, 0],
+            [1, 2, 2, 1],
+            [0, 1, 1, 0],
+            [0, 0, 0, 0]
+        ])
+        bounds = (0.0, np.datetime64('2016-01-01T00:00:00'),
+                  4.0, np.datetime64('2016-01-05T00:00:00'))
+        expected = Image((xs, ys, arr), bounds=bounds, vdims='count')
         self.assertEqual(agg, expected)
 
     def test_segments_aggregate_count(self):
