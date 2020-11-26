@@ -68,9 +68,13 @@ def plot_to_figure(plot, reset_nclicks=0, responsive=True):
 
     # Remove figure width height, let container decide
     if responsive:
-        fig_dict['layout'].pop('width', None)
-        fig_dict['layout'].pop('height', None)
         fig_dict['layout'].pop('autosize', None)
+
+    if responsive is True or responsive == "width":
+        fig_dict['layout'].pop('width', None)
+
+    if responsive is True or responsive == "height":
+        fig_dict['layout'].pop('height', None)
 
     # Pass to figure constructor to expand magic underscore notation
     return go.Figure(fig_dict)
@@ -251,7 +255,7 @@ def decode_store_data(store_data):
 
 def to_dash(
         app, hvobjs, reset_button=False, graph_class=dcc.Graph,
-        button_class=html.Button, responsive=True,
+        button_class=html.Button, responsive="width",
 ):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
@@ -266,9 +270,11 @@ def to_dash(
             (default) or ddk.Graph.
         button_class: Class to use when creating reset button component.
             E.g. html.Button (default) or dbc.Button
-        responsive: If True (default) graphs will fill their containers responsively.
-            If False, graphs will have a fixed size based on the HoloViews
-            width and height parameters.
+        responsive: If True graphs will fill their containers width and height
+            responsively. If False, graphs will have a fixed size matching their
+            HoloViews size. If "width" (default), the width is responsive but
+            height matches the HoloViews size. If "height", the height is responsive
+            but the width matches the HoloViews size.
     Returns:
         DashComponents named tuple with properties:
             - graphs: List of graph components (with type matching the input
