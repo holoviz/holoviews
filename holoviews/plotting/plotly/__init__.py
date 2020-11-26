@@ -126,6 +126,10 @@ options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdBu_r')
 
+# RGB
+# Disable padding in RGB elements to prevent datashader artifacts
+options.RGB = Options("plot", padding=0)
+
 # 3D
 options.Scatter3D = Options('style', color=Cycle(), size=6)
 
