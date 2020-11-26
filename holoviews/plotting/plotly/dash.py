@@ -42,7 +42,27 @@ DashComponents = namedtuple(
 HoloViewsFunctionSpec = namedtuple("HoloViewsFunctionSpec", ["fn", "kdims", "streams"])
 
 
-def plot_to_figure(plot, reset_nclicks=0, responsive=True):
+def get_layout_ranges(plot):
+    layout_ranges = {}
+    fig_dict = plot.state
+    for k in fig_dict['layout']:
+        if k.startswith('xaxis') or k.startswith('yaxis'):
+            if "range" in fig_dict['layout'][k]:
+                layout_ranges[k] = {"range": fig_dict['layout'][k]["range"]}
+
+        if k.startswith('mapbox'):
+            mapbox_ranges = {}
+            if "center" in fig_dict['layout'][k]:
+                mapbox_ranges["center"] = fig_dict['layout'][k]["center"]
+            if "zoom" in fig_dict['layout'][k]:
+                mapbox_ranges["zoom"] = fig_dict['layout'][k]["zoom"]
+            if mapbox_ranges:
+                layout_ranges[k] = mapbox_ranges
+
+    return layout_ranges
+
+
+def plot_to_figure(plot, reset_nclicks=0, layout_ranges=None, responsive=True):
     """
     Convert a HoloViews plotly plot to a plotly.py Figure.
 
@@ -62,9 +82,13 @@ def plot_to_figure(plot, reset_nclicks=0, responsive=True):
     fig_dict['layout']['uirevision'] = "reset-" + str(reset_nclicks)
 
     # Remove range specification so plotly.js autorange + uirevision is in control
-    for k in fig_dict['layout']:
-        if k.startswith('xaxis') or k.startswith('yaxis'):
-            fig_dict['layout'][k].pop('range', None)
+    if layout_ranges:
+        for k in fig_dict['layout']:
+            if k.startswith('xaxis') or k.startswith('yaxis'):
+                fig_dict['layout'][k].pop('range', None)
+            if k.startswith('mapbox'):
+                fig_dict['layout'][k].pop('zoom', None)
+                fig_dict['layout'][k].pop('center', None)
 
     # Remove figure width height, let container decide
     if responsive:
@@ -73,7 +97,12 @@ def plot_to_figure(plot, reset_nclicks=0, responsive=True):
         fig_dict['layout'].pop('autosize', None)
 
     # Pass to figure constructor to expand magic underscore notation
-    return go.Figure(fig_dict)
+    fig = go.Figure(fig_dict)
+
+    if layout_ranges:
+        fig.update_layout(layout_ranges)
+
+    return fig
 
 
 def to_function_spec(hvobj):
@@ -314,6 +343,9 @@ def to_dash(
         BoundsXYCallback, BoundsXCallback, BoundsYCallback
     ]
 
+    # Layout ranges
+    layout_ranges = []
+
     for i, hvobj in enumerate(hvobjs):
 
         fn_spec = to_function_spec(hvobj)
@@ -326,7 +358,10 @@ def to_dash(
         plot = PlotlyRenderer.get_plot(hvobj)
         plots.append(plot)
 
-        fig = plot_to_figure(plot, reset_nclicks=0, responsive=responsive).to_dict()
+        layout_ranges.append(get_layout_ranges(plot))
+        fig = plot_to_figure(
+            plot, reset_nclicks=0, layout_ranges=layout_ranges[-1], responsive=responsive
+        ).to_dict()
         initial_fig_dicts.append(fig)
 
         # Build graphs
@@ -549,7 +584,8 @@ def to_dash(
             hvobj = fn(*(fig_kdim_values + stream_values))
             plot = PlotlyRenderer.get_plot(hvobj)
             fig = plot_to_figure(
-                plot, reset_nclicks=reset_nclicks, responsive=responsive
+                plot, reset_nclicks=reset_nclicks,
+                layout_ranges=layout_ranges[fig_ind], responsive=responsive
             ).to_dict()
             figs[fig_ind] = fig
 
