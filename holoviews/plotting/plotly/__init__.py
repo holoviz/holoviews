@@ -126,8 +126,9 @@ options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdBu_r')
 
-# RGB
-# Disable padding in RGB elements to prevent datashader artifacts
+# Disable padding for image-like elements
+options.Image = Options("plot", padding=0)
+options.Raster = Options("plot", padding=0)
 options.RGB = Options("plot", padding=0)
 
 # 3D
