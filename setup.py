@@ -70,8 +70,6 @@ extras_require['tests'] = [
     'path.py',
     'matplotlib >=2.2,<3.1',
     'nbsmoke >=0.2.0',
-    'pytest-cov ==2.5.1',
-    'pytest <6.0',
     'nbconvert <6',
     'twine',
     'rfc3986',
