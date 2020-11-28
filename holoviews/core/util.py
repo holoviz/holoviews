@@ -9,7 +9,7 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from contextlib import contextmanager
 from distutils.version import LooseVersion as _LooseVersion
 from functools import partial
@@ -19,10 +19,6 @@ from types import FunctionType
 import numpy as np
 import param
 
-try:
-    from cyordereddict import OrderedDict
-except:
-    from collections import OrderedDict
 
 # Python3 compatibility
 if sys.version_info.major >= 3:

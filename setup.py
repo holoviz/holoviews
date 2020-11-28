@@ -58,7 +58,6 @@ if sys.version_info.major > 2:
 
 # Extra third-party libraries
 extras_require["extras"] = extras_require["examples"] + [
-    "cyordereddict",
     "pscript ==0.7.1",
 ]
 
@@ -93,7 +92,6 @@ extras_require["nbtests"] = extras_require["recommended"] + [
     "deepdiff",
     "nbconvert ==5.3.1",
     "jsonschema ==2.6.0",
-    "cyordereddict",
     "ipython ==5.4.1",
 ]
 
@@ -116,11 +114,10 @@ extras_require["build"] = [
     "python <3.8",
 ]
 
-# Everything including cyordereddict (optimization) and nosetests
+# Everything for examples and nosetests
 extras_require["all"] = list(
     set(extras_require["unit_tests"]) | set(extras_require["nbtests"])
 )
-
 
 def get_setup_version(reponame):
     """
@@ -131,7 +128,7 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, ".version")
     try:
         from param import version
-    except:
+    except ImportError:
         version = None
     if version is not None:
         return version.Version.setup_version(
