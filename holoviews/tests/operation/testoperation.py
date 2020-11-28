@@ -141,7 +141,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_points_histogram(self):
         points = Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3)
+        op_hist = histogram(points, num_bins=3, normed=True)
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
@@ -151,7 +151,7 @@ class OperationTests(ComparisonTestCase):
         ds = Dataset([np.nan, np.nan], ['x'])
         op_hist = histogram(ds, bins=[0, 1, 2])
 
-        hist = Histogram(([0, 1, 2], [0, 0]), vdims=('x_frequency', 'Frequency'))
+        hist = Histogram(([0, 1, 2], [0, 0]), vdims=('x_count', 'Count'))
         self.assertEqual(op_hist, hist)
 
     @da_skip
@@ -159,7 +159,7 @@ class OperationTests(ComparisonTestCase):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
                      ['x'], datatype=['dask'])
-        op_hist = histogram(ds, num_bins=3)
+        op_hist = histogram(ds, num_bins=3, normed=True)
 
         hist = Histogram(([0, 3, 6, 9], [0.1, 0.1, 0.133333]),
                          vdims=('x_frequency', 'Frequency'))
@@ -171,7 +171,7 @@ class OperationTests(ComparisonTestCase):
         import dask.array as da
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=(3)),),
                      ['x'], datatype=['dask'])
-        op_hist = histogram(ds, num_bins=3, cumulative=True)
+        op_hist = histogram(ds, num_bins=3, cumulative=True, normed=True)
 
         hist = Histogram(([0, 3, 6, 9], [0.3, 0.6, 1]),
                          vdims=('x_frequency', 'Frequency'))
@@ -184,7 +184,7 @@ class OperationTests(ComparisonTestCase):
         ds = Dataset((da.from_array(np.array(range(10), dtype='f'), chunks=3),
                       da.from_array([i/10. for i in range(10)], chunks=3)),
                      ['x', 'y'], datatype=['dask'])
-        op_hist = histogram(ds, weight_dimension='y', num_bins=3)
+        op_hist = histogram(ds, weight_dimension='y', num_bins=3, normed=True)
 
         hist = Histogram(([0, 3, 6, 9], [0.022222, 0.088889, 0.222222]),
                          vdims='y')
@@ -193,7 +193,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_points_histogram_bin_range(self):
         points = Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, bin_range=(0, 3))
+        op_hist = histogram(points, num_bins=3, bin_range=(0, 3), normed=True)
 
         hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]),
                          vdims=('x_frequency', 'Frequency'))
@@ -226,7 +226,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_histogram_operation_datetime(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
-        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4, normed=True)
         hist_data = {
             'Date': np.array([
                 '2017-01-01T00:00:00.000000', '2017-01-01T18:00:00.000000',
@@ -241,7 +241,7 @@ class OperationTests(ComparisonTestCase):
 
     def test_histogram_operation_datetime64(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
-        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4, normed=True)
         hist_data = {
             'Date': np.array([
                 '2017-01-01T00:00:00.000000', '2017-01-01T18:00:00.000000',
@@ -257,7 +257,7 @@ class OperationTests(ComparisonTestCase):
     @pd_skip
     def test_histogram_operation_pd_period(self):
         dates = pd.date_range('2017-01-01', '2017-01-04', freq='D').to_period('D')
-        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4, normed=True)
         hist_data = {
             'Date': np.array([
                 '2017-01-01T00:00:00.000000', '2017-01-01T18:00:00.000000',
@@ -272,13 +272,14 @@ class OperationTests(ComparisonTestCase):
 
     def test_points_histogram_weighted(self):
         points = Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, weight_dimension='y')
+        op_hist = histogram(points, num_bins=3, weight_dimension='y', normed=True)
         hist = Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_mean_weighted(self):
         points = Points([float(i) for i in range(10)])
-        op_hist = histogram(points, num_bins=3, weight_dimension='y', mean_weighted=True)
+        op_hist = histogram(points, num_bins=3, weight_dimension='y',
+                            mean_weighted=True, normed=True)
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
 
