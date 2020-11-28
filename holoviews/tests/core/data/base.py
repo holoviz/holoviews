@@ -79,7 +79,7 @@ class InterfaceTests(ComparisonTestCase):
         pass
 
 
-            
+
 class HomogeneousColumnTests(object):
     """
     Tests for data formats that require all dataset to have the same
@@ -405,7 +405,7 @@ class HomogeneousColumnTests(object):
         expected = Dataset((self.xs, self.y_ints, self.y_ints*2), 'x', ['y', 'y2'])
         self.assertEqual(transformed, expected)
 
-        
+
 
 class HeterogeneousColumnTests(HomogeneousColumnTests):
     """
@@ -514,7 +514,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
         ds = Dataset(dt64, [Dimension('Date', range=(dt64[0], dt64[-1]))])
         self.assertEqual(ds.range('Date'), (dt64[0], dt64[-1]))
-        
+
     # Operations
 
     @pd_skip

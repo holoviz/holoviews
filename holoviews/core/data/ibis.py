@@ -21,11 +21,21 @@ class IbisInterface(Interface):
 
     default_partitions = 100
 
+    zero_indexed_backend_modules = [
+        'ibis.backends.omniscidb.client',
+    ]
+
     # the rowid is needed until ibis updates versions
     @classmethod
     def has_rowid(cls):
-        import ibis
-        return hasattr(ibis, "rowid")
+        import ibis.expr.operations
+        return hasattr(ibis.expr.operations, "RowID")
+
+    @classmethod
+    def is_rowid_zero_indexed(cls, data):
+        from ibis.client import find_backends, validate_backends
+        (backend,) = validate_backends(list(find_backends(data)))
+        return type(backend).__module__ in cls.zero_indexed_backend_modules
 
     @classmethod
     def loaded(cls):
@@ -167,7 +177,10 @@ class IbisInterface(Interface):
 
         if "hv_row_id__" in data.columns:
             return data
-        return data.mutate(hv_row_id__=ibis.rowid())
+        if cls.is_rowid_zero_indexed(data):
+            return data.mutate(hv_row_id__=data.rowid())
+        else:
+            return data.mutate(hv_row_id__=data.rowid() - 1)
 
     @classmethod
     def iloc(cls, dataset, index):
@@ -386,15 +399,18 @@ class IbisInterface(Interface):
             numpy.nansum: ibis.expr.operations.Sum,
             numpy.var: ibis.expr.operations.Variance,
             numpy.nanvar: ibis.expr.operations.Variance,
-            numpy.cumsum: ibis.expr.operations.CumulativeSum
+            len: ibis.expr.operations.Count,
         }.get(function, function)
 
         if len(dimensions):
             selection = new.groupby(columns)
             if function is numpy.count_nonzero:
-                counted = selection.count()
-                aggregation = counted.mutate(
-                    **{d.name: counted['count'] for d in dataset.vdims}
+                aggregation = selection.aggregate(
+                    **{
+                        x: ibis.expr.operations.Count(new[x], where=new[x] != 0).to_expr()
+                        for x in new.columns
+                        if x not in columns
+                    }
                 )
             else:
                 aggregation = selection.aggregate(
