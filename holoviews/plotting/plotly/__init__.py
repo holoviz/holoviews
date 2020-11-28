@@ -1,12 +1,21 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import plotly
+
+from param import concrete_descendents
+
+from ...core import (
+    Overlay, NdOverlay, Layout, NdLayout, GridSpace, GridMatrix, config
+)
 from ...core.options import Store, Cycle, Options
-from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
-                     GridMatrix, config)
+from ...core.util import LooseVersion, VersionError
 from ...element import *              # noqa (Element import for registration)
+
+from .element import ElementPlot
 from .renderer import PlotlyRenderer
 
 from .annotation import *            # noqa (API import)
+from .tiles import *                 # noqa (API import)
 from .element import *               # noqa (API import)
 from .chart import *                 # noqa (API import)
 from .chart3d import *               # noqa (API import)
@@ -17,9 +26,6 @@ from .tabular import *               # noqa (API import)
 from .callbacks import *             # noqa (API import)
 from .shapes import *                # noqa (API import)
 from .images import *                # noqa (API import)
-
-from ...core.util import LooseVersion, VersionError
-import plotly
 
 if LooseVersion(plotly.__version__) < '4.0.0':
     raise VersionError(
@@ -67,6 +73,7 @@ Store.register({Points: ScatterPlot,
 
                 # Annotations
                 Labels: LabelPlot,
+                Tiles: TilePlot,
 
                 # Shapes
                 Box: PathShapePlot,
@@ -74,6 +81,7 @@ Store.register({Points: ScatterPlot,
                 Ellipse: PathShapePlot,
                 Rectangles: BoxShapePlot,
                 Segments: SegmentShapePlot,
+                Path: PathsPlot,
                 HLine: HVLinePlot,
                 VLine: HVLinePlot,
                 HSpan: HVSpanPlot,
@@ -83,6 +91,7 @@ Store.register({Points: ScatterPlot,
                 Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 Layout: LayoutPlot,
+                AdjointLayout: AdjointLayoutPlot,
                 NdLayout: LayoutPlot,
                 GridSpace: GridPlot,
                 GridMatrix: GridPlot}, backend='plotly')
@@ -90,7 +99,12 @@ Store.register({Points: ScatterPlot,
 
 options = Store.options(backend='plotly')
 
-dflt_cmap = 'hot' if config.style_17 else 'fire'
+if config.no_padding:
+    for plot in concrete_descendents(ElementPlot).values():
+        plot.padding = 0
+
+dflt_cmap = 'fire'
+dflt_shape_line_color = '#2a3f5f'  # Line color of default plotly template
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
@@ -112,9 +126,21 @@ options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdBu_r')
 
+# Disable padding for image-like elements
+options.Image = Options("plot", padding=0)
+options.Raster = Options("plot", padding=0)
+options.RGB = Options("plot", padding=0)
+
 # 3D
 options.Scatter3D = Options('style', color=Cycle(), size=6)
 
 # Annotations
 options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
+
+# Shapes
+options.Rectangles = Options('style', line_color=dflt_shape_line_color)
+options.Bounds = Options('style', line_color=dflt_shape_line_color)
+options.Path = Options('style', line_color=dflt_shape_line_color)
+options.Segments = Options('style', line_color=dflt_shape_line_color)
+options.Box = Options('style', line_color=dflt_shape_line_color)

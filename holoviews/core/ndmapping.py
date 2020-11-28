@@ -486,6 +486,7 @@ class MultiDimensionalMapping(Dimensioned):
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
+        return info_str
 
 
     def update(self, other):
@@ -826,7 +827,7 @@ class UniformNdMapping(NdMapping):
         Returns:
             Cloned object
         """
-        settings = dict(self.get_param_values())
+        settings = dict(self.param.get_param_values())
         if settings.get('group', None) != self._group:
             settings.pop('group')
         if settings.get('label', None) != self._label:
@@ -851,6 +852,60 @@ class UniformNdMapping(NdMapping):
         with item_check(not shared_data and self._check_items):
             return clone_type(data, *args, **{k:v for k,v in settings.items()
                                               if k not in pos_args})
+
+
+    def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
+        """Concatenates and aggregates along supplied dimensions
+
+        Useful to collapse stacks of objects into a single object,
+        e.g. to average a stack of Images or Curves.
+
+        Args:
+            dimensions: Dimension(s) to collapse
+                Defaults to all key dimensions
+            function: Aggregation function to apply, e.g. numpy.mean
+            spreadfn: Secondary reduction to compute value spread
+                Useful for computing a confidence interval, spread, or
+                standard deviation.
+            **kwargs: Keyword arguments passed to the aggregation function
+
+        Returns:
+            Returns the collapsed element or HoloMap of collapsed
+            elements
+        """
+        from .data import concat
+        if not dimensions:
+            dimensions = self.kdims
+        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if self.ndims > 1 and len(dimensions) != self.ndims:
+            groups = self.groupby([dim for dim in self.kdims
+                                   if dim not in dimensions])
+
+        elif all(d in self.kdims for d in dimensions):
+            groups = UniformNdMapping([(0, self)], ['tmp'])
+        else:
+            raise KeyError("Supplied dimensions not found.")
+
+        collapsed = groups.clone(shared_data=False)
+        for key, group in groups.items():
+            last = group.values()[-1]
+            if isinstance(last, UniformNdMapping):
+                group_data = OrderedDict([
+                    (k, v.collapse()) for k, v in group.items()
+                ])
+                group = group.clone(group_data)
+            if hasattr(group.values()[-1], 'interface'):
+                group_data = concat(group)
+                if function:
+                    agg = group_data.aggregate(group.last.kdims, function, spreadfn, **kwargs)
+                    group_data = group.type(agg)
+            else:
+                group_data = [el.data for el in group]
+                args = (group_data, function, group.last.kdims)
+                data = group.type.collapse_data(*args, **kwargs)
+                group_data = group.last.clone(data)
+            collapsed[key] = group_data
+        return collapsed if self.ndims-len(dimensions) else collapsed.last
 
 
     def dframe(self, dimensions=None, multi_index=False):

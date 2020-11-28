@@ -3,6 +3,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from collections import OrderedDict
+from inspect import getmro
 
 import param
 
@@ -10,11 +11,11 @@ from panel.pane import PaneBase
 from panel.layout import Row, Tabs
 from panel.util import param_name
 
-from .core import DynamicMap, Element, Layout, Overlay, Store
+from .core import DynamicMap, HoloMap, ViewableElement, Element, Layout, Overlay, Store
 from .core.util import isscalar
-from .element import Rectangles, Path, Polygons, Points, Table
+from .element import Rectangles, Path, Polygons, Points, Table, Curve
 from .plotting.links import VertexTableLink, DataLink, RectanglesTableLink, SelectionLink
-from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw
+from .streams import BoxEdit, PolyDraw, PolyEdit, Selection1D, PointDraw, CurveEdit
 
 
 def preprocess(function, current=[]):
@@ -52,6 +53,10 @@ class annotate(param.ParameterizedFunction):
 
     edit_vertices = param.Boolean(default=True, doc="""
         Whether to add tool to edit vertices.""")
+
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
 
     num_objects = param.Integer(default=None, bounds=(0, None), doc="""
         The maximum number of objects to draw.""")
@@ -110,26 +115,47 @@ class annotate(param.ParameterizedFunction):
             elif isinstance(annotator, annotate):
                 layers.append(annotator.plot)
                 tables += [t[0].object for t in annotator.editor]
-            elif isinstance(annotator, Element):
+            elif isinstance(annotator, (HoloMap, ViewableElement)):
                 layers.append(annotator)
             else:
                 raise ValueError("Cannot compose %s type with annotators." %
                                  type(annotator).__name__)
-        tables = Overlay(tables, group='Annotator').opts(tabs=True)
-        return (Overlay(layers).collate() + tables).opts(sizing_mode='stretch_width')
+        tables = Overlay(tables, group='Annotator')
+        return (Overlay(layers).collate() + tables)
 
     def __call__(self, element, **params):
-        for eltype, annotator_type in self._annotator_types.items():
-            if isinstance(element, eltype):
-                break
+        overlay = element if isinstance(element, Overlay) else [element]
+
+        layers = []
+        annotator_type = None
+        for element in overlay:
+            matches = []
+            for eltype, atype in self._annotator_types.items():
+                if isinstance(element, eltype):
+                    matches.append((getmro(type(element)).index(eltype), atype))
+            if matches:
+                if annotator_type is not None:
+                    msg = ('An annotate call may only annotate a single element. '
+                           'If you want to annotate multiple elements call annotate '
+                           'on each one separately and then use the annotate.compose '
+                           'method to combine them into a single layout.')
+                    raise ValueError(msg)
+                annotator_type = sorted(matches)[0][1]
+                self.annotator = annotator_type(element, **params)
+                tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator')
+                layout = (self.annotator.plot + tables)
+                layers.append(layout)
             else:
-                annotator_type = None
+                layers.append(element)
+
         if annotator_type is None:
-            raise ValueError('Annotation of %s element types is not '
-                             'supported.' % type(element).__name__)
-        self.annotator = annotator_type(element, **params)
-        tables = Overlay([t[0].object for t in self.annotator.editor], group='Annotator').opts(tabs=True)
-        return (self.annotator.plot + tables).opts(sizing_mode='stretch_width')
+            obj = overlay if isinstance(overlay, Overlay) else element
+            raise ValueError('Could not find an Element to annotate on'
+                             '%s object.' % type(obj).__name__)
+
+        if len(layers) == 1:
+            return layers[0]
+        return self.compose(*layers)
 
 
 
@@ -148,6 +174,10 @@ class Annotator(PaneBase):
     default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
                                        'padding': 0.1, 'framewise': True}, doc="""
         Opts to apply to the element.""")
+
+    empty_value = param.Parameter(default=None, doc="""
+        The value to insert on annotation columns when drawing a new
+        element.""")
 
     object = param.ClassSelector(class_=Element, doc="""
         The Element to edit and annotate.""")
@@ -232,6 +262,8 @@ class Annotator(PaneBase):
 
     def _update_object(self, data=None):
         with param.discard_events(self):
+            if len(self._stream.source) == 0:
+                self.plot[()]
             self.object = self._stream.element
 
     def _update_table(self):
@@ -315,7 +347,7 @@ class PathAnnotator(Annotator):
         self._stream = PolyDraw(
             source=self.plot, data={}, num_objects=self.num_objects,
             show_vertices=self.show_vertices, tooltip='%s Tool' % name,
-            vertex_style=self.vertex_style
+            vertex_style=self.vertex_style, empty_value=self.empty_value
         )
         if self.edit_vertices:
             self._vertex_stream = PolyEdit(
@@ -337,7 +369,7 @@ class PathAnnotator(Annotator):
                 validate.append(col)
                 continue
             init = self.annotations[col]() if isinstance(self.annotations, dict) else ''
-            element = element.add_dimension(col, 0, init, True)
+            element = element.add_dimension(col, len(element.vdims), init, True)
         for col in self.vertex_annotations:
             if col in element:
                 continue
@@ -345,7 +377,7 @@ class PathAnnotator(Annotator):
                 init = self.vertex_annotations[col]()
             else:
                 init = ''
-            element = element.add_dimension(col, 0, init, True)
+            element = element.add_dimension(col, len(element.vdims), init, True)
 
         # Validate annotations
         poly_data = {c: element.dimension_values(c, expanded=False)
@@ -359,7 +391,8 @@ class PathAnnotator(Annotator):
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, color_index=None, **self.default_opts)
         opts.update(self._extra_opts)
-        return element.options(**opts)
+        return element.options(**{k: v for k, v in opts.items()
+                                  if k not in element.opts.get('plot').kwargs})
 
     def _update_links(self):
         super(PathAnnotator, self)._update_links()
@@ -402,6 +435,7 @@ class PathAnnotator(Annotator):
         return self.object.clone(data)
 
 
+
 class PolyAnnotator(PathAnnotator):
     """
     Annotator which allows drawing and editing Polygons and associating
@@ -427,7 +461,7 @@ class _GeomAnnotator(Annotator):
         name = param_name(self.name)
         self._stream = self._stream_type(
             source=self.plot, data={}, num_objects=self.num_objects,
-            tooltip='%s Tool' % name
+            tooltip='%s Tool' % name, empty_value=self.empty_value
         )
 
     def _process_element(self, object):
@@ -438,14 +472,15 @@ class _GeomAnnotator(Annotator):
         for col in self.annotations:
             if col in object:
                 continue
-            init = self.annotations[col]() if isinstance(self.annotations, dict) else None
-            object = object.add_dimension(col, 0, init, True)
+            init = self.annotations[col]() if isinstance(self.annotations, dict) else ''
+            object = object.add_dimension(col, len(object.vdims), init, True)
 
         # Add options
         tools = [tool() for tool in self._tools]
         opts = dict(tools=tools, **self.default_opts)
         opts.update(self._extra_opts)
-        return object.options(**opts)
+        return object.options(**{k: v for k, v in opts.items()
+                                 if k not in object.opts.get('plot').kwargs})
 
 
 
@@ -466,8 +501,33 @@ class PointAnnotator(_GeomAnnotator):
     _stream_type = PointDraw
 
 
+class CurveAnnotator(_GeomAnnotator):
+    """
+    Annotator which allows editing a Curve element and associating values
+    with each vertex using a Table.
+    """
 
-class BoxAnnotator(_GeomAnnotator):
+    default_opts = param.Dict(default={'responsive': True, 'min_height': 400,
+                                       'padding': 0.1, 'framewise': True}, doc="""
+        Opts to apply to the element.""")
+
+    object = param.ClassSelector(class_=Curve, doc="""
+        Points element to edit and annotate.""")
+
+    vertex_style = param.Dict(default={'size': 10}, doc="""
+        Options to apply to vertices during drawing and editing.""")
+
+    _stream_type = CurveEdit
+
+    def _init_stream(self):
+        name = param_name(self.name)
+        self._stream = self._stream_type(
+            source=self.plot, data={}, tooltip='%s Tool' % name,
+            style=self.vertex_style
+        )
+
+
+class RectangleAnnotator(_GeomAnnotator):
     """
     Annotator which allows drawing and editing Rectangles and associating
     values with each point using a table.
@@ -487,5 +547,9 @@ annotate._annotator_types.update([
     (Polygons, PolyAnnotator),
     (Path, PathAnnotator),
     (Points, PointAnnotator),
-    (Rectangles, BoxAnnotator),
+    (Curve, CurveAnnotator),
+    (Rectangles, RectangleAnnotator),
 ])
+
+# Alias: remove before 1.13.0 release
+BoxAnnotator = RectangleAnnotator

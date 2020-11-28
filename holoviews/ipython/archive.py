@@ -128,7 +128,7 @@ class NotebookArchive(FileArchive):
             print("\n"+self.traceback)
 
 
-    def auto(self, enabled=True, **kwargs):
+    def auto(self, enabled=True, clear=False, **kwargs):
         """
         Method to enable or disable automatic capture, allowing you to
         simultaneously set the instance parameters.
@@ -144,8 +144,10 @@ class NotebookArchive(FileArchive):
         time.sleep(0.5)
         self._auto=enabled
         self.param.set_param(**kwargs)
-
         tstamp = time.strftime(" [%Y-%m-%d %H:%M:%S]", self._timestamp)
+        # When clear == True, it clears the archive, in order to start a new auto capture in a clean archive
+        if clear:
+            FileArchive.clear(self)
         print("Automatic capture is now %s.%s"
               % ('enabled' if enabled else 'disabled',
                  tstamp if enabled else ''))

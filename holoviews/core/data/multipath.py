@@ -214,6 +214,8 @@ class MultiInterface(Interface):
         from ...element import Polygons
         if not dataset.data:
             return dataset.data
+        elif selection_mask is not None:
+            return [d for b, d in zip(selection_mask, dataset.data) if b]
         ds = cls._inner_dataset_template(dataset)
         skipped = (Polygons._hole_key,)
         if hasattr(ds.interface, 'geo_column'):
@@ -498,7 +500,7 @@ class MultiInterface(Interface):
             new_data = []
             for d in geoms:
                 template.data = d
-                new_data.append(template.iloc[:, cols])
+                new_data.append(template.iloc[:, cols].data)
             return new_data
 
         count = 0
@@ -549,7 +551,8 @@ def ensure_ring(geom, values=None):
     """
     if values is None:
         values = geom
-    breaks = np.where(np.isnan(geom).sum(axis=1))[0]
+    
+    breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
     starts = [0] + list(breaks+1)
     ends = list(breaks-1) + [len(geom)-1]
     zipped = zip(geom[starts], geom[ends], ends, values[starts])

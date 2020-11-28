@@ -20,6 +20,8 @@ class ImageInterface(GridInterface):
 
     datatype = 'image'
 
+    named = False
+
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
@@ -197,6 +199,13 @@ class ImageInterface(GridInterface):
             return data.T.flatten() if flat else data
         else:
             return None
+
+
+    @classmethod
+    def mask(cls, dataset, mask, mask_val=np.nan):
+        masked = dataset.data.copy().astype('float')
+        masked[np.flipud(mask)] = mask_val
+        return masked
 
 
     @classmethod

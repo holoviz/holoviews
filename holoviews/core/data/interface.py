@@ -32,6 +32,19 @@ def is_dask(array):
         return False
     return da and isinstance(array, da.Array)
 
+def cached(method):
+    """
+    Decorates an Interface method and using a cached version
+    """
+    def cached(*args, **kwargs):
+        cache = getattr(args[1], '_cached')
+        if cache is None:
+            return method(*args, **kwargs)
+        else:
+            args = (cache,)+args[2:]
+            return getattr(cache.interface, method.__name__)(*args, **kwargs)
+    return cached
+
 
 class DataError(ValueError):
     "DataError is raised when the data cannot be interpreted"
@@ -83,6 +96,7 @@ class iloc(Accessor):
     integer indices, slices, lists and arrays of values. For more
     information see the ``Dataset.iloc`` property docstring.
     """
+
     @classmethod
     def _perform_getitem(cls, dataset, index):
         index = util.wrap_tuple(index)
@@ -99,7 +113,7 @@ class iloc(Accessor):
         data = dataset.interface.iloc(dataset, (rows, cols))
         kdims = dataset.kdims
         vdims = dataset.vdims
-        if np.isscalar(data):
+        if util.isscalar(data):
             return data
         elif cols == slice(None):
             pass
@@ -113,12 +127,11 @@ class iloc(Accessor):
             kdims = [d for d in dims if d in kdims]
             vdims = [d for d in dims if d in vdims]
 
-        datatype = [dt for dt in dataset.datatype
-                    if dt in Interface.interfaces and
+        datatypes = util.unique_iterator([dataset.interface.datatype]+dataset.datatype)
+        datatype = [dt for dt in datatypes if dt in Interface.interfaces and
                     not Interface.interfaces[dt].gridded]
         if not datatype: datatype = ['dataframe', 'dictionary']
-        return dataset.clone(data, kdims=kdims, vdims=vdims,
-                             datatype=datatype)
+        return dataset.clone(data, kdims=kdims, vdims=vdims, datatype=datatype)
 
 
 class ndloc(Accessor):
@@ -157,6 +170,9 @@ class Interface(param.Parameterized):
 
     # Denotes whether the interface expects ragged data
     multi = False
+
+    # Whether the interface stores the names of the underlying dimensions
+    named = True
 
     @classmethod
     def loaded(cls):
@@ -229,7 +245,7 @@ class Interface(param.Parameterized):
                     datatype = eltype.datatype
 
             interface = data.interface
-            if interface.datatype in datatype and interface.datatype in eltype.datatype:
+            if interface.datatype in datatype and interface.datatype in eltype.datatype and interface.named:
                 data = data.data
             elif interface.multi and any(cls.interfaces[dt].multi for dt in datatype if dt in cls.interfaces):
                 data = [d for d in data.interface.split(data, None, None, 'columns')]
@@ -301,11 +317,23 @@ class Interface(param.Parameterized):
                             "dimensions, the following dimensions were "
                             "not found: %s" % repr(not_found), cls)
 
+    @classmethod
+    def persist(cls, dataset):
+        """
+        Should return a persisted version of the Dataset.
+        """
+        return dataset
+
+    @classmethod
+    def compute(cls, dataset):
+        """
+        Should return a computed version of the Dataset.
+        """
+        return dataset
 
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
-
 
     @classmethod
     def isscalar(cls, dataset, dim):
@@ -446,6 +474,22 @@ class Interface(param.Parameterized):
         data = list(zip(keys, datasets)) if keys else datasets
         concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
         return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=new_type)
+
+    @classmethod
+    def histogram(cls, array, bins, density=True, weights=None):
+        if util.is_dask_array(array):
+            import dask.array as da
+            histogram = da.histogram
+        elif util.is_cupy_array(array):
+            import cupy
+            histogram = cupy.histogram
+        else:
+            histogram = np.histogram
+        hist, edges = histogram(array, bins=bins, density=density, weights=weights)
+        if util.is_cupy_array(hist):
+            edges = cupy.asnumpy(edges)
+            hist = cupy.asnumpy(hist)
+        return hist, edges
 
     @classmethod
     def reduce(cls, dataset, reduce_dims, function, **kwargs):

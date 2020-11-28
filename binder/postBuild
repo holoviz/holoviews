@@ -1,0 +1,5 @@
+# Install the bokeh sampledata required for some examples
+bokeh sampledata
+
+# JupyterLab extension
+jupyter labextension install @pyviz/jupyterlab_pyviz

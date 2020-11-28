@@ -11,7 +11,7 @@ from ..core.operation import Operation
 from .chart import Points
 from .path import Path
 from .util import (split_path, pd, circular_layout, connect_edges,
-                   connect_edges_pd, quadratic_bezier)
+                   connect_edges_pd, quadratic_bezier, connect_tri_edges_pd)
 
 
 class RedimGraph(Redim):
@@ -149,13 +149,18 @@ class Graph(Dataset, Element2D):
             node_info = None
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
+
         self._nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if node_info is not None:
             self._add_node_info(node_info)
         self._validate()
-        self.redim = RedimGraph(self, mode='dataset')
+
+
+    @property
+    def redim(self):
+        return RedimGraph(self, mode='dataset')
 
 
     def _add_node_info(self, node_info):
@@ -251,7 +256,7 @@ class Graph(Dataset, Element2D):
                                         *args, **overrides)
 
 
-    def select(self, selection_specs=None, selection_mode='edges', **selection):
+    def select(self, selection_expr=None, selection_specs=None, selection_mode='edges', **selection):
         """
         Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
@@ -265,17 +270,28 @@ class Graph(Dataset, Element2D):
         connected to the selected nodes. To select only edges between the
         selected nodes set the selection_mode to 'nodes'.
         """
+        from ..util.transform import dim
+        if selection_expr is not None and not isinstance(selection_expr, dim):
+            raise ValueError("""\
+The first positional argument to the Dataset.select method is expected to be a
+holoviews.util.transform.dim expression. Use the selection_specs keyword
+argument to specify a selection specification""")
+        
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions('ranges')+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-            or not selection):
+            or (not selection and not selection_expr)):
             return self
 
         index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
         node_selection = {index_dim: v for k, v in selection.items()
                           if k in self.kdims}
-        nodes = self.nodes.select(**dict(selection, **node_selection))
+        if selection_expr:
+            mask = selection_expr.apply(self.nodes, compute=False, keep_index=True)
+            nodes = self.nodes[mask]
+        else:
+            nodes = self.nodes.select(**dict(selection, **node_selection))
         selection = {k: v for k, v in selection.items() if k in dimensions}
 
         # Compute mask for edges if nodes were selected on
@@ -346,7 +362,7 @@ class Graph(Dataset, Element2D):
     def dimensions(self, selection='all', label=False):
         dimensions = super(Graph, self).dimensions(selection, label)
         if selection == 'ranges':
-            if self._nodes:
+            if self._nodes is not None:
                 node_dims = self.nodes.dimensions(selection, label)
             else:
                 node_dims = self.node_type.kdims+self.node_type.vdims
@@ -364,8 +380,12 @@ class Graph(Dataset, Element2D):
         Computes the node positions the first time they are requested
         if no explicit node information was supplied.
         """
+        
         if self._nodes is None:
+            from ..operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)
+            self._nodes._dataset = None
+            self._nodes._pipeline = chain.instance()
         return self._nodes
 
 
@@ -570,13 +590,13 @@ class TriMesh(Graph):
             self._edgepaths = edgepaths
             return edgepaths
 
-        simplices = self.array([0, 1, 2]).astype(np.int32)
-        pts = self.nodes.array([0, 1]).astype(float)
-        pts = pts[simplices]
-        paths = np.pad(pts[:, [0, 1, 2, 0], :],
-                       pad_width=((0, 0), (0, 1), (0, 0)),
-                       mode='constant',
-                       constant_values=np.nan).reshape(-1, 2)[:-1]
+        df = connect_tri_edges_pd(self)
+        pts = df.values.reshape((len(df), 3, 2))
+        paths = np.pad(
+            pts[:, [0, 1, 2, 0], :].astype(float),
+            pad_width=((0, 0), (0, 1), (0, 0)),
+            mode='constant', constant_values=np.nan
+        ).reshape(-1, 2)[:-1]
         edgepaths = self.edge_type([paths], kdims=self.nodes.kdims[:2],
                                    datatype=['multitabular'])
         self._edgepaths = edgepaths
@@ -676,7 +696,7 @@ class layout_chords(Operation):
         for i in range(areas_in_radians.shape[0]):
             n_conn = weights_of_areas[i]
             p0, p1 = points[i], points[i+1]
-            angles = np.linspace(p0, p1, n_conn)
+            angles = np.linspace(p0, p1, int(n_conn))
             coords = list(zip(np.cos(angles), np.sin(angles)))
             all_areas.append(coords)
 
@@ -781,7 +801,6 @@ class Chord(Graph):
                                 % type(edgepaths))
             self._edgepaths = edgepaths
         self._validate()
-        self.redim = RedimGraph(self, mode='dataset')
 
 
     @property

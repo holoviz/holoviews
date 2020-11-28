@@ -8,6 +8,7 @@ import numpy as np
 from ..core import util
 from ..core.dimension import Dimension
 from ..core.element import Element2D
+from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lon_lat
 
 
 class Tiles(Element2D):
@@ -53,6 +54,28 @@ class Tiles(Element2D):
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         return np.array([])
+
+    @staticmethod
+    def lon_lat_to_easting_northing(longitude, latitude):
+        """
+        Projects the given longitude, latitude values into Web Mercator
+        (aka Pseudo-Mercator or EPSG:3857) coordinates.
+
+        See docstring for holoviews.util.transform.lon_lat_to_easting_northing
+        for more information
+        """
+        return lon_lat_to_easting_northing(longitude, latitude)
+
+    @staticmethod
+    def easting_northing_to_lon_lat(easting, northing):
+        """
+        Projects the given easting, northing values into
+        longitude, latitude coordinates.
+
+        See docstring for holoviews.util.transform.easting_northing_to_lon_lat
+        for more information
+        """
+        return easting_northing_to_lon_lat(easting, northing)
 
 
 # Mapping between patterns to match specified as tuples and tuples containing attributions

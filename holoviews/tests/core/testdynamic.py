@@ -18,6 +18,8 @@ from ..utils import LoggingComparisonTestCase
 from .testdimensioned import CustomBackendTestCase, TestObj
 
 XY = Stream.define('XY', x=0,y=0)
+X = Stream.define('X', x=0)
+Y = Stream.define('Y', y=0)
 
 frequencies =  np.linspace(0.5,2.0,5)
 phases = np.linspace(0, np.pi*2, 5)
@@ -65,12 +67,72 @@ class DynamicMapConstructor(ComparisonTestCase):
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
+    def test_simple_constructor_positional_stream_args(self):
+        DynamicMap(lambda v: v, streams=[PointerXY()], positional_stream_args=True)
+
     def test_simple_constructor_streams_invalid_mismatch_named(self):
 
         def foo(x): return x
         regexp = "Callable 'foo' missing keywords to accept stream parameters: y"
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(foo, streams=[PointerXY()])
+
+
+class DynamicMapPositionalStreamArgs(ComparisonTestCase):
+    def test_positional_stream_args_without_streams(self):
+        fn = lambda i: Curve([i, i])
+        dmap = DynamicMap(fn, kdims=['i'], positional_stream_args=True)
+        self.assertEqual(dmap[0], Curve([0, 0]))
+
+    def test_positional_stream_args_with_only_stream(self):
+        fn = lambda s: Curve([s['x'], s['y']])
+        xy_stream = XY(x=1, y=2)
+        dmap = DynamicMap(fn, streams=[xy_stream], positional_stream_args=True)
+        self.assertEqual(dmap[()], Curve([1, 2]))
+
+        # Update stream values
+        xy_stream.event(x=5, y=7)
+        self.assertEqual(dmap[()], Curve([5, 7]))
+
+    def test_positional_stream_args_with_single_kdim_and_stream(self):
+        fn = lambda i, s: Points([i, i]) + Curve([s['x'], s['y']])
+        xy_stream = XY(x=1, y=2)
+        dmap = DynamicMap(
+            fn, kdims=['i'], streams=[xy_stream], positional_stream_args=True
+        )
+        self.assertEqual(dmap[6], Points([6, 6]) + Curve([1, 2]))
+
+        # Update stream values
+        xy_stream.event(x=5, y=7)
+        self.assertEqual(dmap[3], Points([3, 3]) + Curve([5, 7]))
+
+    def test_positional_stream_args_with_multiple_kdims_and_stream(self):
+        fn = lambda i, j, s1, s2: Points([i, j]) + Curve([s1['x'], s2['y']])
+        x_stream = X(x=2)
+        y_stream = Y(y=3)
+
+        dmap = DynamicMap(
+            fn,
+            kdims=['i', 'j'],
+            streams=[x_stream, y_stream],
+            positional_stream_args=True
+        )
+        self.assertEqual(dmap[0, 1], Points([0, 1]) + Curve([2, 3]))
+
+        # Update stream values
+        x_stream.event(x=5)
+        y_stream.event(y=6)
+        self.assertEqual(dmap[3, 4], Points([3, 4]) + Curve([5, 6]))
+
+    def test_initialize_with_overlapping_stream_params(self):
+        fn = lambda xy0, xy1: \
+             Points([xy0['x'], xy0['y']]) + Curve([xy1['x'], xy1['y']])
+        xy_stream0 = XY(x=1, y=2)
+        xy_stream1 = XY(x=3, y=4)
+        dmap = DynamicMap(
+            fn, streams=[xy_stream0, xy_stream1], positional_stream_args=True
+        )
+        self.assertEqual(dmap[()], Points([1, 2]) + Curve([3, 4]))
 
 
 class DynamicMapMethods(ComparisonTestCase):
@@ -389,8 +451,8 @@ class DynamicMapMethods(ComparisonTestCase):
         self.assertEqual(dmaps[1][0], Points([]))
         with self.assertRaises(KeyError):
             dmaps[1][1]
-    
-        
+
+
 
 class DynamicMapOptionsTests(CustomBackendTestCase):
 

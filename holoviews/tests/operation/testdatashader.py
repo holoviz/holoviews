@@ -3,21 +3,30 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
-                       Spread, Area, Segments, Polygons)
+                       Spread, Area, Rectangles, Segments, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
+from numpy import nan
 
 try:
     import datashader as ds
     import dask.dataframe as dd
+    import xarray as xr
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, rasterize
+        shade, spread, rasterize
     )
 except:
     raise SkipTest('Datashader not available')
+
+try:
+    import cudf
+    import cupy
+except:
+    cudf = None
 
 try:
     import spatialpandas
@@ -25,6 +34,7 @@ except:
     spatialpandas = None
 
 spatialpandas_skip = skipIf(spatialpandas is None, "SpatialPandas not available")
+cudf_skip = skipIf(cudf is None, "cuDF not available")
 
 
 
@@ -39,6 +49,17 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
                          vdims=['Count'])
+        self.assertEqual(img, expected)
+
+    @cudf_skip
+    def test_aggregate_points_cudf(self):
+        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)], datatype=['cuDF'])
+        self.assertIsInstance(points.data, cudf.DataFrame)
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=['Count'])
+        self.assertIsInstance(img.data.Count.data, cupy.ndarray)
         self.assertEqual(img, expected)
 
     def test_aggregate_zero_range_points(self):
@@ -339,6 +360,80 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
+    def test_rectangles_aggregate_count(self):
+        rects = Rectangles([(0, 0, 1, 2), (1, 1, 3, 2)])
+        agg = rasterize(rects, width=4, height=4, dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        arr = np.array([
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [1, 2, 1, 1],
+            [0, 0, 0, 0]
+        ])
+        expected = Image((xs, ys, arr), vdims='count')
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_count_cat(self):
+        rects = Rectangles([(0, 0, 1, 2, 'A'), (1, 1, 3, 2, 'B')], vdims=['cat'])
+        agg = rasterize(rects, width=4, height=4, aggregator=ds.count_cat('cat'),
+                        dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        arr1 = np.array([
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [1, 1, 0, 0],
+            [0, 0, 0, 0]
+        ])
+        arr2 = np.array([
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [0, 1, 1, 1],
+            [0, 0, 0, 0]
+        ])
+        expected1 = Image((xs, ys, arr1), vdims='cat Count')
+        expected2 = Image((xs, ys, arr2), vdims='cat Count')
+        expected = NdOverlay({'A': expected1, 'B': expected2}, kdims=['cat'])
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_sum(self):
+        rects = Rectangles([(0, 0, 1, 2, 0.5), (1, 1, 3, 2, 1.5)], vdims=['value'])
+        agg = rasterize(rects, width=4, height=4, aggregator='sum', dynamic=False)
+        xs = [0.375, 1.125, 1.875, 2.625]
+        ys = [0.25, 0.75, 1.25, 1.75]
+        nan = np.nan
+        arr = np.array([
+            [0.5, 0.5, nan, nan],
+            [0.5, 0.5, nan, nan],
+            [0.5, 2. , 1.5, 1.5],
+            [nan, nan, nan, nan]
+        ])
+        expected = Image((xs, ys, arr), vdims='value')
+        self.assertEqual(agg, expected)
+
+    def test_rectangles_aggregate_dt_count(self):
+        rects = Rectangles([
+            (0, dt.datetime(2016, 1, 2), 4, dt.datetime(2016, 1, 3)),
+            (1, dt.datetime(2016, 1, 1), 2, dt.datetime(2016, 1, 5))
+        ])
+        agg = rasterize(rects, width=4, height=4, dynamic=False)
+        xs = [0.5, 1.5, 2.5, 3.5]
+        ys = [
+            np.datetime64('2016-01-01T12:00:00'), np.datetime64('2016-01-02T12:00:00'),
+            np.datetime64('2016-01-03T12:00:00'), np.datetime64('2016-01-04T12:00:00')
+        ]
+        arr = np.array([
+            [0, 1, 1, 0],
+            [1, 2, 2, 1],
+            [0, 1, 1, 0],
+            [0, 0, 0, 0]
+        ])
+        bounds = (0.0, np.datetime64('2016-01-01T00:00:00'),
+                  4.0, np.datetime64('2016-01-05T00:00:00'))
+        expected = Image((xs, ys, arr), bounds=bounds, vdims='count')
+        self.assertEqual(agg, expected)
+
     def test_segments_aggregate_count(self):
         segments = Segments([(0, 1, 4, 1), (1, 0, 1, 4)])
         agg = rasterize(segments, width=4, height=4, dynamic=False)
@@ -353,10 +448,16 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
-    def test_segments_aggregate_sum(self):
+    def test_segments_aggregate_sum(self, instance=False):
         segments = Segments([(0, 1, 4, 1, 2), (1, 0, 1, 4, 4)], vdims=['value'])
-        agg = rasterize(segments, width=4, height=4, dynamic=False,
-                        aggregator='sum')
+        if instance:
+            agg = rasterize.instance(
+                width=10, height=10, dynamic=False, aggregator='sum'
+            )(segments, width=4, height=4)
+        else:
+            agg = rasterize(
+                segments, width=4, height=4, dynamic=False, aggregator='sum'
+            )
         xs = [0.5, 1.5, 2.5, 3.5]
         ys = [0.5, 1.5, 2.5, 3.5]
         na = np.nan
@@ -368,6 +469,9 @@ class DatashaderAggregateTests(ComparisonTestCase):
         ])
         expected = Image((xs, ys, arr), vdims='value')
         self.assertEqual(agg, expected)
+
+    def test_segments_aggregate_sum_instance(self):
+        self.test_segments_aggregate_sum(instance=True)
 
     def test_segments_aggregate_dt_count(self):
         segments = Segments([
@@ -462,6 +566,35 @@ class DatashaderAggregateTests(ComparisonTestCase):
         expected = Image((xs, ys, arr), vdims='count')
         self.assertEqual(agg, expected)
 
+    def test_rgb_regrid_packed(self):
+        coords = {'x': [1, 2], 'y': [1, 2], 'band': [0, 1, 2]}
+        arr = np.array([
+            [[255, 10],
+             [  0, 30]],
+            [[  1,  0],
+             [  0,  0]],
+            [[127,  0],
+             [  0, 68]],
+        ]).T
+        da = xr.DataArray(data=arr, dims=('x', 'y', 'band'), coords=coords)
+        im = RGB(da, ['x', 'y'])
+        agg = rasterize(im, width=3, height=3, dynamic=False, upsample=True)
+        xs = [0.8333333, 1.5, 2.166666]
+        ys = [0.8333333, 1.5, 2.166666]
+        arr = np.array([
+            [[255, 255, 10],
+             [255, 255, 10],
+             [  0,   0, 30]],
+            [[  1,   1,  0],
+             [  1,   1,  0],
+             [  0,   0,  0]],
+            [[127, 127,  0],
+             [127, 127,  0],
+             [  0,   0, 68]],
+        ]).transpose((1, 2, 0))
+        expected = RGB((xs, ys, arr))
+        self.assertEqual(agg, expected)
+
     @spatialpandas_skip
     def test_line_rasterize(self):
         path = Path([[(0, 0), (1, 1), (2, 0)], [(0, 0), (0, 1)]], datatype=['spatialpandas'])
@@ -500,7 +633,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         xs = [0.25, 0.75, 1.25, 1.75]
         ys = [0.125, 0.375, 0.625, 0.875]
         arr = np.array([
-            [2, 1, 1, 1],
+            [1, 1, 1, 1],
             [0, 1, 0, 1],
             [0, 1, 1, 0],
             [0, 0, 1, 0]
@@ -564,19 +697,52 @@ class DatashaderAggregateTests(ComparisonTestCase):
 
 
 
+class DatashaderCatAggregateTests(ComparisonTestCase):
+
+    def setUp(self):
+        if ds_version < '0.11.0':
+            raise SkipTest('Regridding operations require datashader>=0.11.0')
+
+    def test_aggregate_points_categorical(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('z', ds.count()))
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims='z Count'),
+                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count'),
+                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count')},
+                             kdims=['z'])
+        self.assertEqual(img, expected)
+
+
+    def test_aggregate_points_categorical_mean(self):
+        points = Points([(0.2, 0.3, 'A', 0.1), (0.4, 0.7, 'B', 0.2), (0, 0.99, 'C', 0.3)], vdims=['cat', 'z'])
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.by('cat', ds.mean('z')))
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        expected = NdOverlay({'A': Image((xs, ys, [[0.1, nan], [nan, nan]]), vdims='z'),
+                              'B': Image((xs, ys, [[nan, nan], [0.2, nan]]), vdims='z'),
+                              'C': Image((xs, ys, [[nan, nan], [0.3, nan]]), vdims='z')},
+                             kdims=['cat'])
+        self.assertEqual(img, expected)
+        
+
 
 class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_categorical_images_xarray(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['xarray'], vdims='z Count'),
-                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count'),
-                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count')},
+        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count'),
+                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count'),
+                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['xarray'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
-        r = [[228, 255], [66, 255]]
-        g = [[26, 255], [150, 255]]
-        b = [[28, 255], [129, 255]]
+        r = [[228, 120], [66, 120]]
+        g = [[26, 109], [150, 109]]
+        b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
@@ -584,14 +750,17 @@ class DatashaderShadeTests(ComparisonTestCase):
 
     def test_shade_categorical_images_grid(self):
         xs, ys = [0.25, 0.75], [0.25, 0.75]
-        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['grid'], vdims='z Count'),
-                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count'),
-                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count')},
+        data = NdOverlay({'A': Image((xs, ys, np.array([[1, 0], [0, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count'),
+                          'B': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count'),
+                          'C': Image((xs, ys, np.array([[0, 0], [1, 0]], dtype='u4')),
+                                     datatype=['grid'], vdims='z Count')},
                          kdims=['z'])
         shaded = shade(data)
-        r = [[228, 255], [66, 255]]
-        g = [[26, 255], [150, 255]]
-        b = [[28, 255], [129, 255]]
+        r = [[228, 120], [66, 120]]
+        g = [[26, 109], [150, 109]]
+        b = [[28, 95], [129, 95]]
         a = [[40, 0], [255, 0]]
         expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
                        vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
@@ -850,6 +1019,27 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
 
+class DatashaderSpreadTests(ComparisonTestCase):
+
+    def test_spread_rgb_1px(self):
+        arr = np.array([[[0, 0, 0], [0, 1, 1], [0, 1, 1]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]]], dtype=np.uint8).T*255
+        spreaded = spread(RGB(arr))
+        arr = np.array([[[0, 0, 1], [0, 0, 1], [0, 0, 1]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[0, 0, 0], [0, 0, 0], [0, 0, 0]],
+                        [[1, 1, 1], [1, 1, 1], [1, 1, 1]]], dtype=np.uint8).T*255
+        self.assertEqual(spreaded, RGB(arr))
+
+    def test_spread_img_1px(self):
+        if ds_version < '0.12.0':
+            raise SkipTest('Datashader does not support DataArray yet')
+        arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
+        spreaded = spread(Image(arr))
+        arr = np.array([[0, 0, 0], [1, 1, 1], [1, 1, 1]]).T
+        self.assertEqual(spreaded, Image(arr))
+        
 
 class DatashaderStackTests(ComparisonTestCase):
 

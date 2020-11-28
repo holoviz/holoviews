@@ -3,6 +3,7 @@ import os, sys, inspect, shutil
 from collections import defaultdict
 from types import FunctionType
 
+
 try:
     from pathlib import Path
 except:
@@ -11,13 +12,17 @@ except:
 import param
 from pyviz_comms import extension as _pyviz_extension
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from ..core import (
+    Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
+    StoreOptions, Store
+)
 from ..core.options import options_policy, Keywords, Options
 from ..core.operation import Operation
+from ..core.overlay import Overlay
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
-from ..core.spaces import Callable
 from ..core import util
+from ..operation.element import function
 from ..streams import Stream, Params
 from .settings import OutputSettings, list_formats, list_backends
 
@@ -87,6 +92,9 @@ class opts(param.ParameterizedFunction):
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
+
+    def __init__(self, *args, **kwargs): # Needed for opts specific __signature__
+        super(opts, self).__init__(*args, **kwargs)
 
     def __call__(self, *args, **params):
         if not params and not args:
@@ -329,6 +337,19 @@ class opts(param.ParameterizedFunction):
             {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
         """
         current_backend = Store.current_backend
+
+        if not Store.renderers:
+            raise ValueError("No plotting extension is currently loaded. "
+                             "Ensure you load an plotting extension with "
+                             "hv.extension or import it explicitly from "
+                             "holoviews.plotting before applying any "
+                             "options.")
+        elif current_backend not in Store.renderers:
+            raise ValueError("Currently selected plotting extension {ext} "
+                             "has not been loaded, ensure you load it "
+                             "with hv.extension({ext}) before setting "
+                             "options".format(ext=repr(current_backend)))
+
         try:
             backend_options = Store.options(backend=backend or current_backend)
         except KeyError as e:
@@ -484,10 +505,17 @@ class opts(param.ParameterizedFunction):
             return Options(spec, **kws)
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        sorted_kw_set = sorted(set(filtered_keywords))
+        if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+            builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
+        else:
+            from inspect import Parameter, Signature
+            signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
+            builder.__signature__ = signature
         return classmethod(builder)
-
 
     @classmethod
     def _element_keywords(cls, backend, elements=None):
@@ -525,9 +553,18 @@ class opts(param.ParameterizedFunction):
                         cls._create_builder(element, keywords))
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
-        kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted(filtered_keywords))
-        old_doc = cls.__original_docstring__.replace('params(strict=Boolean, name=String)','')
-        cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        sorted_kw_set = sorted(set(filtered_keywords))
+        if sys.version_info.major == 2:
+            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
+            old_doc = cls.__original_docstring__.replace(
+                'params(strict=Boolean, name=String)','')
+            cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
+        else:
+            from inspect import Parameter, Signature
+            signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                     for kw in sorted_kw_set])
+            cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -619,7 +656,11 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-output.__doc__ = Store.output_settings._generate_docstring()
+if sys.version_info.major == 2:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=True)
+else:
+    output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+    output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
@@ -628,8 +669,9 @@ def renderer(name):
     """
     try:
         if name not in Store.renderers:
-            if Store.current_backend:
-                prev_backend = Store.current_backend
+            prev_backend = Store.current_backend
+            if Store.current_backend not in Store.renderers:
+                prev_backend = None
             extension(name)
             if prev_backend:
                 Store.set_current_backend(prev_backend)
@@ -713,7 +755,7 @@ class extension(_pyviz_extension):
         cls._backend_hooks[backend].append(callback)
 
 
-def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
+def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None, title=None, **kwargs):
     """
     Saves the supplied object to file.
 
@@ -741,12 +783,27 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
         Bokeh resources used to load bokehJS components. Defaults to
         CDN, to embed resources inline for offline usage use 'inline'
         or bokeh.resources.INLINE.
+    toolbar: bool or None
+        Whether to include toolbars in the exported plot. If None,
+        display the toolbar unless fmt is `png` and backend is `bokeh`.
+        If `True`, always include the toolbar.  If `False`, do not include the
+        toolbar.
+    title: string
+        Custom title for exported HTML file
     **kwargs: dict
         Additional keyword arguments passed to the renderer,
         e.g. fps for animations
     """
     backend = backend or Store.current_backend
     renderer_obj = renderer(backend)
+    if (
+        not toolbar
+        and backend == "bokeh"
+        and (fmt == "png" or (isinstance(filename, str) and filename.endswith("png")))
+    ):
+        obj = obj.opts(toolbar=None, backend="bokeh", clone=True)
+    elif toolbar is not None and not toolbar:
+        obj = obj.opts(toolbar=None)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
     if Path is not None and isinstance(filename, Path):
@@ -759,7 +816,8 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', **kwargs):
             fmt = formats[-1]
         if formats[-1] in supported:
             filename = '.'.join(formats[:-1])
-    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources)
+    return renderer_obj.save(obj, filename, fmt=fmt, resources=resources,
+                             title=title)
 
 
 def render(obj, backend=None, **kwargs):
@@ -832,6 +890,14 @@ class Dynamic(param.ParameterizedFunction):
          with an RangeXY, this switch determines whether the
          corresponding visualization should update this stream with
          range changes originating from the newly generated axes.""")
+
+    link_dataset = param.Boolean(default=True, doc="""
+         Determines whether the output of the operation should inherit
+         the .dataset property of the input to the operation. Helpful
+         for tracking data providence for user supplied functions,
+         which do not make use of the clone method. Should be disabled
+         for operations where the output is not derived from the input
+         and instead depends on some external state.""")
 
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
@@ -942,20 +1008,25 @@ class Dynamic(param.ParameterizedFunction):
 
         def apply(element, *key, **kwargs):
             kwargs = dict(util.resolve_dependent_kwargs(self.p.kwargs), **kwargs)
-            return self._process(element, key, kwargs)
+            processed = self._process(element, key, kwargs)
+            if (self.p.link_dataset and isinstance(element, Dataset) and
+                isinstance(processed, Dataset) and processed._dataset is None):
+                processed._dataset = element.dataset
+            return processed
 
         def dynamic_operation(*key, **kwargs):
             key, obj = resolve(key, kwargs)
             return apply(obj, *key, **kwargs)
 
-        if isinstance(self.p.operation, Operation):
-            return OperationCallable(dynamic_operation, inputs=[map_obj],
-                                     link_inputs=self.p.link_inputs,
-                                     operation=self.p.operation)
-        else:
-            return Callable(dynamic_operation, inputs=[map_obj],
-                            link_inputs=self.p.link_inputs,
-                            operation=apply)
+        operation = self.p.operation
+        op_kwargs = self.p.kwargs
+        if not isinstance(operation, Operation):
+            operation = function.instance(fn=apply)
+            op_kwargs = {'kwargs': op_kwargs}
+        return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                 link_inputs=self.p.link_inputs,
+                                 operation=operation,
+                                 operation_kwargs=op_kwargs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn, streams):
@@ -964,7 +1035,10 @@ class Dynamic(param.ParameterizedFunction):
         an equivalent DynamicMap from the HoloMap.
         """
         if isinstance(hmap, ViewableElement):
-            return DynamicMap(dynamic_fn, streams=streams)
+            dmap = DynamicMap(dynamic_fn, streams=streams)
+            if isinstance(hmap, Overlay):
+                dmap.callback.inputs[:] = list(hmap)
+            return dmap
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
         kdims = [d.clone(values=list(util.unique_iterator(values))) for d, values in

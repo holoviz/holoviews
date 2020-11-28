@@ -4,25 +4,33 @@ from nbsite.shared_conf import *
 
 # Declare information specific to this project.
 project = u'HoloViews'
-authors = u'PyViz developers'
-copyright = u'2019 ' + authors
+authors = u'HoloViz developers'
+copyright = u'2020 ' + authors
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
+
+import param
+
+param.parameterized.docstring_signature = False
+param.parameterized.docstring_describe_params = False
 
 import holoviews
 version = release = holoviews.__version__
 
-html_theme = 'sphinx_ioam_theme'
+holoviews.extension.inline = False
+
+html_theme = 'sphinx_holoviz_theme'
 html_static_path += ['_static']
 html_theme_options = {
     'logo': 'logo.png',
     'favicon': 'favicon.ico',
-    'custom_css': 'holoviews.css'
+    'custom_css': 'holoviews.css',
+    'include_logo_text': True,
+    'second_nav': True,
+    'footer': False
 }
 nbbuild_cell_timeout = 360
 
 extensions += ['nbsite.gallery']
-
-templates_path = ['_templates']
 
 nbsite_gallery_conf = {
     'backends': ['bokeh', 'matplotlib', 'plotly'],
@@ -59,14 +67,16 @@ html_context.update({
     'DESCRIPTION': description,
     'AUTHOR': authors,
     'VERSION': version,
-    'WEBSITE_SERVER': 'https:',
+    'WEBSITE_URL': 'https://holoviews.org', # for canonical link
+    'GOOGLE_SEARCH_ID': '006807479272082416678:p6n_f0d8taw',
+    'GOOGLE_ANALYTICS_UA': 'UA-61554933-1',
     # Links
     'LINKS': (
         ('Getting started', '/getting_started/index'),
         ('User Guide', '/user_guide/index'),
         ('Gallery', '/gallery/index'),
         ('Reference Gallery', '/reference/index'),
-        ('API Docs', '/Reference_Manual/index'),
+        ('API Docs', '/reference_manual/index'),
         ('FAQ', '/FAQ'),
         ('About', '/about')
     ),
@@ -76,7 +86,7 @@ html_context.update({
     ),
     # Social links
     'SOCIAL': (
-        ('Gitter', '//gitter.im/pyviz/pyviz'),
+        ('Discourse', '//discourse.holoviz.org/c/holoviews'),
         ('Twitter', '//twitter.com/holoviews'),
         ('Github', '//github.com/pyviz/holoviews'),
     ),
@@ -87,7 +97,7 @@ html_context.update({
         ('Gallery', 'gallery/index'),
         ('Reference Gallery', 'reference/index'),
         ('Releases', 'releases'),
-        ('API', 'Reference_Manual/index'),
+        ('API', 'reference_manual/index'),
         ('FAQ', 'FAQ')
     ),
     'js_includes': html_context['js_includes']+['holoviews.js']

@@ -31,7 +31,7 @@ class SankeyPlot(GraphPlot):
     node_width = param.Number(default=15, doc="""
         Width of the nodes.""")
 
-    node_padding = param.Integer(default=10, doc="""
+    node_padding = param.Integer(default=None, doc="""
         Number of pixels of padding relative to the bounds.""")
 
     iterations = param.Integer(default=32, doc="""
@@ -40,14 +40,22 @@ class SankeyPlot(GraphPlot):
     node_sort = param.Boolean(default=True, doc="""
         Sort nodes in ascending breadth.""")
 
-    _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
+    width = param.Integer(default=1000, allow_None=True, bounds=(0, None), doc="""
+        The width of the component (in pixels). This can be either
+        fixed or preferred width, depending on width sizing policy.""")
 
-    _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
+    height = param.Integer(default=600, allow_None=True, bounds=(0, None), doc="""
+        The height of the component (in pixels).  This can be either
+        fixed or preferred height, depending on height sizing policy.""")
 
+    filled = True
+    
     style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
                                          'label_text_font_size']
 
-    filled = True
+    _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
+
+    _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
@@ -155,13 +163,11 @@ class SankeyPlot(GraphPlot):
             else:
                 label = ''
             if self.show_values:
-                value = value_dim.pprint_value(node['value'])
+                value = value_dim.pprint_value(node['value'], print_unit=True)
                 if label:
                     label = '%s - %s' % (label, value)
                 else:
                     label = value
-            if value_dim.unit:
-                label += ' %s' % value_dim.unit
             if label:
                 text_labels.append(label)
 

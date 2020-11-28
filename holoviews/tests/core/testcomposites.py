@@ -38,6 +38,11 @@ class LayoutTestCase(ElementTestCase):
         self.assertEqual(t.keys(),
                          [('Element', 'I'), ('Element', 'II')])
 
+    def test_layouttree_deduplicate(self):
+        for i in range(2, 10):
+            l = Layout([Element([], label='0') for _ in range(i)])
+            self.assertEqual(len(l), i)
+
     def test_layouttree_values_1(self):
         t = self.el1 + self.el2
         self.assertEqual(t.values(), [self.el1, self.el2])
@@ -296,7 +301,7 @@ class OverlayTestCase(ElementTestCase):
 
     def test_overlay_group(self):
         t1 = (self.el1 * self.el2)
-        t2 = Overlay(list(t1.relabel(group='NewValue')))
+        t2 = Overlay(list(t1.relabel(group='NewValue', depth=1)))
         self.assertEqual(t2.keys(), [('NewValue', 'I'), ('NewValue', 'II')])
 
     def test_overlay_quadruple_1(self):

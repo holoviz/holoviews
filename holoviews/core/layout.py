@@ -222,7 +222,7 @@ class AdjointLayout(Dimensioned):
 
     def __getitem__(self, key):
         "Index into the AdjointLayout by index or label"
-        if key is ():
+        if key == ():
             return self
 
         data_slice = None
@@ -436,6 +436,24 @@ class Layout(ViewableTree):
         self.__dict__['_max_cols'] = 4
         super(Layout, self).__init__(items, identifier, parent, **kwargs)
 
+    def decollate(self):
+        """Packs Layout of DynamicMaps into a single DynamicMap that returns a Layout
+
+        Decollation allows packing a Layout of DynamicMaps into a single DynamicMap
+        that returns a Layout of simple (non-dynamic) elements. All nested streams are
+        lifted to the resulting DynamicMap, and are available in the `streams`
+        property.  The `callback` property of the resulting DynamicMap is a pure,
+        stateless function of the stream values. To avoid stream parameter name
+        conflicts, the resulting DynamicMap is configured with
+        positional_stream_args=True, and the callback function accepts stream values
+        as positional dict arguments.
+
+        Returns:
+            DynamicMap that returns a Layout
+        """
+        from .decollate import decollate
+        return decollate(self)
+
     @property
     def shape(self):
         "Tuple indicating the number of rows and columns in the Layout."
@@ -498,6 +516,22 @@ class Layout(ViewableTree):
         self._max_cols = ncols
         return self
 
+    def relabel(self, label=None, group=None, depth=1):
+        """Clone object and apply new group and/or label.
+
+        Applies relabeling to children up to the supplied depth.
+
+        Args:
+            label (str, optional): New label to apply to returned object
+            group (str, optional): New group to apply to returned object
+            depth (int, optional): Depth to which relabel will be applied
+                If applied to container allows applying relabeling to
+                contained objects up to the specified depth
+
+        Returns:
+            Returns relabelled object
+        """
+        return super(Layout, self).relabel(label, group, depth)
 
     def grid_items(self):
         return {tuple(np.unravel_index(idx, self.shape)): (path, item)

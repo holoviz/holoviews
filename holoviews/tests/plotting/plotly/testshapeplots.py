@@ -1,7 +1,10 @@
-from holoviews.element import VLine, HLine, Bounds, Box, Rectangles, Segments
-
+from holoviews.element import (
+    VLine, HLine, Bounds, Box, Rectangles, Segments, Tiles, Path
+)
+import numpy as np
 from .testplot import TestPlotlyPlot
 
+default_shape_color = '#2a3f5f'
 
 class TestShape(TestPlotlyPlot):
     def assert_shape_element_styling(self, element):
@@ -17,8 +20,27 @@ class TestShape(TestPlotlyPlot):
         state = self._get_plot_state(element)
         shapes = state['layout']['shapes']
         self.assert_property_values(shapes[0], props)
-        
-        
+
+
+class TestMapboxShape(TestPlotlyPlot):
+    def setUp(self):
+        super(TestMapboxShape, self).setUp()
+
+        # Precompute coordinates
+        self.xs = [3000000, 2000000, 1000000]
+        self.ys = [-3000000, -2000000, -1000000]
+        self.x_range = (-5000000, 4000000)
+        self.x_center = sum(self.x_range) / 2.0
+        self.y_range = (-3000000, 2000000)
+        self.y_center = sum(self.y_range) / 2.0
+        self.lon_range, self.lat_range = Tiles.easting_northing_to_lon_lat(self.x_range, self.y_range)
+        self.lon_centers, self.lat_centers = Tiles.easting_northing_to_lon_lat(
+            [self.x_center], [self.y_center]
+        )
+        self.lon_center, self.lat_center = self.lon_centers[0], self.lat_centers[0]
+        self.lons, self.lats = Tiles.easting_northing_to_lon_lat(self.xs, self.ys)
+
+
 class TestVLineHLine(TestShape):
 
     def assert_vline(self, shape, x, xref='x', ydomain=(0, 1)):
@@ -91,7 +113,7 @@ class TestVLineHLine(TestShape):
     def test_hline_styling(self):
         self.assert_shape_element_styling(HLine(3))
 
-        
+
 class TestPathShape(TestShape):
     def assert_path_shape_element(self, shape, element, xref='x', yref='y'):
         # Check type
@@ -107,6 +129,43 @@ class TestPathShape(TestShape):
         # Check axis references
         self.assertEqual(shape['xref'], xref)
         self.assertEqual(shape['yref'], yref)
+
+    def test_simple_path(self):
+        path = Path([(0, 0), (1, 1), (0, 1), (0, 0)])
+        state = self._get_plot_state(path)
+        shapes = state['layout']['shapes']
+        self.assertEqual(len(shapes), 1)
+        self.assert_path_shape_element(shapes[0], path)
+        self.assert_shape_element_styling(path)
+
+
+class TestMapboxPathShape(TestMapboxShape):
+    def test_simple_path(self):
+        path = Tiles("") * Path([
+            (self.x_range[0], self.y_range[0]),
+            (self.x_range[1], self.y_range[1]),
+            (self.x_range[0], self.y_range[1]),
+            (self.x_range[0], self.y_range[0]),
+        ]).redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        state = self._get_plot_state(path)
+        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["mode"], "lines")
+        self.assertEqual(state["data"][1]["lon"], np.array([
+            self.lon_range[i] for i in (0, 1, 0, 0)
+        ] + [np.nan]))
+        self.assertEqual(state["data"][1]["lat"], np.array([
+            self.lat_range[i] for i in (0, 1, 1, 0)
+        ] + [np.nan]))
+        self.assertEqual(state["data"][1]["showlegend"], False)
+        self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
+        self.assertEqual(
+            state['layout']['mapbox']['center'], {
+                'lat': self.lat_center, 'lon': self.lon_center
+            }
+        )
 
 
 class TestBounds(TestPathShape):
@@ -144,6 +203,49 @@ class TestBounds(TestPathShape):
         self.assert_shape_element_styling(Bounds((1, 2, 3, 4)))
 
 
+class TestMapboxBounds(TestMapboxShape):
+    def test_single_bounds(self):
+        bounds = Tiles("") * Bounds(
+            (self.x_range[0], self.y_range[0], self.x_range[1], self.y_range[1])
+        ).redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        state = self._get_plot_state(bounds)
+        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["mode"], "lines")
+        self.assertEqual(state["data"][1]["lon"], np.array([
+            self.lon_range[i] for i in (0, 0, 1, 1, 0)
+        ]))
+        self.assertEqual(state["data"][1]["lat"], np.array([
+            self.lat_range[i] for i in (0, 1, 1, 0, 0)
+        ]))
+        self.assertEqual(state["data"][1]["showlegend"], False)
+        self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
+        self.assertEqual(
+            state['layout']['mapbox']['center'], {
+                'lat': self.lat_center, 'lon': self.lon_center
+            }
+        )
+
+    def test_bounds_layout(self):
+        bounds1 = Bounds((0, 0, 1, 1))
+        bounds2 = Bounds((0, 0, 2, 2))
+        bounds3 = Bounds((0, 0, 3, 3))
+        bounds4 = Bounds((0, 0, 4, 4))
+
+        layout = (Tiles("") * bounds1 + Tiles("") * bounds2 +
+                  Tiles("") * bounds3 + Tiles("") * bounds4).cols(2)
+
+        state = self._get_plot_state(layout)
+        self.assertEqual(state['data'][1]["subplot"], "mapbox")
+        self.assertEqual(state['data'][3]["subplot"], "mapbox2")
+        self.assertEqual(state['data'][5]["subplot"], "mapbox3")
+        self.assertEqual(state['data'][7]["subplot"], "mapbox4")
+        self.assertNotIn("xaxis", state['layout'])
+        self.assertNotIn("yaxis", state['layout'])
+
+
 class TestBox(TestPathShape):
 
     def test_single_box(self):
@@ -177,6 +279,35 @@ class TestBox(TestPathShape):
         self.assert_shape_element_styling(Box(0, 0, (1, 1)))
 
 
+class TestMapboxBox(TestMapboxShape):
+    def test_single_box(self):
+        box = Tiles("") * Box(0, 0, (1000000, 2000000)).redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        x_box_range = [-500000, 500000]
+        y_box_range = [-1000000, 1000000]
+        lon_box_range, lat_box_range = Tiles.easting_northing_to_lon_lat(x_box_range, y_box_range)
+
+        state = self._get_plot_state(box)
+        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["mode"], "lines")
+        self.assertEqual(state["data"][1]["showlegend"], False)
+        self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
+        self.assertEqual(state["data"][1]["lon"], np.array([
+            lon_box_range[i] for i in (0, 0, 1, 1, 0)
+        ]))
+        self.assertEqual(state["data"][1]["lat"], np.array([
+            lat_box_range[i] for i in (0, 1, 1, 0, 0)
+        ]))
+
+        self.assertEqual(
+            state['layout']['mapbox']['center'], {
+                'lat': self.lat_center, 'lon': self.lon_center
+            }
+        )
+
+
 class TestRectangles(TestPathShape):
 
     def test_boxes_simple(self):
@@ -185,11 +316,43 @@ class TestRectangles(TestPathShape):
         shapes = state['layout']['shapes']
         self.assertEqual(len(shapes), 2)
         self.assertEqual(shapes[0], {'type': 'rect', 'x0': 0, 'y0': 0, 'x1': 1,
-                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': ''}) 
+                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': '',
+                                     'line': {'color': default_shape_color}})
         self.assertEqual(shapes[1], {'type': 'rect', 'x0': 2, 'y0': 2, 'x1': 4,
-                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': ''})
+                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': '',
+                                     'line': {'color': default_shape_color}})
         self.assertEqual(state['layout']['xaxis']['range'], [0, 4])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 3])
+
+
+class TestMapboxRectangles(TestMapboxShape):
+    def test_rectangles_simple(self):
+        rectangles = Tiles("") * Rectangles([
+            (0, 0, self.x_range[1], self.y_range[1]),
+            (self.x_range[0], self.y_range[0], 0, 0),
+        ]).redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        state = self._get_plot_state(rectangles)
+        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["mode"], "lines")
+        self.assertEqual(state["data"][1]["showlegend"], False)
+        self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
+        self.assertEqual(state["data"][1]["lon"], np.array([
+            0, 0, self.lon_range[1], self.lon_range[1], 0, np.nan,
+            self.lon_range[0], self.lon_range[0], 0, 0, self.lon_range[0], np.nan
+        ]))
+        self.assertEqual(state["data"][1]["lat"], np.array([
+            0, self.lat_range[1], self.lat_range[1], 0, 0, np.nan,
+            self.lat_range[0], 0, 0, self.lat_range[0], self.lat_range[0], np.nan
+        ]))
+
+        self.assertEqual(
+            state['layout']['mapbox']['center'], {
+                'lat': self.lat_center, 'lon': self.lon_center
+            }
+        )
 
 
 class TestSegments(TestPathShape):
@@ -200,8 +363,40 @@ class TestSegments(TestPathShape):
         shapes = state['layout']['shapes']
         self.assertEqual(len(shapes), 2)
         self.assertEqual(shapes[0], {'type': 'line', 'x0': 0, 'y0': 0, 'x1': 1,
-                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': ''}) 
+                                     'y1': 1, 'xref': 'x', 'yref': 'y', 'name': '',
+                                     'line': {'color': default_shape_color}})
         self.assertEqual(shapes[1], {'type': 'line', 'x0': 2, 'y0': 2, 'x1': 4,
-                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': ''})
+                                     'y1': 3, 'xref': 'x', 'yref': 'y', 'name': '',
+                                     'line': {'color': default_shape_color}})
         self.assertEqual(state['layout']['xaxis']['range'], [0, 4])
         self.assertEqual(state['layout']['yaxis']['range'], [0, 3])
+
+
+class TestMapboxSegments(TestMapboxShape):
+    def test_segments_simple(self):
+        rectangles = Tiles("") * Segments([
+            (0, 0, self.x_range[1], self.y_range[1]),
+            (self.x_range[0], self.y_range[0], 0, 0),
+        ]).redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        state = self._get_plot_state(rectangles)
+        self.assertEqual(state["data"][1]["type"], "scattermapbox")
+        self.assertEqual(state["data"][1]["mode"], "lines")
+        self.assertEqual(state["data"][1]["showlegend"], False)
+        self.assertEqual(state["data"][1]["line"]["color"], default_shape_color)
+        self.assertEqual(state["data"][1]["lon"], np.array([
+            0, self.lon_range[1], np.nan,
+            self.lon_range[0], 0, np.nan
+        ]))
+        self.assertEqual(state["data"][1]["lat"], np.array([
+            0, self.lat_range[1], np.nan,
+            self.lat_range[0], 0, np.nan
+        ]))
+
+        self.assertEqual(
+            state['layout']['mapbox']['center'], {
+                'lat': self.lat_center, 'lon': self.lon_center
+            }
+        )

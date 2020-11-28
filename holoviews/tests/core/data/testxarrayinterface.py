@@ -1,10 +1,12 @@
 import datetime as dt
+
 from collections import OrderedDict
 from unittest import SkipTest
 
 import numpy as np
 
 try:
+    import pandas as pd
     import xarray as xr
 except:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
@@ -44,6 +46,29 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
                   np.tile(y[:, np.newaxis], len(x)))
         return da.assign_coords(**{'xc': xr.DataArray(xs, dims=('y','x')),
                                    'yc': xr.DataArray(ys, dims=('y','x')),})
+
+    def get_multi_dim_irregular_dataset(self):
+        temp = 15 + 8 * np.random.randn(2, 2, 4, 3)
+        precip = 10 * np.random.rand(2, 2, 4, 3)
+        lon = [[-99.83, -99.32], [-99.79, -99.23]]
+        lat = [[42.25, 42.21], [42.63, 42.59]]
+        return xr.Dataset({'temperature': (['x', 'y', 'z', 'time'],  temp),
+                         'precipitation': (['x', 'y', 'z', 'time'], precip)},
+                        coords={'lon': (['x', 'y'], lon),
+                                'lat': (['x', 'y'], lat),
+                                'z': np.arange(4),
+                                'time': pd.date_range('2014-09-06', periods=3),
+                                'reference_time': pd.Timestamp('2014-09-05')})
+
+    def test_xarray_dataset_irregular_shape(self):
+        ds = Dataset(self.get_multi_dim_irregular_dataset())
+        shape = ds.interface.shape(ds, gridded=True)
+        self.assertEqual(shape, (np.nan, np.nan, 3, 4))
+
+    def test_xarray_irregular_dataset_values(self):
+        ds = Dataset(self.get_multi_dim_irregular_dataset())
+        values = ds.dimension_values('z', expanded=False)
+        self.assertEqual(values, np.array([0, 1, 2, 3]))
 
     def test_xarray_dataset_with_scalar_dim_canonicalize(self):
         xs = [0, 1]
@@ -212,11 +237,22 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         self.assertEqual(t.data.dims , dict(chain=1,value=8))
         self.assertEqual(t.data.stuff.shape , (1,8))
 
+    def test_mask_2d_array_transposed(self):
+        array = np.random.rand(4, 3)
+        da = xr.DataArray(array.T, coords={'x': [0, 1, 2], 'y': [0, 1, 2, 3]}, dims=['x', 'y'])
+        ds = Dataset(da, ['x', 'y'], 'z')
+        mask = np.array([[1, 1, 0], [1, 0, 1], [0, 1, 1], [1, 0, 1]], dtype='bool')
+        masked = ds.clone(ds.interface.mask(ds, mask))
+        masked_array = masked.dimension_values(2, flat=False)
+        expected = array.copy()
+        expected[mask] = np.nan
+        self.assertEqual(masked_array, expected)
+
+    # Disabled tests for NotImplemented methods
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")
 
-    # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
 

@@ -91,7 +91,7 @@ class PandasInterface(Interface):
             # Then use defined data type
             kdims = kdims if kdims else kdim_param.default
             vdims = vdims if vdims else vdim_param.default
-            columns = [dimension_name(d) for d in kdims+vdims]
+            columns = list(util.unique_iterator([dimension_name(d) for d in kdims+vdims]))
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
@@ -149,7 +149,8 @@ class PandasInterface(Interface):
     def validate(cls, dataset, vdims=True):
         dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
-        not_found = [d for d in dimensions if d not in dataset.data.columns]
+        cols = list(dataset.data.columns)
+        not_found = [d for d in dimensions if d not in cols]
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
@@ -165,12 +166,22 @@ class PandasInterface(Interface):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
-            column = column[~column.isin([None])]
+            try:
+                column = column[~column.isin([None])]
+            except:
+                pass
             if not len(column):
                 return np.NaN, np.NaN
             return column.iloc[0], column.iloc[-1]
         else:
             return (column.min(), column.max())
+
+
+    @classmethod
+    def concat_fn(cls, dataframes, **kwargs):
+        if util.pandas_version >= '0.23.0':
+            kwargs['sort'] = False
+        return pd.concat(dataframes, **kwargs)
 
 
     @classmethod
@@ -181,8 +192,7 @@ class PandasInterface(Interface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        kwargs = dict(sort=False) if util.pandas_version >= '0.23.0' else {}
-        return pd.concat(dataframes, **kwargs)
+        return cls.concat_fn(dataframes)
 
 
     @classmethod
@@ -255,6 +265,14 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def mask(cls, dataset, mask, mask_value=np.nan):
+        masked = dataset.data.copy()
+        cols = [vd.name for vd in dataset.vdims]
+        masked.loc[mask, cols] = mask_value
+        return masked
+
+
+    @classmethod
     def redim(cls, dataset, dimensions):
         column_renames = {k: v.name for k, v in dimensions.items()}
         return dataset.data.rename(columns=column_renames)
@@ -308,13 +326,20 @@ class PandasInterface(Interface):
     @classmethod
     def sample(cls, dataset, samples=[]):
         data = dataset.data
-        mask = False
+        mask = None
         for sample in samples:
-            sample_mask = True
+            sample_mask = None
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
-            mask |= sample_mask
+                submask = data.iloc[:, i]==v
+                if sample_mask is None:
+                    sample_mask = submask
+                else:
+                    sample_mask &= submask
+            if mask is None:
+                mask = sample_mask
+            else:
+                mask |= sample_mask
         return data[mask]
 
 
@@ -325,6 +350,9 @@ class PandasInterface(Interface):
             data.insert(dim_pos, dimension.name, values)
         return data
 
+    @classmethod
+    def assign(cls, dataset, new_data):
+        return dataset.data.assign(**new_data)
 
     @classmethod
     def as_dframe(cls, dataset):

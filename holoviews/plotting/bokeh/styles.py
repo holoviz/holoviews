@@ -23,6 +23,8 @@ from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
+base_properties = ['visible', 'muted']
+
 line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
                    'line_join', 'line_cap', 'line_dash']
 line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
@@ -123,7 +125,6 @@ def validate(style, value, scalar=False):
     value: 
        The style value to validate
     scalar: bool
-
 
     Returns
     -------

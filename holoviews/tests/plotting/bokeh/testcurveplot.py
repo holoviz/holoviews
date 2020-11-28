@@ -97,7 +97,8 @@ class TestCurvePlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj.opts(plot=opts)
-        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
+                              formatters={'@{x}': "datetime"})
 
     def test_curve_overlay_hover_batched(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
@@ -195,29 +196,29 @@ class TestCurvePlot(TestBokehPlot):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_yticks(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'yticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_both_ticks(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'ticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_xticks_and_both_ticks(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '18pt', 'ticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
-                         {'value': '18pt'})
+                         '18pt')
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_xticks_list(self):
         curve = Curve(range(10)).opts(plot=dict(xticks=[0, 5, 10]))
@@ -276,7 +277,7 @@ class TestCurvePlot(TestBokehPlot):
         curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(curve)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.2)
+        self.assertEqual(x_range.start, 0)
         self.assertEqual(x_range.end, 3)
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)

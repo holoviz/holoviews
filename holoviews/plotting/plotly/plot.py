@@ -23,6 +23,8 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
 
     height = param.Integer(default=400)
 
+    unsupported_geo_style_opts = []
+
     @property
     def state(self):
         """
@@ -41,12 +43,12 @@ class PlotlyPlot(DimensionedPlot, CallbackPlot):
             self.current_frame = None
 
 
-    def initialize_plot(self, ranges=None):
-        return self.generate_plot(self.keys[-1], ranges)
+    def initialize_plot(self, ranges=None, is_geo=False):
+        return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
 
-    def update_frame(self, key, ranges=None):
-        return self.generate_plot(key, ranges)
+    def update_frame(self, key, ranges=None, is_geo=False):
+        return self.generate_plot(key, ranges, is_geo=is_geo)
 
 
 
@@ -193,14 +195,14 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         return subplots, adjoint_clone
 
 
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
         insert_rows = []
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
-                subplots = subplot.generate_plot(key, ranges=ranges)
+                subplots = subplot.generate_plot(key, ranges=ranges, is_geo=is_geo)
 
                 # Computes plotting offsets depending on
                 # number of adjoined plots
@@ -253,7 +255,7 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
 
 
-    def initialize_plot(self, ranges=None):
+    def initialize_plot(self, ranges=None, is_geo=False):
         """
         Plot all the views contained in the AdjointLayout Object using axes
         appropriate to the layout configuration. All the axes are
@@ -261,17 +263,19 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
-        return self.generate_plot(self.keys[-1], ranges)
+        return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
 
 
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                adjoined_plots.append(subplot.generate_plot(key, ranges=ranges))
+                adjoined_plots.append(
+                    subplot.generate_plot(key, ranges=ranges, is_geo=is_geo)
+                )
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
 
@@ -345,21 +349,20 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
         return subplots, collapsed_layout
 
 
-    def generate_plot(self, key, ranges=None):
+    def generate_plot(self, key, ranges=None, is_geo=False):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for r in range(self.cols)]
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
             subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
-                plot = subplot.initialize_plot(ranges=ranges)
+                plot = subplot.initialize_plot(ranges=ranges, is_geo=is_geo)
                 plots[r].append(plot)
             else:
                 plots[r].append(None)
 
         # Compute final width/height
         w, h = self._get_size(subplot.width, subplot.height)
-        print(w, h)
 
         fig = figure_grid(plots,
                           column_spacing=self.hspacing,

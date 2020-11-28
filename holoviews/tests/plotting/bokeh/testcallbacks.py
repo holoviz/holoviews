@@ -5,6 +5,7 @@ import numpy as np
 
 from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store
+from holoviews.core.util import pd
 from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
@@ -119,6 +120,12 @@ class TestCallbacks(CallbackTestCase):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
         self.assertFalse(bool(Callback._callbacks))
+
+    def test_selection1d_syncs_to_selected(self):
+        points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
+        stream = Selection1D(source=points)
+        bokeh_renderer.get_plot(points)
+        self.assertEqual(stream.index, [0, 2])
 
 
 class TestResetCallback(CallbackTestCase):
@@ -370,7 +377,7 @@ class TestServerCallbacks(CallbackTestCase):
 
     def test_server_callback_resolve_attr_spec_source_selected(self):
         source = ColumnDataSource()
-        source.selected = Selection(indices=[1, 2, 3])
+        source.selected.indices = [1, 2, 3]
         msg = Callback.resolve_attr_spec('cb_obj.selected.indices', source)
         self.assertEqual(msg, {'id': source.ref['id'], 'value': [1, 2, 3]})
 
@@ -444,6 +451,33 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(resolved, {'id': cds.ref['id'],
                                     'value': points.columns()})
 
+    def test_rangexy_datetime(self):
+        curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
+        stream = RangeXY(source=curve)
+        plot = bokeh_server_renderer.get_plot(curve)
+        callback = plot.callbacks[0]
+        callback.on_msg({"x0": curve.iloc[0, 0], 'x1': curve.iloc[3, 0],
+                         "y0": 0.2, 'y1': 0.8})
+        self.assertEqual(stream.x_range[0], curve.iloc[0, 0])
+        self.assertEqual(stream.x_range[1], curve.iloc[3, 0])
+        self.assertEqual(stream.y_range, (0.2, 0.8))
+
+    def test_rangexy_framewise_reset(self):
+        stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
+        curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
+                           kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
+        plot = bokeh_server_renderer.get_plot(curve.opts(framewise=True))
+        plot.update((1,))
+        self.assertEqual(stream.y_range, None)
+
+    def test_rangexy_framewise_not_reset_if_triggering(self):
+        stream = RangeXY(x_range=(0, 2), y_range=(0, 1))
+        curve = DynamicMap(lambda z, x_range, y_range: Curve([1, 2, z]),
+                           kdims=['z'], streams=[stream]).redim.range(z=(0, 3))
+        bokeh_server_renderer.get_plot(curve.opts(framewise=True
+        ))
+        stream.event(x_range=(0, 3))
+        self.assertEqual(stream.x_range, (0, 3))
 
 
 
@@ -485,7 +519,6 @@ class TestBokehCustomJSCallbacks(CallbackTestCase):
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
         self.assertIn(selection, plot.callbacks[0].streams)
-
 
     def test_callback_on_table_is_attached(self):
         table = Table([1, 2, 3], 'x')

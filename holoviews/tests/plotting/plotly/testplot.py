@@ -1,11 +1,13 @@
 from unittest import SkipTest
 
+from param import concrete_descendents
+
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
 import pyviz_comms as comms
 
 try:
-    import holoviews.plotting.plotly # noqa (Activate backend)
+    from holoviews.plotting.plotly.element import ElementPlot
     plotly_renderer = Store.renderers['plotly']
     from holoviews.plotting.plotly.util import figure_grid
     import plotly.graph_objs as go
@@ -25,10 +27,16 @@ class TestPlotlyPlot(ComparisonTestCase):
         Store.set_current_backend('plotly')
         self.comm_manager = plotly_renderer.comm_manager
         plotly_renderer.comm_manager = comms.CommManager
+        self._padding = {}
+        for plot in concrete_descendents(ElementPlot).values():
+            self._padding[plot] = plot.padding
+            plot.padding = 0
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         plotly_renderer.comm_manager = self.comm_manager
+        for plot, padding in self._padding.items():
+            plot.padding = padding
 
     def _get_plot_state(self, element):
         fig_dict = plotly_renderer.get_plot_state(element)

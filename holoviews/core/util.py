@@ -28,6 +28,11 @@ except:
 if sys.version_info.major >= 3:
     import builtins as builtins   # noqa (compatibility)
 
+    if sys.version_info.minor > 3:
+        from collections.abc import Iterable # noqa (compatibility)
+    else:
+        from collections import Iterable # noqa (compatibility)
+
     basestring = str
     unicode = str
     long = int
@@ -39,6 +44,7 @@ if sys.version_info.major >= 3:
     LooseVersion = _LooseVersion
 else:
     import __builtin__ as builtins # noqa (compatibility)
+    from collections import Iterable # noqa (compatibility)
 
     basestring = basestring
     unicode = unicode
@@ -68,7 +74,7 @@ else:
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
 
-datetime_types = (np.datetime64, dt.datetime, dt.date)
+datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 arraylike_types = (np.ndarray,)
 
@@ -78,8 +84,8 @@ except ImportError:
     pd = None
 
 if pd:
+    pandas_version = LooseVersion(pd.__version__)
     try:
-        pandas_version = LooseVersion(pd.__version__)
         if pandas_version >= '0.24.0':
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
@@ -128,21 +134,20 @@ class Config(param.ParameterizedFunction):
     future_deprecations = param.Boolean(default=False, doc="""
        Whether to warn about future deprecations""")
 
-    style_17 = param.Boolean(default=False, doc="""
-       Switch to the default style options used up to (and including)
-       the HoloViews 1.7 release.""")
+    image_rtol = param.Number(default=10e-4, doc="""
+      The tolerance used to enforce regular sampling for regular,
+      gridded data where regular sampling is expected. Expressed as the
+      maximal allowable sampling difference between sample
+      locations.""")
+
+    no_padding = param.Boolean(default=False, doc="""
+       Disable default padding (introduced in 1.13.0).""")
 
     warn_options_call = param.Boolean(default=True, doc="""
        Whether to warn when the deprecated __call__ options syntax is
        used (the opts method should now be used instead). It is
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
-
-    image_rtol = param.Number(default=10e-4, doc="""
-      The tolerance used to enforce regular sampling for regular,
-      gridded data where regular sampling is expected. Expressed as the
-      maximal allowable sampling difference between sample
-      locations.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)
@@ -456,6 +461,8 @@ def validate_dynamic_argspec(callback, kdims, streams):
         return kdims
     elif set(kdims).issubset(set(posargs+kwargs)):
         return kdims
+    elif argspec.keywords:
+        return kdims
     else:
         raise KeyError('Callback {name!r} signature over {names} does not accommodate '
                        'required kdims {kdims}'.format(name=name,
@@ -482,16 +489,16 @@ def callable_name(callable_obj):
             meth = callable_obj
             if sys.version_info < (3,0):
                 owner =  meth.im_class if meth.im_self is None else meth.im_self
+                if meth.__name__ == '__call__':
+                    return type(owner).__name__
+                return '.'.join([owner.__name__, meth.__name__])
             else:
-                owner =  meth.__self__
-            if meth.__name__ == '__call__':
-                return type(owner).__name__
-            return '.'.join([owner.__name__, meth.__name__])
+                return meth.__func__.__qualname__.replace('.__call__', '')
         elif isinstance(callable_obj, types.GeneratorType):
             return callable_obj.__name__
         else:
             return type(callable_obj).__name__
-    except:
+    except Exception:
         return str(callable_obj)
 
 
@@ -509,9 +516,10 @@ def process_ellipses(obj, key, vdim_selection=False):
     if getattr(getattr(key, 'dtype', None), 'kind', None) == 'b':
         return key
     wrapped_key = wrap_tuple(key)
-    if wrapped_key.count(Ellipsis)== 0:
+    ellipse_count = sum(1 for k in wrapped_key if k is Ellipsis)
+    if ellipse_count == 0:
         return key
-    if wrapped_key.count(Ellipsis)!=1:
+    elif ellipse_count != 1:
         raise Exception("Only one ellipsis allowed at a time.")
     dim_count = len(obj.dimensions())
     index = wrapped_key.index(Ellipsis)
@@ -539,6 +547,8 @@ def get_method_owner(method):
     """
     Gets the instance that owns the supplied method
     """
+    if isinstance(method, partial):
+        method = method.func
     return method.__self__ if sys.version_info.major >= 3 else method.im_self
 
 
@@ -863,13 +873,21 @@ def isfinite(val):
         elif val.dtype.kind == 'O':
             return np.array([isfinite(v) for v in val], dtype=bool)
         elif val.dtype.kind in 'US':
-            return np.ones_like(val, dtype=bool)
-        return np.isfinite(val)
+            return ~pd.isna(val) if pd else np.ones_like(val, dtype=bool)
+        finite = np.isfinite(val)
+        if pd and pandas_version >= '1.0.0':
+            finite &= ~pd.isna(val)
+        return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
-    elif isinstance(val, basestring):
+    elif isinstance(val, (basestring, bytes)):
         return True
-    return np.isfinite(val)
+    finite = np.isfinite(val)
+    if pd and pandas_version >= '1.0.0':
+        if finite is pd.NA:
+            return False
+        return finite & (~pd.isna(val))
+    return finite
 
 
 def isdatetime(value):
@@ -939,7 +957,7 @@ def max_range(ranges, combined=True):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [tuple(np.NaN if v is None else v for v in r) for r in ranges]
-            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types)
+            if pd and any(isinstance(v, datetime_types) and not isinstance(v, cftime_types+(dt.time,))
                           for r in values for v in r):
                 converted = []
                 for l, h in values:
@@ -958,8 +976,9 @@ def max_range(ranges, combined=True):
                     if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             elif arr.dtype.kind in 'M':
-                return ((arr.min(), arr.max()) if combined else
-                        (arr[:, 0].min(), arr[:, 1].min()))
+                drange = ((arr.min(), arr.max()) if combined else
+                          (arr[:, 0].min(), arr[:, 1].max()))
+                return drange
 
             if combined:
                 return (np.nanmin(arr), np.nanmax(arr))
@@ -1004,9 +1023,15 @@ def dimension_range(lower, upper, hard_range, soft_range, padding=None, log=Fals
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = range_pad(lower, upper, padding, log)
-    lower = max_range([(lower, None), (soft_range[0], None)])[0]
-    upper = max_range([(None, upper), (None, soft_range[1])])[1]
+    plower, pupper = range_pad(lower, upper, padding, log)
+    if isfinite(soft_range[0]) and soft_range[0] <= lower:
+        lower = soft_range[0]
+    else:
+        lower = max_range([(plower, None), (soft_range[0], None)])[0]
+    if isfinite(soft_range[1]) and soft_range[1] >= upper:
+        upper = soft_range[1]
+    else:
+        upper = max_range([(None, pupper), (None, soft_range[1])])[1]
     dmin, dmax = hard_range
     lower = lower if dmin is None or not isfinite(dmin) else dmin
     upper = upper if dmax is None or not isfinite(dmax) else dmax
@@ -1099,6 +1124,20 @@ def unique_iterator(seq):
         if item not in seen:
             seen.add(item)
             yield item
+
+
+def lzip(*args):
+    """
+    zip function that returns a list.
+    """
+    return list(zip(*args))
+
+
+def unique_zip(*args):
+    """
+    Returns a unique list of zipped values.
+    """
+    return list(unique_iterator(zip(*args)))
 
 
 def unique_array(arr):
@@ -1228,6 +1267,23 @@ def is_number(obj):
     # This is for older versions of gmpy
     elif hasattr(obj, 'qdiv'): return True
     else: return False
+
+
+def is_int(obj, int_like=False):
+    """
+    Checks for int types including the native Python type and NumPy-like objects
+
+    Args:
+        obj: Object to check for integer type
+        int_like (boolean): Check for float types with integer value
+
+    Returns:
+        Boolean indicating whether the supplied value is of integer type.
+    """
+    real_int = isinstance(obj, int) or getattr(getattr(obj, 'dtype', None), 'kind', 'o') in 'ui'
+    if real_int or (int_like and hasattr(obj, 'is_integer') and obj.is_integer()):
+        return True
+    return False
 
 
 class ProgressIndicator(param.Parameterized):
@@ -1439,6 +1495,20 @@ def is_dask_array(data):
     return (da is not None and isinstance(data, da.Array))
 
 
+def is_cupy_array(data):
+    if 'cupy' in sys.modules:
+        import cupy
+        return isinstance(data, cupy.ndarray)
+    return False
+
+
+def is_ibis_expr(data):
+    if 'ibis' in sys.modules:
+        import ibis
+        return isinstance(data, ibis.expr.types.ColumnExpr)
+    return False
+
+
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)
@@ -1469,6 +1539,43 @@ def is_param_method(obj, has_deps=False):
     return parameterized
 
 
+def resolve_dependent_value(value):
+    """Resolves parameter dependencies on the supplied value
+
+    Resolves parameter values, Parameterized instance methods and
+    parameterized functions with dependencies on the supplied value.
+
+    Args:
+       value: A value which will be resolved
+
+    Returns:
+       A new dictionary where any parameter dependencies have been
+       resolved.
+    """
+    range_widget = False
+    if 'panel' in sys.modules:
+        from panel.widgets import RangeSlider, Widget
+        range_widget = isinstance(value, RangeSlider)
+        try:
+            from panel.depends import param_value_if_widget
+            value = param_value_if_widget(value)
+        except Exception:
+            if isinstance(value, Widget):
+                value = value.param.value
+    if is_param_method(value, has_deps=True):
+        value = value()
+    elif isinstance(value, param.Parameter) and isinstance(value.owner, param.Parameterized):
+        value = getattr(value.owner, value.name)
+    elif isinstance(value, FunctionType) and hasattr(value, '_dinfo'):
+        deps = value._dinfo
+        args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
+        kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
+        value = value(*args, **kwargs)
+    if isinstance(value, tuple) and range_widget:
+        value = slice(*value)
+    return value
+
+
 def resolve_dependent_kwargs(kwargs):
     """Resolves parameter dependencies in the supplied dictionary
 
@@ -1483,23 +1590,7 @@ def resolve_dependent_kwargs(kwargs):
        A new dictionary with where any parameter dependencies have been
        resolved.
     """
-    resolved = {}
-    for k, v in kwargs.items():
-        if 'panel' in sys.modules:
-            from panel.widgets.base import Widget
-            if isinstance(v, Widget):
-                v = v.param.value
-        if is_param_method(v, has_deps=True):
-            v = v()
-        elif isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
-            v = getattr(v.owner, v.name)
-        elif isinstance(v, FunctionType) and hasattr(v, '_dinfo'):
-            deps = v._dinfo
-            args = (getattr(p.owner, p.name) for p in deps.get('dependencies', []))
-            kwargs = {k: getattr(p.owner, p.name) for k, p in deps.get('kw', {}).items()}
-            v = v(*args, **kwargs)
-        resolved[k] = v
-    return resolved
+    return {k: resolve_dependent_value(v) for k, v in kwargs.items()}
 
 
 @contextmanager
@@ -1583,7 +1674,7 @@ def rename_stream_kwargs(stream, kwargs, reverse=False):
     return mapped_kwargs
 
 
-def stream_parameters(streams, no_duplicates=True, exclude=['name']):
+def stream_parameters(streams, no_duplicates=True, exclude=['name', '_memoize_key']):
     """
     Given a list of streams, return a flat list of parameter name,
     excluding those listed in the exclude list.
@@ -1591,27 +1682,36 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
-    param_groups = []
+    from ..streams import Params
+    param_groups = {}
     for s in streams:
         if not s.contents and isinstance(s.hashkey, dict):
-            param_groups.append(list(s.hashkey))
+            param_groups[s] = list(s.hashkey)
         else:
-            param_groups.append(list(s.contents))
-    names = [name for group in param_groups for name in group]
+            param_groups[s] = list(s.contents)
 
     if no_duplicates:
-        clashes = sorted(set([n for n in names if names.count(n) > 1]))
+        seen, clashes = {}, []
         clash_streams = []
         for s in streams:
-            for c in clashes:
-                if c in s.contents or (not s.contents and isinstance(s.hashkey, dict) and c in s.hashkey):
+            if isinstance(s, Params):
+                continue
+            for c in param_groups[s]:
+                if c in seen:
+                    clashes.append(c)
+                    if seen[c] not in clash_streams:
+                        clash_streams.append(seen[c])
                     clash_streams.append(s)
+                else:
+                    seen[c] = s
+        clashes = sorted(clashes)
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
             raise Exception('The supplied stream objects %s and %s '
                             'clash on the following parameters: %r'
                             % (clashing, clash_streams[-1], clashes))
-    return [name for name in names if name not in exclude]
+    return [name for group in param_groups.values() for name in group
+            if name not in exclude]
 
 
 def dimensionless_contents(streams, kdims, no_duplicates=True):
@@ -1742,6 +1842,8 @@ class ndmapping_groupby(param.ParameterizedFunction):
     Apply a groupby operation to an NdMapping, using pandas to improve
     performance (if available).
     """
+
+    sort = param.Boolean(default=False, doc='Whether to apply a sorted groupby')
 
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):

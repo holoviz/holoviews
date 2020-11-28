@@ -34,7 +34,7 @@ class TestErrorBarsPlot(TestBokehPlot):
         self.assertEqual(x_range.start, 0.8)
         self.assertEqual(x_range.end, 3.2)
         self.assertEqual(y_range.start, 0)
-        self.assertEqual(y_range.end, 3.8)
+        self.assertEqual(y_range.end, 3.5)
 
     def test_errorbars_padding_nonsquare(self):
         errorbars = ErrorBars([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).options(padding=0.1, width=600)

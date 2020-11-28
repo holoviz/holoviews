@@ -21,6 +21,44 @@ class TestElementPlot(TestMPLPlot):
         plot.cleanup()
         self.assertFalse(bool(stream._subscribers))
 
+    def test_element_hooks(self):
+        def hook(plot, element):
+            plot.handles['title'].set_text('Called')
+        curve = Curve(range(10), label='Not Called').opts(hooks=[hook])
+        plot = mpl_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['title'].get_text(), 'Called')
+
+    def test_element_font_scaling(self):
+        curve = Curve(range(10)).options(fontscale=2, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 24)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 20)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
+    def test_element_font_scaling_fontsize_override_common(self):
+        curve = Curve(range(10)).options(fontscale=2, fontsize=14, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 28)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 28)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 28)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 20)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
+    def test_element_font_scaling_fontsize_override_specific(self):
+        curve = Curve(range(10)).options(
+            fontscale=2, fontsize={'title': 16, 'xticks': 12, 'xlabel': 6}, title='A title')
+        plot = mpl_renderer.get_plot(curve)
+        ax = plot.handles['axis']
+        self.assertEqual(ax.title.get_fontsize(), 32)
+        self.assertEqual(ax.xaxis.label.get_fontsize(), 12)
+        self.assertEqual(ax.yaxis.label.get_fontsize(), 20)
+        self.assertEqual(ax.xaxis._major_tick_kw['labelsize'], 24)
+        self.assertEqual(ax.yaxis._major_tick_kw['labelsize'], 20)
+
     def test_element_xlabel(self):
         element = Curve(range(10)).options(xlabel='custom x-label')
         axes = mpl_renderer.get_plot(element).handles['axis']
@@ -106,7 +144,7 @@ class TestElementPlot(TestMPLPlot):
         zformatter = zaxis.get_major_formatter()
         self.assertIs(zformatter, formatter)
 
-        
+
 
 class TestColorbarPlot(TestMPLPlot):
 
@@ -147,8 +185,34 @@ class TestColorbarPlot(TestMPLPlot):
         self.assertEqual(cmap._rgba_under, (1.0, 0, 0, 1))
         self.assertEqual(cmap._rgba_over, (0, 0, 1.0, 1))
 
+    def test_colorbar_label(self):
+        scatter = Scatter(np.random.rand(100, 3), vdims=["y", "color"]).options(
+            color='color', colorbar=True)
+        plot = mpl_renderer.get_plot(scatter)
+        cbar_ax = plot.handles['cax']
+        self.assertEqual(cbar_ax.get_ylabel(), 'color')
+
+    def test_colorbar_empty_clabel(self):
+        img = Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]])).opts(clabel='', colorbar=True)
+        plot = mpl_renderer.get_plot(img)
+        colorbar = plot.handles['cax']
+        self.assertEqual(colorbar.get_label(), '')
+
     def test_colorbar_label_style_mapping(self):
         scatter = Scatter(np.random.rand(100, 3), vdims=["y", "color"]).options(color='color', colorbar=True)
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'color')
+
+
+class TestOverlayPlot(TestMPLPlot):
+
+    def test_overlay_legend_opts(self):
+        overlay = (
+            Curve(np.random.randn(10).cumsum(), label='A') *
+            Curve(np.random.randn(10).cumsum(), label='B')
+        ).options(legend_opts={'framealpha': 0.5, 'facecolor': 'red'})
+        plot = mpl_renderer.get_plot(overlay)
+        legend_frame = plot.handles['legend'].get_frame()
+        self.assertEquals(legend_frame.get_alpha(), 0.5)
+        self.assertEquals(legend_frame.get_facecolor(), (1.0, 0.0, 0.0, 0.5))

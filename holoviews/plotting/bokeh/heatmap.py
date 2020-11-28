@@ -3,13 +3,16 @@ from __future__ import absolute_import, division, unicode_literals
 import param
 import numpy as np
 
-from bokeh.models import Span
 from bokeh.models.glyphs import AnnularWedge
 
+from ...core.data import GridInterface
 from ...core.util import is_nan, dimension_sanitizer
 from ...core.spaces import HoloMap
 from .element import ColorbarPlot, CompositeElementPlot
-from .styles import line_properties, fill_properties, mpl_to_bokeh, text_properties
+from .selection import BokehOverlaySelectionDisplay
+from .styles import (
+    base_properties, line_properties, fill_properties, text_properties
+)
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -21,6 +24,8 @@ class HeatMapPlot(ColorbarPlot):
         an RGB(A) color as a either (1) a color hex string of the form
         #FFFFFF or #FFFFFFFF, (2) a length-3 or length-4 tuple specifying
         values in the range 0-1, or (3) a named HTML color.""")
+
+    padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -50,11 +55,10 @@ class HeatMapPlot(ColorbarPlot):
 
     _plot_methods = dict(single='rect')
 
-    style_opts = (['xmarks_' + p for p in line_properties] +
-                  ['ymarks_' + p for p in line_properties] +
-                  ['cmap', 'color', 'dilate', 'visible'] + line_properties + fill_properties)
+    style_opts = (['cmap', 'color', 'dilate'] + base_properties +
+                  line_properties + fill_properties)
 
-    _categorical = True
+    selection_display = BokehOverlaySelectionDisplay()
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -70,25 +74,66 @@ class HeatMapPlot(ColorbarPlot):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if 'line_alpha' not in style: style['line_alpha'] = 0
+        if 'line_alpha' not in style and 'line_width' not in style:
+            style['line_alpha'] = 0
+            style['selection_line_alpha'] = 0
+            style['nonselection_line_alpha'] = 0
+        elif 'line_color' not in style:
+            style['line_color'] = 'white'
+
+        if not element._unique:
+            self.param.warning('HeatMap element index is not unique,  ensure you '
+                               'aggregate the data before displaying it, e.g. '
+                               'using heatmap.aggregate(function=np.mean). '
+                               'Duplicate index values have been dropped.')
+
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
 
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
-        xvals, yvals = (aggregate.dimension_values(x),
-                        aggregate.dimension_values(y))
-        zvals = aggregate.dimension_values(2, flat=False)
-        if self.invert_axes:
-            xdim, ydim = ydim, xdim
-            zvals = zvals.T.flatten()
+
+        xtype = aggregate.interface.dtype(aggregate, xdim)
+        widths = None
+        if xtype.kind in 'SUO':
+            xvals = aggregate.dimension_values(xdim)
+            width = 1
         else:
-            zvals = zvals.T.flatten()
-        if xvals.dtype.kind not in 'SU':
-            xvals = [xdim.pprint_value(xv) for xv in xvals]
-        if yvals.dtype.kind not in 'SU':
-            yvals = [ydim.pprint_value(yv) for yv in yvals]
+            xvals = aggregate.dimension_values(xdim, flat=False)
+            if xvals.shape[1] > 1:
+                edges = GridInterface._infer_interval_breaks(xvals, axis=1)
+                widths = np.diff(edges, axis=1).T.flatten()
+            else:
+                widths = [self.default_span]*xvals.shape[0] if len(xvals) else []
+            xvals = xvals.T.flatten()
+            width = 'width'
+
+        ytype = aggregate.interface.dtype(aggregate, ydim)
+        heights = None
+        if ytype.kind in 'SUO':
+            yvals = aggregate.dimension_values(ydim)
+            height = 1
+        else:
+            yvals = aggregate.dimension_values(ydim, flat=False)
+            if yvals.shape[0] > 1:
+                edges = GridInterface._infer_interval_breaks(yvals, axis=0)
+                heights = np.diff(edges, axis=0).T.flatten()
+            else:
+                heights = [self.default_span]*yvals.shape[1] if len(yvals) else []
+            yvals = yvals.T.flatten()
+            height = 'height'
+
+        zvals = aggregate.dimension_values(2, flat=False)
+        zvals = zvals.T.flatten()
+
+        if self.invert_axes:
+            width, height = height, width
+
         data = {x: xvals, y: yvals, 'zvalues': zvals}
+        if widths is not None:
+            data['width'] = widths
+        if heights is not None:
+            data['height'] = heights
 
         if 'hover' in self.handles and not self.static_source:
             for vdim in element.vdims:
@@ -100,48 +145,13 @@ class HeatMapPlot(ColorbarPlot):
         style = {k: v for k, v in style.items() if not
                  any(g in k for g in RadialHeatMapPlot._style_groups.values())}
         return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
-                       'height': 1, 'width': 1}, style)
+                       'height': height, 'width': width}, style)
 
     def _draw_markers(self, plot, element, marks, axis='x'):
-        if marks is None:
+        if marks is None or self.radial:
             return
-        style = self.style[self.cyclic_index]
-        mark_opts = {k[7:]: v for k, v in style.items() if axis+'mark' in k}
-        mark_opts = {'line_'+k if k in ('color', 'alpha') else k: v
-                     for k, v in mpl_to_bokeh(mark_opts).items()}
-        categories = list(element.dimension_values(0 if axis == 'x' else 1,
-                                                   expanded=False))
-
-        if callable(marks):
-            positions = [i for i, x in enumerate(categories) if marks(x)]
-        elif isinstance(marks, int):
-            nth_mark = np.ceil(len(categories) / marks).astype(int)
-            positions = np.arange(len(categories)+1)[::nth_mark]
-        elif isinstance(marks, tuple):
-            positions = [categories.index(m) for m in marks if m in categories]
-        else:
-            positions = [m for m in marks if isinstance(m, int) and m < len(categories)]
-        if axis == 'y':
-            positions = [len(categories)-p for p in positions]
-
-        prev_markers = self.handles.get(axis+'marks', [])
-        new_markers = []
-        for i, p in enumerate(positions):
-            if i < len(prev_markers):
-                span = prev_markers[i]
-                span.update(**dict(mark_opts, location=p))
-            else:
-                dimension = 'height' if axis == 'x' else 'width'
-                span = Span(level='annotation', dimension=dimension,
-                            location=p, **mark_opts)
-                plot.renderers.append(span)
-            span.visible = True
-            new_markers.append(span)
-        for pm in prev_markers:
-            if pm not in new_markers:
-                pm.visible = False
-                new_markers.append(pm)
-        self.handles[axis+'marks'] = new_markers
+        self.param.warning('Only radial HeatMaps supports marks, to make the'
+                           'HeatMap quads for distinguishable set a line_width')
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(HeatMapPlot, self)._init_glyphs(plot, element, ranges, source)
@@ -226,9 +236,9 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     _draw_order = ['annular_wedge', 'multi_line', 'arc', 'text']
 
-    style_opts = (['xmarks_' + p for p in line_properties] + \
-                  ['ymarks_' + p for p in line_properties] + \
-                  ['annular_' + p for p in fill_properties + line_properties] + \
+    style_opts = (['xmarks_' + p for p in base_properties + line_properties] + \
+                  ['ymarks_' + p for p in base_properties + line_properties] + \
+                  ['annular_' + p for p in base_properties + fill_properties + line_properties] + \
                   ['ticks_' + p for p in text_properties] + ['cmap'])
 
     def __init__(self, *args, **kwargs):
@@ -288,6 +298,10 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         lower = -self.radius_outer
         upper = 2 * self.max_radius + self.radius_outer
         return (lower, lower, upper, upper)
+
+
+    def _get_axis_dims(self, element):
+        return (None, None)
 
 
     def _axis_properties(self, *args, **kwargs):

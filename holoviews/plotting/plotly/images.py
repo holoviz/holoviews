@@ -1,9 +1,13 @@
 from __future__ import absolute_import, division, unicode_literals
 
-from holoviews.core.util import VersionError
-from .element import ElementPlot
 import numpy as np
+
 from plotly.graph_objs.layout import Image as _Image
+
+from ...core.util import VersionError
+from ...element import Tiles
+from .element import ElementPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class RGBPlot(ElementPlot):
@@ -12,28 +16,44 @@ class RGBPlot(ElementPlot):
 
     apply_ranges = True
 
-    def init_graph(self, datum, options, index=0):
-        image = dict(datum, **options)
+    selection_display = PlotlyOverlaySelectionDisplay()
 
-        # Create a dummy invisible scatter trace for this image.
-        # This serves two purposes
-        #  1. The two points placed on the corners of the image are used by the
-        #     autoscale logic to allow using the autoscale button to property center
-        #     the image.
-        #  2. This trace will be given a UID, and this UID will make it possible to
-        #     associate callbacks with the image element. This is needed, in particular
-        #     to support datashader
-        dummy_trace = {
-            'type': 'scatter',
-            'x': [image['x'], image['x'] + image['sizex']],
-            'y': [image['y'] - image['sizey'], image['y']],
-            'mode': 'markers',
-            'marker': {'opacity': 0}
-        }
-        return dict(images=[image],
-                    traces=[dummy_trace])
+    _supports_geo = True
 
-    def get_data(self, element, ranges, style):
+    def init_graph(self, datum, options, index=0, is_geo=False, **kwargs):
+        if is_geo:
+            layer = dict(datum, **options)
+            dummy_trace = {
+                'type': 'scattermapbox',
+                'lat': [None],
+                'lon': [None],
+                'mode': 'markers',
+                'showlegend': False
+            }
+            return dict(mapbox=dict(layers=[layer]),
+                        traces=[dummy_trace])
+        else:
+            image = dict(datum, **options)
+            # Create a dummy invisible scatter trace for this image.
+            # This serves two purposes
+            #  1. The two points placed on the corners of the image are used by the
+            #     autoscale logic to allow using the autoscale button to properly center
+            #     the image.
+            #  2. This trace will be given a UID, and this UID will make it possible to
+            #     associate callbacks with the image element. This is needed, in particular
+            #     to support datashader
+            dummy_trace = {
+                'type': 'scatter',
+                'x': [image['x'], image['x'] + image['sizex']],
+                'y': [image['y'] - image['sizey'], image['y']],
+                'mode': 'markers',
+                'marker': {'opacity': 0},
+                "showlegend": False,
+            }
+            return dict(images=[image],
+                        traces=[dummy_trace])
+
+    def get_data(self, element, ranges, style, is_geo=False, **kwargs):
         try:
             import PIL.Image
         except ImportError:
@@ -83,12 +103,29 @@ Rendering RGB elements with the plotly backend requires the Pillow package""")
 
         source = _Image(source=pil_img).source
 
-        return [dict(source=source,
-                     x=l,
-                     y=t,
-                     sizex=r - l,
-                     sizey=t - b,
-                     xref='x',
-                     yref='y',
-                     sizing='stretch',
-                     layer='above')]
+        if is_geo:
+            lon_left, lat_top = Tiles.easting_northing_to_lon_lat(l, t)
+            lon_right, lat_bottom = Tiles.easting_northing_to_lon_lat(r, b)
+            coordinates = [
+                [lon_left, lat_top],
+                [lon_right, lat_top],
+                [lon_right, lat_bottom],
+                [lon_left, lat_bottom],
+            ]
+            layer = {
+                "sourcetype": "image",
+                "source": source,
+                "coordinates": coordinates,
+                "below": 'traces',
+            }
+            return [layer]
+        else:
+            return [dict(source=source,
+                         x=l,
+                         y=t,
+                         sizex=r - l,
+                         sizey=t - b,
+                         xref='x',
+                         yref='y',
+                         sizing='stretch',
+                         layer='above')]

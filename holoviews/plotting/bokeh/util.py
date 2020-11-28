@@ -15,12 +15,16 @@ import bokeh
 import numpy as np
 
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
-from bokeh.core.properties import value
 from bokeh.core.validation import silence
 from bokeh.layouts import WidgetBox, Row, Column
 from bokeh.models import tools
-from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS, GridBox
-from bokeh.models.formatters import FuncTickFormatter, TickFormatter, PrintfTickFormatter
+from bokeh.models import (
+    Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS,
+    GridBox, DatetimeAxis, CategoricalAxis
+)
+from bokeh.models.formatters import (
+    FuncTickFormatter, TickFormatter, PrintfTickFormatter
+)
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 from bokeh.themes.theme import Theme
@@ -39,7 +43,8 @@ from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
     LooseVersion, _getargspec, basestring, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types)
+    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types
+)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
 
@@ -373,6 +378,18 @@ def empty_plot(width, height):
     return Spacer(width=width, height=height)
 
 
+def remove_legend(plot, legend):
+    """
+    Removes a legend from a bokeh plot.
+    """
+    valid_places = ['left', 'right', 'above', 'below', 'center']
+    plot.legend[:] = [l for l in plot.legend if l is not legend]
+    for place in valid_places:
+        place = getattr(plot, place)
+        if legend in place:
+            place.remove(legend)
+
+
 def font_size_to_pixels(size):
     """
     Convert a fontsize to a pixel value
@@ -396,13 +413,14 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
     reset = "range.setv({start: 0, end: range.factors.length})"
-    ranges.callback = CustomJS(args=dict(range=ranges), code=reset)
+    customjs = CustomJS(args=dict(range=ranges), code=reset)
+    ranges.js_on_change('start', customjs)
 
     axis_props = {}
     if label_size:
-        axis_props['axis_label_text_font_size'] = value(label_size)
+        axis_props['axis_label_text_font_size'] = label_size
     if tick_size:
-        axis_props['major_label_text_font_size'] = value(tick_size)
+        axis_props['major_label_text_font_size'] = tick_size
 
     tick_px = font_size_to_pixels(tick_size)
     if tick_px is None:
@@ -567,7 +585,7 @@ def py2js_tickformatter(formatter, msg=''):
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
-    match = re.search('(formatter \= function \(.*\))', jsfunc )
+    match = re.search('(formatter \= function flx_formatter \(.*\))', jsfunc)
     return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 
@@ -581,7 +599,7 @@ def get_tab_title(key, frame, overlay):
             title = []
             if frame.label:
                 title.append(frame.label)
-                if frame.group != frame.params('group').default:
+                if frame.group != frame.param.objects('existing')['group'].default:
                     title.append(frame.group)
             else:
                 title.append(frame.group)
@@ -593,6 +611,18 @@ def get_tab_title(key, frame, overlay):
                             zip(overlay.kdims, key)])
     return title
 
+
+def get_default(model, name, theme=None):
+    """
+    Looks up the default value for a bokeh model property.
+    """
+    overrides = None
+    if theme is not None:
+        if isinstance(theme, str):
+            theme = built_in_themes[theme]
+        overrides = theme._for_class(model)
+    descriptor = model.lookup(name)
+    return descriptor.property.themed_default(model, name, overrides)
 
 
 def filter_batched_data(data, mapping):
@@ -660,8 +690,16 @@ def recursive_model_update(model, props):
                 nested_props = v.properties_with_values(include_defaults=False)
                 recursive_model_update(nested_model, nested_props)
             else:
-                setattr(model, k, v)
+                try:
+                    setattr(model, k, v)
+                except Exception as e:
+                    if isinstance(v, dict) and 'value' in v:
+                        setattr(model, k, v['value'])
+                    else:
+                        raise e
         elif k in valid_properties and v != valid_properties[k]:
+            if isinstance(v, dict) and 'value' in v:
+                v = v['value']
             updates[k] = v
     model.update(**updates)
 
@@ -900,6 +938,18 @@ def match_dim_specs(specs1, specs2):
             if s1 != s2:
                 return False
     return True
+
+
+def match_ax_type(ax, range_type):
+    """
+    Ensure the range_type matches the axis model being matched.
+    """
+    if isinstance(ax[0], CategoricalAxis):
+        return range_type == 'categorical'
+    elif isinstance(ax[0], DatetimeAxis):
+        return range_type == 'datetime'
+    else:
+        return range_type in ('auto', 'log')
 
 
 def wrap_formatter(formatter, axis):

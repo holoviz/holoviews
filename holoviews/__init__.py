@@ -5,11 +5,11 @@ import os, io
 import numpy as np # noqa (API import)
 import param
 
-
 __version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
                                         reponame="holoviews"))
 
-from . import util # noqa (API import)
+from . import util                                       # noqa (API import)
+from .annotators import annotate                         # noqa (API import)
 from .core import archive, config                        # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
 from .core.dimension import OrderedDict, Dimension       # noqa (API import)
@@ -26,6 +26,7 @@ from .core.spaces import (HoloMap, Callable, DynamicMap, # noqa (API import)
 from .operation import Operation                         # noqa (API import)
 from .element import *                                   # noqa (API import)
 from .element import __all__ as elements_list
+from .selection import link_selections                   # noqa (API import)
 from .util import (extension, renderer, output, opts,    # noqa (API import)
                    render, save)
 from .util.transform import dim                          # noqa (API import)

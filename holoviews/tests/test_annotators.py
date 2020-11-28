@@ -1,6 +1,7 @@
 from holoviews import Overlay
 from holoviews.annotators import annotate, PointAnnotator, PathAnnotator
 from holoviews.element import Points, Path, Table
+from holoviews.element.tiles import Wikipedia, Tiles
 
 from holoviews.tests.plotting.bokeh.testplot import TestBokehPlot
 
@@ -22,6 +23,20 @@ class Test_annotate(TestBokehPlot):
 
         self.assertIsInstance(tables, Overlay)
         self.assertEqual(len(tables), 3)
+
+    def test_annotate_overlay(self):
+        layout = annotate(Wikipedia() * Points([]), annotations=['Label'])
+
+        overlay = layout.DynamicMap.I[()]
+        tables = layout.Annotator.PointAnnotator[()]
+
+        self.assertIsInstance(overlay, Overlay)
+        self.assertEqual(len(overlay), 2)
+        self.assertIsInstance(overlay.get(0), Tiles)
+        self.assertEqual(overlay.get(1), Points([], vdims='Label'))
+
+        self.assertIsInstance(tables, Overlay)
+        self.assertEqual(len(tables), 1)
 
     def test_annotated_property(self):
         annotator = annotate.instance()

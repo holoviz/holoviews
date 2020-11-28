@@ -1,8 +1,9 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
-import bokeh
+
 from bokeh.palettes import all_palettes
+from param import concrete_descendents
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, GridMatrix, NdLayout, config)
@@ -15,13 +16,6 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey,
                         Tiles, Segments, Slope, Rectangles)
 from ...core.options import Options, Cycle, Palette
-from ...core.util import LooseVersion, VersionError
-
-if LooseVersion(bokeh.__version__) < '0.12.10':
-    raise VersionError("The bokeh extension requires a bokeh version >=0.12.10, "
-                       "please upgrade from bokeh %s to a more recent version."
-                       % bokeh.__version__, bokeh.__version__, '0.12.10')
-
 try:
     from ...interface import DFrame
 except:
@@ -32,6 +26,7 @@ from .annotation import (
     DivPlot, LabelsPlot, SlopePlot
 )
 from ..plot import PlotSelector
+from ..util import fire
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
@@ -139,17 +134,14 @@ if DFrame is not None:
 
 Store.register(associations, 'bokeh')
 
-if config.style_17:
-    ElementPlot.show_grid = True
-    RasterPlot.show_grid = True
+if config.no_padding:
+    for plot in concrete_descendents(ElementPlot).values():
+        plot.padding = 0
 
-    ElementPlot.show_frame = True
-else:
-    # Raster types, Path types and VectorField should have frames
-    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
-                      RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
-        framedcls.show_frame = True
-
+# Raster types, Path types and VectorField should have frames
+for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
+                  RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
+    framedcls.show_frame = True
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
@@ -166,7 +158,9 @@ Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
 Cycle.default_cycles.update({name: p[max(p.keys())] for name, p in all_palettes.items()
                              if max(p.keys()) < 256})
 
-dflt_cmap = 'hot' if config.style_17 else 'fire'
+dflt_cmap = 'fire'
+all_palettes['fire'] = {len(fire): fire}
+
 options = Store.options(backend='bokeh')
 
 # Charts
@@ -175,9 +169,7 @@ options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='bla
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
-if not config.style_17:
-    options.Points = Options('plot', show_frame=True)
-
+options.Points = Options('plot', show_frame=True)
 options.Histogram = Options('style', line_color='black', color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
@@ -188,8 +180,7 @@ options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', mute
 options.VectorField = Options('style', color='black', muted_alpha=0.2)
 
 # Paths
-if not config.style_17:
-    options.Contours = Options('plot', show_legend=True)
+options.Contours = Options('plot', show_legend=True)
 options.Contours = Options('style', color=Cycle(), cmap='viridis')
 options.Path = Options('style', color=Cycle(), cmap='viridis')
 options.Box = Options('style', color='black')
@@ -262,7 +253,7 @@ options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
 options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 options.Sankey = Options(
     'plot', xaxis=None, yaxis=None, inspection_policy='edges',
-    selection_policy='nodes', width=1000, height=600, show_frame=False
+    selection_policy='nodes', show_frame=False, width=1000, height=600
 )
 options.Sankey = Options(
     'style', node_nonselection_alpha=0.2, node_size=10, edge_nonselection_alpha=0.2,
@@ -292,6 +283,6 @@ options.Distribution = Options(
 options.Violin = Options(
     'style', violin_fill_color=Cycle(), violin_line_color='black',
     violin_fill_alpha=0.5, stats_color='black', box_color='black',
-    median_color='white'
+    median_color='white', cmap='Category10'
 )
 options.HexTiles = Options('style', muted_alpha=0.2)

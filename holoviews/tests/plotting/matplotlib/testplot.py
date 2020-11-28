@@ -1,11 +1,13 @@
 from unittest import SkipTest
 
+from param import concrete_descendents
+
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 import pyviz_comms as comms
 
 try:
-    import holoviews.plotting.mpl # noqa
+    from holoviews.plotting.mpl.element import ElementPlot
     import matplotlib.pyplot as plt
     mpl_renderer = Store.renderers['matplotlib']
 except:
@@ -30,9 +32,15 @@ class TestMPLPlot(ComparisonTestCase):
         mpl_renderer.comm_manager = comms.CommManager
         if not mpl_renderer:
             raise SkipTest("Matplotlib required to test plot instantiation")
-        Store.current_backend = 'matplotlib'
+        Store.set_current_backend('matplotlib')
+        self._padding = {}
+        for plot in concrete_descendents(ElementPlot).values():
+            self._padding[plot] = plot.padding
+            plot.padding = 0
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         mpl_renderer.comm_manager = self.comm_manager
         plt.close(plt.gcf())
+        for plot, padding in self._padding.items():
+            plot.padding = padding

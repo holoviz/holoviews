@@ -70,6 +70,9 @@ class Operation(param.ParameterizedFunction):
     _postprocess_hooks = []
     _allow_extra_keywords=False
 
+    # Whether to apply operation per element (will be enabled by default in 2.0)
+    _per_element = False
+
     # Flag indicating whether to automatically propagate the .dataset property from
     # the input of the operation to the result
     _propagate_dataset = True
@@ -124,20 +127,29 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
+
         element_pipeline = getattr(element, '_pipeline', None)
 
+        if hasattr(element, '_in_method'):
+            in_method = element._in_method
+            if not in_method:
+                element._in_method = True
         ret = self._process(element, key)
+        if hasattr(element, '_in_method') and not in_method:
+            element._in_method = in_method
+
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
 
         if (self._propagate_dataset and isinstance(ret, Dataset)
-                and isinstance(element, Dataset)):
+            and isinstance(element, Dataset) and not in_method):
             ret._dataset = element.dataset.clone()
             ret._pipeline = element_pipeline.instance(
                 operations=element_pipeline.operations + [
                     self.instance(**self.p)
                 ],
             )
+            ret._transforms = element._transforms
         return ret
 
 
@@ -184,10 +196,13 @@ class Operation(param.ParameterizedFunction):
                 # Backwards compatibility for key argument
                 return element.clone([(k, self._apply(el, key=k))
                                       for k, el in element.items()])
-            elif isinstance(element, ViewableElement):
+            elif ((self._per_element and isinstance(element, Element)) or
+                  (not self._per_element and isinstance(element, ViewableElement))):
                 return self._apply(element)
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
+        kwargs['per_element'] = self._per_element
+        kwargs['link_dataset'] = self._propagate_dataset
         return element.apply(self, **kwargs)
 
 

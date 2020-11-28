@@ -1,4 +1,5 @@
 from __future__ import absolute_import, division, unicode_literals
+import types
 
 import param
 import numpy as np
@@ -10,10 +11,11 @@ except:
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
-from ...core.util import isfinite
+from ...core.util import isfinite, max_range
 from ...element import HexTiles
 from .element import ColorbarPlot
-from .styles import line_properties, fill_properties
+from .selection import BokehOverlaySelectionDisplay
+from .styles import base_properties, line_properties, fill_properties
 
 
 class hex_binning(Operation):
@@ -24,7 +26,11 @@ class hex_binning(Operation):
     useable.
     """
 
-    aggregator = param.Callable(default=np.size)
+    aggregator = param.ClassSelector(
+        default=np.size, class_=(types.FunctionType, tuple), doc="""
+      Aggregation function or dimension transform used to compute bin
+      values. Defaults to np.size to count the number of values
+      in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
@@ -76,11 +82,15 @@ class hex_binning(Operation):
         # Construct aggregate
         data = coords + values
         xd, yd = (element.get_dimension(i) for i in indexes)
-        xd, yd = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
-        kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
-        agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
+        xdn, ydn = xd.clone(range=(x0, x1)), yd.clone(range=(y0, y1))
+        kdims = [ydn, xdn] if self.p.invert_axes else [xdn, ydn]
+        agg = (
+            element.clone(data, kdims=kdims, vdims=vdims)
+            .aggregate(function=aggregator)
+        )
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
+        agg.cdims = {xd.name: xdn, yd.name: ydn}
         return agg
 
 
@@ -93,10 +103,11 @@ Compositor.register(compositor)
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.Callable(default=np.size, doc="""
-      Aggregation function used to compute bin values. Any NumPy
-      reduction is allowed, defaulting to np.size to count the number
-      of values in each bin.""")
+    aggregator = param.ClassSelector(
+        default=np.size, class_=(types.FunctionType, tuple), doc="""
+      Aggregation function or dimension transform used to compute
+      bin values.  Defaults to np.size to count the number of values
+      in each bin.""")
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
       Number of hexagonal bins along x- and y-axes. Defaults to uniform
@@ -112,11 +123,26 @@ class HexTilesPlot(ColorbarPlot):
                                        doc="""
       The orientation of hexagon bins. By default the pointy side is on top.""")
 
+    selection_display = BokehOverlaySelectionDisplay()
+
+    style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
+
+    _nonvectorized_styles = base_properties + ['cmap', 'line_dash']
     _plot_methods = dict(single='hex_tile')
 
-    style_opts = ['cmap', 'color', 'scale', 'visible'] + line_properties + fill_properties
-
-    _nonvectorized_styles = ['cmap', 'line_dash']
+    def get_extents(self, element, ranges, range_type='combined'):
+        xdim, ydim = element.kdims[:2]
+        ranges[xdim.name]['data'] = xdim.range
+        ranges[ydim.name]['data'] = ydim.range
+        xd = element.cdims.get(xdim.name)
+        if xd and xdim.name in ranges:
+            ranges[xdim.name]['hard'] = xd.range
+            ranges[xdim.name]['soft'] = max_range([xd.soft_range, ranges[xdim.name]['soft']])
+        yd = element.cdims.get(ydim.name)
+        if yd and ydim.name in ranges:
+            ranges[ydim.name]['hard'] = yd.range
+            ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
+        return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:
@@ -130,9 +156,10 @@ class HexTilesPlot(ColorbarPlot):
         if not len(element):
             data = {'q': [], 'r': []}
             return data, mapping, style
+
         q, r = (element.dimension_values(i) for i in range(2))
         x, y = element.kdims[::-1] if self.invert_axes else element.kdims
-        (x0, x1), (y0, y1) = ranges[x.name]['combined'], ranges[y.name]['combined']
+        (x0, x1), (y0, y1) = x.range, y.range
         if isinstance(self.gridsize, tuple):
             sx, sy = self.gridsize
         else:
@@ -155,4 +182,5 @@ class HexTilesPlot(ColorbarPlot):
         style['orientation'] = self.orientation+'top'
         style['size'] = size
         style['aspect_scale'] = scale
+
         return data, mapping, style

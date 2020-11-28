@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
@@ -5,32 +6,42 @@ regardless of plotting package or backend.
 from __future__ import unicode_literals, absolute_import
 
 import base64
+import os
+
 from io import BytesIO
 try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 from contextlib import contextmanager
+from functools import partial
 
 import param
+import panel
 
+from bokeh.document import Document
+from bokeh.io import curdoc
+from bokeh.embed import file_html
+from bokeh.resources import CDN, INLINE
 from panel import config
-from panel.io.notebook import load_notebook, render_model, render_mimebundle
+from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
+from pyviz_comms import CommManager, JupyterCommManager
 
+from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import unbound_dimensions
-from .. import Layout, HoloMap, AdjointLayout, DynamicMap
-
+from ..core.util import basestring, unbound_dimensions, LooseVersion
+from ..streams import Stream
 from . import Plot
-from pyviz_comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
+
+panel_version = LooseVersion(panel.__version__)
 
 # Tags used when visual output is to be embedded in HTML
 IMAGE_TAG = "<img src='{src}' style='max-width:100%; margin: auto; display: block; {css}'/>"
@@ -41,6 +52,7 @@ Your browser does not support the video tag.
 </video>"""
 PDF_TAG = "<iframe src='{src}' style='width:100%; margin: auto; display: block; {css}'></iframe>"
 HTML_TAG = "{src}"
+INVALID_TAG = "<div>Cannot render {mime_type} in HTML</div>"
 
 HTML_TAGS = {
     'base64': 'data:{mime_type};base64,{b64}', # Use to embed data
@@ -50,7 +62,8 @@ HTML_TAGS = {
     'webm': VIDEO_TAG,
     'mp4':  VIDEO_TAG,
     'pdf':  PDF_TAG,
-    'html': HTML_TAG
+    'html': HTML_TAG,
+    'pgf':  INVALID_TAG
 }
 
 MIME_TYPES = {
@@ -60,6 +73,7 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
+    'pgf':  'text/pgf',
     'html': 'text/html',
     'json': 'text/json',
     'js':   'application/javascript',
@@ -88,6 +102,9 @@ class Renderer(Exporter):
     generate output. The process of 'drawing' is execute by the Plots
     and the Renderer turns the final plotting state into output.
     """
+
+    center = param.Boolean(default=True, doc="""
+        Whether to center the plot""")
 
     backend = param.String(doc="""
         The full, lowercase name of the rendering backend or third
@@ -211,9 +228,10 @@ class Renderer(Exporter):
                 obj = collate(obj)
                 initialize_dynamic(obj)
             obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
-            obj = Layout(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
                              **kwargs)
+            if isinstance(obj, AdjointLayout):
+                obj = Layout(obj)
             plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
                                                    **plot_opts)
             defaults = [kd.default for kd in plot.dimensions]
@@ -230,8 +248,6 @@ class Renderer(Exporter):
             plot.comm = comm
 
         if comm or self_or_cls.mode == 'server':
-            from bokeh.document import Document
-            from bokeh.io import curdoc
             if doc is None:
                 doc = Document() if self_or_cls.notebook_context else curdoc()
             plot.document = doc
@@ -263,7 +279,11 @@ class Renderer(Exporter):
         dynamic = any(isinstance(m, DynamicMap) for m in holomaps)
 
         if fmt in ['auto', None]:
-            if any(len(o) > 1 or (isinstance(o, DynamicMap) and unbound_dimensions(o.streams, o.kdims))
+            if any(len(o) > 1 or (isinstance(o, DynamicMap) and
+                                  unbound_dimensions(
+                                      o.streams,
+                                      o.kdims,
+                                      no_duplicates=not o.positional_stream_args))
                    for o in holomaps):
                 fmt = holomap_formats[0] if self.holomap in ['auto', None] else self.holomap
             else:
@@ -273,7 +293,8 @@ class Renderer(Exporter):
             plot = self.get_widget(obj, fmt)
             fmt = 'html'
         elif dynamic or (self._render_with_panel and fmt == 'html'):
-            plot, fmt = HoloViewsPane(obj, center=True, backend=self.backend, renderer=self), fmt
+            plot = HoloViewsPane(obj, center=True, backend=self.backend,
+                                 renderer=self)
         else:
             plot = self.get_plot(obj, renderer=self, **kwargs)
 
@@ -307,12 +328,11 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt, **kwargs)
+        if isinstance(resources, basestring):
+            resources = resources.lower()
         if css is None: css = self.css
 
         if isinstance(plot, Viewable):
-            from bokeh.document import Document
-            from bokeh.embed import file_html
-            from bokeh.resources import CDN, INLINE
             doc = Document()
             plot._render_model(doc)
             if resources == 'cdn':
@@ -354,20 +374,68 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, Viewable):
-            from bokeh.document import Document
-            dynamic = bool(plot.object.traverse(lambda x: x, [DynamicMap]))
-            embed = (not (dynamic or self.widget_mode == 'live') or config.embed)
-            comm = self.comm_manager.get_server_comm() if comm else None
-            doc = Document()
-            with config.set(embed=embed):
-                model = plot.layout._render_model(doc, comm)
-            return render_model(model, comm) if embed else render_mimebundle(model, doc, comm)
+            registry = list(Stream.registry.items())
+            objects = plot.object.traverse(lambda x: x)
+            dynamic, streams = False, False
+            for source in objects:
+                dynamic |= isinstance(source, DynamicMap)
+                streams |= any(
+                    src is source or (src._plot_id is not None and src._plot_id == source._plot_id)
+                    for src, streams in registry for s in streams
+                )
+            embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
+
+            # This part should be factored out in Panel and then imported
+            # here for HoloViews 2.0, which will be able to require a
+            # recent Panel version.
+            if embed or config.comms == 'default':
+                comm = self.comm_manager.get_server_comm() if comm else None
+                doc = Document()
+                with config.set(embed=embed):
+                    model = plot.layout._render_model(doc, comm)
+                if embed:
+                    return render_model(model, comm)
+                args = (model, doc, comm)
+                if panel_version > '0.9.3':
+                    from panel.models.comm_manager import CommManager
+                    ref = model.ref['id']
+                    manager = CommManager(comm_id=comm.id, plot_id=ref)
+                    client_comm = self.comm_manager.get_client_comm(
+                        on_msg=partial(plot._on_msg, ref, manager),
+                        on_error=partial(plot._on_error, ref),
+                        on_stdout=partial(plot._on_stdout, ref)
+                    )
+                    manager.client_comm_id = client_comm.id
+                    args = args + (manager,)
+                return render_mimebundle(*args)
+
+            # Handle rendering object as ipywidget
+            widget = ipywidget(plot, combine_events=True)
+            if hasattr(widget, '_repr_mimebundle_'):
+                return widget._repr_mimebundle()
+            plaintext = repr(widget)
+            if len(plaintext) > 110:
+                plaintext = plaintext[:110] + '…'
+            data = {
+                'text/plain': plaintext,
+            }
+            if widget._view_name is not None:
+                data['application/vnd.jupyter.widget-view+json'] = {
+                    'version_major': 2,
+                    'version_minor': 0,
+                    'model_id': widget._model_id
+                }
+            if config.comms == 'vscode':
+                # Unfortunately VSCode does not yet handle _repr_mimebundle_
+                from IPython.display import display
+                display(data, raw=True)
+                return {'text/html': '<div style="display: none"></div>'}, {}
+            return data, {}
         else:
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
         data['text/html'] = html
 
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
-
 
     def static_html(self, obj, fmt=None, template=None):
         """
@@ -389,7 +457,7 @@ class Renderer(Exporter):
             widget_type = 'individual'
             widget_location = self_or_cls.widget_location or 'right'
 
-        layout = HoloViewsPane(plot, widget_type=widget_type, center=True,
+        layout = HoloViewsPane(plot, widget_type=widget_type, center=self_or_cls.center,
                                widget_location=widget_location, renderer=self_or_cls)
         interval = int((1./self_or_cls.fps) * 1000)
         for player in layout.layout.select(PlayerBase):
@@ -508,13 +576,19 @@ class Renderer(Exporter):
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
-             options=None, resources='inline', **kwargs):
+             options=None, resources='inline', title=None, **kwargs):
         """
         Save a HoloViews object to file, either using an explicitly
         supplied format or to the appropriate default.
         """
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
+
+        if kwargs:
+            param.main.warning("Supplying plot, style or norm options "
+                               "as keyword arguments to the Renderer.save "
+                               "method is deprecated and will error in "
+                               "the next minor release.")
 
         with StoreOptions.options(obj, options, **kwargs):
             plot, fmt = self_or_cls._validate(obj, fmt)
@@ -527,7 +601,12 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
-            plot.layout.save(basename, embed=True, resources=resources)
+            if isinstance(basename, basestring):
+                if title is None:
+                    title = os.path.basename(basename)
+                if fmt in MIME_TYPES:
+                    basename = '.'.join([basename, fmt])
+            plot.layout.save(basename, embed=True, resources=resources, title=title)
             return
 
         rendered = self_or_cls(plot, fmt)

@@ -62,7 +62,7 @@ dmap = hv.DynamicMap(get_fractal, label='Manderbrot Explorer',
 
 # Apply options
 dmap.opts(
-    opts.Histogram(framewise=True, logy=True, width=200),
+    opts.Histogram(framewise=True, logy=True, width=200, xlim=(1, None)),
     opts.Image(cmap='fire', logz=True, height=600, width=600,
                xaxis=None, yaxis=None))
 

@@ -20,7 +20,7 @@ from ...element import Graph, Path
 from ...streams import Stream
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap, color_intervals, dim_range_key
+from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
 from .util import mpl_version, validate, wrap_formatter
 
@@ -782,7 +782,7 @@ class ColorbarPlot(ElementPlot):
         if isinstance(dimension, dim):
             dimension = dimension.dimension
         dimension = element.get_dimension(dimension)
-        if self.clabel:
+        if self.clabel is not None:
             label = self.clabel
         elif dimension:
             label = dimension.pprint_label
@@ -987,6 +987,9 @@ class LegendPlot(ElementPlot):
         'bottom', 'top', 'left', 'best', 'top_right', 'top_left',
         'bottom_right' and 'bottom_left' are supported.""")
 
+    legend_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar.""")
+
     legend_specs = {'inner': {},
                     'best': {},
                     'left':   dict(bbox_to_anchor=(-.15, 1), loc=1),
@@ -1017,7 +1020,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title', 'title_format', 'padding',
                           'xlabel', 'ylabel', 'zlabel', 'xlim', 'ylim', 'zlim',
-                          'xformatter', 'yformatter', 'data_aspect']
+                          'xformatter', 'yformatter', 'data_aspect', 'fontscale',
+                          'legend_opts']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
@@ -1036,7 +1040,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         """
         legend_data = []
         dimensions = overlay.kdims
-        title = ', '.join([d.name for d in dimensions])
+        title = ', '.join([d.label for d in dimensions])
         for key, subplot in self.subplots.items():
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
@@ -1044,9 +1048,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             handle = subplot.traverse(lambda p: p.handles['artist'],
                                       [lambda p: 'artist' in p.handles])
             if isinstance(overlay, NdOverlay):
-                key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
-                label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
-                                  zip(dimensions, key)])
+                label = ','.join([dim.pprint_value(k, print_unit=True)
+                                  for k, dim in zip(key, dimensions)])
                 if handle:
                     legend_data.append((handle, label))
             else:
@@ -1073,16 +1076,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         else:
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+            legend_opts = self.legend_opts.copy()
+            legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, scatterpoints=1,
-                              **dict(leg_spec, **self._fontsize('legend')))
+                              title=title, **legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])
-            frame = leg.get_frame()
-            frame.set_facecolor('1.0')
-            frame.set_edgecolor('0.0')
-            frame.set_linewidth('1.0')
             leg.set_zorder(10e6)
             self.handles['legend'] = leg
             self.handles['bbox_extra_artists'].append(leg)
@@ -1131,7 +1131,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = None if empty else element.get(k, None)
             if isinstance(self.hmap, DynamicMap) and not empty:
-                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
+                idx, spec, exact = self._match_subplot(k, subplot, items, element)
                 if idx is not None:
                     _, el = items.pop(idx)
                     if not exact:

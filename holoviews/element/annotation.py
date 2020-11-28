@@ -77,7 +77,7 @@ class Annotation(Element2D):
             args = args[0]
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
+        settings = {k: v for k, v in dict(self.param.get_param_values(), **overrides).items()
                     if k not in pos_args[:len(args)]}
         if 'id' not in settings:
             settings['id'] = self.id
@@ -157,13 +157,12 @@ class Slope(Annotation):
 
     y_intercept = param.Number(default=0)
 
-    __pos_params = ['slope', 'intercept']
+    __pos_params = ['slope', 'y_intercept']
 
     def __init__(self, slope, y_intercept, kdims=None, vdims=None, **params):
         super(Slope, self).__init__(
             (slope, y_intercept), slope=slope, y_intercept=y_intercept,
             kdims=kdims, vdims=vdims, **params)
-
 
     @classmethod
     def from_scatter(cls, element, **kwargs):
@@ -192,16 +191,16 @@ class VSpan(Annotation):
 
     group = param.String(default='VSpan', constant=True)
 
-    x1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    x1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
        The start x-position of the VSpan which must be numeric or a timestamp.""")
 
-    x2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    x2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
        The end x-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['x1', 'x2']
 
-    def __init__(self, x1, x2, **params):
-        super(VSpan, self).__init__([x1, x2], **params)
+    def __init__(self, x1=None, x2=None, **params):
+        super(VSpan, self).__init__([x1, x2], x1=x1, x2=x2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -228,16 +227,16 @@ class HSpan(Annotation):
 
     group = param.String(default='HSpan', constant=True)
 
-    y1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    y1 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
        The start y-position of the VSpan which must be numeric or a timestamp.""")
 
-    y2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, doc="""
+    y2 = param.ClassSelector(default=0, class_=(Number,) + datetime_types, allow_None=True, doc="""
        The end y-position of the VSpan which must be numeric or a timestamp.""")
 
     __pos_params = ['y1', 'y2']
 
-    def __init__(self, y1, y2, **params):
-        super(HSpan, self).__init__([y1, y2], **params)
+    def __init__(self, y1=None, y2=None, **params):
+        super(HSpan, self).__init__([y1, y2], y1=y1, y2=y2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.

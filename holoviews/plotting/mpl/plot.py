@@ -9,7 +9,8 @@ import matplotlib as mpl
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 from matplotlib import pyplot as plt
-from matplotlib import gridspec, animation
+from matplotlib import gridspec, animation, rcParams
+from matplotlib.font_manager import font_scalings
 
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
@@ -19,7 +20,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_stre
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
-from .util import compute_ratios, fix_aspect, mpl_version
+from .util import compute_ratios, fix_aspect, get_old_rcparams
 
 
 @contextmanager
@@ -27,15 +28,7 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    deprecated = [
-        'text.latex.unicode',
-        'examples.directory',
-        'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
-        'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
-    ]
-    old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                    if mpl_version < '3.0' or k not in deprecated}
+    old_rcparams = get_old_rcparams()
     mpl.rcParams.clear()
     mpl.rcParams.update(dict(old_rcparams, **rcparams))
     try:
@@ -100,14 +93,6 @@ class MPLPlot(DimensionedPlot):
         the axis (now marked for deprecation). The hook is passed the
         plot object and the displayed object; other plotting handles
         can be accessed via plot.handles.""")
-
-    finalize_hooks = param.HookList(default=[], doc="""
-        Deprecated; use hooks options instead.""")
-
-    hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing a plot. The
-        hook is passed the plot object and the displayed element, and
-        other plotting handles can be accessed via plot.handles.""")
 
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
@@ -180,6 +165,23 @@ class MPLPlot(DimensionedPlot):
             axis = fig.add_subplot(111, projection=self.projection)
             axis.set_aspect('auto')
         return fig, axis
+
+
+    def _get_fontsize_defaults(self):
+        base = rcParams['font.size']
+        sizes = {
+            "label": rcParams['axes.labelsize'],
+            "title": rcParams['axes.titlesize'],
+            "xticks": rcParams['xtick.labelsize'],
+            "yticks": rcParams['ytick.labelsize'],
+            "legend": rcParams['legend.fontsize'],
+        }
+        scaled = dict(sizes)
+        for k, v in sizes.items():
+            if isinstance(v, str):
+                scaled[k] = base * font_scalings[v]
+        scaled['ticks'] = scaled['xticks']
+        return scaled
 
 
     def _subplot_label(self, axis):
@@ -380,7 +382,7 @@ class GridPlot(CompositePlot):
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
         norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = all(norm_opts['axiswise'])
+        axiswise = all(norm_opts.get('axiswise', []))
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
@@ -1050,7 +1052,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             override_opts = {}
             sublabel_opts = {}
             if pos == 'main':
-                own_params = self.get_param_values(onlychanged=True)
+                own_params = self.param.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
             elif pos == 'right':
@@ -1103,8 +1105,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
             and self.v17_layout_format):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in self.traverse(traverse_fn)
+                                    if artists is not None)
+            )
             fix_aspect(fig, self.rows, self.cols,
                        title_obj, extra_artists,
                        vspace=self.vspace*self.fig_scale,

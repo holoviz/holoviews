@@ -4,7 +4,8 @@ import numpy as np
 from ..core.dimension import Dimension, process_dimensions
 from ..core.data import Dataset
 from ..core.element import Element, Element2D
-from ..core.util import get_param_values, OrderedDict
+from ..core.util import get_param_values, unique_iterator, OrderedDict
+from .selection import Selection1DExpr, Selection2DExpr
 
 
 class StatisticsElement(Dataset, Element2D):
@@ -35,6 +36,21 @@ class StatisticsElement(Dataset, Element2D):
                              type(self).__name__)
         else:
             self.vdims = process_dimensions(None, vdims)['vdims']
+
+    @property
+    def dataset(self):
+        """
+        The Dataset that this object was created from
+        """
+        from . import Dataset
+        if self._dataset is None:
+            datatype = list(unique_iterator(self.datatype+Dataset.datatype))
+            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
+                              vdims=[], datatype=datatype)
+            return dataset
+        elif not isinstance(self._dataset, Dataset):
+            return Dataset(self, _validate_vdims=False, **self._dataset)
+        return self._dataset
 
 
     def range(self, dim, data_range=True, dimension_range=True):
@@ -150,23 +166,23 @@ class StatisticsElement(Dataset, Element2D):
 
 
 
-class Bivariate(StatisticsElement):
+class Bivariate(Selection2DExpr, StatisticsElement):
     """
     Bivariate elements are containers for two dimensional data, which
     is to be visualized as a kernel density estimate. The data should
     be supplied in a tabular format of x- and y-columns.
     """
 
+    group = param.String(default="Bivariate", constant=True)
+
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0,1))
 
-    group = param.String(default="Bivariate", constant=True)
 
 
-
-class Distribution(StatisticsElement):
+class Distribution(Selection1DExpr, StatisticsElement):
     """
     Distribution elements provides a representation for a
     one-dimensional distribution which can be visualized as a kernel
@@ -174,14 +190,15 @@ class Distribution(StatisticsElement):
     and will use the first column.
     """
 
-    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
-
     group = param.String(default='Distribution', constant=True)
+
+    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
 
-class BoxWhisker(Dataset, Element2D):
+
+class BoxWhisker(Selection1DExpr, Dataset, Element2D):
     """
     BoxWhisker represent data as a distributions highlighting the
     median, mean and various percentiles. It may have a single value
@@ -191,9 +208,11 @@ class BoxWhisker(Dataset, Element2D):
 
     group = param.String(default='BoxWhisker', constant=True)
 
-    kdims = param.List(default=[], bounds=(0,None))
+    kdims = param.List(default=[], bounds=(0, None))
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+
+    _inverted_expr = True
 
 
 class Violin(BoxWhisker):
@@ -207,7 +226,7 @@ class Violin(BoxWhisker):
     group = param.String(default='Violin', constant=True)
 
 
-class HexTiles(Dataset, Element2D):
+class HexTiles(Selection2DExpr, Dataset, Element2D):
     """
     HexTiles is a statistical element with a visual representation
     that renders a density map of the data values as a hexagonal grid.
@@ -220,4 +239,5 @@ class HexTiles(Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
+
 

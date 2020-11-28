@@ -7,6 +7,7 @@ from holoviews.core import NdOverlay
 from holoviews.core.options import Cycle
 from holoviews.core.util import pd
 from holoviews.element import Points
+from holoviews.streams import Stream
 
 from .testplot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
@@ -118,7 +119,8 @@ class TestPointPlot(TestBokehPlot):
                         kdims=['Test'])
         opts = {'Points': {'tools': ['hover']}}
         obj = obj.opts(plot=opts)
-        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x_dt_strings}'), ('y', '@{y}')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}{%F %T}'), ('y', '@{y}')],
+                              formatters={'@{x}': "datetime"})
 
     def test_points_overlay_hover_batched(self):
         obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},
@@ -289,7 +291,7 @@ class TestPointPlot(TestBokehPlot):
         points = Points([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(points)
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
-        self.assertEqual(x_range.start, -0.2)
+        self.assertEqual(x_range.start, 0)
         self.assertEqual(x_range.end, 3)
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)
@@ -299,9 +301,24 @@ class TestPointPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
-        self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date_dt_strings}')])
+        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('y', '@{y}'), ('date', '@{date}{%F %T}')],
+                         {'@{date}': "datetime"})
+
+    def test_points_selected(self):
+        points = Points([(0, 0), (1, 1), (2, 2)]).opts(selected=[0, 2])
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.selected.indices, [0, 2])
+
+    def test_points_update_selected(self):
+        stream = Stream.define('Selected', selected=[])()
+        points = Points([(0, 0), (1, 1), (2, 2)]).apply.opts(selected=stream.param.selected)
+        plot = bokeh_renderer.get_plot(points)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.selected.indices, [])
+        stream.event(selected=[0, 2])
+        self.assertEqual(cds.selected.indices, [0, 2])
 
     ###########################
     #    Styling mapping      #

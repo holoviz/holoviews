@@ -28,3 +28,6 @@ holoviews.rc
 ghostdriver.log
 holoviews/.version
 .dir-locals.el
+.doit.db
+.vscode/settings.json
+holoviews/.vscode/settings.json

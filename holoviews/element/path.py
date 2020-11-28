@@ -12,9 +12,10 @@ from ..core import Dataset
 from ..core.data import MultiInterface
 from ..core.util import OrderedDict
 from .geom import Geometry
+from .selection import SelectionPolyExpr
 
 
-class Path(Geometry):
+class Path(SelectionPolyExpr, Geometry):
     """
     The Path element represents one or more of path geometries with
     associated values. Each path geometry may be split into
@@ -82,6 +83,8 @@ class Path(Geometry):
 
 
     def __getitem__(self, key):
+        if isinstance(key, np.ndarray):
+            return self.select(selection_mask=np.squeeze(key))
         if key in self.dimensions(): return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
@@ -333,6 +336,9 @@ class BaseShape(Path):
 
     __abstract = True
 
+    def __new__(cls, *args, **kwargs):
+        return super(Dataset, cls).__new__(cls)
+
     def __init__(self, **params):
         super(BaseShape, self).__init__([], **params)
         self.interface = MultiInterface
@@ -343,7 +349,7 @@ class BaseShape(Path):
         containing the specified args and kwargs.
         """
         link = overrides.pop('link', True)
-        settings = dict(self.get_param_values(), **overrides)
+        settings = dict(self.param.get_param_values(), **overrides)
         if 'id' not in settings:
             settings['id'] = self.id
         if not args and link:
@@ -398,13 +404,13 @@ class Box(BaseShape):
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
-        (l,b,r,t) = (x-half_width, y-half_height, x+half_width, y+half_height)
-
+        (l,b,r,t) = (-half_width, -half_height, half_width, half_height)
         box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                         [np.sin(self.orientation), np.cos(self.orientation)]])
 
-        self.data = [np.tensordot(rot, box.T, axes=[1,0]).T]
+        xs, ys = np.tensordot(rot, box.T, axes=[1,0])
+        self.data = [np.column_stack([xs+x, ys+y])]
 
 
 class Ellipse(BaseShape):

@@ -1,12 +1,11 @@
 import numpy as np
 import param
 
-from ..streams import BoundsXY
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
 from ..core.data import GridInterface
-from .geom import Points, VectorField # noqa: backward compatible import
-from .stats import BoxWhisker         # noqa: backward compatible import
+from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
+from .selection import Selection1DExpr, Selection2DExpr
 
 
 class Chart(Dataset, Element2D):
@@ -48,59 +47,18 @@ class Chart(Dataset, Element2D):
         return super(Chart, self).__getitem__(index)
 
 
-class Chart2dSelectionExpr(object):
-    """
-    Mixin class for Cartesian 2D Chart elements to add basic support for
-    SelectionExpr streams.
-    """
-    _selection_streams = (BoundsXY,)
-
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from ..util.transform import dim
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
-        if kwargs.get('bounds', None):
-            x0, y0, x1, y1 = kwargs['bounds']
-
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
-
-            if invert_axes:
-                ydim = self.kdims[0]
-                xdim = self.vdims[0]
-            else:
-                xdim = self.kdims[0]
-                ydim = self.vdims[0]
-
-            bbox = {
-                xdim.name: (x0, x1),
-                ydim.name: (y0, y1),
-            }
-
-            selection_expr = (
-                    (dim(xdim) >= x0) & (dim(xdim) <= x1) &
-                    (dim(ydim) >= y0) & (dim(ydim) <= y1)
-            )
-
-            return selection_expr, bbox
-        return None, None
-
-
-class Scatter(Chart2dSelectionExpr, Chart):
+class Scatter(Selection2DExpr, Chart):
     """
     Scatter is a Chart element representing a set of points in a 1D
     coordinate system where the key dimension maps to the points
     location along the x-axis while the first value dimension
     represents the location of the point along the y-axis.
     """
+
     group = param.String(default='Scatter', constant=True)
 
 
-class Curve(Chart2dSelectionExpr, Chart):
+class Curve(Selection1DExpr, Chart):
     """
     Curve is a Chart element representing a line in a 1D coordinate
     system where the key dimension maps on the line x-coordinate and
@@ -111,21 +69,22 @@ class Curve(Chart2dSelectionExpr, Chart):
     group = param.String(default='Curve', constant=True)
 
 
-class ErrorBars(Chart2dSelectionExpr, Chart):
+class ErrorBars(Selection1DExpr, Chart):
     """
     ErrorBars is a Chart element representing error bars in a 1D
     coordinate system where the key dimension corresponds to the
-    location along the x-axis and the first value dimension 
-    corresponds to the location along the y-axis and one or two 
-    extra value dimensions corresponding to the symmetric or 
+    location along the x-axis and the first value dimension
+    corresponds to the location along the y-axis and one or two
+    extra value dimensions corresponding to the symmetric or
     asymetric errors either along x-axis or y-axis. If two value
-    dimensions are given, then the last value dimension will be 
-    taken as symmetric errors. If three value dimensions are given 
+    dimensions are given, then the last value dimension will be
+    taken as symmetric errors. If three value dimensions are given
     then the last two value dimensions will be taken as negative and
     positive errors. By default the errors are defined along y-axis.
     A parameter `horizontal`, when set `True`, will define the errors
     along the x-axis.
     """
+
     group = param.String(default='ErrorBars', constant=True, doc="""
         A string describing the quantity measured by the ErrorBars
         object.""")
@@ -184,7 +143,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Chart):
+class Bars(Selection1DExpr, Chart):
     """
     Bars is a Chart element representing categorical observations
     using the height of rectangular bars. The key dimensions represent
@@ -199,7 +158,7 @@ class Bars(Chart):
 
 
 
-class Histogram(Chart):
+class Histogram(Selection1DExpr, Chart):
     """
     Histogram is a Chart element representing a number of bins in a 1D
     coordinate system. The key dimension represents the binned values,
@@ -220,8 +179,6 @@ class Histogram(Chart):
 
     _binned = True
 
-    _selection_streams = (BoundsXY,)
-
     def __init__(self, data, edges=None, **params):
         if data is None:
             data = []
@@ -235,59 +192,6 @@ class Histogram(Chart):
             data = data[::-1]
 
         super(Histogram, self).__init__(data, **params)
-
-    def _get_selection_expr_for_stream_value(self, **kwargs):
-        from ..util.transform import dim
-
-        invert_axes = self.opts.get('plot').kwargs.get('invert_axes', False)
-
-        if kwargs.get('bounds', None):
-            if invert_axes:
-                y0, x0, y1, x1 = kwargs['bounds']
-            else:
-                x0, y0, x1, y1 = kwargs['bounds']
-
-            # Handle invert_xaxis/invert_yaxis
-            if y0 > y1:
-                y0, y1 = y1, y0
-            if x0 > x1:
-                x0, x1 = x1, x0
-
-            xdim = self.kdims[0]
-            ydim = self.vdims[0]
-
-            edges = self.edges
-            centers = self.dimension_values(xdim)
-            heights = self.dimension_values(ydim)
-
-            selected_mask = (
-                (centers >= x0) & (centers <= x1) &
-                (heights >= y0) & (heights <= y1)
-            )
-
-            selected_bins = (np.arange(len(centers))[selected_mask] + 1).tolist()
-            if not selected_bins:
-                return None, None
-
-            selection_expr = (
-                dim(xdim).digitize(edges).isin(selected_bins)
-            )
-
-            if selected_bins[-1] == len(centers):
-                # Handle values exactly on the upper boundary
-                selection_expr = selection_expr | (dim(xdim) == edges[-1])
-
-            bbox = {
-                xdim.name: (
-                    edges[max(0, min(selected_bins) - 1)],
-                    edges[min(len(edges - 1), max(selected_bins))],
-                ),
-            }
-
-            return selection_expr, bbox
-
-        return None, None
-
     def __setstate__(self, state):
         """
         Ensures old-style Histogram types without an interface can be unpickled.
@@ -315,7 +219,7 @@ class Histogram(Chart):
         return self.interface.coords(self, self.kdims[0], edges=True)
 
 
-class Spikes(Chart2dSelectionExpr, Chart):
+class Spikes(Selection1DExpr, Chart):
     """
     Spikes is a Chart element which represents a number of discrete
     spikes, events or observations in a 1D coordinate system. The key
@@ -333,6 +237,7 @@ class Spikes(Chart2dSelectionExpr, Chart):
     vdims = param.List(default=[])
 
     _auto_indexable_1d = False
+
 
 
 class Area(Curve):

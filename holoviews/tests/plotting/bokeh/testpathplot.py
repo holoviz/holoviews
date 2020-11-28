@@ -1,10 +1,12 @@
 import datetime as dt
 
 import numpy as np
+
 from holoviews.core import NdOverlay, HoloMap
 from holoviews.core.options import Cycle
 from holoviews.element import Path, Polygons, Contours
 from holoviews.streams import PolyDraw
+from holoviews.util.transform import dim
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -56,6 +58,36 @@ class TestPathPlot(TestBokehPlot):
         obj = obj.opts(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}')])
 
+    def test_path_colored_and_split_with_extra_vdims(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        color = [0, 0.25, 0.5, 0.75]
+        other = ['A', 'B', 'C', 'D']
+        data = {'x': xs, 'y': ys, 'color': color, 'other': other}
+        path = Path([data], vdims=['color','other']).options(color='color', tools=['hover'])
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['other'], np.array(['A', 'B', 'C']))
+        self.assertEqual(source.data['color'], np.array([0, 0.25, 0.5]))
+
+    def test_path_colored_dim_split_with_extra_vdims(self):
+        xs = [1, 2, 3, 4]
+        ys = xs[::-1]
+        color = [0, 0.25, 0.5, 0.75]
+        other = ['A', 'B', 'C', 'D']
+        data = {'x': xs, 'y': ys, 'color': color, 'other': other}
+        path = Path([data], vdims=['color','other']).options(color=dim('color')*2, tools=['hover'])
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+
+        self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
+        self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
+        self.assertEqual(source.data['other'], np.array(['A', 'B', 'C']))
+        self.assertEqual(source.data['color'], np.array([0, 0.5, 1]))
+
     def test_path_colored_by_levels_single_value(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -73,8 +105,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
         self.assertEqual(source.data['color'], np.array([998, 999, 998]))
-        self.assertEqual(source.data['date_dt_strings'],
-                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
+        self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 998)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
@@ -96,12 +127,11 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
         self.assertEqual(source.data['color'], np.array([998, 999, 998]))
-        self.assertEqual(source.data['date_dt_strings'],
-                         np.array(['2018-08-01 00:00:00', '2018-08-01 00:00:00', '2018-08-01 00:00:00']))
+        self.assertEqual(source.data['date'], np.array([date]*3))
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
-
+        
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]

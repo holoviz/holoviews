@@ -7,58 +7,39 @@ except ImportError:
 
 import types
 import copy
+
 import numpy as np
 import param
+import pandas as pd # noqa
+
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
 from .. import util
 from ..accessors import Redim
 from ..dimension import (
-    Dimension, process_dimensions, Dimensioned, LabelledData
+    Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
 )
 from ..element import Element
 from ..ndmapping import OrderedDict, MultiDimensionalMapping
 from ..spaces import HoloMap, DynamicMap
-from .interface import Interface, iloc, ndloc
-from .array import ArrayInterface
-from .dictionary import DictInterface
-from .grid import GridInterface
+
+from .array import ArrayInterface             # noqa (API import)
+from .cudf import cuDFInterface               # noqa (API import)
+from .dask import DaskInterface               # noqa (API import)
+from .dictionary import DictInterface         # noqa (API import)
+from .grid import GridInterface               # noqa (API import)
+from .ibis import IbisInterface               # noqa (API import)
+from .interface import Interface, iloc, ndloc # noqa (API import)
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
+from .pandas import PandasInterface           # noqa (API import)
 from .spatialpandas import SpatialPandasInterface # noqa (API import)
+from .xarray import XArrayInterface           # noqa (API import)
 
-default_datatype = 'dictionary'
-datatypes = ['dictionary', 'grid', 'spatialpandas']
+default_datatype = 'dataframe'
 
-try:
-    import pandas as pd # noqa (Availability import)
-    from .pandas import PandasInterface
-    default_datatype = 'dataframe'
-    datatypes = ['dataframe', 'dictionary', 'spatialpandas', 'grid']
-    DFColumns = PandasInterface
-except ImportError:
-    pd = None
-except Exception as e:
-    pd = None
-    param.main.param.warning('Pandas interface failed to import with '
-                             'following error: %s' % e)
-
-try:
-    from .xarray import XArrayInterface # noqa (Conditional API import)
-    datatypes.append('xarray')
-except ImportError:
-    pass
-
-try:
-    from .dask import DaskInterface   # noqa (Conditional API import)
-    datatypes.append('dask')
-except ImportError:
-    pass
-
-if 'array' not in datatypes:
-    datatypes.append('array')
-if 'multitabular' not in datatypes:
-    datatypes.append('multitabular')
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
+             'cuDF', 'spatialpandas', 'array', 'multitabular', 'ibis']
 
 
 def concat(datasets, datatype=None):
@@ -275,6 +256,28 @@ class Dataset(Element):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
+    def __new__(cls, data=None, kdims=None, vdims=None, **kwargs):
+        """
+        Allows casting a DynamicMap to an Element class like hv.Curve, by applying the
+        class to each underlying element.
+        """
+        if isinstance(data, DynamicMap):
+            class_name = cls.__name__
+            repr_kdims = 'kdims=%r' % kdims if kdims else None
+            repr_vdims = 'vdims=%r' % vdims if vdims else None
+            repr_kwargs = (', '.join('%s=%r' % (k,v) for k,v in kwargs.items())
+                           if kwargs else None)
+            extras = ', '.join([el for el in [repr_kdims, repr_vdims, repr_kwargs]
+                               if el is not None])
+            extras = ', ' + extras if extras else ''
+            apply_args= 'hv.{class_name}{extras}'.format(class_name=class_name,
+                                                         extras=extras)
+            msg = "Cannot construct a {class_name} from the supplied object of type DynamicMap. Implicitly creating a DynamicMap of {class_name} objects, but instead please explicitly call .apply({apply_args}) on the supplied DynamicMap."
+            cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
+            return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
+        else:
+            return super(Dataset, cls).__new__(cls)
+
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
             chain as chain_op, factory
@@ -283,14 +286,31 @@ class Dataset(Element):
         input_data = data
         dataset_provided = 'dataset' in kwargs
         input_dataset = kwargs.pop('dataset', None)
-        input_pipeline = kwargs.pop(
-            'pipeline', None
-        )
+        input_pipeline = kwargs.pop('pipeline', None)
+        input_transforms = kwargs.pop('transforms', None)
 
         if isinstance(data, Element):
+            if 'kdims' in kwargs:
+                kwargs['kdims'] = [
+                    data.get_dimension(kd) if isinstance(kd, util.basestring) else kd
+                    for kd in kwargs['kdims']
+                ]
+            if 'kdims' in kwargs:
+                kwargs['vdims'] = [
+                    data.get_dimension(vd) if isinstance(vd, util.basestring) else vd
+                    for vd in kwargs['vdims']
+                ]
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
+        if isinstance(data, Dataset):
+            if not dataset_provided and data._dataset is not None:
+                input_dataset = data._dataset
+            if input_pipeline is None:
+                input_pipeline = data.pipeline
+            if input_transforms is None:
+                input_transforms = data._transforms
+
         kwargs.update(process_dimensions(kdims, vdims))
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
@@ -301,45 +321,59 @@ class Dataset(Element):
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
-        self.redim = Redim(self, mode='dataset')
-
         # Handle _pipeline property
         if input_pipeline is None:
             input_pipeline = chain_op.instance()
 
+        kwargs['kdims'] = self.kdims
+        kwargs['vdims'] = self.vdims
         init_op = factory.instance(
             output_type=type(self),
             args=[],
-            kwargs=kwargs,
+            kwargs=dict(kwargs, kdims=self.kdims, vdims=self.vdims),
         )
         self._pipeline = input_pipeline.instance(
             operations=input_pipeline.operations + [init_op],
             output_type=type(self),
         )
+        self._transforms = input_transforms or []
+
+        # On lazy interfaces this allows keeping an evaluated version
+        # of the dataset in memory
+        self._cached = None
 
         # Handle initializing the dataset property.
-        self._dataset = None
-        if input_dataset is not None:
-            self._dataset = input_dataset.clone(dataset=None, pipeline=None)
-        elif isinstance(input_data, Dataset) and not dataset_provided:
-            self._dataset = input_data._dataset
-        elif type(self) is Dataset:
-            self._dataset = self
+        self._dataset = input_dataset
+        if self._dataset is None and isinstance(input_data, Dataset) and not dataset_provided:
+            if input_data.data is self.data:
+                self._dataset = {'kdims': input_data.kdims, 'vdims': input_data.vdims}
+            else:
+                self._dataset = Dataset(input_data, dataset=None, pipeline=None,
+                                        transforms=None, _validate_vdims=False)
+                if hasattr(self, '_binned'):
+                    self._dataset._binned = self._binned
+
+    @property
+    def redim(self):
+        return Redim(self, mode='dataset')
 
     @property
     def dataset(self):
         """
         The Dataset that this object was created from
         """
-        from . import Dataset
         if self._dataset is None:
+            if type(self) is Dataset:
+                return self
             datatype = list(util.unique_iterator(self.datatype+Dataset.datatype))
-            dataset = Dataset(self, _validate_vdims=False, datatype=datatype)
+            dataset = Dataset(self, dataset=None, pipeline=None, transforms=None,
+                              _validate_vdims=False, datatype=datatype)
             if hasattr(self, '_binned'):
                 dataset._binned = self._binned
             return dataset
-        else:
-            return self._dataset
+        elif not isinstance(self._dataset, Dataset):
+            return Dataset(self, _validate_vdims=False, **self._dataset)
+        return self._dataset
 
     @property
     def pipeline(self):
@@ -349,6 +383,34 @@ class Dataset(Element):
         dataset property
         """
         return self._pipeline
+
+    def compute(self):
+        """
+        Computes the data to a data format that stores the daata in
+        memory, e.g. a Dask dataframe or array is converted to a
+        Pandas DataFrame or NumPy array.
+
+        Returns:
+            Dataset with the data stored in in-memory format
+        """
+        return self.interface.compute(self)
+
+    def persist(self):
+        """
+        Persists the results of a lazy data interface to memory to
+        speed up data manipulation and visualization. If the
+        particular data backend already holds the data in memory
+        this is a no-op. Unlike the compute method this maintains
+        the same data type.
+
+        Returns:
+            Dataset with the data persisted to memory
+        """
+        persisted = self.interface.persist(self)
+        if persisted.interface is self.interface:
+            return persisted
+        self._cached = persisted
+        return self
 
     def closest(self, coords=[], **kwargs):
         """Snaps coordinate(s) to closest coordinate in Dataset
@@ -378,7 +440,7 @@ class Dataset(Element):
         if xs.dtype.kind in 'SO':
             raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs]
+        return [type(s)(xs[idx]) for s, idx in zip(coords, idxs)]
 
 
     def sort(self, by=None, reverse=False):
@@ -433,15 +495,14 @@ class Dataset(Element):
 
         Requires the dimension name or object, the desired position in
         the key dimensions and a key value scalar or array of values,
-        matching the length o shape of the Dataset.
+        matching the length or shape of the Dataset.
 
         Args:
             dimension: Dimension or dimension spec to add
-            dim_pos (int) Integer index to insert dimension at
+            dim_pos (int): Integer index to insert dimension at
             dim_val (scalar or ndarray): Dimension value(s) to add
             vdim: Disabled, this type does not have value dimensions
             **kwargs: Keyword arguments passed to the cloned element
-
         Returns:
             Cloned object containing the new dimension
         """
@@ -526,21 +587,19 @@ argument to specify a selection specification""")
         selection = {dim_name: sel for dim_name, sel in selection.items()
                      if dim_name in self.dimensions()+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-                or (not selection and not selection_expr)):
+            or (not selection and not selection_expr)):
             return self
 
         # Handle selection dim expression
         if selection_expr is not None:
             mask = selection_expr.apply(self, compute=False, keep_index=True)
-            dataset = self[mask]
-        else:
-            dataset = self
+            selection = {'selection_mask': mask}
 
         # Handle selection kwargs
         if selection:
-            data = dataset.interface.select(dataset, **selection)
+            data = self.interface.select(self, **selection)
         else:
-            data = dataset.data
+            data = self.data
 
         if np.isscalar(data):
             return data
@@ -616,7 +675,7 @@ argument to specify a selection specification""")
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             return self.clone(self.select(selection_mask=slices))
-        elif slices in [(), Ellipsis]:
+        elif (isinstance(slices, ()) and len(slices) == 1) or slices is Ellipsis:
             return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
@@ -708,6 +767,7 @@ argument to specify a selection specification""")
         # may be replaced with more general handling
         # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
+        datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
@@ -724,7 +784,7 @@ argument to specify a selection specification""")
             if np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
-                reindexed = selection.clone(new_type=Dataset).reindex(kdims)
+                reindexed = selection.clone(new_type=Dataset, datatype=datatype).reindex(kdims)
                 selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
             datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
@@ -741,7 +801,8 @@ argument to specify a selection specification""")
             except NotImplementedError:
                 pass
         samples = [util.wrap_tuple(s) for s in samples]
-        return self.clone(self.interface.sample(self, samples), new_type=Table)
+        sampled = self.interface.sample(self, samples)
+        return self.clone(sampled, new_type=Table, datatype=datatype)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reductions):
@@ -783,26 +844,39 @@ argument to specify a selection specification""")
         """Aggregates data on the supplied dimensions.
 
         Aggregates over the supplied key dimensions with the defined
-        function.
+        function or dim_transform specified as a tuple of the transformed
+        dimension name and dim transform.
 
         Args:
             dimensions: Dimension(s) to aggregate on
                 Default to all key dimensions
-            function: Aggregation function to apply, e.g. numpy.mean
+            function: Aggregation function or transform to apply
+                Supports both simple functions and dimension transforms
             spreadfn: Secondary reduction to compute value spread
                 Useful for computing a confidence interval, spread, or
                 standard deviation.
-            **kwargs: Keyword arguments passed to the aggregation function
+            **kwargs: Keyword arguments either passed to the aggregation function
+                or to create new names for the transformed variables
 
         Returns:
             Returns the aggregated Dataset
         """
-        if function is None:
-            raise ValueError("The aggregate method requires a function to be specified")
+        from ...util.transform import dim
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
+        if isinstance(function, tuple) or any(isinstance(v, dim) for v in kwargs.values()):
+            dataset = self.clone(new_type=Dataset)
+            if dimensions:
+                dataset = dataset.groupby(dimensions)
+            args = () if function is None else (function,)
+            transformed = dataset.apply.transform(*args, drop=True, **kwargs)
+            if not isinstance(transformed, Dataset):
+                transformed = transformed.collapse()
+            return transformed.clone(new_type=type(self))
+
+        # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
-        if not len(self):
+        if not self:
             if spreadfn:
                 spread_name = spreadfn.__name__
                 vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
@@ -828,7 +902,9 @@ argument to specify a selection specification""")
             for i, d in enumerate(vdims):
                 dim = d.clone('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, flat=False)
-                combined = combined.add_dimension(dim, ndims+i, dvals, True)
+                idx = vdims.index(d)
+                combined = combined.add_dimension(dim, idx+1, dvals, True)
+                vdims = combined.vdims
             return combined.clone(new_type=Dataset if generic_type else type(self))
 
         if np.isscalar(aggregated):
@@ -892,6 +968,71 @@ argument to specify a selection specification""")
 
         return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
+
+    def transform(self, *args, **kwargs):
+        """Transforms the Dataset according to a dimension transform.
+
+        Transforms may be supplied as tuples consisting of the
+        dimension(s) and the dim transform to apply or keyword
+        arguments mapping from dimension(s) to dim transforms. If the
+        arg or kwarg declares multiple dimensions the dim transform
+        should return a tuple of values for each.
+
+        A transform may override an existing dimension or add a new
+        one in which case it will be added as an additional value
+        dimension.
+
+        Args:
+            args: Specify the output arguments and transforms as a
+                  tuple of dimension specs and dim transforms
+            drop (bool): Whether to drop all variables not part of the transform
+            keep_index (bool): Whether to keep indexes
+                  Whether to apply transform on datastructure with
+                  index, e.g. pandas.Series or xarray.DataArray,
+                  (important for dask datastructures where index may
+                  be required to align datasets).
+            kwargs: Specify new dimensions in the form new_dim=dim_transform
+
+        Returns:
+            Transformed dataset with new dimensions
+        """
+        drop = kwargs.pop('drop', False)
+        keep_index = kwargs.pop('keep_index', True)
+        transforms = OrderedDict()
+        for s, transform in list(args)+list(kwargs.items()):
+            transforms[util.wrap_tuple(s)] = transform
+
+        new_data = OrderedDict()
+        for signature, transform in transforms.items():
+            applied = transform.apply(
+                self, compute=False, keep_index=keep_index
+            )
+            if len(signature) == 1:
+                new_data[signature[0]] = applied
+            else:
+                for s, vals in zip(signature, applied):
+                    new_data[s] = vals
+
+        new_dims = []
+        for d in new_data:
+            if self.get_dimension(d) is None:
+                new_dims.append(d)
+
+        ds = self
+        if ds.interface.datatype in ('image', 'array'):
+            ds = ds.clone(datatype=[dt for dt in ds.datatype if dt != ds.interface.datatype])
+
+        if drop:
+            kdims = [ds.get_dimension(d) for d in new_data if d in ds.kdims]
+            vdims = [ds.get_dimension(d) or d for d in new_data if d not in ds.kdims]
+            data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            return ds.clone(data, kdims=kdims, vdims=vdims)
+        else:
+            new_data = OrderedDict([(dimension_name(d), values) for d, values in new_data.items()])
+            data = ds.interface.assign(ds, new_data)
+            data, drop = data if isinstance(data, tuple) else (data, [])
+            kdims = [kd for kd in self.kdims if kd.name not in drop]
+            return ds.clone(data, kdims=kdims, vdims=ds.vdims+new_dims)
 
     def __len__(self):
         "Number of values in the Dataset."
@@ -1024,21 +1165,12 @@ argument to specify a selection specification""")
                 data = self
                 if link:
                     overrides['plot_id'] = self._plot_id
+        elif self._in_method and 'dataset' not in overrides:
+            overrides['dataset'] = self.dataset
 
-            if 'dataset' not in overrides:
-                overrides['dataset'] = self.dataset
-
-            if 'pipeline' not in overrides:
-                overrides['pipeline'] = self._pipeline
-        elif self._in_method:
-            if 'dataset' not in overrides:
-                overrides['dataset'] = self.dataset
-
-        new_dataset = super(Dataset, self).clone(
+        return super(Dataset, self).clone(
             data, shared_data, new_type, *args, **overrides
         )
-
-        return new_dataset
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support
@@ -1108,10 +1240,3 @@ argument to specify a selection specification""")
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
         return ndloc(self)
-
-
-# Aliases for pickle backward compatibility
-Columns      = Dataset
-ArrayColumns = ArrayInterface
-DictColumns  = DictInterface
-GridColumns  = GridInterface

@@ -28,14 +28,22 @@ def _PlotlyHoloviewsPane(fig_dict, **kwargs):
     # Remove internal HoloViews properties
     clean_internal_figure_properties(fig_dict)
 
-    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup', **kwargs)
+    config = fig_dict.pop('config', {})
+    if config.get('responsive'):
+        kwargs['sizing_mode'] = 'stretch_both'
+    plotly_pane = pn.pane.Plotly(fig_dict, viewport_update_policy='mouseup',
+                                 config=config, **kwargs)
 
     # Register callbacks on pane
     for callback_cls in callbacks.values():
-        plotly_pane.param.watch(
-            lambda event, cls=callback_cls: cls.update_streams_from_property_update(event.new, event.obj.object),
-            callback_cls.callback_property,
-        )
+        for callback_prop in callback_cls.callback_properties:
+            plotly_pane.param.watch(
+                lambda event, cls=callback_cls, prop=callback_prop:
+                    cls.update_streams_from_property_update(
+                        prop, event.new, event.obj.object
+                    ),
+                callback_prop,
+            )
     return plotly_pane
 
 
@@ -70,6 +78,7 @@ class PlotlyRenderer(Renderer):
         Allows cleaning the dictionary of any internal properties that were added
         """
         fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        config = fig_dict.get('config', {})
 
         # Remove internal properties (e.g. '_id', '_dim')
         clean_internal_figure_properties(fig_dict)
@@ -77,11 +86,11 @@ class PlotlyRenderer(Renderer):
         # Run through Figure constructor to normalize keys
         # (e.g. to expand magic underscore notation)
         fig_dict = go.Figure(fig_dict).to_dict()
+        fig_dict['config'] = config
 
         # Remove template
         fig_dict.get('layout', {}).pop('template', None)
         return fig_dict
-
 
     def _figure_data(self, plot, fmt, as_script=False, **kwargs):
         if fmt == 'gif':
@@ -153,6 +162,8 @@ class PlotlyRenderer(Renderer):
         """
         import panel.models.plotly # noqa
         cls._loaded = True
+        if 'plotly' not in getattr(pn.extension, '_loaded_extensions', ['plotly']):
+            pn.extension._loaded_extensions.append('plotly')
 
 
 def _activate_plotly_backend(renderer):

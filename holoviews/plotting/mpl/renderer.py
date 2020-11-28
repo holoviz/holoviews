@@ -1,8 +1,8 @@
 from __future__ import absolute_import, division, unicode_literals
 
 import os
-import sys
 import base64
+
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
@@ -18,18 +18,10 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
-from .util import get_tight_bbox, mpl_version
+from .util import get_tight_bbox, get_old_rcparams
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
-
-mpl_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-var target = $('#fig_{plot_id}');
-var img = $('<div />').html(msg);
-target.children().each(function () {{ $(this).remove() }})
-target.append(img)
-"""
 
 # <format name> : (animation writer, format,  anim_kwargs, extra_args)
 ANIMATION_OPTS = {
@@ -37,12 +29,9 @@ ANIMATION_OPTS = {
              ['-vcodec', 'libvpx-vp9', '-b', '1000k']),
     'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
             ['-pix_fmt', 'yuv420p']),
-    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+    'gif': ('pillow', 'gif', {'fps': 10}, []),
     'scrubber': ('html', None, {'fps': 5}, None)
 }
-
-if mpl_version >= '2.2':
-    ANIMATION_OPTS['gif'] = ('pillow', 'gif', {'fps': 10}, [])
 
 
 class MPLRenderer(Renderer):
@@ -66,7 +55,8 @@ class MPLRenderer(Renderer):
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'pgf',
+                                        'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
@@ -82,7 +72,7 @@ class MPLRenderer(Renderer):
     mode = param.ObjectSelector(default='default', objects=['default'])
 
 
-    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'html', None, 'auto'],
+    mode_formats = {'fig':     ['png', 'svg', 'pdf', 'pgf', 'html', None, 'auto'],
                     'holomap': ['widgets', 'scrubber', 'webm','mp4', 'gif',
                                 'html', None, 'auto']}
 
@@ -154,8 +144,6 @@ class MPLRenderer(Renderer):
         any IPython dependency.
         """
         if fmt in ['gif', 'mp4', 'webm']:
-            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
             with mpl.rc_context(rc=plot.fig_rcparams):
                 anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
@@ -163,8 +151,10 @@ class MPLRenderer(Renderer):
             fig = plot.state
 
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-            extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
-                                         if artists is not None]))
+            extra_artists = list(
+                chain.from_iterable(artists for artists in plot.traverse(traverse_fn)
+                                    if artists is not None)
+            )
 
             kw = dict(
                 format=fmt,
@@ -243,16 +233,7 @@ class MPLRenderer(Renderer):
     @classmethod
     @contextmanager
     def state(cls):
-        deprecated = [
-            'text.latex.unicode',
-            'examples.directory',
-            'savefig.frameon', # deprecated in MPL 3.1, to be removed in 3.3
-            'verbose.level', # deprecated in MPL 3.1, to be removed in 3.3
-            'verbose.fileo', # deprecated in MPL 3.1, to be removed in 3.3
-        ]
-        old_rcparams = {k: mpl.rcParams[k] for k in mpl.rcParams.keys()
-                        if mpl_version < '3.0' or k not in deprecated}
-    
+        old_rcparams = get_old_rcparams()
         try:
             cls._rcParams = old_rcparams
             yield

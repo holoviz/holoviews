@@ -1,3 +1,4 @@
+import datetime as dt
 import re
 
 import numpy as np
@@ -34,6 +35,18 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot.update((4,))
         self.assertFalse(subplot1.handles['glyph_renderer'].visible)
         self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+
+    def test_layout_framewise_norm(self):
+        img1 = Image(np.mgrid[0:5, 0:5][0]).opts(framewise=True)
+        img2 = Image(np.mgrid[0:5, 0:5][0]*10).opts(framewise=True)
+        plot = bokeh_renderer.get_plot(img1+img2)
+        img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        img1_cmapper = img1_plot.handles['color_mapper']
+        img2_cmapper = img2_plot.handles['color_mapper']
+        self.assertEqual(img1_cmapper.low, 0)
+        self.assertEqual(img2_cmapper.low, 0)
+        self.assertEqual(img1_cmapper.high, 40)
+        self.assertEqual(img2_cmapper.high, 40)
 
     def test_layout_title(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
@@ -337,3 +350,21 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(cp1.handles['y_range'].end, 3)
         self.assertEqual(cp2.handles['y_range'].start, 10)
         self.assertEqual(cp2.handles['y_range'].end, 30)
+
+    def test_layout_categorical_numeric_type_axes_not_linked(self):
+        curve1 = Curve([1, 2, 3])
+        curve2 = Curve([('A', 0), ('B', 1), ('C', 2)])
+        layout = curve1 + curve2
+        plot = bokeh_renderer.get_plot(layout)
+        cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
+        self.assertIsNot(cp1.handles['x_range'], cp2.handles['x_range'])
+        self.assertIs(cp1.handles['y_range'], cp2.handles['y_range'])
+
+    def test_layout_datetime_numeric_type_axes_not_linked(self):
+        curve1 = Curve([1, 2, 3])
+        curve2 = Curve([(dt.datetime(2020, 1, 1), 0), (dt.datetime(2020, 1, 2), 1), (dt.datetime(2020, 1, 3), 2)])
+        layout = curve1 + curve2
+        plot = bokeh_renderer.get_plot(layout)
+        cp1, cp2 = plot.subplots[(0, 0)].subplots['main'], plot.subplots[(0, 1)].subplots['main']
+        self.assertIsNot(cp1.handles['x_range'], cp2.handles['x_range'])
+        self.assertIs(cp1.handles['y_range'], cp2.handles['y_range'])

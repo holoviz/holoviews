@@ -55,7 +55,7 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(spikes)
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.start, 0)
-        self.assertEqual(x_range.end, 3.2)
+        self.assertEqual(x_range.end, 3)
 
     def test_spikes_padding_unequal(self):
         spikes = Spikes([1, 2, 3]).options(padding=(0.05, 0.1))
@@ -112,9 +112,9 @@ class TestSpikesPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(points)
         cds = plot.handles['cds']
         self.assertEqual(cds.data['date'].astype('datetime64'), np.array([1483228800000000000]))
-        self.assertEqual(cds.data['date_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('value', '@{value}'), ('date', '@{date_dt_strings}')])
+        self.assertEqual(hover.tooltips, [('x', '@{x}'), ('value', '@{value}'), ('date', '@{date}{%F %T}')])
+        self.assertEqual(hover.formatters, {'@{date}': "datetime"})
 
     def test_spikes_datetime_kdim_hover(self):
         points = Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').options(tools=['hover'])
@@ -124,9 +124,9 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(cds.data['y0'], np.array([0]))
         self.assertEqual(cds.data['y1'], np.array([1]))
 
-        self.assertEqual(cds.data['x_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, [('x', '@{x_dt_strings}'), ('y', '@{y}')])
+        self.assertEqual(hover.tooltips, [('x', '@{x}{%F %T}'), ('y', '@{y}')])
+        self.assertEqual(hover.formatters, {'@{x}': "datetime"})
 
     def test_spikes_datetime_kdim_hover_spike_length_override(self):
         points = Spikes([(dt.datetime(2017, 1, 1), 1)], 'x', 'y').options(
@@ -136,10 +136,10 @@ class TestSpikesPlot(TestBokehPlot):
         self.assertEqual(cds.data['x'].astype('datetime64'), np.array([1483228800000000000]))
         self.assertEqual(cds.data['y0'], np.array([0]))
         self.assertEqual(cds.data['y1'], np.array([0.75]))
-        self.assertEqual(cds.data['x_dt_strings'], ['2017-01-01 00:00:00'])
         hover = plot.handles['hover']
-        self.assertEqual(hover.tooltips, [('x', '@{x_dt_strings}'), ('y', '@{y}')])
-
+        self.assertEqual(hover.tooltips, [('x', '@{x}{%F %T}'), ('y', '@{y}')])
+        self.assertEqual(hover.formatters, {'@{x}': "datetime"})
+        
     ###########################
     #    Styling mapping      #
     ###########################

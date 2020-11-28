@@ -84,7 +84,7 @@ class TestCurvePlot(TestMPLPlot):
         curve = Curve([1, 2, 3]).redim.soft_range(x=(0, 3)).options(padding=0.1)
         plot = mpl_renderer.get_plot(curve)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
-        self.assertEqual(x_range[0], -0.2)
+        self.assertEqual(x_range[0], 0)
         self.assertEqual(x_range[1], 3)
         self.assertEqual(y_range[0], 0.8)
         self.assertEqual(y_range[1], 3.2)

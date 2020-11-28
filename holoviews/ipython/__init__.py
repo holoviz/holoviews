@@ -112,6 +112,7 @@ class notebook_extension(extension):
     _loaded = False
 
     def __call__(self, *args, **params):
+        comms = params.pop('comms', None)
         super(notebook_extension, self).__call__(*args, **params)
         # Abort if IPython not found
         try:
@@ -178,9 +179,13 @@ class notebook_extension(extension):
         resources = list(resources)
         if len(resources) == 0: return
 
+        from panel import config
+        if hasattr(config, 'comms') and comms:
+            config.comms = comms
+
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
-        Renderer.load_nb()
+        Renderer.load_nb(inline=p.inline)
 
         if hasattr(ip, 'kernel') and not loaded:
             Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
@@ -257,21 +262,6 @@ class notebook_extension(extension):
         publish_display_data(data={'text/html': html})
 
 
-    @param.parameterized.bothmethod
-    def tab_completion_docstring(self_or_cls):
-        """
-        Generates a docstring that can be used to enable tab-completion
-        of resources.
-        """
-        elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
-        for name, p in self_or_cls.param.objects().items():
-            param_type = p.__class__.__name__
-            elements.append("%s=%s" % (name, param_type))
-
-        return "params(%s)" % ', '.join(['holoviews=Boolean'] + elements)
-
-
-notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
 notebook_extension.add_delete_action(Renderer._delete_plot)
 
 

@@ -9,20 +9,30 @@ from ...core import util
 from ...element import Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
-from .element import ColorbarPlot, LegendPlot
-from .styles import (expand_batched_style, line_properties, fill_properties,
-                     mpl_to_bokeh, validate)
+from .element import ColorbarPlot, LegendPlot, OverlayPlot
+from .selection import BokehOverlaySelectionDisplay
+from .styles import (
+    expand_batched_style, base_properties, line_properties, fill_properties,
+    mpl_to_bokeh, validate
+)
 from .util import multi_polygons_data
+
 
 
 class PathPlot(LegendPlot, ColorbarPlot):
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = line_properties + ['cmap', 'visible']
+    style_opts = base_properties + line_properties + ['cmap']
+
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
+    _nonvectorized_styles = base_properties + ['cmap']
     _batched_style_opts = line_properties
 
     def _hover_opts(self, element):
@@ -56,7 +66,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
             ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
-            not (v == color and s == 'color')}
+            not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
         if (not cdim or scalar) and not style_mapping and 'hover' not in self.handles:
@@ -90,8 +100,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
                 values = path.dimension_values(vd)[:-1]
                 vd_name = util.dimension_sanitizer(vd.name)
                 vals[vd_name].append(values)
-                if values.dtype.kind == 'M' or (len(values) and isinstance(values[0], util.datetime_types)):
-                    vals[vd_name+'_dt_strings'].append([vd.pprint_value(v) for v in values])
+
         values = {d: np.concatenate(vs) if len(vs) else [] for d, vs in vals.items()}
         if self.invert_axes:
             xpaths, ypaths = ypaths, xpaths
@@ -105,7 +114,9 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
         zorders = self._updated_zorders(element)
         for (key, el), zorder in zip(element.data.items(), zorders):
-            self.param.set_param(**self.lookup_options(el, 'plot').options)
+            el_opts = self.lookup_options(el, 'plot').options
+            self.param.set_param(**{k: v for k, v in el_opts.items()
+                                    if k not in OverlayPlot._propagate_options})
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))[zorder]
             self.overlay_dims = dict(zip(element.kdims, key))
@@ -130,10 +141,15 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
+    selected = param.List(default=None, doc="""
+        The current selection as a list of integers corresponding
+        to the selected items.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
     _color_style = 'line_color'
+    _nonvectorized_styles = base_properties + ['cmap']
 
     def __init__(self, *args, **params):
         super(ContourPlot, self).__init__(*args, **params)
@@ -164,10 +180,6 @@ class ContourPlot(PathPlot):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
-            values = data[dim]
-            if ((isinstance(values, np.ndarray) and values.dtype.kind == 'M') or
-                  (len(values) and isinstance(values[0], util.datetime_types))):
-                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in values]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
@@ -224,7 +236,9 @@ class ContourPlot(PathPlot):
 
 class PolygonPlot(ContourPlot):
 
-    style_opts = ['cmap', 'visible'] + line_properties + fill_properties
+    style_opts = base_properties + line_properties + fill_properties + ['cmap']
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = line_properties + fill_properties
     _color_style = 'fill_color'
+
+    selection_display = BokehOverlaySelectionDisplay()

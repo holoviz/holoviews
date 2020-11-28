@@ -12,7 +12,7 @@ import weakref
 from operator import itemgetter
 from collections import defaultdict, Counter
 from itertools import chain
-from functools import reduce, partial
+from functools import partial
 
 import param
 import numpy as np
@@ -240,16 +240,16 @@ class Dimension(param.Parameterized):
             raise KeyError('Dimension name must only be passed as the positional argument')
 
         if isinstance(spec, Dimension):
-            existing_params = dict(spec.get_param_values())
+            existing_params = dict(spec.param.get_param_values())
         elif (spec, params.get('unit', None)) in self.presets.keys():
             preset = self.presets[(str(spec), str(params['unit']))]
-            existing_params = dict(preset.get_param_values())
+            existing_params = dict(preset.param.get_param_values())
         elif isinstance(spec, dict):
             existing_params = spec
         elif spec in self.presets:
-            existing_params = dict(self.presets[spec].get_param_values())
+            existing_params = dict(self.presets[spec].param.get_param_values())
         elif (spec,) in self.presets:
-            existing_params = dict(self.presets[(spec,)].get_param_values())
+            existing_params = dict(self.presets[(spec,)].param.get_param_values())
         else:
             existing_params = {}
 
@@ -324,7 +324,7 @@ class Dimension(param.Parameterized):
         Returns:
             Cloned Dimension object
         """
-        settings = dict(self.get_param_values(), **overrides)
+        settings = dict(self.param.get_param_values(), **overrides)
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
@@ -382,7 +382,7 @@ class Dimension(param.Parameterized):
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
     def pprint(self):
-        changed = dict(self.get_param_values(onlychanged=True))
+        changed = dict(self.param.get_param_values(onlychanged=True))
         if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
             return 'Dimension({spec})'.format(spec=repr(self.name))
 
@@ -395,7 +395,7 @@ class Dimension(param.Parameterized):
         return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
 
-    def pprint_value(self, value):
+    def pprint_value(self, value, print_unit=False):
         """Applies the applicable formatter to the value.
 
         Args:
@@ -409,20 +409,25 @@ class Dimension(param.Parameterized):
                      else self.type_formatters.get(own_type))
         if formatter:
             if callable(formatter):
-                return formatter(value)
+                formatted_value = formatter(value)
             elif isinstance(formatter, basestring):
                 if isinstance(value, (dt.datetime, dt.date)):
-                    return value.strftime(formatter)
+                    formatted_value = value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
-                    return util.dt64_to_dt(value).strftime(formatter)
+                    formatted_value = util.dt64_to_dt(value).strftime(formatter)
                 elif re.findall(r"\{(\w+)\}", formatter):
-                    return formatter.format(value)
+                    formatted_value = formatter.format(value)
                 else:
-                    return formatter % value
-        return unicode(bytes_to_unicode(value))
+                    formatted_value = formatter % value
+        else:
+            formatted_value = unicode(bytes_to_unicode(value))
+
+        if print_unit and self.unit is not None:
+            formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
+        return formatted_value
 
     def pprint_value_string(self, value):
-        """Pretty print the dimension value and unit.
+        """Pretty print the dimension value and unit with title_format
 
         Args:
             value: Dimension value to format
@@ -543,7 +548,7 @@ class LabelledData(param.Parameterized):
         Returns:
             Cloned object
         """
-        params = dict(self.get_param_values())
+        params = dict(self.param.get_param_values())
         if new_type is None:
             clone_type = self.__class__
         else:
@@ -624,14 +629,11 @@ class LabelledData(param.Parameterized):
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
         return identifier_match
 
-
     def traverse(self, fn=None, specs=None, full_breadth=True):
         """Traverses object returning matching items
-
         Traverses the set of children of the object, collecting the
         all objects matching the defined specs. Each object can be
         processed with the supplied function.
-
         Args:
             fn (function, optional): Function applied to matched objects
             specs: List of specs to match
@@ -641,7 +643,6 @@ class LabelledData(param.Parameterized):
             full_breadth: Whether to traverse all objects
                 Whether to traverse the full set of objects on each
                 container or only the first.
-
         Returns:
             list: List of objects that matched
         """
@@ -852,10 +853,18 @@ class Dimensioned(LabelledData):
         self._settings = None
 
         # Instantiate accessors
-        self.apply = Apply(self)
-        self.opts = Opts(self)
-        self.redim = Redim(self)
 
+    @property
+    def apply(self):
+        return Apply(self)
+
+    @property
+    def opts(self):
+        return Opts(self)
+
+    @property
+    def redim(self):
+        return Redim(self)
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
@@ -956,14 +965,25 @@ class Dimensioned(LabelledData):
                 raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
-        dimension = dimension_name(dimension)
-        name_map = {dim.name: dim for dim in all_dims}
-        name_map.update({dim.label: dim for dim in all_dims})
-        name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
-        if strict and dimension not in name_map:
-            raise KeyError("Dimension %r not found." % dimension)
+
+        if isinstance(dimension, Dimension):
+            dims = [d for d in all_dims if dimension == d]
+            if strict and not dims:
+                raise KeyError("%r not found." % dimension)
+            elif dims:
+                return dims[0]
+            else:
+                return None
         else:
-            return name_map.get(dimension, default)
+            dimension = dimension_name(dimension)
+            name_map = {dim.spec: dim for dim in all_dims}
+            name_map.update({dim.name: dim for dim in all_dims})
+            name_map.update({dim.label: dim for dim in all_dims})
+            name_map.update({util.dimension_sanitizer(dim.name): dim for dim in all_dims})
+            if strict and dimension not in name_map:
+                raise KeyError("Dimension %r not found." % dimension)
+            else:
+                return name_map.get(dimension, default)
 
 
     def get_dimension_index(self, dimension):
@@ -1260,9 +1280,9 @@ class Dimensioned(LabelledData):
                              "Supplying both formats is not supported.")
         elif args and all(isinstance(el, dict) for el in args):
             if len(args) > 1:
-                self.warning('Only a single dictionary can be passed '
-                             'as a positional argument. Only processing '
-                             'the first dictionary')
+                self.param.warning('Only a single dictionary can be passed '
+                                   'as a positional argument. Only processing '
+                                   'the first dictionary')
             options = [Options(spec, **kws) for spec,kws in args[0].items()]
         elif args:
             options = list(args)
@@ -1378,8 +1398,11 @@ class ViewableTree(AttrTree, Dimensioned):
         for i, (path, item) in enumerate(items):
             if counter[path] > 1:
                 path = path + (util.int_to_roman(counts[path]+1),)
-            elif counts[path]:
-                path = path[:-1] + (util.int_to_roman(counts[path]+1),)
+            else:
+                inc = 1
+                while counts[path]:
+                    path = path[:-1] + (util.int_to_roman(counts[path]+inc),)
+                    inc += 1
             new_items.append((path, item))
             counts[path] += 1
         return new_items
@@ -1440,38 +1463,5 @@ class ViewableTree(AttrTree, Dimensioned):
             return super(ViewableTree, self).dimension_values(
                 dimension, expanded, flat)
 
-
-    def regroup(self, group):
-        """Deprecated method to apply new group to items.
-
-        Equivalent functionality possible using:
-
-            ViewableTree(tree.relabel(group='Group').values())
-        """
-        self.param.warning('%s.regroup is deprecated, use relabel '
-                           'method with a group argument instead.'
-                           % type(self).__name__)
-        new_items = [el.relabel(group=group) for el in self.data.values()]
-        return reduce(lambda x,y: x+y, new_items)
-
-
-    def relabel(self, label=None, group=None, depth=1):
-        """Clone object and apply new group and/or label.
-
-        Applies relabeling to children up to the supplied depth.
-
-        Args:
-            label (str, optional): New label to apply to returned object
-            group (str, optional): New group to apply to returned object
-            depth (int, optional): Depth to which relabel will be applied
-                If applied to container allows applying relabeling to
-                contained objects up to the specified depth
-
-        Returns:
-            Returns relabelled object
-        """
-        return super(ViewableTree, self).relabel(label, group, depth)
-
-    
     def __len__(self):
         return len(self.data)

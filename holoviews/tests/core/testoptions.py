@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 from unittest import SkipTest
 
@@ -901,6 +902,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
         return img
 
     def test_builder_backend_switch(self):
+        if sys.version_info.major == 3:
+            raise SkipTest('Python 3 tab completes via __signature__ not __doc__')
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.set_current_backend('bokeh')
@@ -915,6 +918,23 @@ class TestCrossBackendOptions(ComparisonTestCase):
         dockeys = eval(docline.replace('Curve', 'dict'))
         self.assertEqual('color' in dockeys, True)
         self.assertEqual('linewidth' in dockeys, True)
+
+    def test_builder_backend_switch_signature(self):
+        if sys.version_info.major == 2:
+            raise SkipTest('Python 2 tab completes via __doc__ not __signature__')
+        Store.options(val=self.store_mpl, backend='matplotlib')
+        Store.options(val=self.store_bokeh, backend='bokeh')
+        Store.set_current_backend('bokeh')
+        self.assertEqual(opts.Curve.__signature__ is not None, True)
+        sigkeys = opts.Curve.__signature__.parameters
+        self.assertEqual('color' in sigkeys, True)
+        self.assertEqual('line_width' in sigkeys, True)
+        Store.set_current_backend('matplotlib')
+        self.assertEqual(opts.Curve.__signature__ is not None, True)
+        sigkeys = opts.Curve.__signature__.parameters
+        self.assertEqual('color' in sigkeys, True)
+        self.assertEqual('linewidth' in sigkeys, True)
+
 
     def test_builder_cross_backend_validation(self):
         Store.options(val=self.store_mpl, backend='matplotlib')

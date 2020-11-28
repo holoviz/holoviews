@@ -71,6 +71,14 @@ class DaskInterface(PandasInterface):
         return data, dims, extra
 
     @classmethod
+    def compute(cls, dataset):
+        return dataset.clone(dataset.data.compute())
+
+    @classmethod
+    def persist(cls, dataset):
+        return dataset.clone(dataset.data.persist())
+
+    @classmethod
     def shape(cls, dataset):
         return (len(dataset.data), len(dataset.data.columns))
 
@@ -90,15 +98,7 @@ class DaskInterface(PandasInterface):
         return dataset.data
 
     @classmethod
-    def values(
-            cls,
-            dataset,
-            dim,
-            expanded=True,
-            flat=True,
-            compute=True,
-            keep_index=False,
-    ):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True, keep_index=False):
         dim = dataset.get_dimension(dim)
         data = dataset.data[dim.name]
         if not expanded:
@@ -271,22 +271,18 @@ class DaskInterface(PandasInterface):
         data = dataset.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
-                err = ('Dask dataframe does not support assigning '
-                       'non-scalar value.')
-                raise NotImplementedError(err)
+                if len(values):
+                    err = ('Dask dataframe does not support assigning '
+                           'non-scalar value.')
+                    raise NotImplementedError(err)
+                values = None
             data = data.assign(**{dimension.name: values})
         return data
 
     @classmethod
-    def concat(cls, datasets, dimensions, vdims):
+    def concat_fn(cls, dataframes, **kwargs):
         import dask.dataframe as dd
-        dataframes = []
-        for key, ds in datasets:
-            data = ds.data.copy()
-            for d, k in zip(dimensions, key):
-                data[d.name] = k
-            dataframes.append(data)
-        return dd.concat(dataframes)
+        return dd.concat(dataframes, **kwargs)
 
     @classmethod
     def dframe(cls, dataset, dimensions):

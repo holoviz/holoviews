@@ -1,15 +1,19 @@
 from unittest import SkipTest
 
+import pyviz_comms as comms
+
+from param import concrete_descendents
+
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-import pyviz_comms as comms
 
 try:
     from bokeh.models import (
         ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
     )
     from holoviews.plotting.bokeh.callbacks import Callback
+    from holoviews.plotting.bokeh.element import ElementPlot
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
@@ -19,7 +23,7 @@ from .. import option_intersections
 
 class TestPlotDefinitions(ComparisonTestCase):
 
-    known_clashes = [(('Bars',), {'width'}), (('BoxWhisker',), {'width'})]
+    known_clashes = []
 
     def test_bokeh_option_definitions(self):
         # Check option definitions do not introduce new clashes
@@ -34,12 +38,18 @@ class TestBokehPlot(ComparisonTestCase):
         bokeh_renderer.comm_manager = comms.CommManager
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
-        Store.current_backend = 'bokeh'
+        Store.set_current_backend('bokeh')
+        self._padding = {}
+        for plot in concrete_descendents(ElementPlot).values():
+            self._padding[plot] = plot.padding
+            plot.padding = 0
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}
+        for plot, padding in self._padding.items():
+            plot.padding = padding
 
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)
@@ -51,7 +61,7 @@ class TestBokehPlot(ComparisonTestCase):
         mapper_type = LogColorMapper if log else LinearColorMapper
         self.assertTrue(isinstance(cmapper, mapper_type))
 
-    def _test_hover_info(self, element, tooltips, line_policy='nearest'):
+    def _test_hover_info(self, element, tooltips, line_policy='nearest', formatters={}):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
@@ -60,6 +70,7 @@ class TestBokehPlot(ComparisonTestCase):
         hover = fig.select(dict(type=HoverTool))
         self.assertTrue(len(hover))
         self.assertEqual(hover[0].tooltips, tooltips)
+        self.assertEqual(hover[0].formatters, formatters)
         self.assertEqual(hover[0].line_policy, line_policy)
 
         if isinstance(element, Element):
@@ -69,5 +80,6 @@ class TestBokehPlot(ComparisonTestCase):
                     self.assertIn(lookup[2:-1], cds.data)
 
         # Ensure all the glyph renderers have a hover tool
+        print(renderers, hover)
         for renderer in renderers:
             self.assertTrue(any(renderer in h.renderers for h in hover))

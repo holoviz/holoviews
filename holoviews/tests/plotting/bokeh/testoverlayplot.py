@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
 from holoviews.core.options import Cycle
-from holoviews.element import Curve, Points, ErrorBars, Text, VLine
+from holoviews.element import Curve, Points, ErrorBars, Scatter, Text, VLine
 from holoviews.streams import Stream
 from holoviews.util import Dynamic
 
@@ -31,6 +31,28 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         subplot1, subplot2 = plot.subplots.values()
         self.assertEqual(subplot1.handles['source'].data['y'], np.arange(12))
         self.assertEqual(subplot2.handles['source'].data['y'], np.arange(12)*2)
+
+    def test_overlay_framewise_norm(self):
+        a = {
+            'X': [0, 1, 2],
+            'Y': [0, 1, 2],
+            'Z': [0, 50, 100]
+        }
+        b = {
+            'X': [3, 4, 5],
+            'Y': [0, 10, 20],
+            'Z': [50, 50, 150]
+        }
+        sa = Scatter(a, 'X', ['Y', 'Z']).opts(color='Z', framewise=True)
+        sb = Scatter(b, 'X', ['Y', 'Z']).opts(color='Z', framewise=True)
+        plot = bokeh_renderer.get_plot(sa * sb)
+        sa_plot, sb_plot = plot.subplots.values()
+        sa_cmapper = sa_plot.handles['color_color_mapper']
+        sb_cmapper = sb_plot.handles['color_color_mapper']
+        self.assertEqual(sa_cmapper.low, 0)
+        self.assertEqual(sb_cmapper.low, 0)
+        self.assertEqual(sa_cmapper.high, 150)
+        self.assertEqual(sb_cmapper.high, 150)
 
     def test_overlay_update_visible(self):
         hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})

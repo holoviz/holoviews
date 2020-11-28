@@ -300,8 +300,8 @@ class Comparison(ComparisonInterface):
                                        % (dim1.label, dim2.label))
 
         # 'Deep' equality of dimension metadata (all parameters)
-        dim1_params = dict(dim1.get_param_values())
-        dim2_params = dict(dim2.get_param_values())
+        dim1_params = dict(dim1.param.get_param_values())
+        dim2_params = dict(dim2.param.get_param_values())
 
         # Special handling of deprecated 'initial' values argument
         dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
@@ -312,8 +312,8 @@ class Comparison(ComparisonInterface):
                                        % (set(dim1_params.keys()), set(dim2_params.keys())))
 
         for k in dim1_params.keys():
-            if (dim1.params(k).__class__.__name__ == 'Callable'
-                and dim2.params(k).__class__.__name__ == 'Callable'):
+            if (dim1.param.objects('existing')[k].__class__.__name__ == 'Callable'
+                and dim2.param.objects('existing')[k].__class__.__name__ == 'Callable'):
                 continue
             try:  # This is needed as two lists are not compared by contents using ==
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)

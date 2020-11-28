@@ -142,6 +142,7 @@ class OutputSettings(KeywordSettings):
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'       : list_backends(),
+               'center'        : [True, False],
                'fig'           : list_formats('fig'),
                'holomap'       : list_formats('holomap'),
                'widgets'       : ['embed', 'live'],
@@ -162,6 +163,7 @@ class OutputSettings(KeywordSettings):
                                             'min-height', 'outline', 'float']}}
 
     defaults = OrderedDict([('backend'      , None),
+                            ('center'       , True),
                             ('fig'          , None),
                             ('holomap'      , None),
                             ('widgets'      , None),
@@ -180,7 +182,7 @@ class OutputSettings(KeywordSettings):
 
     # Remaining backend specific options renderer options
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css',
-                     'widget_mode', 'mode', 'widget_location']
+                     'widget_mode', 'mode', 'widget_location', 'center']
 
     options = OrderedDict()
     _backend_options = defaultdict(dict)
@@ -211,7 +213,7 @@ class OutputSettings(KeywordSettings):
     nbagg_counter = 0
 
     @classmethod
-    def _generate_docstring(cls):
+    def _generate_docstring(cls, signature=False):
         intro = ["Helper used to set HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
         backend = "backend      : The backend used by HoloViews"
@@ -234,8 +236,18 @@ class OutputSettings(KeywordSettings):
                         dpi, filename, info, css, widget_location]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
                     'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
-        signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
-        return '\n'.join([signature] + intro + descriptions)
+        if signature:
+            doc_signature = '\noutput(%s)\n' % ', '.join('%s=None' % kw for kw in keywords)
+            return '\n'.join([doc_signature] + intro + descriptions)
+        else:
+            return '\n'.join(intro + descriptions)
+
+    @classmethod
+    def _generate_signature(cls):
+        from inspect import Signature, Parameter
+        keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',
+                    'size', 'dpi', 'filename', 'info', 'css', 'widget_location']
+        return Signature([Parameter(kw, Parameter.KEYWORD_ONLY) for kw in keywords])
 
 
     @classmethod
@@ -263,13 +275,25 @@ class OutputSettings(KeywordSettings):
         if line and kwargs:
             raise ValueError('Please either specify a string to '
                              'parse or keyword arguments')
+        elif not Store.renderers:
+            raise ValueError("No plotting extension is currently loaded. "
+                             "Ensure you load an plotting extension with "
+                             "hv.extension or import it explicitly from "
+                             "holoviews.plotting before using hv.output.")
 
         # Make backup of previous options
         prev_backend = Store.current_backend
-        prev_renderer = Store.renderers[prev_backend]
-        prev_backend_spec = prev_backend+':'+prev_renderer.mode
-        prev_params = {k: v for k, v in prev_renderer.get_param_values()
-                       if k in cls.render_params}
+        if prev_backend in Store.renderers:
+            prev_renderer = Store.renderers[prev_backend]
+            prev_backend_spec = prev_backend+':'+prev_renderer.mode
+            prev_params = {k: v for k, v in prev_renderer.param.get_param_values()
+                           if k in cls.render_params}
+        else:
+            prev_renderer = None
+            prev_backend_spec = prev_backend+':default'
+            prev_params = {}
+        backend = prev_backend
+
         prev_restore = dict(OutputSettings.options)
         try:
             if line is not None:
@@ -286,8 +310,9 @@ class OutputSettings(KeywordSettings):
                     backend_spec += ':default'
             else:
                 backend_spec = prev_backend_spec
-            renderer = Store.renderers[backend_spec.split(':')[0]]
-            render_params = {k: v for k, v in renderer.get_param_values()
+            backend = backend_spec.split(':')[0]
+            renderer = Store.renderers[backend]
+            render_params = {k: v for k, v in renderer.param.get_param_values()
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
@@ -297,6 +322,11 @@ class OutputSettings(KeywordSettings):
             # If setting options failed ensure they are reset
             OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
+            if backend not in Store.renderers:
+                raise ValueError("The selected plotting extension {ext} "
+                                 "has not been loaded, ensure you load it "
+                                 "with hv.extension({ext}) before using "
+                                 "hv.output.".format(ext=repr(backend)))
             print('Error: %s' % str(e))
             if help_prompt:
                 print(help_prompt)

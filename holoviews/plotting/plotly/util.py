@@ -6,6 +6,7 @@ import re
 import numpy as np
 from plotly import colors
 
+from ...core.util import isfinite, max_range
 from ..util import color_intervals, process_cmap
 
 # Constants
@@ -112,7 +113,10 @@ legend_trace_types = {
 # Aliases - map common style options to more common names
 
 STYLE_ALIASES = {'alpha': 'opacity',
-                 'cell_height': 'height', 'marker': 'symbol'}
+                 'cell_height': 'height',
+                 'marker': 'symbol',
+                 "max_zoom": "maxzoom",
+                 "min_zoom": "minzoom",}
 
 # Regular expression to extract any trailing digits from a subplot-style
 # string.
@@ -449,12 +453,12 @@ def _scale_translate(fig, scale_x, scale_y, translate_x, translate_y):
     layout = fig.setdefault('layout', {})
 
     def scale_translate_x(x):
-        return [x[0] * scale_x + translate_x,
-                x[1] * scale_x + translate_x]
+        return [min(x[0] * scale_x + translate_x, 1),
+                min(x[1] * scale_x + translate_x, 1)]
 
     def scale_translate_y(y):
-        return [y[0] * scale_y + translate_y,
-                y[1] * scale_y + translate_y]
+        return [min(y[0] * scale_y + translate_y, 1),
+                min(y[1] * scale_y + translate_y, 1)]
 
     def perform_scale_translate(obj):
         domain = obj.setdefault('domain', {})
@@ -558,10 +562,10 @@ def merge_figure(fig, subfig):
 
     # layout
     layout = fig.setdefault('layout', {})
-    _merge_layout_objs(layout, subfig.get('layout', {}))
+    merge_layout(layout, subfig.get('layout', {}))
 
 
-def _merge_layout_objs(obj, subobj):
+def merge_layout(obj, subobj):
     """
     Merge layout objects recursively
 
@@ -578,7 +582,7 @@ def _merge_layout_objs(obj, subobj):
     for prop, val in subobj.items():
         if isinstance(val, dict) and prop in obj:
             # recursion
-            _merge_layout_objs(obj[prop], val)
+            merge_layout(obj[prop], val)
         elif (isinstance(val, list) and
               obj.get(prop, None) and
               isinstance(obj[prop][0], dict)):
@@ -586,8 +590,14 @@ def _merge_layout_objs(obj, subobj):
             # append
             obj[prop].extend(val)
         else:
-            # init/overwrite
-            obj[prop] = copy.deepcopy(val)
+            # Handle special cases
+            if prop == "style" and val == "white-bg" and obj.get("style", None):
+                # Don't let layout.mapbox.style of "white-bg" override other
+                # background
+                pass
+            elif val is not None:
+                # init/overwrite
+                obj[prop] = copy.deepcopy(val)
 
 
 def _compute_subplot_domains(widths, spacing):
@@ -672,17 +682,26 @@ def figure_grid(figures_grid,
     nrows = len(row_heights)
     ncols = len(column_widths)
 
+    responsive = True
+    for r in range(nrows):
+        for c in range(ncols):
+            fig_element = figures_grid[r][c]
+            if not fig_element:
+                continue
+            responsive &= fig_element.get('config', {}).get('responsive', False)
+
+    default = None if responsive else 400
     for r in range(nrows):
         for c in range(ncols):
             fig_element = figures_grid[r][c]
             if not fig_element:
                 continue
 
-            w = fig_element.get('layout', {}).get('width', None)
+            w = fig_element.get('layout', {}).get('width', default)
             if w:
                 column_widths[c] = max(w, column_widths[c])
 
-            h = fig_element.get('layout', {}).get('height', None)
+            h = fig_element.get('layout', {}).get('height', default)
             if h:
                 row_heights[r] = max(h, row_heights[r])
 
@@ -729,20 +748,33 @@ def figure_grid(figures_grid,
 
                 _offset_subplot_ids(fig, subplot_offsets)
 
-                fig_height = fig['layout']['height'] * row_height_scale
-                fig_width = fig['layout']['width'] * column_width_scale
-
-                scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
-                scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
-                _scale_translate(fig,
-                                 scale_x, scale_y,
-                                 column_domain[0], row_domain[0])
+                if responsive:
+                    scale_x = 1./ncols
+                    scale_y = 1./nrows
+                    px = ((0.2/(ncols) if ncols > 1 else 0))
+                    py = ((0.2/(nrows) if nrows > 1 else 0))
+                    sx = scale_x-px
+                    sy = scale_y-py
+                    _scale_translate(fig, sx, sy, scale_x*c+px/2., scale_y*r+py/2.)
+                else:
+                    fig_height = fig['layout'].get('height', default) * row_height_scale
+                    fig_width = fig['layout'].get('width', default) * column_width_scale
+                    scale_x = (column_domain[1] - column_domain[0]) * (fig_width / column_widths[c])
+                    scale_y = (row_domain[1] - row_domain[0]) * (fig_height / row_heights[r])
+                    _scale_translate(
+                        fig, scale_x, scale_y, column_domain[0], row_domain[0]
+                    )
 
                 merge_figure(output_figure, fig)
+
+    if responsive:
+        output_figure['config'] = {'responsive': True}
 
     # Set output figure width/height
     if height:
         output_figure['layout']['height'] = height
+    elif responsive:
+        output_figure['layout']['autosize'] = True
     else:
         output_figure['layout']['height'] = (
             sum(row_heights) + row_spacing * (nrows - 1)
@@ -750,6 +782,8 @@ def figure_grid(figures_grid,
 
     if width:
         output_figure['layout']['width'] = width
+    elif responsive:
+        output_figure['layout']['autosize'] = True
     else:
         output_figure['layout']['width'] = (
                 sum(column_widths) + column_spacing * (ncols - 1)
@@ -833,8 +867,6 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
     # Build mapping from matching properties to (axis, ref) tuples
     axis_map = {}
 
-    # print(fig['layout'])
-
     for k, v in fig.get('layout', {}).items():
         if k[1:5] == 'axis':
             matching_val = v.get(matching_prop, None)
@@ -847,16 +879,18 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
             axis_pair = (axis_ref, v)
             axis_map[matching_val].append(axis_pair)
 
-    # print(axis_map)
-
     # Set matching
     for _, axis_pairs in axis_map.items():
         if len(axis_pairs) < 2:
             continue
 
-        matches_reference = axis_pairs[0][0]
+        matches_reference, linked_axis = axis_pairs[0]
         for _, axis in axis_pairs[1:]:
             axis['matches'] = matches_reference
+            if 'range' in axis and 'range' in linked_axis:
+                linked_axis['range'] = [
+                    v if isfinite(v) else None for v in max_range([axis['range'], linked_axis['range']])
+                ]
 
 
 def clean_internal_figure_properties(fig):

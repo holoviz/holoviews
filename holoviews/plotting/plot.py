@@ -6,20 +6,26 @@ of this Plot baseclass.
 from __future__ import absolute_import
 
 import threading
+import uuid
 import warnings
 
-from itertools import groupby, product
 from collections import Counter, defaultdict
+from functools import partial
+from itertools import groupby, product
 
 import numpy as np
 import param
 
+from panel.config import config
 from panel.io.notebook import push
 from panel.io.state import state
+from panel.io.server import unlocked
+from pyviz_comms import JupyterComm
 
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
+from ..core.data import Dataset
 from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
@@ -30,11 +36,13 @@ from ..core.util import stream_parameters, isfinite
 from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
-from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
-                   attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders, get_nested_plot_frame,
-                   split_dmap_overlay, get_axis_padding, get_range,
-                   get_minimum_span, get_plot_frame)
+from .util import (
+    get_dynamic_mode, initialize_unbounded, dim_axis_label,
+    attach_streams, traverse_setter, get_nested_streams,
+    compute_overlayable_zorders, get_nested_plot_frame,
+    split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
+    get_plot_frame, scale_fontsize, dynamic_update
+)
 
 
 class Plot(param.Parameterized):
@@ -54,7 +62,7 @@ class Plot(param.Parameterized):
 
     def __init__(self, renderer=None, root=None, **params):
         params = {k: v for k, v in params.items()
-                  if k in self.params()}
+                  if k in self.param}
         super(Plot, self).__init__(**params)
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self._force = False
@@ -118,19 +126,33 @@ class Plot(param.Parameterized):
                 if plot is not None:
                     plot.document = doc
 
-
     @property
     def pane(self):
         return self._pane
 
     @pane.setter
     def pane(self, pane):
+        if (config.console_output != 'disable' and self.root and
+            self.root.ref['id'] not in state._handles and
+            isinstance(self.comm, JupyterComm)):
+            from IPython.display import display
+            handle = display(display_id=uuid.uuid4().hex)
+            state._handles[self.root.ref['id']] = (handle, [])
+
         self._pane = pane
         if self.subplots:
             for plot in self.subplots.values():
                 if plot is not None:
                     plot.pane = pane
-
+                if not plot.root:
+                    continue
+                for cb in getattr(plot, 'callbacks', []):
+                    if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
+                        cb.comm._on_error = partial(pane._on_error, plot.root.ref['id'])
+        elif self.root:
+            for cb in getattr(self, 'callbacks', []):
+                if hasattr(pane, '_on_error') and getattr(cb, 'comm', None):
+                    cb.comm._on_error = partial(pane._on_error, self.root.ref['id'])
 
     @property
     def comm(self):
@@ -174,7 +196,9 @@ class Plot(param.Parameterized):
             for stream in set(plot.streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
-                    if util.get_method_owner(subscriber) not in plots]
+                    if not util.is_param_method(subscriber) or
+                    util.get_method_owner(subscriber) not in plots
+                ]
 
 
     def _session_destroy(self, session_context):
@@ -194,8 +218,8 @@ class Plot(param.Parameterized):
                 thread_id != state._thread_id)):
                 # If we do not have the Document lock, schedule refresh as callback
                 self._triggering += [s for p in self.traverse(lambda x: x, [Plot])
-                                     for s in p.streams if s._triggering]
-                if self.document.session_context:
+                                     for s in getattr(p, 'streams', []) if s._triggering]
+                if self.document and self.document.session_context:
                     self.document.add_next_tick_callback(self.refresh)
                     return
 
@@ -211,6 +235,7 @@ class Plot(param.Parameterized):
             key = tuple(None if d in stream_params else k
                         for d, k in zip(self.dimensions, key))
             stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
+
 
             self._trigger_refresh(stream_key)
             if self.top_level:
@@ -228,7 +253,8 @@ class Plot(param.Parameterized):
         "Triggers update to a plot on a refresh event"
         # Update if not top-level, batched or an ElementPlot
         if not self.top_level or isinstance(self, GenericElementPlot):
-            self.update(key)
+            with unlocked():
+                self.update(key)
 
 
     def push(self):
@@ -244,8 +270,8 @@ class Plot(param.Parameterized):
 
         if self.renderer.backend != 'bokeh' and child_pane is not None:
             child_pane.object = self.renderer.get_plot_state(self)
-        elif ((self.renderer.mode != 'server' or (root and 'embedded' in root.tags))
-              and self.document and self.comm):
+        elif (self.renderer.mode != 'server' and root and
+              'embedded' not in root.tags and self.document and self.comm):
             push(self.document, self.comm)
 
 
@@ -264,6 +290,8 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         return lookup_options(obj, group, cls.backend)
+
+
 
 class PlotSelector(object):
     """
@@ -284,9 +312,12 @@ class PlotSelector(object):
         interface = self._define_interface(self.plot_classes.values(), allow_mismatch)
         self.style_opts, self.plot_options = interface
 
+    def selection_display(self, obj):
+        plt_class = self.get_plot_class(obj)
+        return getattr(plt_class, 'selection_display', None)
 
     def _define_interface(self, plots, allow_mismatch):
-        parameters = [{k:v.precedence for k,v in plot.params().items()
+        parameters = [{k:v.precedence for k,v in plot.param.params().items()
                        if ((v.precedence is None) or (v.precedence >= 0))}
                       for plot in plots]
         param_sets = [set(params.keys()) for params in parameters]
@@ -324,6 +355,10 @@ class PlotSelector(object):
     def params(self):
         return self.plot_options
 
+    @property
+    def param(self):
+        return self.plot_options
+
 
 
 class DimensionedPlot(Plot):
@@ -345,6 +380,9 @@ class DimensionedPlot(Plot):
 
        You can set the font size of 'zlabel', 'ylabel' and 'xlabel'
        together using the 'labels' key.""")
+
+    fontscale = param.Number(default=None, doc="""
+       Scales the size of all fonts.""")
 
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'zlabel', 'clabel', 'labels',
@@ -382,7 +420,7 @@ class DimensionedPlot(Plot):
         self.layout_num = layout_num
         self.layout_dimensions = layout_dimensions
         self.subplot = subplot
-        self.keys = keys
+        self.keys = keys if keys is None else list(keys)
         self.uniform = uniform
         self.dynamic = dynamic
         self.drawn = False
@@ -473,16 +511,16 @@ class DimensionedPlot(Plot):
 
 
     def _format_title(self, key, dimensions=True, separator='\n'):
-        if self.title_format and util.config.future_deprecations:
+        if self.title_format:
             self.param.warning('title_format is deprecated. Please use title instead')
 
         label, group, type_name, dim_title = self._format_title_components(
             key, dimensions=True, separator='\n'
         )
 
-        custom_title = (self.title != self.param.params('title').default)
+        custom_title = (self.title != self.param['title'].default)
         if custom_title and self.title_format:
-            self.warning('Both title and title_format set. Using title')
+            self.param.warning('Both title and title_format set. Using title')
         title_str = (
             self.title if custom_title or self.title_format is None
             else self.title_format
@@ -508,28 +546,53 @@ class DimensionedPlot(Plot):
         return (self.label, self.group, type(self).__name__, '')
 
 
+    def _get_fontsize_defaults(self):
+        """
+        Should returns default fontsize for the following keywords:
+
+            * ticks
+            * minor_ticks
+            * label
+            * title
+            * legend
+            * legend_title
+
+        However may also provide more specific defaults for
+        specific axis label or ticks, e.g. clabel or xticks.
+        """
+        return {}
+
+
     def _fontsize(self, key, label='fontsize', common=True):
-        if not self.fontsize: return {}
+        if not self.fontsize and not self.fontscale:
+            return {}
+        elif not isinstance(self.fontsize, dict) and self.fontsize is not None and common:
+            return {label: scale_fontsize(self.fontsize, self.fontscale)}
 
-        if not isinstance(self.fontsize, dict):
-            return {label:self.fontsize} if common else {}
-
-        unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
+        fontsize = self.fontsize if isinstance(self.fontsize, dict) else {}
+        unknown_keys = set(fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.param.warning(msg %  (list(unknown_keys), self._fontsize_keys))
-            for key in unknown_keys: self.fontsize.pop(key, None)
+            for key in unknown_keys: fontsize.pop(key, None)
 
-        if key in self.fontsize:
-            return {label:self.fontsize[key]}
-        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel'] and 'labels' in self.fontsize:
-            return {label:self.fontsize['labels']}
-        elif key in ['xticks', 'yticks', 'zticks', 'cticks'] and 'ticks' in self.fontsize:
-            return {label:self.fontsize['ticks']}
-        elif key in ['minor_xticks', 'minor_yticks'] and 'minor_ticks' in self.fontsize:
-            return {label:self.fontsize['minor_ticks']}
-        else:
+        defaults = self._get_fontsize_defaults()
+        size = None
+        if key in fontsize:
+            size = fontsize[key]
+        elif key in ['zlabel', 'ylabel', 'xlabel', 'clabel']:
+            size = fontsize.get('labels', defaults.get(key, defaults.get('label')))
+        elif key in ['xticks', 'yticks', 'zticks', 'cticks']:
+            size = fontsize.get('ticks', defaults.get(key, defaults.get('ticks')))
+        elif key in ['minor_xticks', 'minor_yticks']:
+            size = fontsize.get('minor_ticks', defaults.get(key, defaults.get('minor_ticks')))
+        elif key in ('legend', 'legend_title', 'title'):
+            size = defaults.get(key)
+
+        if size is None:
             return {}
+
+        return {label: scale_fontsize(size, self.fontscale)}
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -545,7 +608,7 @@ class DimensionedPlot(Plot):
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
         # Get inherited ranges
-        ranges = self.ranges if ranges is None else dict(ranges)
+        ranges = self.ranges if ranges is None else {k: dict(v) for k, v in ranges.items()}
 
         # Get element identifiers from current object and resolve
         # with selected normalization options
@@ -561,18 +624,17 @@ class DimensionedPlot(Plot):
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
             framewise = framewise or self.dynamic or len(elements) == 1
-            if group in ranges and (not framewise or ranges is not self.ranges):
-                continue
-            elif not framewise: # Traverse to get all elements
+            if not framewise: # Traverse to get all elements
                 elements = obj.traverse(return_fn, [group])
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
+            
             # Only compute ranges if not axiswise on a composite plot
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
-                self._compute_group_range(group, elements, ranges)
+                self._compute_group_range(group, elements, ranges, framewise, self.top_level)
         self.ranges.update(ranges)
         return ranges
 
@@ -624,10 +686,44 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges):
+    def _compute_group_range(cls, group, elements, ranges, framewise, top_level):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        data_ranges = {}
+        categorical_dims = []
+        for el in elements:
+            for el_dim in el.dimensions('ranges'):
+                if hasattr(el, 'interface'):
+                    if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
+                        dtype = el.nodes.interface.dtype(el.nodes, el_dim)
+                    else:
+                        dtype = el.interface.dtype(el, el_dim)
+                elif hasattr(el, '__len__') and len(el):
+                    dtype = el.dimension_values(el_dim).dtype
+                else:
+                    dtype = None
+
+                if all(util.isfinite(r) for r in el_dim.range):
+                    data_range = (None, None)
+                elif dtype is not None and dtype.kind in 'SU':
+                    data_range = ('', '')
+                elif isinstance(el, Graph) and el_dim in el.kdims[:2]:
+                    data_range = el.nodes.range(2, dimension_range=False)
+                elif el_dim.values:
+                    ds = Dataset(el_dim.values, el_dim)
+                    data_range = ds.range(el_dim, dimension_range=False)
+                else:
+                    data_range = el.range(el_dim, dimension_range=False)
+
+                data_ranges[(el, el_dim)] = data_range
+
+                if (any(isinstance(r, util.basestring) for r in data_range) or
+                    (el_dim.type is not None and issubclass(el_dim.type, util.basestring)) or
+                    (dtype is not None and dtype.kind in 'SU')):
+                    categorical_dims.append(el_dim)
+
+        prev_ranges = ranges.get(group, {})
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
@@ -638,14 +734,19 @@ class DimensionedPlot(Plot):
             for k, v in dict(opts.kwargs, **plot_opts.kwargs).items():
                 if not isinstance(v, dim) or ('color' not in k and k != 'magnitude'):
                     continue
+
                 if isinstance(v, dim) and v.applies(el):
                     dim_name = repr(v)
-                    values = v.apply(el, expanded=False, all_values=True)
+                    if dim_name in prev_ranges and not framewise:
+                        continue
+                    values = v.apply(el, all_values=True)
                     factors = None
                     if values.dtype.kind == 'M':
                         drange = values.min(), values.max()
                     elif util.isscalar(values):
                         drange = values, values
+                    elif values.dtype.kind in 'US':
+                        factors = util.unique_array(values)
                     elif len(values) == 0:
                         drange = np.NaN, np.NaN
                     else:
@@ -657,6 +758,7 @@ class DimensionedPlot(Plot):
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
                         group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+
                     if factors is not None:
                         if 'factors' not in group_ranges[dim_name]:
                             group_ranges[dim_name]['factors'] = []
@@ -704,12 +806,25 @@ class DimensionedPlot(Plot):
                         values = el.nodes.dimension_values(el_dim, expanded=False)
                     if (isinstance(values, np.ndarray) and values.dtype.kind == 'O' and
                         all(isinstance(v, (np.ndarray)) for v in values)):
-                        values = np.concatenate(values)
+                        values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)
-                    group_ranges[el_dim.name]['factors'].append(factors)
+                    group_ranges[dim_name]['factors'].append(factors)
+
+        group_dim_ranges = defaultdict(dict)
+        for gdim, values in group_ranges.items():
+            matching = True
+            for t, rs in values.items():
+                if t == 'factors':
+                    continue
+                matching &= (
+                    len({'date' if isinstance(v, util.datetime_types) else 'number'
+                         for rng in rs for v in rng if util.isfinite(v)}) < 2
+                )
+            if matching:
+                group_dim_ranges[gdim] = values
 
         dim_ranges = []
-        for gdim, values in group_ranges.items():
+        for gdim, values in group_dim_ranges.items():
             hard_range = util.max_range(values['hard'], combined=False)
             soft_range = util.max_range(values['soft'])
             data_range = util.max_range(values['data'])
@@ -718,10 +833,33 @@ class DimensionedPlot(Plot):
             dranges = {'data': data_range, 'hard': hard_range,
                        'soft': soft_range, 'combined': combined}
             if 'factors' in values:
-                dranges['factors'] = util.unique_array([
-                    v for fctrs in values['factors'] for v in fctrs])
+                all_factors = values['factors']
+                factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
+                dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+                expanded = [v for fctrs in all_factors for v in fctrs]
+                if dtype is not None:
+                    try:
+                        # Try to keep the same dtype
+                        expanded = np.array(expanded, dtype=dtype)
+                    except Exception:
+                        pass
+                dranges['factors'] = util.unique_array(expanded)
             dim_ranges.append((gdim, dranges))
-        ranges[group] = OrderedDict(dim_ranges)
+        if prev_ranges and not (framewise and top_level):
+            for d, dranges in dim_ranges:
+                for g, drange in dranges.items():
+                    prange = prev_ranges.get(d, {}).get(g, None)
+                    if prange is None:
+                        if d not in prev_ranges:
+                            prev_ranges[d] = {}
+                        prev_ranges[d][g] = drange
+                    elif g == 'factors':
+                        prev_ranges[d][g] = drange
+                    else:
+                        prev_ranges[d][g] = util.max_range([prange, drange],
+                                                           combined=g=='hard')
+        else:
+            ranges[group] = OrderedDict(dim_ranges)
 
 
     @classmethod
@@ -750,11 +888,15 @@ class DimensionedPlot(Plot):
 
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        options = defaultdict(lambda: defaultdict(list))
+        options = OrderedDict()
         default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
+            if key not in options:
+                options[key] = {}
             for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = []
                 options[key][opt].append(v)
             for opt, v in defaults.items():
                 default_opts[key][opt].append(v)
@@ -783,8 +925,8 @@ class DimensionedPlot(Plot):
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
                                      keyfn=isoverlay)
-        from_overlay = not all(p is None for p in opts[True]['projection'])
-        projections = opts[from_overlay]['projection']
+        from_overlay = not all(p is None for p in opts.get(True, {}).get('projection', []))
+        projections = opts.get(from_overlay, {}).get('projection', [])
         custom_projs = [p for p in projections if p is not None]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
@@ -878,6 +1020,11 @@ class GenericElementPlot(DimensionedPlot):
         0 a default_span of 2.0 will result in axis ranges spanning
         from -1 to 1.""")
 
+    hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a plot. The
+        hook is passed the plot object and the displayed element, and
+        other plotting handles can be accessed via plot.handles.""")
+
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
 
@@ -887,13 +1034,16 @@ class GenericElementPlot(DimensionedPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
+    finalize_hooks = param.HookList(default=[], doc="""
+        Deprecated; use hooks options instead.""")
+
     logx = param.Boolean(default=False, doc="""
         Whether the x-axis of the plot will be a log axis.""")
 
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
 
-    padding = param.ClassSelector(default=0, class_=(int, float, tuple), doc="""
+    padding = param.ClassSelector(default=0.1, class_=(int, float, tuple), doc="""
         Fraction by which to increase auto-ranged extents to make
         datapoints more visible around borders.
 
@@ -1041,7 +1191,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             self.ordering = util.layer_sort(self.hmap)
             overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
-            opts = {k: v for k, v in overlay_opts if k in self.params()}
+            opts = {k: v for k, v in overlay_opts if k in self.param}
             self.param.set_param(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
@@ -1076,7 +1226,7 @@ class GenericElementPlot(DimensionedPlot):
         frame = get_plot_frame(self.hmap, key_map, cached)
         traverse_setter(self, '_force', False)
 
-        if not key in self.keys and self.dynamic:
+        if not key in self.keys and len(key) == self.hmap.ndims and self.dynamic:
             self.keys.append(key)
         self.current_frame = frame
         self.current_key = key
@@ -1091,6 +1241,10 @@ class GenericElementPlot(DimensionedPlot):
             self.param.warning(
                 "Supply either hooks or finalize_hooks not both, "
                 "using hooks and ignoring finalize_hooks.")
+        elif self.finalize_hooks:
+            self.param.warning(
+                "The finalize_hooks option is deprecated, use the "
+                "hooks option instead.")
         hooks = self.hooks or self.finalize_hooks
         for hook in hooks:
             try:
@@ -1106,12 +1260,28 @@ class GenericElementPlot(DimensionedPlot):
         """
 
 
-    def get_padding(self, extents):
+    def get_padding(self, obj, extents):
         """
         Computes padding along the axes taking into account the plot aspect.
         """
         (x0, y0, z0, x1, y1, z1) = extents
-        padding = 0 if self.overlaid else self.padding
+        padding_opt = self.lookup_options(obj, 'plot').kwargs.get('padding')
+        if self.overlaid:
+            padding = 0
+        elif padding_opt is None:
+            if self.param.objects('existing')['padding'].default is not self.padding:
+                padding = self.padding
+            else:
+                opts = self._traverse_options(
+                    obj, 'plot', ['padding'], specs=[Element], defaults=True
+                )
+                padding = opts.get('padding')
+                if padding:
+                    padding = padding[0]
+                else:
+                    padding = self.padding
+        else:
+            padding = padding_opt
         xpad, ypad, zpad = get_axis_padding(padding)
         if not self.overlaid and not self.batched:
             xspan = x1-x0 if util.is_number(x0) and util.is_number(x1) else None
@@ -1161,7 +1331,7 @@ class GenericElementPlot(DimensionedPlot):
                 y0, y1 = my0, my1
 
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
 
         if range_type == 'soft':
             x0, x1 = xsrange
@@ -1285,7 +1455,8 @@ class GenericElementPlot(DimensionedPlot):
 
     def _format_title_components(self, key, dimensions=True, separator='\n'):
         frame = self._get_frame(key)
-        if frame is None: return None
+        if frame is None:
+            return ('', '', '', '')
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
@@ -1472,7 +1643,7 @@ class GenericOverlayPlot(GenericElementPlot):
                                    'during plotting' % obj.last)
                 return None
         elif self.batched and 'batched' in plottype._plot_methods:
-            param_vals = dict(self.get_param_values())
+            param_vals = dict(self.param.get_param_values())
             propagate = {opt: param_vals[opt] for opt in self._propagate_options
                          if opt in param_vals}
             opts['batched'] = self.batched
@@ -1492,10 +1663,31 @@ class GenericOverlayPlot(GenericElementPlot):
                         fontsize=self.fontsize, streams=streams,
                         renderer=self.renderer, adjoined=self.adjoined,
                         stream_sources=self.stream_sources,
-                        projection=self.projection,
-                        zorder=zorder, **passed_handles)
+                        projection=self.projection, fontscale=self.fontscale,
+                        zorder=zorder, root=self.root, **passed_handles)
         return plottype(obj, **plotopts)
 
+
+    def _match_subplot(self, key, subplot, items, element):
+        found = False
+        temp_items = list(items)
+        while not found:
+            idx, spec, exact = dynamic_update(self, subplot, key, element, temp_items)
+            if idx is not None:
+                if not exact:
+                    exact_matches = [
+                        dynamic_update(self, subplot, k, element, temp_items)
+                        for k in self.subplots
+                    ]
+                    exact_matches = [m for m in exact_matches if m[-1]]
+                    if exact_matches:
+                        idx = exact_matches[0][0]
+                        _, el = temp_items.pop(idx)
+                        continue
+            found = True
+        if idx is not None:
+            idx = items.index(temp_items.pop(idx))
+        return idx, spec, exact
 
     def _create_dynamic_subplots(self, key, items, ranges, **init_kwargs):
         """
@@ -1605,7 +1797,7 @@ class GenericOverlayPlot(GenericElementPlot):
         z0, z1 = get_minimum_span(z0, z1, zspan)
 
         # Apply padding
-        xpad, ypad, zpad = self.get_padding((x0, y0, z0, x1, y1, z1))
+        xpad, ypad, zpad = self.get_padding(overlay, (x0, y0, z0, x1, y1, z1))
         x0, x1 = util.dimension_range(x0, x1, (hx0, hx1), (sx0, sx1), xpad, self.logx)
         y0, y1 = util.dimension_range(y0, y1, (hy0, hy1), (sy0, sy1), ypad, self.logy)
         if len(extents['data']) == 6:

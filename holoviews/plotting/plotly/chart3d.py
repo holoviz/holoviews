@@ -32,7 +32,7 @@ class Chart3DPlot(ElementPlot):
         Ticks along z-axis specified as an integer, explicit list of
         tick locations, list of tuples containing the locations.""")
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         return [dict(x=element.dimension_values(0),
                      y=element.dimension_values(1),
                      z=element.dimension_values(2))]
@@ -40,16 +40,20 @@ class Chart3DPlot(ElementPlot):
 
 class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
-    trace_kwargs = {'type': 'surface'}
-
     style_opts = ['visible', 'alpha', 'lighting', 'lightposition', 'cmap']
 
-    def graph_options(self, element, ranges, style):
-        opts = super(SurfacePlot, self).graph_options(element, ranges, style)
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'surface'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super(SurfacePlot, self).graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         return dict(opts, **copts)
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         return [dict(x=element.dimension_values(0, False),
                      y=element.dimension_values(1, False),
                      z=element.dimension_values(2, flat=False))]
@@ -57,29 +61,35 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
 
 class Scatter3DPlot(Chart3DPlot, ScatterPlot):
 
-    trace_kwargs = {'type': 'scatter3d', 'mode': 'markers'}
-
     style_opts = [
         'visible', 'marker', 'color', 'cmap', 'alpha', 'opacity', 'size', 'sizemin'
     ]
 
-    selection_display = PlotlyOverlaySelectionDisplay()
+    _supports_geo = False
+
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
+
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter3d', 'mode': 'markers'}
 
 
 class Path3DPlot(Chart3DPlot, CurvePlot):
-
-    trace_kwargs = {'type': 'scatter3d', 'mode': 'lines'}
 
     _per_trace = True
 
     _nonvectorized_styles = []
 
-    def graph_options(self, element, ranges, style):
-        opts = super(Path3DPlot, self).graph_options(element, ranges, style)
+    @classmethod
+    def trace_kwargs(cls, is_geo=False, **kwargs):
+        return {'type': 'scatter3d', 'mode': 'lines'}
+
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super(Path3DPlot, self).graph_options(element, ranges, style, **kwargs)
         opts['line'].pop('showscale', None)
         return opts
 
-    def get_data(self, element, ranges, style):
+    def get_data(self, element, ranges, style, **kwargs):
         return [dict(x=el.dimension_values(0), y=el.dimension_values(1),
                      z=el.dimension_values(2))
                 for el in element.split()]
@@ -89,19 +99,23 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
 
     style_opts = ['cmap', 'edges_color', 'facecolor']
 
-    def get_data(self, element, ranges, style):
+    selection_display = PlotlyOverlaySelectionDisplay(supports_region=False)
+
+    def get_data(self, element, ranges, style, **kwargs):
         try:
             from scipy.spatial import Delaunay
         except:
-            SkipRendering("SciPy not available, cannot plot TriSurface")
+            raise SkipRendering("SciPy not available, cannot plot TriSurface")
         x, y, z = (element.dimension_values(i) for i in range(3))
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
         return [dict(x=x, y=y, z=z, simplices=simplices)]
 
-    def graph_options(self, element, ranges, style):
-        opts = super(TriSurfacePlot, self).graph_options(element, ranges, style)
+    def graph_options(self, element, ranges, style, **kwargs):
+        opts = super(TriSurfacePlot, self).graph_options(
+            element, ranges, style, **kwargs
+        )
         copts = self.get_color_opts(element.dimensions()[2], element, ranges, style)
         opts['colormap'] = [tuple(v/255. for v in colors.hex_to_rgb(c))
                             for _, c in copts['colorscale']]
@@ -113,7 +127,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
 
         return {k: v for k, v in opts.items() if 'legend' not in k and k != 'name'}
 
-    def init_graph(self, datum, options, index=0):
+    def init_graph(self, datum, options, index=0, **kwargs):
 
         # Pop colorbar options since these aren't accepted by the trisurf
         # figure factory.

@@ -5,12 +5,15 @@
 git:
   depth: 100
 
-language: generic
+language: python
 
 os:
   - linux
 
 dist: xenial
+
+addons:
+  firefox: latest
 
 notifications:
   email:
@@ -18,21 +21,22 @@ notifications:
 
 env:
   global:
-    - PYENV_VERSION=3.7
-    - PKG_TEST_PYTHON="--test-python=py36 --test-python=py27"
-    - CHANS_DEV="-c pyviz/label/dev -c conda-forge"
+    - PKG_TEST_PYTHON="--test-python=py37 --test-python=py27"
+    - CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
     - CHANS="-c pyviz"
     - MPLBACKEND="Agg"
-    - PYTHON_VERSION=3.6
+    - PYTHON_VERSION=3.7
+    - MOZ_HEADLESS=1
 
 stages:
-  - test
+  - name: tests
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)?\d?$
   - name: extra_tests
     if: type = cron
   - name: conda_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: pip_dev_package
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: conda_package
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: pip_package
@@ -42,20 +46,20 @@ stages:
   - name: gallery
     if: tag =~ ^v(\d+|\.)*[^a-z]\d*$
   - name: docs_dev
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: gallery_dev
-    if: tag =~ ^v(\d+|\.)*[a-z]\d*$
+    if: tag =~ ^v(\d+|\.)+([a-z]|rc)\d+$
   - name: docs_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
   - name: gallery_daily
-    if: (type = cron OR commit_message =~ /\[doc-build\]/)
+    if: ((type = cron) OR ((commit_message =~ /\[doc-build\]/) and branch = master))
 
 jobs:
   include:
     ########## Test Stage ##########
 
     - &default
-      stage: test
+      stage: tests
       env: DESC="Python 3.6 tests" HV_REQUIREMENTS="unit_tests" PYTHON_VERSION=3.6
       before_install:
         - pip install pyctdev && doit miniconda_install && pip uninstall -y doit pyctdev
@@ -65,20 +69,21 @@ jobs:
       install:
         - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
         - source activate test-environment
-        - travis_wait 20 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - travis_wait 45 doit develop_install $CHANS_DEV -o $HV_REQUIREMENTS
+        - if [ "$PYTHON_VERSION" == "3.6" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit env_capture
+        - hash -r
       script:
         - doit test_all_recommended
       after_success: coveralls
       after_failure: sleep 10
 
-    - <<: *default
-      env: DESC="Python 2.7 tests" PYTHON_VERSION=2.7 HV_REQUIREMENTS="unit_tests"
-
     - &basic_deps
       <<: *default
       stage: extra_tests
       env: DESC="Basic dependencies" HV_REQUIREMENTS="basic_tests"
+      script:
+        - doit test_unit
       after_success: echo "Success"
 
     ########## DOCS ##########
@@ -86,43 +91,43 @@ jobs:
     - &doc_build
       <<: *default
       stage: docs_dev
-      env: DESC="docs" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" PANEL_EMBED='true' PANEL_EMBED_JSON='true' PANEL_EMBED_JSON_PREFIX='json'
+      env: DESC="docs" HV_DOC_GALLERY="false" HV_DOC_REF_GALLERY="true" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
+      before-script:
+        - conda install -c conda-forge geckodriver selenium
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
-        - nbsite generate-rst --org pyviz --project-name holoviews --skip ^reference
+        - nbsite generate-rst --org holoviz --project-name holoviews --skip ^reference
+        - python ./doc/generate_modules.py holoviews -d ./doc/reference_manual -n holoviews -e tests
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
+        - aws s3 sync --quiet ./ s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER --exclude=".git/*" --exclude="doc/nbpublisher/*"
 
     - &gallery_build
       <<: *doc_build
       stage: gallery_dev
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc" BUCKET="dev."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="dev." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       script:
         - bokeh sampledata
-        - conda install -c conda-forge awscli
-        - conda install -c conda-forge mpl_sample_data --no-deps
-        - aws s3 sync s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
+        - aws s3 sync --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER ./
         - git reset --hard --recurse-submodule
         - nbsite build --what=html --output=builtdocs
       after_success:
-        - aws s3 sync ./builtdocs s3://${BUCKET}holoviews.org/
-        - aws s3 rm --recursive s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
+        - aws s3 sync --quiet ./builtdocs s3://${BUCKET}holoviews.org/
+        - aws s3 rm --recursive --quiet s3://holoviews-doc-builds/$TRAVIS_BUILD_NUMBER
 
     - <<: *doc_build
       stage: docs_daily
 
     - <<: *gallery_build
       stage: gallery_daily
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_DOC_GALLERY='false' HV_DOC_REF_GALLERY='false' HV_REQUIREMENTS="doc" BUCKET="build."
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" BUCKET="build." HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
 
     - <<: *doc_build
       stage: docs
 
     - <<: *gallery_build
       stage: gallery
-      env: DESC="gallery" CHANS_DEV="-c pyviz/label/dev" HV_REQUIREMENTS="doc"
+      env: DESC="gallery" HV_DOC_GALLERY="true" HV_DOC_REF_GALLERY="false" HV_REQUIREMENTS="doc" PANEL_EMBED="true" PANEL_EMBED_JSON="true" PANEL_EMBED_JSON_PREFIX="json" CHANS_DEV="-c pyviz/label/dev -c bokeh -c conda-forge"
       after_success:
         - aws s3 sync ./builtdocs s3://holoviews.org/
 
@@ -133,17 +138,17 @@ jobs:
     - &conda_pkg
       <<: *default
       stage: conda_dev_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS_DEV="-c pyviz/label/dev -c bokeh"
       install:
-        - doit package_build $CHANS_DEV --no-pkg-tests
+        - doit package_build $CHANS_DEV $PKG_TEST_PYTHON --test-group=unit
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev
 
     - <<: *conda_pkg
       stage: conda_package
-      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
+      env: DESC="" TRAVIS_NOCACHE=$TRAVIS_JOB_ID CHANS="-c pyviz -c bokeh"
       install:
-        - doit package_build $CHANS_DEV --no-pkg-tests
+        - doit package_build $CHANS $PKG_TEST_PYTHON --test-group=unit
       script:
         - doit package_upload --token=$CONDA_UPLOAD_TOKEN --label=dev --label=main
 
@@ -154,16 +159,15 @@ jobs:
       stage: pip_dev_package
       env: PYPI="https://test.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
       install:
+        - doit env_create $CHANS_DEV --python=$PYTHON_VERSION
+        - source activate test-environment
         - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
         - doit pip_on_conda
+        - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install $CHANS_DEV matplotlib=3.0.3 --no-deps; fi;
         - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
 
     - <<: *pip_pkg
       stage: pip_package
       env: PYPI="https://upload.pypi.org/legacy/" TRAVIS_NOCACHE=$TRAVIS_JOB_ID
-      install:
-        - travis_wait 30 doit develop_install $CHANS_DEV -o unit_tests && pip uninstall -y holoviews
-        - doit pip_on_conda
-        - doit ecosystem=pip package_build
       script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}

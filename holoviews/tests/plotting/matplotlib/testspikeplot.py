@@ -37,7 +37,7 @@ class TestSpikesPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
         self.assertEqual(x_range[0], 0)
-        self.assertEqual(x_range[1], 3.2)
+        self.assertEqual(x_range[1], 3)
 
     def test_spikes_padding_unequal(self):
         spikes = Spikes([1, 2, 3]).options(padding=(0.05, 0.1))

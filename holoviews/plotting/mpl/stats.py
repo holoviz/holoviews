@@ -24,6 +24,7 @@ class DistributionPlot(AreaPlot):
         Whether the bivariate contours should be filled.""")
 
 
+
 class BivariatePlot(PolygonPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density
@@ -87,7 +88,7 @@ class BoxPlot(ChartPlot):
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
-        format_kdims = [kd(value_format=None) for kd in element.kdims]
+        format_kdims = [kd.clone(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]]}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
