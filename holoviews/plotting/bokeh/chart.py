@@ -664,6 +664,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
+    style_opts = (base_properties + fill_properties + line_properties +
+                  ['bar_width', 'cmap'])
+
     _nonvectorized_styles = base_properties + ['bar_width', 'cmap']
     _plot_methods = dict(single=('vbar', 'hbar'))
 

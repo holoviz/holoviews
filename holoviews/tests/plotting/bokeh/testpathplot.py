@@ -100,7 +100,7 @@ class TestPathPlot(TestBokehPlot):
             color='color', color_levels=levels, cmap=colors, tools=['hover'])
         plot = bokeh_renderer.get_plot(path)
         source = plot.handles['source']
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles['color_color_mapper']
 
         self.assertEqual(source.data['xs'], [np.array([1, 2]), np.array([2, 3]), np.array([3, 4])])
         self.assertEqual(source.data['ys'], [np.array([4, 3]), np.array([3, 2]), np.array([2, 1])])
@@ -131,7 +131,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
-        
+
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -173,7 +173,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(item.label, legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
-        
+
 
 class TestPolygonPlot(TestBokehPlot):
 
@@ -190,17 +190,18 @@ class TestPolygonPlot(TestBokehPlot):
                               for j in range(5)})
         plot = bokeh_renderer.get_plot(polygons)
         for i, splot in enumerate(plot.subplots.values()):
-            cmapper = splot.handles['color_mapper']
+            cmapper = splot.handles['fill_color_color_mapper']
             self.assertEqual(cmapper.low, 0)
             self.assertEqual(cmapper.high, 4)
             source = splot.handles['source']
-            self.assertEqual(source.data['Value'], np.array([i]))
+            self.assertEqual(source.data['fill_color'], np.array([i]))
 
     def test_polygons_colored_batched(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i, j) for i in range(10)]], vdims='Value')
                               for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
-        cmapper = plot.handles['color_mapper']
+
+        cmapper = plot.handles['fill_color_color_mapper']
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
         source = plot.handles['source']
@@ -212,7 +213,7 @@ class TestPolygonPlot(TestBokehPlot):
                                           vdims=['some ? unescaped name'])
                               for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
-        cmapper = plot.handles['color_mapper']
+        cmapper = plot.handles['fill_color_color_mapper']
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
         source = plot.handles['source']
@@ -225,7 +226,7 @@ class TestPolygonPlot(TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual(len(source.data['xs']), 0)
         self.assertEqual(len(source.data['ys']), 0)
-        self.assertEqual(len(source.data['Intensity']), 0)
+        self.assertEqual(len(source.data['fill_color']), 0)
 
     def test_polygon_with_hole_plot(self):
         xs = [1, 2, 3]
@@ -276,7 +277,7 @@ class TestPolygonPlot(TestBokehPlot):
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.line_color, 'black')
-        self.assertEqual(glyph.fill_color, {'field': 'color'})
+        self.assertEqual(glyph.fill_color, {'field': 'fill_color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_polygons_linear_color_op(self):
@@ -374,7 +375,7 @@ class TestContoursPlot(TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual(len(source.data['xs']), 0)
         self.assertEqual(len(source.data['ys']), 0)
-        self.assertEqual(len(source.data['Intensity']), 0)
+        self.assertEqual(len(source.data['line_color']), 0)
 
     def test_contours_color_op(self):
         contours = Contours([
@@ -384,7 +385,7 @@ class TestContoursPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(contours)
         cds = plot.handles['source']
         glyph = plot.handles['glyph']
-        self.assertEqual(glyph.line_color, {'field': 'color'})
+        self.assertEqual(glyph.line_color, {'field': 'line_color'})
         self.assertEqual(cds.data['color'], np.array(['green', 'red']))
 
     def test_contours_linear_color_op(self):

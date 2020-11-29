@@ -186,6 +186,19 @@ class ContourPlot(PathPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
+    def _apply_transforms(self, element, data, ranges, style, group=None):
+        transformed = super(ContourPlot, self)._apply_transforms(
+            element, data, ranges, style, group
+        )
+        if not element.vdims or any(isinstance(t, dict) and 'transform' in t
+                                    for t in transformed.values()):
+            return transformed
+        default_transform = {self._color_style: dim(element.vdims[0])}
+        transformed.update(super(ContourPlot, self)._apply_transforms(
+            element, data, ranges, default_transform, group
+        ))
+        return transformed
+
     def get_data(self, element, ranges, style):
         if self._has_holes is None:
             draw_callbacks = any(isinstance(cb, (PolyDrawCallback, PolyEditCallback))
