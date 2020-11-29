@@ -207,6 +207,12 @@ class BarPlot(BarsMixin, ElementPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
+    def get_extents(self, element, ranges, range_type='combined'):
+        x0, y0, x1, y1 = BarsMixin.get_extents(self, element, ranges, range_type)
+        if range_type not in ('data', 'combined'):
+            return x0, y0, x1, y1
+        return (None, y0, None, y1)
+
     def get_data(self, element, ranges, style, **kwargs):
         # Get x, y, group, stack and color dimensions
         xdim = element.kdims[0]
