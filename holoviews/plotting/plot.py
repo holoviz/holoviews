@@ -773,10 +773,10 @@ class DimensionedPlot(Plot):
                     continue
                 data_range = data_ranges[(el, el_dim)]
                 if el_dim.name not in group_ranges:
-                    group_ranges[el_dim.name] = {'data': [], 'hard': [], 'soft': []}
-                group_ranges[el_dim.name]['data'].append(data_range)
-                group_ranges[el_dim.name]['hard'].append(el_dim.range)
-                group_ranges[el_dim.name]['soft'].append(el_dim.soft_range)
+                    group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                group_ranges[dim_name]['data'].append(data_range)
+                group_ranges[dim_name]['hard'].append(el_dim.range)
+                group_ranges[dim_name]['soft'].append(el_dim.soft_range)
                 if el_dim in categorical_dims:
                     if 'factors' not in group_ranges[dim_name]:
                         group_ranges[dim_name]['factors'] = []

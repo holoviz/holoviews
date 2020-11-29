@@ -42,10 +42,10 @@ class TestBarPlot(TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual([tuple(x) for x in source.data['xoffsets']],
                          [('A', '0'), ('B', '0'), ('A', '1')])
-        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
-        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
+        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
+        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
 
     def test_bars_multi_level_sorted(self):
         box= Bars((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
