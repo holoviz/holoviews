@@ -48,24 +48,14 @@ class SankeyPlot(GraphPlot):
         The height of the component (in pixels).  This can be either
         fixed or preferred height, depending on height sizing policy.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
-
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
+    filled = True
+    
+    style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
+                                         'label_text_font_size']
 
     _style_groups = dict(GraphPlot._style_groups, quad='node', text='label')
 
     _draw_order = ['graph', 'quad_1', 'text_1', 'text_2']
-
-    style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
-                                         'label_text_font_size']
-
-    filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
@@ -136,21 +126,13 @@ class SankeyPlot(GraphPlot):
         else:
             nodes = element
 
-        label_dim = nodes.get_dimension(self.label_index)
         labels = self.labels
-        if label_dim and labels:
-            if self.label_index not in [2, None]:
-                self.param.warning(
-                    "Cannot declare style mapping for 'labels' option "
-                    "and declare a label_index; ignoring the label_index.")
-        elif label_dim:
-            labels = label_dim
         if isinstance(labels, basestring):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:
             text = []
-        if isinstance(labels, dim):
+        elif isinstance(labels, dim):
             text = labels.apply(element, flat=True)
         else:
             text = element.nodes.dimension_values(labels)
@@ -219,9 +201,9 @@ class SankeyPlot(GraphPlot):
         """
         Replace edge start and end hover data with label_index data.
         """
-        if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
+        if not (self.inspection_policy == 'edges' and 'hover' in self.handles) or self.labels is None:
             return
-        lidx = element.nodes.get_dimension(self.label_index)
+        lidx = element.nodes.get_dimension(self.labels)
         src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
         if src == 'start': src += '_values'
         if tgt == 'end':   tgt += '_values'
@@ -236,7 +218,7 @@ class SankeyPlot(GraphPlot):
         if range_type == 'extents':
             return element.nodes.extents
         xdim, ydim = element.nodes.kdims[:2]
-        xpad = .05 if self.label_index is None else 0.25
+        xpad = .05 if self.labels is None else 0.25
         x0, x1 = ranges[xdim.name][range_type]
         y0, y1 = ranges[ydim.name][range_type]
         xdiff = (x1-x0)

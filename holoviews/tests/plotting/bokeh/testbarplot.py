@@ -5,7 +5,6 @@ from holoviews.element import Bars
 
 from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
-from ..utils import ParamLogStream
 from .testplot import TestBokehPlot, bokeh_renderer
 
 
@@ -29,7 +28,7 @@ class TestBarPlot(TestBokehPlot):
         self.assertEqual(len(fig.legend), 0)
 
     def test_empty_bars(self):
-        bars = Bars([], kdims=['x', 'y'], vdims=['z']).opts(plot=dict(group_index=1))
+        bars = Bars([], kdims=['x', 'y'], vdims=['z'])
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         source = plot.handles['source']
@@ -43,10 +42,10 @@ class TestBarPlot(TestBokehPlot):
         source = plot.handles['source']
         self.assertEqual([tuple(x) for x in source.data['xoffsets']],
                          [('A', '0'), ('B', '0'), ('A', '1')])
-        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
-        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
+        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
+        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
 
     def test_bars_multi_level_sorted(self):
         box= Bars((['A', 'B']*15, [3, 10, 1]*10, np.random.randn(30)),
@@ -254,13 +253,3 @@ class TestBarPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         for subplot, color in zip(plot.subplots.values(),  colors):
             self.assertEqual(subplot.handles['glyph'].fill_color, color)
-
-    def test_bars_color_index_color_clash(self):
-        bars = Bars([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                    vdims=['y', 'color']).options(color='color', color_index='color')
-        with ParamLogStream() as log:
-            bokeh_renderer.get_plot(bars)
-        log_msg = log.stream.read()
-        warning = ("Cannot declare style mapping for 'color' option "
-                   "and declare a color_index; ignoring the color_index.\n")
-        self.assertEqual(log_msg, warning)

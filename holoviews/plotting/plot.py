@@ -33,7 +33,7 @@ from ..core.options import Store, Compositor, SkipRendering, lookup_options
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters, isfinite
-from ..element import Table, Graph, Contours
+from ..element import Table, Graph
 from ..streams import Stream, RangeXY, RangeX, RangeY
 from ..util.transform import dim
 from .util import (
@@ -697,8 +697,6 @@ class DimensionedPlot(Plot):
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
                         dtype = el.nodes.interface.dtype(el.nodes, el_dim)
-                    elif isinstance(el, Contours) and el.level is not None:
-                        dtype = np.array([el.level]).dtype # Remove when deprecating level
                     else:
                         dtype = el.interface.dtype(el, el_dim)
                 elif hasattr(el, '__len__') and len(el):
@@ -774,7 +772,7 @@ class DimensionedPlot(Plot):
                 if dim_name in prev_ranges and not framewise:
                     continue
                 data_range = data_ranges[(el, el_dim)]
-                if dim_name not in group_ranges:
+                if el_dim.name not in group_ranges:
                     group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
                 group_ranges[dim_name]['data'].append(data_range)
                 group_ranges[dim_name]['hard'].append(el_dim.range)

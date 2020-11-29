@@ -20,7 +20,7 @@ except:
                  '-': None}
 from bokeh.transform import dodge
 
-from ...core.util import datetime_types, dimension_sanitizer, basestring
+from ...core.util import datetime_types, dimension_sanitizer
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
@@ -32,7 +32,7 @@ from .util import date_to_integer
 
 class TextPlot(ElementPlot, AnnotationPlot):
 
-    style_opts = text_properties+['color', 'angle', 'visible']
+    style_opts = base_properties+text_properties+['color', 'angle']
     _plot_methods = dict(single='text', batched='text')
 
     selection_display = None
@@ -87,12 +87,6 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
     yoffset = param.Number(default=None, doc="""
       Amount of offset to apply to labels along x-axis.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = base_properties + text_properties + ['cmap', 'angle']
@@ -118,19 +112,6 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
             mapping['y'] = dodge(ydim, self.yoffset)
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
-
-        cdim = element.get_dimension(self.color_index)
-        if cdim is None:
-            return data, mapping, style
-
-        cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
-        if dims[2] is cdim and cdata:
-            # If color dim is same as text dim, rename color column
-            data['text_color'] = cdata[tdim]
-            mapping['text_color'] = dict(cmapping['text_color'], field='text_color')
-        else:
-            data.update(cdata)
-            mapping.update(cmapping)
         return data, mapping, style
 
 

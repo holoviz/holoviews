@@ -224,7 +224,7 @@ class dim(object):
         self.coerce = kwargs.get('coerce', True)
         if isinstance(obj, basestring):
             self.dimension = Dimension(obj)
-        elif isinstance(obj, Dimension):
+        elif isinstance(obj, (Dimension, int)):
             self.dimension = obj
         else:
             self.dimension = obj.dimension
@@ -634,6 +634,8 @@ class dim(object):
         from ..element import Graph
 
         dimension = self.dimension
+        if isinstance(dimension, int):
+            dimension = dataset.get_dimension(dimension)
         if expanded is None:
             expanded = not ((dataset.interface.gridded and dimension in dataset.kdims) or
                             (dataset.interface.multi and dataset.interface.isunique(dataset, dimension, True)))

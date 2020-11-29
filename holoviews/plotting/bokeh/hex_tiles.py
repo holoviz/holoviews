@@ -11,9 +11,8 @@ except:
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor
-from ...core.util import basestring, isfinite, max_range
+from ...core.util import isfinite, max_range
 from ...element import HexTiles
-from ...util.transform import dim as dim_transform
 from .element import ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, line_properties, fill_properties
@@ -124,28 +123,6 @@ class HexTilesPlot(ColorbarPlot):
                                        doc="""
       The orientation of hexagon bins. By default the pointy side is on top.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
-    max_scale = param.Number(default=0.9, bounds=(0, None), doc="""
-      When size_index is enabled this defines the maximum size of each
-      bin relative to uniform tile size, i.e. for a value of 1, the
-      largest bin will match the size of bins when scaling is disabled.
-      Setting value larger than 1 will result in overlapping bins.""")
-
-    min_scale = param.Number(default=0, bounds=(0, None), doc="""
-      When size_index is enabled this defines the minimum size of each
-      bin relative to uniform tile size, i.e. for a value of 1, the
-      smallest bin will match the size of bins when scaling is disabled.
-      Setting value larger than 1 will result in overlapping bins.""")
-
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                     allow_None=True, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
-
     selection_display = BokehOverlaySelectionDisplay()
 
     style_opts = base_properties + line_properties + fill_properties + ['cmap', 'scale']
@@ -193,7 +170,7 @@ class HexTilesPlot(ColorbarPlot):
         scale = ysize/xsize
 
         data = {'q': q, 'r': r}
-        cdata, cmapping = self._get_color_data(element, ranges, style)
+        cdata, cmapping = self._get_color_data(element, ranges, style, element.vdims[0])
         data.update(cdata)
         mapping.update(cmapping)
         if self.min_count is not None and self.min_count <= 0:
@@ -205,26 +182,5 @@ class HexTilesPlot(ColorbarPlot):
         style['orientation'] = self.orientation+'top'
         style['size'] = size
         style['aspect_scale'] = scale
-        scale_dim = element.get_dimension(self.size_index)
-        scale = style.get('scale')
-        if (scale_dim and ((isinstance(scale, basestring) and scale in element) or
-                           isinstance(scale, dim_transform))):
-            self.param.warning("Cannot declare style mapping for 'scale' option "
-                               "and declare a size_index; ignoring the size_index.")
-            scale_dim = None
-        if scale_dim is not None:
-            sizes = element.dimension_values(scale_dim)
-            if self.aggregator is np.size:
-                ptp = sizes.max()
-                baseline = 0
-            else:
-                ptp = sizes.ptp()
-                baseline = sizes.min()
-            if self.min_scale > self.max_scale:
-                raise ValueError('min_scale parameter must be smaller '
-                                 'than max_scale parameter.')
-            scale = self.max_scale - self.min_scale
-            mapping['scale'] = 'scale'
-            data['scale'] = (((sizes - baseline) / ptp) * scale) + self.min_scale
 
         return data, mapping, style

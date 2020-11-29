@@ -15,7 +15,8 @@ from .styles import (
     expand_batched_style, base_properties, line_properties, fill_properties,
     mpl_to_bokeh, validate
 )
-from .util import bokeh_version, multi_polygons_data
+from .util import multi_polygons_data
+
 
 
 class PathPlot(LegendPlot, ColorbarPlot):
@@ -27,12 +28,6 @@ class PathPlot(LegendPlot, ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
     style_opts = base_properties + line_properties + ['cmap']
 
     _plot_methods = dict(single='multi_line', batched='multi_line')
@@ -41,13 +36,10 @@ class PathPlot(LegendPlot, ColorbarPlot):
     _batched_style_opts = line_properties
 
     def _hover_opts(self, element):
-        cdim = element.get_dimension(self.color_index)
         if self.batched:
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
         else:
             dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
-        if cdim not in dims and cdim is not None:
-            dims.append(cdim)
         return dims, {}
 
 
@@ -67,10 +59,8 @@ class PathPlot(LegendPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring) and not validate('color', color):
+        if isinstance(color, util.basestring) and not validate('color', color) == False:
             cdim = element.get_dimension(color)
-        elif self.color_index is not None:
-            cdim = element.get_dimension(self.color_index)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
@@ -94,18 +84,9 @@ class PathPlot(LegendPlot, ColorbarPlot):
         vals = defaultdict(list)
         if hover:
             vals.update({util.dimension_sanitizer(vd.name): [] for vd in element.vdims})
-        if cdim and self.color_index is not None:
-            dim_name = util.dimension_sanitizer(cdim.name)
-            cmapper = self._get_colormapper(cdim, element, ranges, style)
-            mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
-            vals[dim_name] = []
 
         xpaths, ypaths = [], []
         for path in element.split():
-            if cdim and self.color_index is not None:
-                scalar = path.interface.isunique(path, cdim, per_geom=True)
-                cvals = path.dimension_values(cdim, not scalar)
-                vals[dim_name].append(cvals[:-1])
             cols = path.columns(path.kdims)
             xs, ys = (cols[kd.name] for kd in element.kdims)
             alen = len(xs)
@@ -167,12 +148,6 @@ class ContourPlot(PathPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    # Deprecated options
-
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
-                                      allow_None=True, doc="""
-        Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
-
     _color_style = 'line_color'
     _nonvectorized_styles = base_properties + ['cmap']
 
@@ -197,13 +172,11 @@ class ContourPlot(PathPlot):
 
         interface = element.interface
         scalar_kwargs = {'per_geom': True} if interface.multi else {}
-        npath = len([vs for vs in data.values()][0])
+
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
-                if element.level is not None:
-                    data[dim] = np.full(npath, element.level)
-                elif interface.isunique(element, d, **scalar_kwargs):
+                if interface.isunique(element, d, **scalar_kwargs):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
@@ -212,6 +185,19 @@ class ContourPlot(PathPlot):
             dim = util.dimension_sanitizer(k.name)
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
+
+    def _apply_transforms(self, element, data, ranges, style, group=None):
+        transformed = super(ContourPlot, self)._apply_transforms(
+            element, data, ranges, style, group
+        )
+        if not element.vdims or any(isinstance(t, dict) and 'transform' in t
+                                    for t in transformed.values()):
+            return transformed
+        default_transform = {self._color_style: dim(element.vdims[0])}
+        transformed.update(super(ContourPlot, self)._apply_transforms(
+            element, data, ranges, default_transform, group
+        ))
+        return transformed
 
     def get_data(self, element, ranges, style):
         if self._has_holes is None:
@@ -239,40 +225,6 @@ class ContourPlot(PathPlot):
             data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
         self._get_hover_data(data, element)
-
-        color, fill_color = style.get('color'), style.get('fill_color')
-        if (((isinstance(color, dim) and color.applies(element)) or color in element) or
-            (isinstance(fill_color, dim) and fill_color.applies(element)) or fill_color in element):
-            cdim = None
-        elif None not in [element.level, self.color_index] and element.vdims:
-            cdim = element.vdims[0]
-        else:
-            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
-            cdim = element.get_dimension(cidx)
-
-        if cdim is None:
-            return data, mapping, style
-
-        ncontours = len(xs)
-        dim_name = util.dimension_sanitizer(cdim.name)
-        if element.level is not None:
-            values = np.full(ncontours, float(element.level))
-        else:
-            values = element.dimension_values(cdim, expanded=False)
-        data[dim_name] = values
-
-        factors = None
-        if cdim.name in ranges and 'factors' in ranges[cdim.name]:
-            factors = ranges[cdim.name]['factors']
-        elif values.dtype.kind in 'SUO' and len(values):
-            if isinstance(values[0], np.ndarray):
-                values = np.concatenate(values)
-            factors = util.unique_array(values)
-        cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
-        mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
-        if self.show_legend:
-            legend_prop = 'legend_field' if bokeh_version >= '1.3.5' else 'legend'
-            mapping[legend_prop] = dim_name
         return data, mapping, style
 
     def _init_glyph(self, plot, mapping, properties):

@@ -186,7 +186,8 @@ class TestColorbarPlot(TestMPLPlot):
         self.assertEqual(cmap._rgba_over, (0, 0, 1.0, 1))
 
     def test_colorbar_label(self):
-        scatter = Scatter(np.random.rand(100, 3), vdims=["y", "color"]).options(color_index=2, colorbar=True)
+        scatter = Scatter(np.random.rand(100, 3), vdims=["y", "color"]).options(
+            color='color', colorbar=True)
         plot = mpl_renderer.get_plot(scatter)
         cbar_ax = plot.handles['cax']
         self.assertEqual(cbar_ax.get_ylabel(), 'color')

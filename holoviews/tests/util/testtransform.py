@@ -151,6 +151,11 @@ class TestDimTransforms(ComparisonTestCase):
             check_names=False
         )
 
+    # Lookup
+
+    def test_int_lookup(self):
+        expr = dim(0)
+        self.check_apply(expr, self.linear_ints)
 
     def assert_apply_xarray(self, expr, expected, skip_dask=False, skip_no_index=False):
         import xarray as xr
@@ -210,7 +215,6 @@ class TestDimTransforms(ComparisonTestCase):
             expr.apply(self.dataset_xarray_dask, keep_index=True, compute=True),
             expected_dask.compute(),
         )
-
 
     # Unary operators
 

@@ -7,7 +7,7 @@ import matplotlib
 from matplotlib import patches as patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec, basestring
+from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
@@ -167,10 +167,6 @@ class TextPlot(AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
-                                      allow_None=True, doc="""
-      Index of the dimension from which the color will the drawn""")
-
     xoffset = param.Number(default=None, doc="""
       Amount of offset to apply to labels along x-axis.""")
 
@@ -197,14 +193,7 @@ class LabelsPlot(ColorbarPlot):
         if self.yoffset is not None:
             ys += self.yoffset
 
-        cs = None
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            self._norm_kwargs(element, ranges, style, cdim)
-            cs = element.dimension_values(cdim)
-        if 'c' in style:
-            cs = style.pop('c')
-
+        cs = style.pop('c', None)
         if 'size' in style: style['fontsize'] = style.pop('size')
         if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
         if 'verticalalignment' not in style: style['verticalalignment'] = 'center'

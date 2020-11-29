@@ -1876,10 +1876,10 @@ class ColorbarPlot(ElementPlot):
         return cmapper
 
 
-    def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None,
+    def _get_color_data(self, element, ranges, style, cdim, name='color', factors=None, colors=None,
                         int_categories=False):
         data, mapping = {}, {}
-        cdim = element.get_dimension(self.color_index)
+        cdim = element.get_dimension(cdim)
         color = style.get(name, None)
         if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
             self.param.warning(
