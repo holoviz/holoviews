@@ -634,7 +634,7 @@ class RGB(Image):
             raise ImportError("RGB.load_image requires PIL (or Pillow).")
 
         with open(filename, 'rb') as f:
-            data = np.array(Image.open(f.read()))
+            data = np.array(Image.open(f))
 
         if array:
             return data
