@@ -1734,9 +1734,6 @@ class ColorbarPlot(ElementPlot):
     logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
-    robust_clim = param.Boolean(default=False, doc="""
-        Robust colorscaling excluding outliers, i.e. 2nd to 98th percentile.""")
-
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
