@@ -317,10 +317,11 @@ class AggregationOperation(ResamplingOperation):
         elif category:
             agg_name = type(agg_fn).__name__.title()
             vdims = Dimension('%s %s%s' % (category, agg_name, vdim_suffix))
-            if agg_name == 'Count':
+            if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
-            vdims = Dimension('Count%s' % vdim_suffix, nodata=0)
+            agg_name = type(agg_fn).__name__.title()
+            vdims = Dimension('%s%s' % (agg_name, vdim_suffix), nodata=0)
         params['vdims'] = vdims
         return params
 
@@ -1024,20 +1025,7 @@ class trimesh_rasterize(aggregate):
             wireframe = True
             precompute = False # TriMesh itself caches wireframe
             agg = self._get_aggregator(element) if isinstance(agg, (ds.any, ds.count)) else ds.any()
-            vdim = 'Count' if isinstance(agg, ds.count) else 'Any'
-        elif getattr(agg, 'column', None):
-            if agg.column in element.vdims:
-                vdim = element.get_dimension(agg.column)
-            elif isinstance(element, TriMesh) and agg.column in element.nodes.vdims:
-                vdim = element.nodes.get_dimension(agg.column)
-            else:
-                raise ValueError("Aggregation column %s not found on TriMesh element."
-                                 % agg.column)
-        else:
-            if isinstance(element, TriMesh) and element.nodes.vdims:
-                vdim = element.nodes.vdims[0]
-            else:
-                vdim = element.vdims[0]
+        elif getattr(agg, 'column', None) is None:
             agg = self._get_aggregator(element)
 
         if element._plot_id in self._precomputed:
@@ -1047,14 +1035,13 @@ class trimesh_rasterize(aggregate):
         else:
             precomputed = self._precompute(element, agg)
 
-        params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], vdims=[vdim])
+        bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
+        params = self._get_agg_params(element, x, y, agg, bounds)
 
         if width == 0 or height == 0:
             if width == 0: params['xdensity'] = 1
             if height == 0: params['ydensity'] = 1
-            bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
-            return Image((xs, ys, np.zeros((height, width))), bounds=bounds, **params)
+            return Image((xs, ys, np.zeros((height, width))), **params)
 
         if wireframe:
             segments = precomputed['segments']

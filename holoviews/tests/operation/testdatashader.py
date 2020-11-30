@@ -223,7 +223,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_aggregate_contours_without_vdim(self):
         contours = Contours([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
         img = rasterize(contours, dynamic=False)
-        self.assertEqual(img.vdims, [Dimension('Count', nodata=0)])
+        self.assertEqual(img.vdims, [Dimension('Any', nodata=0)])
 
     def test_aggregate_dframe_nan_path(self):
         path = Path([Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]]).dframe()])
@@ -883,7 +883,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         trimesh = TriMesh((simplices, vertices))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
         image = Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
-                      bounds=(0, 0, 1, 1), vdims='Any')
+                      bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_no_vdims_zero_range(self):
@@ -892,7 +892,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         trimesh = TriMesh((simplices, vertices))
         img = rasterize(trimesh, height=2, x_range=(0, 0), dynamic=False)
         image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
-                      bounds=(0, 0, 0, 1), xdensity=1, vdims='Any')
+                      bounds=(0, 0, 0, 1), xdensity=1, vdims=Dimension('Any', nodata=0))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_with_vdims_as_wireframe(self):
@@ -901,7 +901,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         trimesh = TriMesh((simplices, vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, aggregator='any', interpolation=None, dynamic=False)
         image = Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
-                      bounds=(0, 0, 1, 1), vdims='Any')
+                      bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh(self):
