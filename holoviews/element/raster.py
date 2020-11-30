@@ -612,34 +612,32 @@ class RGB(Image):
         """
         return self
 
-
     @classmethod
     def load_image(cls, filename, height=1, array=False, bounds=None, bare=False, **kwargs):
-        """
-        Returns an raster element or raw numpy array from a PNG image
-        file, using matplotlib.
+        """Load an image from a file and return an RGB element or array
 
-        The specified height determines the bounds of the raster
-        object in sheet coordinates: by default the height is 1 unit
-        with the width scaled appropriately by the image aspect ratio.
+        Args:
+            filename: Filename of the image to be loaded
+            height: Determines the bounds of the image where the width
+                    is scaled relative to the aspect ratio of the image.
+            array: Whether to return an array (rather than RGB default)
+            bounds: Bounds for the returned RGB (overrides height)
+            bare: Whether to hide the axes
+            kwargs: Additional kwargs to the RGB constructor
 
-        Note that as PNG images are encoded as RGBA, the red component
-        maps to the first channel, the green component maps to the
-        second component etc. For RGB elements, this mapping is
-        trivial but may be important for subclasses e.g. for HSV
-        elements.
-
-        Setting bare=True will apply options disabling axis labels
-        displaying just the bare image. Any additional keyword
-        arguments will be passed to the Image object.
+        Returns:
+            RGB element or array
         """
         try:
-            from matplotlib import pyplot as plt
+            from PIL import Image
         except:
-            raise ImportError("RGB.load_image requires matplotlib.")
+            raise ImportError("RGB.load_image requires PIL (or Pillow).")
 
-        data = plt.imread(filename)
-        if array:  return data
+        with open(filename, 'rb') as f:
+            data = np.array(Image.open(f))
+
+        if array:
+            return data
 
         (h, w, _) = data.shape
         if bounds is None:
@@ -647,9 +645,9 @@ class RGB(Image):
             xoffset, yoffset = w*f/2, h*f/2
             bounds=(-xoffset, -yoffset, xoffset, yoffset)
         rgb = cls(data, bounds=bounds, **kwargs)
-        if bare: rgb = rgb(plot=dict(xaxis=None, yaxis=None))
+        if bare:
+            rgb.opts(xaxis=None, yaxis=None)
         return rgb
-
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, Overlay):
