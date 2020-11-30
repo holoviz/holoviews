@@ -296,7 +296,7 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        kdim_list = ', '.join(str(kd) for kd in params['kdims'])
+        kdim_list = '_'.join(str(kd) for kd in params['kdims'])
         vdim_suffix = self.vdim_suffix.format(kdims=kdim_list)
 
         category = None
@@ -316,12 +316,12 @@ class AggregationOperation(ResamplingOperation):
                 vdims = dims[0].clone(column + vdim_suffix)
         elif category:
             agg_name = type(agg_fn).__name__.title()
-            vdims = Dimension('%s %s%s' % (category, agg_name, vdim_suffix))
+            vdims = Dimension('%s %s%s' % (category, agg_name, vdim_suffix), label=agg_name)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
             agg_name = type(agg_fn).__name__.title()
-            vdims = Dimension('%s%s' % (agg_name, vdim_suffix), nodata=0)
+            vdims = Dimension('%s%s' % (agg_name, vdim_suffix), label=agg_name, nodata=0)
         params['vdims'] = vdims
         return params
 
