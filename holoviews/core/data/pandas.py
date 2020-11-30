@@ -175,7 +175,7 @@ class PandasInterface(Interface):
             return column.iloc[0], column.iloc[-1]
         else:
             cmin, cmax = column.min(), column.max()
-            if column.dtype.kind == 'M' and getattr(column.dtype, 'tz'):
+            if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
                 return (cmin.to_pydatetime().replace(tzinfo=None),
                         cmax.to_pydatetime().replace(tzinfo=None))
             return cmin, cmax
@@ -323,7 +323,7 @@ class PandasInterface(Interface):
         data = dataset.data[dim.name]
         if keep_index:
             return data
-        if data.dtype.kind == 'M' and getattr(data.dtype, 'tz'):
+        if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
             dts = [dt.replace(tzinfo=None) for dt in data.dt.to_pydatetime()]
             data = np.array(dts, dtype=data.dtype.base)
         if not expanded:
