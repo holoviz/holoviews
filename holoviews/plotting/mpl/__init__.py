@@ -221,18 +221,20 @@ register_cmap("fire_r", cmap=fire_r_cmap)
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = 'fire'
+dflt_chart_cmap = 'kbc_r'
+
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
-options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
+options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_chart_cmap)
 options.Points = Options('plot', show_frame=True)
 options.ErrorBars = Options('style', edgecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', edgecolor='k', color=Cycle())
 options.Histogram = Options('style', edgecolor='k', facecolor=Cycle())
-options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_chart_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Path3D = Options('plot', fig_size=150)

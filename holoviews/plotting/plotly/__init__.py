@@ -104,6 +104,7 @@ if config.no_padding:
         plot.padding = 0
 
 dflt_cmap = 'fire'
+dflt_chart_cmap = 'kbc_r'
 dflt_shape_line_color = '#2a3f5f'  # Line color of default plotly template
 
 point_size = np.sqrt(6) # Matches matplotlib default
@@ -113,8 +114,8 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
-options.Scatter = Options('style', color=Cycle())
-options.Points = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
+options.Points = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
 options.TriSurface = Options('style', cmap='viridis')

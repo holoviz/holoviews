@@ -15,6 +15,7 @@ install_requires = [
     "numpy >=1.0",
     "pyviz_comms >=0.7.3",
     "panel >=0.8.0",
+    "colorcet",
     "pandas",
 ]
 

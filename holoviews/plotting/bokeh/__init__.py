@@ -159,6 +159,7 @@ Cycle.default_cycles.update({name: p[max(p.keys())] for name, p in all_palettes.
                              if max(p.keys()) < 256})
 
 dflt_cmap = 'fire'
+dflt_chart_cmap = 'kbc_r'
 all_palettes['fire'] = {len(fire): fire}
 
 options = Store.options(backend='bokeh')
@@ -167,8 +168,8 @@ options = Store.options(backend='bokeh')
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='black',
                              box_line_color='black', outlier_color='black')
-options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
-options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_chart_cmap)
+options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_chart_cmap)
 options.Points = Options('plot', show_frame=True)
 options.Histogram = Options('style', line_color='black', color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
