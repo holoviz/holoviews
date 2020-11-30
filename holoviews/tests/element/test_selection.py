@@ -350,10 +350,10 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([-0.4, 0.6, 0.4, -0.1]),
                                 'y': np.array([-0.1, -0.1, 1.7, 1.7])})
         self.assertEqual(expr.apply(img, expanded=True, flat=False), np.array([
-            [ True,  False, False],
-            [ True, False, False],
-            [ False,  False, False],
-            [False, False, False]
+            [    1., np.nan, np.nan],
+            [    1., np.nan, np.nan],
+            [np.nan, np.nan, np.nan],
+            [np.nan, np.nan, np.nan]
         ]))
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
 
