@@ -678,10 +678,10 @@ class DimensionedPlot(Plot):
                 if applies and 'norm' in opts.groups:
                     nopts = opts['norm'].options
                     popts = opts['plot'].options
-                    if 'axiswise' in nopts or 'framewise' in nopts or 'robust_clim' in popts:
+                    if 'axiswise' in nopts or 'framewise' in nopts or 'clim_percentile' in popts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
                                                  nopts.get('framewise', False),
-                                                 popts.get('robust_clim', False))})
+                                                 popts.get('clim_percentile', False))})
         element_specs = [spec for _, spec in element_specs]
         norm_opts.update({spec: (False, False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
@@ -725,9 +725,10 @@ class DimensionedPlot(Plot):
 
                 data_ranges[(el, el_dim)] = data_range
                 if dtype is not None and dtype.kind == 'uif' and robust:
+                    percentile = 2 if isinstance(robust, bool) else robust
                     robust_ranges[(el, el_dim)] = (
-                        dim(el_dim, np.percentile, 2).apply(el),
-                        dim(el_dim, np.percentile, 98).apply(el)
+                        dim(el_dim, np.nanpercentile, percentile).apply(el),
+                        dim(el_dim, np.nanpercentile, percentile).apply(el)
                     )
 
                 if (any(isinstance(r, util.basestring) for r in data_range) or

@@ -1700,6 +1700,10 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Robust colorscaling excluding outliers, if True uses 2nd to
+        98th percentile, otherwise uses the explicit numeric value.""")
+
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")

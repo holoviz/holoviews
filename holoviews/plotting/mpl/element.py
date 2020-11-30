@@ -669,6 +669,10 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Robust colorscaling excluding outliers, if True uses 2nd to
+        98th percentile, otherwise uses the explicit numeric value.""")
+
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
@@ -708,9 +712,6 @@ class ColorbarPlot(ElementPlot):
         objects=['neither', 'both', 'min', 'max'], default=None, doc="""
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
-
-    robust_clim = param.Boolean(default=False, doc="""
-        Robust colorscaling excluding outliers, i.e. 2nd to 98th percentile.""")
 
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
