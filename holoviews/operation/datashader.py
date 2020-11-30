@@ -318,7 +318,8 @@ class AggregationOperation(ResamplingOperation):
                 vdims = dims[0].clone(column + vdim_suffix)
         elif category:
             agg_name = type(agg_fn).__name__.title()
-            vdims = Dimension('%s %s%s' % (category, agg_name, vdim_suffix), label=agg_name)
+            agg_label = '%s %s' % (category, agg_name)
+            vdims = Dimension('%s%s' % (agg_label, vdim_suffix), label=agg_label)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
