@@ -666,12 +666,14 @@ class ColorbarPlot(ElementPlot):
         over the title key in colorbar_opts.""")
 
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a
+        tuple (low,high). If specified, takes precedence over data
+        and dimension ranges.""")
 
     clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
-        Robust colorscaling excluding outliers, if True uses 2nd to
-        98th percentile, otherwise uses the explicit numeric value.""")
+        Percentile value to compute colorscale robust to outliers. If
+        True uses 2nd and 98th percentile, otherwise uses the specified
+        percentile value.""")
 
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
