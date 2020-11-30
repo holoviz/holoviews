@@ -1,3 +1,77 @@
+Version 1.14.0
+==============
+
+This release is brings a number of major features including a new
+IbisInterface and Plotly Dash support. Many thanks to the many
+contributors to this release either directly by submitting PRs or by
+reporting issues and making suggestions. Specifically we would like to
+thank @philippjfr, @jonmmease and @tonyfast for their work on the
+IbisInterface and @jonmmease for improving Plotly support as well as
+@kcpevey, @Hoxbro, @marckassay, @mcepl and @ceball for various other
+enhancements, improvements to documentation and testing infrastructure.
+In addition, thanks to the maintainers @jbednar, @jlstevens and
+@philippjfr for contributing to this release. This version includes the
+addition of a large number of features, enhancements and bug fixes:
+
+Major features:
+
+- New Plotly Dash support
+  ([#4605](https://github.com/holoviz/holoviews/pull/4605))
+- New Plotly support for Tiles element
+  ([#4686](https://github.com/holoviz/holoviews/pull/4686))
+- New IbisInterface
+  ([#4517](https://github.com/holoviz/holoviews/pull/4517))
+
+Bug fixes:
+
+- Ensure RangeXY returns x/y ranges in correct order (#4665)
+  ([#4665](https://github.com/holoviz/holoviews/pull/4665))
+- Fix datashader instability by disabling padding for Plotly RGB elements.
+  ([#4705](https://github.com/holoviz/holoviews/pull/4705))
+- Various Dask and cuDF histogram fixes
+  ([#4691](https://github.com/holoviz/holoviews/pull/4691))
+- Fix handling of custom matplotlib and bokeh colormaps
+  ([#4693](https://github.com/holoviz/holoviews/pull/4693))
+- Fix cuDF values implementation
+  ([#4687](https://github.com/holoviz/holoviews/pull/4687))
+- Fixed range calculation on HexTiles
+  ([#4689](https://github.com/holoviz/holoviews/pull/4689))
+- Use PIL for RGB.load_image
+  ([#4639](https://github.com/holoviz/holoviews/pull/4639))
+
+Enhancements:
+
+- Allow clashing Params stream contents
+  ([#4677](https://github.com/holoviz/holoviews/pull/4677))
+- Implement support for robust color limits
+  ([#4712](https://github.com/holoviz/holoviews/pull/4712))
+- Support link_selections on dynamic overlays
+  ([#4683](https://github.com/holoviz/holoviews/pull/4683))
+- Move testing infrastructure to GH Actions
+  ([#4592](https://github.com/holoviz/holoviews/pull/4592))
+- Ensure pandas does not convert to UTC
+  ([#4711](https://github.com/holoviz/holoviews/pull/4711))
+- Remove all use of cyordereddict.
+  ([#4620](https://github.com/holoviz/holoviews/pull/4620))
+- Implement datashader aggregation of Rectangles
+  ([#4701](https://github.com/holoviz/holoviews/pull/4701))
+
+Documentation:
+
+- Clarify data types accepted by Points
+  ([#4430](https://github.com/holoviz/holoviews/pull/4430))
+- Update to the Introduction notebook
+  ([#4682](https://github.com/holoviz/holoviews/pull/4682))
+- Fix releases urls
+  ([#4672](https://github.com/holoviz/holoviews/pull/4672))
+
+Compatibility:
+
+- Warning when there are multiple kdims on Chart elements
+  ([#4710](https://github.com/holoviz/holoviews/pull/4710))
+- Set histogram normed option to False by default (#4258)
+  ([#4258](https://github.com/holoviz/holoviews/pull/4258))
+
 Version 1.13.5
 ==============
 
