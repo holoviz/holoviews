@@ -1294,10 +1294,14 @@ class Store(object):
         options = []
         for group in Options._option_groups:
             opts = cls.lookup_options(backend, obj, group)
+            if not opts:
+                continue
             new_opts = cls.lookup_options(backend, new_obj, group, defaults=False)
+            existing = new_opts.kwargs if new_opts else {}
             filtered = {k: v for k, v in opts.kwargs.items()
-                        if (names is None or k in names) and k not in new_opts.kwargs}
-            if opts and filtered: options.append(Options(group, **filtered))
+                        if (names is None or k in names) and k not in existing}
+            if filtered:
+                options.append(Options(group, **filtered))
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 
