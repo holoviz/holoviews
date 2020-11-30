@@ -1070,8 +1070,8 @@ argument to specify a selection specification""")
         dim = self.get_dimension(dimension, strict=True)
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:
-            # Ensure nodata applies to boolean data in py2m
-            if sys.version.version_info.major == 2 and values.dtype.kind == 'b':
+            # Ensure nodata applies to boolean data in py2
+            if sys.version_info.major == 2 and values.dtype.kind == 'b':
                 values = values.astype('int')
             values = np.where(values==dim.nodata, np.NaN, values)
         return values
