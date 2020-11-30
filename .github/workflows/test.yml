@@ -52,7 +52,7 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
-          conda clean
+          conda clean --all --yes
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
