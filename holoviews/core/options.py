@@ -1280,11 +1280,13 @@ class Store(object):
 
 
     @classmethod
-    def transfer_options(cls, obj, new_obj, backend=None):
+    def transfer_options(cls, obj, new_obj, backend=None, names=None):
         """
         Transfers options for all backends from one object to another.
         Drops any options defined in the supplied drop list.
         """
+        if obj is new_obj:
+            return
         backend = cls.current_backend if backend is None else backend
         type_name = type(new_obj).__name__
         group = type_name if obj.group == type(obj).__name__ else obj.group
@@ -1292,7 +1294,10 @@ class Store(object):
         options = []
         for group in Options._option_groups:
             opts = cls.lookup_options(backend, obj, group)
-            if opts and opts.kwargs: options.append(Options(group, **opts.kwargs))
+            new_opts = cls.lookup_options(backend, new_obj, group, defaults=False)
+            filtered = {k: v for k, v in opts.kwargs.items()
+                        if (names is None or k in names) and k not in new_opts.kwargs}
+            if opts and filtered: options.append(Options(group, **filtered))
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 
