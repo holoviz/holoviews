@@ -3,6 +3,7 @@ import param
 
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
+from ..core.dimension import process_dimensions
 from ..core.data import GridInterface
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
 from .selection import Selection1DExpr, Selection2DExpr
@@ -41,7 +42,14 @@ class Chart(Dataset, Element2D):
     # Enables adding index if 1D array like data is supplied
     _auto_indexable_1d = True
 
+    _max_kdim_count = 1 # Remove once kdims has bounds=(1,1) instead of warning
     __abstract = True
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        params.update(process_dimensions(kdims, vdims))
+        if len(params.get('kdims', [])) == self._max_kdim_count + 1:
+            self.param.warning('Chart elements should only be supplied a single kdim')
+        super(Chart, self).__init__(data, **params)
 
     def __getitem__(self, index):
         return super(Chart, self).__getitem__(index)
@@ -156,6 +164,7 @@ class Bars(Selection1DExpr, Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
+    _max_kdim_count = 3
 
 
 class Histogram(Selection1DExpr, Chart):
