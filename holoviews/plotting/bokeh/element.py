@@ -1819,7 +1819,7 @@ class ColorbarPlot(ElementPlot):
             if all(util.isfinite(cl) for cl in self.clim):
                 low, high = self.clim
             elif dim_name in ranges:
-                if self.robust_clim and 'robust' in ranges[dim_name]:
+                if self.clim_percentile and 'robust' in ranges[dim_name]:
                     low, high = ranges[dim_name]['robust']
                 else:
                     low, high = ranges[dim_name]['combined']

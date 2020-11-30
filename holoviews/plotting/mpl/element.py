@@ -854,7 +854,7 @@ class ColorbarPlot(ElementPlot):
                 categorical = False
             elif values.dtype.kind in 'uif':
                 if dim_name in ranges:
-                    if self.robust_clim and 'robust' in ranges[dim_name]:
+                    if self.clim_percentile and 'robust' in ranges[dim_name]:
                         clim = ranges[dim_name]['robust']
                     else:
                         clim = ranges[dim_name]['combined']
