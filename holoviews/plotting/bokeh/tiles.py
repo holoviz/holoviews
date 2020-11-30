@@ -30,7 +30,9 @@ class TilePlot(ElementPlot):
         if not isinstance(element.data, util.basestring):
             SkipRendering("WMTS element data must be a URL string, "
                           "bokeh cannot render %r" % element.data)
-        if '{Q}' in element.data:
+        if element.data is None:
+            raise ValueError("Tile source URL may not be None with the bokeh backend")
+        elif '{Q}' in element.data:
             tile_source = QUADKEYTileSource
         elif all(kw in element.data for kw in ('{XMIN}', '{XMAX}', '{YMIN}', '{YMAX}')):
             tile_source = BBoxTileSource
