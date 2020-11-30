@@ -618,7 +618,7 @@ class DimensionedPlot(Plot):
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, (axiswise, framewise) in norm_opts.items():
+        for group, (axiswise, framewise, robust) in norm_opts.items():
             axiswise = (not getattr(self, 'shared_axes', True)) or (axiswise)
             elements = []
             # Skip if ranges are cached or already computed by a
@@ -634,7 +634,8 @@ class DimensionedPlot(Plot):
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
-                self._compute_group_range(group, elements, ranges, framewise, self.top_level)
+                self._compute_group_range(group, elements, ranges, framewise,
+                                          robust, self.top_level)
         self.ranges.update(ranges)
         return ranges
 
@@ -676,21 +677,25 @@ class DimensionedPlot(Plot):
                               for i in range(1, 4))
                 if applies and 'norm' in opts.groups:
                     nopts = opts['norm'].options
-                    if 'axiswise' in nopts or 'framewise' in nopts:
+                    popts = opts['plot'].options
+                    if 'axiswise' in nopts or 'framewise' in nopts or 'clim_percentile' in popts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
-                                                 nopts.get('framewise', False))})
+                                                 nopts.get('framewise', False),
+                                                 popts.get('clim_percentile', False))})
         element_specs = [spec for _, spec in element_specs]
-        norm_opts.update({spec: (False, False) for spec in element_specs
+        norm_opts.update({spec: (False, False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges, framewise, top_level):
+    def _compute_group_range(cls, group, elements, ranges, framewise, robust, top_level):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+        
         data_ranges = {}
+        robust_ranges = {}
         categorical_dims = []
         for el in elements:
             for el_dim in el.dimensions('ranges'):
@@ -719,6 +724,12 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
+                if dtype is not None and dtype.kind == 'uif' and robust:
+                    percentile = 2 if isinstance(robust, bool) else robust
+                    robust_ranges[(el, el_dim)] = (
+                        dim(el_dim, np.nanpercentile, percentile).apply(el),
+                        dim(el_dim, np.nanpercentile, percentile).apply(el)
+                    )
 
                 if (any(isinstance(r, util.basestring) for r in data_range) or
                     (el_dim.type is not None and issubclass(el_dim.type, util.basestring)) or
@@ -775,10 +786,13 @@ class DimensionedPlot(Plot):
                     continue
                 data_range = data_ranges[(el, el_dim)]
                 if dim_name not in group_ranges:
-                    group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                    group_ranges[dim_name] = {'data': [], 'hard': [],
+                                              'soft': [], 'robust': []}
                 group_ranges[dim_name]['data'].append(data_range)
                 group_ranges[dim_name]['hard'].append(el_dim.range)
                 group_ranges[dim_name]['soft'].append(el_dim.soft_range)
+                if (el, el_dim) in robust_ranges:
+                    group_ranges[dim_name]['robust'].append(robust_ranges[(el, el_dim)])
                 if el_dim in categorical_dims:
                     if 'factors' not in group_ranges[dim_name]:
                         group_ranges[dim_name]['factors'] = []
@@ -815,11 +829,13 @@ class DimensionedPlot(Plot):
         for gdim, values in group_dim_ranges.items():
             hard_range = util.max_range(values['hard'], combined=False)
             soft_range = util.max_range(values['soft'])
+            robust_range = util.max_range(values.get('robust', []))
             data_range = util.max_range(values['data'])
             combined = util.dimension_range(data_range[0], data_range[1],
                                             hard_range, soft_range)
             dranges = {'data': data_range, 'hard': hard_range,
-                       'soft': soft_range, 'combined': combined}
+                       'soft': soft_range, 'combined': combined,
+                       'robust': robust_range}
             if 'factors' in values:
                 all_factors = values['factors']
                 factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []

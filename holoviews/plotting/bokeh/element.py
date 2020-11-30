@@ -1700,6 +1700,11 @@ class ColorbarPlot(ElementPlot):
        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
        If specified, takes precedence over data and dimension ranges.""")
 
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True uses 2nd and 98th percentile, otherwise uses the specified
+        percentile value.""")
+
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
@@ -1727,7 +1732,7 @@ class ColorbarPlot(ElementPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
-    logz  = param.Boolean(default=False, doc="""
+    logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
     symmetric = param.Boolean(default=False, doc="""
@@ -1812,7 +1817,10 @@ class ColorbarPlot(ElementPlot):
             if all(util.isfinite(cl) for cl in self.clim):
                 low, high = self.clim
             elif dim_name in ranges:
-                low, high = ranges[dim_name]['combined']
+                if self.clim_percentile and 'robust' in ranges[dim_name]:
+                    low, high = ranges[dim_name]['robust']
+                else:
+                    low, high = ranges[dim_name]['combined']
                 dlow, dhigh = ranges[dim_name]['data']
                 if (util.is_int(low, int_like=True) and
                     util.is_int(high, int_like=True) and

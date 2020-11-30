@@ -666,8 +666,14 @@ class ColorbarPlot(ElementPlot):
         over the title key in colorbar_opts.""")
 
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a
+        tuple (low,high). If specified, takes precedence over data
+        and dimension ranges.""")
+
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True uses 2nd and 98th percentile, otherwise uses the specified
+        percentile value.""")
 
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
@@ -850,7 +856,10 @@ class ColorbarPlot(ElementPlot):
                 categorical = False
             elif values.dtype.kind in 'uif':
                 if dim_name in ranges:
-                    clim = ranges[dim_name]['combined']
+                    if self.clim_percentile and 'robust' in ranges[dim_name]:
+                        clim = ranges[dim_name]['robust']
+                    else:
+                        clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
