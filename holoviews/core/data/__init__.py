@@ -5,6 +5,7 @@ try:
 except ImportError:
     pass
 
+import sys
 import types
 import copy
 
