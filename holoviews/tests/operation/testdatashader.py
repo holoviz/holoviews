@@ -17,7 +17,7 @@ try:
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize
+        shade, spread, rasterize, AggregationOperation
     )
 except:
     raise SkipTest('Datashader not available')
@@ -42,6 +42,7 @@ import logging
 numba_logger = logging.getLogger('numba')
 numba_logger.setLevel(logging.WARNING)
 
+AggregationOperation.vdim_suffix = ''
 
 class DatashaderAggregateTests(ComparisonTestCase):
     """
