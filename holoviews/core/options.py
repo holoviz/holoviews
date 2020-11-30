@@ -1280,7 +1280,7 @@ class Store(object):
 
 
     @classmethod
-    def transfer_options(cls, obj, new_obj, backend=None, names=None):
+    def transfer_options(cls, obj, new_obj, backend=None, names=None, level=3):
         """
         Transfers options for all backends from one object to another.
         Drops any options defined in the supplied drop list.
@@ -1290,7 +1290,7 @@ class Store(object):
         backend = cls.current_backend if backend is None else backend
         type_name = type(new_obj).__name__
         group = type_name if obj.group == type(obj).__name__ else obj.group
-        spec = '.'.join([s for s in (type_name, group, obj.label) if s])
+        spec = '.'.join([s for s in (type_name, group, obj.label)[:level] if s])
         options = []
         for group in Options._option_groups:
             opts = cls.lookup_options(backend, obj, group)
