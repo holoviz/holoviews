@@ -28,7 +28,7 @@ class Chart(Dataset, Element2D):
     a column stored in a dictionary, array or DataFrame.
     """
 
-    kdims = param.List(default=[Dimension('x')], bounds=(1,2), doc="""
+    kdims = param.List(default=[Dimension('x')], bounds=(1,1), doc="""
         The key dimension(s) of a Chart represent the independent
         variable(s).""")
 
