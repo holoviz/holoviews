@@ -1727,8 +1727,11 @@ class ColorbarPlot(ElementPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
-    logz  = param.Boolean(default=False, doc="""
+    logz = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
+
+    robust_clim = param.Boolean(default=False, doc="""
+        Robust colorscaling excluding outliers, i.e. 2nd to 98th percentile.""")
 
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
@@ -1812,7 +1815,10 @@ class ColorbarPlot(ElementPlot):
             if all(util.isfinite(cl) for cl in self.clim):
                 low, high = self.clim
             elif dim_name in ranges:
-                low, high = ranges[dim_name]['combined']
+                if self.robust_clim and 'robust' in ranges[dim_name]:
+                    low, high = ranges[dim_name]['robust']
+                else:
+                    low, high = ranges[dim_name]['combined']
                 dlow, dhigh = ranges[dim_name]['data']
                 if (util.is_int(low, int_like=True) and
                     util.is_int(high, int_like=True) and

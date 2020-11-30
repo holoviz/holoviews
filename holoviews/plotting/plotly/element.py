@@ -587,6 +587,9 @@ class ColorbarPlot(ElementPlot):
         outlinecolor, thickness, bgcolor, outlinewidth, bordercolor,
         ticklen, xpad, ypad, tickangle...""")
 
+    robust_clim = param.Boolean(default=False, doc="""
+        Robust colorscaling excluding outliers, i.e. 2nd to 98th percentile.""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -608,7 +611,10 @@ class ColorbarPlot(ElementPlot):
             if util.isfinite(self.clim).all():
                 cmin, cmax = self.clim
             elif dim_name in ranges:
-                cmin, cmax = ranges[dim_name]['combined']
+                if self.robust_clim and 'robust' in ranges[dim_name]:
+                    low, high = ranges[dim_name]['robust']
+                else:
+                    cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 cmin, cmax = np.nan, np.nan
                 auto = True

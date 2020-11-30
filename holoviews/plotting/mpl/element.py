@@ -709,6 +709,9 @@ class ColorbarPlot(ElementPlot):
         If not 'neither', make pointed end(s) for out-of- range values."""
     )
 
+    robust_clim = param.Boolean(default=False, doc="""
+        Robust colorscaling excluding outliers, i.e. 2nd to 98th percentile.""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -850,7 +853,10 @@ class ColorbarPlot(ElementPlot):
                 categorical = False
             elif values.dtype.kind in 'uif':
                 if dim_name in ranges:
-                    clim = ranges[dim_name]['combined']
+                    if self.robust_clim and 'robust' in ranges[dim_name]:
+                        clim = ranges[dim_name]['robust']
+                    else:
+                        clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
