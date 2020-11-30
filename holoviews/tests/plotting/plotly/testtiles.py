@@ -54,7 +54,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(len(layers), 0)
 
     def test_styled_mapbox_tiles(self):
-        tiles = Tiles("").opts(mapboxstyle="dark", accesstoken="token-str").redim.range(
+        tiles = Tiles().opts(mapboxstyle="dark", accesstoken="token-str").redim.range(
             x=self.x_range, y=self.y_range
         )
 
