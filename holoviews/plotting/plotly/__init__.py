@@ -124,7 +124,7 @@ options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='bl
 options.Image = Options('style', cmap=config.default_gridded_cmap)
 options.Raster = Options('style', cmap=config.default_gridded_cmap)
 options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r')
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap)
 
 # Disable padding for image-like elements
 options.Image = Options("plot", padding=0)

@@ -256,7 +256,7 @@ options.Rectangles = Options('style', edgecolor='black')
 options.Image = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
 options.Raster = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
 options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r', edgecolors='white',
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap, edgecolors='white',
                           annular_edgecolors='white', annular_linewidth=0.5,
                           xmarks_edgecolor='white', xmarks_linewidth=3,
                           ymarks_edgecolor='white', ymarks_linewidth=3,
