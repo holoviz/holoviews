@@ -113,7 +113,7 @@ class ResamplingOperation(LinkableOperation):
         used to represent this internal state is not freed between
         calls.""")
 
-    _transfer_options = ['cmap']
+    _transfer_options = []
 
     @bothmethod
     def instance(self_or_cls,**params):
