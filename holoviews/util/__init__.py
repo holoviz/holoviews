@@ -195,8 +195,8 @@ class opts(param.ParameterizedFunction):
 
         Applies options on an object or nested group of objects,
         returning a new object with the options applied. This method
-        accepts the separate option namespaces explicitly (i.e 'plot',
-        'style' and 'norm').
+        accepts the separate option namespaces explicitly (i.e. 'plot',
+        'style', and 'norm').
 
         If the options are to be set directly on the object a
         simple format may be used, e.g.:

@@ -83,7 +83,7 @@ class InterfaceTests(ComparisonTestCase):
 class HomogeneousColumnTests(object):
     """
     Tests for data formats that require all dataset to have the same
-    type (e.g numpy arrays)
+    type (e.g. numpy arrays)
     """
 
     __test__ = False

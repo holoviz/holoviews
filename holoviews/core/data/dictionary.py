@@ -19,7 +19,7 @@ from .. import util
 class DictInterface(Interface):
     """
     Interface for simple dictionary-based dataset format. The dictionary
-    keys correspond to the column (i.e dimension) names and the values
+    keys correspond to the column (i.e. dimension) names and the values
     are collections representing the values in that column.
     """
 

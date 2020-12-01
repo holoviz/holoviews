@@ -26,7 +26,7 @@ from ..util.transform import dim
 def displayable(obj):
     """
     Predicate that returns whether the object is displayable or not
-    (i.e whether the object obeys the nesting hierarchy
+    (i.e. whether the object obeys the nesting hierarchy)
     """
     if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace, AdjointLayout))
                                         for o in obj):

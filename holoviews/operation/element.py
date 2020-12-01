@@ -55,7 +55,7 @@ class operation(Operation):
        checking.
 
        May be used to declare useful information to other code in
-       HoloViews e.g required for tab-completion support of operations
+       HoloViews, e.g. required for tab-completion support of operations
        registered with compositors.""")
 
     group = param.String(default='Operation', doc="""

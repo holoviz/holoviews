@@ -228,7 +228,7 @@ options = Store.options(backend='matplotlib')
 dflt_cmap = config.default_cmap
 
 # Default option definitions
-# Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
+# Note: *No*short aliases here! e.g. use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)

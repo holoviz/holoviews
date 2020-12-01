@@ -9,7 +9,7 @@ There are three classes that form the options system:
 Cycle:
 
    Used to define infinite cycles over a finite set of elements, using
-   either an explicit list or some pre-defined collection (e.g from
+   either an explicit list or some pre-defined collection (e.g. from
    matplotlib rcParams). For instance, a Cycle object can be used loop
    a set of display colors for multiple curves on a single axis.
 
@@ -81,7 +81,7 @@ def cleanup_custom_options(id, weakref=None):
 
 def lookup_options(obj, group, backend):
     """
-    Given a HoloViews object, a plot option group (e.g 'style') and
+    Given a HoloViews object, a plot option group (e.g. 'style') and
     backend, return the corresponding Options object.
     """
     plot_class = None
@@ -601,8 +601,8 @@ class OptionTree(AttrTree):
     inheritance for a given group up to the root of the tree.
 
     When constructing an OptionTree, you can specify the option groups
-    as a list (i.e empty initial option groups at the root) or as a
-    dictionary (e.g groups={'style':Option()}). You can also
+    as a list (i.e. empty initial option groups at the root) or as a
+    dictionary (e.g. groups={'style':Option()}). You can also
     initialize the OptionTree with the options argument together with
     the **kwargs - see StoreOptions.merge_options for more information
     on the options specification syntax.
@@ -1107,7 +1107,7 @@ class Store(object):
     """
     The Store is what links up HoloViews objects to their
     corresponding options and to the appropriate classes of the chosen
-    backend (e.g for rendering).
+    backend (e.g. for rendering).
 
     In addition, Store supports pickle operations that automatically
     pickle and unpickle the corresponding options for a HoloViews
@@ -1310,7 +1310,7 @@ class Store(object):
     def add_style_opts(cls, component, new_options, backend=None):
         """
         Given a component such as an Element (e.g. Image, Curve) or a
-        container (e.g Layout) specify new style options to be
+        container (e.g. Layout) specify new style options to be
         accepted by the corresponding plotting class.
 
         Note: This is supplied for advanced users who know which
@@ -1557,7 +1557,7 @@ class StoreOptions(object):
         currently loaded backend.
 
         Only useful when invalid keywords generate exceptions instead of
-        skipping i.e Options.skip_invalid is False.
+        skipping, i.e. Options.skip_invalid is False.
         """
         loaded_backends =  Store.loaded_backends() if backends is None else backends
 
@@ -1761,7 +1761,7 @@ class StoreOptions(object):
             store_ids = Store.custom_options(backend=backend).keys()
             max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
             max_ids.append(max_id)
-        # If no backends defined (e.g plotting not imported) return zero
+        # If no backends defined (e.g. plotting not imported) return zero
         return max(max_ids) if len(max_ids) else 0
 
 

@@ -575,7 +575,7 @@ class Callable(param.Parameterized):
     stream requires it and is triggering.
 
     A Callable may also specify a stream_mapping which specifies the
-    objects that are associated with interactive (i.e linked) streams
+    objects that are associated with interactive (i.e. linked) streams
     when composite objects such as Layouts are returned from the
     callback. This is required for building interactive, linked
     visualizations (for the backends that support them) when returning

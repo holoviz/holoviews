@@ -96,9 +96,9 @@ class notebook_extension(extension):
         format will be displayed).
 
         Although the 'html' format is supported across backends, other
-        formats supported by the current backend (e.g 'png' and 'svg'
+        formats supported by the current backend (e.g. 'png' and 'svg'
         using the matplotlib backend) may be used. This may be useful to
-        export figures to other formats such as PDF with nbconvert. """)
+        export figures to other formats such as PDF with nbconvert.""")
 
     allow_jedi_completion = param.Boolean(default=False, doc="""
        Whether to allow jedi tab-completion to be enabled in IPython.
