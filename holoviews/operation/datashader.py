@@ -14,6 +14,7 @@ import datashader.reductions as rd
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
 
+from datashader.colors import color_lookup
 from param.parameterized import bothmethod
 
 try:
@@ -1292,6 +1293,12 @@ class shade(LinkableOperation):
         elif isinstance(self.p.cmap, Callable):
             colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
             shade_opts['cmap'] = map(self.rgb2hex, colors)
+        elif isinstance(self.p.cmap, basestring):
+            if self.p.cmap.startswith('#') or self.p.cmap in color_lookup:
+                shade_opts['cmap'] = self.p.cmap
+            else:
+                from ..plotting.util import process_cmap
+                shade_opts['cmap'] = process_cmap(self.p.cmap)
         else:
             shade_opts['cmap'] = self.p.cmap
 
