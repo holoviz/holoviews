@@ -220,13 +220,9 @@ fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_col
 register_cmap("fire", cmap=fire_cmap)
 register_cmap("fire_r", cmap=fire_r_cmap)
 
-def mpl_cm(name,colorlist):
-    cm = LinearSegmentedColormap.from_list(name, colorlist, N=len(colorlist))
-    register_cmap(name, cmap=cm)
-
-mpl_cm('kbc_r',list(reversed(kbc)))
-
-
+register_cmap('kbc_r',
+              cmap=LinearSegmentedColormap.from_list('kbc_r',
+                                                     list(reversed(kbc)), N=len(kbc)))
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = config.default_cmap
