@@ -1155,13 +1155,18 @@ class shade(LinkableOperation):
         Callable type must allow mapping colors for supplied values
         between 0 and 1.""")
 
-    normalization = param.ClassSelector(default='eq_hist',
-                                        class_=(basestring, Callable),
-                                        doc="""
+    cnorm = param.ClassSelector(default='eq_hist',
+                                class_=(basestring, Callable),
+                                doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
+
+    normalization = param.ClassSelector(default='eq_hist',
+                                        precedence=-1,
+                                        class_=(basestring, Callable),
+                                        doc="Deprecated parameter (use cnorm instead)")
 
     clims = param.NumericTuple(default=None, length=2, doc="""
         Min and max data values to use for colormap interpolation, when
@@ -1258,9 +1263,17 @@ class shade(LinkableOperation):
         array = element.data[vdim]
         kdims = element.kdims
 
+        overrides = dict(self.p.items())
+        if 'normalization' in overrides:
+            self.param.warning("Shading 'normalization' parameter deprecated, "
+                               "use 'cnorm' parameter instead'")
+            cnorm = overrides.get('cnorm', overrides['normalization'])
+        else:
+            cnorm = self.p.cnorm
+
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=self.p.normalization,
+        shade_opts = dict(how=cnorm,
                           min_alpha=self.p.min_alpha,
                           alpha=self.p.alpha)
         if element.ndims > 2:
@@ -1292,7 +1305,7 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
+        elif ds_version > '0.5.0' and cnorm != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         params = dict(get_param_values(element), kdims=kdims,
