@@ -145,6 +145,8 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
+    default_cmap = param.String(default='fire', doc="Used to be 'fire' ")
+
     def __call__(self, **params):
         self.param.set_param(**params)
         return self

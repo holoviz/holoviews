@@ -220,27 +220,25 @@ register_cmap("fire", cmap=fire_cmap)
 register_cmap("fire_r", cmap=fire_r_cmap)
 
 options = Store.options(backend='matplotlib')
-dflt_cmap = 'fire'
-dflt_chart_cmap = 'kbc_r'
+dflt_cmap = config.default_cmap
 
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
-options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_chart_cmap)
+options.Scatter = Options('style', color=Cycle(), marker='o')
 options.Points = Options('plot', show_frame=True)
 options.ErrorBars = Options('style', edgecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', edgecolor='k', color=Cycle())
 options.Histogram = Options('style', edgecolor='k', facecolor=Cycle())
-options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_chart_cmap)
+options.Points = Options('style', color=Cycle(), marker='o')
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Path3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
-options.Surface = Options('style', cmap='fire')
-options.Spikes = Options('style', color='black', cmap=dflt_chart_cmap)
+options.Spikes = Options('style', color='black')
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
@@ -274,13 +272,10 @@ options.Spline = Options('style', edgecolor=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
-options.Contours = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
+options.Contours = Options('style', color=Cycle())
 options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
-options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
-                           cmap=dflt_chart_cmap)
-options.Rectangles = Options('style', cmap=dflt_chart_cmap)
-options.Segments = Options('style', cmap=dflt_chart_cmap)
+options.Path = Options('style', color=Cycle())
+options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black')
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
