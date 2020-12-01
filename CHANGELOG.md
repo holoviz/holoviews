@@ -25,9 +25,10 @@ Major features:
   previous uses of the `datashade` operation to be replaced with the
   `rasterize` operation. This enables many features that were
   unavailable with `datashade` such as access to the raw aggregate data,
-  client-side histogram equalization with `cnorm='eq_hist'`, dynamically
-  updating colorbars and easy application of transparency to rasterized
-  data in areas of missing values.
+  client-side histogram equalization with `cnorm='eq_hist'`, use of the
+  Bokeh Hover tool to easily inspect values, dynamically updating
+  colorbars and easy application of transparency to rasterized data in
+  areas of missing values.
   ([#4567](https://github.com/holoviz/holoviews/pull/4567))
   
 Enhancements:
