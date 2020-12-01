@@ -71,6 +71,17 @@ Compatibility:
   ([#4710](https://github.com/holoviz/holoviews/pull/4710))
 - Set histogram normed option to False by default (#4258)
   ([#4258](https://github.com/holoviz/holoviews/pull/4258))
+- The default colormap in holoviews is now 'kbc_r' instead of
+  'fire'. This change was made as the highest value of the fire colormap
+  is white which meant data was often not visible against a white
+  background. To restore the old behavior you can set
+  `hv.config.default_cmap='fire'` which you can do via the extension e.g.
+  `hv.extension('bokeh', config=dict(default_cmap='fire'))`. There is
+  also `hv.config.default_gridded_cmap` which you can set to 'fire' if
+  you wish to use the old colormap for the `Raster`, `Image` and
+  `QuadMesh` element types. The default `HeatMap` colormap has also been
+  set to 'kbc_r' for consistency and can be set back to the old value of
+  'RdYlBu_r' via `hv.config.default_heatmap_cmap`.
 
 Version 1.13.5
 ==============
