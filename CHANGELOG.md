@@ -21,7 +21,15 @@ Major features:
   ([#4686](https://github.com/holoviz/holoviews/pull/4686))
 - New IbisInterface
   ([#4517](https://github.com/holoviz/holoviews/pull/4517))
-
+- New `Dimension.nodata` parameter and 'cnorm' plot option allowing
+  previous uses of the `datashade` operation to be replaced with the
+  `rasterize` operation. This enables many features that were
+  unavailable with `datashade` such as access to the raw aggregate data,
+  client-side histogram equalization with `cnorm='eq_hist'`, dynamically
+  updating colorbars and easy application of transparency to rasterized
+  data in areas of missing values.
+  ([#4567](https://github.com/holoviz/holoviews/pull/4567))
+  
 Enhancements:
 
 - Allow clashing Params stream contents
