@@ -140,8 +140,8 @@ options.VSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 
 # Shapes
-options.Rectangles = Options('style', line_color=dflt_shape_line_color, cmap=dflt_chart_cmap)
-options.Bounds = Options('style', line_color=dflt_shape_line_color, cmap=dflt_chart_cmap)
-options.Path = Options('style', line_color=dflt_shape_line_color, cmap=dflt_chart_cmap)
-options.Segments = Options('style', line_color=dflt_shape_line_color, cmap=dflt_chart_cmap)
+options.Rectangles = Options('style', line_color=dflt_shape_line_color)
+options.Bounds = Options('style', line_color=dflt_shape_line_color)
+options.Path = Options('style', line_color=dflt_shape_line_color)
+options.Segments = Options('style', line_color=dflt_shape_line_color)
 options.Box = Options('style', line_color=dflt_shape_line_color)
