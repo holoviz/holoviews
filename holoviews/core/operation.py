@@ -178,6 +178,9 @@ class Operation(param.ParameterizedFunction):
         The process_element method allows a single element to be
         operated on given an externally supplied key.
         """
+        if self._per_element and not isinstance(element, Element):
+            return element.clone({k: self.process_element(el, key, **params)
+                                  for k, el in element.items()})
         if hasattr(self, 'p'):
             if self._allow_extra_keywords:
                 extras = self.p._extract_extra_keywords(params)
