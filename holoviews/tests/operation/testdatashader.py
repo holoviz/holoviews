@@ -42,7 +42,7 @@ import logging
 numba_logger = logging.getLogger('numba')
 numba_logger.setLevel(logging.WARNING)
 
-AggregationOperation.vdim_suffix = ''
+AggregationOperation.vdim_prefix = ''
 
 class DatashaderAggregateTests(ComparisonTestCase):
     """
