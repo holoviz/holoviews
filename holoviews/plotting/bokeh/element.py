@@ -1706,8 +1706,8 @@ class ColorbarPlot(ElementPlot):
 
     clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
         Percentile value to compute colorscale robust to outliers. If
-        True uses 2nd and 98th percentile, otherwise uses the specified
-        percentile value.""")
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
