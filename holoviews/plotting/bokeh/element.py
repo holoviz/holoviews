@@ -50,6 +50,16 @@ from .util import (
     compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
 )
 
+try:
+    from bokeh.models import EqHistColorMapper
+except ImportError:
+    EqHistColorMapper = None
+
+try:
+    from bokeh.models import BinnedTicker
+except ImportError:
+    BinnedTicker = None
+
 if bokeh_version >= '2.0.1':
     try:
         TOOLS_MAP = Tool._known_aliases
@@ -1755,7 +1765,9 @@ class ColorbarPlot(ElementPlot):
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
-        if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
+        if EqHistColorMapper and isinstance(color_mapper, EqHistColorMapper) and BinnedTicker:
+            ticker = BinnedTicker(mapper=color_mapper)
+        elif isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
@@ -1955,9 +1967,7 @@ class ColorbarPlot(ElementPlot):
                         "the `clim` option."
                     )
             elif self.cnorm == 'eq_hist':
-                try:
-                    from bokeh.models import EqHistColorMapper
-                except ImportError:
+                if EqHistColorMapper is None:
                     raise ImportError("Could not import bokeh.models.EqHistColorMapper. "
                                       "Note that the option cnorm='eq_hist' requires "
                                       "bokeh 2.2.3 or higher.")
