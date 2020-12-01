@@ -530,6 +530,10 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
         ds = Dataset((['A', 'B', 'C', None],), 'A')
         self.assertEqual(ds.range(0), ('A', 'C'))
 
+    def test_dataset_nodata_range(self):
+        table = self.table.clone(vdims=[Dimension('Weight', nodata=10), 'Height'])
+        self.assertEqual(table.range('Weight'), (15, 18))
+
     def test_dataset_sort_vdim_ht(self):
         dataset = Dataset({'x':self.xs, 'y':-self.ys},
                           kdims=['x'], vdims=['y'])
@@ -982,6 +986,10 @@ class GriddedInterfaceTests(object):
             (self.grid_xs, self.grid_ys[:2], self.grid_zs[:2]), ['x', 'y'], ['z']
         )
         self.assertEqual(self.dataset_grid.select(y=(0, 0.25)), ds)
+
+    def test_nodata_range(self):
+        ds = self.dataset_grid.clone(vdims=[Dimension('z', nodata=0)])
+        self.assertEqual(ds.range('z'), (1, 5))
 
     def test_dataset_ndloc_index(self):
         xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)

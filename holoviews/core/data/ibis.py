@@ -98,9 +98,12 @@ class IbisInterface(Interface):
     @classmethod
     @cached
     def range(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
         if cls.dtype(dataset, dimension).kind in 'SUO':
             return None, None
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        if dimension.nodata is not None:
+            return Interface.range(dataset, dimension)
+        column = dataset.data[dimension.name]
         return tuple(
             dataset.data.aggregate([column.min(), column.max()]).execute().values[0, :]
         )

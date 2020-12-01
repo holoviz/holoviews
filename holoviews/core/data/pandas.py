@@ -159,7 +159,8 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
                 util.LooseVersion(pd.__version__) < '0.17.0'):
@@ -174,6 +175,8 @@ class PandasInterface(Interface):
                 return np.NaN, np.NaN
             return column.iloc[0], column.iloc[-1]
         else:
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
             cmin, cmax = column.min(), column.max()
             if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
                 return (cmin.to_pydatetime().replace(tzinfo=None),

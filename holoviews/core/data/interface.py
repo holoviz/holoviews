@@ -359,7 +359,17 @@ class Interface(param.Parameterized):
         else:
             return data.dtype
 
-
+    @classmethod
+    def replace_value(cls, data, nodata):
+        """
+        Replace `nodata` value in data with NaN
+        """
+        data = data.astype('float64')
+        mask = data != nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
+        
     @classmethod
     def select_mask(cls, dataset, selection):
         """

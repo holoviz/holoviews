@@ -248,7 +248,8 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True).name
+        dimension = dataset.get_dimension(dimension, strict=True)
+        dim = dimension.name
         if dataset._binned and dimension in dataset.kdims:
             data = cls.coords(dataset, dim, edges=True)
             if data.dtype.kind == 'M':
@@ -260,6 +261,9 @@ class XArrayInterface(GridInterface):
                 data = dataset.data.values[..., dataset.vdims.index(dim)]
             else:
                 data = dataset.data[dim]
+            if dimension.nodata is not None:
+                data = cls.replace_value(data, dimension.nodata)
+
             if len(data):
                 dmin, dmax = data.min().data, data.max().data
             else:

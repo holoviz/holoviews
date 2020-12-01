@@ -85,11 +85,14 @@ class DaskInterface(PandasInterface):
     @classmethod
     def range(cls, dataset, dimension):
         import dask.dataframe as dd
-        column = dataset.data[dataset.get_dimension(dimension).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
             return (column[0], column[-1]) if len(column) else (None, None)
         else:
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
