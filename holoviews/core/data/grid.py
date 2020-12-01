@@ -28,7 +28,7 @@ class GridInterface(DictInterface):
     Interface for simple dictionary-based dataset format using a
     compressed representation that uses the cartesian product between
     key dimensions. As with DictInterface, the dictionary keys correspond
-    to the column (i.e dimension) names and the values are NumPy arrays
+    to the column (i.e. dimension) names and the values are NumPy arrays
     representing the values in that column.
 
     To use this compressed format, the key dimensions must be orthogonal

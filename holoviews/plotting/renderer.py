@@ -108,7 +108,7 @@ class Renderer(Exporter):
 
     backend = param.String(doc="""
         The full, lowercase name of the rendering backend or third
-        part plotting package used e.g 'matplotlib' or 'cairo'.""")
+        part plotting package used e.g. 'matplotlib' or 'cairo'.""")
 
     dpi = param.Integer(None, doc="""
         The render resolution in dpi (dots per inch)""")

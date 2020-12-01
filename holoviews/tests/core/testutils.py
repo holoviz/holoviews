@@ -267,7 +267,7 @@ class TestSanitizationPy2(ComparisonTestCase):
     def test_arabic_five_sanitized_py2(self):
         """
         Note: There would be a clash if you mixed the languages of
-        your digits! E.g arabic ٥ five and urdu ۵ five
+        your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         sanitized = sanitize_identifier('٥', version=2)
         self.assertEqual(sanitized, 'five')
@@ -275,7 +275,7 @@ class TestSanitizationPy2(ComparisonTestCase):
     def test_urdu_five_sanitized_py2(self):
         """
         Note: There would be a clash if you mixed the languages of
-        your digits! E.g arabic ٥ five and urdu ۵ five
+        your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         sanitized = sanitize_identifier('۵', version=2)
         self.assertEqual(sanitized, 'five')
@@ -283,7 +283,7 @@ class TestSanitizationPy2(ComparisonTestCase):
     def test_urdu_a_five_sanitized_py2(self):
         """
         Note: There would be a clash if you mixed the languages of
-        your digits! E.g arabic ٥ five and urdu ۵ five
+        your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         sanitized = sanitize_identifier('a ۵', version=2)
         self.assertEqual(sanitized, 'A_five')
@@ -361,7 +361,7 @@ class TestSanitizationPy3(ComparisonTestCase):
     def test_arabic_five_sanitized_py3(self):
         """
         Note: There would be a clash if you mixed the languages of
-        your digits! E.g arabic ٥ five and urdu ۵ five
+        your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         try:
             sanitize_identifier('٥', version=3)
@@ -377,7 +377,7 @@ class TestSanitizationPy3(ComparisonTestCase):
     def test_urdu_a_five_sanitized_py3(self):
         """
         Note: There would be a clash if you mixed the languages of
-        your digits! E.g arabic ٥ five and urdu ۵ five
+        your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         sanitized = sanitize_identifier('a ۵', version=3)
         self.assertEqual(sanitized, 'A_۵')

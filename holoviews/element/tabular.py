@@ -16,7 +16,7 @@ class ItemTable(Element):
     order. Tables store heterogeneous data with different labels.
 
     Dimension objects are also accepted as keys, allowing dimensional
-    information (e.g type and units) to be associated per heading.
+    information (e.g. type and units) to be associated per heading.
     """
 
     kdims = param.List(default=[], bounds=(0, 0), doc="""

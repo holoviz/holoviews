@@ -96,7 +96,7 @@ class Parser(object):
             if val is False:
                 elements =list(items)
                 # Assume anything before ) or } can be joined with commas
-                # (e.g tuples with spaces in them)
+                # (e.g. tuples with spaces in them)
                 joiner=',' if any(((')' in el) or ('}' in el))
                                   for el in elements) else ''
                 grouped[-1] += joiner + joiner.join(elements)

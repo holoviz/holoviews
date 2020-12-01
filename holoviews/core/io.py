@@ -82,7 +82,7 @@ class Exporter(param.ParameterizedFunction):
 
     Pickling:   Native Python, supported by HoloViews.
     Rendering:  Any plotting backend may be used (default uses matplotlib)
-    Storage:    Saving to a database (e.g SQL), HDF5 etc.
+    Storage:    Saving to a database (e.g. SQL), HDF5 etc.
     """
 
     # Mime-types that need encoding as utf-8 upon export
@@ -177,7 +177,7 @@ class Importer(param.ParameterizedFunction):
 
     Unpickling: Native Python, supported by HoloViews.
     Servers:    Loading data over a network connection.
-    Storage:    Loading from a database (e.g SQL), HDF5 etc.
+    Storage:    Loading from a database (e.g. SQL), HDF5 etc.
     """
 
     def __call__(self, data):
@@ -575,7 +575,7 @@ class FileArchive(Archive):
 
     export_name = param.String(default='{timestamp}', doc="""
         The name assigned to the overall export. If an archive file is
-        used, this is the correspond filename (e.g of the exporter zip
+        used, this is the correspond filename (e.g. of the exporter zip
         file). Alternatively, if unpack=False, this is the name of the
         output directory. Lastly, for archives of a single file, this
         is the basename of the output file.

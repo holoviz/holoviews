@@ -1,5 +1,5 @@
 """
-Test cases for the composite types built with + and * i.e Layout
+Test cases for the composite types built with + and *, i.e. Layout
 and Overlay (does *not* test HoloMaps).
 """
 
