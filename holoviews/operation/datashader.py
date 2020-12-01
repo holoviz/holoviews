@@ -1586,7 +1586,8 @@ class SpreadingOperation(LinkableOperation):
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
-            raise ValueError('spreading can only be applied to Image or RGB Elements.')
+            raise ValueError('spreading can only be applied to Image or RGB Elements. '
+                             'Received object of type %s' % str(type(element)))
 
         kwargs = {}
         array = self._apply_spreading(data)
