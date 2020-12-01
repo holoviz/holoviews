@@ -17,6 +17,11 @@ class RasterPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
@@ -175,7 +180,7 @@ class RGBPlot(ElementPlot):
         if self.invert_axes:
             img = img.T
             l, b, r, t = b, l, t, r
-            
+
         dh, dw = t-b, r-l
         if self.invert_xaxis:
             l, r = r, l
@@ -202,6 +207,11 @@ class HSVPlot(RGBPlot):
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -238,6 +248,7 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]

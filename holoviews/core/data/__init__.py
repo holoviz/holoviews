@@ -5,6 +5,7 @@ try:
 except ImportError:
     pass
 
+import sys
 import types
 import copy
 
@@ -1067,8 +1068,13 @@ argument to specify a selection specification""")
             NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dimension, strict=True)
-        return self.interface.values(self, dim, expanded, flat)
-
+        values = self.interface.values(self, dim, expanded, flat)
+        if dim.nodata is not None:
+            # Ensure nodata applies to boolean data in py2
+            if sys.version_info.major == 2 and values.dtype.kind == 'b':
+                values = values.astype('int')
+            values = np.where(values==dim.nodata, np.NaN, values)
+        return values
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.

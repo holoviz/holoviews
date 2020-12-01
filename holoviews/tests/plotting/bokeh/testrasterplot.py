@@ -21,6 +21,26 @@ class TestRasterPlot(TestBokehPlot):
         self.assertEqual(source.data['image'][0],
                          np.array([[0, 1], [1, 0]]))
 
+    def test_nodata_array(self):
+        img = Image(np.array([[0, 1], [2, 0]])).opts(nodata=0)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        source = plot.handles['source']
+        self.assertEqual(cmapper.low, 1)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(source.data['image'][0],
+                         np.array([[2, np.NaN], [np.NaN, 1]]))
+
+    def test_nodata_array_uint(self):
+        img = Image(np.array([[0, 1], [2, 0]], dtype='uint32')).opts(nodata=0)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        source = plot.handles['source']
+        self.assertEqual(cmapper.low, 1)
+        self.assertEqual(cmapper.high, 2)
+        self.assertEqual(source.data['image'][0],
+                         np.array([[2, np.NaN], [np.NaN, 1]]))
+
     def test_raster_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4,  5]])
         raster = Raster(arr).opts(plot=dict(invert_axes=True))

@@ -145,6 +145,20 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
+    default_cmap = param.String(default='kbc_r', doc="""
+       Global default colormap. Prior to HoloViews 1.14.0, the default
+       value was 'fire' which can be set for backwards compatibility.""")
+
+    default_gridded_cmap = param.String(default='kbc_r', doc="""
+       Global default colormap for gridded elements (i.e. Image, Raster
+       and QuadMesh). Can be set to 'fire' to match raster defaults
+       prior to HoloViews 1.14.0 while allowing the default_cmap to be
+       the value of 'kbc_r' used in HoloViews >= 1.14.0""")
+
+    default_heatmap_cmap = param.String(default='kbc_r', doc="""
+       Global default colormap for HeatMap elements. Prior to HoloViews
+       1.14.0, the default value was the 'RdYlBu_r' colormap.""")
+
     def __call__(self, **params):
         self.param.set_param(**params)
         return self
@@ -171,7 +185,7 @@ class HashableJSON(json.JSONEncoder):
     their id.
 
     One limitation of this approach is that dictionaries with composite
-    keys (e.g tuples) are not supported due to the JSON spec.
+    keys (e.g. tuples) are not supported due to the JSON spec.
     """
     string_hashable = (dt.datetime,)
     repr_hashable = ()
@@ -402,7 +416,7 @@ def validate_dynamic_argspec(callback, kdims, streams):
     appropriate signature.
 
     If validation succeeds, returns a list of strings to be zipped with
-    the positional arguments i.e kdim values. The zipped values can then
+    the positional arguments, i.e. kdim values. The zipped values can then
     be merged with the stream values to pass everything to the Callable
     as keywords.
 
@@ -501,11 +515,11 @@ def callable_name(callable_obj):
 def process_ellipses(obj, key, vdim_selection=False):
     """
     Helper function to pad a __getitem__ key with the right number of
-    empty slices (i.e :) when the key contains an Ellipsis (...).
+    empty slices (i.e. :) when the key contains an Ellipsis (...).
 
     If the vdim_selection flag is true, check if the end of the key
     contains strings or Dimension objects in obj. If so, extra padding
-    will not be applied for the value dimensions (i.e the resulting key
+    will not be applied for the value dimensions (i.e. the resulting key
     will be exactly one longer than the number of kdims). Note: this
     flag should not be used for composite types.
     """
@@ -524,7 +538,7 @@ def process_ellipses(obj, key, vdim_selection=False):
 
     padlen = dim_count - (len(head) + len(tail))
     if vdim_selection:
-        # If the end of the key (i.e the tail) is in vdims, pad to len(kdims)+1
+        # If the end of the key (i.e. the tail) is in vdims, pad to len(kdims)+1
         if wrapped_key[-1] in obj.vdims:
             padlen = (len(obj.kdims) +1 ) - len(head+tail)
     return head + ((slice(None),) * padlen) + tail
@@ -1939,7 +1953,7 @@ def arglexsort(arrays):
 def dimensioned_streams(dmap):
     """
     Given a DynamicMap return all streams that have any dimensioned
-    parameters i.e parameters also listed in the key dimensions.
+    parameters, i.e. parameters also listed in the key dimensions.
     """
     dimensioned = []
     for stream in dmap.streams:
@@ -2208,7 +2222,9 @@ def closest_match(match, specs, depth=0):
                 match_length = max(i for i in range(len(match[0]))
                                    if match[0].startswith(spec[0][:i]))
             elif is_number(match[0]) and is_number(spec[0]):
-                match_length = -abs(match[0]-spec[0])
+                m = bool(match[0]) if isinstance(match[0], np.bool_) else match[0]
+                s = bool(spec[0]) if isinstance(spec[0], np.bool_) else spec[0]
+                match_length = -abs(m-s)
             else:
                 match_length = 0
             match_lengths.append((i, match_length, spec[0]))

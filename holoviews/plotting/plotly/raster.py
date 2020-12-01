@@ -11,6 +11,11 @@ from .element import ColorbarPlot
 
 class RasterPlot(ColorbarPlot):
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     style_opts = ['visible', 'cmap', 'alpha']
@@ -41,6 +46,7 @@ class RasterPlot(ColorbarPlot):
         if self.invert_axes:
             x0, y0, dx, dy = y0, x0, dy, dx
             array = array.T
+
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
@@ -101,6 +107,11 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 
 class QuadMeshPlot(RasterPlot):
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     def get_data(self, element, ranges, style, **kwargs):
         x, y, z = element.dimensions()[:3]
         irregular = element.interface.irregular(element, x)
@@ -113,4 +124,5 @@ class QuadMeshPlot(RasterPlot):
         if self.invert_axes:
             y, x = 'x', 'y'
             zdata = zdata.T
+
         return [{x: xc, y: yc, 'z': zdata}]

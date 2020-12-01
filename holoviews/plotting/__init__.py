@@ -8,13 +8,28 @@ display in the IPython Notebook (optional).
 from __future__ import absolute_import
 
 from ..core.options import Cycle, Compositor
-from ..element import Area, Polygons
+from ..element import Area, Image, QuadMesh, Polygons, Raster
 from ..element.sankey import _layout_sankey, Sankey
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
-from .util import list_cmaps # noqa (API import)
+from .util import apply_nodata, list_cmaps # noqa (API import)
 from ..operation.stats import univariate_kde, bivariate_kde
 
+Compositor.register(Compositor("Image", apply_nodata, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=Image,
+                               backends=['bokeh', 'matplotlib', 'plotly']))
+Compositor.register(Compositor("Raster", apply_nodata, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=Raster,
+                               backends=['bokeh', 'matplotlib', 'plotly']))
+Compositor.register(Compositor("QuadMesh", apply_nodata, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=QuadMesh,
+                               backends=['bokeh', 'matplotlib', 'plotly']))
 Compositor.register(Compositor("Distribution", univariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,

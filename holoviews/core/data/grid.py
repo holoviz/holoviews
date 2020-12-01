@@ -787,11 +787,15 @@ class GridInterface(DictInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
         if dataset._binned and dimension in dataset.kdims:
             expanded = cls.irregular(dataset, dimension)
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
             column = cls.values(dataset, dimension, expanded=False, flat=False)
+
+        if dimension.nodata is not None:
+            column = cls.replace_value(column, dimension.nodata)
 
         da = dask_array_module()
         if column.dtype.kind == 'M':
@@ -824,6 +828,6 @@ class GridInterface(DictInterface):
                 data[k] = cls.canonicalize(dataset, v)
         return data
 
-            
+
 
 Interface.register(GridInterface)

@@ -248,7 +248,7 @@ class DictInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension)
+        dim = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dim.name]
         if isscalar(column):
             return column, column

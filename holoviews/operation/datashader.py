@@ -28,7 +28,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range)
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
@@ -112,6 +112,8 @@ class ResamplingOperation(LinkableOperation):
         calls. The cost of enabling this option is that the memory
         used to represent this internal state is not freed between
         calls.""")
+
+    _transfer_options = []
 
     @bothmethod
     def instance(self_or_cls,**params):
@@ -228,6 +230,10 @@ class AggregationOperation(ResamplingOperation):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
+    vdim_prefix = param.String(default='{kdims} ', doc="""
+        Prefix to prepend to value dimension name where {kdims}
+        templates in the names of the input element key dimensions.""")
+
     _agg_methods = {
         'any':   rd.any,
         'count': rd.count,
@@ -292,6 +298,9 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
+        kdim_list = '_'.join(str(kd) for kd in params['kdims'])
+        vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+
         category = None
         if hasattr(agg_fn, 'reduction'):
             category = agg_fn.cat_column
@@ -303,12 +312,19 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
-            vdims = [dims[0].clone(name)]
+            if isinstance(agg_fn, ds.count_cat):
+                vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
+            else:
+                vdims = dims[0].clone(vdim_prefix + column)
         elif category:
-            vdims = Dimension('%s Count' % category)
+            agg_name = type(agg_fn).__name__.title()
+            agg_label = '%s %s' % (category, agg_name)
+            vdims = Dimension('%s%s' % (vdim_prefix, agg_label), label=agg_label)
+            if agg_name in ('Count', 'Any'):
+                vdims.nodata = 0
         else:
-            vdims = Dimension('Count')
+            agg_name = type(agg_fn).__name__.title()
+            vdims = Dimension('%s%s' % (vdim_prefix, agg_name), label=agg_name, nodata=0)
         params['vdims'] = vdims
         return params
 
@@ -607,16 +623,10 @@ class area_aggregate(AggregationOperation):
 
         df = PandasInterface.as_dframe(element)
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
@@ -705,13 +715,7 @@ class spikes_aggregate(AggregationOperation):
         if xtype == 'datetime':
             df[x.name] = df[x.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
-        params = dict(get_param_values(element), kdims=[x, y], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x, y, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x, y, width, height, xs, ys, agg_fn, **params)
@@ -752,18 +756,10 @@ class geom_aggregate(AggregationOperation):
             df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
             df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, (ds.count, ds.any)):
-            vdim = type(agg_fn).__name__
-        elif isinstance(agg_fn, ds.count_cat):
-            vdim = '%s Count' % agg_fn.column
-        else:
-            vdim = element.get_dimension(agg_fn.column)
-
         if isinstance(agg_fn, ds.count_cat):
             df[agg_fn.column] = df[agg_fn.column].astype('category')
 
-        params = dict(get_param_values(element), kdims=[x0d, y0d], vdims=vdim,
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+        params = self._get_agg_params(element, x0d, y0d, agg_fn, (x0, y0, x1, y1))
 
         if width == 0 or height == 0:
             return self._empty_agg(element, x0d, y0d, width, height, xs, ys, agg_fn, **params)
@@ -1032,20 +1028,7 @@ class trimesh_rasterize(aggregate):
             wireframe = True
             precompute = False # TriMesh itself caches wireframe
             agg = self._get_aggregator(element) if isinstance(agg, (ds.any, ds.count)) else ds.any()
-            vdim = 'Count' if isinstance(agg, ds.count) else 'Any'
-        elif getattr(agg, 'column', None):
-            if agg.column in element.vdims:
-                vdim = element.get_dimension(agg.column)
-            elif isinstance(element, TriMesh) and agg.column in element.nodes.vdims:
-                vdim = element.nodes.get_dimension(agg.column)
-            else:
-                raise ValueError("Aggregation column %s not found on TriMesh element."
-                                 % agg.column)
-        else:
-            if isinstance(element, TriMesh) and element.nodes.vdims:
-                vdim = element.nodes.vdims[0]
-            else:
-                vdim = element.vdims[0]
+        elif getattr(agg, 'column', None) is None:
             agg = self._get_aggregator(element)
 
         if element._plot_id in self._precomputed:
@@ -1055,14 +1038,13 @@ class trimesh_rasterize(aggregate):
         else:
             precomputed = self._precompute(element, agg)
 
-        params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], vdims=[vdim])
+        bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
+        params = self._get_agg_params(element, x, y, agg, bounds)
 
         if width == 0 or height == 0:
             if width == 0: params['xdensity'] = 1
             if height == 0: params['ydensity'] = 1
-            bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
-            return Image((xs, ys, np.zeros((height, width))), bounds=bounds, **params)
+            return Image((xs, ys, np.zeros((height, width))), **params)
 
         if wireframe:
             segments = precomputed['segments']
@@ -1173,13 +1155,18 @@ class shade(LinkableOperation):
         Callable type must allow mapping colors for supplied values
         between 0 and 1.""")
 
-    normalization = param.ClassSelector(default='eq_hist',
-                                        class_=(basestring, Callable),
-                                        doc="""
+    cnorm = param.ClassSelector(default='eq_hist',
+                                class_=(basestring, Callable),
+                                doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
+
+    normalization = param.ClassSelector(default='eq_hist',
+                                        precedence=-1,
+                                        class_=(basestring, Callable),
+                                        doc="Deprecated parameter (use cnorm instead)")
 
     clims = param.NumericTuple(default=None, length=2, doc="""
         Min and max data values to use for colormap interpolation, when
@@ -1243,8 +1230,14 @@ class shade(LinkableOperation):
             return element
         data = tuple(element.dimension_values(kd, expanded=False)
                      for kd in element.kdims)
-        data += tuple(element.dimension_values(vd, flat=False)
-                      for vd in element.vdims)
+        vdims = list(element.vdims)
+        # Override nodata temporarily
+        element.vdims[:] = [vd.clone(nodata=None) for vd in element.vdims]
+        try:
+            data += tuple(element.dimension_values(vd, flat=False)
+                          for vd in element.vdims)
+        finally:
+            element.vdims[:] = vdims
         dtypes = [dt for dt in element.datatype if dt != 'xarray']
         return element.clone(data, datatype=['xarray']+dtypes,
                              bounds=element.bounds,
@@ -1270,9 +1263,22 @@ class shade(LinkableOperation):
         array = element.data[vdim]
         kdims = element.kdims
 
+        overrides = dict(self.p.items())
+        if 'normalization' in overrides:
+            if 'cnorm' in overrides:
+                self.param.warning("Both the 'cnorm' and 'normalization' keywords"
+                                   "specified; 'cnorm' value taking precedence over "
+                                   "deprecated 'normalization' option")
+            elif config.future_deprecations:
+                self.param.warning("Shading 'normalization' parameter deprecated, "
+                                   "use 'cnorm' parameter instead'")
+            cnorm = overrides.get('cnorm', overrides['normalization'])
+        else:
+            cnorm = self.p.cnorm
+
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=self.p.normalization,
+        shade_opts = dict(how=cnorm,
                           min_alpha=self.p.min_alpha,
                           alpha=self.p.alpha)
         if element.ndims > 2:
@@ -1304,7 +1310,7 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
+        elif ds_version > '0.5.0' and cnorm != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         params = dict(get_param_values(element), kdims=kdims,
@@ -1598,7 +1604,8 @@ class SpreadingOperation(LinkableOperation):
         elif isinstance(element, Image):
             data = element.clone(datatype=['xarray']).data[element.vdims[0].name]
         else:
-            raise ValueError('spreading can only be applied to Image or RGB Elements.')
+            raise ValueError('spreading can only be applied to Image or RGB Elements. '
+                             'Received object of type %s' % str(type(element)))
 
         kwargs = {}
         array = self._apply_spreading(data)

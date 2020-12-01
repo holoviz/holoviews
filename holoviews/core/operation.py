@@ -3,9 +3,11 @@ Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
 import param
+
 from .dimension import ViewableElement
 from .element import Element
 from .layout import Layout
+from .options import Store
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
 from . import util, Dataset
@@ -77,6 +79,9 @@ class Operation(param.ParameterizedFunction):
     # the input of the operation to the result
     _propagate_dataset = True
 
+    # Options to transfer from the input element to the transformed element
+    _transfer_options = []
+
     @classmethod
     def search(cls, element, pattern):
         """
@@ -127,7 +132,6 @@ class Operation(param.ParameterizedFunction):
         for hook in self._preprocess_hooks:
             kwargs.update(hook(self, element))
 
-
         element_pipeline = getattr(element, '_pipeline', None)
 
         if hasattr(element, '_in_method'):
@@ -137,6 +141,12 @@ class Operation(param.ParameterizedFunction):
         ret = self._process(element, key)
         if hasattr(element, '_in_method') and not in_method:
             element._in_method = in_method
+
+        if self._transfer_options:
+            for backend in Store.loaded_backends():
+                Store.transfer_options(
+                    element, ret, backend, self._transfer_options, level=1
+                )
 
         for hook in self._postprocess_hooks:
             ret = hook(self, ret, **kwargs)
@@ -168,6 +178,9 @@ class Operation(param.ParameterizedFunction):
         The process_element method allows a single element to be
         operated on given an externally supplied key.
         """
+        if self._per_element and not isinstance(element, Element):
+            return element.clone({k: self.process_element(el, key, **params)
+                                  for k, el in element.items()})
         if hasattr(self, 'p'):
             if self._allow_extra_keywords:
                 extras = self.p._extract_extra_keywords(params)

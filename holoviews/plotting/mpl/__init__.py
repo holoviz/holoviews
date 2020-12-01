@@ -6,6 +6,7 @@ from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from matplotlib.cm import register_cmap
 from param import concrete_descendents
+from colorcet import kbc
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
@@ -219,8 +220,13 @@ fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_col
 register_cmap("fire", cmap=fire_cmap)
 register_cmap("fire_r", cmap=fire_r_cmap)
 
+register_cmap('kbc_r',
+              cmap=LinearSegmentedColormap.from_list('kbc_r',
+                                                     list(reversed(kbc)), N=len(kbc)))
+
 options = Store.options(backend='matplotlib')
-dflt_cmap = 'fire'
+dflt_cmap = config.default_cmap
+
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
@@ -238,7 +244,7 @@ options.Scatter3D = Options('plot', fig_size=150)
 options.Path3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Surface = Options('style', cmap='fire')
-options.Spikes = Options('style', color='black', cmap='fire')
+options.Spikes = Options('style', color='black', cmap=dflt_cmap)
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
@@ -247,10 +253,10 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
 options.Rectangles = Options('style', edgecolor='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r', edgecolors='white',
+options.Image = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.Raster = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap, edgecolors='white',
                           annular_edgecolors='white', annular_linewidth=0.5,
                           xmarks_edgecolor='white', xmarks_linewidth=3,
                           ymarks_edgecolor='white', ymarks_linewidth=3,
@@ -272,11 +278,13 @@ options.Spline = Options('style', edgecolor=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
-options.Contours = Options('style', color=Cycle(), cmap='viridis')
+options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle(), cmap='viridis')
+options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
-                           cmap='viridis')
+                           cmap=dflt_cmap)
+options.Rectangles = Options('style', cmap=dflt_cmap)
+options.Segments = Options('style', cmap=dflt_cmap)
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
@@ -288,7 +296,7 @@ options.TimeSeries = Options('style', color=Cycle())
 options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=15)
 options.TriMesh = Options('style', node_edgecolors='black', node_facecolors='white',
-                          edge_color='black', node_size=5, edge_linewidth=1)
+                          edge_color='black', node_size=5, edge_linewidth=1, cmap=dflt_cmap)
 options.Chord = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=10, edge_linewidth=0.5)
 options.Chord = Options('plot', xaxis=None, yaxis=None)

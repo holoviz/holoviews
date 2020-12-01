@@ -19,7 +19,7 @@ def is_cupy(array):
     if 'cupy' not in sys.modules:
         return False
     from cupy import ndarray
-    return isinstance(array, ndarray) 
+    return isinstance(array, ndarray)
 
 
 class XArrayInterface(GridInterface):
@@ -86,7 +86,8 @@ class XArrayInterface(GridInterface):
                 spec = (dim.name, coord.attrs['long_name'])
             else:
                 spec = (dim.name, dim.label)
-            return dim.clone(spec, unit=unit)
+            nodata = coord.attrs.get('NODATA')
+            return dim.clone(spec, unit=unit, nodata=nodata)
 
         packed = False
         if isinstance(data, xr.DataArray):
@@ -99,8 +100,9 @@ class XArrayInterface(GridInterface):
             elif data.name:
                 vdim = Dimension(data.name)
                 vdim.unit = data.attrs.get('units')
+                vdim.nodata = data.attrs.get('NODATA')
                 label = data.attrs.get('long_name')
-                if label is not None:
+                if 'long_name' in data.attrs:
                     vdim.label = label
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
@@ -246,7 +248,8 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True).name
+        dimension = dataset.get_dimension(dimension, strict=True)
+        dim = dimension.name
         if dataset._binned and dimension in dataset.kdims:
             data = cls.coords(dataset, dim, edges=True)
             if data.dtype.kind == 'M':
@@ -258,6 +261,9 @@ class XArrayInterface(GridInterface):
                 data = dataset.data.values[..., dataset.vdims.index(dim)]
             else:
                 data = dataset.data[dim]
+            if dimension.nodata is not None:
+                data = cls.replace_value(data, dimension.nodata)
+
             if len(data):
                 dmin, dmax = data.min().data, data.max().data
             else:

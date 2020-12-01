@@ -22,7 +22,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import mpl_version, validate, wrap_formatter
+from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -672,8 +672,8 @@ class ColorbarPlot(ElementPlot):
 
     clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
         Percentile value to compute colorscale robust to outliers. If
-        True uses 2nd and 98th percentile, otherwise uses the specified
-        percentile value.""")
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
@@ -688,6 +688,9 @@ class ColorbarPlot(ElementPlot):
     color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
+
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -894,7 +897,10 @@ class ColorbarPlot(ElementPlot):
         else:
             categorical = values.dtype.kind not in 'uif'
 
-        if self.logz:
+        if self.cnorm == 'eq_hist':
+            opts[prefix+'norm'] = EqHistNormalize(
+                vmin=clim[0], vmax=clim[1])
+        if self.cnorm == 'log' or self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                              linthresh=clim[1]/np.e)
@@ -971,7 +977,6 @@ class ColorbarPlot(ElementPlot):
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
         opts[prefix+'cmap'] = cmap
-
 
 
 class LegendPlot(ElementPlot):

@@ -928,6 +928,8 @@ class Compositor(param.Parameterized):
                 sliced = overlay.clone(values[start:stop])
             items = sliced.traverse(lambda x: x, [Element])
             if applicable_op and all(el in processed[applicable_op] for el in items):
+                if unpack and len(overlay) == 1:
+                    return overlay.values()[0]
                 return overlay
             result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
@@ -1096,7 +1098,7 @@ class Compositor(param.Parameterized):
                                if k in self.operation.param})
 
         transformed = self.operation(value, input_ranges=input_ranges, **kwargs)
-        if self.transfer_options:
+        if self.transfer_options and value is not transformed:
             Store.transfer_options(value, transformed, backend)
         return transformed
 
@@ -1278,19 +1280,28 @@ class Store(object):
 
 
     @classmethod
-    def transfer_options(cls, obj, new_obj, backend=None):
+    def transfer_options(cls, obj, new_obj, backend=None, names=None, level=3):
         """
         Transfers options for all backends from one object to another.
         Drops any options defined in the supplied drop list.
         """
+        if obj is new_obj:
+            return
         backend = cls.current_backend if backend is None else backend
         type_name = type(new_obj).__name__
         group = type_name if obj.group == type(obj).__name__ else obj.group
-        spec = '.'.join([s for s in (type_name, group, obj.label) if s])
+        spec = '.'.join([s for s in (type_name, group, obj.label)[:level] if s])
         options = []
         for group in Options._option_groups:
             opts = cls.lookup_options(backend, obj, group)
-            if opts and opts.kwargs: options.append(Options(group, **opts.kwargs))
+            if not opts:
+                continue
+            new_opts = cls.lookup_options(backend, new_obj, group, defaults=False)
+            existing = new_opts.kwargs if new_opts else {}
+            filtered = {k: v for k, v in opts.kwargs.items()
+                        if (names is None or k in names) and k not in existing}
+            if filtered:
+                options.append(Options(group, **filtered))
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 

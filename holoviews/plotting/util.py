@@ -13,6 +13,7 @@ import param
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, NdOverlay, AdjointLayout)
 from ..core.options import CallbackError, Cycle
+from ..core.operation import Operation
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
@@ -1094,6 +1095,39 @@ def hex2rgb(hex):
   ''' "#FFFFFF" -> [255,255,255] '''
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+
+
+class apply_nodata(Operation):
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
+    def _replace_value(self, data):
+        "Replace `nodata` value in data with NaN, if specified in opts"
+        data = data.astype('float64')
+        mask = data!=self.p.nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
+
+    def _process(self, element, key=None):
+        if self.p.nodata is None:
+            return element
+        if hasattr(element, 'interface'):
+            vdim = element.vdims[0]
+            dtype = element.interface.dtype(element, vdim)
+            if dtype.kind not in 'iu':
+                return element
+            transform = dim(vdim, self._replace_value)
+            return element.transform(**{vdim.name: transform})
+        else:
+            array = element.dimension_values(2, flat=False).T
+            if array.dtype.kind not in 'iu':
+                return element
+            array = array.astype('float64')
+            return element.clone(self._replace_value(array))
 
 
 RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')

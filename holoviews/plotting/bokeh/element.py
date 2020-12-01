@@ -32,7 +32,7 @@ from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
-from ...streams import Stream, Buffer, RangeXY, PlotSize
+from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
@@ -49,6 +49,16 @@ from .util import (
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
     compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
 )
+
+try:
+    from bokeh.models import EqHistColorMapper
+except ImportError:
+    EqHistColorMapper = None
+
+try:
+    from bokeh.models import BinnedTicker
+except ImportError:
+    BinnedTicker = None
 
 if bokeh_version >= '2.0.1':
     try:
@@ -203,7 +213,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
@@ -1391,10 +1401,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         self.drawn = True
 
-        trigger = self._trigger
-        self._trigger = []
-        Stream.trigger(trigger)
-
         return plot
 
 
@@ -1692,22 +1698,29 @@ class ColorbarPlot(ElementPlot):
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
+    cformatter = param.ClassSelector(
+        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        Formatter for ticks along the colorbar axis.""")
+
     clabel = param.String(default=None, doc="""
-        An explicit override of the color bar label, if set takes precedence
+        An explicit override of the color bar label. If set, takes precedence
         over the title key in colorbar_opts.""")
 
     clim = param.Tuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a tuple (low,high).
+        If specified, takes precedence over data and dimension ranges.""")
 
     clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
         Percentile value to compute colorscale robust to outliers. If
-        True uses 2nd and 98th percentile, otherwise uses the specified
-        percentile value.""")
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     cformatter = param.ClassSelector(
         default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
+
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
@@ -1748,7 +1761,9 @@ class ColorbarPlot(ElementPlot):
     def _draw_colorbar(self, plot, color_mapper, prefix=''):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
-        if LogColorMapper and isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
+        if EqHistColorMapper and isinstance(color_mapper, EqHistColorMapper) and BinnedTicker:
+            ticker = BinnedTicker(mapper=color_mapper)
+        elif isinstance(color_mapper, LogColorMapper) and color_mapper.low > 0:
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
@@ -1931,8 +1946,9 @@ class ColorbarPlot(ElementPlot):
 
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
-            colormapper = LinearColorMapper
-            if self.logz:
+            if self.cnorm == 'linear':
+                colormapper = LinearColorMapper
+            if self.cnorm == 'log' or self.logz:
                 colormapper = LogColorMapper
                 if util.is_int(low) and util.is_int(high) and low == 0:
                     low = 1
@@ -1946,6 +1962,12 @@ class ColorbarPlot(ElementPlot):
                         "lower bound on the color dimension or using "
                         "the `clim` option."
                     )
+            elif self.cnorm == 'eq_hist':
+                if EqHistColorMapper is None:
+                    raise ImportError("Could not import bokeh.models.EqHistColorMapper. "
+                                      "Note that the option cnorm='eq_hist' requires "
+                                      "bokeh 2.2.3 or higher.")
+                colormapper = EqHistColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             # Pad zero-range to avoid breaking colorbar (as of bokeh 1.0.4)

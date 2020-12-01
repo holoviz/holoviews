@@ -123,7 +123,10 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
+        if dimension.nodata is not None:
+            column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
             return np.NaN, np.NaN
         else:

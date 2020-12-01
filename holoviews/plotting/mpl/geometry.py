@@ -27,6 +27,8 @@ class SegmentPlot(GeomMixin, ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
@@ -57,6 +59,8 @@ class RectanglesPlot(GeomMixin, ColorbarPlot):
             plot_kwargs['array'] = plot_kwargs.pop('c')
         if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
             plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
         line_segments = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}

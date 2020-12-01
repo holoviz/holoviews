@@ -112,7 +112,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         super(ElementPlot, self).__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
 
     @classmethod
     def trace_kwargs(cls, **kwargs):
@@ -578,8 +578,8 @@ class ColorbarPlot(ElementPlot):
 
     clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
         Percentile value to compute colorscale robust to outliers. If
-        True uses 2nd and 98th percentile, otherwise uses the specified
-        percentile value.""")
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")

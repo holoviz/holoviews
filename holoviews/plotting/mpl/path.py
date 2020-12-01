@@ -29,6 +29,19 @@ class PathPlot(ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
 
+    _collection = LineCollection
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        if 'c' in plot_kwargs:
+            plot_kwargs['array'] = plot_kwargs.pop('c')
+        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
+            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
+        collection = self._collection(*plot_args, **plot_kwargs)
+        ax.add_collection(collection)
+        return {'artist': collection}
+
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
 
@@ -71,16 +84,7 @@ class PathPlot(ColorbarPlot):
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
             style['array'] = np.array(cvals)
-        if 'c' in style:
-            style['array'] = style.pop('c')
-        if 'vmin' in style:
-            style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
         return (paths,), style, {'dimensions': dims}
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        line_segments = LineCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
@@ -88,6 +92,9 @@ class PathPlot(ColorbarPlot):
         artist.set_paths(data[0])
         if 'array' in style:
             artist.set_array(style['array'])
+        if 'vmin' in style and 'vmax' in style:
+            artist.set_clim((style['vmin'], style['vmax']))
+        if 'clim' in style:
             artist.set_clim(style['clim'])
         if 'norm' in style:
             artist.set_norm(style['norm'])
@@ -106,11 +113,6 @@ class ContourPlot(PathPlot):
     color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        line_segments = LineCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
 
     def get_data(self, element, ranges, style):
         if isinstance(element, Polygons):
@@ -162,7 +164,6 @@ class ContourPlot(PathPlot):
             array = util.search_indices(array, util.unique_array(array))
         style['array'] = array
         self._norm_kwargs(element, ranges, style, cdim)
-        style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
 
 
@@ -182,7 +183,4 @@ class PolygonPlot(ContourPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle',
                   'color']
 
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        polys = PatchCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(polys)
-        return {'artist': polys}
+    _collection = PatchCollection

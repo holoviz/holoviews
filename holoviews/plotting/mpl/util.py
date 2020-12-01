@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib
 from matplotlib import units as munits
 from matplotlib import ticker
-from matplotlib.colors import cnames
+from matplotlib.colors import Normalize, cnames
 from matplotlib.lines import Line2D
 from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
@@ -394,6 +394,73 @@ class CFTimeConverter(NetCDFTimeConverter):
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
         return super(CFTimeConverter, cls).convert(value, unit, axis)
+
+
+class EqHistNormalize(Normalize):
+
+    def __init__(self, vmin=None, vmax=None, clip=False, nbins=256**2, ncolors=256):
+        super(EqHistNormalize, self).__init__(vmin, vmax, clip)
+        self._nbins = nbins
+        self._bin_edges = None
+        self._ncolors = ncolors
+        self._color_bins = np.linspace(0, 1, ncolors)
+
+    def binning(self, data, n=256):
+        low = data.min() if self.vmin is None else self.vmin
+        high = data.max() if self.vmax is None else self.vmax
+        nbins = self._nbins
+        eq_bin_edges = np.linspace(low, high, nbins+1)
+        hist, _ = np.histogram(data, eq_bin_edges)
+
+        eq_bin_centers = np.convolve(eq_bin_edges, [0.5, 0.5], mode='valid')
+        cdf = np.cumsum(hist)
+        cdf_max = cdf[-1]
+        norm_cdf = cdf/cdf_max
+
+        # Iteratively find as many finite bins as there are colors
+        finite_bins = n-1
+        binning = []
+        iterations = 0
+        guess = n*2
+        while ((finite_bins != n) and (iterations < 4) and (finite_bins != 0)):
+            ratio = guess/finite_bins
+            if (ratio > 1000):
+                #Abort if distribution is extremely skewed
+                break
+            guess = np.round(max(n*ratio, n))
+
+            # Interpolate
+            palette_edges = np.arange(0, guess)
+            palette_cdf = norm_cdf*(guess-1)
+            binning = np.interp(palette_edges, palette_cdf, eq_bin_centers)
+
+            # Evaluate binning
+            uniq_bins = np.unique(binning)
+            finite_bins = len(uniq_bins)-1
+            iterations += 1
+        if (finite_bins == 0):
+            binning = [low]+[high]*(n-1)
+        else:
+            binning = binning[-n:]
+            if (finite_bins != n):
+                warnings.warn("EqHistColorMapper warning: Histogram equalization did not converge.")
+        return binning
+
+    def __call__(self, data, clip=None):
+        return self.process_value(data)[0]
+
+    def process_value(self, data):
+        if isinstance(data, np.ndarray):
+            self._bin_edges = self.binning(data, self._ncolors)
+        isscalar = np.isscalar(data)
+        data = np.array([data]) if isscalar else data
+        interped = np.interp(data, self._bin_edges, self._color_bins)
+        return np.ma.array(interped), isscalar
+
+    def inverse(self, value):
+        if self._bin_edges is None:
+            raise ValueError("Not invertible until eq_hist has been computed")
+        return np.interp([value], self._color_bins, self._bin_edges)[0]
 
 
 for cft in cftime_types:
