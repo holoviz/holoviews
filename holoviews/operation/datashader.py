@@ -28,7 +28,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range)
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
@@ -1264,7 +1264,7 @@ class shade(LinkableOperation):
         kdims = element.kdims
 
         overrides = dict(self.p.items())
-        if 'normalization' in overrides:
+        if 'normalization' in overrides and config.future_deprecations:
             self.param.warning("Shading 'normalization' parameter deprecated, "
                                "use 'cnorm' parameter instead'")
             cnorm = overrides.get('cnorm', overrides['normalization'])
