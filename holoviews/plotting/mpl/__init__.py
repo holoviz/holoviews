@@ -300,7 +300,7 @@ options.TimeSeries = Options('style', color=Cycle())
 options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=15)
 options.TriMesh = Options('style', node_edgecolors='black', node_facecolors='white',
-                          edge_color='black', node_size=5, edge_linewidth=1)
+                          edge_color='black', node_size=5, edge_linewidth=1, cmap=dflt_cmap)
 options.Chord = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
                         edge_color='black', node_size=10, edge_linewidth=0.5)
 options.Chord = Options('plot', xaxis=None, yaxis=None)

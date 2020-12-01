@@ -225,7 +225,7 @@ options.TriMesh = Options(
     edge_line_color='black', node_hover_fill_color='limegreen',
     edge_line_width=1, edge_hover_line_color='limegreen',
     edge_nonselection_alpha=0.2, edge_nonselection_line_color='black',
-    node_nonselection_alpha=0.2,
+    node_nonselection_alpha=0.2, cmap=dflt_cmap
 )
 options.TriMesh = Options('plot', tools=[])
 options.Chord = Options('style', node_size=15, node_color=Cycle(),

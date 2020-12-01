@@ -117,7 +117,7 @@ options.Scatter = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
-options.TriSurface = Options('style', cmap='viridis')
+options.TriSurface = Options('style', cmap=dflt_cmap)
 options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
