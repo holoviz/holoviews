@@ -19,12 +19,10 @@ jobs:
         exclude:
           - os: windows-latest
             python-version: 2.7
-          - os: macos-latest
-            python-version: 3.7
     timeout-minutes: 60
     defaults:
       run:
-        shell: bash -l {0} 
+        shell: bash -l {0}
     env:
       DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
