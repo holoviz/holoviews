@@ -150,7 +150,7 @@ class Config(param.ParameterizedFunction):
        value was 'fire' which can be set for backwards compatibility.""")
 
     default_gridded_cmap = param.String(default='kbc_r', doc=""" Global
-       default colormap for gridded elements (i.e Image, Raster and
+       default colormap for gridded elements (i.e. Image, Raster and
        QuadMesh). Can be set to 'fire' to match raster defaults prior to
        HoloViews 1.14.0 while allowing the default_cmap to be the value
        of 'kbc_r' used in HoloViews >= 1.14.0""")
@@ -181,7 +181,7 @@ class HashableJSON(json.JSONEncoder):
     their id.
 
     One limitation of this approach is that dictionaries with composite
-    keys (e.g tuples) are not supported due to the JSON spec.
+    keys (e.g. tuples) are not supported due to the JSON spec.
     """
     string_hashable = (dt.datetime,)
     repr_hashable = ()
@@ -412,7 +412,7 @@ def validate_dynamic_argspec(callback, kdims, streams):
     appropriate signature.
 
     If validation succeeds, returns a list of strings to be zipped with
-    the positional arguments i.e kdim values. The zipped values can then
+    the positional arguments, i.e. kdim values. The zipped values can then
     be merged with the stream values to pass everything to the Callable
     as keywords.
 
@@ -511,11 +511,11 @@ def callable_name(callable_obj):
 def process_ellipses(obj, key, vdim_selection=False):
     """
     Helper function to pad a __getitem__ key with the right number of
-    empty slices (i.e :) when the key contains an Ellipsis (...).
+    empty slices (i.e. :) when the key contains an Ellipsis (...).
 
     If the vdim_selection flag is true, check if the end of the key
     contains strings or Dimension objects in obj. If so, extra padding
-    will not be applied for the value dimensions (i.e the resulting key
+    will not be applied for the value dimensions (i.e. the resulting key
     will be exactly one longer than the number of kdims). Note: this
     flag should not be used for composite types.
     """
@@ -534,7 +534,7 @@ def process_ellipses(obj, key, vdim_selection=False):
 
     padlen = dim_count - (len(head) + len(tail))
     if vdim_selection:
-        # If the end of the key (i.e the tail) is in vdims, pad to len(kdims)+1
+        # If the end of the key (i.e. the tail) is in vdims, pad to len(kdims)+1
         if wrapped_key[-1] in obj.vdims:
             padlen = (len(obj.kdims) +1 ) - len(head+tail)
     return head + ((slice(None),) * padlen) + tail
@@ -1949,7 +1949,7 @@ def arglexsort(arrays):
 def dimensioned_streams(dmap):
     """
     Given a DynamicMap return all streams that have any dimensioned
-    parameters i.e parameters also listed in the key dimensions.
+    parameters, i.e. parameters also listed in the key dimensions.
     """
     dimensioned = []
     for stream in dmap.streams:
