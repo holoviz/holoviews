@@ -32,7 +32,7 @@ from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
-from ...streams import Stream, Buffer, RangeXY, PlotSize
+from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
