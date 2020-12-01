@@ -313,9 +313,9 @@ class AggregationOperation(ResamplingOperation):
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
             if isinstance(agg_fn, ds.count_cat):
-                vdims = dims[0].clone('%s Count%s' % (column, vdim_suffix), nodata=0)
+                vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
             else:
-                vdims = dims[0].clone(column + vdim_suffix)
+                vdims = dims[0].clone(vdim_prefix + column)
         elif category:
             agg_name = type(agg_fn).__name__.title()
             agg_label = '%s %s' % (category, agg_name)
