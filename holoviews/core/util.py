@@ -2208,7 +2208,9 @@ def closest_match(match, specs, depth=0):
                 match_length = max(i for i in range(len(match[0]))
                                    if match[0].startswith(spec[0][:i]))
             elif is_number(match[0]) and is_number(spec[0]):
-                match_length = -abs(match[0]-spec[0])
+                m = bool(match[0]) if isinstance(match[0], np.bool_) else match[0]
+                s = bool(spec[0]) if isinstance(spec[0], np.bool_) else spec[0]
+                match_length = -abs(m-s)
             else:
                 match_length = 0
             match_lengths.append((i, match_length, spec[0]))
