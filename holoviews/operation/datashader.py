@@ -230,9 +230,9 @@ class AggregationOperation(ResamplingOperation):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    vdim_suffix = param.String(default=' over {kdims}', doc="""
-        Suffix to add to value dimension name where {kdims} templates
-        in the names of the input element key dimensions""")
+    vdim_prefix = param.String(default='{kdims} ', doc="""
+        Prefix to prepend to value dimension name where {kdims}
+        templates in the names of the input element key dimensions.""")
 
     _agg_methods = {
         'any':   rd.any,
@@ -299,7 +299,7 @@ class AggregationOperation(ResamplingOperation):
                       datatype=['xarray'], bounds=bounds)
 
         kdim_list = '_'.join(str(kd) for kd in params['kdims'])
-        vdim_suffix = self.vdim_suffix.format(kdims=kdim_list)
+        vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
 
         category = None
         if hasattr(agg_fn, 'reduction'):
@@ -319,12 +319,12 @@ class AggregationOperation(ResamplingOperation):
         elif category:
             agg_name = type(agg_fn).__name__.title()
             agg_label = '%s %s' % (category, agg_name)
-            vdims = Dimension('%s%s' % (agg_label, vdim_suffix), label=agg_label)
+            vdims = Dimension('%s%s' % (vdim_prefix, agg_label), label=agg_label)
             if agg_name in ('Count', 'Any'):
                 vdims.nodata = 0
         else:
             agg_name = type(agg_fn).__name__.title()
-            vdims = Dimension('%s%s' % (agg_name, vdim_suffix), label=agg_name, nodata=0)
+            vdims = Dimension('%s%s' % (vdim_prefix, agg_name), label=agg_name, nodata=0)
         params['vdims'] = vdims
         return params
 
