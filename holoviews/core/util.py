@@ -145,7 +145,9 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
-    default_cmap = param.String(default='fire', doc="Used to be 'fire' ")
+    default_cmap = param.String(default='kbc_r', doc="""
+       Global default colormap. Prior to HoloViews 1.14.0, the default
+       value was 'fire' which can be set for backwards compatibility.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)

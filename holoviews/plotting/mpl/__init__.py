@@ -6,6 +6,7 @@ from matplotlib import rc_params_from_file
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from matplotlib.cm import register_cmap
 from param import concrete_descendents
+from colorcet import kbc
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
@@ -218,6 +219,14 @@ fire_r_cmap = LinearSegmentedColormap.from_list("fire_r", list(reversed(fire_col
                                                 N=len(fire_colors))
 register_cmap("fire", cmap=fire_cmap)
 register_cmap("fire_r", cmap=fire_r_cmap)
+
+def mpl_cm(name,colorlist):
+    cm = LinearSegmentedColormap.from_list(name, colorlist, N=len(colorlist))
+    register_cmap(name, cmap=cm)
+
+mpl_cm('kbc_r',list(reversed(kbc)))
+
+
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = config.default_cmap
