@@ -182,13 +182,15 @@ options.VectorField = Options('style', color='black', muted_alpha=0.2)
 
 # Paths
 options.Contours = Options('plot', show_legend=True)
-options.Contours = Options('style', color=Cycle(), cmap='viridis')
-options.Path = Options('style', color=Cycle(), cmap='viridis')
+options.Contours = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
+options.Path = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle(), line_color='black',
-                           cmap='viridis')
+                           cmap=dflt_chart_cmap)
+options.Rectangles = Options('style', cmap=dflt_chart_cmap)
+options.Segments = Options('style', cmap=dflt_chart_cmap)
 
 # Geometries
 options.Rectangles = Options('style', line_color='black')

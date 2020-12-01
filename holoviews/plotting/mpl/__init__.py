@@ -274,11 +274,13 @@ options.Spline = Options('style', edgecolor=Cycle())
 
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
-options.Contours = Options('style', color=Cycle(), cmap='viridis')
+options.Contours = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
 options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle(), cmap='viridis')
+options.Path = Options('style', color=Cycle(), cmap=dflt_chart_cmap)
 options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
-                           cmap='viridis')
+                           cmap=dflt_chart_cmap)
+options.Rectangles = Options('style', cmap=dflt_chart_cmap)
+options.Segments = Options('style', cmap=dflt_chart_cmap)
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
