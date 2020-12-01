@@ -241,6 +241,18 @@ class Renderer(Exporter):
         else:
             plot = obj
 
+        # Trigger streams which were marked as requiring an update
+        triggers = []
+        for p in plot.traverse():
+            if not hasattr(p, '_trigger'):
+                continue
+            for trigger in p._trigger:
+                if trigger not in triggers:
+                    triggers.append(trigger)
+            p._trigger = []
+        for trigger in triggers:
+            Stream.trigger([trigger])
+
         if isinstance(self_or_cls, Renderer):
             self_or_cls.last_plot = plot
 

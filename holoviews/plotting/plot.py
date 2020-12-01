@@ -629,7 +629,7 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
-            
+
             # Only compute ranges if not axiswise on a composite plot
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
@@ -693,7 +693,7 @@ class DimensionedPlot(Plot):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
-        
+
         data_ranges = {}
         robust_ranges = {}
         categorical_dims = []
@@ -962,6 +962,7 @@ class CallbackPlot(object):
         Initializes any callbacks for streams which have defined
         the plotted object as a source.
         """
+        source_streams = []
         cb_classes = set()
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks[self.backend]
@@ -977,8 +978,11 @@ class CallbackPlot(object):
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):
             cb_streams = [s for _, s in group]
+            for cb_stream in cb_streams:
+                if cb_stream not in source_streams:
+                    source_streams.append(cb_stream)
             cbs.append(cb(self, cb_streams, source))
-        return cbs
+        return cbs, source_streams
 
     @property
     def link_sources(self):
@@ -1312,27 +1316,17 @@ class GenericElementPlot(DimensionedPlot):
         (y0, y1), ysrange, yhrange = get_range(element, ranges, ydim)
         (z0, z1), zsrange, zhrange = get_range(element, ranges, zdim)
 
+        trigger = False
         if not self.overlaid and not self.batched:
             xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
             mx0, mx1 = get_minimum_span(x0, x1, xspan)
-
-            # If auto-padding is enabled ensure RangeXY dependent plots
-            # are recomputed before initial render
             if x0 != mx0 or x1 != mx1:
-                for stream in self.streams:
-                    if isinstance(stream, (RangeX, RangeXY)):
-                        stream.update(x_range=(mx0, mx1))
-                        if stream not in self._trigger:
-                            self._trigger.append(stream)
                 x0, x1 = mx0, mx1
+                trigger = True
             my0, my1 = get_minimum_span(y0, y1, yspan)
             if y0 != my0 or y1 != my1:
-                for stream in self.streams:
-                    if isinstance(stream, (RangeY, RangeXY)):
-                        stream.update(y_range=(my0, my1))
-                        if stream not in self._trigger:
-                            self._trigger.append(stream)
                 y0, y1 = my0, my1
+                trigger = True
 
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
@@ -1369,6 +1363,13 @@ class GenericElementPlot(DimensionedPlot):
             elif zdim is None:
                 z0, z1 = np.NaN, np.NaN
             return (x0, y0, z0, x1, y1, z1)
+
+        if not self.drawn:
+            for stream in getattr(self, 'source_streams', []):
+                if (isinstance(stream, (RangeX, RangeY, RangeXY)) and
+                    trigger and stream not in self._trigger):
+                    self._trigger.append(stream)
+
         return (x0, y0, x1, y1)
 
 
@@ -1431,6 +1432,22 @@ class GenericElementPlot(DimensionedPlot):
 
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+
+        if not self.drawn:
+            x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
+            for stream in getattr(self, 'source_streams', []):
+                if isinstance(stream, RangeX):
+                    params = {'x_range': x_range}
+                elif isinstance(stream, RangeY):
+                    params = {'y_range': y_range}
+                elif isinstance(stream, RangeXY):
+                    params = {'x_range': x_range, 'y_range': y_range}
+                else:
+                    continue
+                stream.update(**params)
+                if stream not in self._trigger and (self.xlim or self.ylim):
+                    self._trigger.append(stream)
+
         if self.projection == '3d':
             z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
             return (x0, y0, z0, x1, y1, z1)

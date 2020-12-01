@@ -112,7 +112,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         super(ElementPlot, self).__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
 
     @classmethod
     def trace_kwargs(cls, **kwargs):

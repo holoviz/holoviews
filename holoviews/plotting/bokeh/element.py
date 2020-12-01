@@ -213,7 +213,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.static_source = False
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.geographic = bool(self.hmap.last.traverse(lambda x: x, Tiles))
@@ -1400,10 +1400,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._execute_hooks(element)
 
         self.drawn = True
-
-        trigger = self._trigger
-        self._trigger = []
-        Stream.trigger(trigger)
 
         return plot
 

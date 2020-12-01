@@ -48,7 +48,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.static_source = False
 
