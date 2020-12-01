@@ -92,7 +92,10 @@ class PathPlot(ColorbarPlot):
         artist.set_paths(data[0])
         if 'array' in style:
             artist.set_array(style['array'])
-            artist.set_clim((style['vmin'], style['vmin']))
+        if 'vmin' in style and 'vmax' in style:
+            artist.set_clim((style['vmin'], style['vmax']))
+        if 'clim' in style:
+            artist.set_clim(style['clim'])
         if 'norm' in style:
             artist.set_norm(style['norm'])
         artist.set_visible(style.get('visible', True))
