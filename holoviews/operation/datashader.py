@@ -1266,8 +1266,9 @@ class shade(LinkableOperation):
         overrides = dict(self.p.items())
         if 'normalization' in overrides:
             if 'cnorm' in overrides:
-                self.param.warning("Cannot supply both 'normalization' and 'cnorm' for shading; "
-                                   "use 'cnorm' instead'")
+                self.param.warning("Both the 'cnorm' and 'normalization' keywords"
+                                   "specified; 'cnorm' value taking precedence over "
+                                   "deprecated 'normalization' option")
             elif config.future_deprecations:
                 self.param.warning("Shading 'normalization' parameter deprecated, "
                                    "use 'cnorm' parameter instead'")
