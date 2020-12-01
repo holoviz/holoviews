@@ -22,23 +22,6 @@ Major features:
 - New IbisInterface
   ([#4517](https://github.com/holoviz/holoviews/pull/4517))
 
-Bug fixes:
-
-- Ensure RangeXY returns x/y ranges in correct order (#4665)
-  ([#4665](https://github.com/holoviz/holoviews/pull/4665))
-- Fix datashader instability by disabling padding for Plotly RGB elements.
-  ([#4705](https://github.com/holoviz/holoviews/pull/4705))
-- Various Dask and cuDF histogram fixes
-  ([#4691](https://github.com/holoviz/holoviews/pull/4691))
-- Fix handling of custom matplotlib and bokeh colormaps
-  ([#4693](https://github.com/holoviz/holoviews/pull/4693))
-- Fix cuDF values implementation
-  ([#4687](https://github.com/holoviz/holoviews/pull/4687))
-- Fixed range calculation on HexTiles
-  ([#4689](https://github.com/holoviz/holoviews/pull/4689))
-- Use PIL for RGB.load_image
-  ([#4639](https://github.com/holoviz/holoviews/pull/4639))
-
 Enhancements:
 
 - Allow clashing Params stream contents
@@ -55,6 +38,23 @@ Enhancements:
   ([#4620](https://github.com/holoviz/holoviews/pull/4620))
 - Implement datashader aggregation of Rectangles
   ([#4701](https://github.com/holoviz/holoviews/pull/4701))
+
+Bug fixes:
+
+- Ensure RangeXY returns x/y ranges in correct order (#4665)
+  ([#4665](https://github.com/holoviz/holoviews/pull/4665))
+- Fix datashader instability by disabling padding for Plotly RGB elements.
+  ([#4705](https://github.com/holoviz/holoviews/pull/4705))
+- Various Dask and cuDF histogram fixes
+  ([#4691](https://github.com/holoviz/holoviews/pull/4691))
+- Fix handling of custom matplotlib and bokeh colormaps
+  ([#4693](https://github.com/holoviz/holoviews/pull/4693))
+- Fix cuDF values implementation
+  ([#4687](https://github.com/holoviz/holoviews/pull/4687))
+- Fixed range calculation on HexTiles
+  ([#4689](https://github.com/holoviz/holoviews/pull/4689))
+- Use PIL for RGB.load_image
+  ([#4639](https://github.com/holoviz/holoviews/pull/4639))
 
 Documentation:
 
@@ -79,6 +79,15 @@ This version contains numerous bug fixes and a number of enhancements.
 Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
 @jonmmease, @kcpevey and @philippjfr.
 
+Enhancements:
+
+- Refactor of link selections streams
+  ([#4572](https://github.com/holoviz/holoviews/pull/4572))
+- Add ability to listen to dataset linked_selection
+  ([#4547](https://github.com/holoviz/holoviews/pull/4547))
+- Added `selected` parameter to Bokeh PathPlot
+  ([#4641](https://github.com/holoviz/holoviews/pull/4641))
+
 Bug fixes:
 
 - Improvements to iteration over Series in CuDF data backend
@@ -97,15 +106,6 @@ Bug fixes:
   ([#4637](https://github.com/holoviz/holoviews/pull/4637))
 - Fixed deserialization of polygon/multi_line CDS data in bokeh backend
   ([#4631](https://github.com/holoviz/holoviews/pull/4631))
-
-Enhancements:
-
-- Refactor of link selections streams
-  ([#4572](https://github.com/holoviz/holoviews/pull/4572))
-- Add ability to listen to dataset linked_selection
-  ([#4547](https://github.com/holoviz/holoviews/pull/4547))
-- Added `selected` parameter to Bokeh PathPlot
-  ([#4641](https://github.com/holoviz/holoviews/pull/4641))
 
 Documentation:
 
