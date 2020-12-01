@@ -1264,9 +1264,13 @@ class shade(LinkableOperation):
         kdims = element.kdims
 
         overrides = dict(self.p.items())
-        if 'normalization' in overrides and config.future_deprecations:
-            self.param.warning("Shading 'normalization' parameter deprecated, "
-                               "use 'cnorm' parameter instead'")
+        if 'normalization' in overrides:
+            if 'cnorm' in overrides:
+                self.param.warning("Cannot supply both 'normalization' and 'cnorm' for shading; "
+                                   "use 'cnorm' instead'")
+            elif config.future_deprecations:
+                self.param.warning("Shading 'normalization' parameter deprecated, "
+                                   "use 'cnorm' parameter instead'")
             cnorm = overrides.get('cnorm', overrides['normalization'])
         else:
             cnorm = self.p.cnorm
