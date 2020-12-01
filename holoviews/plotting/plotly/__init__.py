@@ -113,8 +113,8 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
-options.Scatter = Options('style', color=Cycle())
-options.Points = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
 options.TriSurface = Options('style', cmap='viridis')
