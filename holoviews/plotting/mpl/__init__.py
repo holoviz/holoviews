@@ -257,9 +257,9 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
 options.Rectangles = Options('style', edgecolor='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
-options.QuadMesh = Options('style', cmap=dflt_cmap)
+options.Image = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.Raster = Options('style', cmap=config.default_gridded_cmap, interpolation='nearest')
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
 options.HeatMap = Options('style', cmap='RdYlBu_r', edgecolors='white',
                           annular_edgecolors='white', annular_linewidth=0.5,
                           xmarks_edgecolor='white', xmarks_linewidth=3,

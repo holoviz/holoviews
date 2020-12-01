@@ -149,6 +149,12 @@ class Config(param.ParameterizedFunction):
        Global default colormap. Prior to HoloViews 1.14.0, the default
        value was 'fire' which can be set for backwards compatibility.""")
 
+    default_gridded_cmap = param.String(default='kbc_r', doc=""" Global
+       default colormap for gridded elements (i.e Image, Raster and
+       QuadMesh). Can be set to 'fire' to match raster defaults prior to
+       HoloViews 1.14.0 while allowing the default_cmap to be the value
+       of 'kbc_r' used in HoloViews >= 1.14.0""")
+
     def __call__(self, **params):
         self.param.set_param(**params)
         return self

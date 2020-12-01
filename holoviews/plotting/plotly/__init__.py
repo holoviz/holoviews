@@ -121,10 +121,10 @@ options.TriSurface = Options('style', cmap=dflt_cmap)
 options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap)
-options.Raster = Options('style', cmap=dflt_cmap)
-options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdBu_r')
+options.Image = Options('style', cmap=config.default_gridded_cmap)
+options.Raster = Options('style', cmap=config.default_cmapconfig.default_gridded_cmap)
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
+options.HeatMap = Options('style', cmap='RdYlBu_r')
 
 # Disable padding for image-like elements
 options.Image = Options("plot", padding=0)
