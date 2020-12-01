@@ -176,7 +176,7 @@ options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
 options.Bars = Options('style', color=Cycle(), line_color='black', bar_width=0.8, muted_alpha=0.2)
 
-options.Spikes = Options('style', color='black', cmap='fire', muted_alpha=0.2)
+options.Spikes = Options('style', color='black', cmap=dflt_chart_cmap, muted_alpha=0.2)
 options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', muted_alpha=0.2)
 options.VectorField = Options('style', color='black', muted_alpha=0.2)
 
