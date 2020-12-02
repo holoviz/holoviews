@@ -83,10 +83,10 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          aws s3 sync --quiet ./builtdocs s3://holoviews.org/
+          aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
         if: startsWith(github.ref, 'ref/tags/') && !(contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc'))
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
+          aws s3 sync --quiet ./builtdocs s3://holoviews.org/
