@@ -635,7 +635,7 @@ class DimensionedPlot(Plot):
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
                 self._compute_group_range(group, elements, ranges, framewise,
-                                          robust, self.top_level)
+                                          axiswise, robust, self.top_level)
         self.ranges.update(ranges)
         return ranges
 
@@ -689,7 +689,7 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges, framewise, robust, top_level):
+    def _compute_group_range(cls, group, elements, ranges, framewise, axiswise, robust, top_level):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
@@ -849,7 +849,7 @@ class DimensionedPlot(Plot):
                         pass
                 dranges['factors'] = util.unique_array(expanded)
             dim_ranges.append((gdim, dranges))
-        if prev_ranges and not (framewise and top_level):
+        if prev_ranges and not (framewise and (top_level or axiswise)):
             for d, dranges in dim_ranges:
                 for g, drange in dranges.items():
                     prange = prev_ranges.get(d, {}).get(g, None)
