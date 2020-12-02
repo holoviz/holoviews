@@ -56,7 +56,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z').apply.transform(
             z=transform).opts(framewise=True, axiswise=True)
         plot = bokeh_renderer.get_plot(img1+img2)
-        img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        img1_plot = plot.subplots[(0, 0)].subplots['main']
+        img2_plot = plot.subplots[(0, 1)].subplots['main']
         img1_cmapper = img1_plot.handles['color_mapper']
         img2_cmapper = img2_plot.handles['color_mapper']
         self.assertEqual(img1_cmapper.low, 0)
@@ -77,7 +78,8 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z2').apply.transform(
             z2=transform).opts(framewise=True)
         plot = bokeh_renderer.get_plot(img1+img2)
-        img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
+        img1_plot = plot.subplots[(0, 0)].subplots['main']
+        img2_plot = plot.subplots[(0, 1)].subplots['main']
         img1_cmapper = img1_plot.handles['color_mapper']
         img2_cmapper = img2_plot.handles['color_mapper']
         self.assertEqual(img1_cmapper.low, 0)
