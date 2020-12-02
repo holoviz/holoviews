@@ -1,9 +1,117 @@
+Version 1.14.0
+================
+
+This release brings a number of major features including a new
+IbisInterface, new Plotly Dash support and greatly improved Plotly
+support, and greatly improved interaction and integration with
+Datashader. Many thanks to the many contributors to this release,
+whether directly by submitting PRs or by reporting issues and making
+suggestions. Specifically, we would like to thank @philippjfr,
+@jonmmease, and @tonyfast for their work on the IbisInterface and
+@jonmmease for improving Plotly support, as well as @kcpevey, @Hoxbro,
+@marckassay, @mcepl, and @ceball for various other enhancements,
+improvements to documentation and testing infrastructure.  In
+addition, thanks to the maintainers @jbednar, @jlstevens and
+@philippjfr for contributing to this release. This version includes a
+large number of new features, enhancements, and bug fixes.
+
+Major features:
+
+- New Plotly Dash support
+  ([#4605](https://github.com/holoviz/holoviews/pull/4605))
+- New Plotly support for Tiles element
+  ([#4686](https://github.com/holoviz/holoviews/pull/4686))
+- New IbisInterface
+  ([#4517](https://github.com/holoviz/holoviews/pull/4517))
+- Greatly improved Datashader `rasterize()` 
+  ([#4567](https://github.com/holoviz/holoviews/pull/4567)). 
+  Previously, many of the features of Datashader were available only
+  through `datashade`, which rendered data all the way to RGB pixels
+  and thus prevented many client-side Bokeh features like hover,
+  colorbars, dynamic colormaps, etc. `rasterize` now supports all
+  these Bokeh features along with nearly all the Datashader features
+  previously only available through `datashade`, including (now
+  client-side) histogram equalization with `cnorm='eq_hist'` and easy
+  control of transparency via a new `Dimension.nodata` parameter.
+  
+Enhancements:
+
+- Implemented datashader aggregation of Rectangles
+  ([#4701](https://github.com/holoviz/holoviews/pull/4701))
+- New support for robust color limits (`clim_percentile`)
+  ([#4712](https://github.com/holoviz/holoviews/pull/4712))
+- Support for dynamic overlays in link_selections
+  ([#4683](https://github.com/holoviz/holoviews/pull/4683))
+- Allow clashing Param stream contents
+  ([#4677](https://github.com/holoviz/holoviews/pull/4677))
+- Ensured pandas does not convert times to UTC
+  ([#4711](https://github.com/holoviz/holoviews/pull/4711))
+- Removed all use of cyordereddict
+  ([#4620](https://github.com/holoviz/holoviews/pull/4620))
+- Testing infrastructure moved to GH Actions
+  ([#4592](https://github.com/holoviz/holoviews/pull/4592))
+
+Bug fixes:
+
+- Ensure RangeXY returns x/y ranges in correct order (#4665)
+  ([#4665](https://github.com/holoviz/holoviews/pull/4665))
+- Fix datashader instability with Plotly by disabling padding for RGB elements
+  ([#4705](https://github.com/holoviz/holoviews/pull/4705))
+- Various Dask and cuDF histogram fixes
+  ([#4691](https://github.com/holoviz/holoviews/pull/4691))
+- Fix handling of custom matplotlib and bokeh colormaps
+  ([#4693](https://github.com/holoviz/holoviews/pull/4693))
+- Fix cuDF values implementation
+  ([#4687](https://github.com/holoviz/holoviews/pull/4687))
+- Fixed range calculation on HexTiles
+  ([#4689](https://github.com/holoviz/holoviews/pull/4689))
+- Use PIL for RGB.load_image
+  ([#4639](https://github.com/holoviz/holoviews/pull/4639))
+
+Documentation:
+
+- Clarified data types accepted by Points
+  ([#4430](https://github.com/holoviz/holoviews/pull/4430))
+- Updated Introduction notebook
+  ([#4682](https://github.com/holoviz/holoviews/pull/4682))
+- Fixed releases urls
+  ([#4672](https://github.com/holoviz/holoviews/pull/4672))
+
+Compatibility:
+
+- Warning when there are multiple kdims on Chart elements
+  ([#4710](https://github.com/holoviz/holoviews/pull/4710))
+- Set histogram `normed` option to False by default
+  ([#4258](https://github.com/holoviz/holoviews/pull/4258))
+- The default colormap in holoviews is now 'kbc_r' instead of
+  'fire'; see issue 
+  [#3500](https://github.com/holoviz/holoviews/issues/3500) for details.
+  This change was made mainly because the highest value of the fire colormap
+  is white, which meant data was often not visible against a white
+  background. To restore the old behavior you can set
+  `hv.config.default_cmap='fire'`, which you can do via the extension e.g.
+  `hv.extension('bokeh', config=dict(default_cmap='fire'))`. There is
+  also `hv.config.default_gridded_cmap` which you can set to 'fire' if
+  you wish to use the old colormap for the `Raster`, `Image` and
+  `QuadMesh` element types. The default `HeatMap` colormap has also been
+  set to 'kbc_r' for consistency and can be set back to the old value of
+  'RdYlBu_r' via `hv.config.default_heatmap_cmap`.
+
 Version 1.13.5
 ==============
 
 This version contains numerous bug fixes and a number of enhancements.
 Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
 @jonmmease, @kcpevey and @philippjfr.
+
+Enhancements:
+
+- Refactor of link selections streams
+  ([#4572](https://github.com/holoviz/holoviews/pull/4572))
+- Add ability to listen to dataset linked_selection
+  ([#4547](https://github.com/holoviz/holoviews/pull/4547))
+- Added `selected` parameter to Bokeh PathPlot
+  ([#4641](https://github.com/holoviz/holoviews/pull/4641))
 
 Bug fixes:
 
@@ -23,15 +131,6 @@ Bug fixes:
   ([#4637](https://github.com/holoviz/holoviews/pull/4637))
 - Fixed deserialization of polygon/multi_line CDS data in bokeh backend
   ([#4631](https://github.com/holoviz/holoviews/pull/4631))
-
-Enhancements:
-
-- Refactor of link selections streams
-  ([#4572](https://github.com/holoviz/holoviews/pull/4572))
-- Add ability to listen to dataset linked_selection
-  ([#4547](https://github.com/holoviz/holoviews/pull/4547))
-- Added `selected` parameter to Bokeh PathPlot
-  ([#4641](https://github.com/holoviz/holoviews/pull/4641))
 
 Documentation:
 
