@@ -522,7 +522,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         elif offset:
             self._update_separator(offset)
 
-        if cmap is not None:
+        if cmap is not None and main_range and (None not in main_range):
             self._colorize_bars(cmap, bars, element, main_range, dim)
         return bars
 

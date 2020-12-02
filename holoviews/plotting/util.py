@@ -411,7 +411,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
     """
     key = plot.current_key
     dims = element.dimensions()
-    dim = dims[0] if 'frequency' in dims[1].name else dims[1]
+    dim = dims[0] if 'frequency' in dims[1].name or 'count' in dims[1].name else dims[1]
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
