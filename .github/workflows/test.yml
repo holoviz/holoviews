@@ -1,12 +1,11 @@
-# things not included
-# language
-# notifications - no email notifications set up
-
 name: pytest
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
-    - '*'
+      - '*'
 
 jobs:
   test_suite:
