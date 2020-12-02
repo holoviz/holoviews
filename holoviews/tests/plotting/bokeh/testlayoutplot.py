@@ -8,6 +8,7 @@ from holoviews.core import (HoloMap, GridSpace, Layout, Empty, Dataset,
 from holoviews.element import Curve, Image, Points, Histogram, Scatter
 from holoviews.streams import Stream
 from holoviews.util import render, opts
+from holoviews.util.transform import dim
 
 try:
     from bokeh.layouts import Column, Row
@@ -47,6 +48,50 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(img2_cmapper.low, 0)
         self.assertEqual(img1_cmapper.high, 40)
         self.assertEqual(img2_cmapper.high, 40)
+
+    def test_layout_framewise_matching_norm_update(self):
+        img1 = Image(np.mgrid[0:5, 0:5][0], vdims='z').opts(framewise=True, axiswise=True)
+        stream = Stream.define('zscale', value=1)()
+        transform = dim('z')*stream.param.value
+        img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z').apply.transform(
+            z=transform).opts(framewise=True, axiswise=True)
+        plot = bokeh_renderer.get_plot(img1+img2)
+        img1_plot = plot.subplots[(0, 0)].subplots['main']
+        img2_plot = plot.subplots[(0, 1)].subplots['main']
+        img1_cmapper = img1_plot.handles['color_mapper']
+        img2_cmapper = img2_plot.handles['color_mapper']
+        self.assertEqual(img1_cmapper.low, 0)
+        self.assertEqual(img2_cmapper.low, 0)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 4)
+        stream.update(value=10)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 40)
+        stream.update(value=2)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 8)
+
+    def test_layout_framewise_nonmatching_norm_update(self):
+        img1 = Image(np.mgrid[0:5, 0:5][0], vdims='z').opts(framewise=True)
+        stream = Stream.define('zscale', value=1)()
+        transform = dim('z2')*stream.param.value
+        img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z2').apply.transform(
+            z2=transform).opts(framewise=True)
+        plot = bokeh_renderer.get_plot(img1+img2)
+        img1_plot = plot.subplots[(0, 0)].subplots['main']
+        img2_plot = plot.subplots[(0, 1)].subplots['main']
+        img1_cmapper = img1_plot.handles['color_mapper']
+        img2_cmapper = img2_plot.handles['color_mapper']
+        self.assertEqual(img1_cmapper.low, 0)
+        self.assertEqual(img2_cmapper.low, 0)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 4)
+        stream.update(value=10)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 40)
+        stream.update(value=2)
+        self.assertEqual(img1_cmapper.high, 4)
+        self.assertEqual(img2_cmapper.high, 8)
 
     def test_layout_title(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
