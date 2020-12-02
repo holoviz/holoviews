@@ -44,7 +44,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          channel-priority: "strict"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
