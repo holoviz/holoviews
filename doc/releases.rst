@@ -31,6 +31,9 @@ thanks to the maintainers @jbednar, @jlstevens and @philippjfr for
 contributing to this release. This version includes a large number of
 new features, enhancements, and bug fixes.
 
+It is important to note that version 1.14.0 will be the last HoloViews
+release supporting Python 2.
+
 Major features:
 
 -  New Plotly Dash support
