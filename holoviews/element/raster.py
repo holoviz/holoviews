@@ -635,6 +635,7 @@ class RGB(Image):
 
         with open(filename, 'rb') as f:
             data = np.array(Image.open(f))
+            data = data / 255.
 
         if array:
             return data
