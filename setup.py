@@ -38,7 +38,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
-    "datashader ==0.11.1",
+    "datashader >=0.11.1",
     "ffmpeg",
     "cftime",
     "netcdf4",
