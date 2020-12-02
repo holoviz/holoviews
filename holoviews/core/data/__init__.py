@@ -354,6 +354,16 @@ class Dataset(Element):
                 if hasattr(self, '_binned'):
                     self._dataset._binned = self._binned
 
+    def __getstate__(self):
+        "Ensures pipelines are dropped"
+        obj_dict = super(Dataset, self).__getstate__()
+        if '_pipeline' in obj_dict:
+            pipeline = obj_dict['_pipeline']
+            obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
+        if '_transforms' in obj_dict:
+            obj_dict['_transforms'] = []
+        return obj_dict
+
     @property
     def redim(self):
         return Redim(self, mode='dataset')
