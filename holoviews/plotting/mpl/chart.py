@@ -468,7 +468,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         """
         edges, hvals, widths, lims, isdatetime = super(SideHistogramPlot, self)._process_hist(hist)
         offset = self.offset * lims[3]
-        hvals *= 1-self.offset
+        hvals = hvals * (1-self.offset)
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims, isdatetime
