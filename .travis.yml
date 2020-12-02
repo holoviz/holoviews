@@ -165,7 +165,7 @@ jobs:
         - doit pip_on_conda
         - if [ "$PYTHON_VERSION" == "3.7" ]; then conda uninstall matplotlib matplotlib-base --force; conda install matplotlib=3.0.3 --no-deps; fi;
         - doit ecosystem=pip package_build
-      script: doit ecosystem=pip package_upload -u $TPPU -p $TPPP -r ${PYPI}
+      script: doit ecosystem=pip package_upload -u $PPU -p $PPP -r ${PYPI}
 
     - <<: *pip_pkg
       stage: pip_package
