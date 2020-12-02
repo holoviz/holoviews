@@ -1045,7 +1045,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
             raise SkipTest('Datashader does not support DataArray yet')
         arr = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]]).T
         spreaded = spread(Image(arr))
-        arr = np.array([[0, 0, 0], [1, 1, 1], [1, 1, 1]]).T
+        arr = np.array([[0, 0, 0], [2, 3, 2], [2, 3, 2]]).T
         self.assertEqual(spreaded, Image(arr))
         
 
