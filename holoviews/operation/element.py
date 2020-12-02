@@ -1027,8 +1027,8 @@ class gridmatrix(param.ParameterizedFunction):
        or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
-       If a HoloMap is supplied this will allow overlaying one or
-       more of it's key dimensions.""")
+       If a HoloMap is supplied, this will allow overlaying one or
+       more of its key dimensions.""")
 
     def __call__(self, data, **params):
         p = param.ParamOverrides(self, params)
