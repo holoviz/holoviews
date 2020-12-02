@@ -154,4 +154,4 @@ ESRI = EsriImagery # For backwards compatibility with gv 1.5
 OSM = lambda: Tiles('http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 Wikipedia = lambda: Tiles('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png', name="Wikipedia")
 
-tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k != 'ESRI'}
+tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat']}
