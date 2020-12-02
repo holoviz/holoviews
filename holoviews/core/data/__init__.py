@@ -9,6 +9,8 @@ import sys
 import types
 import copy
 
+from contextlib import contextmanager
+
 import numpy as np
 import param
 import pandas as pd # noqa
@@ -154,10 +156,24 @@ class DataConversion(object):
             return group
 
 
+@contextmanager
+def disable_pipeline():
+    """
+    Disable PipelineMeta class from storing pipelines.
+    """
+    PipelineMeta.disable = True
+    try:
+        yield
+    finally:
+        PipelineMeta.disable = False
+
+
 class PipelineMeta(ParameterizedMetaclass):
 
     # Public methods that should not be wrapped
     blacklist = ['__init__', 'clone']
+
+    disable = False
 
     def __new__(mcs, classname, bases, classdict):
 
@@ -183,6 +199,8 @@ class PipelineMeta(ParameterizedMetaclass):
 
             try:
                 result = method_fn(*args, **kwargs)
+                if PipelineMeta.disable:
+                    return result
 
                 op = method_op.instance(
                     input_type=type(inst),
@@ -353,6 +371,16 @@ class Dataset(Element):
                                         transforms=None, _validate_vdims=False)
                 if hasattr(self, '_binned'):
                     self._dataset._binned = self._binned
+
+    def __getstate__(self):
+        "Ensures pipelines are dropped"
+        obj_dict = super(Dataset, self).__getstate__()
+        if '_pipeline' in obj_dict:
+            pipeline = obj_dict['_pipeline']
+            obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
+        if '_transforms' in obj_dict:
+            obj_dict['_transforms'] = []
+        return obj_dict
 
     @property
     def redim(self):
