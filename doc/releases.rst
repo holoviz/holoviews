@@ -1,21 +1,13 @@
 Releases
 ========
 
-Announcements
--------------
-
-* `Version 1.13 <http://blog.pyviz.org/release_1.13.html>`__ (June 23, 2020)
-* `Version 1.10 <http://blog.pyviz.org/release_1.10.html>`__ (April 11, 2018)
-
-
-Release notes
--------------
-
 Version 1.14
 ~~~~~~~~~~~~
 
 Version 1.14.0
 **************
+
+Date: 2020-12-03
 
 This release brings a number of major features including a new
 IbisInterface, new Plotly Dash support and greatly improved Plotly
@@ -127,6 +119,9 @@ Version 1.13
 Version 1.13.5
 **************
 
+Date: 2020-10-28
+
+
 This version contains numerous bug fixes and a number of enhancements.
 Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
 @jonmmease, @kcpevey and @philippjfr.
@@ -168,6 +163,8 @@ Documentation:
 
 Version 1.13.4
 **************
+
+Date: 2020-10-23
 
 This version fixes a large number of bugs particularly relating to
 linked selections. Additionally it introduces some enhancements laying
@@ -241,6 +238,8 @@ Enhancements:
 Version 1.13.3
 **************
 
+Date: 2020-06-23
+
 This version introduces a number of enhancements of existing
 functionality, particularly for features introduced in 1.13.0,
 e.g. cuDF support and linked selections. In addition it introduces a
@@ -312,6 +311,8 @@ Bug fixes:
 Version 1.13.2
 **************
 
+Date: 2020-04-02
+
 This is a minor patch release fixing a number of regressions
 introduced as part of the 1.13.x releases. Many thanks to the
 contributors including @eddienko, @poplarShift, @wuyuani135, @maximlt
@@ -337,6 +338,8 @@ Bug fixes:
 
 Version 1.13.1
 **************
+
+Date: 2020-03-25
 
 This is a minor patch release to fix issues compatibility with the
 about to be released Bokeh 2.0.1 release. Additionally this release
@@ -383,6 +386,8 @@ Documentation:
 Version 1.13.0
 **************
 
+Date: 2020-03-21
+
 This release is packed full of features and includes a general
 refactoring of how HoloViews renders widgets now built on top of the
 Panel library. Many thanks to the many contributors to this release
@@ -393,6 +398,10 @@ suggestions. Specifically we would like to thank @poplarShift,
 @srp3003, @jsignell as well as the maintainers @jbednar, @jlstevens and
 @philippjfr for contributing to this release. This version includes the
 addition of a large number of features, enhancements and bug fixes:
+
+`Read more about version 1.13 here
+<http://blog.pyviz.org/release_1.13.html>`__ (June 23, 2020)
+
 
 Major features:
 
@@ -1347,6 +1356,10 @@ fixes, as well as a small number of API changes. Many thanks to the
 numerous users who filed bug reports, tested development versions, and
 contributed a number of new features and bug fixes, including special
 thanks to @mansenfranzen, @ea42gh, @drs251 and @jakirkham.
+
+`Read more about version 1.10 here
+<http://blog.pyviz.org/release_1.10.html>`__ (April 11, 2018)
+
 
 JupyterLab support:
 
