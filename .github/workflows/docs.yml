@@ -58,8 +58,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc
-          conda uninstall matplotlib matplotlib-core --force
-          conda install -c conda-forge geckodriver selenium matplotlib
+          conda install -c conda-forge geckodriver selenium
       - name: bokeh sampledata
         run: |
           eval "$(conda shell.bash hook)"
