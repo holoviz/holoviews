@@ -276,7 +276,7 @@ options.VSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.HSpan = Options('style', alpha=0.5, facecolor=Cycle())
 options.Spline = Options('style', edgecolor=Cycle())
 
-options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
+options.Arrow = Options('style', color='k', linewidth=2, textsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Contours = Options('plot', show_legend=True)
