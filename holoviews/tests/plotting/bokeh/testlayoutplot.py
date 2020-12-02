@@ -54,7 +54,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         stream = Stream.define('zscale', value=1)()
         transform = dim('z')*stream.param.value
         img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z').apply.transform(
-            z=dim('z')*stream.param.value).opts(framewise=True, axiswise=True)
+            z=transform).opts(framewise=True, axiswise=True)
         plot = bokeh_renderer.get_plot(img1+img2)
         img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
         img1_cmapper = img1_plot.handles['color_mapper']
@@ -75,7 +75,7 @@ class TestLayoutPlot(LoggingComparisonTestCase, TestBokehPlot):
         stream = Stream.define('zscale', value=1)()
         transform = dim('z2')*stream.param.value
         img2 = Image(np.mgrid[0:5, 0:5][0], vdims='z2').apply.transform(
-            z2=dim('z2')*stream.param.value).opts(framewise=True)
+            z2=transform).opts(framewise=True)
         plot = bokeh_renderer.get_plot(img1+img2)
         img1_plot, img2_plot = (sp.subplots['main'] for sp in plot.subplots.values())
         img1_cmapper = img1_plot.handles['color_mapper']
