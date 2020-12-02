@@ -42,8 +42,8 @@ jobs:
         with:
           miniconda-version: "latest"
       - name: Fetch unshallow
-       if: !(startsWith(github.ref, 'ref/tags/'))
-       run: git fetch --prune --tags --unshallow
+        if: !(startsWith(github.ref, 'ref/tags/'))
+        run: git fetch --prune --tags --unshallow
       - name: conda setup
         run: |
           conda config --set always_yes True
