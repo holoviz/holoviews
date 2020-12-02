@@ -1447,7 +1447,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Resets RangeXY streams if norm option is set to framewise
         """
-        # Temporarily reverts this fix (see https://github.com/holoviz/holoviews/issues/4396)
+        # Skipping conditional to temporarily revert fix (see https://github.com/holoviz/holoviews/issues/4396)
         # This fix caused PlotSize change events to rerender
         # rasterized/datashaded with the full extents which was wrong
         if self.overlaid or True:
