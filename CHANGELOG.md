@@ -2,16 +2,17 @@ Version 1.14.0
 ==============
 
 This release is brings a number of major features including a new
-IbisInterface and Plotly Dash support. Many thanks to the many
-contributors to this release either directly by submitting PRs or by
-reporting issues and making suggestions. Specifically we would like to
-thank @philippjfr, @jonmmease and @tonyfast for their work on the
-IbisInterface and @jonmmease for improving Plotly support as well as
-@kcpevey, @Hoxbro, @marckassay, @mcepl and @ceball for various other
-enhancements, improvements to documentation and testing infrastructure.
-In addition, thanks to the maintainers @jbednar, @jlstevens and
-@philippjfr for contributing to this release. This version includes the
-addition of a large number of features, enhancements and bug fixes:
+IbisInterface, Plotly Dash support and improved interaction and
+integration with Datashader. Many thanks to the many contributors to
+this release either directly by submitting PRs or by reporting issues
+and making suggestions. Specifically we would like to thank @philippjfr,
+@jonmmease and @tonyfast for their work on the IbisInterface and
+@jonmmease for improving Plotly support as well as @kcpevey, @Hoxbro,
+@marckassay, @mcepl and @ceball for various other enhancements,
+improvements to documentation and testing infrastructure.  In addition,
+thanks to the maintainers @jbednar, @jlstevens and @philippjfr for
+contributing to this release. This version includes the addition of a
+large number of features, enhancements and bug fixes:
 
 Major features:
 
