@@ -139,7 +139,7 @@ Bug fixes:
   (`#4646 <https://github.com/holoviz/holoviews/pull/4646>`_)
 - Fixed bug resetting ranges
   (`#4654 <https://github.com/holoviz/holoviews/pull/4654>`_)
-- Fix bug matching elements to subplots in `DynamicMap` (#4649)
+- Fix bug matching elements to subplots in `DynamicMap`
   (`#4649 <https://github.com/holoviz/holoviews/pull/4649>`_)
 - Ensure consistent split `Violin` color assignment
   (`#4650 <https://github.com/holoviz/holoviews/pull/4650>`_)
