@@ -639,7 +639,19 @@ class RGB(Image):
         if array:
             return data
 
-        (h, w, _) = data.shape
+        (h, w, d) = data.shape
+        if 'vdims' not in kwargs and data.dtype.kind != 'f':
+            vdims = [
+                Dimension('R', range=(0, 255)),
+                Dimension('G', range=(0, 255)),
+                Dimension('B', range=(0, 255))
+            ]
+            if d == 4:
+                vdims.append(
+                    Dimension('A', range=(0, 255))
+                )
+            kwargs['vdims'] = vdims
+
         if bounds is None:
             f = float(height) / h
             xoffset, yoffset = w*f/2, h*f/2
