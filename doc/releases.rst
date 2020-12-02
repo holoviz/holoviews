@@ -52,6 +52,9 @@ Major features:
    previously only available through ``datashade``, including (now
    client-side) histogram equalization with ``cnorm='eq_hist'`` and easy
    control of transparency via a new ``Dimension.nodata`` parameter.
+   See the `Large Data User Guide
+   <https://holoviews.org/user_guide/Large_Data.html>`__ for more
+   information.
 
 Enhancements:
 
