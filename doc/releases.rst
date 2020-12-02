@@ -400,7 +400,7 @@ suggestions. Specifically we would like to thank @poplarShift,
 addition of a large number of features, enhancements and bug fixes:
 
 `Read more about version 1.13 here
-<http://blog.pyviz.org/release_1.13.html>`__ (June 23, 2020)
+<http://blog.holoviz.org/release_1.13.html>`__ (June 23, 2020)
 
 
 Major features:
@@ -1358,7 +1358,7 @@ contributed a number of new features and bug fixes, including special
 thanks to @mansenfranzen, @ea42gh, @drs251 and @jakirkham.
 
 `Read more about version 1.10 here
-<http://blog.pyviz.org/release_1.10.html>`__ (April 11, 2018)
+<http://blog.holoviz.org/release_1.10.html>`__ (April 11, 2018)
 
 
 JupyterLab support:
