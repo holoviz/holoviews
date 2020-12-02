@@ -25,7 +25,7 @@ from pyviz_comms import JupyterComm
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.data import Dataset
+from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
@@ -1607,7 +1607,9 @@ class GenericOverlayPlot(GenericElementPlot):
                                         for key in holomap.data.keys()])
         ranges = frame_ranges.values()
 
-        return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
+        with disable_pipeline():
+            collapsed = Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
+        return collapsed
 
 
     def _create_subplots(self, ranges):

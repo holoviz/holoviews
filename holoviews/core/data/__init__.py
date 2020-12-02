@@ -9,6 +9,8 @@ import sys
 import types
 import copy
 
+from contextlib import contextmanager
+
 import numpy as np
 import param
 import pandas as pd # noqa
@@ -154,10 +156,24 @@ class DataConversion(object):
             return group
 
 
+@contextmanager
+def disable_pipeline():
+    """
+    Disable PipelineMeta class from storing pipelines.
+    """
+    PipelineMeta.disable = True
+    try:
+        yield
+    finally:
+        PipelineMeta.disable = False
+
+
 class PipelineMeta(ParameterizedMetaclass):
 
     # Public methods that should not be wrapped
     blacklist = ['__init__', 'clone']
+
+    disable = False
 
     def __new__(mcs, classname, bases, classdict):
 
@@ -183,6 +199,8 @@ class PipelineMeta(ParameterizedMetaclass):
 
             try:
                 result = method_fn(*args, **kwargs)
+                if PipelineMeta.disable:
+                    return result
 
                 op = method_op.instance(
                     input_type=type(inst),

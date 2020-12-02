@@ -32,6 +32,7 @@ from panel.viewable import Viewable
 from pyviz_comms import CommManager, JupyterCommManager
 
 from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
+from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import basestring, unbound_dimensions, LooseVersion
@@ -227,7 +228,9 @@ class Renderer(Exporter):
             if not displayable(obj):
                 obj = collate(obj)
                 initialize_dynamic(obj)
-            obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
+
+            with disable_pipeline():
+                obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
             plot_opts = dict(self_or_cls.plot_options(obj, self_or_cls.size),
                              **kwargs)
             if isinstance(obj, AdjointLayout):
