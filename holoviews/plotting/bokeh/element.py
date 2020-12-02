@@ -1453,7 +1453,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.overlaid or True:
             return
         for el, callbacks in self.traverse(lambda x: (x.current_frame, x.callbacks)):
-            if el is None:W
+            if el is None:
                 continue
             for callback in callbacks:
                 norm = self.lookup_options(el, 'norm').options
