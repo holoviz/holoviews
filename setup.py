@@ -110,6 +110,7 @@ extras_require["build"] = [
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
     "python <3.8",
+    "pip",
 ]
 
 # Everything for examples and nosetests

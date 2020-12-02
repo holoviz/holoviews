@@ -15,3 +15,7 @@ def task_pip_on_conda():
         # this interferes with pip-installed nose
         'conda remove -y --force nose'
     ]}
+
+import pyctdev._conda
+python_develop = 'python -m pip install --no-deps --no-build-isolation -e .'
+pyctdev._conda.python_develop = python_develop
