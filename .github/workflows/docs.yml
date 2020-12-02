@@ -59,7 +59,7 @@ jobs:
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc
           conda uninstall matplotlib --force
-          conda install -c conda-forge geckodriver selenium "matplotlib-core>=3"
+          conda install -c conda-forge geckodriver selenium matplotlib
       - name: bokeh sampledata
         run: |
           eval "$(conda shell.bash hook)"
