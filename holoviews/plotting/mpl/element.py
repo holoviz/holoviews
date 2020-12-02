@@ -453,6 +453,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         using the last available frame.
         """
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -1127,6 +1128,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if element is None and not reused:
             element = self._get_frame(key)
         elif element is not None:

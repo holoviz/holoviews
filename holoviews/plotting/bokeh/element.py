@@ -1447,10 +1447,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Resets RangeXY streams if norm option is set to framewise
         """
-        if self.overlaid:
+        # Temporarily reverts this fix (see https://github.com/holoviz/holoviews/issues/4396)
+        # This fix caused PlotSize change events to rerender
+        # rasterized/datashaded with the full extents which was wrong
+        if self.overlaid or True:
             return
         for el, callbacks in self.traverse(lambda x: (x.current_frame, x.callbacks)):
-            if el is None:
+            if el is None:W
                 continue
             for callback in callbacks:
                 norm = self.lookup_options(el, 'norm').options
@@ -1466,6 +1469,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -2367,6 +2371,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         """
         self._reset_ranges()
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:

@@ -134,8 +134,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
+        self.prev_frame =  self.current_frame
         if element is None:
             element = self._get_frame(key)
+        else:
+            self.current_frame = element
 
         if is_geo and not self._supports_geo:
             raise ValueError(
@@ -723,8 +726,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return figure
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
-
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:

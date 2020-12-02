@@ -604,6 +604,7 @@ class DimensionedPlot(Plot):
         over the whole animation) and finally compute the dimension
         ranges in each group. The new set of ranges is returned.
         """
+        prev_frame = getattr(self, 'prev_frame', None)
         all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
@@ -635,7 +636,8 @@ class DimensionedPlot(Plot):
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
                 self._compute_group_range(group, elements, ranges, framewise,
-                                          axiswise, robust, self.top_level)
+                                          axiswise, robust, self.top_level,
+                                          prev_frame)
         self.ranges.update(ranges)
         return ranges
 
@@ -687,9 +689,34 @@ class DimensionedPlot(Plot):
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
+    @classmethod
+    def _merge_group_ranges(cls, ranges):
+        hard_range = util.max_range(ranges['hard'], combined=False)
+        soft_range = util.max_range(ranges['soft'])
+        robust_range = util.max_range(ranges.get('robust', []))
+        data_range = util.max_range(ranges['data'])
+        combined = util.dimension_range(data_range[0], data_range[1],
+                                        hard_range, soft_range)
+        dranges = {'data': data_range, 'hard': hard_range,
+                   'soft': soft_range, 'combined': combined,
+                   'robust': robust_range, 'values': ranges}
+        if 'factors' in ranges:
+            all_factors = ranges['factors']
+            factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
+            dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+            expanded = [v for fctrs in all_factors for v in fctrs]
+            if dtype is not None:
+                try:
+                    # Try to keep the same dtype
+                    expanded = np.array(expanded, dtype=dtype)
+                except Exception:
+                    pass
+            dranges['factors'] = util.unique_array(expanded)
+        return dranges
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges, framewise, axiswise, robust, top_level):
+    def _compute_group_range(cls, group, elements, ranges, framewise,
+                             axiswise, robust, top_level, prev_frame):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
@@ -770,7 +797,9 @@ class DimensionedPlot(Plot):
                         except:
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
-                        group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                        group_ranges[dim_name] = {
+                            'id': [], 'data': [], 'hard': [], 'soft': []
+                        }
 
                     if factors is not None:
                         if 'factors' not in group_ranges[dim_name]:
@@ -778,6 +807,7 @@ class DimensionedPlot(Plot):
                         group_ranges[dim_name]['factors'].append(factors)
                     else:
                         group_ranges[dim_name]['data'].append(drange)
+                    group_ranges[dim_name]['id'].append(id(el))
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
@@ -786,8 +816,9 @@ class DimensionedPlot(Plot):
                     continue
                 data_range = data_ranges[(el, el_dim)]
                 if dim_name not in group_ranges:
-                    group_ranges[dim_name] = {'data': [], 'hard': [],
-                                              'soft': [], 'robust': []}
+                    group_ranges[dim_name] = {
+                        'id': [], 'data': [], 'hard': [], 'soft': [], 'robust': []
+                    }
                 group_ranges[dim_name]['data'].append(data_range)
                 group_ranges[dim_name]['hard'].append(el_dim.range)
                 group_ranges[dim_name]['soft'].append(el_dim.soft_range)
@@ -811,12 +842,14 @@ class DimensionedPlot(Plot):
                         values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)
                     group_ranges[dim_name]['factors'].append(factors)
+                group_ranges[dim_name]['id'].append(id(el))
 
+        # Avoid merging ranges with non-matching types
         group_dim_ranges = defaultdict(dict)
         for gdim, values in group_ranges.items():
             matching = True
             for t, rs in values.items():
-                if t == 'factors':
+                if t in ('factors', 'id'):
                     continue
                 matching &= (
                     len({'date' if isinstance(v, util.datetime_types) else 'number'
@@ -825,31 +858,35 @@ class DimensionedPlot(Plot):
             if matching:
                 group_dim_ranges[gdim] = values
 
+        # Merge ranges across elements
         dim_ranges = []
         for gdim, values in group_dim_ranges.items():
-            hard_range = util.max_range(values['hard'], combined=False)
-            soft_range = util.max_range(values['soft'])
-            robust_range = util.max_range(values.get('robust', []))
-            data_range = util.max_range(values['data'])
-            combined = util.dimension_range(data_range[0], data_range[1],
-                                            hard_range, soft_range)
-            dranges = {'data': data_range, 'hard': hard_range,
-                       'soft': soft_range, 'combined': combined,
-                       'robust': robust_range}
-            if 'factors' in values:
-                all_factors = values['factors']
-                factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
-                dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
-                expanded = [v for fctrs in all_factors for v in fctrs]
-                if dtype is not None:
-                    try:
-                        # Try to keep the same dtype
-                        expanded = np.array(expanded, dtype=dtype)
-                    except Exception:
-                        pass
-                dranges['factors'] = util.unique_array(expanded)
+            dranges = cls._merge_group_ranges(values)
             dim_ranges.append((gdim, dranges))
-        if prev_ranges and not (framewise and (top_level or axiswise)):
+
+        # Merge local ranges into global range dictionary
+        if prev_ranges and not (top_level or axiswise) and framewise and prev_frame is not None:
+            # Partially update global ranges with local changes
+            prev_ids = prev_frame.traverse(lambda o: id(o))
+            for d, dranges in dim_ranges:
+                values = prev_ranges.get(d, {}).get('values', None)
+                ids = values.get('id')
+                if values is None:
+                    for g, drange in dranges.items():
+                        if d not in prev_ranges:
+                            prev_ranges[d] = {}
+                        prev_ranges[d][g] = drange
+                    continue
+
+                # Filter out ranges of updated elements and append new ranges
+                merged = {}
+                for g, drange in dranges['values'].items():
+                    filtered = [r for i, r in zip(ids, values[g]) if i not in prev_ids]
+                    filtered += drange
+                    merged[g] = filtered
+                prev_ranges[d] = cls._merge_group_ranges(merged)
+        elif prev_ranges and not (framewise and (top_level or axiswise)):
+            # Combine local with global range
             for d, dranges in dim_ranges:
                 for g, drange in dranges.items():
                     prange = prev_ranges.get(d, {}).get(g, None)
@@ -857,12 +894,13 @@ class DimensionedPlot(Plot):
                         if d not in prev_ranges:
                             prev_ranges[d] = {}
                         prev_ranges[d][g] = drange
-                    elif g == 'factors':
+                    elif g in ('factors', 'values'):
                         prev_ranges[d][g] = drange
                     else:
                         prev_ranges[d][g] = util.max_range([prange, drange],
                                                            combined=g=='hard')
         else:
+            # Override global range
             ranges[group] = OrderedDict(dim_ranges)
 
 
