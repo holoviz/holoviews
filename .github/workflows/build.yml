@@ -20,6 +20,7 @@ jobs:
       PYTHON_VERSION: "3.7"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
+      CONDA_UPLOAD_TOKEN: ${{ secrets.CONDA_UPLOAD_TOKEN }}
     steps:
       - uses: actions/checkout@v2
         with:
@@ -85,6 +86,14 @@ jobs:
           doit develop_install $CHANS_DEV -o unit_tests
           pip uninstall -y holoviews
           doit pip_on_conda
+      - name: matplotlib patch
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda uninstall matplotlib matplotlib-base --force
+          conda install matplotlib=3.0.3 --no-deps
+          python -c "import matplotlib; print(matplotlib.__version__);"
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"
