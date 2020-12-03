@@ -529,6 +529,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
+        if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
+             plot_kwargs.pop('vmin', None)
+             plot_kwargs.pop('vmax', None)
         artist = plot_fn(*plot_args, **plot_kwargs)
         return {'artist': artist[0] if isinstance(artist, list) and
                 len(artist) == 1 else artist}
