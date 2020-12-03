@@ -43,6 +43,9 @@ jobs:
           miniconda-version: "latest"
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
+      - name: Set output
+        id: vars
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
       - name: conda setup
         run: |
           conda config --set always_yes True
@@ -77,12 +80,13 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs
       - name: upload dev
+        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
-        if: startsWith(github.ref, 'ref/tags/') && !(contains(github.ref, 'a') || contains(github.ref, 'b') || contains(github.ref, 'rc'))
+        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
