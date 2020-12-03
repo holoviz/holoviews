@@ -66,7 +66,7 @@ jobs:
           fetch-depth: "100"
       - uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: $PYTHON_VERSION
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
@@ -77,15 +77,21 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
+          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
       - name: env setup
         run: |
           eval "$(conda shell.bash hook)"
-          doit env_create $CHANS_DEV --python=$PYTHON_VERSION
           conda activate test-environment
           doit develop_install $CHANS_DEV -o unit_tests
           pip uninstall -y holoviews
           doit pip_on_conda
       - name: pip build
-        run: doit ecosystem=pip package_build
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_build
       - name: pip upload
-        run: doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit ecosystem=pip package_upload -u $PPU -p $PPP -r $PYPI
