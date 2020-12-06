@@ -110,7 +110,7 @@ extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
-    "python",
+    "python <3.8",
     "pip",
 ]
 
