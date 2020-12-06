@@ -73,6 +73,13 @@ jobs:
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda install -c pyviz "datashader=0.11.1"
+      - name: matplotlib patch
+        if: startsWith(matrix.python-version, 3.)
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install matplotlib=3.0.3 --no-deps
+          python -c "import matplotlib; print(matplotlib.__version__);"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
