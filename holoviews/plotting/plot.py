@@ -870,13 +870,15 @@ class DimensionedPlot(Plot):
             prev_ids = prev_frame.traverse(lambda o: id(o))
             for d, dranges in dim_ranges:
                 values = prev_ranges.get(d, {}).get('values', None)
-                ids = values.get('id')
-                if values is None:
+
+                if values is None or 'id' not in values:
                     for g, drange in dranges.items():
                         if d not in prev_ranges:
                             prev_ranges[d] = {}
                         prev_ranges[d][g] = drange
                     continue
+
+                ids = values.get('id')
 
                 # Filter out ranges of updated elements and append new ranges
                 merged = {}
