@@ -122,8 +122,9 @@ class _base_link_selections(param.ParameterizedFunction):
                 stream.clear_history()
                 stream.event()
 
-        mode_stream = SelectMode(source=hvobj)
-        mode_stream.param.watch(self._update_mode, 'mode')
+        if not isinstance(hvobj, Table):
+            mode_stream = SelectMode(source=hvobj)
+            mode_stream.param.watch(self._update_mode, 'mode')
 
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
