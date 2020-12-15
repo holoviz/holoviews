@@ -6,7 +6,7 @@ import param
 import numpy as np
 
 from ...core import util
-from ...element import Polygons
+from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
