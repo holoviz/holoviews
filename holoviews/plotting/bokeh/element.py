@@ -31,7 +31,9 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
+from ...element import (
+    Annotation, Contours, Graph, Path, Tiles, VectorField
+)
 from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -1054,6 +1056,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
+    def _element_transform(self, transform, element, ranges):
+        return transform.apply(element, ranges=ranges, flat=True)
+
+
     def _apply_transforms(self, element, data, ranges, style, group=None):
         new_style = dict(style)
         prefix = group+'_' if group else ''
@@ -1079,11 +1085,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 ds = Dataset({d.name: v for d, v in self.overlay_dims.items()},
                              list(self.overlay_dims))
                 val = v.apply(ds, ranges=ranges, flat=True)[0]
-            elif isinstance(element, Path) and not isinstance(element, Contours):
-                val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
-                                      for el in element.split()])
             else:
-                val = v.apply(element, ranges=ranges, flat=True)
+                val = self._element_transform(v, element, ranges)
 
             if (not util.isscalar(val) and len(util.unique_array(val)) == 1 and
                 ((not 'color' in k or validate('color', val)) or k in self._nonvectorized_styles)):

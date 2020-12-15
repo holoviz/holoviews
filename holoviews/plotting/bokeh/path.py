@@ -6,7 +6,7 @@ import param
 import numpy as np
 
 from ...core import util
-from ...element import Polygons
+from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
@@ -39,6 +39,12 @@ class PathPlot(LegendPlot, ColorbarPlot):
     _mapping = dict(xs='xs', ys='ys')
     _nonvectorized_styles = base_properties + ['cmap']
     _batched_style_opts = line_properties
+
+    def _element_transform(self, transform, element, ranges):
+        if isinstance(element, Contours):
+            return super(PathPlot, self)._element_transform(transform, element, ranges)
+        return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
+                               for el in element.split()])
 
     def _hover_opts(self, element):
         cdim = element.get_dimension(self.color_index)
