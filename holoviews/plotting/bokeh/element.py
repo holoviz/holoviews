@@ -31,7 +31,9 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Dataset
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import Annotation, Graph, VectorField, Path, Contours, Tiles
+from ...element import (
+    Annotation, Contours, Graph, HeatMap, Path, Tiles, VectorField
+)
 from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -1082,6 +1084,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif isinstance(element, Path) and not isinstance(element, Contours):
                 val = np.concatenate([v.apply(el, ranges=ranges, flat=True)
                                       for el in element.split()])
+            elif isinstance(element, HeatMap):
+                val = v.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
             else:
                 val = v.apply(element, ranges=ranges, flat=True)
 
