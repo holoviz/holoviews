@@ -106,6 +106,8 @@ class _base_link_selections(param.ParameterizedFunction):
         Register an Element or DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
         """
+        from .element import Table
+
         # Create stream that produces element that displays region of selection
         selection_expr_seq = SelectionExprSequence(
             hvobj, mode=self.selection_mode, include_region=self.show_regions,
@@ -122,8 +124,9 @@ class _base_link_selections(param.ParameterizedFunction):
                 stream.clear_history()
                 stream.event()
 
-        mode_stream = SelectMode(source=hvobj)
-        mode_stream.param.watch(self._update_mode, 'mode')
+        if not isinstance(hvobj, Table):
+            mode_stream = SelectMode(source=hvobj)
+            mode_stream.param.watch(self._update_mode, 'mode')
 
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
