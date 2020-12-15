@@ -70,6 +70,9 @@ class HeatMapPlot(ColorbarPlot):
     def _get_factors(self, element, ranges):
         return super(HeatMapPlot, self)._get_factors(element.gridded, ranges)
 
+    def _element_transform(self, transform, elemement, ranges):
+        return v.apply(element.gridded, ranges=ranges, flat=False).T.flatten()
+
     def get_data(self, element, ranges, style):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
         if self.invert_axes: x, y = y, x
