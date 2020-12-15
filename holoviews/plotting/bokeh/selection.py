@@ -30,7 +30,6 @@ class BokehOverlaySelectionDisplay(OverlaySelectionDisplay):
     def _build_element_layer(self, element, layer_color, layer_alpha, **opts):
         backend_options = Store.options(backend='bokeh')
         el_name = type(element).name
-        Store.lookup_options
         style_options = backend_options[(el_name,)]['style']
         allowed = style_options.allowed_keywords
 
