@@ -110,7 +110,7 @@ class TestHeatMapPlot(TestBokehPlot):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(dilate=True)
         plot = bokeh_renderer.get_plot(hmap)
         glyph = plot.handles['glyph']
-        self.assertTrue(glyph.dilate) 
+        self.assertTrue(glyph.dilate)
 
     def test_heatmap_single_x_value(self):
         hmap = HeatMap(([1], ['A', 'B'], np.array([[1], [2]])))
@@ -129,3 +129,18 @@ class TestHeatMapPlot(TestBokehPlot):
         self.assertEqual(cds.data['x'], np.array(['A', 'B']))
         self.assertEqual(cds.data['height'], [2.0, 2.0])
         self.assertEqual(plot.handles['glyph'].width, 1)
+
+    def test_heatmap_alpha_dim(self):
+        data = {
+            "row": [1, 2, 1, 2],
+            "col": [1, 2, 2, 1],
+            "alpha": [0, 0, 0, 1],
+            "val": [.5, .6, .2, .1]
+        }
+        hm = HeatMap(data, kdims=["col", "row"], vdims=["val", "alpha"]).opts(alpha="alpha")
+        plot = bokeh_renderer.get_plot(hm)
+        cds = plot.handles['cds']
+        self.assertEqual(cds.data['row'], np.array([1, 2, 1, 2]))
+        self.assertEqual(cds.data['col'], np.array([1, 1, 2, 2]))
+        self.assertEqual(cds.data['alpha'], np.array([0, 1, 0, 0]))
+        self.assertEqual(cds.data['zvalues'], np.array([0.5, 0.1, 0.2, 0.6]))
