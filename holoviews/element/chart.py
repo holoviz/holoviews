@@ -272,12 +272,14 @@ class Area(Curve):
         """
         if not len(areas):
             return areas
-        baseline = np.zeros(len(areas.values()[0]))
+        baseline_xs = {}
         stacked = areas.clone(shared_data=False)
         vdims = [areas.values()[0].vdims[0], 'Baseline']
         for k, area in areas.items():
-            x, y = (area.dimension_values(i) for i in range(2))
-            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
+            xs, ys = (area.dimension_values(i) for i in range(2))
+            baseline = np.array([baseline_xs.get(x, 0) for x in xs])
+            stacked[k] = area.clone((xs, ys+baseline, baseline), vdims=vdims,
                                     new_type=Area)
-            baseline = baseline + y
+            baseline_xs.update({x: (0 if np.isnan(y) else y)+baseline_xs.get(x, 0)
+                                for x, y in zip(xs, ys)})
         return stacked
