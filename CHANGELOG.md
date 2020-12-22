@@ -1,5 +1,28 @@
+Version 1.14.1
+==============
+
+This release contains a small number of bug fixes addressing
+regressions @csachs, @GilShoshan94 and the maintainers @jlstevens and
+@philippjfr.
+
+Bug fixes:
+
+- Fix issues with linked selections on tables
+  ([#4758](https://github.com/holoviz/holoviews/pull/4758))
+- Fix Heatmap alpha dimension transform
+  ([#4757](https://github.com/holoviz/holoviews/pull/4757))
+- Do not drop tools in linked selections
+  ([#4756](https://github.com/holoviz/holoviews/pull/4756))
+- Fixed access to possibly non-existant key
+  ([#4742](https://github.com/holoviz/holoviews/pull/4742))
+
+Documentation:
+
+- Warn about disabled interactive features on website
+  ([#4762](https://github.com/holoviz/holoviews/pull/4762))
+
 Version 1.14.0
-================
+==============
 
 This release brings a number of major features including a new
 IbisInterface, new Plotly Dash support and greatly improved Plotly
