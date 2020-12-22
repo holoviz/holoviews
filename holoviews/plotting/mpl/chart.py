@@ -508,7 +508,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
             cdim = None
 
         # Get colormapping options
-        if isinstance(range_item, (HeatMap, Raster)) or cdim and cdim in element:
+        if isinstance(range_item, (HeatMap, Raster)) or (cdim and cdim in element):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
