@@ -2,7 +2,8 @@ Version 1.14.1
 ==============
 
 This release contains a small number of bug fixes addressing
-regressions @csachs, @GilShoshan94 and the maintainers @jlstevens and
+regressions. Many thanks to the contributors to this release including
+@csachs, @GilShoshan94 and the maintainers @jlstevens, @jbednar and
 @philippjfr.
 
 Bug fixes:
