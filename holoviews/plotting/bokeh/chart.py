@@ -483,15 +483,20 @@ class SideHistogramPlot(HistogramPlot):
                       if d is not None]
         dimension = color_dims[0] if color_dims else None
         cmapper = self._get_colormapper(dimension, element, {}, {})
-        if cmapper and dimension in element.dimensions():
+        if cmapper:
+            cvals = None
             if isinstance(dimension, dim):
-                dim_name = dimension.dimension.name
-                data[dim_name] = [] if self.static_source else dimension.apply(element)
+                if dimension.applies(element):
+                    dim_name = dimension.dimension.name
+                    cvals = [] if self.static_source else dimension.apply(element)
             else:
-                dim_name = dimension.name
-                data[dim_name] = [] if self.static_source else element.dimension_values(dimension)
-            mapping['fill_color'] = {'field': dim_name,
-                                     'transform': cmapper}
+                if dimension in element.dimensions():
+                    dim_name = dimension.name
+                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            if cvals is not None:
+                data[dim_name] = cvals
+                mapping['fill_color'] = {'field': dim_name,
+                                         'transform': cmapper}
         return (data, mapping, style)
 
 
