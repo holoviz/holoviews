@@ -4,6 +4,33 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.1
+==============
+
+Date: 2020-12-22
+
+This release contains a small number of bug fixes addressing
+regressions. Many thanks to the contributors to this release including
+@csachs, @GilShoshan94 and the maintainers @jlstevens, @jbednar and
+@philippjfr.
+
+Bug fixes:
+
+- Fix issues with linked selections on tables
+  (`#4758 <https://github.com/holoviz/holoviews/pull/4758>`__)
+- Fix Heatmap alpha dimension transform
+  (`#4757 <https://github.com/holoviz/holoviews/pull/4757>`__)
+- Do not drop tools in linked selections
+  (`#4756 <https://github.com/holoviz/holoviews/pull/4756>`__)
+- Fixed access to possibly non-existant key
+  (`#4742 <https://github.com/holoviz/holoviews/pull/4742>`__)
+
+Documentation:
+
+- Warn about disabled interactive features on website
+  (`#4762 <https://github.com/holoviz/holoviews/pull/4762>`__)
+
+
 Version 1.14.0
 **************
 
