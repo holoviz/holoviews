@@ -896,7 +896,7 @@ def configure_matching_axes_from_dims(fig, matching_prop='_dim'):
 def clean_internal_figure_properties(fig):
     """
     Remove all HoloViews internal properties (those with leading underscores) from the
-    inupt figure.
+    input figure.
 
     Note: This function mutates the input figure
 
