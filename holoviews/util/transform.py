@@ -318,9 +318,12 @@ class dim(object):
                     from panel.widgets.base import Widget
                     if isinstance(op_arg, Widget):
                         op_arg = op_arg.param.value
+                if isinstance(op_arg, dim):
+                    params.update(op_arg.params)
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
                     params[op_arg.name+str(id(op))] = op_arg
+                
         return params
 
     # Namespace properties
