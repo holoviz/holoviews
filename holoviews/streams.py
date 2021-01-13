@@ -55,7 +55,7 @@ def streams_list_from_dict(streams):
         if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
             params[k] = v
         else:
-            param.main.param.warning('Cannot handle value %r in streams dictionary' % v)
+            raise TypeError('Cannot handle value %r in streams dictionary' % v)
     return Params.from_params(params)
 
 
