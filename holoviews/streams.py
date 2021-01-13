@@ -4,6 +4,7 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
+import sys
 import weakref
 from numbers import Number
 from collections import defaultdict
@@ -42,6 +43,20 @@ def triggering_streams(streams):
     finally:
         for stream in streams:
             stream._triggering = False
+
+
+def streams_list_from_dict(streams):
+    "Converts a streams dictionary into a streams list"
+    params = {}
+    for k, v in streams.items():
+        if 'panel' in sys.modules:
+            from panel.depends import param_value_if_widget
+            v = param_value_if_widget(v)
+        if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+            params[k] = v
+        else:
+            param.main.param.warning('Cannot handle value %r in streams dictionary' % v)
+    return Params.from_params(params)
 
 
 class Stream(param.Parameterized):

@@ -19,7 +19,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, streams_list_from_dict
 
 
 
@@ -881,11 +881,12 @@ class DynamicMap(HoloMap):
         If the callable is an instance of Callable it will be used
         directly, otherwise it will be automatically wrapped in one.""")
 
-    streams = param.List(default=[], constant=True, doc="""
-       List of Stream instances to associate with the DynamicMap. The
-       set of parameter values across these streams will be supplied as
-       keyword arguments to the callback when the events are received,
-       updating the streams.""" )
+    streams = param.ClassSelector(default=[], class_=(dict, list), constant=True, doc="""
+       List of Stream instances to associate with the DynamicMap or a
+       dictionary mapping parameters or panel widgets to callback
+       argument names. In the list case, the set of parameter values
+       across these streams will be supplied as keyword arguments to the
+       callback when the events are received, updating the streams.""" )
 
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
@@ -897,11 +898,13 @@ class DynamicMap(HoloMap):
        If True, stream parameters are passed to callback as positional arguments.
        Each positional argument is a dict containing the contents of a stream.
        The positional stream arguments follow the positional arguments for each kdim,
-       and they are ordered to match the order of the DynamicMap's streams list. 
+       and they are ordered to match the order of the DynamicMap's streams list.
     """)
 
     def __init__(self, callback, initial_items=None, streams=None, **params):
         streams = (streams or [])
+        if isinstance(streams, dict):
+            streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
         if (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
