@@ -19,7 +19,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream, Params, LinkedStream, streams_list_from_dict
+from ..streams import Stream, Params, streams_list_from_dict
 
 
 
@@ -947,7 +947,7 @@ class DynamicMap(HoloMap):
                 stream.source = self
             if isinstance(stream, Params):
                 for p in stream.parameters:
-                    if isinstance(p.owner, LinkedStream) and p.owner.source is None:
+                    if isinstance(p.owner, Stream) and p.owner.source is None:
                         p.owner.source = self
 
         self.periodic = periodic(self)
