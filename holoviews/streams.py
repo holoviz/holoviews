@@ -52,7 +52,9 @@ def streams_list_from_dict(streams):
         if 'panel' in sys.modules:
             from panel.depends import param_value_if_widget
             v = param_value_if_widget(v)
-        if isinstance(v, param.Parameter) and isinstance(v.owner, param.Parameterized):
+        if (isinstance(v, param.Parameter)
+            and (isinstance(v.owner, param.Parameterized)
+                 or issubclass(v.owner, param.Parameterized))):
             params[k] = v
         else:
             raise TypeError('Cannot handle value %r in streams dictionary' % v)
@@ -726,7 +728,7 @@ class Params(Stream):
         for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
             group = list(group)
             inst = [p.owner for _, p in group][0]
-            if not isinstance(inst, param.Parameterized):
+            if inst is None:
                 continue
             names = [p.name for _, p in group]
             rename = {p.name: n for n, p in group}
