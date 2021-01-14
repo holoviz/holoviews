@@ -67,6 +67,9 @@ class DynamicMapConstructor(ComparisonTestCase):
         test = TestParameters()
         DynamicMap(lambda x: x, streams=dict(x=test.param.example))
 
+    def test_simple_constructor_streams_dict_class_parameter(self):
+        DynamicMap(lambda x: x, streams=dict(x=TestParameters.param.example))
+
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle value 3 in streams dictionary"
         with self.assertRaisesRegexp(TypeError, regexp):
