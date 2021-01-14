@@ -1,6 +1,8 @@
 import uuid
 import time
+import sys
 from collections import deque
+from unittest import SkipTest
 
 import param
 import numpy as np
@@ -28,7 +30,8 @@ x,y = np.mgrid[-5:6, -5:6] * 0.1
 def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
 
-
+class TestParameters(param.Parameterized):
+    example = param.Number(default=1)
 
 class DynamicMapConstructor(ComparisonTestCase):
 
@@ -49,6 +52,28 @@ class DynamicMapConstructor(ComparisonTestCase):
 
     def test_simple_constructor_streams(self):
         DynamicMap(lambda x: x, streams=[PointerX()])
+
+    def test_simple_constructor_streams_dict(self):
+        pointerx = PointerX()
+        DynamicMap(lambda x: x, streams=dict(x=pointerx.param.x))
+
+    def test_simple_constructor_streams_dict_panel_widget(self):
+        if 'panel' not in sys.modules:
+            raise SkipTest('Panel not available')
+        import panel
+        DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
+
+    def test_simple_constructor_streams_dict_parameter(self):
+        test = TestParameters()
+        DynamicMap(lambda x: x, streams=dict(x=test.param.example))
+
+    def test_simple_constructor_streams_dict_class_parameter(self):
+        DynamicMap(lambda x: x, streams=dict(x=TestParameters.param.example))
+
+    def test_simple_constructor_streams_dict_invalid(self):
+        regexp = "Cannot handle value 3 in streams dictionary"
+        with self.assertRaisesRegexp(TypeError, regexp):
+            DynamicMap(lambda x: x, streams=dict(x=3))
 
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "

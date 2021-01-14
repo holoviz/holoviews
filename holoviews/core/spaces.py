@@ -19,7 +19,7 @@ from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, Params, streams_list_from_dict
 
 
 
@@ -885,7 +885,10 @@ class DynamicMap(HoloMap):
        List of Stream instances to associate with the DynamicMap. The
        set of parameter values across these streams will be supplied as
        keyword arguments to the callback when the events are received,
-       updating the streams.""" )
+       updating the streams. Can also be supplied as a dictionary that
+       maps parameters or panel widgets to callback argument names that
+       will then be automatically converted to the equivalent list
+       format.""")
 
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
@@ -897,11 +900,13 @@ class DynamicMap(HoloMap):
        If True, stream parameters are passed to callback as positional arguments.
        Each positional argument is a dict containing the contents of a stream.
        The positional stream arguments follow the positional arguments for each kdim,
-       and they are ordered to match the order of the DynamicMap's streams list. 
+       and they are ordered to match the order of the DynamicMap's streams list.
     """)
 
     def __init__(self, callback, initial_items=None, streams=None, **params):
         streams = (streams or [])
+        if isinstance(streams, dict):
+            streams = streams_list_from_dict(streams)
 
         # If callback is a parameterized method and watch is disabled add as stream
         if (params.get('watch', True) and (util.is_param_method(callback, has_deps=True) or
@@ -942,6 +947,11 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
+            if isinstance(stream, Params):
+                for p in stream.parameters:
+                    if isinstance(p.owner, Stream) and p.owner.source is None:
+                        p.owner.source = self
+
         self.periodic = periodic(self)
 
     @property

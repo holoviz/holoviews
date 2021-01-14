@@ -358,6 +358,46 @@ class TestParamMethodStream(ComparisonTestCase):
         inner.x = 10
         self.assertEqual(dmap[()], Points([10]))
 
+
+    def test_param_instance_steams_dict(self):
+        inner = self.inner()
+
+        def test(x):
+            return Points([x])
+
+        dmap = DynamicMap(test, streams=dict(x=inner.param.x))
+
+        inner.x = 10
+        self.assertEqual(dmap[()], Points([10]))
+
+    def test_param_class_steams_dict(self):
+        class ClassParamExample(param.Parameterized):
+            x = param.Number(default=1)
+
+        def test(x):
+            return Points([x])
+
+        dmap = DynamicMap(test, streams=dict(x=ClassParamExample.param.x))
+
+        ClassParamExample.x = 10
+        self.assertEqual(dmap[()], Points([10]))
+
+    def test_panel_param_steams_dict(self):
+        try:
+            import panel
+        except:
+            raise SkipTest('Panel required for widget support in streams dict')
+        widget = panel.widgets.FloatSlider(value=1)
+
+        def test(x):
+            return Points([x])
+
+        dmap = DynamicMap(test, streams=dict(x=widget))
+
+        widget.value = 10
+        self.assertEqual(dmap[()], Points([10]))
+
+
     def test_param_method_depends_no_deps(self):
         inner = self.inner()
         stream = ParamMethod(inner.method_no_deps)
@@ -1230,6 +1270,10 @@ class TestExprSelectionStream(ComparisonTestCase):
 
     def test_selection_expr_stream_polygon_index_cols(self):
         # Create SelectionExpr on element
+        try: import shapely # noqa
+        except:
+            try: import spatialpandas # noqa
+            except: raise SkipTest('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],
