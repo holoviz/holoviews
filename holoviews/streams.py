@@ -52,9 +52,7 @@ def streams_list_from_dict(streams):
         if 'panel' in sys.modules:
             from panel.depends import param_value_if_widget
             v = param_value_if_widget(v)
-        if (isinstance(v, param.Parameter)
-            and (isinstance(v.owner, param.Parameterized)
-                 or issubclass(v.owner, param.Parameterized))):
+        if isinstance(v, param.Parameter) and v.owner is not None:
             params[k] = v
         else:
             raise TypeError('Cannot handle value %r in streams dictionary' % v)
