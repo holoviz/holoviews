@@ -1270,10 +1270,10 @@ class TestExprSelectionStream(ComparisonTestCase):
 
     def test_selection_expr_stream_polygon_index_cols(self):
         # Create SelectionExpr on element
-        try:
-            import shapely
+        try: import shapely # noqa
         except:
-            raise SkipTest('Shapely required for polygon selection')
+            try: import spatialpandas # noqa
+            except: raise SkipTest('Shapely required for polygon selection')
         poly = Polygons([
             [(0, 0, 'a'), (2, 0, 'a'), (1, 1, 'a')],
             [(2, 0, 'b'), (4, 0, 'b'), (3, 1, 'b')],

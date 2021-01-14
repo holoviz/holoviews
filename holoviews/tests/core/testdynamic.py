@@ -2,9 +2,9 @@ import uuid
 import time
 import sys
 from collections import deque
+from unittest import SkipTest
 
 import param
-from unittest import SkipTest
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout, NdOverlay
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
