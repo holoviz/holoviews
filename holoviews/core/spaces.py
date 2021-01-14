@@ -886,7 +886,9 @@ class DynamicMap(HoloMap):
        dictionary mapping parameters or panel widgets to callback
        argument names. In the list case, the set of parameter values
        across these streams will be supplied as keyword arguments to the
-       callback when the events are received, updating the streams.""" )
+       callback when the events are received, updating the streams. When
+       a dictionary is supplied, it will be automatically converted to
+       the equivalent list format.""" )
 
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
