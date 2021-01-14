@@ -881,7 +881,7 @@ class DynamicMap(HoloMap):
         If the callable is an instance of Callable it will be used
         directly, otherwise it will be automatically wrapped in one.""")
 
-    streams = param.ClassSelector(default=[], class_=(dict, list), constant=True, doc="""
+    streams = param.List(default=[], constant=True, doc="""
        List of Stream instances to associate with the DynamicMap or a
        dictionary mapping parameters or panel widgets to callback
        argument names. In the list case, the set of parameter values
