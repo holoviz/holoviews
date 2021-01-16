@@ -9,6 +9,7 @@ import numpy as np
 
 from ..dimension import dimension_name
 from ..util import isscalar, unique_iterator, pd, unique_array
+from .dask import DaskInterface
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
@@ -261,8 +262,9 @@ class SpatialPandasInterface(MultiInterface):
                 return (bounds[0], bounds[2])
             else:
                 return (bounds[1], bounds[3])
-        else:
-            return Interface.range(dataset, dim)
+        elif isinstance(dataset.data, cls.dask_types()):
+            return DaskInterface.range(dataset, dim)
+        return PandasInterface.range(dataset, dim)
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -270,6 +272,8 @@ class SpatialPandasInterface(MultiInterface):
         if any(d in geo_dims for d in dimensions):
             raise DataError("SpatialPandasInterface does not allow grouping "
                             "by geometry dimension.", cls)
+        elif isinstance(dataset.data, cls.dask_types()):
+            return DaskInterface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
         return PandasInterface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
 
     @classmethod
