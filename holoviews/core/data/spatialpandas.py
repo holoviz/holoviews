@@ -32,7 +32,7 @@ class SpatialPandasInterface(MultiInterface):
         if not cls.loaded():
             return False
         is_sdf = isinstance(obj, cls.types())
-        if 'geopandas' in sys.modules and not 'geoviews' in sys.modules and geopandas:
+        if 'geopandas' in sys.modules and not 'geoviews' in sys.modules:
             import geopandas as gpd
             is_sdf |= isinstance(obj, (gpd.GeoDataFrame, gpd.GeoSeries))
         return is_sdf
@@ -84,6 +84,7 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import pandas as pd
+        from spatialpandas import GeoDataFrame
 
         if kdims is None:
             kdims = eltype.kdims
