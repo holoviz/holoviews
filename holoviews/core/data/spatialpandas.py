@@ -31,14 +31,14 @@ class SpatialPandasInterface(MultiInterface):
     def applies(cls, obj):
         if not cls.loaded():
             return False
-        is_sdf = isinstance(obj, cls.types())
+        is_sdf = isinstance(obj, cls.data_types())
         if 'geopandas' in sys.modules and not 'geoviews' in sys.modules:
             import geopandas as gpd
             is_sdf |= isinstance(obj, (gpd.GeoDataFrame, gpd.GeoSeries))
         return is_sdf
 
     @classmethod
-    def types(cls):
+    def data_types(cls):
         from spatialpandas import GeoDataFrame, GeoSeries
         stypes = (GeoDataFrame, GeoSeries)
         if 'spatialpandas.dask' in sys.modules:
