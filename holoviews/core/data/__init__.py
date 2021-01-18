@@ -41,8 +41,8 @@ from .xarray import XArrayInterface           # noqa (API import)
 
 default_datatype = 'dataframe'
 
-datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
-             'cuDF', 'spatialpandas', 'array', 'multitabular', 'ibis']
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'spatialpandas',
+             'dask', 'cuDF', 'array', 'multitabular', 'ibis']
 
 
 def concat(datasets, datatype=None):
