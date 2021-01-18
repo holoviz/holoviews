@@ -319,7 +319,7 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def nonzero(cls, dataset):
-        return bool(cls.length(dataset))
+        return bool(len(dataset.data.head(1)))
 
     @classmethod
     def redim(cls, dataset, dimensions):
