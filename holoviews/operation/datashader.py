@@ -1727,7 +1727,7 @@ class directly_connect_edges(_connect_edges, connect_edges):
         return connect_edges.__call__(self, position_df, edges_df)
 
 
-class inspect_sample(LinkableOperation):
+class inspect_points(LinkableOperation):
     """
     Given datashaded aggregate (Image) output, return a single
     (hoverable) point at the sample closest to the cursor.
@@ -1746,6 +1746,12 @@ class inspect_sample(LinkableOperation):
        count aggregator (default) and commonly NaN for other (float)
        aggregators""")
 
+    value_bounds = param.NumericTuple(default=None, length=2, allow_None=True, doc="""
+       If not None, a numeric bounds for the pixel under the cursor in
+       order for hits to be computed. Useful for count aggregators where
+       a value of (1,1000) would make sure no more than a thousand
+       samples will be searched.""")
+
     # Stream values and overrides
     link_inputs = param.Boolean(default=True)
     streams = param.List(default=[PointerXY])
@@ -1754,12 +1760,17 @@ class inspect_sample(LinkableOperation):
 
 
     def _process(self, raster, key=None):
+        no_match = Points(None, extents=raster.extents)
         try: val = raster[self.p.x,self.p.y]
         except: val = self.p.null_value # Exception at the edges
         interface = raster.dataset.interface.datatype
         if  interface != 'spatialpandas':
             raise Exception('%r interface not yet supported' % interface)
         x_range, y_range = raster.range(0), raster.range(1)
+
+        if self.p.value_bounds is not None:
+            if (val < self.p.value_bounds[0]) or (val > self.p.value_bounds[1]):
+                return no_match
         if val != self.p.null_value:
             mask_size = self._distance_args(x_range, y_range, raster.data, self.pixels)
             masked = self._mask_dataframe(raster.dataset.data, self.p.x, self.p.y,
@@ -1769,7 +1780,7 @@ class inspect_sample(LinkableOperation):
             point = Points(dist_sorted).iloc[:1]
             point.extents=raster.extents
             return point
-        return Points(None, extents=raster.extents)
+        return no_match
 
     @classmethod
     def _distance_args(cls, x_range, y_range, data, pixels):
