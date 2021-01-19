@@ -1735,11 +1735,8 @@ class inspect_points(LinkableOperation):
 
     pixels = param.Integer(default=3, doc="""
        Number of pixels in data space around the cursor point to search
-       for hits in (with mask_shape). The hit in this mask that is
-       closest to the cursors position is displayed.""")
-
-    mask_shape = param.ObjectSelector(default='square', objects=['square'], doc="""
-       Not implemented.""")
+       for hits in. The hit within this box mask that is closest to the
+       cursors position is displayed.""")
 
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
