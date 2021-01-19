@@ -1429,7 +1429,7 @@ class rasterize(AggregationOperation):
 
     _transforms = [(Image, regrid),
                    (Polygons, geometry_rasterize),
-                   (lambda x: (isinstance(x, Path, Points) and
+                   (lambda x: (isinstance(x, (Path, Points)) and
                                x.interface.datatype == 'spatialpandas'),
                     geometry_rasterize),
                    (TriMesh, trimesh_rasterize),
