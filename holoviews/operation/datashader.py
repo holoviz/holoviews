@@ -33,7 +33,7 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
-from ..streams import RangeXY, PlotSize
+from ..streams import RangeXY, PlotSize, PointerXY
 
 ds_version = LooseVersion(ds.__version__)
 
@@ -861,7 +861,7 @@ class regrid(AggregationOperation):
         for i, vd in enumerate(element.vdims):
             if element.interface is XArrayInterface:
                 if element.interface.packed(element):
-                    xarr = element.data[..., i] 
+                    xarr = element.data[..., i]
                 else:
                     xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
@@ -1725,3 +1725,78 @@ class directly_connect_edges(_connect_edges, connect_edges):
 
     def _bundle(self, position_df, edges_df):
         return connect_edges.__call__(self, position_df, edges_df)
+
+
+class inspect_sample(LinkableOperation):
+    """
+    Given datashaded aggregate (Image) output, return a single
+    (hoverable) point at the sample closest to the cursor.
+    """
+
+    pixels = param.Integer(default=3, doc="""
+       Number of pixels in data space around the cursor point to search
+       for hits in (with mask_shape). The hit in this mask that is
+       closest to the cursors position is displayed.""")
+
+    mask_shape = param.ObjectSelector(default='square', objects=['square'], doc="""
+       Not implemented.""")
+
+    null_value = param.Number(default=0, doc="""
+       Value of raster which indicates no hits. For instance zero for
+       count aggregator (default) and commonly NaN for other (float)
+       aggregators""")
+
+    # Stream values and overrides
+    link_inputs = param.Boolean(default=True)
+    streams = param.List(default=[PointerXY])
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+
+
+    def _process(self, raster, key=None):
+        try: val = raster[self.p.x,self.p.y]
+        except: val = self.p.null_value # Exception at the edges
+        interface = raster.dataset.interface.datatype
+        if  interface != 'spatialpandas':
+            raise Exception('%r interface not yet supported' % interface)
+        x_range, y_range = raster.range(0), raster.range(1)
+        if val != self.p.null_value:
+            mask_size = self._distance_args(x_range, y_range, raster.data, self.pixels)
+            masked = self._mask_dataframe(raster.dataset.data, self.p.x, self.p.y,
+                                          mask_size, interface)
+            dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
+                                                 raster.kdims, interface)
+            point = Points(dist_sorted).iloc[:1]
+            point.extents=raster.extents
+            return point
+        return Points(None, extents=raster.extents)
+
+    @classmethod
+    def _distance_args(cls, x_range, y_range, data, pixels):
+        xcount, ycount = data.dims['x'], data.dims['y']
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
+
+    @classmethod
+    def _mask_dataframe(cls, df, x, y, mask_size, interface):
+        "Mask the dataframe with size around x and y"
+        xdelta, ydelta = mask_size
+        # If spatialpandas, pandas, geopandas etc. Currently assuming spatialpandas
+        return df.cx[x-xdelta:x+xdelta, y-ydelta:y+ydelta]
+
+    @classmethod
+    def _get_xs_ys(cls, df, raster_kdims, interface):
+        "Returns the x and y arrays or series for the given dataframe"
+        return df.geometry.array.x, df.geometry.array.y
+
+    @classmethod
+    def _sort_by_distance(cls, df, x, y, raster_kdims, interface):
+        """
+        Returns a dataframe of hits within a given mask around a given
+        spatial location, sorted by distance from that location.
+        """
+        xs, ys = cls._get_xs_ys(df, raster_kdims, interface)
+        dx, dy = xs - x, ys - y
+        distances = pd.Series(dx*dx + dy*dy)
+        return df.iloc[distances.argsort()]
