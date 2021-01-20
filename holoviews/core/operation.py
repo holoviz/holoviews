@@ -216,6 +216,7 @@ class Operation(param.ParameterizedFunction):
             kwargs['streams'] = self.p.streams
         kwargs['per_element'] = self._per_element
         kwargs['link_dataset'] = self._propagate_dataset
+        kwargs['link_inputs'] = self.p.link_inputs
         return element.apply(self, **kwargs)
 
 
