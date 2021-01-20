@@ -1749,6 +1749,12 @@ class inspect_points(LinkableOperation):
        a value of (1,1000) would make sure no more than a thousand
        samples will be searched.""")
 
+
+    point_count = param.Integer(default=1, doc="""
+       Maximum number of points to display within the mask of size
+       pixels. Points are prioritized by distance from the cursor
+       point. This means that the default value of one shows the single
+       closest sample to the cursor.""")
     # Stream values and overrides
     link_inputs = param.Boolean(default=True)
     streams = param.List(default=[PointerXY])
@@ -1774,7 +1780,7 @@ class inspect_points(LinkableOperation):
                                           mask_size, interface)
             dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
                                                  raster.kdims, interface)
-            point = Points(dist_sorted).iloc[:1]
+            point = Points(dist_sorted).iloc[:self.p.point_count]
             point.extents=raster.extents
             return point
         return no_match
