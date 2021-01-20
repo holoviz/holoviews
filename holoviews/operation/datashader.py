@@ -1729,7 +1729,7 @@ class directly_connect_edges(_connect_edges, connect_edges):
 
 def identity(x): return x
 
-class inspect_points(LinkableOperation):
+class inspect_points(Operation):
     """
     Given datashaded aggregate (Image) output, return a single
     (hoverable) point at the sample closest to the cursor.
@@ -1770,7 +1770,6 @@ class inspect_points(LinkableOperation):
        is also what is passed to the Points object.""")
 
     # Stream values and overrides
-    link_inputs = param.Boolean(default=True)
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
     y = param.Number(default=0)
