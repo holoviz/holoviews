@@ -1775,7 +1775,7 @@ class inspect_points(Operation):
     y = param.Number(default=0)
 
     def _process(self, raster, key=None):
-        no_match = Points(self.p.hits_transformer(None), extents=raster.extents)
+        no_match = Points(self.p.hits_transformer(None))
         try: val = raster[self.p.x,self.p.y]
         except: val = self.p.null_value # Exception at the edges
         interface = raster.dataset.interface.datatype
@@ -1798,7 +1798,6 @@ class inspect_points(Operation):
                      else [col for col in self.hits.columns
                            if col not in ['x','y']])
             point = Points(self.hits, vdims=vdims).iloc[:self.p.point_count]
-            point.extents=raster.extents
             return point
         self.hits = self.p.hits_transformer(None)
         return no_match
