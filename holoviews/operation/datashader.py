@@ -1795,8 +1795,10 @@ class inspect_points(LinkableOperation):
             dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
                                                  raster.kdims, interface)
             self.hits = self.p.hits_transformer(dist_sorted)
-            point = Points(self.hits , vdims=list(col for col in self.hits.columns
-                                    if col not in ['x','y'])).iloc[:self.p.point_count]
+            vdims=  ([] if (self.p.hits_transformer is identity)
+                     else [col for col in self.hits.columns
+                           if col not in ['x','y']])
+            point = Points(self.hits, vdims=vdims).iloc[:self.p.point_count]
             point.extents=raster.extents
             return point
         self.hits = self.p.hits_transformer(None)
