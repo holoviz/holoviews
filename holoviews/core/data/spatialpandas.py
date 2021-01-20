@@ -415,6 +415,8 @@ class SpatialPandasInterface(MultiInterface):
         if isgeom and keep_index:
             return data[geom_col]
         elif not isgeom:
+            if is_points:
+                return data[dimension.name].values
             return get_value_array(data, dimension, expanded, keep_index, geom_col, is_points)
         elif not len(data):
             return np.array([])
@@ -636,7 +638,7 @@ def get_value_array(data, dimension, expanded, keep_index, geom_col,
     all_scalar = True
     arrays, scalars = [], []
     for i, geom in enumerate(data[geom_col]):
-        length = geom_length(geom)
+        length = 1 if is_points else geom_length(geom)
         val = column.iloc[i]
         scalar = isscalar(val)
         if scalar:
