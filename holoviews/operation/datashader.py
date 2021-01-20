@@ -1727,6 +1727,8 @@ class directly_connect_edges(_connect_edges, connect_edges):
         return connect_edges.__call__(self, position_df, edges_df)
 
 
+def identity(x): return x
+
 class inspect_points(LinkableOperation):
     """
     Given datashaded aggregate (Image) output, return a single
@@ -1749,21 +1751,32 @@ class inspect_points(LinkableOperation):
        a value of (1,1000) would make sure no more than a thousand
        samples will be searched.""")
 
+    hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
 
     point_count = param.Integer(default=1, doc="""
        Maximum number of points to display within the mask of size
        pixels. Points are prioritized by distance from the cursor
        point. This means that the default value of one shows the single
        closest sample to the cursor.""")
+
+    hits_transformer = param.Callable(default=identity, doc="""
+       Function that can transform the hits dataframe before it is set
+       on the hits parameter. When no hits occur, the value passed to
+       the callable is None. This can be used to do multiple common
+       tasks such as 1) subselecting available columns 2) limiting the
+       maximum number of hit rows returned 3) performing joins with
+       other data sources 4) returning a dataframe with appropriate
+       columns and dtypes when no hits occur. The transformed dataframe
+       is also what is passed to the Points object.""")
+
     # Stream values and overrides
     link_inputs = param.Boolean(default=True)
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
     y = param.Number(default=0)
 
-
     def _process(self, raster, key=None):
-        no_match = Points(None, extents=raster.extents)
+        no_match = Points(self.p.hits_transformer(None), extents=raster.extents)
         try: val = raster[self.p.x,self.p.y]
         except: val = self.p.null_value # Exception at the edges
         interface = raster.dataset.interface.datatype
@@ -1773,6 +1786,7 @@ class inspect_points(LinkableOperation):
 
         if self.p.value_bounds is not None:
             if (val < self.p.value_bounds[0]) or (val > self.p.value_bounds[1]):
+                self.p.hits = self.p.hits_transformer(None)
                 return no_match
         if val != self.p.null_value:
             mask_size = self._distance_args(x_range, y_range, raster.data, self.pixels)
@@ -1780,9 +1794,12 @@ class inspect_points(LinkableOperation):
                                           mask_size, interface)
             dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
                                                  raster.kdims, interface)
-            point = Points(dist_sorted).iloc[:self.p.point_count]
+            self.hits = self.p.hits_transformer(dist_sorted)
+            point = Points(self.hits , vdims=list(col for col in self.hits.columns
+                                    if col not in ['x','y'])).iloc[:self.p.point_count]
             point.extents=raster.extents
             return point
+        self.hits = self.p.hits_transformer(None)
         return no_match
 
     @classmethod
