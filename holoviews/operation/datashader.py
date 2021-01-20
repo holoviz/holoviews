@@ -33,7 +33,7 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
-from ..streams import RangeXY, PlotSize
+from ..streams import RangeXY, PlotSize, PointerXY
 
 ds_version = LooseVersion(ds.__version__)
 
@@ -1725,3 +1725,120 @@ class directly_connect_edges(_connect_edges, connect_edges):
 
     def _bundle(self, position_df, edges_df):
         return connect_edges.__call__(self, position_df, edges_df)
+
+
+def identity(x): return x
+
+class inspect_points(Operation):
+    """
+    Given datashaded aggregate (Image) output, return a single
+    (hoverable) point at the sample closest to the cursor.
+    """
+
+    pixels = param.Integer(default=3, doc="""
+       Number of pixels in data space around the cursor point to search
+       for hits in. The hit within this box mask that is closest to the
+       cursors position is displayed.""")
+
+    null_value = param.Number(default=0, doc="""
+       Value of raster which indicates no hits. For instance zero for
+       count aggregator (default) and commonly NaN for other (float)
+       aggregators. For RGBA images, the alpha channel is used which means
+       zero alpha acts as the null value.""")
+
+    value_bounds = param.NumericTuple(default=None, length=2, allow_None=True, doc="""
+       If not None, a numeric bounds for the pixel under the cursor in
+       order for hits to be computed. Useful for count aggregators where
+       a value of (1,1000) would make sure no more than a thousand
+       samples will be searched.""")
+
+    hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
+
+    point_count = param.Integer(default=1, doc="""
+       Maximum number of points to display within the mask of size
+       pixels. Points are prioritized by distance from the cursor
+       point. This means that the default value of one shows the single
+       closest sample to the cursor.""")
+
+    hits_transformer = param.Callable(default=identity, doc="""
+       Function that can transform the hits dataframe before it is set
+       on the hits parameter. When no hits occur, the value passed to
+       the callable is None. This can be used to do multiple common
+       tasks such as 1) subselecting available columns 2) limiting the
+       maximum number of hit rows returned 3) performing joins with
+       other data sources 4) returning a dataframe with appropriate
+       columns and dtypes when no hits occur. The transformed dataframe
+       is also what is passed to the Points object.""")
+
+    # Stream values and overrides
+    streams = param.List(default=[PointerXY])
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+
+    def _process(self, raster, key=None):
+        no_match = Points(self.p.hits_transformer(None))
+        try:
+            if isinstance(raster, RGB):
+                val = raster[self.p.x,self.p.y, 'A']
+            else:
+                val = raster[self.p.x,self.p.y]
+        except: val = self.p.null_value # Exception at the edges
+        interface = raster.dataset.interface.datatype
+        if  interface != 'spatialpandas':
+            raise Exception('%r interface not yet supported' % interface)
+        x_range, y_range = raster.range(0), raster.range(1)
+
+        if self.p.value_bounds is not None:
+            if (val < self.p.value_bounds[0]) or (val > self.p.value_bounds[1]):
+                self.p.hits = self.p.hits_transformer(None)
+                return no_match
+
+        if val != self.p.null_value:
+            mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
+            masked = self._mask_dataframe(raster.dataset.data, self.p.x, self.p.y,
+                                          mask_size, interface)
+            dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
+                                                 raster.kdims, interface)
+            self.hits = self.p.hits_transformer(dist_sorted)
+            vdims=  ([] if (self.p.hits_transformer is identity)
+                     else [col for col in self.hits.columns
+                           if col not in ['x','y']])
+            point = Points(self.hits, vdims=vdims).iloc[:self.p.point_count]
+            return point
+        self.hits = self.p.hits_transformer(None)
+        return no_match
+
+    @classmethod
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
+
+    @classmethod
+    def _mask_dataframe(cls, df, x, y, mask_size, interface):
+        "Mask the dataframe with size around x and y"
+        xdelta, ydelta = mask_size
+        # If spatialpandas, pandas, geopandas etc. Currently assuming spatialpandas
+        masked = df.cx[x-xdelta:x+xdelta, y-ydelta:y+ydelta]
+        if hasattr(masked, 'compute'):
+            masked = masked.compute()
+        return masked
+
+    @classmethod
+    def _get_xs_ys(cls, df, raster_kdims, interface):
+        "Returns the x and y arrays or series for the given dataframe"
+        return df.geometry.array.x, df.geometry.array.y
+
+    @classmethod
+    def _sort_by_distance(cls, df, x, y, raster_kdims, interface):
+        """
+        Returns a dataframe of hits within a given mask around a given
+        spatial location, sorted by distance from that location.
+        """
+        xs, ys = cls._get_xs_ys(df, raster_kdims, interface)
+        dx, dy = xs - x, ys - y
+        distances = pd.Series(dx*dx + dy*dy)
+        if hasattr(df.geometry, 'compute'):
+            df = df.compute()
+        return df.iloc[list(distances.argsort())]
