@@ -1,16 +1,13 @@
 from __future__ import absolute_import, division
 
 import sys
-import warnings
 
 from collections import defaultdict
 
 import numpy as np
-import pandas as pd
 
 from ..dimension import dimension_name
 from ..util import isscalar, unique_iterator, pd, unique_array
-from .dask import DaskInterface
 from .interface import DataError, Interface
 from .multipath import MultiInterface, ensure_ring
 from .pandas import PandasInterface
