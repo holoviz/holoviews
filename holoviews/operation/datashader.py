@@ -861,7 +861,7 @@ class regrid(AggregationOperation):
         for i, vd in enumerate(element.vdims):
             if element.interface is XArrayInterface:
                 if element.interface.packed(element):
-                    xarr = element.data[..., i]
+                    xarr = element.data[..., i] 
                 else:
                     xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
@@ -1743,7 +1743,8 @@ class inspect_points(Operation):
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
        count aggregator (default) and commonly NaN for other (float)
-       aggregators""")
+       aggregators. For RGBA images, the alpha channel is used which means
+       zero alpha acts as the null value.""")
 
     value_bounds = param.NumericTuple(default=None, length=2, allow_None=True, doc="""
        If not None, a numeric bounds for the pixel under the cursor in
@@ -1769,14 +1770,26 @@ class inspect_points(Operation):
        columns and dtypes when no hits occur. The transformed dataframe
        is also what is passed to the Points object.""")
 
+    points_transformer = param.Callable(default=identity, doc="""
+      Function that transforms the hits dataframe""")
+
+    vdims = param.List(default=[], doc="""
+       The vdims of the returned Point element drawn from the source
+       dataframe. If a points_transformer is used, these columns need to
+       in the return value.""")
+
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
     y = param.Number(default=0)
 
     def _process(self, raster, key=None):
-        no_match = Points(self.p.hits_transformer(None))
-        try: val = raster[self.p.x,self.p.y]
+        no_match = Points(self.p.hits_transformer(None), vdims=self.p.vdims)
+        try:
+            if isinstance(raster, RGB):
+                val = raster[self.p.x,self.p.y, 'A']
+            else:
+                val = raster[self.p.x,self.p.y]
         except: val = self.p.null_value # Exception at the edges
         interface = raster.dataset.interface.datatype
         if  interface != 'spatialpandas':
@@ -1787,24 +1800,22 @@ class inspect_points(Operation):
             if (val < self.p.value_bounds[0]) or (val > self.p.value_bounds[1]):
                 self.p.hits = self.p.hits_transformer(None)
                 return no_match
+
         if val != self.p.null_value:
-            mask_size = self._distance_args(x_range, y_range, raster.data, self.pixels)
+            mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
             masked = self._mask_dataframe(raster.dataset.data, self.p.x, self.p.y,
                                           mask_size, interface)
             dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
                                                  raster.kdims, interface)
             self.hits = self.p.hits_transformer(dist_sorted)
-            vdims=  ([] if (self.p.hits_transformer is identity)
-                     else [col for col in self.hits.columns
-                           if col not in ['x','y']])
-            point = Points(self.hits, vdims=vdims).iloc[:self.p.point_count]
+            point = Points(self.p.points_transformer(self.hits), vdims=self.p.vdims).iloc[:self.p.point_count]
             return point
         self.hits = self.p.hits_transformer(None)
         return no_match
 
     @classmethod
-    def _distance_args(cls, x_range, y_range, data, pixels):
-        xcount, ycount = data.dims['x'], data.dims['y']
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
         return (x_delta*pixels, y_delta*pixels)
@@ -1814,7 +1825,10 @@ class inspect_points(Operation):
         "Mask the dataframe with size around x and y"
         xdelta, ydelta = mask_size
         # If spatialpandas, pandas, geopandas etc. Currently assuming spatialpandas
-        return df.cx[x-xdelta:x+xdelta, y-ydelta:y+ydelta]
+        masked = df.cx[x-xdelta:x+xdelta, y-ydelta:y+ydelta]
+        if hasattr(masked, 'compute'):
+            masked = masked.compute()
+        return masked
 
     @classmethod
     def _get_xs_ys(cls, df, raster_kdims, interface):
@@ -1830,4 +1844,6 @@ class inspect_points(Operation):
         xs, ys = cls._get_xs_ys(df, raster_kdims, interface)
         dx, dy = xs - x, ys - y
         distances = pd.Series(dx*dx + dy*dy)
-        return df.iloc[distances.argsort()]
+        if hasattr(df.geometry, 'compute'):
+            df = df.compute()
+        return df.iloc[list(distances.argsort())]
