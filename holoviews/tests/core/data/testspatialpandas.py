@@ -13,8 +13,13 @@ try:
         LineDtype, PointDtype, PolygonDtype,
         MultiLineDtype, MultiPointDtype, MultiPolygonDtype
     )
-except:
+except Exception:
     spatialpandas = None
+
+try:
+    import dask.dataframe as dd
+except Exception:
+    dd = None
 
 from holoviews.core.data import (
     Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
@@ -231,6 +236,13 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     interface = DaskSpatialPandasInterface
 
     __test__ = True
+
+    def setUp(self):
+        if spatialpandas is None:
+            raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
+        elif dd is None:
+            raise SkipTest('DaskSpatialPandasInterface requires dask, skipping tests')
+        super(GeomTests, self).setUp()
 
     def test_array_points_iloc_index_row(self):
         raise SkipTest("Not supported")
