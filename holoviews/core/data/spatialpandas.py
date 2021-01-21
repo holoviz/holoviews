@@ -6,6 +6,7 @@ import warnings
 from collections import defaultdict
 
 import numpy as np
+import pandas as pd
 
 from ..dimension import dimension_name
 from ..util import isscalar, unique_iterator, pd, unique_array
@@ -17,11 +18,13 @@ from .pandas import PandasInterface
 
 class SpatialPandasInterface(MultiInterface):
 
-    types = ()
+    base_interface = PandasInterface
 
     datatype = 'spatialpandas'
 
     multi = True
+
+    types = ()
 
     @classmethod
     def loaded(cls):
@@ -40,39 +43,23 @@ class SpatialPandasInterface(MultiInterface):
     @classmethod
     def data_types(cls):
         from spatialpandas import GeoDataFrame, GeoSeries
-        stypes = (GeoDataFrame, GeoSeries)
-        if 'spatialpandas.dask' in sys.modules:
-            from spatialpandas.dask import DaskGeoDataFrame, DaskGeoSeries
-            stypes = stypes + (DaskGeoDataFrame, DaskGeoSeries)
-        return stypes
+        return (GeoDataFrame, GeoSeries)
 
     @classmethod
-    def series_types(cls):
+    def series_type(cls):
         from spatialpandas import GeoSeries
-        if 'spatialpandas.dask' in sys.modules:
-            from spatialpandas.dask import DaskGeoSeries
-            return (GeoSeries, DaskGeoSeries)
-        return (GeoSeries,)
+        return GeoSeries
 
     @classmethod
-    def frame_types(cls):
+    def frame_type(cls):
         from spatialpandas import GeoDataFrame
-        if 'spatialpandas.dask' in sys.modules:
-            from spatialpandas.dask import DaskGeoDataFrame
-            return (GeoDataFrame, DaskGeoDataFrame)
-        return (GeoDataFrame,)
-
-    @classmethod
-    def dask_types(cls):
-        if 'spatialpandas.dask' in sys.modules:
-            from spatialpandas.dask import DaskGeoDataFrame, DaskGeoSeries
-            return (DaskGeoSeries, DaskGeoDataFrame)
-        return ()
+        return GeoDataFrame
 
     @classmethod
     def geo_column(cls, data):
         col = 'geometry'
-        stypes = cls.series_types()
+        stypes = cls.series_type()
+        print(data[col], stypes)
         if col in data and isinstance(data[col], stypes):
             return col
         cols = [c for c in data.columns if isinstance(data[c], stypes)]
@@ -83,7 +70,6 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        import pandas as pd
         from spatialpandas import GeoDataFrame
 
         if kdims is None:
@@ -92,7 +78,7 @@ class SpatialPandasInterface(MultiInterface):
         if vdims is None:
             vdims = eltype.vdims
 
-        if isinstance(data, cls.series_types()):
+        if isinstance(data, cls.series_type()):
             data = data.to_frame()
 
         if 'geopandas' in sys.modules:
@@ -106,8 +92,8 @@ class SpatialPandasInterface(MultiInterface):
                 data = from_shapely(data)
             if isinstance(data, list):
                 data = from_multi(eltype, data, kdims, vdims)
-        elif not isinstance(data, cls.frame_types()):
-            raise ValueError("SpatialPandasInterface only support spatialpandas DataFrames.")
+        elif not isinstance(data, cls.frame_type()):
+            raise ValueError("%s only support spatialpandas DataFrames." % cls.__name__)
         elif 'geometry' not in data:
             cls.geo_column(data)
 
@@ -263,9 +249,8 @@ class SpatialPandasInterface(MultiInterface):
                 return (bounds[0], bounds[2])
             else:
                 return (bounds[1], bounds[3])
-        elif isinstance(dataset.data, cls.dask_types()):
-            return DaskInterface.range(dataset, dim)
-        return PandasInterface.range(dataset, dim)
+        else:
+            return cls.base_interface.range(dataset, dim)
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
@@ -273,9 +258,7 @@ class SpatialPandasInterface(MultiInterface):
         if any(d in geo_dims for d in dimensions):
             raise DataError("SpatialPandasInterface does not allow grouping "
                             "by geometry dimension.", cls)
-        elif isinstance(dataset.data, cls.dask_types()):
-            return DaskInterface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
-        return PandasInterface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
+        return cls.base_interface.groupby(dataset, dimensions, container_type, group_type, **kwargs)
 
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
@@ -299,7 +282,7 @@ class SpatialPandasInterface(MultiInterface):
         if any(d in geo_dims for d in by):
             raise DataError("SpatialPandasInterface does not allow sorting "
                             "by geometry dimension.", cls)
-        return PandasInterface.sort(dataset, by, reverse)
+        return cls.base_interface.sort(dataset, by, reverse)
 
     @classmethod
     def length(cls, dataset):
@@ -308,7 +291,7 @@ class SpatialPandasInterface(MultiInterface):
         column = dataset.data[col_name]
         geom_type = cls.geom_type(dataset)
         if not isinstance(column.dtype, MultiPointDtype) and geom_type != 'Point':
-            return PandasInterface.length(dataset)
+            return cls.base_interface.length(dataset)
         length = 0
         for i, geom in enumerate(column):
             if isinstance(geom, Point):
@@ -323,7 +306,7 @@ class SpatialPandasInterface(MultiInterface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return PandasInterface.redim(dataset, dimensions)
+        return cls.base_interface.redim(dataset, dimensions)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -424,7 +407,7 @@ class SpatialPandasInterface(MultiInterface):
         geom_type = cls.geom_type(dataset)
         index = geom_dims.index(dimension)
         geom_series = data[geom_col]
-        if compute and isinstance(geom_series, cls.dask_types()):
+        if compute and hasattr(geom_series, 'compute'):
             geom_series = geom_series.compute()
         return geom_array_to_array(geom_series.values, index, expanded, geom_type)
 

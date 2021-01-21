@@ -16,7 +16,9 @@ try:
 except:
     spatialpandas = None
 
-from holoviews.core.data import Dataset, SpatialPandasInterface
+from holoviews.core.data import (
+    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+)
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
@@ -217,3 +219,15 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
                                    2., 7., 5., 6., 7. ]))
         self.assertEqual(path.data.iloc[1, 0].buffer_values,
                          np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]))
+
+
+class DaskSpatialPandasTest(GeomTests, RoundTripTests):
+    """
+    Test of the DaskSpatialPandasInterface.
+    """
+
+    datatype = 'dask_spatialpandas'
+
+    interface = DaskSpatialPandasInterface
+
+    __test__ = True
