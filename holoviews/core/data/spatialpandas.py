@@ -56,7 +56,6 @@ class SpatialPandasInterface(MultiInterface):
     def geo_column(cls, data):
         col = 'geometry'
         stypes = cls.series_type()
-        print(data[col], stypes)
         if col in data and isinstance(data[col], stypes):
             return col
         cols = [c for c in data.columns if isinstance(data[c], stypes)]

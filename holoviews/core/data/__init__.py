@@ -42,8 +42,8 @@ from .xarray import XArrayInterface           # noqa (API import)
 
 default_datatype = 'dataframe'
 
-datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'spatialpandas',
-             'dask', 'cuDF', 'array', 'multitabular', 'dask_spatialpandas',
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
+             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
              'ibis']
 
 
