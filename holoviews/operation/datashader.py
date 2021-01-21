@@ -1790,7 +1790,7 @@ class inspect_points(Operation):
         if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
             val == self.p.null_value):
             df = self._empty_df(raster.dataset)
-            self.hits = self.p.hits_transformer(None)
+            self.hits = self.p.hits_transformer(df)
             return Points(self.points_transformer(self.hits), kdims=raster.kdims)
 
         x_range, y_range = raster.range(0), raster.range(1)
