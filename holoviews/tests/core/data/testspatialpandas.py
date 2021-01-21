@@ -232,9 +232,6 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     __test__ = True
 
-    def test_array_dataset_add_dimension_scalar(self):
-        raise SkipTest("Not supported")
-
     def test_array_points_iloc_index_row(self):
         raise SkipTest("Not supported")
 
