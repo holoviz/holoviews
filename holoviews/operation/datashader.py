@@ -1790,8 +1790,8 @@ class inspect_points(Operation):
         if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
             val == self.p.null_value):
             empty_df = self._empty_df(raster.dataset)
+            df = self.p.points_transformer(empty_df)
             self.hits = self.p.hits_transformer(empty_df)
-            df = self.p.points_transformer(self.hits)
             vdims = self._vdims(raster, df)
             return Points(df, kdims=raster.kdims, vdims=vdims)
 
@@ -1800,8 +1800,8 @@ class inspect_points(Operation):
         mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
         masked = self._mask_dataframe(raster, self.p.x, self.p.y, mask_size)
         dist_sorted = self._sort_by_distance(raster, masked, self.p.x, self.p.y)
+        df = self.p.points_transformer(dist_sorted)
         self.hits = self.p.hits_transformer(dist_sorted)
-        df = self.p.points_transformer(self.hits)
         vdims = self._vdims(raster, df)
         return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.point_count]
 
