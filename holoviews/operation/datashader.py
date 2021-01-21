@@ -1789,9 +1789,11 @@ class inspect_points(Operation):
 
         if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
             val == self.p.null_value):
-            df = self._empty_df(raster.dataset)
-            self.hits = self.p.hits_transformer(df)
-            return Points(self.points_transformer(self.hits), kdims=raster.kdims)
+            empty_df = self._empty_df(raster.dataset)
+            self.hits = self.p.hits_transformer(empty_df)
+            df = self.p.points_transformer(self.hits)
+            vdims = self._vdims(raster, df)
+            return Points(df, kdims=raster.kdims, vdims=vdims)
 
         x_range, y_range = raster.range(0), raster.range(1)
 
@@ -1799,7 +1801,18 @@ class inspect_points(Operation):
         masked = self._mask_dataframe(raster, self.p.x, self.p.y, mask_size)
         dist_sorted = self._sort_by_distance(raster, masked, self.p.x, self.p.y)
         self.hits = self.p.hits_transformer(dist_sorted)
-        return Points(self.p.points_transformer(self.hits), kdims=raster.kdims).iloc[:self.p.point_count]
+        df = self.p.points_transformer(self.hits)
+        vdims = self._vdims(raster, df)
+        return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.point_count]
+
+    @classmethod
+    def _vdims(cls, raster, df):
+        ds = raster.dataset
+        if 'spatialpandas' in ds.interface.datatype:
+            coords = [ds.interface.geo_column(ds.data)]
+        else:
+            coords = [kd.name for kd in raster.kdims]
+        return [col for col in df.columns if col not in coords]
 
     @classmethod
     def _empty_df(cls, dataset):
