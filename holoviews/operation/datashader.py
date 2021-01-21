@@ -1799,7 +1799,7 @@ class inspect_points(Operation):
         masked = self._mask_dataframe(raster, self.p.x, self.p.y, mask_size)
         dist_sorted = self._sort_by_distance(raster, masked, self.p.x, self.p.y)
         self.hits = self.p.hits_transformer(dist_sorted)
-        return Points(self.p.points_transformer(self.hits), vdims=self.p.vdims).iloc[:self.p.point_count]
+        return Points(self.p.points_transformer(self.hits), kdims=raster.kdims).iloc[:self.p.point_count]
 
     @classmethod
     def _empty_df(cls, dataset):
