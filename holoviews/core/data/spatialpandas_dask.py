@@ -64,12 +64,19 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
 
     @classmethod
     def split(cls, dataset, start, end, datatype, **kwargs):
-        if datatype is None:
-            raise NotImplementedError
         ds = dataset.clone(dataset.data.compute(), datatype=['spatialpandas'])
         return ds.interface.split(ds, start, end, datatype, **kwargs)
 
-    
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        if rows is not None:
+            raise NotImplementedError
+        return super(DaskSpatialPandasInterface, cls).iloc(dataset, index)
+
+    @classmethod
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
+        return cls.base_interface.add_dimension(dataset, dimension, dim_pos, values, vdim)
         
 
 Interface.register(DaskSpatialPandasInterface)

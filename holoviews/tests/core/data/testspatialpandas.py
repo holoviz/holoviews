@@ -231,3 +231,42 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
     interface = DaskSpatialPandasInterface
 
     __test__ = True
+
+    def test_array_dataset_add_dimension_scalar(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_index_row(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_index_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_index_rows_index_cols(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows_no_start(self):
+        raise SkipTest("Not supported")
+    
+    def test_array_points_iloc_slice_rows_no_end(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows_no_stop(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_index_row(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_index_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_slice_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_dict_dataset_add_dimension_values(self):
+        raise SkipTest("Not supported")
+
+    def test_sort_by_value(self):
+        raise SkipTest("Not supported")

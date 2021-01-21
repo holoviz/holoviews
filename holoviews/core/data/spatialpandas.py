@@ -175,43 +175,14 @@ class SpatialPandasInterface(MultiInterface):
         elif selection_mask is None:
             selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
-        df = df.iloc[selection_mask]
+        df = df[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
 
     @classmethod
     def select_mask(cls, dataset, selection):
-        mask = np.ones(len(dataset.data), dtype=np.bool)
-        for dim, k in selection.items():
-            if isinstance(k, tuple):
-                k = slice(*k)
-            arr = dataset.data[dim].values
-            if isinstance(k, slice):
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', r'invalid value encountered')
-                    if k.start is not None:
-                        mask &= k.start <= arr
-                    if k.stop is not None:
-                        mask &= arr < k.stop
-            elif isinstance(k, (set, list)):
-                iter_slcs = []
-                for ik in k:
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings('ignore', r'invalid value encountered')
-                        iter_slcs.append(arr == ik)
-                mask &= np.logical_or.reduce(iter_slcs)
-            elif callable(k):
-                mask &= k(arr)
-            else:
-                index_mask = arr == k
-                if dataset.ndims == 1 and np.sum(index_mask) == 0:
-                    data_index = np.argmin(np.abs(arr - k))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
-                    mask[data_index] = True
-                else:
-                    mask &= index_mask
-        return mask
+        return cls.base_interface.select_mask(dataset, selection)
 
     @classmethod
     def geom_dims(cls, dataset):
