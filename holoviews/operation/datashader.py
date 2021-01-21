@@ -1366,7 +1366,7 @@ class geometry_rasterize(AggregationOperation):
         if element._plot_id in self._precomputed:
             data, col = self._precomputed[element._plot_id]
         else:
-            if element.interface.datatype != 'spatialpandas':
+            if 'spatialpandas' not in element.interface.datatype:
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
