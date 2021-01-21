@@ -1366,7 +1366,7 @@ class geometry_rasterize(AggregationOperation):
         if element._plot_id in self._precomputed:
             data, col = self._precomputed[element._plot_id]
         else:
-            if element.interface.datatype != 'spatialpandas':
+            if 'spatialpandas' not in element.interface.datatype:
                 element = element.clone(datatype=['spatialpandas'])
             data = element.data
             col = element.interface.geo_column(data)
@@ -1429,8 +1429,8 @@ class rasterize(AggregationOperation):
 
     _transforms = [(Image, regrid),
                    (Polygons, geometry_rasterize),
-                   (lambda x: (isinstance(x, Path) and
-                               x.interface.datatype == 'spatialpandas'),
+                   (lambda x: (isinstance(x, (Path, Points)) and
+                               'spatialpandas' in x.interface.datatype),
                     geometry_rasterize),
                    (TriMesh, trimesh_rasterize),
                    (QuadMesh, quadmesh_rasterize),

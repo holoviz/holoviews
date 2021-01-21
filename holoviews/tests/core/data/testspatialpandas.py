@@ -13,10 +13,17 @@ try:
         LineDtype, PointDtype, PolygonDtype,
         MultiLineDtype, MultiPointDtype, MultiPolygonDtype
     )
-except:
+except Exception:
     spatialpandas = None
 
-from holoviews.core.data import Dataset, SpatialPandasInterface
+try:
+    import dask.dataframe as dd
+except Exception:
+    dd = None
+
+from holoviews.core.data import (
+    Dataset, SpatialPandasInterface, DaskSpatialPandasInterface
+)
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
@@ -217,3 +224,58 @@ class SpatialPandasTest(GeomTests, RoundTripTests):
                                    2., 7., 5., 6., 7. ]))
         self.assertEqual(path.data.iloc[1, 0].buffer_values,
                          np.array([3, 2, 7, 5, 6, 7, 3, 2, 3, 7, 1, 2, 2, 0, 3, 7]))
+
+
+class DaskSpatialPandasTest(GeomTests, RoundTripTests):
+    """
+    Test of the DaskSpatialPandasInterface.
+    """
+
+    datatype = 'dask_spatialpandas'
+
+    interface = DaskSpatialPandasInterface
+
+    __test__ = True
+
+    def setUp(self):
+        if spatialpandas is None:
+            raise SkipTest('DaskSpatialPandasInterface requires spatialpandas, skipping tests')
+        elif dd is None:
+            raise SkipTest('DaskSpatialPandasInterface requires dask, skipping tests')
+        super(GeomTests, self).setUp()
+
+    def test_array_points_iloc_index_row(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_index_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_index_rows_index_cols(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows_no_start(self):
+        raise SkipTest("Not supported")
+    
+    def test_array_points_iloc_slice_rows_no_end(self):
+        raise SkipTest("Not supported")
+
+    def test_array_points_iloc_slice_rows_no_stop(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_index_row(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_index_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_multi_polygon_iloc_slice_rows(self):
+        raise SkipTest("Not supported")
+
+    def test_dict_dataset_add_dimension_values(self):
+        raise SkipTest("Not supported")
+
+    def test_sort_by_value(self):
+        raise SkipTest("Not supported")

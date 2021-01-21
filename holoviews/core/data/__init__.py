@@ -36,13 +36,15 @@ from .interface import Interface, iloc, ndloc # noqa (API import)
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
 from .pandas import PandasInterface           # noqa (API import)
-from .spatialpandas import SpatialPandasInterface # noqa (API import)
+from .spatialpandas import SpatialPandasInterface     # noqa (API import)
+from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
 
 default_datatype = 'dataframe'
 
-datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
-             'cuDF', 'spatialpandas', 'array', 'multitabular', 'ibis']
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
+             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
+             'ibis']
 
 
 def concat(datasets, datatype=None):
