@@ -1770,13 +1770,21 @@ class inspect_points(Operation):
        columns and dtypes when no hits occur. The transformed dataframe
        is also what is passed to the Points object.""")
 
+    points_transformer = param.Callable(default=identity, doc="""
+      Function that transforms the hits dataframe""")
+
+    vdims = param.List(default=[], doc="""
+       The vdims of the returned Point element drawn from the source
+       dataframe. If a points_transformer is used, these columns need to
+       in the return value.""")
+
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
     y = param.Number(default=0)
 
     def _process(self, raster, key=None):
-        no_match = Points(self.p.hits_transformer(None))
+        no_match = Points(self.p.hits_transformer(None), vdims=self.p.vdims)
         try:
             if isinstance(raster, RGB):
                 val = raster[self.p.x,self.p.y, 'A']
@@ -1800,10 +1808,7 @@ class inspect_points(Operation):
             dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
                                                  raster.kdims, interface)
             self.hits = self.p.hits_transformer(dist_sorted)
-            vdims=  ([] if (self.p.hits_transformer is identity)
-                     else [col for col in self.hits.columns
-                           if col not in ['x','y']])
-            point = Points(self.hits, vdims=vdims).iloc[:self.p.point_count]
+            point = Points(self.p.points_transformer(self.hits), vdims=self.p.vdims).iloc[:self.p.point_count]
             return point
         self.hits = self.p.hits_transformer(None)
         return no_match
