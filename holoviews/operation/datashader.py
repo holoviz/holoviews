@@ -1773,45 +1773,41 @@ class inspect_points(Operation):
     points_transformer = param.Callable(default=identity, doc="""
       Function that transforms the hits dataframe""")
 
-    vdims = param.List(default=[], doc="""
-       The vdims of the returned Point element drawn from the source
-       dataframe. If a points_transformer is used, these columns need to
-       in the return value.""")
-
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
     y = param.Number(default=0)
 
     def _process(self, raster, key=None):
-        no_match = Points(self.p.hits_transformer(None), vdims=self.p.vdims)
         try:
             if isinstance(raster, RGB):
                 val = raster[self.p.x,self.p.y, 'A']
             else:
                 val = raster[self.p.x,self.p.y]
-        except: val = self.p.null_value # Exception at the edges
-        interface = raster.dataset.interface.datatype
-        if  interface != 'spatialpandas':
-            raise Exception('%r interface not yet supported' % interface)
+        except Exception:
+            val = self.p.null_value # Exception at the edges
+
+        if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
+            val == self.p.null_value):
+            df = self._empty_df(raster.dataset)
+            self.hits = self.p.hits_transformer(None)
+            return Points(self.points_transformer(self.hits), kdims=raster.kdims)
+
         x_range, y_range = raster.range(0), raster.range(1)
 
-        if self.p.value_bounds is not None:
-            if (val < self.p.value_bounds[0]) or (val > self.p.value_bounds[1]):
-                self.p.hits = self.p.hits_transformer(None)
-                return no_match
+        mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
+        masked = self._mask_dataframe(raster, self.p.x, self.p.y, mask_size)
+        dist_sorted = self._sort_by_distance(raster, masked, self.p.x, self.p.y)
+        self.hits = self.p.hits_transformer(dist_sorted)
+        return Points(self.p.points_transformer(self.hits), vdims=self.p.vdims).iloc[:self.p.point_count]
 
-        if val != self.p.null_value:
-            mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
-            masked = self._mask_dataframe(raster.dataset.data, self.p.x, self.p.y,
-                                          mask_size, interface)
-            dist_sorted = self._sort_by_distance(masked, self.p.x, self.p.y,
-                                                 raster.kdims, interface)
-            self.hits = self.p.hits_transformer(dist_sorted)
-            point = Points(self.p.points_transformer(self.hits), vdims=self.p.vdims).iloc[:self.p.point_count]
-            return point
-        self.hits = self.p.hits_transformer(None)
-        return no_match
+    @classmethod
+    def _empty_df(cls, dataset):
+        if 'dask' in dataset.interface.datatype:
+            return dataset.data.partitions[0].head(0)
+        elif dataset.interface.datatype in ['pandas', 'geopandas', 'spatialpandas']:
+            return dataset.data.head(0)
+        return dataset.iloc[:0].dframe()
 
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
@@ -1821,29 +1817,35 @@ class inspect_points(Operation):
         return (x_delta*pixels, y_delta*pixels)
 
     @classmethod
-    def _mask_dataframe(cls, df, x, y, mask_size, interface):
+    def _mask_dataframe(cls, raster, x, y, mask_size):
         "Mask the dataframe with size around x and y"
+        ds = raster.dataset
         xdelta, ydelta = mask_size
-        # If spatialpandas, pandas, geopandas etc. Currently assuming spatialpandas
-        masked = df.cx[x-xdelta:x+xdelta, y-ydelta:y+ydelta]
-        if hasattr(masked, 'compute'):
-            masked = masked.compute()
-        return masked
+        x0, x1, y0, y1 = x-xdelta, x+xdelta, y-ydelta, y+ydelta
+        if 'spatialpandas' in ds.interface.datatype:
+            df = ds.data.cx[x0:x1, y0:y1]
+            return df.compute() if hasattr(df, 'compute') else df
+        xdim, ydim = raster.kdims
+        query = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
+        return ds.select(**query).dframe()
 
     @classmethod
-    def _get_xs_ys(cls, df, raster_kdims, interface):
+    def _get_xs_ys(cls, raster, df):
         "Returns the x and y arrays or series for the given dataframe"
-        return df.geometry.array.x, df.geometry.array.y
+        ds = raster.dataset
+        if 'spatialpandas' in ds.interface.datatype:
+            geom = ds.interface.geo_column(ds.data)
+            return df[geom].array.x, df[geom].array.y
+        xdim, ydim = raster.kdims
+        return df[xdim].values, df[ydim].values
 
     @classmethod
-    def _sort_by_distance(cls, df, x, y, raster_kdims, interface):
+    def _sort_by_distance(cls, raster, df, x, y):
         """
         Returns a dataframe of hits within a given mask around a given
         spatial location, sorted by distance from that location.
         """
-        xs, ys = cls._get_xs_ys(df, raster_kdims, interface)
+        xs, ys = cls._get_xs_ys(raster, df)
         dx, dy = xs - x, ys - y
         distances = pd.Series(dx*dx + dy*dy)
-        if hasattr(df.geometry, 'compute'):
-            df = df.compute()
-        return df.iloc[list(distances.argsort())]
+        return df.iloc[distances.argsort().values]
