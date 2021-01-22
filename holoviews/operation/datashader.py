@@ -1729,6 +1729,42 @@ class directly_connect_edges(_connect_edges, connect_edges):
 
 def identity(x): return x
 
+
+class inspect_mask(Operation):
+    """
+    Operation used to display the inspection mask, for use with other
+    inspection operations.
+    """
+    pixels = param.Integer(default=3, doc="""
+       Size of the mask that should match the pixels parameter used in
+       the associated inspection operation. """)
+
+    streams = param.List(default=[PointerXY])
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+
+    @classmethod
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
+
+    def _process(self, raster, key=None):
+        if isinstance(raster, RGB):
+            raster = raster[..., raster.vdims[-1]]
+        x_range, y_range = raster.range(0), raster.range(1)
+        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+        x, y = self.p.x, self.p.y
+        return self._indicator(raster.kdims, x, y, xdelta, ydelta)
+
+    def _indicator(self, kdims, x, y, xdelta, ydelta):
+        rect = np.array([(x-xdelta/2,y-ydelta/2), (x+xdelta/2, y-ydelta/2),
+                         (x+xdelta/2, y+ydelta/2), (x-xdelta/2, y+ydelta/2)])
+        data = {(str(kdims[0]),str(kdims[1])):rect}
+        return Polygons(data, kdims=kdims)
+
+
 class inspect_points(Operation):
     """
     Given datashaded aggregate (Image) output, return a single
@@ -1773,14 +1809,6 @@ class inspect_points(Operation):
     points_transformer = param.Callable(default=identity, doc="""
       Function that transforms the hits dataframe""")
 
-    indicator = param.ObjectSelector(default='points',
-                                     objects=['points', 'polygon'], doc="""
-      Indicator type used to inspect samples. If 'points' then the
-      matched samples are shown with one or more Points while 'polygon'
-      shows the mask area used with a Polygon. This polygon reflects the
-      information of the closest sample to the cursor in its vdims,
-      which can be made visible by enabling the hover tool.""")
-
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
@@ -1802,30 +1830,18 @@ class inspect_points(Operation):
             df = self.p.points_transformer(empty_df)
             self.hits = self.p.hits_transformer(empty_df)
             vdims = self._vdims(raster, df)
-            return self._indicator(df, raster.kdims, vdims, x, y, xdelta, ydelta)
+            return Points(df, kdims=raster.kdims, vdims=vdims)
 
         masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
         dist_sorted = self._sort_by_distance(raster, masked, x, y)
         df = self.p.points_transformer(dist_sorted)
         self.hits = self.p.hits_transformer(dist_sorted)
         vdims = self._vdims(raster, df)
-        return self._indicator(df, raster.kdims, vdims, x, y, xdelta, ydelta)
+        return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.point_count]
 
-    def _indicator(self, df, kdims, vdims, x, y, xdelta, ydelta):
-        points = Points(df, kdims=kdims, vdims=vdims).iloc[:self.p.point_count]
-        if self.p.indicator == 'polygon':
-            rect = np.array([(x-xdelta/2,y-ydelta/2), (x+xdelta/2, y-ydelta/2),
-                             (x+xdelta/2, y+ydelta/2), (x-xdelta/2, y+ydelta/2)])
-            if len(df) == 0:
-                data = {(str(kdims[0]),str(kdims[1])):[]}
-                metadata = {v:[] for v in vdims}
-            else:
-                row = df.iloc[0]
-                data = {(str(kdims[0]),str(kdims[1])):rect}
-                metadata = {v:row[v] for v in vdims}
-            return Polygons(dict(data, **metadata), vdims=vdims)
-        else:
-            return points
+    @property
+    def mask(self):
+        return inspect_mask.instance(pixels=self.p.pixels)
 
     @classmethod
     def _vdims(cls, raster, df):
