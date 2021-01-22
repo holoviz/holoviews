@@ -79,6 +79,12 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         return cls.base_interface.add_dimension(dataset, dimension, dim_pos, values, vdim)
-        
+
+    @classmethod
+    def dframe(cls, dataset, dimensions):
+        if dimensions:
+            return dataset.data[dimensions].compute()
+        else:
+            return dataset.data.compute()
 
 Interface.register(DaskSpatialPandasInterface)
