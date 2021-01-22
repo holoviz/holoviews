@@ -1815,7 +1815,7 @@ class inspect_points(Operation):
     @classmethod
     def _empty_df(cls, dataset):
         if 'dask' in dataset.interface.datatype:
-            return dataset.data.partitions[0].head(0)
+            return dataset.data._meta.iloc[:0]
         elif dataset.interface.datatype in ['pandas', 'geopandas', 'spatialpandas']:
             return dataset.data.head(0)
         return dataset.iloc[:0].dframe()
