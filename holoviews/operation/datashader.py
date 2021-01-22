@@ -1779,13 +1779,14 @@ class inspect_points(Operation):
     y = param.Number(default=0)
 
     def _process(self, raster, key=None):
-        try:
-            if isinstance(raster, RGB):
-                val = raster[self.p.x,self.p.y, 'A']
-            else:
-                val = raster[self.p.x,self.p.y]
-        except Exception:
-            val = self.p.null_value # Exception at the edges
+        if isinstance(raster, RGB):
+            raster = raster[..., raster.vdims[-1]]
+        x_range, y_range = raster.range(0), raster.range(1)
+        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.pixels)
+        x, y = self.p.x, self.p.y
+        val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
+        if np.isnan(val):
+            val = self.p.null_value
 
         if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
             val == self.p.null_value):
@@ -1795,11 +1796,8 @@ class inspect_points(Operation):
             vdims = self._vdims(raster, df)
             return Points(df, kdims=raster.kdims, vdims=vdims)
 
-        x_range, y_range = raster.range(0), raster.range(1)
-
-        mask_size = self._distance_args(raster, x_range, y_range, self.pixels)
-        masked = self._mask_dataframe(raster, self.p.x, self.p.y, mask_size)
-        dist_sorted = self._sort_by_distance(raster, masked, self.p.x, self.p.y)
+        masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
+        dist_sorted = self._sort_by_distance(raster, masked, x, y)
         df = self.p.points_transformer(dist_sorted)
         self.hits = self.p.hits_transformer(dist_sorted)
         vdims = self._vdims(raster, df)
@@ -1830,10 +1828,9 @@ class inspect_points(Operation):
         return (x_delta*pixels, y_delta*pixels)
 
     @classmethod
-    def _mask_dataframe(cls, raster, x, y, mask_size):
+    def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
         "Mask the dataframe with size around x and y"
         ds = raster.dataset
-        xdelta, ydelta = mask_size
         x0, x1, y0, y1 = x-xdelta, x+xdelta, y-ydelta, y+ydelta
         if 'spatialpandas' in ds.interface.datatype:
             df = ds.data.cx[x0:x1, y0:y1]
