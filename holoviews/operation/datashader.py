@@ -756,7 +756,7 @@ class geom_aggregate(AggregationOperation):
             df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
             df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, ds.count_cat):
+        if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
             df[agg_fn.column] = df[agg_fn.column].astype('category')
 
         params = self._get_agg_params(element, x0d, y0d, agg_fn, (x0, y0, x1, y1))
@@ -1374,7 +1374,7 @@ class geometry_rasterize(AggregationOperation):
         if self.p.precompute:
             self._precomputed[element._plot_id] = (data, col)
 
-        if isinstance(agg_fn, ds.count_cat):
+        if isinstance(agg_fn, ds.count_cat) and data[agg_fn.column].dtype.name != 'category':
             data[agg_fn.column] = data[agg_fn.column].astype('category')
 
         if isinstance(element, Polygons):
