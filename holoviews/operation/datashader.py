@@ -1782,7 +1782,7 @@ class inspect_points(Operation):
         if isinstance(raster, RGB):
             raster = raster[..., raster.vdims[-1]]
         x_range, y_range = raster.range(0), raster.range(1)
-        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.pixels)
+        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
         x, y = self.p.x, self.p.y
         val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
         if np.isnan(val):
