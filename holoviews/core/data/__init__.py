@@ -905,6 +905,11 @@ argument to specify a selection specification""")
                 transformed = transformed.collapse()
             return transformed.clone(new_type=type(self))
 
+        ndims = len(dimensions)
+        min_d, max_d = self.param.objects('existing')['kdims'].bounds
+        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
+        new_type = Dataset if generic_type else None
+
         # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
         if not self:
@@ -913,16 +918,14 @@ argument to specify a selection specification""")
                 vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
             else:
                 vdims = self.vdims
-            return self.clone([], kdims=kdims, vdims=vdims)
+            if not kdims and len(vdims) == 1:
+                return np.nan
+            return self.clone([], kdims=kdims, vdims=vdims, new_type=new_type)
 
         vdims = self.vdims
         aggregated, dropped = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
         vdims = [vd for vd in vdims if vd not in dropped]
-
-        ndims = len(dimensions)
-        min_d, max_d = self.param.objects('existing')['kdims'].bounds
-        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
 
         if spreadfn:
             error, _ = self.interface.aggregate(self, dimensions, spreadfn)
@@ -936,7 +939,7 @@ argument to specify a selection specification""")
                 idx = vdims.index(d)
                 combined = combined.add_dimension(dim, idx+1, dvals, True)
                 vdims = combined.vdims
-            return combined.clone(new_type=Dataset if generic_type else type(self))
+            return combined.clone(new_type=new_type)
 
         if np.isscalar(aggregated):
             return aggregated
@@ -947,8 +950,7 @@ argument to specify a selection specification""")
             except:
                 datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=Dataset if generic_type else None,
-                                  datatype=datatype)
+                                  new_type=new_type, datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
