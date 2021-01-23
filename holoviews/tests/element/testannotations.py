@@ -42,18 +42,18 @@ class AnnotationTests(ComparisonTestCase):
         self.assertEqual(hline.range(1), (0, 0))
 
     def test_vline_dimension_values(self):
-        hline = VLine(0)
-        self.assertEqual(hline.range(0), (0, 0))
-        self.assertTrue(all(not np.isfinite(v) for v in hline.range(1)))
+        vline = VLine(0)
+        self.assertEqual(vline.range(0), (0, 0))
+        self.assertTrue(all(not np.isfinite(v) for v in vline.range(1)))
 
         # Testing numpy inputs
-        hline = VLine(np.array([0]))
-        self.assertEqual(hline.range(0), (0, 0))
-        self.assertTrue(all(not np.isfinite(v) for v in hline.range(1)))
+        vline = VLine(np.array([0]))
+        self.assertEqual(vline.range(0), (0, 0))
+        self.assertTrue(all(not np.isfinite(v) for v in vline.range(1)))
 
-        hline = VLine(np.array(0))
-        self.assertEqual(hline.range(0), (0, 0))
-        self.assertTrue(all(not np.isfinite(v) for v in hline.range(1)))
+        vline = VLine(np.array(0))
+        self.assertEqual(vline.range(0), (0, 0))
+        self.assertTrue(all(not np.isfinite(v) for v in vline.range(1)))
 
     def test_arrow_redim_range_aux(self):
         annotations = Arrow(0, 0)
