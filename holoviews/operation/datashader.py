@@ -1770,14 +1770,14 @@ class inspect_mask(Operation):
 
 class inspect_points(Operation):
     """
-    Given datashaded aggregate (Image) output, return a single
-    (hoverable) point at the sample closest to the cursor.
+    Given datashaded aggregate (Image) output, return a set of
+    (hoverable) points sampled from those near the cursor.
     """
 
     pixels = param.Integer(default=3, doc="""
        Number of pixels in data space around the cursor point to search
        for hits in. The hit within this box mask that is closest to the
-       cursors position is displayed.""")
+       cursor's position is displayed.""")
 
     null_value = param.Number(default=0, doc="""
        Value of raster which indicates no hits. For instance zero for
@@ -1805,7 +1805,7 @@ class inspect_points(Operation):
        customization of the hits parameter and points output
        respectively. Useful when no distinction is needed between the
        hits_transformer and the points_transformer or when these later
-       transformers share the same initial code (e.g common merges and
+       transformers share the same initial code (e.g. common merges and
        joins with other sources of data)""")
 
     hits_transformer = param.Callable(default=identity, doc="""
@@ -1820,8 +1820,8 @@ class inspect_points(Operation):
 
     points_transformer = param.Callable(default=identity, doc="""
       Function that transforms the hits dataframe after applying the
-      transformer and before it it pass to the Points. Can be used to
-      customize the value dimensions e.g to implement custom hover
+      transformer and before it is passed to the Points. Can be used to
+      customize the value dimensions e.g. to implement custom hover
       behavior.""")
 
     # Stream values and overrides
