@@ -1733,11 +1733,14 @@ def identity(x): return x
 class inspect_mask(Operation):
     """
     Operation used to display the inspection mask, for use with other
-    inspection operations.
+    inspection operations. Can be used directly but is more commonly
+    constructed using the mask property of the corresponding inspector
+    operation.
     """
+
     pixels = param.Integer(default=3, doc="""
        Size of the mask that should match the pixels parameter used in
-       the associated inspection operation. """)
+       the associated inspection operation.""")
 
     streams = param.List(default=[PointerXY])
     x = param.Number(default=0)
@@ -1796,18 +1799,30 @@ class inspect_points(Operation):
        point. This means that the default value of one shows the single
        closest sample to the cursor.""")
 
+    transformer = param.Callable(default=identity, doc="""
+       Function that can transform the hits dataframe before it is
+       passed to the hits_transformer and points_transformer for further
+       customization of the hits parameter and points output
+       respectively. Useful when no distinction is needed between the
+       hits_transformer and the points_transformer or when these later
+       transformers share the same initial code (e.g common merges and
+       joins with other sources of data)""")
+
     hits_transformer = param.Callable(default=identity, doc="""
-       Function that can transform the hits dataframe before it is set
-       on the hits parameter. When no hits occur, the value passed to
-       the callable is None. This can be used to do multiple common
-       tasks such as 1) subselecting available columns 2) limiting the
-       maximum number of hit rows returned 3) performing joins with
-       other data sources 4) returning a dataframe with appropriate
-       columns and dtypes when no hits occur. The transformed dataframe
-       is also what is passed to the Points object.""")
+       Function that can transform the hits dataframe after applying the
+       transformer and before it is set on the hits parameter. When no
+       hits occur, the value passed to the callable is None. This can be
+       used to do multiple common tasks such as 1) subselecting
+       available columns 2) limiting the maximum number of hit rows
+       returned 3) performing joins with other data sources 4) returning
+       a dataframe with appropriate columns and dtypes when no hits
+       occur.""")
 
     points_transformer = param.Callable(default=identity, doc="""
-      Function that transforms the hits dataframe""")
+      Function that transforms the hits dataframe after applying the
+      transformer and before it it pass to the Points. Can be used to
+      customize the value dimensions e.g to implement custom hover
+      behavior.""")
 
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
@@ -1824,18 +1839,19 @@ class inspect_points(Operation):
         if np.isnan(val):
             val = self.p.null_value
 
-        if ((self.p.value_bounds and not (self.p.value_bounds[0] < val < self.p.value_bounds[1])) or
-            val == self.p.null_value):
+        if ((self.p.value_bounds and
+             not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
+             or val == self.p.null_value):
             empty_df = self._empty_df(raster.dataset)
-            df = self.p.points_transformer(empty_df)
-            self.hits = self.p.hits_transformer(empty_df)
+            df = self.p.points_transformer(self.p.transformer(empty_df))
+            self.hits = self.p.hits_transformer(self.p.transformer(empty_df))
             vdims = self._vdims(raster, df)
             return Points(df, kdims=raster.kdims, vdims=vdims)
 
         masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
         dist_sorted = self._sort_by_distance(raster, masked, x, y)
-        df = self.p.points_transformer(dist_sorted)
-        self.hits = self.p.hits_transformer(dist_sorted)
+        df = self.p.points_transformer(self.p.transformer(dist_sorted))
+        self.hits = self.p.hits_transformer(self.p.transformer(dist_sorted))
         vdims = self._vdims(raster, df)
         return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.point_count]
 
