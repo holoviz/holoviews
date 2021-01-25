@@ -1885,7 +1885,8 @@ class inspect_points(Operation):
 
     @classmethod
     def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
-        "Mask the dataframe with size around x and y"
+        "Mask the dataframe around the specified x and y position with
+        the given x and y deltas"
         ds = raster.dataset
         x0, x1, y0, y1 = x-xdelta, x+xdelta, y-ydelta, y+ydelta
         if 'spatialpandas' in ds.interface.datatype:
