@@ -1793,7 +1793,7 @@ class inspect_points(Operation):
 
     hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
 
-    point_count = param.Integer(default=1, doc="""
+    max_points = param.Integer(default=1, doc="""
        Maximum number of points to display within the mask of size
        pixels. Points are prioritized by distance from the cursor
        point. This means that the default value of one shows the single
@@ -1853,7 +1853,7 @@ class inspect_points(Operation):
         df = self.p.points_transformer(self.p.transformer(dist_sorted))
         self.hits = self.p.hits_transformer(self.p.transformer(dist_sorted))
         vdims = self._vdims(raster, df)
-        return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.point_count]
+        return Points(df, kdims=raster.kdims, vdims=vdims).iloc[:self.p.max_points]
 
     @property
     def mask(self):
