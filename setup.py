@@ -16,7 +16,7 @@ install_requires = [
     "pyviz_comms >=0.7.3",
     "panel >=0.8.0",
     "colorcet",
-    "pandas<=1.2.0",
+    "pandas",
 ]
 
 extras_require = {}
@@ -42,7 +42,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "ffmpeg",
     "cftime",
     "netcdf4",
-    "dask",
+    "dask<=2020.12.0",
     "scipy",
     "shapely",
     "scikit-image"
