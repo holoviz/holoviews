@@ -861,7 +861,7 @@ class regrid(AggregationOperation):
         for i, vd in enumerate(element.vdims):
             if element.interface is XArrayInterface:
                 if element.interface.packed(element):
-                    xarr = element.data[..., i] 
+                    xarr = element.data[..., i]
                 else:
                     xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
@@ -1768,7 +1768,8 @@ class inspect_mask(Operation):
         return Polygons(data, kdims=kdims)
 
 
-class inspect_points(Operation):
+
+class inspect_base(Operation):
     """
     Given datashaded aggregate (Image) output, return a set of
     (hoverable) points sampled from those near the cursor.
@@ -1810,7 +1811,12 @@ class inspect_points(Operation):
     x = param.Number(default=0)
     y = param.Number(default=0)
 
+    @property
+    def mask(self):
+        return inspect_mask.instance(pixels=self.p.pixels)
+
     def _process(self, raster, key=None):
+        self._validate(raster)
         if isinstance(raster, RGB):
             raster = raster[..., raster.vdims[-1]]
         x_range, y_range = raster.range(0), raster.range(1)
@@ -1830,21 +1836,14 @@ class inspect_points(Operation):
 
         self.hits = result
         df = self.p.transform(result)
-        return Points(df.iloc[:self.p.max_hits],
-                      kdims=raster.kdims, vdims=self._vdims(raster, df))
-
-    @property
-    def mask(self):
-        return inspect_mask.instance(pixels=self.p.pixels)
+        return self._element(raster, df.iloc[:self.p.max_hits])
 
     @classmethod
-    def _vdims(cls, raster, df):
-        ds = raster.dataset
-        if 'spatialpandas' in ds.interface.datatype:
-            coords = [ds.interface.geo_column(ds.data)]
-        else:
-            coords = [kd.name for kd in raster.kdims]
-        return [col for col in df.columns if col not in coords]
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
 
     @classmethod
     def _empty_df(cls, dataset):
@@ -1853,13 +1852,6 @@ class inspect_points(Operation):
         elif dataset.interface.datatype in ['pandas', 'geopandas', 'spatialpandas']:
             return dataset.data.head(0)
         return dataset.iloc[:0].dframe()
-
-    @classmethod
-    def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
-        x_delta = abs(x_range[1] - x_range[0]) / xcount
-        y_delta = abs(y_range[1] - y_range[0]) / ycount
-        return (x_delta*pixels, y_delta*pixels)
 
     @classmethod
     def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
@@ -1877,6 +1869,27 @@ class inspect_points(Operation):
         return ds.select(**query).dframe()
 
     @classmethod
+    def _validate(cls, raster):
+        pass
+
+    @classmethod
+    def _vdims(cls, raster, df):
+        ds = raster.dataset
+        if 'spatialpandas' in ds.interface.datatype:
+            coords = [ds.interface.geo_column(ds.data)]
+        else:
+            coords = [kd.name for kd in raster.kdims]
+        return [col for col in df.columns if col not in coords]
+
+
+
+class inspect_points(inspect_base):
+
+    @classmethod
+    def _element(cls, raster, df):
+        return Points(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
+
+    @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
         """
         Returns a dataframe of hits within a given mask around a given
@@ -1885,5 +1898,38 @@ class inspect_points(Operation):
         ds = raster.dataset.clone(df)
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
+        distances = pd.Series(dx*dx + dy*dy)
+        return df.iloc[distances.argsort().values]
+
+
+
+class inspect_poly(inspect_base):
+
+    @classmethod
+    def _validate(cls, raster):
+        if 'spatialpandas' not in raster.dataset.interface.datatype:
+            raise ValueError("inspect_poly only supports spatialpandas datatypes.")
+
+    @classmethod
+    def _element(cls, raster, df):
+        return hv.Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
+            color_index=None)
+
+    @classmethod
+    def _sort_by_distance(cls, raster, df, x, y):
+        """
+        Returns a dataframe of hits within a given mask around a given
+        spatial location, sorted by distance from that location.
+        """
+        xs, ys = [], []
+        for geom in df.geometry.array:
+            gxs, gys = geom.flat_values[::2], geom.flat_values[1::2]
+            if not len(gxs):
+                xs.append(np.nan)
+                ys.append(np.nan)
+            else:
+                xs.append((np.min(gxs)+np.max(gxs))/2)
+                ys.append((np.min(gys)+np.max(gys))/2)
+        dx, dy = np.array(xs) - x, np.array(ys) - y
         distances = pd.Series(dx*dx + dy*dy)
         return df.iloc[distances.argsort().values]
