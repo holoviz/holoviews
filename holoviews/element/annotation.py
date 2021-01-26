@@ -95,6 +95,8 @@ class VLine(Annotation):
     __pos_params = ['x']
 
     def __init__(self, x, **params):
+        if isinstance(x, np.ndarray) and x.size == 1:
+            x = np.atleast_1d(x)[0]
         super(VLine, self).__init__(x, x=x, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
@@ -128,6 +130,8 @@ class HLine(Annotation):
     __pos_params = ['y']
 
     def __init__(self, y, **params):
+        if isinstance(y, np.ndarray) and y.size == 1:
+            y = np.atleast_1d(y)[0]
         super(HLine, self).__init__(y, y=y, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
