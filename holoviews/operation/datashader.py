@@ -1899,22 +1899,14 @@ class inspect_points(Operation):
         return ds.select(**query).dframe()
 
     @classmethod
-    def _get_xs_ys(cls, raster, df):
-        "Returns the x and y arrays or series for the given dataframe"
-        ds = raster.dataset
-        if 'spatialpandas' in ds.interface.datatype:
-            geom = ds.interface.geo_column(ds.data)
-            return df[geom].array.x, df[geom].array.y
-        xdim, ydim = raster.kdims
-        return df[xdim].values, df[ydim].values
-
-    @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
         """
         Returns a dataframe of hits within a given mask around a given
         spatial location, sorted by distance from that location.
         """
-        xs, ys = cls._get_xs_ys(raster, df)
+        ds = raster.dataset.clone(df)
+        print("BOO")
+        xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
         distances = pd.Series(dx*dx + dy*dy)
         return df.iloc[distances.argsort().values]
