@@ -1793,36 +1793,17 @@ class inspect_points(Operation):
 
     hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
 
-    max_points = param.Integer(default=1, doc="""
+    max_hits = param.Integer(default=1, doc="""
        Maximum number of points to display within the mask of size
        pixels. Points are prioritized by distance from the cursor
        point. This means that the default value of one shows the single
-       closest sample to the cursor.""")
+       closest sample to the cursor. Note that this limit is not applies
+       to the hits parameter.""")
 
-    transformer = param.Callable(default=identity, doc="""
-       Function that can transform the hits dataframe before it is
-       passed to the hits_transformer and points_transformer for further
-       customization of the hits parameter and points output
-       respectively. Useful when no distinction is needed between the
-       hits_transformer and the points_transformer or when these later
-       transformers share the same initial code (e.g. common merges and
-       joins with other sources of data)""")
-
-    hits_transformer = param.Callable(default=identity, doc="""
-       Function that can transform the hits dataframe after applying the
-       transformer and before it is set on the hits parameter. When no
-       hits occur, the value passed to the callable is None. This can be
-       used to do multiple common tasks such as 1) subselecting
-       available columns 2) limiting the maximum number of hit rows
-       returned 3) performing joins with other data sources 4) returning
-       a dataframe with appropriate columns and dtypes when no hits
-       occur.""")
-
-    points_transformer = param.Callable(default=identity, doc="""
-      Function that transforms the hits dataframe after applying the
-      transformer and before it is passed to the Points. Can be used to
-      customize the value dimensions e.g. to implement custom hover
-      behavior.""")
+    transform = param.Callable(default=identity, doc="""
+      Function that transforms the hits dataframe before it is passed to
+      the Points element. Can be used to customize the value dimensions
+      e.g. to implement custom hover behavior.""")
 
     # Stream values and overrides
     streams = param.List(default=[PointerXY])
@@ -1845,11 +1826,12 @@ class inspect_points(Operation):
             result = self._empty_df(raster.dataset)
         else:
             masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
-            result = self._sort_by_distance(raster, masked, x, y).iloc[:self.p.max_points]
-        transformed = self.p.transformer(result)
-        self.hits = self.p.hits_transformer(transformed)
-        df = self.p.points_transformer(transformed)
-        return Points(df, kdims=raster.kdims, vdims=self._vdims(raster, df))
+            result = self._sort_by_distance(raster, masked, x, y)
+
+        self.hits = result
+        df = self.p.transform(result)
+        return Points(df.iloc[:self.p.max_hits],
+                      kdims=raster.kdims, vdims=self._vdims(raster, df))
 
     @property
     def mask(self):
