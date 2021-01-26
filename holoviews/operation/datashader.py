@@ -1905,7 +1905,6 @@ class inspect_points(Operation):
         spatial location, sorted by distance from that location.
         """
         ds = raster.dataset.clone(df)
-        print("BOO")
         xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
         dx, dy = xs - x, ys - y
         distances = pd.Series(dx*dx + dy*dy)
