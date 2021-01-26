@@ -52,7 +52,8 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     @classmethod
     def values(cls, dataset, dimension, expanded=True, flat=True, compute=True, keep_index=False):
         if compute and not keep_index:
-            meta = np.array([], dtype=cls.dtype(dataset, dimension))
+            dtype = cls.dtype(dataset, dimension)
+            meta = np.array([], dtype=dtype.base)
             return dataset.data.map_partitions(
                 cls.partition_values, meta=meta, dataset=dataset,
                 dimension=dimension, expanded=expanded, flat=flat
