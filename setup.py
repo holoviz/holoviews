@@ -42,7 +42,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "ffmpeg",
     "cftime",
     "netcdf4",
-    "dask<=2020.12.0",
+    "dask",
     "scipy",
     "shapely",
     "scikit-image"
