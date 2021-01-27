@@ -17,7 +17,7 @@ try:
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize, AggregationOperation
+        shade, spread, rasterize, inspect_points, AggregationOperation
     )
 except:
     raise SkipTest('Datashader not available')
@@ -1097,3 +1097,32 @@ class GraphBundlingTests(ComparisonTestCase):
     def test_directly_connect_paths(self):
         direct = directly_connect_edges(self.graph)._split_edgepaths
         self.assertEqual(direct, self.graph.edgepaths)
+
+class InspectorTests(ComparisonTestCase):
+    """
+    Tests for inspector operations
+    """
+    def setUp(self):
+        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        self.img = rasterize(points, dynamic=False,
+                             x_range=(0, 1), y_range=(0, 1), width=4, height=4)
+
+    def test_points_inspection_1px_mask(self):
+        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=1, x=-0.1, y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([]))
+        self.assertEqual(points.dimension_values('y'), np.array([]))
+
+    def test_points_inspection_2px_mask(self):
+        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=2, x=-0.1, y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([0.2]))
+        self.assertEqual(points.dimension_values('y'), np.array([0.3]))
+
+    def test_points_inspection_4px_mask(self):
+        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=4, x=-0.1, y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4]))
+        self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7]))
+
+    def test_points_inspection_5px_mask(self):
+        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=5, x=-0.1, y=-0.1)
+        self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4, 0]))
+        self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7, 0.99]))

@@ -428,6 +428,18 @@ class SpatialPandasInterface(MultiInterface):
             objs.append(obj)
         return objs
 
+    @classmethod
+    def dframe(cls, dataset, dimensions):
+        if dimensions:
+            return dataset.data[dimensions]
+        else:
+            return dataset.data.copy()
+
+    @classmethod
+    def as_dframe(cls, dataset):
+        return dataset.data
+
+
 
 
 def get_geom_type(gdf, col):

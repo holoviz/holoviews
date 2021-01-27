@@ -33,7 +33,7 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
 from ..element.util import connect_tri_edges_pd
-from ..streams import RangeXY, PlotSize
+from ..streams import RangeXY, PlotSize, PointerXY
 
 ds_version = LooseVersion(ds.__version__)
 
@@ -756,7 +756,7 @@ class geom_aggregate(AggregationOperation):
             df[y0d.name] = df[y0d.name].astype('datetime64[us]').astype('int64')
             df[y1d.name] = df[y1d.name].astype('datetime64[us]').astype('int64')
 
-        if isinstance(agg_fn, ds.count_cat):
+        if isinstance(agg_fn, ds.count_cat) and df[agg_fn.column].dtype.name != 'category':
             df[agg_fn.column] = df[agg_fn.column].astype('category')
 
         params = self._get_agg_params(element, x0d, y0d, agg_fn, (x0, y0, x1, y1))
@@ -861,7 +861,7 @@ class regrid(AggregationOperation):
         for i, vd in enumerate(element.vdims):
             if element.interface is XArrayInterface:
                 if element.interface.packed(element):
-                    xarr = element.data[..., i] 
+                    xarr = element.data[..., i]
                 else:
                     xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
@@ -1374,7 +1374,7 @@ class geometry_rasterize(AggregationOperation):
         if self.p.precompute:
             self._precomputed[element._plot_id] = (data, col)
 
-        if isinstance(agg_fn, ds.count_cat):
+        if isinstance(agg_fn, ds.count_cat) and data[agg_fn.column].dtype.name != 'category':
             data[agg_fn.column] = data[agg_fn.column].astype('category')
 
         if isinstance(element, Polygons):
@@ -1725,3 +1725,211 @@ class directly_connect_edges(_connect_edges, connect_edges):
 
     def _bundle(self, position_df, edges_df):
         return connect_edges.__call__(self, position_df, edges_df)
+
+
+def identity(x): return x
+
+
+class inspect_mask(Operation):
+    """
+    Operation used to display the inspection mask, for use with other
+    inspection operations. Can be used directly but is more commonly
+    constructed using the mask property of the corresponding inspector
+    operation.
+    """
+
+    pixels = param.Integer(default=3, doc="""
+       Size of the mask that should match the pixels parameter used in
+       the associated inspection operation.""")
+
+    streams = param.List(default=[PointerXY])
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+
+    @classmethod
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
+
+    def _process(self, raster, key=None):
+        if isinstance(raster, RGB):
+            raster = raster[..., raster.vdims[-1]]
+        x_range, y_range = raster.range(0), raster.range(1)
+        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+        x, y = self.p.x, self.p.y
+        return self._indicator(raster.kdims, x, y, xdelta, ydelta)
+
+    def _indicator(self, kdims, x, y, xdelta, ydelta):
+        rect = np.array([(x-xdelta/2,y-ydelta/2), (x+xdelta/2, y-ydelta/2),
+                         (x+xdelta/2, y+ydelta/2), (x-xdelta/2, y+ydelta/2)])
+        data = {(str(kdims[0]),str(kdims[1])):rect}
+        return Polygons(data, kdims=kdims)
+
+
+
+class inspect_base(Operation):
+    """
+    Given datashaded aggregate (Image) output, return a set of
+    (hoverable) points sampled from those near the cursor.
+    """
+
+    pixels = param.Integer(default=3, doc="""
+       Number of pixels in data space around the cursor point to search
+       for hits in. The hit within this box mask that is closest to the
+       cursor's position is displayed.""")
+
+    null_value = param.Number(default=0, doc="""
+       Value of raster which indicates no hits. For instance zero for
+       count aggregator (default) and commonly NaN for other (float)
+       aggregators. For RGBA images, the alpha channel is used which means
+       zero alpha acts as the null value.""")
+
+    value_bounds = param.NumericTuple(default=None, length=2, allow_None=True, doc="""
+       If not None, a numeric bounds for the pixel under the cursor in
+       order for hits to be computed. Useful for count aggregators where
+       a value of (1,1000) would make sure no more than a thousand
+       samples will be searched.""")
+
+    hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
+
+    max_indicators = param.Integer(default=1, doc="""
+       Maximum number of indicator elements to display within the mask
+       of size pixels. Points are prioritized by distance from the
+       cursor point. This means that the default value of one shows the
+       single closest sample to the cursor. Note that this limit is not
+       applies to the hits parameter.""")
+
+    transform = param.Callable(default=identity, doc="""
+      Function that transforms the hits dataframe before it is passed to
+      the Points element. Can be used to customize the value dimensions
+      e.g. to implement custom hover behavior.""")
+
+    # Stream values and overrides
+    streams = param.List(default=[PointerXY])
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+
+    @property
+    def mask(self):
+        return inspect_mask.instance(pixels=self.p.pixels)
+
+    def _process(self, raster, key=None):
+        self._validate(raster)
+        if isinstance(raster, RGB):
+            raster = raster[..., raster.vdims[-1]]
+        x_range, y_range = raster.range(0), raster.range(1)
+        xdelta, ydelta = self._distance_args(raster, x_range, y_range, self.p.pixels)
+        x, y = self.p.x, self.p.y
+        val = raster[x-xdelta:x+xdelta, y-ydelta:y+ydelta].reduce(function=np.nansum)
+        if np.isnan(val):
+            val = self.p.null_value
+
+        if ((self.p.value_bounds and
+             not (self.p.value_bounds[0] < val < self.p.value_bounds[1]))
+             or val == self.p.null_value):
+            result = self._empty_df(raster.dataset)
+        else:
+            masked = self._mask_dataframe(raster, x, y, xdelta, ydelta)
+            result = self._sort_by_distance(raster, masked, x, y)
+
+        self.hits = result
+        df = self.p.transform(result)
+        return self._element(raster, df.iloc[:self.p.max_indicators])
+
+    @classmethod
+    def _distance_args(cls, element, x_range, y_range,  pixels):
+        ycount, xcount =  element.interface.shape(element, gridded=True)
+        x_delta = abs(x_range[1] - x_range[0]) / xcount
+        y_delta = abs(y_range[1] - y_range[0]) / ycount
+        return (x_delta*pixels, y_delta*pixels)
+
+    @classmethod
+    def _empty_df(cls, dataset):
+        if 'dask' in dataset.interface.datatype:
+            return dataset.data._meta.iloc[:0]
+        elif dataset.interface.datatype in ['pandas', 'geopandas', 'spatialpandas']:
+            return dataset.data.head(0)
+        return dataset.iloc[:0].dframe()
+
+    @classmethod
+    def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
+        """
+        Mask the dataframe around the specified x and y position with
+        the given x and y deltas
+        """
+        ds = raster.dataset
+        x0, x1, y0, y1 = x-xdelta, x+xdelta, y-ydelta, y+ydelta
+        if 'spatialpandas' in ds.interface.datatype:
+            df = ds.data.cx[x0:x1, y0:y1]
+            return df.compute() if hasattr(df, 'compute') else df
+        xdim, ydim = raster.kdims
+        query = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
+        return ds.select(**query).dframe()
+
+    @classmethod
+    def _validate(cls, raster):
+        pass
+
+    @classmethod
+    def _vdims(cls, raster, df):
+        ds = raster.dataset
+        if 'spatialpandas' in ds.interface.datatype:
+            coords = [ds.interface.geo_column(ds.data)]
+        else:
+            coords = [kd.name for kd in raster.kdims]
+        return [col for col in df.columns if col not in coords]
+
+
+
+class inspect_points(inspect_base):
+
+    @classmethod
+    def _element(cls, raster, df):
+        return Points(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
+
+    @classmethod
+    def _sort_by_distance(cls, raster, df, x, y):
+        """
+        Returns a dataframe of hits within a given mask around a given
+        spatial location, sorted by distance from that location.
+        """
+        ds = raster.dataset.clone(df)
+        xs, ys = (ds.dimension_values(kd) for kd in raster.kdims)
+        dx, dy = xs - x, ys - y
+        distances = pd.Series(dx*dx + dy*dy)
+        return df.iloc[distances.argsort().values]
+
+
+
+class inspect_poly(inspect_base):
+
+    @classmethod
+    def _validate(cls, raster):
+        if 'spatialpandas' not in raster.dataset.interface.datatype:
+            raise ValueError("inspect_poly only supports spatialpandas datatypes.")
+
+    @classmethod
+    def _element(cls, raster, df):
+        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
+            color_index=None)
+
+    @classmethod
+    def _sort_by_distance(cls, raster, df, x, y):
+        """
+        Returns a dataframe of hits within a given mask around a given
+        spatial location, sorted by distance from that location.
+        """
+        xs, ys = [], []
+        for geom in df.geometry.array:
+            gxs, gys = geom.flat_values[::2], geom.flat_values[1::2]
+            if not len(gxs):
+                xs.append(np.nan)
+                ys.append(np.nan)
+            else:
+                xs.append((np.min(gxs)+np.max(gxs))/2)
+                ys.append((np.min(gys)+np.max(gys))/2)
+        dx, dy = np.array(xs) - x, np.array(ys) - y
+        distances = pd.Series(dx*dx + dy*dy)
+        return df.iloc[distances.argsort().values]

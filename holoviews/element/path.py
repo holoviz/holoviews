@@ -56,7 +56,9 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multitabular', 'spatialpandas'])
+    datatype = param.ObjectSelector(default=[
+        'multitabular', 'spatialpandas', 'dask_spatialpandas']
+    )
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
