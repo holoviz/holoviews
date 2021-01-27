@@ -1912,7 +1912,7 @@ class inspect_poly(inspect_base):
 
     @classmethod
     def _element(cls, raster, df):
-        return hv.Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
+        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
             color_index=None)
 
     @classmethod
