@@ -1794,12 +1794,12 @@ class inspect_base(Operation):
 
     hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
 
-    max_elements = param.Integer(default=1, doc="""
-       Maximum number of elements to display within the mask of size
-       pixels. Points are prioritized by distance from the cursor
-       point. This means that the default value of one shows the single
-       closest sample to the cursor. Note that this limit is not applies
-       to the hits parameter.""")
+    max_indicators = param.Integer(default=1, doc="""
+       Maximum number of indicator elements to display within the mask
+       of size pixels. Points are prioritized by distance from the
+       cursor point. This means that the default value of one shows the
+       single closest sample to the cursor. Note that this limit is not
+       applies to the hits parameter.""")
 
     transform = param.Callable(default=identity, doc="""
       Function that transforms the hits dataframe before it is passed to
@@ -1836,7 +1836,7 @@ class inspect_base(Operation):
 
         self.hits = result
         df = self.p.transform(result)
-        return self._element(raster, df.iloc[:self.p.max_elements])
+        return self._element(raster, df.iloc[:self.p.max_indicators])
 
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
