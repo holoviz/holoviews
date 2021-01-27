@@ -400,7 +400,9 @@ class dim(object):
     def any(self, *args, **kwargs):      return type(self)(self, np.any, *args, **kwargs)
     def all(self, *args, **kwargs):      return type(self)(self, np.all, *args, **kwargs)
     def cumprod(self, *args, **kwargs):  return type(self)(self, np.cumprod,  *args, **kwargs)
-    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args, **kwargs)
+    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args,
+                                                           axis=kwargs.pop('axis',0),
+                                                           **kwargs)
     def max(self, *args, **kwargs):      return type(self)(self, np.max, *args, **kwargs)
     def mean(self, *args, **kwargs):     return type(self)(self, np.mean, *args, **kwargs)
     def min(self, *args, **kwargs):      return type(self)(self, np.min, *args, **kwargs)
