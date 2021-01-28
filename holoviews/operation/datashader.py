@@ -256,21 +256,21 @@ class AggregationOperation(ResamplingOperation):
         'max':   rd.max
     }
 
-    def _get_aggregator(self, element, add_field=True):
-        agg = self.p.aggregator
+    @classmethod
+    def _get_aggregator(cls, element, agg, add_field=True):
         if isinstance(agg, str):
             if agg not in self._agg_methods:
                 agg_methods = sorted(self._agg_methods)
                 raise ValueError("Aggregation method '%r' is not known; "
                                  "aggregator must be one of: %r" %
                                  (agg, agg_methods))
-            agg = self._agg_methods[agg]()
+            agg = cls._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
         if add_field and getattr(agg, 'column', False) is None and not isinstance(agg, (rd.count, rd.any)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
-                                 '%s operation to.' % type(self).__name__)
+                                 '%s operation to.' % cls.__name__)
             inner_element = elements[0]
             if isinstance(inner_element, TriMesh) and inner_element.nodes.vdims:
                 field = inner_element.nodes.vdims[0].name
@@ -282,7 +282,7 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Could not determine dimension to apply "
                                  "'%s' operation to. Declare the dimension "
                                  "to aggregate as part of the datashader "
-                                 "aggregator." % type(self).__name__)
+                                 "aggregator." % cls.__name__)
             agg = type(agg)(field)
         return agg
 
@@ -466,7 +466,7 @@ class aggregate(LineAggregationOperation):
 
 
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
         if hasattr(agg_fn, 'cat_column'):
             category = agg_fn.cat_column
         else:
@@ -556,7 +556,7 @@ class overlay_aggregate(aggregate):
                  (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims)))
 
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
 
         if not self.applies(element, agg_fn, line_width=self.p.line_width):
             raise ValueError(
@@ -654,7 +654,7 @@ class area_aggregate(AggregationOperation):
 
     def _process(self, element, key=None):
         x, y = element.dimensions()[:2]
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
 
         default = None
         if not self.p.y_range:
@@ -726,7 +726,7 @@ class spikes_aggregate(LineAggregationOperation):
       The offset of the lower end of each spike.""")
 
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
         x, y = element.kdims[0], None
 
         spike_length = 0.5 if self.p.spike_length is None else self.p.spike_length
@@ -798,7 +798,7 @@ class geom_aggregate(AggregationOperation):
         raise NotImplementedError
 
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
         x0d, y0d, x1d, y1d = element.kdims
         info = self._get_sampling(element, [x0d, x1d], [y0d, y1d], ndim=1)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
@@ -994,7 +994,7 @@ class regrid(AggregationOperation):
         # Apply regridding to each value dimension
         regridded = {}
         arrays = self._get_xarrays(element, coords, xtype, ytype)
-        agg_fn = self._get_aggregator(element, add_field=False)
+        agg_fn = self._get_aggregator(element, self.p.aggregator, add_field=False)
         for vd, xarr in arrays.items():
             rarray = cvs.raster(xarr, upsample_method=interp,
                                 downsample_method=agg_fn)
@@ -1021,11 +1021,11 @@ class contours_rasterize(aggregate):
     aggregator = param.ClassSelector(default=ds.mean(),
                                      class_=(ds.reductions.Reduction, str))
 
-    def _get_aggregator(self, element, add_field=True):
-        agg = self.p.aggregator
+    @classmethod
+    def _get_aggregator(cls, element, agg, add_field=True):
         if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
             return ds.any()
-        return super()._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, agg, add_field)
 
 
 
@@ -1113,9 +1113,12 @@ class trimesh_rasterize(aggregate):
                or not (element.vdims or element.nodes.vdims)):
             wireframe = True
             precompute = False # TriMesh itself caches wireframe
-            agg = self._get_aggregator(element) if isinstance(agg, (ds.any, ds.count)) else ds.any()
+            if isinstance(agg, (ds.any, ds.count)):
+                agg = self._get_aggregator(element, self.p.aggregator)
+            else:
+                agg = ds.any()
         elif getattr(agg, 'column', None) is None:
-            agg = self._get_aggregator(element)
+            agg = self._get_aggregator(element, self.p.aggregator)
 
         if element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
@@ -1174,7 +1177,7 @@ class quadmesh_rasterize(trimesh_rasterize):
         data = element.data
 
         x, y = element.kdims
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         if xtype == 'datetime':
@@ -1417,15 +1420,15 @@ class geometry_rasterize(LineAggregationOperation):
     aggregator = param.ClassSelector(default=ds.mean(),
                                      class_=(ds.reductions.Reduction, str))
 
-    def _get_aggregator(self, element, add_field=True):
-        agg = self.p.aggregator
+    @classmethod
+    def _get_aggregator(cls, element, agg, add_field=True):
         if (not (element.vdims or isinstance(agg, str)) and
             agg.column is None and not isinstance(agg, (rd.count, rd.any))):
             return ds.count()
-        return super()._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, agg, add_field)
 
     def _process(self, element, key=None):
-        agg_fn = self._get_aggregator(element)
+        agg_fn = self._get_aggregator(element, self.p.aggregator)
         xdim, ydim = element.kdims
         info = self._get_sampling(element, xdim, ydim)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
@@ -2074,21 +2077,16 @@ class categorical_legend(Operation):
 
     def _process(self, element, key=None):
         from ..plotting.util import rgb2hex
-        rasterize_op, shade_op = None, None
-        for op in element.pipeline.operations[::-1]:
-            if isinstance(op, (shade, datashade)):
-                shade_op = op
-            if isinstance(op, (rasterize, datashade)):
-                rasterize_op = op
-            if None not in (shade_op, rasterize_op):
-                break
-        if shade_op is None:
+        rasterize_op = element.pipeline.find(rasterize)
+        if isinstance(rasterize_op, datashade):
+            shade_op = rasterize_op
+        else:
+            shade_op = element.pipeline.find(shade)
+        if None in (shade_op, rasterize_op):
             return None
-        if not hasattr(rasterize_op, 'p'):
-            rasterize_op = rasterize_op.instance()
-            rasterize_op.p = param.ParamOverrides(rasterize_op, {})
         hvds = element.dataset
-        agg = rasterize_op._get_aggregator(element.pipeline.operations[0](hvds))
+        input_el = element.pipeline.operations[0](hvds)
+        agg = rasterize_op._get_aggregator(input_el, rasterize_op.aggregator)
         if isinstance(agg, ds.count_cat):
             column = agg.column
         elif isinstance(agg, ds.by):
