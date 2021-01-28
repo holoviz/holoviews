@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
 import numpy as np
 import param
 
@@ -7,6 +9,7 @@ from bokeh.models import DatetimeAxis, CustomJSHover
 
 from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
+from .chart import PointPlot
 from .element import ElementPlot, ColorbarPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
@@ -144,6 +147,17 @@ class RGBPlot(ElementPlot):
         xdim, ydim = element.kdims
         return [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y'),
                 ('RGBA', '@image')], {}
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super(RGBPlot, self)._init_glyphs(plot, element, ranges, source)
+        if 'holoviews.operation.datashader' not in sys.modules:
+            return
+        from ...operation.datashader import categorical_legend
+        legend = categorical_legend(element)
+        if legend is None:
+            return
+        legend_plot = PointPlot(legend)
+        legend_plot.initialize_plot(plot=plot)
 
     def get_data(self, element, ranges, style):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')

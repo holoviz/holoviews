@@ -2064,8 +2064,51 @@ class inspect_polygons(inspect_base):
         return df.iloc[distances.argsort().values]
 
 
-
 inspect._dispatch = {
     Points: inspect_points,
     Polygons: inspect_polygons
 }
+
+
+class categorical_legend(Operation):
+
+    def _process(self, element, key=None):
+        from ..plotting.util import rgb2hex
+        rasterize_op, shade_op = None, None
+        for op in element.pipeline.operations[::-1]:
+            if isinstance(op, (shade, datashade)):
+                shade_op = op
+            if isinstance(op, (rasterize, datashade)):
+                rasterize_op = op
+            if None not in (shade_op, rasterize_op):
+                break
+        if shade_op is None:
+            return None
+        if not hasattr(rasterize_op, 'p'):
+            rasterize_op = rasterize_op.instance()
+            rasterize_op.p = param.ParamOverrides(rasterize_op, {})
+        hvds = element.dataset
+        agg = rasterize_op._get_aggregator(element.pipeline.operations[0](hvds))
+        if isinstance(agg, ds.count_cat):
+            column = agg.column
+        elif isinstance(agg, ds.by):
+            column = agg.column
+        else:
+            return None
+        if hasattr(hvds.data, 'dtypes'):
+            cats = list(hvds.data.dtypes[column].categories)
+            if cats == ['__UNKNOWN_CATEGORIES__']:
+                cats = list(hvds.data[column].cat.as_known().categories)
+        else:
+            cats = list(hvds.dimension_values(column, expanded=False))
+        colors = shade_op.color_key
+        color_data = [(0, 0, cat) for cat in cats]
+        if isinstance(colors, list):
+            cat_colors = {cat: colors[i] for i, cat in enumerate(cats)}
+        else:
+            cat_colors = {cat: colors[cat] for cat in cats}
+        cat_colors = {
+            cat: rgb2hex([v/256 for v in color[:3]]) if isinstance(color, tuple) else color
+            for cat, color in cat_colors.items()}
+        return Points(color_data, vdims=['category']).opts(
+             apply_ranges=False, cmap=cat_colors, color='category', show_legend=True)
