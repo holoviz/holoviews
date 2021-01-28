@@ -1244,6 +1244,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
+            if glyph == 'auto':
+                base_glyph = renderer.glyph
+                glyph = type(base_glyph)(**base_glyph.properties_with_values())
+                setattr(renderer, glyph_type+'glyph', glyph)
             if not glyph or (not renderer and glyph_type):
                 continue
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
