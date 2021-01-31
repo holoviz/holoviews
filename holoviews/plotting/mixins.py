@@ -120,7 +120,8 @@ class AreaMixin(object):
         if len(vdims) > 1:
             new_range = {}
             for r in ranges[vdim]:
-                new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
+                if r != 'values':
+                    new_range[r] = util.max_range([ranges[vd.name][r] for vd in vdims])
             ranges[vdim] = new_range
         else:
             s0, s1 = ranges[vdim]['soft']
