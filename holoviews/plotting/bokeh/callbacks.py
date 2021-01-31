@@ -33,7 +33,13 @@ from ...streams import (
 )
 from ..links import Link, RectanglesTableLink, DataLink, RangeToolLink, SelectionLink, VertexTableLink
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from .util import convert_timestamp
+from .util import bokeh_version, convert_timestamp
+
+if bokeh_version >= '2.3.0':
+    CUSTOM_TOOLTIP = 'description'
+else:
+    CUSTOM_TOOLTIP = 'custom_tooltip'
+
 
 
 class MessageCallback(object):
@@ -1272,13 +1278,15 @@ class PointDrawCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         if stream.styles:
             self._create_style_callback(cds, glyph, 'x')
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
         point_tool = PointDrawTool(
             add=all(s.add for s in self.streams),
             drag=all(s.drag for s in self.streams),
-            empty_value=stream.empty_value, renderers=renderers, **kwargs)
+            renderers=renderers, **kwargs)
         self.plot.state.tools.append(point_tool)
         self._update_cds_vdims(cds.data)
         # Add any value dimensions not already in the CDS data
@@ -1302,7 +1310,7 @@ class CurveEditCallback(GlyphDrawCallback):
         renderers = [renderer]
         kwargs = {}
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         point_tool = PointDrawTool(
             add=False, drag=True, renderers=renderers, **kwargs
         )
@@ -1349,10 +1357,11 @@ class PolyDrawCallback(GlyphDrawCallback):
         if stream.styles:
             self._create_style_callback(cds, glyph, 'xs')
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
         poly_tool = PolyDrawTool(
-            drag=all(s.drag for s in self.streams),
-            empty_value=stream.empty_value, renderers=renderers,
+            drag=all(s.drag for s in self.streams), renderers=renderers,
             **kwargs
         )
         plot.state.tools.append(poly_tool)
@@ -1396,9 +1405,10 @@ class FreehandDrawCallback(PolyDrawCallback):
             self._create_style_callback(cds, glyph, 'xs')
         kwargs = {}
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
+        if stream.empty_value is not None:
+            kwargs['empty_value'] = stream.empty_value
         poly_tool = FreehandDrawTool(
-            empty_value=stream.empty_value,
             num_objects=stream.num_objects,
             renderers=[plot.handles['glyph_renderer']],
             **kwargs
@@ -1450,7 +1460,7 @@ class BoxEditCallback(GlyphDrawCallback):
         if stream.num_objects:
             kwargs['num_objects'] = stream.num_objects
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
 
         renderer = self.plot.handles['glyph_renderer']
         if isinstance(self.plot, PathPlot):
@@ -1496,7 +1506,7 @@ class PolyEditCallback(PolyDrawCallback):
         stream = self.streams[0]
         kwargs = {}
         if stream.tooltip:
-            kwargs['custom_tooltip'] = stream.tooltip
+            kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         if vertex_tool is None:
             vertex_style = dict({'size': 10}, **stream.vertex_style)
             r1 = plot.state.scatter([], [], **vertex_style)
