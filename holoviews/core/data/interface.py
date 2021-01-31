@@ -10,40 +10,7 @@ import numpy as np
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
-
-
-def get_array_types():
-    array_types = (np.ndarray,)
-    da = dask_array_module()
-    if da is not None:
-        array_types += (da.Array,)
-    return array_types
-
-def dask_array_module():
-    try:
-        import dask.array as da
-        return da
-    except:
-        return None
-
-def is_dask(array):
-    da = dask_array_module()
-    if da is None:
-        return False
-    return da and isinstance(array, da.Array)
-
-def cached(method):
-    """
-    Decorates an Interface method and using a cached version
-    """
-    def cached(*args, **kwargs):
-        cache = getattr(args[1], '_cached')
-        if cache is None:
-            return method(*args, **kwargs)
-        else:
-            args = (cache,)+args[2:]
-            return getattr(cache.interface, method.__name__)(*args, **kwargs)
-    return cached
+from .util import finite_range
 
 
 class DataError(ValueError):
@@ -440,7 +407,7 @@ class Interface(param.Parameterized):
                 assert column.dtype.kind not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return (np.nanmin(column), np.nanmax(column))
+                    return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):

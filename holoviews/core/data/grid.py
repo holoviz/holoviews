@@ -19,7 +19,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
-from .interface import is_dask, dask_array_module, get_array_types
+from .util import finite_range, is_dask, dask_array_module, get_array_types
 
 
 
@@ -801,16 +801,16 @@ class GridInterface(DictInterface):
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
             if da and isinstance(column, da.Array):
-                return da.compute(dmin, dmax)
-            return dmin, dmax
+                return finite_range(column, *da.compute(dmin, dmax))
+            return finite_range(column, dmin, dmax)
         elif len(column) == 0:
             return np.NaN, np.NaN
         else:
             try:
                 dmin, dmax = (np.nanmin(column), np.nanmax(column))
                 if da and isinstance(column, da.Array):
-                    return da.compute(dmin, dmax)
-                return dmin, dmax
+                    return finite_range(column, *da.compute(dmin, dmax))
+                return finite_range(*dmin, dmax)
             except TypeError:
                 column.sort()
                 return column[0], column[-1]

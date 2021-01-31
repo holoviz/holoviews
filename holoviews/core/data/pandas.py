@@ -14,6 +14,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
+from .util import finite_range
 
 
 class PandasInterface(Interface):
@@ -177,7 +178,7 @@ class PandasInterface(Interface):
         else:
             if dimension.nodata is not None:
                 column = cls.replace_value(column, dimension.nodata)
-            cmin, cmax = column.min(), column.max()
+            cmin, cmax = finite_range(column, column.min(), column.max())
             if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
                 return (cmin.to_pydatetime().replace(tzinfo=None),
                         cmax.to_pydatetime().replace(tzinfo=None))

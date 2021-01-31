@@ -9,8 +9,9 @@ except ImportError:
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
-from .interface import Interface, cached
+from .interface import Interface
 from . import pandas
+from .util import cached
 
 
 class IbisInterface(Interface):

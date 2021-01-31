@@ -13,6 +13,7 @@ from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
 from .interface import Interface, DataError, dask_array_module
+from .util import finite_range
 
 
 def is_cupy(array):
@@ -278,7 +279,7 @@ class XArrayInterface(GridInterface):
             dmax = dmax[()]
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
-        return dmin, dmax
+        return finite_range(data, dmin, dmax)
 
 
     @classmethod

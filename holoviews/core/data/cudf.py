@@ -18,6 +18,7 @@ from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .pandas import PandasInterface
+from .util import finite_range
 
 
 class cuDFInterface(PandasInterface):
@@ -130,7 +131,7 @@ class cuDFInterface(PandasInterface):
         if column.dtype.kind == 'O':
             return np.NaN, np.NaN
         else:
-            return (column.min(), column.max())
+            return finite_range(column, column.min(), column.max())
 
 
     @classmethod

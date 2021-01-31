@@ -8,6 +8,7 @@ from ..sheetcoords import Slice, SheetCoordinateSystem
 from .. import util
 from .grid import GridInterface
 from .interface import Interface, DataError
+from .util import finite_range
 
 
 class ImageInterface(GridInterface):
@@ -154,7 +155,7 @@ class ImageInterface(GridInterface):
             data = np.atleast_3d(obj.data)[:, :, dim_idx]
             if dim.nodata is not None:
                 data = cls.replace_value(data, dim.nodata)
-            drange = (np.nanmin(data), np.nanmax(data))
+            drange = finite_range(data, np.nanmin(data), np.nanmax(data))
         else:
             drange = (None, None)
         return drange
