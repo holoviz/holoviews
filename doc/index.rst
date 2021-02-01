@@ -74,14 +74,15 @@ ____________
 |CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
 
-HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/holoviz/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <https://jupyter.org>`_.
+HoloViews works with `Python 2.7 and Python 3 <https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest>`_ on Linux, Windows, or Mac, and works seamlessly with `Jupyter Notebook and JupyterLab <https://jupyter.org>`_.
 
-The recommended way to install HoloViews is using the `conda <https://conda.pydata.org/docs/>`_ command provided by `Anaconda <https://docs.continuum.io/anaconda/install>`_ or `Miniconda <https://conda.pydata.org/miniconda.html>`_::
+The recommended way to install HoloViews is using the `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`_ command provided by `Anaconda <https://docs.anaconda.com/anaconda/install/>`_ or `Miniconda <https://docs.conda.io/en/latest/miniconda.html>`_::
 
   conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
-directly depends only on `Numpy <https://numpy.org>`_ and `Param <https://param.holoviz.org/>`_.
+directly depends only on `Numpy <https://numpy.org>`_, `Pandas <https://pandas.pydata.org>`_ and `Param <https://param.holoviz.org/>`_.
+
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 
@@ -96,19 +97,16 @@ Once you've installed HoloViews, you can get a copy of all the examples shown on
   holoviews --install-examples
   cd holoviews-examples
 
-And then you can launch Jupyter Notebook to explore them::
+Now you can launch Jupyter Notebook or JupyterLab to explore them::
 
   jupyter notebook
 
-To work with JupyterLab you will also need the PyViz JupyterLab
+  jupyter lab
+
+If you are working with a JupyterLab version <2.0 you will also need the PyViz JupyterLab
 extension::
 
-  conda install -c conda-forge jupyterlab
   jupyter labextension install @pyviz/jupyterlab_pyviz
-
-Once you have installed JupyterLab and the extension launch it with::
-
-  jupyter-lab
 
 For more details on installing and configuring HoloViews see `the installing and configuring guide <user_guide/Installing_and_Configuring.html>`_. 
 
@@ -124,8 +122,8 @@ After you have successfully installed and configured HoloViews, please see `Gett
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/holoviz/holoviews/blob/master/LICENSE.txt
 
-.. |Coveralls| image:: https://img.shields.io/coveralls/pyviz/holoviews.svg
-.. _Coveralls: https://coveralls.io/r/pyviz/holoviews
+.. |Coveralls| image:: https://img.shields.io/coveralls/holoviz/holoviews.svg
+.. _Coveralls: https://coveralls.io/r/holoviz/holoviews
 
 .. toctree::
    :titlesonly:
