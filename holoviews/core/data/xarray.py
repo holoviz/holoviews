@@ -253,10 +253,6 @@ class XArrayInterface(GridInterface):
         dim = dimension.name
         if dataset._binned and dimension in dataset.kdims:
             data = cls.coords(dataset, dim, edges=True)
-            if data.dtype.kind == 'M':
-                dmin, dmax = data.min(), data.max()
-            else:
-                dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             if cls.packed(dataset) and dim in dataset.vdims:
                 data = dataset.data.values[..., dataset.vdims.index(dim)]
@@ -265,10 +261,12 @@ class XArrayInterface(GridInterface):
             if dimension.nodata is not None:
                 data = cls.replace_value(data, dimension.nodata)
 
-            if len(data):
-                dmin, dmax = data.min().data, data.max().data
-            else:
-                dmin, dmax = np.NaN, np.NaN
+        if not len(data):
+            dmin, dmax = np.NaN, np.NaN
+        elif data.dtype.kind == 'M':
+            dmin, dmax = data.min().data, data.max().data
+        else:
+            dmin, dmax = np.nanmin(data), np.nanmax(data)
 
         da = dask_array_module()
         if da and isinstance(dmin, da.Array):
