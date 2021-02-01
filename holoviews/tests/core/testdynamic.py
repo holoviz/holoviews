@@ -12,7 +12,7 @@ from holoviews.core.options import Store
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
-from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer
+from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer, pointer_types
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -901,6 +901,7 @@ class DynamicStreamReset(ComparisonTestCase):
             return Curve(list(history))
 
         class NoMemoize(PointerX):
+            x = param.ClassSelector(class_=pointer_types, default=None, constant=True)
             @property
             def hashkey(self): return {'hash': uuid.uuid4().hex}
 
