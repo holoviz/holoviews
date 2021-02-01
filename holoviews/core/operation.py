@@ -216,9 +216,6 @@ class Operation(param.ParameterizedFunction):
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
 
-
-        if isinstance(kwargs['streams'], dict):
-            kwargs['streams'] = streams.streams_list_from_dict(kwargs['streams'])
         kwargs['per_element'] = self._per_element
         kwargs['link_dataset'] = self._propagate_dataset
         kwargs['link_inputs'] = self.p.link_inputs
