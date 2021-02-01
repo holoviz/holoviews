@@ -942,7 +942,10 @@ class Dynamic(param.ParameterizedFunction):
                            if v is None and k in op.p}
                 if updates:
                     reverse = {v: k for k, v in stream._rename.items()}
-                    stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
+                    update_dict = {reverse.get(k, k): v for k, v in updates.items()}
+                    keywords = {(k[1] if isinstance(k, tuple) else k):v
+                                for k,v in update_dict.items() }
+                    stream.update(**keywords)
             streams.append(stream)
 
         params = {}

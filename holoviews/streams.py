@@ -783,6 +783,9 @@ class Params(Stream):
         pass
 
     def update(self, **kwargs):
+        if isinstance(self.parameterized, Stream):
+            self.parameterized.update(**kwargs)
+            return
         for k, v in kwargs.items():
             setattr(self.parameterized, k, v)
 
