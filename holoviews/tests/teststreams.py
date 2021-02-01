@@ -31,7 +31,6 @@ def test_all_stream_parameters_constant():
 def test_all_linked_stream_parameters_owners():
     "Test to ensure operations can accept parameters in streams dictionary"
     stream_classes = param.concrete_descendents(LinkedStream)
-    print(stream_classes)
     for stream_class in stream_classes.values():
         for name, p in stream_class.param.params().items():
             if name != 'name' and (p.owner != stream_class):
