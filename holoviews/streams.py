@@ -53,7 +53,7 @@ def streams_list_from_dict(streams):
             from panel.depends import param_value_if_widget
             v = param_value_if_widget(v)
         if isinstance(v, param.Parameter) and v.owner is not None:
-            if issubclass(v.owner, Stream):
+            if isinstance(v.owner, type) and issubclass(v.owner, Stream):
                 stream_instance = v.owner()
                 # Nothing is holding onto this instance except via its
                 # parameters
