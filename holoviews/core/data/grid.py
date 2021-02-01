@@ -795,7 +795,7 @@ class GridInterface(DictInterface):
             array = cls.values(dataset, dimension, expanded=False, flat=False)
 
         if dimension.nodata is not None:
-            array = cls.replace_value(column, dimension.nodata)
+            array = cls.replace_value(array, dimension.nodata)
 
         da = dask_array_module()
         if len(array) == 0:
