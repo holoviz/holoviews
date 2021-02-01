@@ -783,11 +783,21 @@ class Params(Stream):
         pass
 
     def update(self, **kwargs):
-        if isinstance(self.parameterized, Stream):
+        if self._rename:
+            owner_updates = defaultdict(dict)
+            for (owner, pname), rname in self._rename.items():
+                if rname in kwargs:
+                    owner_updates[owner][pname] = kwargs[rname]
+            for owner, updates in owner_updates.items():
+                if isinstance(owner, Stream):
+                    owner.update(**updates)
+                else:
+                    owner.param.set_param(**kwargs)
+        elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
             return
-        for k, v in kwargs.items():
-            setattr(self.parameterized, k, v)
+        else:
+            self.parameterized.param.set_param(**kwargs)
 
     @property
     def contents(self):
