@@ -251,7 +251,8 @@ class XArrayInterface(GridInterface):
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         dim = dimension.name
-        if dataset._binned and dimension in dataset.kdims:
+        edges = dataset._binned and dimension in dataset.kdims
+        if edges:
             data = cls.coords(dataset, dim, edges=True)
         else:
             if cls.packed(dataset) and dim in dataset.vdims:
@@ -263,8 +264,10 @@ class XArrayInterface(GridInterface):
 
         if not len(data):
             dmin, dmax = np.NaN, np.NaN
-        elif data.dtype.kind == 'M':
-            dmin, dmax = data.min().data, data.max().data
+        elif data.dtype.kind == 'M' or not edges:
+            dmin, dmax = data.min(), data.max()
+            if not edges:
+                dmin, dmax = dmin.data, dmax.data
         else:
             dmin, dmax = np.nanmin(data), np.nanmax(data)
 
