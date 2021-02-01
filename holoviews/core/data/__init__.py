@@ -17,7 +17,6 @@ import pandas as pd # noqa
 
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
-from .. import util
 from ..accessors import Redim
 from ..dimension import (
     Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
@@ -39,6 +38,9 @@ from .pandas import PandasInterface           # noqa (API import)
 from .spatialpandas import SpatialPandasInterface     # noqa (API import)
 from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
+
+# Ensures correct holoviews.core.util is sourced
+from .. import util
 
 default_datatype = 'dataframe'
 
