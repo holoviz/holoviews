@@ -12,8 +12,8 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface, DataError, dask_array_module
-from .util import finite_range
+from .interface import Interface, DataError
+from .util import dask_array_module, finite_range
 
 
 def is_cupy(array):

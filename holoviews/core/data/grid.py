@@ -810,7 +810,7 @@ class GridInterface(DictInterface):
                 dmin, dmax = (np.nanmin(column), np.nanmax(column))
                 if da and isinstance(column, da.Array):
                     return finite_range(column, *da.compute(dmin, dmax))
-                return finite_range(*dmin, dmax)
+                return finite_range(dmin, dmax)
             except TypeError:
                 column.sort()
                 return column[0], column[-1]
