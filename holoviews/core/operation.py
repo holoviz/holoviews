@@ -11,7 +11,6 @@ from .options import Store
 from .overlay import NdOverlay, Overlay
 from .spaces import Callable, HoloMap
 from . import util, Dataset
-from .. import streams
 
 
 class Operation(param.ParameterizedFunction):
@@ -215,7 +214,6 @@ class Operation(param.ParameterizedFunction):
                 return self._apply(element)
         elif 'streams' not in kwargs:
             kwargs['streams'] = self.p.streams
-
         kwargs['per_element'] = self._per_element
         kwargs['link_dataset'] = self._propagate_dataset
         kwargs['link_inputs'] = self.p.link_inputs

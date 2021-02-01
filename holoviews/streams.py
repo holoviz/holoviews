@@ -785,7 +785,7 @@ class Params(Stream):
                 if isinstance(owner, Stream):
                     owner.update(**updates)
                 else:
-                    owner.param.set_param(**kwargs)
+                    owner.param.set_param(**updates)
         elif isinstance(self.parameterized, Stream):
             self.parameterized.update(**kwargs)
             return
