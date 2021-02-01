@@ -936,7 +936,7 @@ class Dynamic(param.ParameterizedFunction):
                 if not isinstance(p, param.Parameter):
                     raise ValueError("Stream dictionary must map operation keywords "
                                      "to parameter names. Cannot handle %r type."
-                                     % type(stream))
+                                     % type(p))
                 if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
                     if p.name != name:
                         streams[p.owner][p.name] = name
