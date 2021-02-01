@@ -718,6 +718,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             box_zoom = self.state.select(type=tools.BoxZoomTool)
             if box_zoom:
                 box_zoom[0].match_aspect = True
+            wheel_zoom = self.state.select(type=tools.WheelZoomTool)
+            if wheel_zoom:
+                wheel_zoom[0].zoom_on_axis = False
         elif isinstance(axis_obj, CategoricalAxis):
             for key in list(axis_props):
                 if key.startswith('major_label'):
