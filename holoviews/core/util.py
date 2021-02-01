@@ -73,6 +73,7 @@ param_version = LooseVersion(param.__version__)
 datetime_types = (np.datetime64, dt.datetime, dt.date, dt.time)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 arraylike_types = (np.ndarray,)
+masked_types = ()
 
 try:
     import pandas as pd
@@ -99,6 +100,9 @@ if pd:
         if pandas_version > '0.23.0':
             from pandas.core.dtypes.generic import ABCExtensionArray
             arraylike_types = arraylike_types + (ABCExtensionArray,)
+        if pandas_version > '1.0':
+            from pandas.core.arrays import BaseMaskedArray
+            masked_types = (BaseMaskedArray,)
     except Exception as e:
         param.main.warning('pandas could not register all extension types '
                            'imports failed with the following error: %s' % e)
@@ -870,6 +874,10 @@ def isfinite(val):
     """
     is_dask = is_dask_array(val)
     if not np.isscalar(val) and not is_dask:
+        if isinstance(val, np.ma.core.MaskedArray):
+            return ~val.mask & isfinite(val.data)
+        elif isinstance(val, masked_types):
+            return ~val.isna() & isfinite(val._data)
         val = asarray(val, strict=False)
 
     if val is None:
