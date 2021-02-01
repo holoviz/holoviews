@@ -14,7 +14,7 @@ from param import _is_number
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
-from ..core.data.interface import dask_array_module
+from ..core.data.util import dask_array_module
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int,
                          isdatetime, is_dask_array, is_cupy_array,

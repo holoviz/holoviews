@@ -790,30 +790,27 @@ class GridInterface(DictInterface):
         dimension = dataset.get_dimension(dimension, strict=True)
         if dataset._binned and dimension in dataset.kdims:
             expanded = cls.irregular(dataset, dimension)
-            column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
+            array = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
-            column = cls.values(dataset, dimension, expanded=False, flat=False)
+            array = cls.values(dataset, dimension, expanded=False, flat=False)
 
         if dimension.nodata is not None:
-            column = cls.replace_value(column, dimension.nodata)
+            array = cls.replace_value(array, dimension.nodata)
 
         da = dask_array_module()
-        if column.dtype.kind == 'M':
-            dmin, dmax = column.min(), column.max()
-            if da and isinstance(column, da.Array):
-                return finite_range(column, *da.compute(dmin, dmax))
-            return finite_range(column, dmin, dmax)
-        elif len(column) == 0:
+        if len(array) == 0:
             return np.NaN, np.NaN
+
+        if array.dtype.kind == 'M':
+            dmin, dmax = array.min(), array.max()
         else:
             try:
-                dmin, dmax = (np.nanmin(column), np.nanmax(column))
-                if da and isinstance(column, da.Array):
-                    return finite_range(column, *da.compute(dmin, dmax))
-                return finite_range(*dmin, dmax)
+                dmin, dmax = (np.nanmin(array), np.nanmax(array))
             except TypeError:
-                column.sort()
-                return column[0], column[-1]
+                return np.NaN, np.NaN
+        if da and isinstance(array, da.Array):
+            return finite_range(array, *da.compute(dmin, dmax))
+        return finite_range(array, dmin, dmax)
 
     @classmethod
     def assign(cls, dataset, new_data):

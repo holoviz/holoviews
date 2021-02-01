@@ -12,8 +12,8 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface, DataError, dask_array_module
-from .util import finite_range
+from .interface import Interface, DataError
+from .util import dask_array_module, finite_range
 
 
 def is_cupy(array):
@@ -251,12 +251,9 @@ class XArrayInterface(GridInterface):
     def range(cls, dataset, dimension):
         dimension = dataset.get_dimension(dimension, strict=True)
         dim = dimension.name
-        if dataset._binned and dimension in dataset.kdims:
+        edges = dataset._binned and dimension in dataset.kdims
+        if edges:
             data = cls.coords(dataset, dim, edges=True)
-            if data.dtype.kind == 'M':
-                dmin, dmax = data.min(), data.max()
-            else:
-                dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             if cls.packed(dataset) and dim in dataset.vdims:
                 data = dataset.data.values[..., dataset.vdims.index(dim)]
@@ -265,10 +262,14 @@ class XArrayInterface(GridInterface):
             if dimension.nodata is not None:
                 data = cls.replace_value(data, dimension.nodata)
 
-            if len(data):
-                dmin, dmax = data.min().data, data.max().data
-            else:
-                dmin, dmax = np.NaN, np.NaN
+        if not len(data):
+            dmin, dmax = np.NaN, np.NaN
+        elif data.dtype.kind == 'M' or not edges:
+            dmin, dmax = data.min(), data.max()
+            if not edges:
+                dmin, dmax = dmin.data, dmax.data
+        else:
+            dmin, dmax = np.nanmin(data), np.nanmax(data)
 
         da = dask_array_module()
         if da and isinstance(dmin, da.Array):
