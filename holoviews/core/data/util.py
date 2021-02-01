@@ -4,15 +4,23 @@ from .. import util
 
 
 def finite_range(column, cmin, cmax):
-    minf = np.isfinite(cmin)
-    maxf = np.isfinite(cmax)
-    if not minf or not maxf:
+    min_inf = np.isinf(cmin)
+    max_inf = np.isinf(cmax)
+    if (min_inf or max_inf):
         column = column[np.isfinite(column)]
-        cmin = cmin if minf else np.nanmin(column)
-        cmax = cmax if maxf else np.nanmmax(column)
-        if is_dask(column):
-            import dask.array as da
-            cmin, cmax = da.compute(cmin, cmax)
+        if len(column):
+            cmin = np.nanmin(column) if min_inf else cmin 
+            cmax = np.nanmmax(column) if max_inf else cmax
+            if is_dask(column):
+                import dask.array as da
+                if min_inf and max_inf:
+                    cmin, cmax = da.compute(cmin, cmax)
+                elif min_inf:
+                    cmin = cmin.compute()
+                else:
+                    cmax = cmax.compute()
+    else:
+        return cmin, cmax
     if isinstance(cmin, np.ndarray) and cmin.shape == ():
         cmin = cmin[()]
     if isinstance(cmax, np.ndarray) and cmax.shape == ():
