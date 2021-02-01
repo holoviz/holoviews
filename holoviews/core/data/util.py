@@ -4,8 +4,14 @@ from .. import util
 
 
 def finite_range(column, cmin, cmax):
-    min_inf = np.isinf(cmin)
-    max_inf = np.isinf(cmax)
+    try:
+        min_inf = np.isinf(cmin)
+    except TypeError:
+        min_inf = False
+    try:
+        max_inf = np.isinf(cmax)
+    except TypeError:
+        max_inf = False
     if (min_inf or max_inf):
         column = column[np.isfinite(column)]
         if len(column):
