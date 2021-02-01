@@ -99,6 +99,15 @@ def convert_timestamp(timestamp):
     return np.datetime64(datetime.replace(tzinfo=None))
 
 
+def prop_is_none(value):
+    """
+    Checks if property value is None.
+    """
+    return (value is None or
+            (isinstance(value, dict) and 'value' in value
+             and value['value'] is None))
+
+
 def decode_bytes(array):
     """
     Decodes an array, list or tuple of bytestrings to avoid python 3
