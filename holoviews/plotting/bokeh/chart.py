@@ -433,6 +433,8 @@ class HistogramPlot(ColorbarPlot):
             x = element.kdims[0]
             values = element.dimension_values(1)
             edges = element.interface.coords(element, x, edges=True)
+            if hasattr(edges, 'compute'):
+                edges = edges.compute()
             data = dict(top=values, left=edges[:-1], right=edges[1:])
             self._get_hover_data(data, element)
         return (data, mapping, style)
