@@ -59,7 +59,7 @@ class Operation(param.ParameterizedFunction):
        visualization should update this stream with range changes
        originating from the newly generated axes.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.ClassSelector(default=[], class_=(dict, list), doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
