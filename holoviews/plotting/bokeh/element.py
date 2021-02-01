@@ -49,7 +49,8 @@ from .util import (
     TOOL_TYPES, bokeh_version, date_to_integer, decode_bytes, get_tab_title,
     glyph_order, py2js_tickformatter, recursive_model_update,
     theme_attr_json, cds_column_replace, hold_policy, match_dim_specs,
-    compute_layout_properties, wrap_formatter, match_ax_type, remove_legend
+    compute_layout_properties, wrap_formatter, match_ax_type,
+    prop_is_none, remove_legend
 )
 
 try:
@@ -1249,7 +1250,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 glyph = getattr(renderer, glyph_type+'glyph', None)
                 if glyph == 'auto':
                     base_glyph = renderer.glyph
-                    glyph = type(base_glyph)(**base_glyph.properties_with_values())
+                    props = base_glyph.properties_with_values()
+                    glyph = type(base_glyph)(**{k: v for k, v in props.items()
+                                                if not prop_is_none(v)})
                     setattr(renderer, glyph_type+'glyph', glyph)
             if not glyph or (not renderer and glyph_type):
                 continue
