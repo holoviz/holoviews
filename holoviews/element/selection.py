@@ -5,7 +5,7 @@ elements.
 
 import numpy as np
 
-from ..core import util, NdOverlay
+from ..core import Dataset, NdOverlay, util
 from ..streams import SelectionXY, Selection1D, Lasso
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
@@ -28,7 +28,7 @@ class SelectionIndexExpr(object):
         self._index_skip = True
         if not index:
             return None, None, None
-        ds = self.clone(kdims=index_cols)
+        ds = self.clone(kdims=index_cols, new_type=Dataset)
         if len(index_cols) == 1:
             index_dim = index_cols[0]
             vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
