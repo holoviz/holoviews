@@ -1136,6 +1136,7 @@ class InspectorTests(ComparisonTestCase):
         points = inspect_points(self.img, max_indicators=3, dynamic=True,
                                 pixels=1, streams=dict(x=Tap.param.x, y=Tap.param.y))
         self.assertEqual(len(points.streams), 1)
+        self.assertEqual(isinstance(points.streams[0], Tap), True)
         self.assertEqual(points.streams[0].x, 0.4)
         self.assertEqual(points.streams[0].y, 0.7)
 
@@ -1145,5 +1146,6 @@ class InspectorTests(ComparisonTestCase):
                                             streams=dict(x=Tap.param.x, y=Tap.param.y))
         points = inspector(self.img)
         self.assertEqual(len(points.streams), 1)
+        self.assertEqual(isinstance(points.streams[0], Tap), True)
         self.assertEqual(points.streams[0].x, 0.2)
         self.assertEqual(points.streams[0].y, 0.3)
