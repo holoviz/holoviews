@@ -945,6 +945,9 @@ class Dynamic(param.ParameterizedFunction):
                 else:
                     params[name] = p
             stream_specs = streams_list_from_dict(params)
+            # Note that the correct stream instance will only be created
+            # correctly of the parameter's .owner points to the correct
+            # class (i.e the parameter isn't defined on a superclass)
             stream_specs += [stream(rename=rename) for stream, rename in streams.items()]
         else:
             stream_specs = self.p.streams
