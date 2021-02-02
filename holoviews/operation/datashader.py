@@ -1742,8 +1742,7 @@ class inspect_mask(Operation):
        Size of the mask that should match the pixels parameter used in
        the associated inspection operation.""")
 
-    streams = param.ClassSelector(default=dict(x=PointerXY.param.x,
-                                               y=PointerXY.param.y), class_=(dict, list))
+    streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
     x = param.Number(default=0)
     y = param.Number(default=0)
 
