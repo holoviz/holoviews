@@ -12,7 +12,7 @@ from holoviews.core.options import Store
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
 from holoviews.plotting.util import initialize_dynamic
-from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer
+from holoviews.streams import Stream, LinkedStream, PointerXY, PointerX, PointerY, RangeX, Buffer, pointer_types
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -598,6 +598,12 @@ class DynamicTransferStreams(ComparisonTestCase):
         with self.assertRaisesRegexp(Exception, exception):
             Dynamic(self.dmap, streams=[PointerX])
 
+    def test_dynamic_util_inherits_dim_streams_clash_dict(self):
+        exception = ("The supplied stream objects PointerX\(x=None\) and "
+                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
+        with self.assertRaisesRegexp(Exception, exception):
+            Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
+
 
 
 class DynamicTestOperation(ComparisonTestCase):
@@ -628,6 +634,14 @@ class DynamicTestOperation(ComparisonTestCase):
         element = dmap_with_fn[()]
         self.assertEqual(element, Image(sine_array(0,5)*2+1))
         self.assertEqual(dmap_with_fn.streams, [posxy])
+
+    def test_dynamic_operation_on_element_dict(self):
+        img = Image(sine_array(0,5))
+        posxy = PointerXY(x=3, y=1)
+        dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
+                               streams=dict(x=posxy.param.x, y=posxy.param.y))
+        element = dmap_with_fn[()]
+        self.assertEqual(element, Image(sine_array(0,5)*3+1))
 
     def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -901,6 +915,7 @@ class DynamicStreamReset(ComparisonTestCase):
             return Curve(list(history))
 
         class NoMemoize(PointerX):
+            x = param.ClassSelector(class_=pointer_types, default=None, constant=True)
             @property
             def hashkey(self): return {'hash': uuid.uuid4().hex}
 

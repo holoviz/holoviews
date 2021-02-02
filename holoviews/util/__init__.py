@@ -23,7 +23,7 @@ from ..core.util import basestring, merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core import util
 from ..operation.element import function
-from ..streams import Stream, Params
+from ..streams import Stream, Params, streams_list_from_dict
 from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
@@ -902,7 +902,7 @@ class Dynamic(param.ParameterizedFunction):
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.ClassSelector(default=[], class_=(list, dict), doc="""
         List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
@@ -929,9 +929,32 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
+        if isinstance(self.p.streams, dict):
+            streams = defaultdict(dict)
+            stream_specs, params = [], {}
+            for name, p in self.p.streams.items():
+                if not isinstance(p, param.Parameter):
+                    raise ValueError("Stream dictionary must map operation keywords "
+                                     "to parameter names. Cannot handle %r type."
+                                     % type(p))
+                if inspect.isclass(p.owner) and issubclass(p.owner, Stream):
+                    if p.name != name:
+                        streams[p.owner][p.name] = name
+                    else:
+                        streams[p.owner] = {}
+                else:
+                    params[name] = p
+            stream_specs = streams_list_from_dict(params)
+            # Note that the correct stream instance will only be created
+            # correctly of the parameter's .owner points to the correct
+            # class (i.e the parameter isn't defined on a superclass)
+            stream_specs += [stream(rename=rename) for stream, rename in streams.items()]
+        else:
+            stream_specs = self.p.streams
+
         streams = []
         op = self.p.operation
-        for stream in self.p.streams:
+        for stream in stream_specs:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
             elif not (isinstance(stream, Stream) or util.is_param_method(stream)):
@@ -940,9 +963,10 @@ class Dynamic(param.ParameterizedFunction):
             if isinstance(op, Operation):
                 updates = {k: op.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in op.p}
-                if updates:
+                if not isinstance(stream, Params):
                     reverse = {v: k for k, v in stream._rename.items()}
-                    stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
+                    updates = {reverse.get(k, k): v for k, v in updates.items()}
+                stream.update(**updates)
             streams.append(stream)
 
         params = {}

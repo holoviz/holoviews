@@ -7,6 +7,7 @@ import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
                        Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
                        Spread, Area, Rectangles, Segments, Polygons)
+from holoviews.streams import Tap
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
 
@@ -733,7 +734,7 @@ class DatashaderCatAggregateTests(ComparisonTestCase):
                               'C': Image((xs, ys, [[nan, nan], [0.3, nan]]), vdims='z')},
                              kdims=['cat'])
         self.assertEqual(img, expected)
-        
+
 
 
 class DatashaderShadeTests(ComparisonTestCase):
@@ -1047,7 +1048,7 @@ class DatashaderSpreadTests(ComparisonTestCase):
         spreaded = spread(Image(arr))
         arr = np.array([[0, 0, 0], [2, 3, 2], [2, 3, 2]]).T
         self.assertEqual(spreaded, Image(arr))
-        
+
 
 class DatashaderStackTests(ComparisonTestCase):
 
@@ -1107,6 +1108,9 @@ class InspectorTests(ComparisonTestCase):
         self.img = rasterize(points, dynamic=False,
                              x_range=(0, 1), y_range=(0, 1), width=4, height=4)
 
+    def tearDown(self):
+        Tap.x, Tap.y = None, None
+
     def test_points_inspection_1px_mask(self):
         points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=1, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([]))
@@ -1126,3 +1130,22 @@ class InspectorTests(ComparisonTestCase):
         points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=5, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4, 0]))
         self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7, 0.99]))
+
+    def test_points_inspection_dict_streams(self):
+        Tap.x, Tap.y = 0.4, 0.7
+        points = inspect_points(self.img, max_indicators=3, dynamic=True,
+                                pixels=1, streams=dict(x=Tap.param.x, y=Tap.param.y))
+        self.assertEqual(len(points.streams), 1)
+        self.assertEqual(isinstance(points.streams[0], Tap), True)
+        self.assertEqual(points.streams[0].x, 0.4)
+        self.assertEqual(points.streams[0].y, 0.7)
+
+    def test_points_inspection_dict_streams_instance(self):
+        Tap.x, Tap.y = 0.2, 0.3
+        inspector = inspect_points.instance(max_indicators=3, dynamic=True, pixels=1,
+                                            streams=dict(x=Tap.param.x, y=Tap.param.y))
+        points = inspector(self.img)
+        self.assertEqual(len(points.streams), 1)
+        self.assertEqual(isinstance(points.streams[0], Tap), True)
+        self.assertEqual(points.streams[0].x, 0.2)
+        self.assertEqual(points.streams[0].y, 0.3)

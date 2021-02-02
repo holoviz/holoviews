@@ -522,6 +522,9 @@ class Buffer(Pipe):
     is allowed while streaming.
     """
 
+    data = param.Parameter(default=None, constant=True, doc="""
+        Arbitrary data being streamed to a DynamicMap callback.""")
+
     def __init__(self, data, length=1000, index=True, following=True, **params):
         if (util.pd and isinstance(data, util.pd.DataFrame)):
             example = data
@@ -773,8 +776,21 @@ class Params(Stream):
         pass
 
     def update(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self.parameterized, k, v)
+        if self._rename:
+            owner_updates = defaultdict(dict)
+            for (owner, pname), rname in self._rename.items():
+                if rname in kwargs:
+                    owner_updates[owner][pname] = kwargs[rname]
+            for owner, updates in owner_updates.items():
+                if isinstance(owner, Stream):
+                    owner.update(**updates)
+                else:
+                    owner.param.set_param(**updates)
+        elif isinstance(self.parameterized, Stream):
+            self.parameterized.update(**kwargs)
+            return
+        else:
+            self.parameterized.param.set_param(**kwargs)
 
     @property
     def contents(self):
@@ -792,6 +808,14 @@ class ParamMethod(Params):
     a parameterized class and triggers when one of the parameters
     change.
     """
+
+    parameterized = param.ClassSelector(class_=(param.Parameterized,
+                                                param.parameterized.ParameterizedMetaclass),
+                                        constant=True, allow_None=True, doc="""
+        Parameterized instance to watch for parameter changes.""")
+
+    parameters = param.List([], constant=True, doc="""
+        Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
@@ -1288,6 +1312,13 @@ class Draw(PointerXY):
     A series of updating x/y-positions when drawing, together with the
     current stroke count
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
     stroke_count = param.Integer(default=0, constant=True, doc="""
        The current drawing stroke count. Increments every time a new
@@ -1298,32 +1329,74 @@ class SingleTap(PointerXY):
     The x/y-position of a single tap or click in data coordinates.
     """
 
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class DoubleTap(PointerXY):
     """
     The x/y-position of a double-tap or -click in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class PressUp(PointerXY):
     """
     The x/y position of a mouse pressup event in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class PanEnd(PointerXY):
     """The x/y position of a the end of a pan event in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class MouseEnter(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class MouseLeave(PointerXY):
@@ -1331,6 +1404,13 @@ class MouseLeave(PointerXY):
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class PlotSize(LinkedStream):
@@ -1417,6 +1497,10 @@ class SelectionXY(BoundsXY):
     Unlike a BoundsXY stream, this stream returns range or categorical
     selections.
     """
+
+    bounds = param.Tuple(default=None, constant=True, length=4,
+                         allow_None=True, doc="""
+        Bounds defined as (left, bottom, right, top) tuple.""")
 
     x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
                                       constant=True, doc="""
@@ -1509,6 +1593,12 @@ class PointDraw(CDSStream):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
                  styles={}, tooltip=None, **params):
         self.add = add
@@ -1547,6 +1637,12 @@ class CurveEdit(PointDraw):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, style={}, tooltip=None, **params):
         self.style = style or {'size': 10}
         self.tooltip = tooltip
@@ -1583,6 +1679,12 @@ class PolyDraw(CDSStream):
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
     """
+
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
 
     def __init__(self, empty_value=None, drag=True, num_objects=0,
                  show_vertices=False, vertex_style={}, styles={},
@@ -1637,6 +1739,12 @@ class FreehandDraw(CDSStream):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
@@ -1684,6 +1792,12 @@ class BoxEdit(CDSStream):
     tooltip: str
         An optional tooltip to override the default
     """
+
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
 
     def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
         self.empty_value = empty_value
@@ -1740,6 +1854,12 @@ class PolyEdit(PolyDraw):
         The usual bokeh style options apply, e.g. fill_color,
         line_alpha, size, etc.
     """
+
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
 
     def __init__(self, vertex_style={}, shared=True, **params):
         self.shared = shared

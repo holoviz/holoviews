@@ -96,9 +96,9 @@ class ResamplingOperation(LinkableOperation):
         width and height.
     """)
 
-    streams = param.List(default=[PlotSize, RangeXY], doc="""
-        List of streams that are applied if dynamic=True, allowing
-        for dynamic interaction with the plot.""")
+    streams = param.ClassSelector(default=[PlotSize, RangeXY], class_=(dict, list), doc="""
+       List or dictionary of streams that are applied if dynamic=True,
+       allowing for dynamic interaction with the plot.""")
 
     element_type = param.ClassSelector(class_=(Dataset,), instantiate=False,
                                         is_instance=False, default=Image,
@@ -1742,7 +1742,7 @@ class inspect_mask(Operation):
        Size of the mask that should match the pixels parameter used in
        the associated inspection operation.""")
 
-    streams = param.List(default=[PointerXY])
+    streams = param.ClassSelector(default=[PointerXY], class_=(dict, list))
     x = param.Number(default=0)
     y = param.Number(default=0)
 
@@ -1807,7 +1807,9 @@ class inspect_base(Operation):
       e.g. to implement custom hover behavior.""")
 
     # Stream values and overrides
-    streams = param.List(default=[PointerXY])
+    streams = param.ClassSelector(default=dict(x=PointerXY.param.x,
+                                               y=PointerXY.param.y),
+                                  class_=(dict, list))
     x = param.Number(default=0)
     y = param.Number(default=0)
 
