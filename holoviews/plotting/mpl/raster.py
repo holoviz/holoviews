@@ -1,3 +1,5 @@
+import sys
+
 import param
 import numpy as np
 
@@ -5,7 +7,9 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
-from .element import ElementPlot, ColorbarPlot, OverlayPlot
+from ..util import categorical_legend
+from .chart import PointPlot
+from .element import ElementPlot, ColorbarPlot, LegendPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import LooseVersion, get_raster_array, mpl_version
 
@@ -100,7 +104,7 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         return axis_kwargs
 
 
-class RGBPlot(RasterBasePlot):
+class RGBPlot(RasterBasePlot, LegendPlot):
 
     style_opts = ['alpha', 'interpolation', 'visible', 'filterrad']
 
@@ -115,6 +119,21 @@ class RGBPlot(RasterBasePlot):
         style['extent'] = [l, r, b, t]
         style['origin'] = 'upper'
         return [data], style, {'xticks': xticks, 'yticks': yticks}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        handles = super(RGBPlot, self).init_artists(ax, plot_args, plot_kwargs)
+        if 'holoviews.operation.datashader' not in sys.modules:
+            return handles
+        try:
+            legend = categorical_legend(self.current_frame, backend=self.backend)
+        except Exception:
+            return handles
+        if legend is None:
+            return handles
+        legend_params = {k: v for k, v in self.param.get_param_values() if k.startswith('legend')}
+        self._legend_plot = PointPlot(legend, axis=ax, fig=self.state, **legend_params)
+        self._legend_plot.initialize_plot()
+        return handles
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']

@@ -2053,11 +2053,11 @@ class LegendPlot(ElementPlot):
     legend_cols = param.Integer(default=False, doc="""
        Whether to lay out the legend as columns.""")
 
-    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
-                    'bottom': 'below'}
-
     legend_opts = param.Dict(default={}, doc="""
         Allows setting specific styling options for the colorbar.""")
+
+    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
+                    'bottom': 'below'}
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']

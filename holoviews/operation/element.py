@@ -229,7 +229,7 @@ class chain(Operation):
         else:
             return processed.clone(group=self.p.group)
 
-    def find(self, operation):
+    def find(self, operation, skip_nonlinked=True):
         """
         Returns the first found occurrence of an operation while
         performing a backward traversal of the chain pipeline.
@@ -239,7 +239,7 @@ class chain(Operation):
             if isinstance(op, operation):
                 found = op
                 break
-            if not op.link_inputs:
+            if not op.link_inputs and skip_nonlinked:
                 break
         return found
 
