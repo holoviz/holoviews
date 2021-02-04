@@ -494,7 +494,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         legend = plot_kwargs.pop('cat_legend', None)
         with abbreviated_exception():
             handles = self.init_artists(ax, plot_data, plot_kwargs)
-        if legend and 'artist' in handles:
+        if legend and 'artist' in handles and hasattr(handles['artist'], 'legend_elements'):
             legend_handles, _ = handles['artist'].legend_elements()
             leg = ax.legend(legend_handles, legend['factors'],
                             title=legend['title'], **self._legend_opts)
@@ -615,10 +615,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     else:
                         factors = util.unique_array(val)
                     val = util.search_indices(val, factors)
+                    new_style['cat_legend'] = {
+                        'title': v.dimension, 'prop': 'c', 'factors': factors
+                    }
                 k = prefix+'c'
-                title = v.dimension
-                new_style['cat_legend'] = {'title': title, 'prop': 'c', 'factors': factors}
-
             new_style[k] = val
 
         for k, val in list(new_style.items()):
