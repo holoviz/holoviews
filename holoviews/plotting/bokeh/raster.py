@@ -11,7 +11,7 @@ from ...core.util import cartesian_product, dimension_sanitizer, isfinite
 from ...element import Raster
 from ..util import categorical_legend
 from .chart import PointPlot
-from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .element import ColorbarPlot, LegendPlot
 from .selection import BokehOverlaySelectionDisplay
 from .styles import base_properties, fill_properties, line_properties, mpl_to_bokeh
 from .util import colormesh
@@ -159,11 +159,12 @@ class RGBPlot(LegendPlot):
             return
         try:
             legend = categorical_legend(element, backend=self.backend)
-        except Exception as e:
+        except Exception:
             return
         if legend is None:
             return
-        legend_params = {l: v for l, v in self.param.get_param_values() if k.startswith('legend')}
+        legend_params = {k: v for k, v in self.param.get_param_values()
+                         if k.startswith('legend')}
         self._legend_plot = PointPlot(legend, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
         self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
