@@ -84,6 +84,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
+    # No custom legend options
+    _legend_opts = {}
+
     # Declare which styles cannot be mapped to a non-scalar dimension
     _nonvectorized_styles = ['marker', 'alpha', 'cmap', 'angle', 'visible']
 
@@ -486,6 +489,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._finalize_axis(key, element=element, ranges=ranges,
                             **(axis_kwargs if axis_kwargs else {}))
 
+    def render_artists(self, element, ranges, style, ax):
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        legend = plot_kwargs.pop('cat_legend', None)
+        with abbreviated_exception():
+            handles = self.init_artists(ax, plot_data, plot_kwargs)
+        if legend and 'artist' in handles:
+            legend_handles, _ = handles['artist'].legend_elements()
+            leg = ax.legend(legend_handles, legend['factors'],
+                            title=legend['title'], **self._legend_opts)
+            ax.add_artist(leg)
+        return handles, axis_kwargs
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -504,11 +518,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
         if self.show_legend:
             style['label'] = element.label
-
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-
-        with abbreviated_exception():
-            handles = self.init_artists(ax, plot_data, plot_kwargs)
+        handles, axis_kwargs = self.render_artists(element, ranges, style, ax)
         self.handles.update(handles)
 
         trigger = self._trigger
@@ -539,10 +549,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Update the elements of the plot.
         """
         self.teardown_handles()
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-
-        with abbreviated_exception():
-            handles = self.init_artists(axis, plot_data, plot_kwargs)
+        handles, axis_kwargs = self.render_artists(element, ranges, style, axis)
         self.handles.update(handles)
         return axis_kwargs
 
@@ -609,6 +616,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                         factors = util.unique_array(val)
                     val = util.search_indices(val, factors)
                 k = prefix+'c'
+                title = v.dimension
+                new_style['cat_legend'] = {'title': title, 'prop': 'c', 'factors': factors}
 
             new_style[k] = val
 
@@ -1021,6 +1030,13 @@ class LegendPlot(ElementPlot):
                     'bottom_left': dict(loc=3),
                     'bottom_right': dict(loc=4)}
 
+    @property
+    def _legend_opts(self):
+        leg_spec = self.legend_specs[self.legend_position]
+        if self.legend_cols: leg_spec['ncol'] = self.legend_cols
+        legend_opts = self.legend_opts.copy()
+        legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
+        return legend_opts
 
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
@@ -1089,12 +1105,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             if legend:
                 legend.set_visible(False)
         else:
-            leg_spec = self.legend_specs[self.legend_position]
-            if self.legend_cols: leg_spec['ncol'] = self.legend_cols
-            legend_opts = self.legend_opts.copy()
-            legend_opts.update(**dict(leg_spec, **self._fontsize('legend')))
             leg = axis.legend(list(data.keys()), list(data.values()),
-                              title=title, **legend_opts)
+                              title=title, **self._legend_opts)
             title_fontsize = self._fontsize('legend_title')
             if title_fontsize:
                 leg.get_title().set_fontsize(title_fontsize['fontsize'])
