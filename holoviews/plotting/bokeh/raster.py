@@ -155,7 +155,7 @@ class RGBPlot(LegendPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         super(RGBPlot, self)._init_glyphs(plot, element, ranges, source)
-        if 'holoviews.operation.datashader' not in sys.modules:
+        if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
             return
         try:
             legend = categorical_legend(element, backend=self.backend)

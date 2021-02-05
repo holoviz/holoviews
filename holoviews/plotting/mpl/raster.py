@@ -122,7 +122,7 @@ class RGBPlot(RasterBasePlot, LegendPlot):
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         handles = super(RGBPlot, self).init_artists(ax, plot_args, plot_kwargs)
-        if 'holoviews.operation.datashader' not in sys.modules:
+        if 'holoviews.operation.datashader' not in sys.modules or not self.show_legend:
             return handles
         try:
             legend = categorical_legend(self.current_frame, backend=self.backend)
