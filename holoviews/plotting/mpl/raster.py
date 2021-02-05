@@ -131,7 +131,9 @@ class RGBPlot(RasterBasePlot, LegendPlot):
         if legend is None:
             return handles
         legend_params = {k: v for k, v in self.param.get_param_values() if k.startswith('legend')}
-        self._legend_plot = PointPlot(legend, axis=ax, fig=self.state, **legend_params)
+        self._legend_plot = PointPlot(legend, axis=ax, fig=self.state,
+                                      keys=self.keys, dimensions=self.dimensions,
+                                      overlaid=1, **legend_params)
         self._legend_plot.initialize_plot()
         return handles
 

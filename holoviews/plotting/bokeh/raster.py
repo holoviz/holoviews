@@ -165,7 +165,7 @@ class RGBPlot(LegendPlot):
             return
         legend_params = {k: v for k, v in self.param.get_param_values()
                          if k.startswith('legend')}
-        self._legend_plot = PointPlot(legend, **legend_params)
+        self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
         self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
 
