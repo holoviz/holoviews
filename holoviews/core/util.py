@@ -101,11 +101,11 @@ if pd:
             from pandas.core.dtypes.generic import ABCExtensionArray
             arraylike_types = arraylike_types + (ABCExtensionArray,)
         if pandas_version > '1.0':
-            from pandas.core.arrays import BaseMaskedArray
+            from pandas.core.arrays.masked import BaseMaskedArray
             masked_types = (BaseMaskedArray,)
     except Exception as e:
-        param.main.warning('pandas could not register all extension types '
-                           'imports failed with the following error: %s' % e)
+        param.main.param.warning('pandas could not register all extension types '
+                                 'imports failed with the following error: %s' % e)
 
 try:
     import cftime
