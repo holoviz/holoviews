@@ -167,6 +167,7 @@ class RGBPlot(LegendPlot):
                          if k.startswith('legend')}
         self._legend_plot = PointPlot(legend, keys=[], overlaid=1, **legend_params)
         self._legend_plot.initialize_plot(plot=plot)
+        self._legend_plot.handles['glyph_renderer'].tags.append('hv_legend')
         self.handles['rgb_color_mapper'] = self._legend_plot.handles['color_color_mapper']
 
     def get_data(self, element, ranges, style):

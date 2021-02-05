@@ -2205,7 +2205,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         renderers = []
         for item in legend_items:
             item.renderers[:] = [r for r in item.renderers if r not in renderers]
-            if item in filtered or not item.renderers:
+            if (item in filtered or not item.renderers or
+                not any(r.visible or 'hv_legend' in r.tags for r in item.renderers)):
                 continue
             renderers += item.renderers
             filtered.append(item)
