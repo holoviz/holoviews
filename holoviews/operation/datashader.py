@@ -1935,3 +1935,67 @@ class inspect_poly(inspect_base):
         dx, dy = np.array(xs) - x, np.array(ys) - y
         distances = pd.Series(dx*dx + dy*dy)
         return df.iloc[distances.argsort().values]
+
+
+class inspect(Operation):
+    """
+    Generalized inspect operation that detects the appropriate indicator
+    type.
+    """
+
+    pixels = param.Integer(default=3, doc="""
+       Number of pixels in data space around the cursor point to search
+       for hits in. The hit within this box mask that is closest to the
+       cursor's position is displayed.""")
+
+    null_value = param.Number(default=0, doc="""
+       Value of raster which indicates no hits. For instance zero for
+       count aggregator (default) and commonly NaN for other (float)
+       aggregators. For RGBA images, the alpha channel is used which means
+       zero alpha acts as the null value.""")
+
+    value_bounds = param.NumericTuple(default=None, length=2, allow_None=True, doc="""
+       If not None, a numeric bounds for the pixel under the cursor in
+       order for hits to be computed. Useful for count aggregators where
+       a value of (1,1000) would make sure no more than a thousand
+       samples will be searched.""")
+
+    hits = param.DataFrame(default=pd.DataFrame(), allow_None=True)
+
+    max_indicators = param.Integer(default=1, doc="""
+       Maximum number of indicator elements to display within the mask
+       of size pixels. Points are prioritized by distance from the
+       cursor point. This means that the default value of one shows the
+       single closest sample to the cursor. Note that this limit is not
+       applies to the hits parameter.""")
+
+    transform = param.Callable(default=identity, doc="""
+      Function that transforms the hits dataframe before it is passed to
+      the Points element. Can be used to customize the value dimensions
+      e.g. to implement custom hover behavior.""")
+
+    # Stream values and overrides
+    streams = param.ClassSelector(default=dict(x=PointerXY.param.x,
+                                               y=PointerXY.param.y),
+                                  class_=(dict, list))
+    x = param.Number(default=0)
+    y = param.Number(default=0)
+    _dispatch = {Points : inspect_points,
+                 Polygons : inspect_poly}
+
+    def _process(self, raster, key=None):
+        inspect_operation = self._dispatch[self.get_input_type(raster.pipeline.operations)]
+        return inspect_operation(raster, x=self.p.x, y=self.p.y, dynamic=False)
+
+
+    def get_input_type(self, operations):
+        for op in operations:
+            output_type = getattr(op, 'output_type', None)
+            if output_type is not None:
+                if output_type in [el[0] for el in rasterize._transforms]:
+                    # Datashader output types that are also input types e.g for regrid
+                    if issubclass(output_type, (Image, RGB)):
+                        continue
+                    return output_type
+        raise RuntimeError('Could not establish input element type '
+                           'for datashader pipeline in the inspect operation.')
