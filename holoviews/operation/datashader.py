@@ -1985,7 +1985,11 @@ class inspect(Operation):
 
     def _process(self, raster, key=None):
         inspect_operation = self._dispatch[self.get_input_type(raster.pipeline.operations)]
-        return inspect_operation(raster, x=self.p.x, y=self.p.y, dynamic=False)
+        return inspect_operation(raster, pixels=self.p.pixels,
+                                 null_value=self.p.null_value,
+                                 value_bounds=self.p.value_bounds,
+                                 max_indicators=self.p.max_indicators,
+                                 x=self.p.x, y=self.p.y, dynamic=False)
 
 
     def get_input_type(self, operations):
