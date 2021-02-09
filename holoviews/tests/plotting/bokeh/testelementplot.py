@@ -1,9 +1,12 @@
+import datetime as dt
+
 from unittest import SkipTest
 from collections import OrderedDict
 
 import numpy as np
 
 from holoviews.core import Dimension, DynamicMap, NdOverlay, HoloMap
+from holoviews.core.util import dt_to_int
 from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
@@ -325,6 +328,21 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
+
+    def test_element_xticks_datetime(self):
+        dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]
+        tick = dt.datetime(2016, 1, 1, 12)
+        curve = Curve(dates).opts(xticks=[tick])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.xaxis.ticker.ticks, [dt_to_int(tick, 'ms')])
+
+    def test_element_xticks_datetime_label_override(self):
+        dates = [(dt.datetime(2016, 1, i), i) for i in range(1, 4)]
+        tick = dt.datetime(2016, 1, 1, 12)
+        curve = Curve(dates).opts(xticks=[(tick, 'A')])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.xaxis.ticker.ticks, [dt_to_int(tick, 'ms')])
+        self.assertEqual(plot.state.xaxis.major_label_overrides, {dt_to_int(tick, 'ms'): 'A'})
 
     def test_element_grid_custom_xticker(self):
         curve = Curve([1, 2, 3]).opts(xticks=[0.5, 1.5], show_grid=True)
