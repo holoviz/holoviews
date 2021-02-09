@@ -2,11 +2,11 @@ from __future__ import absolute_import
 
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.element import Graph, Nodes, TriMesh, Chord, circular_layout
+from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
 from holoviews.util.transform import dim
 
 try:
-    from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, Patches)
+    from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, NodesOnly, Patches)
     from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
 except:
     pass
@@ -41,6 +41,15 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(edge_source.data['end'], self.target)
         layout = {str(int(z)): (x, y) for x, y, z in self.graph.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
+
+    def test_plot_graph_annotation_overlay(self):
+        plot = bokeh_renderer.get_plot(VLine(0) * self.graph)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['x_range']
+        self.assertEqual(x_range.start, -1)
+        self.assertEqual(x_range.end, 1)
+        self.assertEqual(y_range.start, -1)
+        self.assertEqual(y_range.end, 1)
 
     def test_plot_graph_with_paths(self):
         graph = self.graph.clone((self.graph.data, self.graph.nodes, self.graph.edgepaths))
@@ -85,7 +94,7 @@ class TestBokehGraphPlot(TestBokehPlot):
     def test_graph_inspection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(plot=dict(inspection_policy=None)))
         renderer = plot.handles['glyph_renderer']
-        self.assertIs(renderer.inspection_policy, None)
+        self.assertIsInstance(renderer.inspection_policy, NodesOnly)
 
     def test_graph_selection_policy_nodes(self):
         plot = bokeh_renderer.get_plot(self.graph)
@@ -104,7 +113,7 @@ class TestBokehGraphPlot(TestBokehPlot):
     def test_graph_selection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(plot=dict(selection_policy=None)))
         renderer = plot.handles['glyph_renderer']
-        self.assertIs(renderer.selection_policy, None)
+        self.assertIsInstance(renderer.selection_policy, NodesOnly)
 
     def test_graph_nodes_categorical_colormapped(self):
         g = self.graph2.opts(plot=dict(color_index='Label'), style=dict(cmap='Set1'))
