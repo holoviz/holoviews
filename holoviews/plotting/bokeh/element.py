@@ -673,7 +673,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
                 axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
-            elif isinstance(ticker, (tuple, list)):
+            elif isinstance(ticker, (tuple, list, np.ndarray)):
                 if all(isinstance(t, tuple) for t in ticker):
                     ticks, labels = zip(*ticker)
                     # Ensure floats which are integers are serialized as ints
@@ -682,11 +682,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              for t in ticks]
                     labels = [l if isinstance(l, util.basestring) else str(l)
                               for l in labels]
-                    axis_props['ticker'] = FixedTicker(ticks=ticks)
                     axis_props['major_label_overrides'] = dict(zip(ticks, labels))
                 else:
-                    axis_props['ticker'] = FixedTicker(ticks=ticker)
-
+                    ticks = ticker
+                if util.isdatetime(ticks):
+                    ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
+                axis_props['ticker'] = FixedTicker(ticks=list(ticks))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)

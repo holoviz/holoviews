@@ -422,7 +422,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.set_ticklabels(ticks[1])
         elif isinstance(ticks, ticker.Locator):
             axis.set_major_locator(ticks)
-        elif not ticks and ticks is not None:
+        elif ticks is not None and not len(ticks):
             axis.set_ticks([])
         elif isinstance(ticks, int):
             if log:
@@ -431,7 +431,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             else:
                 locator = ticker.MaxNLocator(ticks)
             axis.set_major_locator(locator)
-        elif isinstance(ticks, (list, tuple)):
+        elif isinstance(ticks, (list, tuple, np.ndarray)):
             labels = None
             if all(isinstance(t, tuple) for t in ticks):
                 ticks, labels = zip(*ticks)
