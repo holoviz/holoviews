@@ -231,8 +231,8 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         overlay = Curve((np.arange(5)), label='increase') * Curve((np.arange(5)*-1+5), label='decrease').opts(muted=True)
         plot = bokeh_renderer.get_plot(overlay)
         unmuted, muted = plot.values()
-        self.assertFalse(unmuted.handles['glyph_renderer'])
-        self.assertFalse(muted.handles['glyph_renderer'])
+        self.assertFalse(unmuted.handles['glyph_renderer'].muted)
+        self.assertTrue(muted.handles['glyph_renderer'].muted)
 
 
 class TestLegends(TestBokehPlot):
