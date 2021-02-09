@@ -378,6 +378,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get the bottom layer and range element
         el = element.traverse(lambda x: x, [lambda el: isinstance(el, Element) and not isinstance(el, (Annotation, Tiles))])
         el = el[0] if el else element
+        if isinstance(el, Graph):
+            el = el.nodes
 
         dims = self._get_axis_dims(el)
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
@@ -424,10 +426,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 x_axis_type = 'auto'
                 categorical_x = True
             else:
-                if isinstance(el, Graph):
-                    xtype = el.nodes.get_dimension_type(xdims[0])
-                else:
-                    xtype = el.get_dimension_type(xdims[0])
+                xtype = el.get_dimension_type(xdims[0])
                 if ((xtype is np.object_ and issubclass(type(l), util.datetime_types)) or
                     xtype in util.datetime_types):
                     x_axis_type = 'datetime'
