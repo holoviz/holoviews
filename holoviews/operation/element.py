@@ -857,7 +857,8 @@ class decimate(Operation):
     random_seed = param.Integer(default=42, doc="""
         Seed used to initialize randomization.""")
 
-    streams = param.List(default=[RangeXY], doc="""
+    streams = param.ClassSelector(default=[RangeXY], class_=(dict, list),
+                                   doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
