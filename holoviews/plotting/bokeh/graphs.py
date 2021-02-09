@@ -10,6 +10,7 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
 from ...core.util import basestring, dimension_sanitizer, unique_array
+from ...element import Graph
 from ...util.transform import dim
 from ..mixins import ChordMixin
 from ..util import process_cmap, get_directed_graph_paths
@@ -99,7 +100,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _get_axis_dims(self, element):
-        return element.nodes.dimensions()[:2]
+        if isinstance(element, Graph):
+            element = element.nodes
+        return element.dimensions()[:2]
 
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
