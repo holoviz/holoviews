@@ -2228,7 +2228,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             leg.update(**self.legend_opts)
             for item in leg.items:
                 for r in item.renderers:
-                    r.muted = self.legend_muted
+                    r.muted = self.legend_muted or r.muted
 
 
     def _init_tools(self, element, callbacks=[]):
