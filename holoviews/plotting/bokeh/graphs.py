@@ -4,8 +4,10 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
-                          EdgesAndLinkedNodes, Patches, Bezier, ColumnDataSource)
+from bokeh.models import (
+    StaticLayoutProvider, NodesAndLinkedEdges, EdgesAndLinkedNodes,
+    Patches, Bezier, ColumnDataSource, NodesOnly
+)
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
@@ -331,14 +333,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         elif self.selection_policy == 'edges':
             renderer.selection_policy = EdgesAndLinkedNodes()
         else:
-            renderer.selection_policy = None
+            renderer.selection_policy = NodesOnly()
 
         if self.inspection_policy == 'nodes':
             renderer.inspection_policy = NodesAndLinkedEdges()
         elif self.inspection_policy == 'edges':
             renderer.inspection_policy = EdgesAndLinkedNodes()
         else:
-            renderer.inspection_policy = None
+            renderer.inspection_policy = NodesOnly()
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
