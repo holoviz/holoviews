@@ -264,7 +264,7 @@ class Area(Curve):
     group = param.String(default='Area', constant=True)
 
     @classmethod
-    def stack(cls, areas):
+    def stack(cls, areas, baseline_name='Baseline'):
         """
         Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
         their baselines. To stack a HoloMap or DynamicMap use the map
@@ -272,12 +272,19 @@ class Area(Curve):
         """
         if not len(areas):
             return areas
-        baseline = np.zeros(len(areas.values()[0]))
+        df = areas.dframe(multi_index=True)
+        levels = list(range(areas.ndims))
+        vdim = areas.last.vdims[0]
+        vdims = [vdim, baseline_name]
+        baseline = None
         stacked = areas.clone(shared_data=False)
-        vdims = [areas.values()[0].vdims[0], 'Baseline']
-        for k, area in areas.items():
-            x, y = (area.dimension_values(i) for i in range(2))
-            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
-                                    new_type=Area)
-            baseline = baseline + y
+        for key, sdf in df.groupby(level=levels):
+            sdf = sdf.droplevel(levels).reindex(index=df.index.levels[-1], fill_value=0)
+            if baseline is None:
+                sdf[baseline_name] = 0
+            else:
+                sdf[vdim.name] = sdf[vdim.name] + baseline
+                sdf[baseline_name] = baseline
+            baseline = sdf[vdim.name]
+            stacked[key] = areas.last.clone(sdf, vdims=vdims)
         return stacked
