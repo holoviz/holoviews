@@ -2,7 +2,7 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import Dimension, Dataset, Element2D
+from ..core import Dimension, Dataset, Element2D, NdOverlay, Overlay
 from ..core.dimension import process_dimensions
 from ..core.data import GridInterface
 from .geom import Rectangles, Points, VectorField # noqa: backward compatible import
@@ -272,6 +272,9 @@ class Area(Curve):
         """
         if not len(areas):
             return areas
+        is_overlay = isinstance(areas, Overlay)
+        if is_overlay:
+            areas = NdOverlay({i: el for i, el in enumerate(areas)})
         df = areas.dframe(multi_index=True)
         levels = list(range(areas.ndims))
         vdim = areas.last.vdims[0]
@@ -287,4 +290,4 @@ class Area(Curve):
                 sdf[baseline_name] = baseline
             baseline = sdf[vdim.name]
             stacked[key] = areas.last.clone(sdf, vdims=vdims)
-        return stacked
+        return Overlay(stacked.values()) if is_overlay else stacked
