@@ -1809,6 +1809,8 @@ class inspect(Operation):
     streams = param.ClassSelector(default=dict(x=PointerXY.param.x,
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
+
+    inspector_instance = param.ClassSelector(default=None, class_=Operation, precedence=-1)
     x = param.Number(default=0)
     y = param.Number(default=0)
     _dispatch = {}
@@ -1817,13 +1819,27 @@ class inspect(Operation):
     def mask(self):
         raise NotImplementedError('The mask property is not available for %s inspector.' %
                                   self.__class__.__name__)
+
+    def _update_hits(self, event):
+        self.hits = event.obj.hits
+
     def _process(self, raster, key=None):
-        inspect_operation = self._dispatch[self.get_input_type(raster.pipeline.operations)]
-        return inspect_operation(raster, pixels=self.p.pixels,
-                                 null_value=self.p.null_value,
-                                 value_bounds=self.p.value_bounds,
-                                 max_indicators=self.p.max_indicators,
-                                 x=self.p.x, y=self.p.y, dynamic=False)
+        if self.p.inspector_instance is None:
+            input_type = self.get_input_type(raster.pipeline.operations)
+            inspect_operation = self._dispatch[input_type]
+            instance = inspect_operation.instance(pixels=self.p.pixels,
+                                                  null_value=self.p.null_value,
+                                                  value_bounds=self.p.value_bounds,
+                                                  max_indicators=self.p.max_indicators,
+                                                  x=self.p.x, y=self.p.y, dynamic=False)
+            self.inspector_instance = instance
+            self.inspector_instance.param.watch(self._update_hits, ['hits'])
+
+        return self.p.inspector_instance(raster, pixels=self.p.pixels,
+                                         null_value=self.p.null_value,
+                                         value_bounds=self.p.value_bounds,
+                                         max_indicators=self.p.max_indicators,
+                                         x=self.p.x, y=self.p.y, dynamic=False)
 
 
     def get_input_type(self, operations):
