@@ -1812,6 +1812,11 @@ class inspect(Operation):
     x = param.Number(default=0)
     y = param.Number(default=0)
     _dispatch = {}
+
+    @property
+    def mask(self):
+        raise NotImplementedError('The mask property is not available for %s inspector.' %
+                                  self.__class__.__name__)
     def _process(self, raster, key=None):
         inspect_operation = self._dispatch[self.get_input_type(raster.pipeline.operations)]
         return inspect_operation(raster, pixels=self.p.pixels,
@@ -1878,10 +1883,6 @@ class inspect_base(inspect):
                                   class_=(dict, list))
     x = param.Number(default=0)
     y = param.Number(default=0)
-
-    @property
-    def mask(self):
-        return inspect_mask.instance(pixels=self.p.pixels)
 
     def _process(self, raster, key=None):
         self._validate(raster)
@@ -1953,6 +1954,10 @@ class inspect_base(inspect):
 
 class inspect_points(inspect_base):
 
+    @property
+    def mask(self):
+        return inspect_mask.instance(pixels=self.p.pixels)
+
     @classmethod
     def _element(cls, raster, df):
         return Points(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
@@ -1972,6 +1977,10 @@ class inspect_points(inspect_base):
 
 
 class inspect_poly(inspect_base):
+
+    @property
+    def mask(self):
+        return inspect_mask.instance(pixels=self.p.pixels)
 
     @classmethod
     def _validate(cls, raster):
