@@ -1810,9 +1810,10 @@ class inspect(Operation):
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
 
-    inspector_instance = param.ClassSelector(default=None, class_=Operation, precedence=-1)
-    x = param.Number(default=0)
-    y = param.Number(default=0)
+    x = param.Number(default=0, doc="x-position to inspect.")
+
+    y = param.Number(default=0, doc="y-position to inspect.")
+
     _dispatch = {}
 
     @property
@@ -1823,26 +1824,25 @@ class inspect(Operation):
     def _update_hits(self, event):
         self.hits = event.obj.hits
 
+    @bothmethod
+    def instance(self_or_cls, **params):
+        inst = super(inspect, self_or_cls).instance(**params)
+        inst._op = None
+        return inst
+
     def _process(self, raster, key=None):
-        if self.p.inspector_instance is None:
-            input_type = self.get_input_type(raster.pipeline.operations)
-            inspect_operation = self._dispatch[input_type]
-            instance = inspect_operation.instance(pixels=self.p.pixels,
-                                                  null_value=self.p.null_value,
-                                                  value_bounds=self.p.value_bounds,
-                                                  max_indicators=self.p.max_indicators,
-                                                  x=self.p.x, y=self.p.y, dynamic=False)
-            self.inspector_instance = instance
-            self.inspector_instance.param.watch(self._update_hits, ['hits'])
+        input_type = self._get_input_type(raster.pipeline.operations)
+        inspect_operation = self._dispatch[input_type]
+        if self._op is None:
+            self._op = inspect_operation.instance()
+            self._op.param.watch(self._update_hits, 'hits')
+        elif not isinstance(self._op, inspect_operation):
+            raise ValueError("Cannot reuse inspect instance on different "
+                             "datashader input type.")
+        self._op.p = self.p
+        return self._op._process(raster)
 
-        return self.p.inspector_instance(raster, pixels=self.p.pixels,
-                                         null_value=self.p.null_value,
-                                         value_bounds=self.p.value_bounds,
-                                         max_indicators=self.p.max_indicators,
-                                         x=self.p.x, y=self.p.y, dynamic=False)
-
-
-    def get_input_type(self, operations):
+    def _get_input_type(self, operations):
         for op in operations:
             output_type = getattr(op, 'output_type', None)
             if output_type is not None:
@@ -1991,4 +1991,7 @@ class inspect_poly(inspect_base):
 
 
 
-inspect._dispatch = {Points : inspect_points, Polygons : inspect_poly}
+inspect._dispatch = {
+    Points: inspect_points,
+    Polygons: inspect_poly
+}
