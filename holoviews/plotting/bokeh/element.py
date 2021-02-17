@@ -619,7 +619,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # this will override theme if not set to the default 12pt
         title_font = self._fontsize('title').get('fontsize')
         if title_font != '12pt':
-            opts['text_font_size'] = value(title_font)
+            title_font = title_font if bokeh_version > '2.2.3' else value(title_font)
+            opts['text_font_size'] = title_font
         return opts
 
 
@@ -654,8 +655,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare', 'bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare', 'bare'])):
-            axis_props['axis_label_text_font_size'] = value('0pt')
-            axis_props['major_label_text_font_size'] = value('0pt')
+            zero_pt = '0pt' if bokeh_version > '2.2.3' else value('0pt')
+            axis_props['axis_label_text_font_size'] = zero_pt
+            axis_props['major_label_text_font_size'] = zero_pt
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
@@ -664,7 +666,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['axis_label_text_font_size'] = labelsize
             ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
             if ticksize:
-                axis_props['major_label_text_font_size'] = value(ticksize)
+                ticksize = ticksize if bokeh_version > '2.2.3' else value(ticksize)
+                axis_props['major_label_text_font_size'] = ticksize 
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
