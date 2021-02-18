@@ -672,6 +672,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)
             ticker = self.xticks if axis == 'x' else self.yticks
+            if isinstance(ticker, np.ndarray):
+                ticker = list(ticker)
             if isinstance(ticker, Ticker):
                 axis_props['ticker'] = ticker
             elif isinstance(ticker, int):
@@ -685,11 +687,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                              for t in ticks]
                     labels = [l if isinstance(l, util.basestring) else str(l)
                               for l in labels]
-                    axis_props['ticker'] = FixedTicker(ticks=ticks)
-                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
                 else:
-                    axis_props['ticker'] = FixedTicker(ticks=ticker)
-
+                    ticks, labels = ticker, None
+                if ticks and util.isdatetime(ticks[0]):
+                    ticks = [util.dt_to_int(tick, 'ms') for tick in ticks]
+                axis_props['ticker'] = FixedTicker(ticks=ticks)
+                if labels is not None:
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
         formatter = self.xformatter if axis == 'x' else self.yformatter
         if formatter:
             formatter = wrap_formatter(formatter, axis)

@@ -417,12 +417,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if an integer number of ticks is supplied and setting a
         rotation for the ticks.
         """
+        if isinstance(ticks, np.ndarray):
+            ticks = list(ticks)
         if isinstance(ticks, (list, tuple)) and all(isinstance(l, list) for l in ticks):
             axis.set_ticks(ticks[0])
             axis.set_ticklabels(ticks[1])
         elif isinstance(ticks, ticker.Locator):
             axis.set_major_locator(ticks)
-        elif not ticks and ticks is not None:
+        elif ticks is not None and not ticks:
             axis.set_ticks([])
         elif isinstance(ticks, int):
             if log:
