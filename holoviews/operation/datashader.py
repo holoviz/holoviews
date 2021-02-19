@@ -1818,8 +1818,7 @@ class inspect(Operation):
 
     @property
     def mask(self):
-        raise NotImplementedError('The mask property is not available for %s inspector.' %
-                                  self.__class__.__name__)
+        return inspect_mask.instance(pixels=self.p.pixels)
 
     def _update_hits(self, event):
         self.hits = event.obj.hits
@@ -1932,10 +1931,6 @@ class inspect_base(inspect):
 
 class inspect_points(inspect_base):
 
-    @property
-    def mask(self):
-        return inspect_mask.instance(pixels=self.p.pixels)
-
     @classmethod
     def _element(cls, raster, df):
         return Points(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
@@ -1955,10 +1950,6 @@ class inspect_points(inspect_base):
 
 
 class inspect_poly(inspect_base):
-
-    @property
-    def mask(self):
-        return inspect_mask.instance(pixels=self.p.pixels)
 
     @classmethod
     def _validate(cls, raster):
