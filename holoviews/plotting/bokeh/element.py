@@ -1981,7 +1981,7 @@ class ColorbarPlot(ElementPlot):
                 elif util.is_number(low) and low <= 0:
                     self.param.warning(
                         "Log color mapper lower bound <= 0 and will not "
-                        "render corrrectly. Ensure you set a positive "
+                        "render correctly. Ensure you set a positive "
                         "lower bound on the color dimension or using "
                         "the `clim` option."
                     )
