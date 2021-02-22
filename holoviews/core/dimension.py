@@ -348,13 +348,6 @@ class Dimension(param.Parameterized):
         """
         return hash(self.spec)
 
-    def __setstate__(self, d):
-        """
-        Compatibility for pickles before alias attribute was introduced.
-        """
-        super(Dimension, self).__setstate__(d)
-        self.label = self.name
-
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
 
