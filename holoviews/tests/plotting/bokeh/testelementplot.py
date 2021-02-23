@@ -40,7 +40,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        self.assertEqual(fig.title.text_font_size, {'value': '24pt'})
+        if bokeh_version > '2.2.3':
+            self.assertEqual(fig.title.text_font_size, '24pt')
+        else:
+            self.assertEqual(fig.title.text_font_size, {'value': '24pt'})
         if bokeh_version < '2.0.2':
             self.assertEqual(xaxis.axis_label_text_font_size, '20pt')
             self.assertEqual(yaxis.axis_label_text_font_size, '20pt')
@@ -58,7 +61,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        self.assertEqual(fig.title.text_font_size, {'value': '28pt'})
+        if bokeh_version > '2.2.3':
+            self.assertEqual(fig.title.text_font_size, '28pt')
+        else:
+            self.assertEqual(fig.title.text_font_size, {'value': '28pt'})
         self.assertEqual(xaxis.axis_label_text_font_size, '28pt')
         self.assertEqual(yaxis.axis_label_text_font_size, '28pt')
         if bokeh_version < '2.0.2':
@@ -76,7 +82,10 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         fig = plot.state
         xaxis = plot.handles['xaxis']
         yaxis = plot.handles['yaxis']
-        self.assertEqual(fig.title.text_font_size, {'value': '200%'})
+        if bokeh_version > '2.2.3':
+            self.assertEqual(fig.title.text_font_size, '200%')
+        else:
+            self.assertEqual(fig.title.text_font_size, {'value': '200%'})
         self.assertEqual(xaxis.axis_label_text_font_size, '24pt')
         self.assertEqual(xaxis.major_label_text_font_size, '2.4em')
         if bokeh_version < '2.0.2':
