@@ -1949,12 +1949,12 @@ class inspect_points(inspect_base):
 
 
 
-class inspect_poly(inspect_base):
+class inspect_polygons(inspect_base):
 
     @classmethod
     def _validate(cls, raster):
         if 'spatialpandas' not in raster.dataset.interface.datatype:
-            raise ValueError("inspect_poly only supports spatialpandas datatypes.")
+            raise ValueError("inspect_polygons only supports spatialpandas datatypes.")
 
     @classmethod
     def _element(cls, raster, df):
@@ -1984,5 +1984,5 @@ class inspect_poly(inspect_base):
 
 inspect._dispatch = {
     Points: inspect_points,
-    Polygons: inspect_poly
+    Polygons: inspect_polygons
 }
