@@ -1105,35 +1105,35 @@ class InspectorTests(ComparisonTestCase):
     """
     def setUp(self):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
-        self.img = rasterize(points, dynamic=False,
+        self.pntsimg = rasterize(points, dynamic=False,
                              x_range=(0, 1), y_range=(0, 1), width=4, height=4)
 
     def tearDown(self):
         Tap.x, Tap.y = None, None
 
     def test_points_inspection_1px_mask(self):
-        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=1, x=-0.1, y=-0.1)
+        points = inspect_points(self.pntsimg, max_indicators=3, dynamic=False, pixels=1, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([]))
         self.assertEqual(points.dimension_values('y'), np.array([]))
 
     def test_points_inspection_2px_mask(self):
-        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=2, x=-0.1, y=-0.1)
+        points = inspect_points(self.pntsimg, max_indicators=3, dynamic=False, pixels=2, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([0.2]))
         self.assertEqual(points.dimension_values('y'), np.array([0.3]))
 
     def test_points_inspection_4px_mask(self):
-        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=4, x=-0.1, y=-0.1)
+        points = inspect_points(self.pntsimg, max_indicators=3, dynamic=False, pixels=4, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4]))
         self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7]))
 
     def test_points_inspection_5px_mask(self):
-        points = inspect_points(self.img, max_indicators=3, dynamic=False, pixels=5, x=-0.1, y=-0.1)
+        points = inspect_points(self.pntsimg, max_indicators=3, dynamic=False, pixels=5, x=-0.1, y=-0.1)
         self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4, 0]))
         self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7, 0.99]))
 
     def test_points_inspection_dict_streams(self):
         Tap.x, Tap.y = 0.4, 0.7
-        points = inspect_points(self.img, max_indicators=3, dynamic=True,
+        points = inspect_points(self.pntsimg, max_indicators=3, dynamic=True,
                                 pixels=1, streams=dict(x=Tap.param.x, y=Tap.param.y))
         self.assertEqual(len(points.streams), 1)
         self.assertEqual(isinstance(points.streams[0], Tap), True)
@@ -1144,7 +1144,7 @@ class InspectorTests(ComparisonTestCase):
         Tap.x, Tap.y = 0.2, 0.3
         inspector = inspect_points.instance(max_indicators=3, dynamic=True, pixels=1,
                                             streams=dict(x=Tap.param.x, y=Tap.param.y))
-        points = inspector(self.img)
+        points = inspector(self.pntsimg)
         self.assertEqual(len(points.streams), 1)
         self.assertEqual(isinstance(points.streams[0], Tap), True)
         self.assertEqual(points.streams[0].x, 0.2)
