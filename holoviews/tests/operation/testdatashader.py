@@ -18,7 +18,7 @@ try:
     from holoviews.core.util import pd
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, spread, rasterize, inspect_points, AggregationOperation
+        shade, spread, rasterize, datashade, inspect_points, inspect_polygons, AggregationOperation
     )
 except:
     raise SkipTest('Datashader not available')
@@ -1107,6 +1107,16 @@ class InspectorTests(ComparisonTestCase):
         points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
         self.pntsimg = rasterize(points, dynamic=False,
                              x_range=(0, 1), y_range=(0, 1), width=4, height=4)
+        if spatialpandas is None:
+            return
+
+        xs1 = [1, 2, 3]; xs2 = [6, 7, 3];ys1 = [2, 0, 7]; ys2 = [7, 5, 2]
+        holes = [ [[(1.5, 2), (2, 3), (1.6, 1.6)], [(2.1, 4.5), (2.5, 5), (2.3, 3.5)]],]
+        polydata = [{'x': xs1, 'y': ys1, 'holes': holes, 'z': 1},
+                    {'x': xs2, 'y': ys2, 'holes': [[]], 'z': 2}]
+        self.polysrgb = datashade(Polygons(polydata, vdims=['z'],
+                                           datatype=['spatialpandas']),
+                                  x_range=(0, 7), y_range=(0, 7), dynamic=False)
 
     def tearDown(self):
         Tap.x, Tap.y = None, None
@@ -1149,3 +1159,11 @@ class InspectorTests(ComparisonTestCase):
         self.assertEqual(isinstance(points.streams[0], Tap), True)
         self.assertEqual(points.streams[0].x, 0.2)
         self.assertEqual(points.streams[0].y, 0.3)
+
+    def test_polys_inspection_1px_mask(self):
+        if spatialpandas is None:
+            raise SkipTest('Polygon inspect tests require spatialpandas')
+        polys = inspect_polygons(self.polysrgb,
+                                 max_indicators=3, dynamic=False, pixels=1, x=-6, y=5)
+        self.assertEqual(polys.dimension_values('x'), np.array([6, 3, 7, 6]))
+        self.assertEqual(polys.dimension_values('y'), np.array([7, 2, 5, 7]))
