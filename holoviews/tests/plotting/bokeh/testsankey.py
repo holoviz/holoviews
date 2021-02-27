@@ -24,7 +24,7 @@ class TestSankeyPlot(TestBokehPlot):
         self.assertEqual(scatter_source.data['index'], scatter_index)
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([145.454545, 395.454545, 48.787879, 229.090909, 430.30303]),
+                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
         for k in text_data:
             self.assertEqual(text_source.data[k], text_data[k])
@@ -33,9 +33,8 @@ class TestSankeyPlot(TestBokehPlot):
             'index': scatter_index,
             'x0': [0, 0, 985.0, 985.0, 985.0],
             'x1': [15, 15, 1000.0, 1000.0, 1000.0],
-            'y0': [19.999999999999588, 290.90909090909054, 2.842170943040401e-14,
-                   117.57575757575768, 360.60606060606057],
-            'y1': [270.90909090909054, 500.0, 97.57575757575768, 340.60606060606057, 500.0]
+            'y0': [0.0, 270.9090909090908, -7.105427357601002e-15, 117.57575757575756, 360.6060606060606],
+            'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
         }
         for k in quad_data:
             self.assertEqual(quad_source.data[k], quad_data[k])
@@ -66,7 +65,7 @@ class TestSankeyPlot(TestBokehPlot):
         self.assertEqual(scatter_source.data['index'], scatter_index)
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([145.454545, 395.454545, 48.787879, 229.090909, 430.30303]),
+                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
         for k in text_data:
             self.assertEqual(text_source.data[k], text_data[k])
@@ -83,4 +82,3 @@ class TestSankeyPlot(TestBokehPlot):
         graph_renderer = plot.handles['glyph_renderer']
         self.assertTrue(renderers.index(graph_renderer)<renderers.index(quad_renderer))
         self.assertTrue(renderers.index(quad_renderer)<renderers.index(text_renderer))
-

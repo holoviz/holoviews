@@ -314,6 +314,7 @@ class TestSankey(ComparisonTestCase):
                 'value': 1,
                 'depth': 0,
                 'height': 1,
+                'column': 0,
                 'x0': 0,
                 'x1': 15,
                 'y0': 0.0,
@@ -325,13 +326,14 @@ class TestSankey(ComparisonTestCase):
                 'value': 1,
                 'depth': 1,
                 'height': 0,
+                'column': 1,
                 'x0': 985.0,
                 'x1': 1000.0,
                 'y0': 0.0,
                 'y1': 500.0},
             'value': 1,
             'width': 500.0,
-            'y0': 0.0,
-            'y1': 0.0
+            'y0': 250.0,
+            'y1': 250.0
         }
         self.assertEqual(links[0], link)
