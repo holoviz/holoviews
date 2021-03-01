@@ -1153,6 +1153,13 @@ class InspectorTests(ComparisonTestCase):
         self.assertEqual(points.dimension_values('x'), np.array([0.2, 0.4, 0]))
         self.assertEqual(points.dimension_values('y'), np.array([0.3, 0.7, 0.99]))
 
+    def test_inspection_5px_mask_points_df(self):
+        inspector = inspect.instance(max_indicators=3, dynamic=False, pixels=5,
+                                     x=-0.1, y=-0.1)
+        inspector(self.pntsimg)
+        self.assertEqual(list(inspector.hits['x']),[0.2,0.4,0.0])
+        self.assertEqual(list(inspector.hits['y']),[0.3,0.7,0.99])
+
     def test_points_inspection_dict_streams(self):
         Tap.x, Tap.y = 0.4, 0.7
         points = inspect_points(self.pntsimg, max_indicators=3, dynamic=True,
@@ -1179,6 +1186,18 @@ class InspectorTests(ComparisonTestCase):
                                  max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
         self.assertEqual(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
                                          vdims='z'))
+
+
+    def test_inspection_1px_mask_poly_df(self):
+        if spatialpandas is None:
+            raise SkipTest('Polygon inspect tests require spatialpandas')
+        inspector = inspect.instance(max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
+        inspector(self.polysrgb)
+        self.assertEqual(len(inspector.hits), 1)
+        data = [[6.0, 7.0, 3.0, 2.0, 7.0, 5.0, 6.0, 7.0]]
+        self.assertEqual(inspector.hits.iloc[0].geometry,
+                         spatialpandas.geometry.polygon.Polygon(data))
+
 
     def test_polys_inspection_1px_mask_miss(self):
         if spatialpandas is None:
