@@ -39,7 +39,7 @@ Bug fixes:
 
 - Ensure link_inputs parameter on operations is passed to apply
   ([#4795](https://github.com/holoviz/holoviews/pull/4795))
-- Add single value numpy array to HLine and VLine input
+- Support single-value numpy array as input to HLine and VLine
   ([#4798](https://github.com/holoviz/holoviews/pull/4798))
 - Check for nested dim dependencies
   ([#4785](https://github.com/holoviz/holoviews/pull/4785))
