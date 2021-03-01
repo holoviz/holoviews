@@ -1160,10 +1160,18 @@ class InspectorTests(ComparisonTestCase):
         self.assertEqual(points.streams[0].x, 0.2)
         self.assertEqual(points.streams[0].y, 0.3)
 
-    def test_polys_inspection_1px_mask(self):
+    def test_polys_inspection_1px_mask_hit(self):
         if spatialpandas is None:
             raise SkipTest('Polygon inspect tests require spatialpandas')
         polys = inspect_polygons(self.polysrgb,
-                                 max_indicators=3, dynamic=False, pixels=1, x=-6, y=5)
-        self.assertEqual(polys.dimension_values('x'), np.array([6, 3, 7, 6]))
-        self.assertEqual(polys.dimension_values('y'), np.array([7, 2, 5, 7]))
+                                 max_indicators=3, dynamic=False, pixels=1, x=6, y=5)
+        self.assertEqual(polys, Polygons([{'x': [6, 3, 7], 'y': [7, 2, 5], 'z': 2}],
+                                         vdims='z'))
+
+
+    def test_polys_inspection_1px_mask_miss(self):
+        if spatialpandas is None:
+            raise SkipTest('Polygon inspect tests require spatialpandas')
+        polys = inspect_polygons(self.polysrgb,
+                                 max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
+        self.assertEqual(polys, Polygons([], vdims='z'))
