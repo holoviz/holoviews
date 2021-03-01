@@ -32,15 +32,15 @@ Enhancements:
   ([#4836](https://github.com/holoviz/holoviews/pull/4836))
 - Handle arrays and datetime ticks
   ([#4831](https://github.com/holoviz/holoviews/pull/4831))
-- Fix for muted option on overlaid Bokeh plots
-  ([#4830](https://github.com/holoviz/holoviews/pull/4830))
+- Support single-value numpy array as input to HLine and VLine
+  ([#4798](https://github.com/holoviz/holoviews/pull/4798))
 
 Bug fixes:
 
 - Ensure link_inputs parameter on operations is passed to apply
   ([#4795](https://github.com/holoviz/holoviews/pull/4795))
-- Support single-value numpy array as input to HLine and VLine
-  ([#4798](https://github.com/holoviz/holoviews/pull/4798))
+- Fix for muted option on overlaid Bokeh plots
+  ([#4830](https://github.com/holoviz/holoviews/pull/4830))
 - Check for nested dim dependencies
   ([#4785](https://github.com/holoviz/holoviews/pull/4785))
 - Fixed np.nanmax call when computing ranges
