@@ -24,7 +24,7 @@ except:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset, Overlay, OrderedDict)
+                    CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
@@ -1958,8 +1958,11 @@ class inspect_polygons(inspect_base):
 
     @classmethod
     def _element(cls, raster, df):
-        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
-            color_index=None)
+        polygons = Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
+        if Store.loaded_backends() != []:
+            return polygons.opts(color_index=None)
+        else:
+            return polygons
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
