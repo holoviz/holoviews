@@ -28,7 +28,7 @@ Enhancements:
   ([#4792](https://github.com/holoviz/holoviews/pull/4792))
 - Disable zoom on axis for geographic plots
   ([#4812](https://github.com/holoviz/holoviews/pull/4812)
-- Fix Area stack classmethod for non-aligned data
+- Add support for non-aligned data in Area stack classmethod
   ([#4836](https://github.com/holoviz/holoviews/pull/4836))
 - Handle arrays and datetime ticks
   ([#4831](https://github.com/holoviz/holoviews/pull/4831))
