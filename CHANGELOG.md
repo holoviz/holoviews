@@ -50,8 +50,8 @@ Major features:
   ([#4686](https://github.com/holoviz/holoviews/pull/4686))
 - New IbisInterface
   ([#4517](https://github.com/holoviz/holoviews/pull/4517))
-- Greatly improved Datashader `rasterize()` 
-  ([#4567](https://github.com/holoviz/holoviews/pull/4567)). 
+- Greatly improved Datashader `rasterize()`
+  ([#4567](https://github.com/holoviz/holoviews/pull/4567)).
   Previously, many of the features of Datashader were available only
   through `datashade`, which rendered data all the way to RGB pixels
   and thus prevented many client-side Bokeh features like hover,
@@ -63,7 +63,7 @@ Major features:
   the [Large Data User
   Guide](https://holoviews.org/user_guide/Large_Data.html) for more
   information.
-  
+
 Enhancements:
 
 - Implemented datashader aggregation of Rectangles
@@ -114,7 +114,7 @@ Compatibility:
 - Set histogram `normed` option to False by default
   ([#4258](https://github.com/holoviz/holoviews/pull/4258))
 - The default colormap in holoviews is now 'kbc_r' instead of
-  'fire'; see issue 
+  'fire'; see issue
   [#3500](https://github.com/holoviz/holoviews/issues/3500) for details.
   This change was made mainly because the highest value of the fire colormap
   is white, which meant data was often not visible against a white
