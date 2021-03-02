@@ -22,8 +22,6 @@ Enhancements:
   ([#4787](https://github.com/holoviz/holoviews/pull/4787),
    [#4818](https://github.com/holoviz/holoviews/pull/4818),
    [#4822](https://github.com/holoviz/holoviews/pull/4822))
-- Added inspect datashader operation supporting points and polygons
-  ([#4794](https://github.com/holoviz/holoviews/pull/4794))
 - Support spatialpandas DaskGeoDataFrame
   ([#4792](https://github.com/holoviz/holoviews/pull/4792))
 - Disable zoom on axis for geographic plots
