@@ -60,6 +60,8 @@ Bug fixes:
 -  Miscellaneous fixes for the Bokeh plotting extension
    (`#4814 <https://github.com/holoviz/holoviews/pull/4814>`__,
    `#4839 <https://github.com/holoviz/holoviews/pull/4839>`__)
+-  Miscellaneous fixes for index based linked selections
+   (`#4776 <https://github.com/holoviz/holoviews/pull/4776>`__)
 
 Documentation:
 
