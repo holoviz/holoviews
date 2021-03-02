@@ -7,6 +7,8 @@ Version 1.14
 Version 1.14.2
 ==============
 
+Date: 2021-03-02
+
 This release adds support for Bokeh 2.3, introduces a number of minor
 enhancements, miscellaneous documentation improvements and a good number
 of bug fixes.
