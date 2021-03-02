@@ -34,7 +34,7 @@ extras_require["recommended"] = extras_require["notebook"] + [
 extras_require["examples"] = extras_require["recommended"] + [
     "networkx",
     "pillow",
-    "xarray >=0.10.4",
+    "xarray >=0.10.4,<0.17.0",
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
