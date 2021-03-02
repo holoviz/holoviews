@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import copy
 import math
 import warnings
 from types import FunctionType
@@ -979,6 +980,8 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(self.color_levels, list):
                     palette, (vmin, vmax) = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
             cmap = mpl_colors.ListedColormap(palette)
+
+        cmap = copy.copy(cmap)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
