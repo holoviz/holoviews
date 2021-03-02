@@ -1,3 +1,72 @@
+Version 1.14.2
+==============
+
+This release adds support for Bokeh 2.3, introduces a number of minor
+enhancements, miscellaneous documentation improvements and a good number
+of bug fixes.
+
+Many thanks to the many contributors to this release, whether directly
+by submitting PRs or by reporting issues and making
+suggestions. Specifically, we would like to thank @philippjfr for the
+Bokeh 2.3 compatibility updates, @kcpevey, @timgates42, and @scottstanie
+for documentation improvements as well as @Hoxbro and @LunarLanding for
+various bug fixes. In addition, thanks to the maintainers @jbednar,
+@jlstevens and @philippjfr for contributing to this release.
+
+Enhancements:
+
+- Bokeh 2.3 compatibility
+  ([#4805](https://github.com/holoviz/holoviews/pull/4805),
+  [#4809](https://github.com/holoviz/holoviews/pull/4809))
+- Supporting dictionary streams parameter in DynamicMaps and operations
+  ([#4787](https://github.com/holoviz/holoviews/pull/4787),
+   [#4818](https://github.com/holoviz/holoviews/pull/4818),
+   [#4822](https://github.com/holoviz/holoviews/pull/4822))
+- Support spatialpandas DaskGeoDataFrame
+  ([#4792](https://github.com/holoviz/holoviews/pull/4792))
+- Disable zoom on axis for geographic plots
+  ([#4812](https://github.com/holoviz/holoviews/pull/4812)
+- Add support for non-aligned data in Area stack classmethod
+  ([#4836](https://github.com/holoviz/holoviews/pull/4836))
+- Handle arrays and datetime ticks
+  ([#4831](https://github.com/holoviz/holoviews/pull/4831))
+- Support single-value numpy array as input to HLine and VLine
+  ([#4798](https://github.com/holoviz/holoviews/pull/4798))
+
+Bug fixes:
+
+- Ensure link_inputs parameter on operations is passed to apply
+  ([#4795](https://github.com/holoviz/holoviews/pull/4795))
+- Fix for muted option on overlaid Bokeh plots
+  ([#4830](https://github.com/holoviz/holoviews/pull/4830))
+- Check for nested dim dependencies
+  ([#4785](https://github.com/holoviz/holoviews/pull/4785))
+- Fixed np.nanmax call when computing ranges
+  ([#4847](https://github.com/holoviz/holoviews/pull/4847))
+- Fix for Dimension pickling
+  ([#4843](https://github.com/holoviz/holoviews/pull/4843))
+- Fixes for dask backed elements in plotting
+  ([#4813](https://github.com/holoviz/holoviews/pull/4813))
+- Handle isfinite for NumPy and Pandas masked arrays
+  ([#4817](https://github.com/holoviz/holoviews/pull/4817))
+- Fix plotting Graph on top of Tiles/Annotation
+  ([#4828](https://github.com/holoviz/holoviews/pull/4828))
+- Miscellaneous fixes for the Bokeh plotting extension
+  ([#4814](https://github.com/holoviz/holoviews/pull/4814),
+  [#4839](https://github.com/holoviz/holoviews/pull/4839))
+- Miscellaneous fixes for index based linked selections
+  ([#4776](https://github.com/holoviz/holoviews/pull/4776))
+
+Documentation:
+
+- Expanded on Tap Stream example in Reference Gallery
+  [#4782](https://github.com/holoviz/holoviews/pull/4782)
+- Miscellaneous typo and broken link fixes
+  ([#4783](https://github.com/holoviz/holoviews/pull/4783),
+  [#4827](https://github.com/holoviz/holoviews/pull/4827),
+  [#4844](https://github.com/holoviz/holoviews/pull/4844),
+  [#4811](https://github.com/holoviz/holoviews/pull/4811))
+
 Version 1.14.1
 ==============
 
@@ -50,8 +119,8 @@ Major features:
   ([#4686](https://github.com/holoviz/holoviews/pull/4686))
 - New IbisInterface
   ([#4517](https://github.com/holoviz/holoviews/pull/4517))
-- Greatly improved Datashader `rasterize()` 
-  ([#4567](https://github.com/holoviz/holoviews/pull/4567)). 
+- Greatly improved Datashader `rasterize()`
+  ([#4567](https://github.com/holoviz/holoviews/pull/4567)).
   Previously, many of the features of Datashader were available only
   through `datashade`, which rendered data all the way to RGB pixels
   and thus prevented many client-side Bokeh features like hover,
@@ -63,7 +132,7 @@ Major features:
   the [Large Data User
   Guide](https://holoviews.org/user_guide/Large_Data.html) for more
   information.
-  
+
 Enhancements:
 
 - Implemented datashader aggregation of Rectangles
@@ -114,7 +183,7 @@ Compatibility:
 - Set histogram `normed` option to False by default
   ([#4258](https://github.com/holoviz/holoviews/pull/4258))
 - The default colormap in holoviews is now 'kbc_r' instead of
-  'fire'; see issue 
+  'fire'; see issue
   [#3500](https://github.com/holoviz/holoviews/issues/3500) for details.
   This change was made mainly because the highest value of the fire colormap
   is white, which meant data was often not visible against a white
