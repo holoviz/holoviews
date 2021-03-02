@@ -13,7 +13,7 @@ setup_args = {}
 install_requires = [
     "param >=1.9.3,<2.0",
     "numpy >=1.0",
-    "pyviz_comms >=0.7.3",
+    "pyviz_comms >=0.7.4",
     "panel >=0.8.0",
     "colorcet",
     "pandas",
