@@ -2284,7 +2284,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if tool:
                 tool_renderers = [] if tool.renderers == 'auto' else tool.renderers
                 hover_renderers = [] if hover.renderers == 'auto' else hover.renderers
-                renderers = tool_renderers + hover_renderers
+                renderers = [r for r in tool_renderers + hover_renderers if r is not None]
                 tool.renderers = list(util.unique_iterator(renderers))
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
