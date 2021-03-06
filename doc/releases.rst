@@ -5,7 +5,7 @@ Version 1.14
 ~~~~~~~~~~~~
 
 Version 1.14.2
-==============
+**************
 
 Date: 2021-03-02
 
@@ -76,7 +76,7 @@ Documentation:
    `#4811 <https://github.com/holoviz/holoviews/pull/4811>`__)
 
 Version 1.14.1
-==============
+**************
 
 Date: 2020-12-22
 
