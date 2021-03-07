@@ -19,3 +19,16 @@ def task_pip_on_conda():
 import pyctdev._conda
 python_develop = 'python -m pip install --no-deps --no-build-isolation -e .'
 pyctdev._conda.python_develop = python_develop
+
+from pyctdev._conda import _join_the_club, get_buildreqs
+
+
+def _conda_build_deps(channel):
+    buildreqs = get_buildreqs()
+    deps = " ".join('"%s"'%_join_the_club(dep) for dep in buildreqs)
+    if len(buildreqs)>0:
+        return "mamba install -y %s %s"%(" ".join(['-c %s'%c for c in channel]),deps)
+    else:
+        return echo("Skipping conda install (no build dependencies)")
+
+pyctdev._conda._conda_build_deps = _conda_build_deps

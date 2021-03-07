@@ -54,6 +54,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
+          conda install mamba -c conda-forge
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
