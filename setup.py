@@ -66,7 +66,7 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require['tests'] = [
     'nose',
     'mock',
-    'flake8 ==3.6.0',
+    'flake8',
     'coveralls',
     'path.py',
     'matplotlib >=2.2,<3.1',
