@@ -15,10 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest', 'macos-latest', 'windows-latest']
-        python-version: [2.7, 3.6, 3.7]
-        exclude:
-          - os: windows-latest
-            python-version: 2.7
+        python-version: [3.6, 3.7, 3.8]
+        # exclude:
+        #   - os: windows-latest
+        #     python-version: 2.7
     timeout-minutes: 60
     defaults:
       run:
@@ -27,10 +27,11 @@ jobs:
       DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev"
-      CHANS: "-c pyviz"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh/label/dev -c conda-forge"
+      CHANS: "-c pyviz -c conda-forge"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      MAMBA_NO_BANNER: 1
     steps:
       - uses: actions/checkout@v2
         with:
@@ -62,25 +63,25 @@ jobs:
           git describe
           echo "======"
           conda list
-      - name: bokeh update
-        if: startsWith(matrix.python-version, 3.)
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install -c pyviz "bokeh>=2.3" "panel>=0.11"
-      - name: datashader pin
-        if: startsWith(matrix.python-version, 2.)
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install -c pyviz "datashader=0.11.1"
-      - name: matplotlib patch
-        if: startsWith(matrix.python-version, 3.)
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install matplotlib=3.0.3 --no-deps
-          python -c "import matplotlib; print(matplotlib.__version__);"
+      # - name: bokeh update
+      #   if: startsWith(matrix.python-version, 3.)
+      #   run: |
+      #     eval "$(conda shell.bash hook)"
+      #     conda activate test-environment
+      #     conda install "bokeh>=2.2"
+      # - name: datashader pin
+      #   if: startsWith(matrix.python-version, 2.)
+      #   run: |
+      #     eval "$(conda shell.bash hook)"
+      #     conda activate test-environment
+      #     conda install -c pyviz "datashader=0.11.1"
+      # - name: matplotlib patch
+      #   if: startsWith(matrix.python-version, 3.)
+      #   run: |
+      #     eval "$(conda shell.bash hook)"
+      #     conda activate test-environment
+      #     conda install matplotlib=3.0.3 --no-deps
+      #     python -c "import matplotlib; print(matplotlib.__version__);"
       - name: doit env_capture
         run: |
           eval "$(conda shell.bash hook)"
