@@ -67,8 +67,8 @@ class TestSpikesPlot(TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
-        self.assertEqual(x_range[0], 736054.80000000005)
-        self.assertEqual(x_range[1], 736057.19999999995)
+        self.assertEqual(x_range[0], 16891.8)
+        self.assertEqual(x_range[1], 16894.2)
 
     def test_spikes_padding_datetime_square_heights(self):
         spikes = Spikes([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)], vdims=['Height']).options(
@@ -76,8 +76,8 @@ class TestSpikesPlot(TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(spikes)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
-        self.assertEqual(x_range[0], 736054.80000000005)
-        self.assertEqual(x_range[1], 736057.19999999995)
+        self.assertEqual(x_range[0], 16891.8)
+        self.assertEqual(x_range[1], 16894.2)
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
 
@@ -87,8 +87,8 @@ class TestSpikesPlot(TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(spikes)
         x_range = plot.handles['axis'].get_xlim()
-        self.assertEqual(x_range[0], 736054.90000000002)
-        self.assertEqual(x_range[1], 736057.09999999998)
+        self.assertEqual(x_range[0], 16891.9)
+        self.assertEqual(x_range[1], 16894.1)
 
     ###########################
     #    Styling mapping      #
