@@ -52,7 +52,7 @@ if sys.version_info.major > 2:
     extras_require["examples"].extend(
         [
             "spatialpandas",
-            "pyarrow <1.0",
+            "pyarrow",
             "ibis-framework >=1.3",
         ]  # spatialpandas incompatibility
     )
@@ -69,7 +69,7 @@ extras_require['tests'] = [
     'flake8',
     'coveralls',
     'path.py',
-    'matplotlib >=3,<3.1',
+    'matplotlib >=3',
     'nbsmoke >=0.2.0',
     'nbconvert <6',
     'twine',
@@ -81,7 +81,7 @@ extras_require["unit_tests"] = extras_require["examples"] + extras_require["test
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
-    + ["matplotlib >=3.0", "bokeh >=1.1.0", "pandas"]
+    + ["matplotlib >=3", "bokeh >=1.1.0", "pandas"]
     + extras_require["notebook"]
 )
 
