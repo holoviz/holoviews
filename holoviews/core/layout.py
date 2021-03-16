@@ -23,6 +23,13 @@ class Composable(object):
         "Compose objects into a Layout"
         return Layout([self, obj])
 
+    def __radd__(self, other):
+        if isinstance(other, list): # Hack for Annotators?
+            return NotImplemented
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are using `sum(elements)` to combine a list of elements,"
+                            "we recommend you to use `Layout(elements)` instead.")
 
     def __lshift__(self, other):
         "Compose objects into an AdjointLayout"
@@ -309,6 +316,12 @@ class AdjointLayout(Dimensioned):
         "Composes plot into a Layout with another object."
         return Layout([self, obj])
 
+    def __radd__(self, other):
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are using `sum(elements)` to combine a list of elements,"
+                            "we recommend you to use `Layout(elements)` instead.")
+        return super(AdjointLayout, self).__radd__(self, other)
 
     def __len__(self):
         "Number of items in the AdjointLayout"
@@ -378,6 +391,13 @@ class NdLayout(UniformNdMapping):
         "Composes the NdLayout with another object into a Layout"
         return Layout([self, obj])
 
+
+    def __radd__(self, other):
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are using `sum(elements)` to combine a list of elements,"
+                            "we recommend you to use `Layout(elements)` instead.")
+        return super(NdLayout, self).__radd__(self, other)
 
     @property
     def last(self):
