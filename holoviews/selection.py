@@ -110,11 +110,12 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Create stream that produces element that displays region of selection
         selection_expr_seq = SelectionExprSequence(
-            hvobj, mode=self.selection_mode, include_region=self.show_regions,
+            hvobj, mode=self.selection_mode,
+            include_region=self.show_regions,
             index_cols=self.index_cols
         )
         self._selection_expr_streams[hvobj] = selection_expr_seq
-        self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
+        self._cross_filter_stream.append_input_stream(selection_expr_seq)
 
         self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
 
@@ -173,6 +174,10 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_transform(el, operations=operations)
                     for el in callback.inputs
                 ]).collate()
+            elif getattr(hvobj.callback, "name", None) == "dynamic_operation":
+                obj = callback.inputs[0]
+                return self._selection_transform(obj, operations=operations).apply(
+                    callback.operation)
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
                 return hvobj
