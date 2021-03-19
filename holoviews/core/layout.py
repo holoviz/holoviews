@@ -26,8 +26,8 @@ class Composable(object):
     def __radd__(self, other):
         if isinstance(other, int):
             raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
-                            "If you are using `sum(elements)` to combine a list of elements,"
-                            "we recommend you to use `Layout(elements)` instead.")
+                            "If you are trying to use a reduction like `sum(elements)` to combine a list of elements,"
+                            "we recommend you to use `Layout(elements)` (and similarly Overlay(elements) for making an overlay from a list) instead.")
 
     def __lshift__(self, other):
         "Compose objects into an AdjointLayout"
