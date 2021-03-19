@@ -111,7 +111,7 @@ class annotate(param.ParameterizedFunction):
             if isinstance(annotator, Layout):
                 l, ts = annotator
                 layers.append(l)
-                tables += ts
+                tables += list(ts)
             elif isinstance(annotator, annotate):
                 layers.append(annotator.plot)
                 tables += [t[0].object for t in annotator.editor]
