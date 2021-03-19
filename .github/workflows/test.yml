@@ -67,7 +67,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install "bokeh>=2.2"
+          conda install -c pyviz "bokeh>=2.3" "panel>=0.11"
       - name: datashader pin
         if: startsWith(matrix.python-version, 2.)
         run: |
