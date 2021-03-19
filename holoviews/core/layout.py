@@ -24,8 +24,6 @@ class Composable(object):
         return Layout([self, obj])
 
     def __radd__(self, other):
-        if isinstance(other, list): # Hack for Annotators?
-            return NotImplemented
         if isinstance(other, int):
             raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
                             "If you are using `sum(elements)` to combine a list of elements,"
