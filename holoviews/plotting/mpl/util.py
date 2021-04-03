@@ -17,7 +17,7 @@ from matplotlib.rcsetup import (
 
 try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import CapStyle as validate_capstyle
-    from matplotlib._enums import  JoinStyle as validate_joinstyle
+    from matplotlib._enums import JoinStyle as validate_joinstyle
 except:  # before Matplotlib 3.4.0
     from matplotlib.rcsetup import (
     validate_capstyle, validate_joinstyle)
