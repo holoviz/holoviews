@@ -20,7 +20,7 @@ try:  # starting Matplotlib 3.4.0
     from matplotlib._enums import  JoinStyle as validate_joinstyle
 except:  # before Matplotlib 3.4.0
     from matplotlib.rcsetup import (
-    validate_fontsize, validate_joinstyle)
+    validate_capstyle, validate_joinstyle)
 
 try:
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
