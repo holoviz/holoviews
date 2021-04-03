@@ -13,8 +13,14 @@ from matplotlib.markers import MarkerStyle
 from matplotlib.patches import Path, PathPatch
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 from matplotlib.rcsetup import (
-    validate_capstyle, validate_fontsize, validate_fonttype, validate_hatch,
-    validate_joinstyle)
+    validate_fontsize, validate_fonttype, validate_hatch)
+
+try:  # starting Matplotlib 3.4.0
+    from matplotlib._enums import CapStyle as validate_capstyle
+    from matplotlib._enums import  JoinStyle as validate_joinstyle
+except:  # before Matplotlib 3.4.0
+    from matplotlib.rcsetup import (
+    validate_fontsize, validate_joinstyle)
 
 try:
     from nc_time_axis import NetCDFTimeConverter, CalendarDateTime
