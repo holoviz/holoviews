@@ -132,6 +132,16 @@ class MultiInterface(Interface):
                        _validate_vdims=validate_vdims)
 
     @classmethod
+    def assign(cls, dataset, new_data):
+        ds = cls._inner_dataset_template(dataset)
+        assigned = []
+        for i, d in enumerate(dataset.data):
+            ds.data = d
+            new = ds.interface.assign(ds, {k: v[i:i+1] for k, v in new_data.items()})
+            assigned.append(new)
+        return assigned
+
+    @classmethod
     def dimension_type(cls, dataset, dim):
         if not dataset.data:
             # Note: Required to make empty datasets work at all (should fix)
