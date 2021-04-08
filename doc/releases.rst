@@ -4,6 +4,37 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.3
+**************
+
+This release contains a small number of bug fixes, enhancements and
+compatibility for the latest release of matplotlib. Many thanks to
+@stonebig, @Hoxbro, @jlstevens, @jbednar and @philippjfr.
+
+Enhancements:
+
+- Allow applying linked selections to chained ``DynamicMap``
+  (`#4870 <https://github.com/holoviz/holoviews/pull/4870>`__)
+- Issuing improved error message when ``__radd__`` called with an
+  integer (`#4868 <https://github.com/holoviz/holoviews/pull/4868>`__)
+- Implement ``MultiInterface.assign``
+  (`#4880 <https://github.com/holoviz/holoviews/pull/4880>`__)
+- Handle tuple unit on xarray attribute
+  (`#4881 <https://github.com/holoviz/holoviews/pull/4881>`__)
+- Support selection masks and expressions on gridded data
+  (`#4882 <https://github.com/holoviz/holoviews/pull/4882>`__)
+
+Bug fixes:
+
+- Handle empty renderers when merging ``HoverTool.renderers``
+  (`#4856 <https://github.com/holoviz/holoviews/pull/4856>`__)
+
+Compatibility:
+
+- Support matplotlib versions >=3.4
+  (`#4878 <https://github.com/holoviz/holoviews/pull/4878>`__)
+
+
 Version 1.14.2
 **************
 
