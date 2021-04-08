@@ -537,6 +537,9 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            return dataset.data.where(selection_mask, drop=True)
+
         validated = {}
         for k, v in selection.items():
             dim = dataset.get_dimension(k, strict=True)
