@@ -83,6 +83,8 @@ class XArrayInterface(GridInterface):
             dim = asdim(dim)
             coord = data[dim.name]
             unit = coord.attrs.get('units') if dim.unit is None else dim.unit
+            if isinstance(unit, tuple):
+                unit = unit[0]
             if 'long_name' in coord.attrs:
                 spec = (dim.name, coord.attrs['long_name'])
             else:
