@@ -662,6 +662,9 @@ class TestDatetimeUtils(unittest.TestCase):
 
     @pd_skip
     def test_timezone_to_int(self):
+        if py_version != 3:
+            raise SkipTest
+
         import pytz
         timezone = pytz.timezone("Europe/Copenhagen")
 
