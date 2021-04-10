@@ -660,6 +660,26 @@ class TestDatetimeUtils(unittest.TestCase):
         self.assertEqual(drange[0], start+np.timedelta64(50, 'ms'))
         self.assertEqual(drange[-1], end-np.timedelta64(50, 'ms'))
 
+    @pd_skip
+    def test_timezone_to_int(self):
+        if py_version != 3:
+            raise SkipTest
+
+        import pytz
+        timezone = pytz.timezone("Europe/Copenhagen")
+
+        values = [
+            datetime.datetime(2021, 4, 8, 12, 0, 0, 0),
+            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, datetime.timezone.utc),
+            datetime.datetime(2021, 4, 8, 12, 0, 0, 0, timezone),
+            datetime.date(2021, 4, 8),
+            np.datetime64(datetime.datetime(2021, 4, 8, 12, 0, 0, 0)),
+        ]
+
+        for value in values:
+            x1 = dt_to_int(value)
+            x2 = dt_to_int(pd.to_datetime(value))
+            self.assertEqual(x1, x2)
 
 class TestNumericUtilities(ComparisonTestCase):
 

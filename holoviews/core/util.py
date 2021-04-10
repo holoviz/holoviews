@@ -2110,12 +2110,13 @@ def dt_to_int(value, time_unit='us'):
         if isinstance(value, pd.Timestamp):
             try:
                 value = value.to_datetime64()
-            except:
+            except Exception:
                 value = np.datetime64(value.to_pydatetime())
     elif isinstance(value, cftime_types):
         return cftime_to_timestamp(value, time_unit)
 
-    if isinstance(value, dt.date):
+    # date class is a parent for datetime class
+    if isinstance(value, dt.date) and not isinstance(value, dt.datetime):
         value = dt.datetime(*value.timetuple()[:6])
 
     # Handle datetime64 separately
@@ -2124,7 +2125,7 @@ def dt_to_int(value, time_unit='us'):
             value = np.datetime64(value, 'ns')
             tscale = (np.timedelta64(1, time_unit)/np.timedelta64(1, 'ns'))
             return value.tolist()/tscale
-        except:
+        except Exception:
             # If it can't handle ns precision fall back to datetime
             value = value.tolist()
 
@@ -2135,8 +2136,12 @@ def dt_to_int(value, time_unit='us'):
 
     try:
         # Handle python3
-        return int(value.timestamp() * tscale)
-    except:
+        if value.tzinfo is None:
+            _epoch = dt.datetime(1970, 1, 1)
+        else:
+            _epoch = dt.datetime(1970, 1, 1, tzinfo=dt.timezone.utc)
+        return int((value - _epoch).total_seconds() * tscale)
+    except Exception:
         # Handle python2
         return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
 
