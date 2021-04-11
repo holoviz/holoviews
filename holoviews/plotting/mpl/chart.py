@@ -133,16 +133,18 @@ class ErrorPlot(ColorbarPlot):
             _, (bottoms, tops), verts = handles
         return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0], 'artist': verts[0]}
 
-
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
-        color = style.get('color')
+        color = style.pop('color', None)
         if isinstance(color, np.ndarray):
             style['ecolor'] = color
         if 'edgecolor' in style:
             style['ecolor'] = style.pop('edgecolor')
         c = style.get('c')
+        if 'linewidth' in style:
+            # Breaks if it is a numpy array, so forces it to be a list.
+            style["elinewidth"] = np.asarray(style.pop('linewidth')).tolist()
         if isinstance(c, np.ndarray):
             with abbreviated_exception():
                 raise ValueError('Mapping a continuous or categorical '
@@ -193,8 +195,8 @@ class ErrorPlot(ColorbarPlot):
             tops.set_ydata(tys)
         if 'ecolor' in style:
             verts.set_edgecolors(style['ecolor'])
-        if 'linewidth' in style:
-            verts.set_linewidths(style['linewidth'])
+        if 'elinewidth' in style:
+            verts.set_linewidths(style['elinewidth'])
 
         return axis_kwargs
 
