@@ -141,10 +141,10 @@ class ErrorPlot(ColorbarPlot):
             style['ecolor'] = color
         if 'edgecolor' in style:
             style['ecolor'] = style.pop('edgecolor')
-        c = style.get('c')
         if 'linewidth' in style:
-            # Breaks if it is a numpy array, so forces it to be a list.
+            # Raise ValueError if a numpy array, so needs to be a list.
             style["elinewidth"] = np.asarray(style.pop('linewidth')).tolist()
+        c = style.get('c')
         if isinstance(c, np.ndarray):
             with abbreviated_exception():
                 raise ValueError('Mapping a continuous or categorical '

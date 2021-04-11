@@ -208,7 +208,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph((edges, nodes)).options(node_alpha='alpha')
 
         if Version(mpl.__version__) < Version("3.4.0"):
-            # Python 3.6 only get matplotlib 3.3
+            # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(graph)
         else:
@@ -403,7 +403,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
 
         if Version(mpl.__version__) < Version("3.4.0"):
-            # Python 3.6 only get matplotlib 3.3
+            # Python 3.6 only support up to matplotlib 3.3
             with self.assertRaises(Exception):
                 mpl_renderer.get_plot(trimesh)
         else:
