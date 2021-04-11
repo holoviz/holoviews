@@ -125,12 +125,15 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(histogram)
 
-    # This does not raise exception anymore... Ok to delete it?
-    # def test_histogram_line_color_op(self):
-    #     histogram = Histogram([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
-    #                           vdims=['y', 'color']).options(edgecolor='color')
-    #     with self.assertRaises(Exception):
-    #         mpl_renderer.get_plot(histogram)
+    def test_histogram_line_color_op(self):
+        histogram = Histogram([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
+                              vdims=['y', 'color']).options(edgecolor='color')
+        plot = mpl_renderer.get_plot(histogram)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        self.assertEqual(children[0].get_edgecolor(), (0, 0, 0, 1))
+        self.assertEqual(children[1].get_edgecolor(), (1, 0, 0, 1))
+        self.assertEqual(children[2].get_edgecolor(), (0, 1, 0, 1))
 
     def test_histogram_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],
