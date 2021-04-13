@@ -16,7 +16,7 @@ install_requires = [
     "pyviz_comms >=0.7.4",
     "panel >=0.8.0",
     "colorcet",
-    "pandas",
+    "pandas >=0.20.0",
 ]
 
 extras_require = {}
@@ -164,8 +164,6 @@ setup_args.update(
         classifiers=[
             "License :: OSI Approved :: BSD License",
             "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python :: 2.7",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
