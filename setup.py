@@ -26,7 +26,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
-    "matplotlib >=2.2",
+    "matplotlib >=3",
     "bokeh >=1.1.0",
 ]
 
@@ -34,7 +34,7 @@ extras_require["recommended"] = extras_require["notebook"] + [
 extras_require["examples"] = extras_require["recommended"] + [
     "networkx",
     "pillow",
-    "xarray >=0.10.4,<0.17.0",
+    "xarray >=0.10.4",
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
@@ -52,7 +52,7 @@ if sys.version_info.major > 2:
     extras_require["examples"].extend(
         [
             "spatialpandas",
-            "pyarrow <1.0",
+            "pyarrow",
             "ibis-framework >=1.3",
         ]  # spatialpandas incompatibility
     )
@@ -66,10 +66,10 @@ extras_require["extras"] = extras_require["examples"] + [
 extras_require['tests'] = [
     'nose',
     'mock',
-    'flake8 ==3.6.0',
+    'flake8',
     'coveralls',
     'path.py',
-    'matplotlib >=2.2,<3.1',
+    'matplotlib >=3',
     'nbsmoke >=0.2.0',
     'nbconvert <6',
     'twine',
@@ -81,7 +81,7 @@ extras_require["unit_tests"] = extras_require["examples"] + extras_require["test
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
-    + ["matplotlib >=2.1", "bokeh >=1.1.0", "pandas"]
+    + ["matplotlib >=3", "bokeh >=1.1.0", "pandas"]
     + extras_require["notebook"]
 )
 
@@ -110,7 +110,8 @@ extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
-    "python <3.8",
+    "python <3.9",
+    "pip",
 ]
 
 # Everything for examples and nosetests

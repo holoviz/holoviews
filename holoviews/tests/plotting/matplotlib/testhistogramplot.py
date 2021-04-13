@@ -19,8 +19,8 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         plot = mpl_renderer.get_plot(hist)
         artist = plot.handles['artist']
         ax = plot.handles['axis']
-        self.assertEqual(ax.get_xlim(), (736330.0, 736333.0))
-        bounds = [736330.0, 736330.75, 736331.5, 736332.25]
+        self.assertEqual(ax.get_xlim(), (17167.0, 17170.0))
+        bounds = [17167.0, 17167.75, 17168.5, 17169.25]
         self.assertEqual([p.get_x() for p in artist.patches], bounds)
 
     def test_histogram_padding_square(self):
@@ -84,8 +84,8 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
-        self.assertEqual(x_range[0], 736054.19999999995)
-        self.assertEqual(x_range[1], 736057.80000000005)
+        self.assertEqual(x_range[0], 16891.2)
+        self.assertEqual(x_range[1], 16894.8)
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
 
@@ -95,8 +95,8 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
         )
         plot = mpl_renderer.get_plot(histogram)
         x_range, y_range = plot.handles['axis'].get_xlim(), plot.handles['axis'].get_ylim()
-        self.assertEqual(x_range[0], 736054.34999999998)
-        self.assertEqual(x_range[1], 736057.65000000002)
+        self.assertEqual(x_range[0], 16891.35)
+        self.assertEqual(x_range[1], 16894.65)
         self.assertEqual(y_range[0], 0)
         self.assertEqual(y_range[1], 3.2)
 
@@ -124,12 +124,16 @@ class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):
                               vdims=['y', 'color']).options(color='color')
         with self.assertRaises(Exception):
             mpl_renderer.get_plot(histogram)
-        
+
     def test_histogram_line_color_op(self):
         histogram = Histogram([(0, 0, '#000'), (0, 1, '#F00'), (0, 2, '#0F0')],
                               vdims=['y', 'color']).options(edgecolor='color')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(histogram)
+        plot = mpl_renderer.get_plot(histogram)
+        artist = plot.handles['artist']
+        children = artist.get_children()
+        self.assertEqual(children[0].get_edgecolor(), (0, 0, 0, 1))
+        self.assertEqual(children[1].get_edgecolor(), (1, 0, 0, 1))
+        self.assertEqual(children[2].get_edgecolor(), (0, 1, 0, 1))
 
     def test_histogram_alpha_op(self):
         histogram = Histogram([(0, 0, 0), (0, 1, 0.2), (0, 2, 0.7)],

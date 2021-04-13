@@ -200,11 +200,21 @@ class TestMplGraphPlot(TestMPLPlot):
         self.assertEqual(artist.get_linewidths(), [12, 3, 5])
 
     def test_graph_op_node_alpha(self):
+        import matplotlib as mpl
+        from packaging.version import Version
+
         edges = [(0, 1), (0, 2)]
         nodes = Nodes([(0, 0, 0, 0.2), (0, 1, 1, 0.6), (1, 1, 2, 1)], vdims='alpha')
         graph = Graph((edges, nodes)).options(node_alpha='alpha')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(graph)
+
+        if Version(mpl.__version__) < Version("3.4.0"):
+            # Python 3.6 only support up to matplotlib 3.3
+            with self.assertRaises(Exception):
+                mpl_renderer.get_plot(graph)
+        else:
+            plot = mpl_renderer.get_plot(graph)
+            artist = plot.handles['nodes']
+            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1]))
 
     def test_graph_op_edge_color(self):
         edges = [(0, 1, 'red'), (0, 2, 'green'), (1, 3, 'blue')]
@@ -385,11 +395,21 @@ class TestMplTriMeshPlot(TestMPLPlot):
         self.assertEqual(artist.get_sizes(), np.array([9, 4, 64, 16]))
 
     def test_trimesh_op_node_alpha(self):
+        import matplotlib as mpl
+        from packaging.version import Version
+
         edges = [(0, 1, 2), (1, 2, 3)]
         nodes = [(-1, -1, 0, 0.2), (0, 0, 1, 0.6), (0, 1, 2, 1), (1, 0, 3, 0.3)]
         trimesh = TriMesh((edges, Nodes(nodes, vdims='alpha'))).options(node_alpha='alpha')
-        with self.assertRaises(Exception):
-            mpl_renderer.get_plot(trimesh)
+
+        if Version(mpl.__version__) < Version("3.4.0"):
+            # Python 3.6 only support up to matplotlib 3.3
+            with self.assertRaises(Exception):
+                mpl_renderer.get_plot(trimesh)
+        else:
+            plot = mpl_renderer.get_plot(trimesh)
+            artist = plot.handles['nodes']
+            self.assertEqual(artist.get_alpha(), np.array([0.2, 0.6, 1, 0.3]))
 
     def test_trimesh_op_node_line_width(self):
         edges = [(0, 1, 2), (1, 2, 3)]
