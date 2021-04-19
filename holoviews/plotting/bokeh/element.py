@@ -1843,7 +1843,11 @@ class ColorbarPlot(ElementPlot):
                         if cdim == eldim]
             if cmappers:
                 cmapper, mappers  = cmappers[0]
-                cmapper = cmapper if cmapper else mappers[0]
+                if not cmapper:
+                    if mappers and mapper[0]:
+                        cmapper = mapper[0]
+                    else:
+                        return None
                 self.handles['color_mapper'] = cmapper
                 return cmapper
             else:
