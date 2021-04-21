@@ -322,7 +322,7 @@ class dim(object):
                     params.update(op_arg.params)
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
-                    params[op_arg.name+str(id(op))] = op_arg
+                    params[op_arg.name+str(id(op_arg))] = op_arg
                 
         return params
 
