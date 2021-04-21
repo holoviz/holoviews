@@ -695,7 +695,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay()
 
-    style_opts = base_properties + line_properties + ['cmap', 'palette'] 
+    style_opts = base_properties + line_properties + ['cmap', 'palette']
 
     _nonvectorized_styles = base_properties + ['cmap']
     _plot_methods = dict(single='segment')
@@ -994,7 +994,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     data['top'].append(ts)
                     data[xdim.name].append(xs)
                     data[stack_dim.name].append(slc_ds.dimension_values(stack_dim))
-                    if hover: data[ydim.name].append(ys)
+                    if hover:
+                        data[ydim.name].append(ys)
+                        for vd in slc_ds.vdims[1:]:
+                            data[vd.name].append(slc_ds.dimension_values(vd))
                     if not style_mapping:
                         self._add_color_data(slc_ds, ranges, style, cdim, data,
                                              mapping, factors, colors)
@@ -1013,7 +1016,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 data[xdim.name].append(ds.dimension_values(xdim))
                 data[ydim.name].append(ds.dimension_values(ydim))
 
-            if hover:
+            if hover and grouping != 'stacked':
                 for vd in ds.vdims[1:]:
                     data[vd.name].append(ds.dimension_values(vd))
 
