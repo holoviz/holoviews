@@ -24,7 +24,7 @@ class PathPlot(ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    show_legend = param.Boolean(default=False, doc="""
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']

@@ -24,7 +24,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         The current selection as a list of integers corresponding
         to the selected items.""")
 
-    show_legend = param.Boolean(default=False, doc="""
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     # Deprecated options
