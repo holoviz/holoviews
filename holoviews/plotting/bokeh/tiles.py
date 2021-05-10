@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 
-from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource, SaveTool
+from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
 
 from ...core import util
 from ...core.options import SkipRendering
