@@ -2,7 +2,7 @@ from __future__ import absolute_import, division, unicode_literals
 
 import numpy as np
 
-from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource, SaveTool
+from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
 
 from ...core import util
 from ...core.options import SkipRendering
@@ -66,7 +66,4 @@ class TilePlot(ElementPlot):
         level = properties.pop('level', 'glyph')
         renderer = plot.add_tile(tile_source, level=level)
         renderer.alpha = properties.get('alpha', 1)
-
-        # Remove save tool
-        plot.tools = [t for t in plot.tools if not isinstance(t, SaveTool)]
         return renderer, tile_source
