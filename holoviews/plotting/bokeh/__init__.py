@@ -1,5 +1,7 @@
 from __future__ import absolute_import, division, unicode_literals
 
+import sys
+
 import numpy as np
 
 from bokeh.palettes import all_palettes
@@ -150,7 +152,9 @@ point_size = np.sqrt(6) # Matches matplotlib default
 
 # Register bokeh.palettes with Palette and Cycle
 def colormap_generator(palette):
-    return lambda value: palette[int(value*(len(palette)-1))]
+    # Epsilon ensures float precision doesn't cause issues (#4911)
+    epsilon = sys.float_info.epsilon*10
+    return lambda value: palette[int(value*(len(palette)-1)+epsilon)]
 
 Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
                           for name, p in all_palettes.items()})
