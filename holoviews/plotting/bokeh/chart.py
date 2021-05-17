@@ -1010,7 +1010,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
                 if group_dim not in ds.dimensions():
-                    ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
+                    ds = ds.add_dimension(group_dim, ds.ndims, gval)
                 data[group_dim.name].append(ds.dimension_values(group_dim))
             else:
                 data[xdim.name].append(ds.dimension_values(xdim))
