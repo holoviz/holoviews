@@ -706,7 +706,7 @@ def _list_cmaps(provider=None, records=False):
             from colorcet import palette_n, glasbey_hv
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
-            cmaps += info('colorcet', cet_maps) 
+            cmaps += info('colorcet', cet_maps)
             cmaps += info('colorcet', [p+'_r' for p in cet_maps])
         except:
             pass
@@ -960,7 +960,7 @@ def color_intervals(colors, levels, clip=None, N=255):
         clmin, clmax = clip
         lidx = int(round(N*((clmin-cmin)/interval)))
         uidx = int(round(N*((cmax-clmax)/interval)))
-        uidx = N-uidx
+        uidx = len(cmap)-uidx
         if lidx == uidx:
             uidx = lidx+1
         cmap = cmap[lidx:uidx]
