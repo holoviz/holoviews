@@ -6,7 +6,7 @@ import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.accessors import Redim
-from ..core.util import max_range, search_indices
+from ..core.util import is_dataframe, max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
@@ -545,15 +545,20 @@ class TriMesh(Graph):
             # Add index to make it a valid Nodes object
             nodes = self.node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
-            # Try assuming data contains just coordinates (2 columns)
-            try:
-                points = self.point_type(nodes)
-                ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
-                nodes = self.node_type(ds)
-            except:
-                raise ValueError("Nodes argument could not be interpreted, expected "
-                                 "data with two or three columns representing the "
-                                 "x/y positions and optionally the node indices.")
+            if is_dataframe(nodes):
+                coords = list(nodes.columns)[:2]
+                index = nodes.index.name or 'index'
+                nodes = self.node_type(nodes, coords+[index])
+            else:
+                try:
+                    points = self.point_type(nodes)
+                    ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
+                    nodes = self.node_type(ds)
+                except Exception:
+                    raise ValueError(
+                        "Nodes argument could not be interpreted, expected "
+                        "data with two or three columns representing the "
+                        "x/y positions and optionally the node indices.")
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
 
