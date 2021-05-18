@@ -289,5 +289,5 @@ class Area(Curve):
                 sdf[vdim.name] = sdf[vdim.name] + baseline
                 sdf[baseline_name] = baseline
             baseline = sdf[vdim.name]
-            stacked[key] = areas.last.clone(sdf, vdims=vdims)
+            stacked[key] = areas[key].clone(sdf, vdims=vdims)
         return Overlay(stacked.values()) if is_overlay else stacked
