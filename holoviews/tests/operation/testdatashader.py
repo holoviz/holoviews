@@ -894,8 +894,6 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_no_vdims_zero_range(self):
-        simplices = [(0, 1, 2), (3, 2, 1)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
         trimesh = TriMesh((self.simplexes, self.vertices))
         img = rasterize(trimesh, height=2, x_range=(0, 0), dynamic=False)
         image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
@@ -977,8 +975,6 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertEqual(img, image)
         
     def test_rasterize_trimesh_node_vdim_precedence(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0., 1), (0., 1., 2), (1., 0, 3), (1, 1, 4)]
         nodes = Points(self.vertices_vdim, vdims=['node_z'])
         trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
