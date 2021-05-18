@@ -922,6 +922,46 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
+    def test_rasterize_pandas_trimesh_implicit_nodes(self):
+        simplex_df = pd.DataFrame(self.simplexes, columns=['v0', 'v1', 'v2'])
+        vertex_df = pd.DataFrame(self.vertices_vdim, columns=['x', 'y', 'z'])
+
+        trimesh = TriMesh((simplex_df, vertex_df))
+        img = rasterize(trimesh, width=3, height=3, dynamic=False)
+
+        array = np.array([
+            [    2.,     3., np.NaN],
+            [   1.5,    2.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
+    def test_rasterize_dask_trimesh_implicit_nodes(self):
+        simplex_df = pd.DataFrame(self.simplexes, columns=['v0', 'v1', 'v2'])
+        vertex_df = pd.DataFrame(self.vertices_vdim, columns=['x', 'y', 'z'])
+
+        simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
+        vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
+
+        trimesh = TriMesh((simplex_ddf, vertex_ddf))
+
+        ri = rasterize.instance()
+        img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
+
+        cache = ri._precomputed
+        self.assertEqual(len(cache), 1)
+        self.assertIn(trimesh._plot_id, cache)
+        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+
+        array = np.array([
+            [    2.,     3., np.NaN],
+            [   1.5,    2.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
     def test_rasterize_dask_trimesh(self):
         simplex_df = pd.DataFrame(self.simplexes_vdim, columns=['v0', 'v1', 'v2', 'z'])
         vertex_df = pd.DataFrame(self.vertices, columns=['x', 'y'])
