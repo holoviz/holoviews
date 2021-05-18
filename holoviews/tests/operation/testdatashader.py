@@ -4,9 +4,11 @@ from unittest import SkipTest, skipIf
 
 import numpy as np
 
-from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
-                       Graph, TriMesh, QuadMesh, NdOverlay, Contours, Spikes,
-                       Spread, Area, Rectangles, Segments, Polygons)
+from holoviews import (
+    Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
+    QuadMesh, NdOverlay, Contours, Spikes, Spread, Area, Rectangles,
+    Segments, Polygons, Nodes
+)
 from holoviews.streams import Tap
 from holoviews.element.comparison import ComparisonTestCase
 from numpy import nan
@@ -879,10 +881,13 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         if ds_version <= '0.6.4':
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
+        self.simplexes = [(0, 1, 2), (3, 2, 1)]
+        self.vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        self.simplexes_vdim = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
+        self.vertices_vdim = [(0., 0., 1), (0., 1., 2), (1., 0, 3), (1, 1, 4)]
+
     def test_rasterize_trimesh_no_vdims(self):
-        simplices = [(0, 1, 2), (3, 2, 1)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices))
+        trimesh = TriMesh((self.simplexes, self.vertices))
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
         image = Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
                       bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
@@ -891,52 +896,116 @@ class DatashaderRasterizeTests(ComparisonTestCase):
     def test_rasterize_trimesh_no_vdims_zero_range(self):
         simplices = [(0, 1, 2), (3, 2, 1)]
         vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices))
+        trimesh = TriMesh((self.simplexes, self.vertices))
         img = rasterize(trimesh, height=2, x_range=(0, 0), dynamic=False)
         image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
                       bounds=(0, 0, 0, 1), xdensity=1, vdims=Dimension('Any', nodata=0))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_with_vdims_as_wireframe(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, aggregator='any', interpolation=None, dynamic=False)
-        image = Image(np.array([[True, True, True], [True, True, True], [True, True, True]]),
-                      bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
+        array = np.array([
+            [True, True, True],
+            [True, True, True],
+            [True, True, True]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1), vdims=Dimension('Any', nodata=0))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
-        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1))
+        array = np.array([
+            [   1.5,    1.5, np.NaN],
+            [   0.5,    1.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
+    def test_rasterize_dask_trimesh(self):
+        simplex_df = pd.DataFrame(self.simplexes_vdim, columns=['v0', 'v1', 'v2', 'z'])
+        vertex_df = pd.DataFrame(self.vertices, columns=['x', 'y'])
+
+        simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
+        vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
+
+        tri_nodes = Nodes(vertex_ddf, ['x', 'y', 'index'])
+        trimesh = TriMesh((simplex_ddf, tri_nodes), vdims=['z'])
+
+        ri = rasterize.instance()
+        img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
+
+        cache = ri._precomputed
+        self.assertEqual(len(cache), 1)
+        self.assertIn(trimesh._plot_id, cache)
+        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+
+        array = np.array([
+            [   1.5,    1.5, np.NaN],
+            [   0.5,    1.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
+    def test_rasterize_dask_trimesh_with_node_vdims(self):
+        simplex_df = pd.DataFrame(self.simplexes, columns=['v0', 'v1', 'v2'])
+        vertex_df = pd.DataFrame(self.vertices_vdim, columns=['x', 'y', 'z'])
+
+        simplex_ddf = dd.from_pandas(simplex_df, npartitions=2)
+        vertex_ddf = dd.from_pandas(vertex_df, npartitions=2)
+
+        tri_nodes = Nodes(vertex_ddf, ['x', 'y', 'index'], ['z'])
+        trimesh = TriMesh((simplex_ddf, tri_nodes))
+
+        ri = rasterize.instance()
+        img = ri(trimesh, width=3, height=3, dynamic=False, precompute=True)
+
+        cache = ri._precomputed
+        self.assertEqual(len(cache), 1)
+        self.assertIn(trimesh._plot_id, cache)
+        self.assertIsInstance(cache[trimesh._plot_id]['mesh'], dd.DataFrame)
+
+        array = np.array([
+            [    2.,     3., np.NaN],
+            [   1.5,    2.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+        
     def test_rasterize_trimesh_node_vdim_precedence(self):
         simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
         vertices = [(0., 0., 1), (0., 1., 2), (1., 0, 3), (1, 1, 4)]
-        trimesh = TriMesh((simplices, Points(vertices, vdims=['node_z'])), vdims=['z'])
+        nodes = Points(self.vertices_vdim, vdims=['node_z'])
+        trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False)
-        image = Image(np.array([[2., 3., np.NaN], [1.5, 2.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1), vdims='node_z')
+
+        array = np.array([
+            [    2.,     3., np.NaN],
+            [   1.5,    2.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1), vdims='node_z')
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_node_explicit_vdim(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0., 1), (0., 1., 2), (1., 0, 3), (1, 1, 4)]
-        trimesh = TriMesh((simplices, Points(vertices, vdims=['node_z'])), vdims=['z'])
+        nodes = Points(self.vertices_vdim, vdims=['node_z'])
+        trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
-        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1))
+
+        array = np.array([
+            [   1.5,    1.5, np.NaN],
+            [   0.5,    1.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_zero_range(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, x_range=(0, 0), height=2, dynamic=False)
         image = Image(([], [0.25, 0.75], np.zeros((2, 0))),
                       bounds=(0, 0, 0, 1), xdensity=1)
@@ -952,21 +1021,25 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_ds_aggregator(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
-        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1))
+        array = np.array([
+            [   1.5,    1.5, np.NaN],
+            [   0.5,    1.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
     def test_rasterize_trimesh_string_aggregator(self):
-        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
-        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
-        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        trimesh = TriMesh((self.simplexes_vdim, self.vertices), vdims=['z'])
         img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator='mean')
-        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
-                      bounds=(0, 0, 1, 1))
+        array = np.array([
+            [   1.5,    1.5, np.NaN],
+            [   0.5,    1.5, np.NaN],
+            [np.NaN, np.NaN, np.NaN]
+        ])
+        image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
     def test_rasterize_quadmesh(self):
