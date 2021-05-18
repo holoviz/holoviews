@@ -1062,6 +1062,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(plot_method, tuple):
             # Handle alternative plot method for flipped axes
             plot_method = plot_method[int(self.invert_axes)]
+        if 'legend_field' in properties and 'legend_label' in properties:
+            del properties['legend_label']
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
