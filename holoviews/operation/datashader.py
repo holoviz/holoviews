@@ -994,11 +994,22 @@ class trimesh_rasterize(aggregate):
             vert_dims = [0, 1, 3]
         else:
             raise ValueError("Cannot shade TriMesh without value dimension.")
-        if set([element.interface.datatype, element.nodes.interface.datatype]) == {'dask'}:
+        datatypes = [element.interface.datatype, element.nodes.interface.datatype]
+        if set(datatypes) == {'dask'}:
             dims, node_dims = element.dimensions(), element.nodes.dimensions()
             simplices = element.data[[dims[sd].name for sd in simplex_dims]]
             verts = element.nodes.data[[node_dims[vd].name for vd in vert_dims]]
         else:
+            if datatypes == 'dask':
+                if datatypes[0] == 'dask':
+                    p, n = 'simplexes', 'vertices'
+                else:
+                    p, n = 'vertices', 'simplexes'
+                self.param.warning(
+                    "TriMesh %s were provided as dask DataFrame but %s "
+                    "were not. Datashader will not use dask to parallelize "
+                    "rasterization unless both are provided as dask "
+                    "DataFrames." % (p, n))
             simplices = element.dframe(simplex_dims)
             verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes):
