@@ -1,3 +1,46 @@
+Version 1.14.4
+==============
+
+This release primarily focuses on a number of bug fixes. Many thanks
+to @Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar and
+@philippjfr for contributing.
+
+Enhancements:
+
+- Reenable `SaveTool` for plots with `Tiles`
+  ([#4922](https://github.com/holoviz/holoviews/pull/4922))
+- Enable dask `TriMesh` rasterization using datashader
+  ([#4935](https://github.com/holoviz/holoviews/pull/4935))
+- Use dataframe index for `TriMesh` node indices
+  ([#4936](https://github.com/holoviz/holoviews/pull/4936))
+
+Bug fixes:
+
+- Fix hover for stacked `Bars`
+  ([#4892](https://github.com/holoviz/holoviews/pull/4892))
+- Check before dereferencing Bokeh colormappers
+  ([#4902](https://github.com/holoviz/holoviews/pull/4902))
+- Fix multiple parameterized inputs to `dim`
+  ([#4903](https://github.com/holoviz/holoviews/pull/4903))
+- Fix floating point error when generating bokeh Palettes
+  ([#4911](https://github.com/holoviz/holoviews/pull/4911))
+- Fix bug using dimensions with label on `Bars`
+  ([#4929](https://github.com/holoviz/holoviews/pull/4929))
+- Do not reverse colormaps with '_r' suffix a second time
+  ([#4931](https://github.com/holoviz/holoviews/pull/4931))
+- Fix remapping of `Params` stream parameter names
+  ([#4932](https://github.com/holoviz/holoviews/pull/4932))
+- Ensure `Area.stack` keeps labels
+  ([#4937](https://github.com/holoviz/holoviews/pull/4937))
+
+Documentation:
+
+- Updated Dashboards user guide to show `pn.bind` first
+  ([#4907](https://github.com/holoviz/holoviews/pull/4907))
+- Updated docs to correctly declare Scatter kdims
+  ([#4914](https://github.com/holoviz/holoviews/pull/4914))
+
+
 Version 1.14.3
 ==============
 
