@@ -987,16 +987,31 @@ class trimesh_rasterize(aggregate):
     def _precompute(self, element, agg):
         from datashader.utils import mesh
         if element.vdims and getattr(agg, 'column', None) not in element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2, 3])
-            verts = element.nodes.dframe([0, 1])
+            simplex_dims = [0, 1, 2, 3]
+            vert_dims = [0, 1]
         elif element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2])
-            verts = element.nodes.dframe([0, 1, 3])
+            simplex_dims = [0, 1, 2]
+            vert_dims = [0, 1, 3]
+        else:
+            raise ValueError("Cannot shade TriMesh without value dimension.")
+        if set([element.interface.datatype, element.nodes.interface.datatype]) == {'dask'}:
+            dims, node_dims = element.dimensions(), element.nodes.dimensions()
+            simplices = element.data[[dims[sd].name for sd in simplex_dims]]
+            verts = element.nodes.data[[node_dims[vd].name for vd in vert_dims]]
+        else:
+            simplices = element.dframe(simplex_dims)
+            verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes):
             if dtype.kind != 'i':
                 simplices[c] = simplices[c].astype('int')
-        return {'mesh': mesh(verts, simplices), 'simplices': simplices,
-                'vertices': verts}
+        mesh = mesh(verts, simplices)
+        if hasattr(mesh, 'persist'):
+            mesh = mesh.persist()
+        return {
+            'mesh': mesh,
+            'simplices': simplices,
+            'vertices': verts
+        }
 
     def _precompute_wireframe(self, element, agg):
         if hasattr(element, '_wireframe'):
@@ -1037,7 +1052,6 @@ class trimesh_rasterize(aggregate):
             precomputed = self._precompute_wireframe(element, agg)
         else:
             precomputed = self._precompute(element, agg)
-
         bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
         params = self._get_agg_params(element, x, y, agg, bounds)
 
