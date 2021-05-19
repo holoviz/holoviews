@@ -170,7 +170,8 @@ class Config(param.ParameterizedFunction):
        wikimedia tile source without warning.
 
        This config parameter was introduced as wikimedia tile sources
-       can no longer be used outside the wikimedia domain.""")
+       can no longer be used outside the wikimedia domain, as of
+       April 2021.""")
 
     def __call__(self, **params):
         self.param.set_param(**params)

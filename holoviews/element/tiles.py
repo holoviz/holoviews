@@ -133,7 +133,7 @@ _ATTRIBUTIONS = {
 
 def deprecation_warning(name, url, reason):
     def deprecated_tilesource_warning():
-        param.main.param.warning('%s tile source is deprecated: %s' %  (name, reason))
+        param.main.param.warning('%s tile source is deprecated and is likely to be unusable: %s' %  (name, reason))
         return Tiles(url, name=name)
     return deprecated_tilesource_warning
 
@@ -143,10 +143,10 @@ CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
 CartoMidnight = deprecation_warning('CartoMidnight',
                                     'https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png',
-                                    'this tile source is no longer publicly available.')
+                                    'no longer publicly available.')
 CartoEco = deprecation_warning('CartoEco',
                                'https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png',
-                               'this tile source is no longer publicly available.')
+                               'no longer publicly available.')
 
 
 # Stamen basemaps
@@ -173,7 +173,7 @@ ESRI = EsriImagery # For backwards compatibility with gv 1.5
 def wikimedia_replacement():
     if util.config.wikimedia_tile_source_replacement == 'OSM-with-warning':
         param.main.param.warning('Wikimedia tile source no longer available outside '
-                                 'wikimedia domain, switching to OpenStreetMap (OSM) tile '
+                                 'wikimedia domain as of April 2021; switching to OpenStreetMap (OSM) tile '
                                  'source. You can set wikimedia_tile_source_replacement '
                                  'to your chosen replacement tile source URL in hv.config'
                                  ' to disable this warning. See release notes for HoloViews'
