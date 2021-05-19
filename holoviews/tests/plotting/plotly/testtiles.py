@@ -99,7 +99,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["sourcetype"], "raster")
         self.assertEqual(layer["minzoom"], 3)
         self.assertEqual(layer["maxzoom"], 7)
-        self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'com/t')])
+        self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'net/t')])
 
     def test_overlay(self):
         # Base layer is mapbox vector layer

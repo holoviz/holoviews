@@ -91,7 +91,7 @@ _ATTRIBUTIONS = {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, '
         '&copy; <a href="https://cartodb.com/attributions">CartoDB</a>'
     ),
-    ('stamen', 'com/t') : ( # to match both 'toner' and 'terrain'
+    ('stamen', 'net/t') : ( # to match both 'toner' and 'terrain'
         'Map tiles by <a href="https://stamen.com">Stamen Design</a>, '
         'under <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. '
         'Data by <a href="https://openstreetmap.org">OpenStreetMap</a>, '
