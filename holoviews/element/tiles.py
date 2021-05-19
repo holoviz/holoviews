@@ -130,9 +130,9 @@ _ATTRIBUTIONS = {
 
 # CartoDB basemaps
 CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
-CartoEco = lambda: Tiles('http://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
+CartoEco = lambda: Tiles('https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
-CartoMidnight = lambda: Tiles('http://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
+CartoMidnight = lambda: Tiles('https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
 
 # Stamen basemaps
 StamenTerrain = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
@@ -150,11 +150,11 @@ EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/service
 EsriNatGeo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{Z}/{Y}/{X}', name="EsriNatGeo")
 EsriUSATopo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{Z}/{Y}/{X}', name="EsriUSATopo")
 EsriTerrain = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{Z}/{Y}/{X}', name="EsriTerrain")
-EsriReference = lambda: Tiles('http://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
+EsriReference = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
 ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
 # Miscellaneous
-OSM = lambda: Tiles('http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
+OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 Wikipedia = lambda: Tiles('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png', name="Wikipedia")
 
 tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat']}
