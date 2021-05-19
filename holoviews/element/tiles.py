@@ -91,7 +91,7 @@ _ATTRIBUTIONS = {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, '
         '&copy; <a href="https://cartodb.com/attributions">CartoDB</a>'
     ),
-    ('stamen', 'com/t') : ( # to match both 'toner' and 'terrain'
+    ('stamen', 'net/t') : ( # to match both 'toner' and 'terrain'
         'Map tiles by <a href="https://stamen.com">Stamen Design</a>, '
         'under <a href="https://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. '
         'Data by <a href="https://openstreetmap.org">OpenStreetMap</a>, '
@@ -125,33 +125,40 @@ _ATTRIBUTIONS = {
     ('arcgis','USA_Topo') : (
         '&copy; <a href="http://downloads.esri.com/ArcGISOnline/docs/tou_summary.pdf">Esri</a>, '
         'NatGeo, i-cubed'
+    ),
+    ('arcgis', 'World_Street_Map') : (
+        '&copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
     )
 }
 
 # CartoDB basemaps
 CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
-CartoEco = lambda: Tiles('http://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
+CartoEco = lambda: Tiles('https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png', name="CartoEco")
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
-CartoMidnight = lambda: Tiles('http://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
+CartoMidnight = lambda: Tiles('https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
 
 # Stamen basemaps
-StamenTerrain = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
-StamenTerrainRetina = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
-StamenWatercolor = lambda: Tiles('http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
-StamenToner = lambda: Tiles('http://tile.stamen.com/toner/{Z}/{X}/{Y}.png', name="StamenToner")
-StamenTonerBackground = lambda: Tiles('http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
-StamenLabels = lambda: Tiles('http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenTerrain = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
+StamenTerrainRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
+StamenWatercolor = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
+StamenToner = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}.png', name="StamenToner")
+StamenTonerRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}@2x.png', name="StamenTonerRetina")
+StamenTonerBackground = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
+StamenTonerBackgroundRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}@2x.png', name="StamenTonerBackgroundRetina")
+StamenLabels = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenLabelsRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}@2x.png', name="StamenLabelsRetina")
 
 # Esri maps (see https://server.arcgisonline.com/arcgis/rest/services for the full list)
 EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
 EsriNatGeo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/NatGeo_World_Map/MapServer/tile/{Z}/{Y}/{X}', name="EsriNatGeo")
 EsriUSATopo = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/USA_Topo_Maps/MapServer/tile/{Z}/{Y}/{X}', name="EsriUSATopo")
 EsriTerrain = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Terrain_Base/MapServer/tile/{Z}/{Y}/{X}', name="EsriTerrain")
-EsriReference = lambda: Tiles('http://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
+EsriStreet = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{Z}/{Y}/{X}')
+EsriReference = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Reference_Overlay/MapServer/tile/{Z}/{Y}/{X}', name="EsriReference")
 ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
 # Miscellaneous
-OSM = lambda: Tiles('http://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
+OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 Wikipedia = lambda: Tiles('https://maps.wikimedia.org/osm-intl/{Z}/{X}/{Y}@2x.png', name="Wikipedia")
 
 tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat']}
