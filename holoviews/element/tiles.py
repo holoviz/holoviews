@@ -143,10 +143,10 @@ CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
 CartoMidnight = deprecation_warning('CartoMidnight',
                                     'https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png',
-                                    'this tile source is no longer public')
+                                    'this tile source is no longer publicly available.')
 CartoEco = deprecation_warning('CartoEco',
                                'https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png',
-                               'this tile source is no longer public')
+                               'this tile source is no longer publicly available.')
 
 
 # Stamen basemaps
