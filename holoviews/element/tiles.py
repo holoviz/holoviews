@@ -186,4 +186,6 @@ def wikimedia_replacement():
 OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 Wikipedia = wikimedia_replacement
 
-tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat']}
+tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
+                ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
+                 'deprecation_warning', 'wikimedia_replacement']}
