@@ -135,12 +135,12 @@ CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/lig
 CartoMidnight = lambda: Tiles('http://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png', name="CartoMidnight")
 
 # Stamen basemaps
-StamenTerrain = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
-StamenTerrainRetina = lambda: Tiles('http://tile.stamen.com/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
-StamenWatercolor = lambda: Tiles('http://tile.stamen.com/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
-StamenToner = lambda: Tiles('http://tile.stamen.com/toner/{Z}/{X}/{Y}.png', name="StamenToner")
-StamenTonerBackground = lambda: Tiles('http://tile.stamen.com/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
-StamenLabels = lambda: Tiles('http://tile.stamen.com/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenTerrain = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}.png', name="StamenTerrain")
+StamenTerrainRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
+StamenWatercolor = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
+StamenToner = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}.png', name="StamenToner")
+StamenTonerBackground = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
+StamenLabels = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
 
 # Esri maps (see https://server.arcgisonline.com/arcgis/rest/services for the full list)
 EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
