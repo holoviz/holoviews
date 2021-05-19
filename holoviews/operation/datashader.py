@@ -1000,7 +1000,7 @@ class trimesh_rasterize(aggregate):
             simplices = element.data[[dims[sd].name for sd in simplex_dims]]
             verts = element.nodes.data[[node_dims[vd].name for vd in vert_dims]]
         else:
-            if datatypes == 'dask':
+            if 'dask' in datatypes:
                 if datatypes[0] == 'dask':
                     p, n = 'simplexes', 'vertices'
                 else:
