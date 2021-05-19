@@ -139,8 +139,11 @@ StamenTerrain = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}
 StamenTerrainRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/terrain/{Z}/{X}/{Y}@2x.png', name="StamenTerrainRetina")
 StamenWatercolor = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/watercolor/{Z}/{X}/{Y}.jpg', name="StamenWatercolor")
 StamenToner = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}.png', name="StamenToner")
+StamenTonerRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner/{Z}/{X}/{Y}@2x.png', name="StamenTonerRetina")
 StamenTonerBackground = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}.png', name="StamenTonerBackground")
+StamenTonerBackgroundRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-background/{Z}/{X}/{Y}@2x.png', name="StamenTonerBackgroundRetina")
 StamenLabels = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}.png', name="StamenLabels")
+StamenLabelsRetina = lambda: Tiles('https://stamen-tiles.a.ssl.fastly.net/toner-labels/{Z}/{X}/{Y}@2x.png', name="StamenLabelsRetina")
 
 # Esri maps (see https://server.arcgisonline.com/arcgis/rest/services for the full list)
 EsriImagery = lambda: Tiles('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{Z}/{Y}/{X}.jpg', name="EsriImagery")
