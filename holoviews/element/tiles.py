@@ -131,17 +131,22 @@ _ATTRIBUTIONS = {
     )
 }
 
-def deprecated_tilesource(name, reason):
-    def raise_deprecation_error():
-        raise DeprecationWarning('%s tile source is deprecated: %s' % (name, reason))
-    return raise_deprecation_error
+def deprecation_warning(name, url, reason):
+    def deprecated_tilesource_warning():
+        param.main.param.warning('%s tile source is deprecated: %s' %  (name, reason))
+        return Tiles(url, name=name)
+    return deprecated_tilesource_warning
 
 
 # CartoDB basemaps
 CartoDark = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/dark_all/{Z}/{X}/{Y}.png', name="CartoDark")
-CartoEco = deprecated_tilesource('CartoEco', 'this tile source is no longer public.')
 CartoLight = lambda: Tiles('https://cartodb-basemaps-4.global.ssl.fastly.net/light_all/{Z}/{X}/{Y}.png', name="CartoLight")
-CartoMidnight = deprecated_tilesource('CartoMidnight', 'this tile source is no longer public.')
+CartoMidnight = deprecation_warning('CartoMidnight',
+                                    'https://3.api.cartocdn.com/base-midnight/{Z}/{X}/{Y}.png',
+                                    'this tile source is no longer public')
+CartoEco = deprecation_warning('CartoEco',
+                               'https://3.api.cartocdn.com/base-eco/{Z}/{X}/{Y}.png',
+                               'this tile source is no longer public')
 
 
 # Stamen basemaps
