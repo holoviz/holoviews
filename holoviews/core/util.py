@@ -163,6 +163,10 @@ class Config(param.ParameterizedFunction):
        Global default colormap for HeatMap elements. Prior to HoloViews
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
+    raise_deprecated_tilesource_exception = param.Boolean(default=False,
+       doc=""" Whether deprecated tile sources should raise a
+       deprecation exception instead of issuing warnings.""")
+
     def __call__(self, **params):
         self.param.set_param(**params)
         return self

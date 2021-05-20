@@ -133,6 +133,8 @@ _ATTRIBUTIONS = {
 
 def deprecation_warning(name, url, reason):
     def deprecated_tilesource_warning():
+        if util.config.raise_deprecated_tilesource_exception:
+            raise DeprecationWarning('%s tile source is deprecated: %s' % (name, reason))
         param.main.param.warning('%s tile source is deprecated and is likely to be unusable: %s' %  (name, reason))
         return Tiles(url, name=name)
     return deprecated_tilesource_warning
@@ -171,7 +173,11 @@ ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
 
 def wikimedia_replacement():
-    param.main.param.warning('Wikimedia tile source no longer available outside '
+    if util.config.raise_deprecated_tilesource_exception:
+        raise DeprecationWarning('Wikipedia tile source no longer available outside '
+                                 'wikimedia domain as of April 2021.')
+
+    param.main.param.warning('Wikipedia tile source no longer available outside '
                              'wikimedia domain as of April 2021; switching '
                              'to OpenStreetMap (OSM) tile source. '
                              'See release notes for HoloViews'

@@ -42,6 +42,11 @@ Documentation:
 
 Compatibility:
 
+Unfortunately a number of tile sources are no longer publicly
+available. Attempting to use these tile sources will now issue warnings
+unless `hv.config.raise_deprecated_tilesource_exception` is set to
+`True` in which case exceptions will be raised instead.
+
 - The `Wikipedia` tile source is no longer available as it is no longer
   being served outside the wikimedia domain. As one of the most
   frequently used tile sources, HoloViews now issues a warning and
