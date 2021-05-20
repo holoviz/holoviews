@@ -1,9 +1,9 @@
 Version 1.14.4
 ==============
 
-This release primarily focuses on a number of bug fixes. Many thanks
-to @Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar and
-@philippjfr for contributing.
+This release primarily focuses on a number of bug fixes. Many thanks to
+@Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar, @jlstevens
+and @philippjfr for contributing.
 
 Enhancements:
 
@@ -40,6 +40,15 @@ Documentation:
 - Updated docs to correctly declare Scatter kdims
   ([#4914](https://github.com/holoviz/holoviews/pull/4914))
 
+Compatibility:
+
+- The `Wikipedia` tile source is no longer available as it is no longer
+  being served outside the wikimedia domain. As one of the most
+  frequently used tile sources, HoloViews now issues a warning and
+  switches to the OpenStreetMap (OSM) tile source instead.
+- The `CartoMidnight` and `CartoEco` tile sources are no longer publicly
+  available. Attempting to use these tile sources will result in a
+  deprecation warning.
 
 Version 1.14.3
 ==============
