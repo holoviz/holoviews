@@ -163,16 +163,6 @@ class Config(param.ParameterizedFunction):
        Global default colormap for HeatMap elements. Prior to HoloViews
        1.14.0, the default value was the 'RdYlBu_r' colormap.""")
 
-    wikimedia_tile_source_replacement = param.String(default='OSM-with-warning', doc="""
-       If set to the special sentinal value of OSM-with-warning, replace
-       wikimedia tile source with OpenStreetMap (OSM) and warn. If set
-       explicitly with a suitable Tile source URL, apply replacement for
-       wikimedia tile source without warning.
-
-       This config parameter was introduced as wikimedia tile sources
-       can no longer be used outside the wikimedia domain, as of
-       April 2021.""")
-
     def __call__(self, **params):
         self.param.set_param(**params)
         return self

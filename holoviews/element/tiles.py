@@ -171,16 +171,12 @@ ESRI = EsriImagery # For backwards compatibility with gv 1.5
 
 
 def wikimedia_replacement():
-    if util.config.wikimedia_tile_source_replacement == 'OSM-with-warning':
-        param.main.param.warning('Wikimedia tile source no longer available outside '
-                                 'wikimedia domain as of April 2021; switching to OpenStreetMap (OSM) tile '
-                                 'source. You can set wikimedia_tile_source_replacement '
-                                 'to your chosen replacement tile source URL in hv.config'
-                                 ' to disable this warning. See release notes for HoloViews'
-                                 ' 1.14.4 for more details')
-        return Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
-    else:
-        return Tiles(util.config.wikimedia_tile_source_replacement, name="Wikipedia")
+    param.main.param.warning('Wikimedia tile source no longer available outside '
+                             'wikimedia domain as of April 2021; switching '
+                             'to OpenStreetMap (OSM) tile source. '
+                             'See release notes for HoloViews'
+                             ' 1.14.4 for more details')
+    return Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
 
 # Miscellaneous
 OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
