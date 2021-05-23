@@ -29,8 +29,6 @@ class RedimGraph(Redim):
             new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
 
-redim_graph = RedimGraph # Deprecate: pickle compatibility - remove in 2.0
-
 
 class layout_nodes(Operation):
     """

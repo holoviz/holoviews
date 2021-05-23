@@ -276,25 +276,6 @@ class Overlay(ViewableTree, CompositeOverlay):
     def shape(self):
         raise NotImplementedError
 
-    # Deprecated methods
-
-    def collapse(self, function):
-        "Deprecated method to collapse layers in the Overlay."
-        self.param.warning('Overlay.collapse is deprecated, to'
-                           'collapse multiple elements use a HoloMap.')
-
-        elements = list(self)
-        types = [type(el) for el in elements]
-        values = [el.group for el in elements]
-        if not len(set(types)) == 1 and len(set(values)) == 1:
-            raise Exception("Overlay is not homogeneous in type or group "
-                            "and cannot be collapsed.")
-        else:
-            return elements[0].clone(types[0].collapse_data([el.data for el in elements],
-                                                            function, self.kdims))
-
-
-
 
 class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     """

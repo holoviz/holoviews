@@ -578,47 +578,6 @@ class MultiDimensionalMapping(Dimensioned):
     def __len__(self):
         return len(self.data)
 
-    ######################
-    #    Deprecations    #
-    ######################
-
-    def table(self, datatype=None, **kwargs):
-        """
-        Deprecated method to convert an MultiDimensionalMapping of
-        Elements to a Table.
-        """
-        self.param.warning("The table method is deprecated and should no "
-                           "longer be used. If using a HoloMap use "
-                           "HoloMap.collapse() instead to return a Dataset.")
-
-        from .data.interface import Interface
-        from ..element.tabular import Table
-        new_data = [(key, value.table(datatype=datatype, **kwargs))
-                    for key, value in self.data.items()]
-        tables = self.clone(new_data)
-        return Interface.concatenate(tables, new_type=Table)
-
-
-    def dframe(self):
-        """
-        Deprecated method to convert a MultiDimensionalMapping to
-        a pandas DataFrame. Conversion to a dataframe now only
-        supported by specific subclasses such as UniformNdMapping
-        types.
-        """
-        self.param.warning("The MultiDimensionalMapping.dframe method is "
-                           "deprecated and should no longer be used. "
-                           "Use a more specific subclass which does support "
-                           "the dframe method instead, e.g. a HoloMap.")
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('key', True) + [self.group]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
 
 class NdMapping(MultiDimensionalMapping):
     """

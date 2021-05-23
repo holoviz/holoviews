@@ -561,7 +561,7 @@ class Opts(object):
         """
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-            if apply_groups and util.config.future_deprecations:
+            if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
                        "group (i.e. separate plot, style and norm groups) is deprecated. "
                        "Use the .options method converting to the simplified format "

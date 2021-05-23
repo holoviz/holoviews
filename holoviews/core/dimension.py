@@ -296,7 +296,6 @@ class Dimension(param.Parameterized):
                 raise ValueError('%r default %s not in declared range: %s' %
                                  (self, self.default, self.range))
 
-
     @property
     def spec(self):
         """"Returns the Dimensions tuple specification
@@ -305,13 +304,6 @@ class Dimension(param.Parameterized):
             tuple: Dimension tuple specification
         """
         return (self.name, self.label)
-
-
-    def __call__(self, spec=None, **overrides):
-        self.param.warning('Dimension.__call__ method has been deprecated, '
-                           'use the clone method instead.')
-        return self.clone(spec=spec, **overrides)
-
 
     def clone(self, spec=None, **overrides):
         """Clones the Dimension with new parameters
@@ -1203,8 +1195,6 @@ class Dimensioned(LabelledData):
         if not dimension_range:
             return lower, upper
         return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
-
-
     def __repr__(self):
         return PrettyPrinter.pprint(self)
 
@@ -1213,17 +1203,6 @@ class Dimensioned(LabelledData):
 
     def __unicode__(self):
         return unicode(PrettyPrinter.pprint(self))
-
-    def __call__(self, options=None, **kwargs):
-        self.param.warning(
-            'Use of __call__ to set options will be deprecated '	
-            'in the next major release (1.14.0). Use the equivalent .opts '
-            'method instead.')	
-
-        if not kwargs and options is None:	
-            return self.opts.clear()
-
-        return self.opts(options, **kwargs)
 
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
@@ -1352,17 +1331,6 @@ class ViewableTree(AttrTree, Dimensioned):
 
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
-
-
-    @classmethod
-    def from_values(cls, vals):
-        "Deprecated method to construct tree from list of objects"
-        name = cls.__name__        
-        param.main.param.warning("%s.from_values is deprecated, the %s "
-                                 "constructor may now be used directly."
-                                 % (name, name))
-        return cls(items=cls._process_items(vals))
-
 
     @classmethod
     def _process_items(cls, vals):

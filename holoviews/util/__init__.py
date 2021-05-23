@@ -16,7 +16,7 @@ from ..core import (
     Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
     StoreOptions, Store
 )
-from ..core.options import options_policy, Keywords, Options
+from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
 from ..core.overlay import Overlay
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
@@ -101,22 +101,6 @@ class opts(param.ParameterizedFunction):
             return Options()
         elif params and not args:
             return Options(**params)
-
-        if len(args) == 1:
-            msg = ("Positional argument signature of opts is deprecated, "
-                   "use opts.defaults instead.\nFor instance, instead of "
-                   "opts('Points (size=5)') use opts.defaults(opts.Points(size=5))")
-            self.param.warning(msg)
-            self._linemagic(args[0])
-        elif len(args) == 2:
-            msg = ("Double positional argument signature of opts is deprecated, "
-                   "use the .options method instead.\nFor instance, instead of "
-                   "opts('Points (size=5)', points) use points.opts(opts.Points(size=5))")
-
-            self.param.warning(msg)
-
-            self._cellmagic(args[0], args[1])
-
 
     @classmethod
     def _group_kwargs_to_options(cls, obj, kwargs):
@@ -261,24 +245,12 @@ class opts(param.ParameterizedFunction):
         return options, False
 
     @classmethod
-    def _cellmagic(cls, options, obj, strict=False):
-        "Deprecated, not expected to be used by any current code"
-        options, failure = cls._process_magic(options, strict)
-        if failure: return obj
-        if not isinstance(obj, Dimensioned):
-            return obj
-        else:
-            return StoreOptions.set_options(obj, options)
-
-    @classmethod
     def _linemagic(cls, options, strict=False, backend=None):
-        "Deprecated, not expected to be used by any current code"
         backends = None if backend is None else [backend]
         options, failure = cls._process_magic(options, strict, backends=backends)
         if failure: return
         with options_policy(skip_invalid=True, warn_on_skip=False):
             StoreOptions.apply_customizations(options, Store.options(backend=backend))
-
 
     @classmethod
     def defaults(cls, *options, **kwargs):
@@ -638,9 +610,6 @@ class output(param.ParameterizedFunction):
             for k in options.keys():
                 if k not in Store.output_settings.allowed:
                     raise KeyError('Invalid keyword: %s' % k)
-            if 'filename' in options:
-                self.param.warning('The filename argument of output is deprecated. '
-                                   'Use hv.save instead.')
 
             def display_fn(obj, renderer):
                 try:

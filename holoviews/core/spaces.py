@@ -143,14 +143,6 @@ class HoloMap(UniformNdMapping, Overlayable):
                              for k, v in self.data.items()])
         return self.clone(data)
 
-
-    def split_overlays(self):
-        "Deprecated method to split overlays inside the HoloMap."
-        self.param.warning("split_overlays is deprecated and is now "
-                           "a private method.")
-        return self._split_overlays()
-
-
     def _split_overlays(self):
         "Splits overlays inside the HoloMap into list of HoloMaps"
         if not issubclass(self.type, CompositeOverlay):
@@ -170,7 +162,6 @@ class HoloMap(UniformNdMapping, Overlayable):
             keys.append(k)
         return keys, maps
 
-
     def _dimension_keys(self):
         """
         Helper for __mul__ that returns the list of keys together with
@@ -178,7 +169,6 @@ class HoloMap(UniformNdMapping, Overlayable):
         """
         return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
-
 
     def _dynamic_mul(self, dimensions, other, keys):
         """
@@ -369,121 +359,6 @@ class HoloMap(UniformNdMapping, Overlayable):
         from .decollate import decollate
         return decollate(self)
 
-
-    def sample(self, samples=[], bounds=None, **sample_values):
-        """Samples element values at supplied coordinates.
-
-        Allows sampling of element with a list of coordinates matching
-        the key dimensions, returning a new object containing just the
-        selected samples. Supports multiple signatures:
-
-        Sampling with a list of coordinates, e.g.:
-
-            ds.sample([(0, 0), (0.1, 0.2), ...])
-
-        Sampling a range or grid of coordinates, e.g.:
-
-            1D: ds.sample(3)
-            2D: ds.sample((3, 3))
-
-        Sampling by keyword, e.g.:
-
-            ds.sample(x=0)
-
-        Args:
-            samples: List of nd-coordinates to sample
-            bounds: Bounds of the region to sample
-                Defined as two-tuple for 1D sampling and four-tuple
-                for 2D sampling.
-            closest: Whether to snap to closest coordinates
-            **kwargs: Coordinates specified as keyword pairs
-                Keywords of dimensions and scalar coordinates
-
-        Returns:
-            A Table containing the sampled coordinates
-        """
-        self.param.warning('The HoloMap.sample method is deprecated, '
-                           'for equivalent functionality use '
-                           'HoloMap.apply.sample().collapse().')
-
-        dims = self.last.ndims
-        if isinstance(samples, tuple) or np.isscalar(samples):
-            if dims == 1:
-                xlim = self.last.range(0)
-                lower, upper = (xlim[0], xlim[1]) if bounds is None else bounds
-                edges = np.linspace(lower, upper, samples+1)
-                linsamples = [(l+u)/2.0 for l,u in zip(edges[:-1], edges[1:])]
-            elif dims == 2:
-                (rows, cols) = samples
-                if bounds:
-                    (l,b,r,t) = bounds
-                else:
-                    l, r = self.last.range(0)
-                    b, t = self.last.range(1)
-
-                xedges = np.linspace(l, r, cols+1)
-                yedges = np.linspace(b, t, rows+1)
-                xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
-                ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
-
-                Y,X = np.meshgrid(ysamples, xsamples)
-                linsamples = list(zip(X.flat, Y.flat))
-            else:
-                raise NotImplementedError("Regular sampling not implemented "
-                                          "for elements with more than two dimensions.")
-
-            samples = list(util.unique_iterator(self.last.closest(linsamples)))
-
-        sampled = self.clone([(k, view.sample(samples, closest=False,
-                                              **sample_values))
-                              for k, view in self.data.items()])
-
-        from ..element import Table
-        return Table(sampled.collapse())
-
-
-    def reduce(self, dimensions=None, function=None, spread_fn=None, **reduce_map):
-        """Applies reduction to elements along the specified dimension(s).
-
-        Allows reducing the values along one or more key dimension
-        with the supplied function. Supports two signatures:
-
-        Reducing with a list of dimensions, e.g.:
-
-            ds.reduce(['x'], np.mean)
-
-        Defining a reduction using keywords, e.g.:
-
-            ds.reduce(x=np.mean)
-
-        Args:
-            dimensions: Dimension(s) to apply reduction on
-                Defaults to all key dimensions
-            function: Reduction operation to apply, e.g. numpy.mean
-            spreadfn: Secondary reduction to compute value spread
-                Useful for computing a confidence interval, spread, or
-                standard deviation.
-            **reductions: Keyword argument defining reduction
-                Allows reduction to be defined as keyword pair of
-                dimension and function
-
-        Returns:
-            The Dataset after reductions have been applied.
-        """
-        self.param.warning('The HoloMap.reduce method is deprecated, '
-                           'for equivalent functionality use '
-                           'HoloMap.apply.reduce().collapse().')
-
-        from ..element import Table
-        reduced_items = [(k, v.reduce(dimensions, function, spread_fn, **reduce_map))
-                         for k, v in self.items()]
-        if not isinstance(reduced_items[0][1], Table):
-            params = dict(util.get_param_values(self.last),
-                          kdims=self.kdims, vdims=self.last.vdims)
-            return Table(reduced_items, **params)
-        return Table(self.clone(reduced_items).collapse())
-
-
     def relabel(self, label=None, group=None, depth=1):
         """Clone object and apply new group and/or label.
 
@@ -500,7 +375,6 @@ class HoloMap(UniformNdMapping, Overlayable):
             Returns relabelled object
         """
         return super().relabel(label=label, group=group, depth=depth)
-
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, individually=True, **kwargs):
@@ -1476,14 +1350,6 @@ class DynamicMap(HoloMap):
                 dmap.label = relabelled.label
             return dmap
         return relabelled
-
-
-    def split_overlays(self):
-        "Deprecated method to split overlays inside the DynamicMap."
-        self.param.warning("split_overlays is deprecated and is now "
-                           "a private method.")
-        return self._split_overlays()
-
 
     def _split_overlays(self):
         """

@@ -26,7 +26,8 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range
+)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
@@ -1186,11 +1187,6 @@ class shade(LinkableOperation):
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
 
-    normalization = param.ClassSelector(default='eq_hist',
-                                        precedence=-1,
-                                        class_=(basestring, Callable),
-                                        doc="Deprecated parameter (use cnorm instead)")
-
     clims = param.NumericTuple(default=None, length=2, doc="""
         Min and max data values to use for colormap interpolation, when
         wishing to override autoranging.
@@ -1286,22 +1282,9 @@ class shade(LinkableOperation):
         array = element.data[vdim]
         kdims = element.kdims
 
-        overrides = dict(self.p.items())
-        if 'normalization' in overrides:
-            if 'cnorm' in overrides:
-                self.param.warning("Both the 'cnorm' and 'normalization' keywords"
-                                   "specified; 'cnorm' value taking precedence over "
-                                   "deprecated 'normalization' option")
-            elif config.future_deprecations:
-                self.param.warning("Shading 'normalization' parameter deprecated, "
-                                   "use 'cnorm' parameter instead'")
-            cnorm = overrides.get('cnorm', overrides['normalization'])
-        else:
-            cnorm = self.p.cnorm
-
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=cnorm,
+        shade_opts = dict(how=self.p.cnorm,
                           min_alpha=self.p.min_alpha,
                           alpha=self.p.alpha)
         if element.ndims > 2:
@@ -1333,7 +1316,7 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > '0.5.0' and cnorm != 'eq_hist':
+        elif ds_version > '0.5.0' and self.p.cnorm != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         params = dict(get_param_values(element), kdims=kdims,

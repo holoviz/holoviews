@@ -62,15 +62,6 @@ class ItemTable(Element):
             raise KeyError("%r not in available headings." % heading)
         return np.array(self.data.get(heading, np.NaN))
 
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        param.main.param.warning(
-            'ItemTable.collapse_data is deprecated and '
-            'should no longer be used.')
-        groups = np.vstack([np.array(odict.values()) for odict in data]).T
-        return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
-
-
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):

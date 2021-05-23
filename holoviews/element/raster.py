@@ -5,7 +5,7 @@ import colorsys
 import param
 
 from ..core import util, config, Dimension, Element2D, Overlay, Dataset
-from ..core.data import ImageInterface, GridInterface
+from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -99,17 +99,6 @@ class Raster(Element2D):
             return arr.flatten() if flat else arr
         else:
             return super().dimension_values(dim)
-
-    @classmethod
-    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
-        param.main.param.warning(
-            'Raster.collapse_data is deprecated, collapsing '
-            'may now be performed through concatenation '
-            'and aggregation.')
-        if isinstance(function, np.ufunc):
-            return function.reduce(data_list)
-        else:
-            return function(np.dstack(data_list), axis=-1, **kwargs)
 
     def sample(self, samples=[], bounds=None, **sample_values):
         """
@@ -393,18 +382,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                              'are supplied, otherwise they must match the data. To change '
                              'the displayed extents set the range on the x- and y-dimensions.')
 
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Image types without an interface
-        use the ImageInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if isinstance(self.data, np.ndarray):
-            self.interface = ImageInterface
-        super(Dataset, self).__setstate__(state)
-
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         """
@@ -521,23 +498,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             return (b, t) if idx else (l, r)
         else:
             return super().range(dim, data_range, dimension_range)
-
-    def table(self, datatype=None):
-        """
-        Converts the data Element to a Table, optionally may
-        specify a supported data type. The default data types
-        are 'numpy' (for homogeneous data), 'dataframe', and
-        'dictionary'.
-        """
-        self.param.warning(
-            "The table method is deprecated and should no longer "
-            "be used. Instead cast the %s to a a Table directly."
-            % type(self).__name__)
-        if datatype and not isinstance(datatype, list):
-            datatype = [datatype]
-        from ..element import Table
-        return self.clone(self.columns(), new_type=Table,
-                          **(dict(datatype=datatype) if datatype else {}))
 
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
@@ -775,20 +735,6 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
                             "element or aggregate the data (e.g. using "
                             "np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style QuadMesh types without an interface can be unpickled.
-
-        Note: Deprecate as part of 2.0
-        """
-        if 'interface' not in state:
-            self.interface = GridInterface
-            x, y = state['_kdims_param_value']
-            z = state['_vdims_param_value'][0]
-            data = state['data']
-            state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
-        super(Dataset, self).__setstate__(state)
 
     def trimesh(self):
         """

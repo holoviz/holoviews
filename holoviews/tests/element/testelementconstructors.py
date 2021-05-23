@@ -1,12 +1,12 @@
 import param
 import numpy as np
 
-from holoviews import (Dimension, Dataset, Element, Annotation, Curve,
-                       Path, Histogram, HeatMap, Contours, Scatter,
-                       Points, Polygons, VectorField, Spikes, Area,
-                       Bars, ErrorBars, BoxWhisker, Raster, Image,
-                       QuadMesh, RGB, Graph, TriMesh, Div, Tiles,
-                       Trisurface)
+from holoviews import (
+    Dimension, Dataset, Element, Annotation, Curve, Path, Histogram,
+    HeatMap, Contours, Scatter, Points, Polygons, VectorField, Spikes,
+    Area, Bars, ErrorBars, BoxWhisker, Raster, Image, QuadMesh, RGB,
+    Graph, TriMesh, Div, Tiles
+)
 from holoviews.element.path import BaseShape
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -31,7 +31,7 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_empty_element_constructor(self):
         failed_elements = []
         for name, el in param.concrete_descendents(Element).items():
-            if issubclass(el, (Annotation, BaseShape, Div, Tiles, Trisurface)):
+            if issubclass(el, (Annotation, BaseShape, Div, Tiles)):
                 continue
             try:
                 el([])
