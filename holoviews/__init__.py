@@ -1,4 +1,3 @@
-
 import os, io
 
 import numpy as np # noqa (API import)
@@ -89,4 +88,4 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-del absolute_import, io, np, os, print_function, rcfile, warnings
+del io, np, os, rcfile, warnings
