@@ -2,7 +2,6 @@
 """
 Test cases for rendering exporters
 """
-import os
 import subprocess
 
 from collections import OrderedDict

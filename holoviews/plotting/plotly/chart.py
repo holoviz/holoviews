@@ -1,12 +1,11 @@
 import param
 import numpy as np
 
-from .selection import PlotlyOverlaySelectionDisplay
-from ...core import util
 from ...operation import interpolate_curve
 from ...element import Tiles
 from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class ChartPlot(ElementPlot):

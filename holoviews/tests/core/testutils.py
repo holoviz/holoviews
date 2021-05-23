@@ -2,10 +2,11 @@
 """
 Unit tests of the helper functions in core.utils
 """
-import sys, math
-import unittest
 import datetime
-from unittest import SkipTest, skipIf
+import math
+import unittest
+
+from unittest import skipIf
 from itertools import product
 from collections import OrderedDict
 
@@ -542,9 +543,6 @@ class TestDatetimeUtils(unittest.TestCase):
 
     @pd_skip
     def test_timezone_to_int(self):
-        if py_version != 3:
-            raise SkipTest
-
         import pytz
         timezone = pytz.timezone("Europe/Copenhagen")
 

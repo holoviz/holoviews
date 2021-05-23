@@ -3,15 +3,16 @@
 Unit tests of the Callable object that wraps user callbacks. Also test
 how DynamicMap validates and invokes Callable based on its signature.
 """
+from functools import partial
+
 import param
-import sys
+
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Scatter
 from holoviews import streams
 from holoviews.core.spaces import Callable, Generator, DynamicMap
 from holoviews.core.operation import OperationCallable
 from holoviews.operation import contours
-from functools import partial
 
 from ..utils import LoggingComparisonTestCase
 

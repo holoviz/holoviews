@@ -2,12 +2,10 @@
 """
 Tests of Layout and related classes
 """
-
-import sys
 from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
 from holoviews.element import HLine, Curve
 from holoviews.element.comparison import ComparisonTestCase
-from unittest import SkipTest
+
 
 class CompositeTest(ComparisonTestCase):
     "For testing of basic composite element types"
