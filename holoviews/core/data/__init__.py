@@ -297,7 +297,7 @@ class Dataset(Element):
             cls.param.warning(cls, msg.format(class_name=class_name, apply_args=apply_args))
             return data.apply(cls, per_element=True, kdims=kdims, vdims=vdims, **kwargs)
         else:
-            return super().__new__(cls)
+            return super(Dataset, cls).__new__(cls)
 
     def __init__(self, data, kdims=None, vdims=None, **kwargs):
         from ...operation.element import (
