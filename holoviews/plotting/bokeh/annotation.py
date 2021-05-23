@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import param
@@ -176,7 +174,7 @@ class LineAnnotationPlot(ElementPlot, AnnotationPlot):
         if self.invert_axes:
             dim = 'x' if dim == 'y' else 'x'
         ranges[dim]['soft'] = loc, loc
-        return super(LineAnnotationPlot, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
 
 class BoxAnnotationPlot(ElementPlot, AnnotationPlot):
@@ -363,7 +361,7 @@ class ArrowPlot(CompositeElementPlot, AnnotationPlot):
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
-            renderer, glyph = super(ArrowPlot, self)._init_glyph(
+            renderer, glyph = super()._init_glyph(
                 plot, mapping, properties, key)
         plot.renderers.append(renderer)
         return renderer, glyph
@@ -431,7 +429,7 @@ class DivPlot(BokehPlot, GenericElementPlot, AnnotationPlot):
     selection_display = None
 
     def __init__(self, element, plot=None, **params):
-        super(DivPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.callbacks = []
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)

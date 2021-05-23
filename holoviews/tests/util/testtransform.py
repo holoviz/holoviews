@@ -2,8 +2,6 @@
 """
 Unit tests for dim transforms
 """
-from __future__ import division
-
 import sys
 import pickle
 

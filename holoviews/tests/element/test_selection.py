@@ -44,7 +44,7 @@ class TestSelection1DExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelection1DExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -226,7 +226,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelection2DExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -441,7 +441,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelectionGeomExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -548,7 +548,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelectionPolyExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 

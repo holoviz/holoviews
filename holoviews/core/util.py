@@ -121,7 +121,7 @@ class VersionError(Exception):
     def __init__(self, msg, version=None, min_version=None, **kwargs):
         self.version = version
         self.min_version = min_version
-        super(VersionError, self).__init__(msg, **kwargs)
+        super().__init__(msg, **kwargs)
 
 
 class Config(param.ParameterizedFunction):
@@ -307,7 +307,7 @@ class periodic(Thread):
             raise ValueError('When using a non-blocking thread, please specify '
                              'either a count or a timeout')
 
-        super(periodic, self).__init__()
+        super().__init__()
         self.period = period
         self.callback = callback
         self.count = count
@@ -324,7 +324,7 @@ class periodic(Thread):
     def start(self):
         self._start_time = time.time()
         if self.block is False:
-            super(periodic,self).start()
+            super().start()
         else:
             self.run()
 

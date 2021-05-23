@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
 
@@ -19,7 +17,7 @@ class DataError(ValueError):
     def __init__(self, msg, interface=None):
         if interface is not None:
             msg = '\n\n'.join([msg, interface.error()])
-        super(DataError, self).__init__(msg)
+        super().__init__(msg)
 
 
 class Accessor(object):

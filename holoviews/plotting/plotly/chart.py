@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -67,7 +65,7 @@ class ScatterPlot(ChartPlot, ColorbarPlot):
             return {'type': 'scatter', 'mode': 'markers'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(ScatterPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         cdim = element.get_dimension(self.color_index)
         if cdim:
             copts = self.get_color_opts(cdim, element, ranges, style)
@@ -111,7 +109,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return super(CurvePlot, self).get_data(element, ranges, style, **kwargs)
+        return super().get_data(element, ranges, style, **kwargs)
 
 
 class AreaPlot(AreaMixin, ChartPlot):
@@ -129,7 +127,7 @@ class AreaPlot(AreaMixin, ChartPlot):
     def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
-            kwargs = super(AreaPlot, self).get_data(element, ranges, style, **kwargs)[0]
+            kwargs = super().get_data(element, ranges, style, **kwargs)[0]
             kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
@@ -285,7 +283,7 @@ class BarPlot(BarsMixin, ElementPlot):
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(BarPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         stack_dim = None
         if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
@@ -328,6 +326,6 @@ class HistogramPlot(ElementPlot):
         return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(HistogramPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         layout['barmode'] = 'overlay'
         return layout

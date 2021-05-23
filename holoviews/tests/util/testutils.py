@@ -40,7 +40,7 @@ class TestOutputUtil(ComparisonTestCase):
             Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
 
-        super(TestOutputUtil, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
@@ -49,7 +49,7 @@ class TestOutputUtil(ComparisonTestCase):
         OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
-        super(TestOutputUtil, self).tearDown()
+        super().tearDown()
 
     def test_output_util_svg_string(self):
         self.assertEqual(OutputSettings.options.get('fig', None), None)
@@ -89,13 +89,13 @@ class TestOptsUtil(LoggingComparisonTestCase):
         Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        super(TestOptsUtil, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Store.current_backend = self.backend
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
-        super(TestOptsUtil, self).tearDown()
+        super().tearDown()
 
     def test_cell_opts_util_style(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')

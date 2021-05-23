@@ -1,7 +1,6 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import sys
 import warnings
+
 from types import FunctionType
 
 import param
@@ -212,7 +211,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks, self.source_streams = self._construct_callbacks()
@@ -228,7 +227,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Flag to check whether plot has been updated
         self._updated = False
 
-
     def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)
@@ -236,7 +234,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
-
 
     def _init_tools(self, element, callbacks=[]):
         """
@@ -335,7 +332,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if dim not in data:
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
-
     def _merge_ranges(self, plots, xspecs, yspecs, xtype, ytype):
         """
         Given a list of other plots return axes that are shared
@@ -358,7 +354,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['x_range'] = plot.y_range
         return plot_ranges
 
-
     def _get_axis_dims(self, element):
         """Returns the dimensions corresponding to each axis.
 
@@ -371,7 +366,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return dims + [None, None]
         else:
             return dims + [None]
-
 
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
@@ -2008,7 +2002,7 @@ class ColorbarPlot(ElementPlot):
         """
         Returns a Bokeh glyph object and optionally creates a colorbar.
         """
-        ret = super(ColorbarPlot, self)._init_glyph(plot, mapping, properties)
+        ret = super()._init_glyph(plot, mapping, properties)
         if self.colorbar:
             for k, v in list(self.handles.items()):
                 if not k.endswith('color_mapper'):
@@ -2133,7 +2127,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           (isinstance(p, OverlayPlot) or isinstance(p, AnnotationPlot))]
         if (not self.show_legend or len(plot.legend) == 0 or
             (len(non_annotation) <= 1 and not (self.dynamic or legend_plots))):
-            return super(OverlayPlot, self)._process_legend()
+            return super()._process_legend()
         elif not plot.legend:
             return
 
@@ -2279,7 +2273,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 if 'hover' not in self.handles:
                     self.handles['hover'] = tool
 
-
     def _get_factors(self, overlay, ranges):
         xfactors, yfactors = [], []
         for k, sp in self.subplots.items():
@@ -2295,13 +2288,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             yfactors = np.concatenate(yfactors)
         return util.unique_array(xfactors), util.unique_array(yfactors)
 
-
     def _get_axis_dims(self, element):
         subplots = list(self.subplots.values())
         if subplots:
             return subplots[0]._get_axis_dims(element)
-        return super(OverlayPlot, self)._get_axis_dims(element)
-
+        return super()._get_axis_dims(element)
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = util.wrap_tuple(self.hmap.last_key)

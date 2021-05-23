@@ -1,5 +1,3 @@
-from __future__ import unicode_literals, absolute_import, division
-
 import re
 import traceback
 import warnings

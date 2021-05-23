@@ -159,7 +159,7 @@ class TestPointerStreams(ComparisonTestCase):
 class TestParamsStream(LoggingComparisonTestCase):
 
     def setUp(self):
-        super(TestParamsStream, self).setUp()
+        super().setUp()
         class Inner(param.Parameterized):
 
             x = param.Number(default = 0)
@@ -873,7 +873,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
     def setUp(self):
         if pd is None:
             raise SkipTest('Pandas not available')
-        super(TestBufferDataFrameStream, self).setUp()
+        super().setUp()
 
     def test_init_buffer_dframe(self):
         data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
@@ -933,7 +933,7 @@ class Sum(Derived):
 
     def __init__(self, val_streams, exclusive=False, base=0):
         self.base = base
-        super(Sum, self).__init__(input_streams=val_streams, exclusive=exclusive)
+        super().__init__(input_streams=val_streams, exclusive=exclusive)
 
     @property
     def constants(self):

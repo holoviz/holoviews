@@ -94,7 +94,7 @@ class opts(param.ParameterizedFunction):
        strict, invalid keywords prevent the options being applied.""")
 
     def __init__(self, *args, **kwargs): # Needed for opts specific __signature__
-        super(opts, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def __call__(self, *args, **params):
         if not params and not args:

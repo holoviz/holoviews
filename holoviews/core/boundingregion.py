@@ -134,7 +134,7 @@ class BoundingBox(BoundingRegion):
         else:
             self._aarect = AARectangle((-0.5, -0.5), (0.5, 0.5))
 
-        super(BoundingBox, self).__init__(**args)
+        super().__init__(**args)
 
 
     def __contains__(self, other):
@@ -352,10 +352,7 @@ class BoundingRegionParameter(param.Parameter):
 
     def __init__(self, default=BoundingBox(radius=0.5), **params):
         self.set_hook = identity_hook
-        super(BoundingRegionParameter, self).__init__(default=default,
-                                                      instantiate=True,
-                                                      **params)
-
+        super().__init__(default=default, instantiate=True, **params)
 
     def __set__(self, obj, val):
         """
@@ -371,4 +368,4 @@ class BoundingRegionParameter(param.Parameter):
         if not isinstance(val, BoundingRegion):
             raise ValueError("Parameter must be a BoundingRegion.")
         else:
-            super(BoundingRegionParameter, self).__set__(obj, val)
+            super().__set__(obj, val)

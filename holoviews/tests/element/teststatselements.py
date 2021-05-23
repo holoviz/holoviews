@@ -125,7 +125,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
             raise SkipTest('SciPy not available')
         self.renderer = hv.renderer('matplotlib')
         np.random.seed(42)
-        super(StatisticalCompositorTest, self).setUp()
+        super().setUp()
 
     def test_distribution_composite(self):
         dist = Distribution(np.array([0, 1, 2]))

@@ -15,7 +15,7 @@ except:
 class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def setUp(self):
-        super(DimensionNameLabelTest, self).setUp()
+        super().setUp()
 
     def test_dimension_name(self):
         dim = Dimension('test')

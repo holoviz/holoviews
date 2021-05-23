@@ -12,8 +12,6 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-from __future__ import absolute_import
-
 import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
 from collections import defaultdict
 
@@ -612,7 +610,7 @@ class FileArchive(Archive):
             raise SyntaxError("Could not parse formatter %r" % formatter)
 
     def __init__(self, **params):
-        super(FileArchive, self).__init__(**params)
+        super().__init__(**params)
         #  Items with key: (basename,ext) and value: (data, info)
         self._files = OrderedDict()
         self._validate_formatters()

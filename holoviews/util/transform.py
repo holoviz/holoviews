@@ -1,5 +1,3 @@
-from __future__ import division
-
 import operator
 import sys
 
@@ -803,7 +801,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
-        super(df_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
     def interface_applies(self, dataset, coerce):
@@ -846,7 +844,7 @@ class xr_dim(dim):
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
                               "requires the xarray to be available.")
-        super(xr_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 
     def interface_applies(self, dataset, coerce):

@@ -38,7 +38,7 @@ class Surface(Image, Element3D):
         Image.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
     def _get_selection_expr_for_stream_value(self, **kwargs):
-        expr, bbox, _ = super(Surface, self)._get_selection_expr_for_stream_value(**kwargs)
+        expr, bbox, _ = super()._get_selection_expr_for_stream_value(**kwargs)
         return expr, bbox, None
 
 
@@ -75,8 +75,8 @@ class Trisurface(TriSurface):
     group = param.String(default='Trisurface', constant=True)
 
     def __init__(self, *args, **kwargs):
-        self.param.warning('Please use TriSurface element instead')
-        super(TriSurface, self).__init__(*args, **kwargs)
+        self.param.warning('Deprecation: Please use TriSurface element instead')
+        super().__init__(*args, **kwargs)
 
 
 class Scatter3D(Element3D, Points):
@@ -99,7 +99,6 @@ class Scatter3D(Element3D, Points):
 
     def __getitem__(self, slc):
         return Points.__getitem__(self, slc)
-
 
 
 class Path3D(Element3D, Path):

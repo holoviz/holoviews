@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -24,7 +22,6 @@ class DistributionPlot(AreaPlot):
         Whether the bivariate contours should be filled.""")
 
 
-
 class BivariatePlot(PolygonPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density
@@ -46,7 +43,6 @@ class BivariatePlot(PolygonPlot):
         A list of scalar values used to specify the contour levels.""")
 
 
-
 class BoxPlot(ChartPlot):
     """
     BoxPlot plots the ErrorBar Element type and supporting
@@ -65,7 +61,7 @@ class BoxPlot(ChartPlot):
     _plot_methods = dict(single='boxplot')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(BoxPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -102,7 +98,6 @@ class BoxPlot(ChartPlot):
                 v.remove()
 
 
-
 class SideBoxPlot(AdjoinedPlot, BoxPlot):
 
     bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
@@ -126,7 +121,7 @@ class SideBoxPlot(AdjoinedPlot, BoxPlot):
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
     def __init__(self, *args, **kwargs):
-        super(SideBoxPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.adjoined:
             self.invert_axes = not self.invert_axes
 

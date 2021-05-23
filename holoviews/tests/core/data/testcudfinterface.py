@@ -26,7 +26,7 @@ class cuDFInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
     __test__ = True
 
     def setUp(self):
-        super(cuDFInterfaceTests, self).setUp()
+        super().setUp()
         logging.getLogger('numba.cuda.cudadrv.driver').setLevel(30)
 
     def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):

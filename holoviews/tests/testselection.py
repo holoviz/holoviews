@@ -707,7 +707,7 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
             import holoviews.plotting.plotly # noqa
         except:
             raise SkipTest("Plotly selection tests require plotly.")
-        super(TestLinkSelectionsPlotly, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('plotly')
 
@@ -738,7 +738,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestLinkSelectionsBokeh, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 

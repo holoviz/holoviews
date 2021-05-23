@@ -1,5 +1,4 @@
 
-from __future__ import print_function, absolute_import
 import os, io
 
 import numpy as np # noqa (API import)

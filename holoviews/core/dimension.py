@@ -3,8 +3,6 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
-from __future__ import unicode_literals
-
 import re
 import datetime as dt
 import weakref
@@ -287,7 +285,7 @@ class Dimension(param.Parameterized):
             values = []
 
         all_params['values'] = list(util.unique_array(values))
-        super(Dimension, self).__init__(**all_params)
+        super().__init__(**all_params)
         if self.default is not None:
             if self.values and self.default not in values:
                 raise ValueError('%r default %s not found in declared values: %s' %
@@ -352,7 +350,7 @@ class Dimension(param.Parameterized):
         """
         Compatibility for pickles before alias attribute was introduced.
         """
-        super(Dimension, self).__setstate__(d)
+        super().__setstate__(d)
         if '_label_param_value' not in d:
             self.label = self.name
 
@@ -510,7 +508,7 @@ class LabelledData(param.Parameterized):
             util.group_sanitizer.add_aliases(**{alias:long_name})
             params['group'] = long_name
 
-        super(LabelledData, self).__init__(**params)
+        super().__init__(**params)
         if not util.group_sanitizer.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
@@ -761,7 +759,7 @@ class LabelledData(param.Parameterized):
             self.param.warning("Could not unpickle custom style information.")
         d['_id'] = opts_id
         self.__dict__.update(d)
-        super(LabelledData, self).__setstate__({})
+        super().__setstate__({})
 
 
 class Dimensioned(LabelledData):
@@ -851,7 +849,7 @@ class Dimensioned(LabelledData):
         if 'cdims' in params:
             params['cdims'] = {d if isinstance(d, Dimension) else Dimension(d): val
                                for d, val in params['cdims'].items()}
-        super(Dimensioned, self).__init__(data, **params)
+        super().__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
@@ -1465,7 +1463,7 @@ class ViewableTree(AttrTree, Dimensioned):
             vals = np.concatenate(values)
             return vals if expanded else util.unique_array(vals)
         else:
-            return super(ViewableTree, self).dimension_values(
+            return super().dimension_values(
                 dimension, expanded, flat)
 
     def __len__(self):

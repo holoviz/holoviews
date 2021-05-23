@@ -14,7 +14,7 @@ from pyviz_comms import CommManager
 class ExtensionTestCase(IPTestCase):
 
     def setUp(self):
-        super(ExtensionTestCase, self).setUp()
+        super().setUp()
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
         for renderer in Store.renderers.values():
             renderer.comm_manager = CommManager
@@ -23,21 +23,19 @@ class ExtensionTestCase(IPTestCase):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
-        super(ExtensionTestCase, self).tearDown()
-
+        super().tearDown()
 
 
 class TestOptsMagic(ExtensionTestCase):
 
     def setUp(self):
-        super(TestOptsMagic, self).setUp()
+        super().setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews import DynamicMap, Curve, Image")
 
     def tearDown(self):
         Store.custom_options(val = {})
-        super(TestOptsMagic, self).tearDown()
-
+        super().tearDown()
 
     def test_cell_opts_style(self):
 
@@ -126,7 +124,7 @@ class TestOptsMagic(ExtensionTestCase):
 class TestOutputMagic(ExtensionTestCase):
 
     def tearDown(self):
-        super(TestOutputMagic, self).tearDown()
+        super().tearDown()
 
     def test_output_svg(self):
         self.line_magic('output', "fig='svg'")
@@ -161,7 +159,7 @@ class TestOutputMagic(ExtensionTestCase):
 class TestCompositorMagic(ExtensionTestCase):
 
     def setUp(self):
-        super(TestCompositorMagic, self).setUp()
+        super().setUp()
         self.cell("import numpy as np")
         self.cell("from holoviews.element import Image")
         self.definitions = list(Compositor.definitions)
@@ -169,7 +167,7 @@ class TestCompositorMagic(ExtensionTestCase):
 
     def tearDown(self):
         Compositor.definitions[:] = self.definitions
-        super(TestCompositorMagic, self).tearDown()
+        super().tearDown()
 
     def test_display_compositor_definition(self):
         definition = " display factory(Image * Image * Image) RGBTEST"

@@ -62,7 +62,7 @@ class TestCurvePlot(TestPlotlyPlot):
 class TestMapboxCurvePlot(TestPlotlyPlot):
 
     def setUp(self):
-        super(TestMapboxCurvePlot, self).setUp()
+        super().setUp()
 
         # Precompute coordinates
         self.xs = [3000000, 2000000, 1000000]

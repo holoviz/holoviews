@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import re
 import warnings
 
@@ -399,13 +397,13 @@ class CFTimeConverter(NetCDFTimeConverter):
             value = CalendarDateTime(value.datetime, value.calendar)
         elif isinstance(value, np.ndarray):
             value = np.array([CalendarDateTime(v.datetime, v.calendar) for v in value])
-        return super(CFTimeConverter, cls).convert(value, unit, axis)
+        return super().convert(value, unit, axis)
 
 
 class EqHistNormalize(Normalize):
 
     def __init__(self, vmin=None, vmax=None, clip=False, nbins=256**2, ncolors=256):
-        super(EqHistNormalize, self).__init__(vmin, vmax, clip)
+        super().__init__(vmin, vmax, clip)
         self._nbins = nbins
         self._bin_edges = None
         self._ncolors = ncolors

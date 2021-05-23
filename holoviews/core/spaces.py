@@ -38,7 +38,7 @@ class HoloMap(UniformNdMapping, Overlayable):
     data_type = (ViewableElement, NdMapping, Layout)
 
     def __init__(self, initial_items=None, kdims=None, group=None, label=None, **params):
-        super(HoloMap, self).__init__(initial_items, kdims, group, label, **params)
+        super().__init__(initial_items, kdims, group, label, **params)
 
     @property
     def opts(self):
@@ -499,7 +499,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         Returns:
             Returns relabelled object
         """
-        return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
+        return super().relabel(label=label, group=group, depth=depth)
 
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
@@ -628,8 +628,8 @@ class Callable(param.Parameterized):
          the Callable, e.g. when it returns a Layout.""")
 
     def __init__(self, callable, **params):
-        super(Callable, self).__init__(callable=callable,
-                                       **dict(params, name=util.callable_name(callable)))
+        super().__init__(callable=callable,
+                         **dict(params, name=util.callable_name(callable)))
         self._memoized = {}
         self._is_overlay = False
         self.args = None
@@ -924,7 +924,7 @@ class DynamicMap(HoloMap):
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
-        super(DynamicMap, self).__init__(initial_items, callback=callback, streams=valid, **params)
+        super().__init__(initial_items, callback=callback, streams=valid, **params)
 
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
@@ -1327,7 +1327,7 @@ class DynamicMap(HoloMap):
             empty = self._stream_parameters() == [] and self.kdims==[]
             if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
-            cache = super(DynamicMap,self).__getitem__(key)
+            cache = super().__getitem__(key)
         except KeyError:
             cache = None
 
@@ -1385,7 +1385,7 @@ class DynamicMap(HoloMap):
         """
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
-        selection = super(DynamicMap, self).select(selection_specs=selection_specs, **kwargs)
+        selection = super().select(selection_specs=selection_specs, **kwargs)
         def dynamic_select(obj, **dynkwargs):
             if selection_specs is not None:
                 matches = any(obj.matches(spec) for spec in selection_specs)
@@ -1437,7 +1437,7 @@ class DynamicMap(HoloMap):
         Returns:
             Returns the object after the map_fn has been applied
         """
-        deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
+        deep_mapped = super().map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
             from ..util import Dynamic
             def apply_map(obj, **dynkwargs):
@@ -1464,7 +1464,7 @@ class DynamicMap(HoloMap):
         Returns:
             Returns relabelled object
         """
-        relabelled = super(DynamicMap, self).relabel(label, group, depth)
+        relabelled = super().relabel(label, group, depth)
         if depth > 0:
             from ..util import Dynamic
             def dynamic_relabel(obj, **dynkwargs):
@@ -1833,7 +1833,7 @@ class DynamicMap(HoloMap):
         if dropped:
             raise ValueError("DynamicMap does not allow dropping dimensions, "
                              "reindex may only be used to reorder dimensions.")
-        return super(DynamicMap, self).reindex(kdims, force)
+        return super().reindex(kdims, force)
 
 
     def drop_dimension(self, dimensions):
@@ -1869,7 +1869,7 @@ class GridSpace(UniformNdMapping):
     kdims = param.List(default=[Dimension("X"), Dimension("Y")], bounds=(1,2))
 
     def __init__(self, initial_items=None, kdims=None, **params):
-        super(GridSpace, self).__init__(initial_items, kdims=kdims, **params)
+        super().__init__(initial_items, kdims=kdims, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
 
@@ -1937,7 +1937,7 @@ class GridSpace(UniformNdMapping):
         Returns:
             List of keys
         """
-        keys = super(GridSpace, self).keys()
+        keys = super().keys()
         if self.ndims == 1 or not full_grid:
             return keys
         dim1_keys = list(OrderedDict.fromkeys(k[0] for k in keys))

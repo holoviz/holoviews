@@ -10,7 +10,7 @@ py3 = (sys.version_info.major == 3)
 class DimensionsComparisonTestCase(ComparisonTestCase):
 
     def setUp(self):
-        super(DimensionsComparisonTestCase, self).setUp()
+        super().setUp()
         self.dimension1 = Dimension('dim1', range=(0,1))
         self.dimension2 = Dimension('dim2', range=(0,1))
         self.dimension3 = Dimension('dim1', range=(0,2))
@@ -98,7 +98,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
 class DimensionedComparisonTestCase(ComparisonTestCase):
 
     def setUp(self):
-        super(DimensionedComparisonTestCase, self).setUp()
+        super().setUp()
         # Value dimension lists
         self.value_list1 = [Dimension('val1')]
         self.value_list2 = [Dimension('val2')]

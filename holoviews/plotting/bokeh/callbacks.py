@@ -556,7 +556,7 @@ class DrawCallback(PointerXYCallback):
 
     def __init__(self, *args, **kwargs):
         self.stroke_count = 0
-        super(DrawCallback, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _process_msg(self, msg):
         event = msg.pop('event')
@@ -777,7 +777,7 @@ class SelectionXYCallback(BoundsCallback):
     """
 
     def _process_msg(self, msg):
-        msg = super(SelectionXYCallback, self)._process_msg(msg)
+        msg = super()._process_msg(msg)
         if 'bounds' not in msg:
             return msg
         el = self.plot.current_frame
@@ -932,7 +932,7 @@ class CDSCallback(Callback):
     on_changes = ['data', 'patching']
 
     def initialize(self, plot_id=None):
-        super(CDSCallback, self).initialize(plot_id)
+        super().initialize(plot_id)
         plot = self.plot
         data = self._process_msg({'data': plot.handles['source'].data})['data']
         for stream in self.streams:
@@ -1041,11 +1041,11 @@ class PointDrawCallback(GlyphDrawCallback):
         self._update_cds_vdims(cds.data)
         # Add any value dimensions not already in the CDS data
         # ensuring the element can be reconstituted in entirety
-        super(PointDrawCallback, self).initialize(plot_id)
+        super().initialize(plot_id)
 
     def _process_msg(self, msg):
         self._update_cds_vdims(msg['data'])
-        return super(PointDrawCallback, self)._process_msg(msg)
+        return super()._process_msg(msg)
 
 
 class CurveEditCallback(GlyphDrawCallback):
@@ -1071,11 +1071,11 @@ class CurveEditCallback(GlyphDrawCallback):
 
         self.plot.state.tools.append(point_tool)
         self._update_cds_vdims(cds.data)
-        super(CurveEditCallback, self).initialize(plot_id)
+        super().initialize(plot_id)
 
     def _process_msg(self, msg):
         self._update_cds_vdims(msg['data'])
-        return super(CurveEditCallback, self)._process_msg(msg)
+        return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
         """
@@ -1116,11 +1116,11 @@ class PolyDrawCallback(GlyphDrawCallback):
         )
         plot.state.tools.append(poly_tool)
         self._update_cds_vdims(cds.data)
-        super(PolyDrawCallback, self).initialize(plot_id)
+        super().initialize(plot_id)
 
     def _process_msg(self, msg):
         self._update_cds_vdims(msg['data'])
-        return super(PolyDrawCallback, self)._process_msg(msg)
+        return super()._process_msg(msg)
 
     def _update_cds_vdims(self, data):
         """
@@ -1223,7 +1223,7 @@ class BoxEditCallback(GlyphDrawCallback):
         super(CDSCallback, self).initialize()
 
     def _process_msg(self, msg):
-        data = super(BoxEditCallback, self)._process_msg(msg)
+        data = super()._process_msg(msg)
         if 'data' not in data:
             return {}
         data = data['data']

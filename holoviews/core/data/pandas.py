@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:

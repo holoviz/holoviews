@@ -49,7 +49,7 @@ class Chart(Dataset, Element2D):
         params.update(process_dimensions(kdims, vdims))
         if len(params.get('kdims', [])) == self._max_kdim_count + 1:
             self.param.warning('Chart elements should only be supplied a single kdim')
-        super(Chart, self).__init__(data, **params)
+        super().__init__(data, **params)
 
     def __getitem__(self, index):
         return super(Chart, self).__getitem__(index)
@@ -134,8 +134,7 @@ class ErrorBars(Selection1DExpr, Chart):
             if not dimension_range:
                 return (lower, upper)
             return util.dimension_range(lower, upper, dim.range, dim.soft_range)
-        return super(ErrorBars, self).range(dim, data_range)
-
+        return super().range(dim, data_range)
 
 
 class Spread(ErrorBars):
@@ -148,7 +147,6 @@ class Spread(ErrorBars):
     """
 
     group = param.String(default='Spread', constant=True)
-
 
 
 class Bars(Selection1DExpr, Chart):
@@ -200,7 +198,8 @@ class Histogram(Selection1DExpr, Chart):
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
 
-        super(Histogram, self).__init__(data, **params)
+        super().__init__(data, **params)
+
     def __setstate__(self, state):
         """
         Ensures old-style Histogram types without an interface can be unpickled.
@@ -213,14 +212,12 @@ class Histogram(Selection1DExpr, Chart):
             state['data'] = {x.name: state['data'][1], y.name: state['data'][0]}
         super(Dataset, self).__setstate__(state)
 
-
     @property
     def values(self):
         "Property to access the Histogram values provided for backward compatibility"
         self.param.warning('Histogram.values is deprecated in favor of '
                            'common dimension_values method.')
         return self.dimension_values(1)
-
 
     @property
     def edges(self):
@@ -246,7 +243,6 @@ class Spikes(Selection1DExpr, Chart):
     vdims = param.List(default=[])
 
     _auto_indexable_1d = False
-
 
 
 class Area(Curve):

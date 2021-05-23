@@ -56,7 +56,7 @@ class ProgressBar(ProgressIndicator):
         self.start_time = None
         self._stdout_display(0, False)
         ProgressBar.current_progress.append(self)
-        super(ProgressBar,self).__init__(**params)
+        super().__init__(**params)
 
     def __call__(self, percentage):
         " Update the progress bar within the specified percent_range"
@@ -136,7 +136,7 @@ class RemoteProgress(ProgressBar):
     port = param.Integer(default=8080, doc="Target port on hostname.")
 
     def __init__(self, port, **params):
-        super(RemoteProgress, self).__init__(port=port, **params)
+        super().__init__(port=port, **params)
 
     def __call__(self):
         import zmq
@@ -188,7 +188,7 @@ class RunProgress(ProgressBar):
 
 
     def __init__(self, **params):
-        super(RunProgress,self).__init__(**params)
+        super().__init__(**params)
 
     def __call__(self, value):
         """
@@ -199,11 +199,11 @@ class RunProgress(ProgressBar):
         while (value - completed) >= self.interval:
             self.run_hook(self.interval)
             completed += self.interval
-            super(RunProgress, self).__call__(100 * (completed / float(value)))
+            super().__call__(100 * (completed / float(value)))
         remaining = value - completed
         if remaining != 0:
             self.run_hook(remaining)
-            super(RunProgress, self).__call__(100)
+            super().__call__(100)
 
 
 def progress(iterator, enum=False, length=None):

@@ -99,7 +99,7 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **dict(params))
+        super().__init__(OrderedDict(), **dict(params))
         if type(initial_items) is dict and not self.sort:
             raise ValueError('If sort=False the data must define a fixed '
                              'ordering, please supply a list of items or '
@@ -266,8 +266,7 @@ class MultiDimensionalMapping(Dimensioned):
             Cloned object
         """
         with item_check(not shared_data and self._check_items):
-            return super(MultiDimensionalMapping, self).clone(data, shared_data,
-                                                              *args, **overrides)
+            return super().clone(data, shared_data, *args, **overrides)
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
@@ -808,7 +807,7 @@ class UniformNdMapping(NdMapping):
         self._type = None
         self._group_check, self.group = None, group
         self._label_check, self.label = None, label
-        super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
+        super().__init__(initial_items, kdims=kdims, **params)
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
@@ -1015,7 +1014,7 @@ class UniformNdMapping(NdMapping):
         elif self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
-        super(UniformNdMapping, self)._item_check(dim_vals, data)
+        super()._item_check(dim_vals, data)
 
 
     def __mul__(self, other, reverse=False):

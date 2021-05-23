@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import groupby
 from collections import defaultdict
 
@@ -238,7 +236,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         Converts integer fontsizes to a string specifying
         fontsize in pt.
         """
-        size = super(BokehPlot, self)._fontsize(key, label, common)
+        size = super()._fontsize(key, label, common)
         return {k: v if isinstance(v, basestring) else '%spt' % v
                 for k, v in size.items()}
 
@@ -472,7 +470,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
@@ -683,7 +681,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         Whether to display overlaid plots in separate panes""")
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout, keys=keys, **params)
+        super().__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
@@ -1007,8 +1005,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, plots=[]):
         """
@@ -1032,7 +1029,6 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
-
 
     def update_frame(self, key, ranges=None):
         plot = None

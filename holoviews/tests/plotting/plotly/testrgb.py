@@ -249,7 +249,7 @@ class TestRGBPlot(TestPlotlyPlot):
 
 class TestMapboxRGBPlot(TestPlotlyPlot):
     def setUp(self):
-        super(TestMapboxRGBPlot, self).setUp()
+        super().setUp()
 
         # Precompute coordinates
         self.xs = [3000000, 2000000, 1000000]

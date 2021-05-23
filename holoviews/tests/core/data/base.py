@@ -429,7 +429,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
                                     'weight':self.weight, 'height':self.height},
                                    kdims=self.alias_kdims, vdims=self.alias_vdims)
 
-        super(HeterogeneousColumnTests, self).init_column_data()
+        super().init_column_data()
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
         self.dataset_ht = Dataset({'x':self.xs, 'y':self.ys},

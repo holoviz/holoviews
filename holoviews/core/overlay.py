@@ -116,7 +116,7 @@ class CompositeOverlay(ViewableElement, Composable):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:
-            return super(CompositeOverlay, self).dimension_values(dimension, expanded, flat)
+            return super().dimension_values(dimension, expanded, flat)
         values = [v for v in values if v is not None and len(v)]
         if not values:
             return np.array()
@@ -140,7 +140,7 @@ class Overlay(ViewableTree, CompositeOverlay):
         self.__dict__['_fixed'] = False
         self.__dict__['_group'] = group
         self.__dict__['_label'] = label
-        super(Overlay, self).__init__(items, **params)
+        super().__init__(items, **params)
 
     def __getitem__(self, key):
         """
@@ -169,7 +169,7 @@ class Overlay(ViewableTree, CompositeOverlay):
                 return values[identifier]
             else:
                 return default
-        return super(Overlay, self).get(identifier, default)
+        return super().get(identifier, default)
 
 
     def __add__(self, other):
@@ -309,7 +309,7 @@ class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     _deep_indexable = True
 
     def __init__(self, overlays=None, kdims=None, **params):
-        super(NdOverlay, self).__init__(overlays, kdims=kdims, **params)
+        super().__init__(overlays, kdims=kdims, **params)
 
     def decollate(self):
         """Packs NdOverlay of DynamicMaps into a single DynamicMap that returns an

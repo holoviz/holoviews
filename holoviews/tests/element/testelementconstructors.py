@@ -26,7 +26,7 @@ class ElementConstructorTest(ComparisonTestCase):
         self.curve = Curve(sine_data)
         self.path = Path([sine_data, cos_data])
         self.histogram = Histogram((self.hxs, self.sin))
-        super(ElementConstructorTest, self).setUp()
+        super().setUp()
 
     def test_empty_element_constructor(self):
         failed_elements = []

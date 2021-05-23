@@ -26,7 +26,7 @@ class ElementTestCase(ComparisonTestCase):
 class LayoutTestCase(ElementTestCase):
 
     def setUp(self):
-        super(LayoutTestCase, self).setUp()
+        super().setUp()
 
     def test_layouttree_keys_1(self):
         t = self.el1 + self.el2
@@ -197,9 +197,6 @@ class OverlayTestCase(ElementTestCase):
     from Layout and behave in a very similar way (except for being
     associated with * instead of the + operator)
     """
-
-    def setUp(self):
-        super(OverlayTestCase, self).setUp()
 
     def test_overlay_keys(self):
         t = self.el1 * self.el2

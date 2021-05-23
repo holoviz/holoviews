@@ -115,7 +115,7 @@ class SkipRendering(Exception):
     """
     def __init__(self, message="", warn=True):
         self.warn = warn
-        super(SkipRendering, self).__init__(message)
+        super().__init__(message)
 
 
 
@@ -128,9 +128,9 @@ class OptionError(Exception):
     """
     def __init__(self, invalid_keyword, allowed_keywords,
                  group_name=None, path=None):
-        super(OptionError, self).__init__(self.message(invalid_keyword,
-                                                       allowed_keywords,
-                                                       group_name, path))
+        super().__init__(self.message(invalid_keyword,
+                                      allowed_keywords,
+                                      group_name, path))
         self.invalid_keyword = invalid_keyword
         self.allowed_keywords = allowed_keywords
         self.group_name =group_name
@@ -263,7 +263,7 @@ class Keywords(param.Parameterized):
         strings = [isinstance(v, (str,basestring)) for v in values]
         if False in strings:
             raise ValueError('All keywords must be strings: {0}'.format(values))
-        super(Keywords, self).__init__(values=sorted(values),
+        super().__init__(values=sorted(values),
                                               target=target)
 
     def __add__(self, other):
@@ -321,7 +321,7 @@ class Cycle(param.Parameterized):
             else:
                 params['values'] = cycle
                 params['key'] = None
-        super(Cycle, self).__init__(**params)
+        super().__init__(**params)
         self.values = self._get_values()
 
 
@@ -491,8 +491,8 @@ class Options(param.Parameterized):
 
         allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
                             else Keywords(allowed_keywords))
-        super(Options, self).__init__(allowed_keywords=allowed_keywords,
-                                      merge_keywords=merge_keywords, key=key)
+        super().__init__(allowed_keywords=allowed_keywords,
+                         merge_keywords=merge_keywords, key=key)
 
     def keywords_target(self, target):
         """
@@ -669,7 +669,7 @@ class OptionTree(AttrTree):
     def __getitem__(self, item):
         if item in self.groups:
             return self.groups[item]
-        return super(OptionTree, self).__getitem__(item)
+        return super().__getitem__(item)
 
 
     def __getattr__(self, identifier):
@@ -723,7 +723,7 @@ class OptionTree(AttrTree):
         else:
             raise ValueError('OptionTree only accepts a dictionary of Options.')
 
-        super(OptionTree, self).__setattr__(identifier, new_node)
+        super().__setattr__(identifier, new_node)
 
         if isinstance(val, OptionTree):
             for subtree in val:
@@ -1014,14 +1014,14 @@ class Compositor(param.Parameterized):
             self.label = ''
 
         self._output_type = output_type
-        super(Compositor, self).__init__(group=group,
-                                         pattern=pattern,
-                                         operation=operation,
-                                         mode=mode,
-                                         backends=backends or [],
-                                         kwargs=kwargs,
-                                         transfer_options=transfer_options,
-                                         transfer_parameters=transfer_parameters)
+        super().__init__(group=group,
+                         pattern=pattern,
+                         operation=operation,
+                         mode=mode,
+                         backends=backends or [],
+                         kwargs=kwargs,
+                         transfer_options=transfer_options,
+                         transfer_parameters=transfer_parameters)
 
 
     @property

@@ -16,7 +16,7 @@ from .testplot import TestMPLPlot, mpl_renderer
 class RadialHeatMapPlotTests(TestMPLPlot):
 
     def setUp(self):
-        super(RadialHeatMapPlotTests, self).setUp()
+        super().setUp()
 
         # set up dummy data for convenient tests
         x = ["Seg {}".format(idx) for idx in range(2)]

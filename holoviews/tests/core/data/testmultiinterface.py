@@ -506,12 +506,12 @@ class MultiBaseInterfaceTest(GeomTests):
         get_logger().setLevel(logging.ERROR)
         self._subtypes = MultiInterface.subtypes
         MultiInterface.subtypes = [self.subtype]
-        super(MultiBaseInterfaceTest, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         MultiInterface.subtypes = self._subtypes
         get_logger().setLevel(self._log_level)
-        super(MultiBaseInterfaceTest, self).tearDown()
+        super().tearDown()
 
 
 class MultiDictInterfaceTest(MultiBaseInterfaceTest):

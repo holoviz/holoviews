@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import numpy as np
 
 from holoviews.element import Polygons

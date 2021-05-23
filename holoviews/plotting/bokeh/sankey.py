@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -68,7 +66,7 @@ class SankeyPlot(GraphPlot):
     filled = True
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(SankeyPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         renderer = plot.renderers.pop(plot.renderers.index(self.handles['glyph_renderer']))
         plot.renderers = [renderer] + plot.renderers
         arc_renderer = self.handles['quad_1_glyph_renderer']
@@ -79,7 +77,7 @@ class SankeyPlot(GraphPlot):
         self._sync_nodes()
 
     def get_data(self, element, ranges, style):
-        data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
+        data, mapping, style = super().get_data(element, ranges, style)
         self._compute_quads(element, data, mapping)
         style['nodes_line_color'] = 'black'
         self._compute_labels(element, data, mapping)
@@ -90,11 +88,11 @@ class SankeyPlot(GraphPlot):
         if key == 'quad_1':
             properties.pop('size', None)
             mapping.pop('size', None)
-        return super(SankeyPlot, self)._init_glyph(plot, mapping, properties, key)
+        return super()._init_glyph(plot, mapping, properties, key)
 
     def _update_glyphs(self, element, ranges, style):
         self._sync_nodes()
-        super(SankeyPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)
 
     def _sync_nodes(self):
         arc_renderer = self.handles['quad_1_glyph_renderer']
@@ -264,4 +262,4 @@ class SankeyPlot(GraphPlot):
         else:
             if isinstance(renderer.glyph, Patches):
                 return
-        super(SankeyPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)

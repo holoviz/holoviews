@@ -28,7 +28,7 @@ class RasterTestCase(ComparisonTestCase):
 class RasterOverlayTestCase(RasterTestCase):
 
     def setUp(self):
-        super(RasterOverlayTestCase, self).setUp()
+        super().setUp()
         # Two overlays of depth two with different layers
         self.overlay1_depth2 = (self.mat1 * self.mat2)
         self.overlay2_depth2 = (self.mat1 * self.mat3)
@@ -41,7 +41,7 @@ class RasterOverlayTestCase(RasterTestCase):
 class RasterMapTestCase(RasterOverlayTestCase):
 
     def setUp(self):
-        super(RasterMapTestCase, self).setUp()
+        super().setUp()
         # Example 1D map
         self.map1_1D = HoloMap(kdims=['int'])
         self.map1_1D[0] = self.mat1

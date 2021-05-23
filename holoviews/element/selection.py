@@ -18,7 +18,7 @@ class SelectionIndexExpr(object):
     _selection_streams = (Selection1D,)
 
     def __init__(self, *args, **kwargs):
-        super(SelectionIndexExpr, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._index_skip = False
 
     def _empty_region(self):

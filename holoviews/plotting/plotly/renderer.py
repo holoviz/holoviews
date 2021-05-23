@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import base64
 
 from io import BytesIO
@@ -77,7 +75,7 @@ class PlotlyRenderer(Renderer):
         Given a HoloViews Viewable return a corresponding figure dictionary.
         Allows cleaning the dictionary of any internal properties that were added
         """
-        fig_dict = super(PlotlyRenderer, self_or_cls).get_plot_state(obj, renderer, **kwargs)
+        fig_dict = super().get_plot_state(obj, renderer, **kwargs)
         config = fig_dict.get('config', {})
 
         # Remove internal properties (e.g. '_id', '_dim')

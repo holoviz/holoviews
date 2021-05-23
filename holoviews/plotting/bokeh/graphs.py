@@ -96,16 +96,13 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = []
         return dims, {}
 
-
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
-
+        return super().get_extents(element.nodes, ranges, range_type)
 
     def _get_axis_dims(self, element):
         if isinstance(element, Graph):
             element = element.nodes
         return element.dimensions()[:2]
-
 
     def _get_edge_colors(self, element, ranges, edge_data, edge_mapping, style):
         cdim = element.get_dimension(self.edge_color_index)
@@ -414,7 +411,7 @@ class ChordPlot(ChordMixin, GraphPlot):
             arc_glyph.update(**styles)
 
     def _init_glyphs(self, plot, element, ranges, source):
-        super(ChordPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
         # Ensure that arc glyph matches node style
         if 'multi_line_2_glyph' in self.handles:
             arc_renderer = self.handles['multi_line_2_glyph_renderer']
@@ -427,11 +424,11 @@ class ChordPlot(ChordMixin, GraphPlot):
     def _update_glyphs(self, element, ranges, style):
         if 'multi_line_2_glyph' in self.handles:
             self._sync_arcs()
-        super(ChordPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)
 
     def get_data(self, element, ranges, style):
         offset = style.pop('label_offset', 1.05)
-        data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
+        data, mapping, style = super().get_data(element, ranges, style)
         angles = element._angles
         arcs = defaultdict(list)
         for i in range(len(element.nodes)):
@@ -517,8 +514,8 @@ class TriMeshPlot(GraphPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         element = self._process_vertices(element)
-        super(TriMeshPlot, self)._init_glyphs(plot, element, ranges, source)
+        super()._init_glyphs(plot, element, ranges, source)
 
     def _update_glyphs(self, element, ranges, style):
         element = self._process_vertices(element)
-        super(TriMeshPlot, self)._update_glyphs(element, ranges, style)
+        super()._update_glyphs(element, ranges, style)

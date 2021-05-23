@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -35,7 +33,7 @@ class RasterBasePlot(ElementPlot):
     _plot_methods = dict(single='imshow')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        extents = super(RasterBasePlot, self).get_extents(element, ranges, range_type)
+        extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
         else:
@@ -102,7 +100,6 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         return axis_kwargs
 
 
-
 class RGBPlot(RasterBasePlot):
 
     style_opts = ['alpha', 'interpolation', 'visible', 'filterrad']
@@ -126,7 +123,6 @@ class RGBPlot(RasterBasePlot):
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
         return axis_kwargs
-
 
 
 class QuadMeshPlot(ColorbarPlot):
@@ -167,7 +163,6 @@ class QuadMeshPlot(ColorbarPlot):
         self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}
 
-
     def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
@@ -183,7 +178,6 @@ class QuadMeshPlot(ColorbarPlot):
             colorbar.update_normal(artist)
 
         return {'artist': artist, 'locs': locs}
-
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):

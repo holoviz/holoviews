@@ -27,7 +27,7 @@ class TestOptsCompleter(IPTestCase):
         self.compositor_defs = {}
         self.all_keys = sorted(self.completions.keys()) + ['style(', 'plot[', 'norm{']
 
-        super(TestOptsCompleter, self).setUp()
+        super().setUp()
 
     def test_completer_setup(self):
         "Test setup_completions for the real completion set"

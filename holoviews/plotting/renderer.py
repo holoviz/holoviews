@@ -3,8 +3,6 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
-from __future__ import unicode_literals, absolute_import
-
 import base64
 import os
 
@@ -185,7 +183,7 @@ class Renderer(Exporter):
 
     def __init__(self, **params):
         self.last_plot = None
-        super(Renderer, self).__init__(**params)
+        super().__init__(**params)
 
     def __call__(self, obj, fmt='auto', **kwargs):
         plot, fmt = self._validate(obj, fmt)

@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-
 import numpy as np
+
 from holoviews.core.data import Dataset
 from holoviews.core.options import Cycle
 from holoviews.core.spaces import HoloMap
@@ -19,7 +18,7 @@ from .testplot import TestMPLPlot, mpl_renderer
 class TestMplGraphPlot(TestMPLPlot):
 
     def setUp(self):
-        super(TestMplGraphPlot, self).setUp()
+        super().setUp()
 
         N = 8
         self.nodes = circular_layout(np.arange(N, dtype=np.int32))
@@ -304,7 +303,7 @@ class TestMplGraphPlot(TestMPLPlot):
 class TestMplTriMeshPlot(TestMPLPlot):
 
     def setUp(self):
-        super(TestMplTriMeshPlot, self).setUp()
+        super().setUp()
 
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
         self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
@@ -475,7 +474,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
 class TestMplChordPlot(TestMPLPlot):
 
     def setUp(self):
-        super(TestMplChordPlot, self).setUp()
+        super().setUp()
         self.edges = [(0, 1, 1), (0, 2, 2), (1, 2, 3)]
         self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
         self.chord = Chord((self.edges, self.nodes))
