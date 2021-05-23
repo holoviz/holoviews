@@ -396,20 +396,24 @@ def argspec(callable_obj):
     if (isinstance(callable_obj, type)
         and issubclass(callable_obj, param.ParameterizedFunction)):
         # Parameterized function.__call__ considered function in py3 but not py2
-        spec = _getargspec(callable_obj.__call__)
+        spec = inspect.getfullargspec(callable_obj.__call__)
         args = spec.args[1:]
-    elif inspect.isfunction(callable_obj):    # functions and staticmethods
-        spec = _getargspec(callable_obj)
+    elif inspect.isfunction(callable_obj):  # functions and staticmethods
+        spec = inspect.getfullargspec(callable_obj)
         args = spec.args
     elif isinstance(callable_obj, partial): # partials
         arglen = len(callable_obj.args)
-        spec =  _getargspec(callable_obj.func)
+        spec = inspect.getfullargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
     elif inspect.ismethod(callable_obj):    # instance and class methods
-        spec = _getargspec(callable_obj)
+        spec = inspect.getfullargspec(callable_obj)
         args = spec.args[1:]
-    else:                                   # callable objects
+    elif isinstance(callable_obj, type) and issubclass(callable_obj, param.Parameterized):
+        return argspec(callable_obj.__init__)
+    elif callable(callable_obj):            # callable objects
         return argspec(callable_obj.__call__)
+    else:
+        raise ValueError("Cannot determine argspec for non-callable type.")
 
     return inspect.ArgSpec(args=args,
                            varargs=spec.varargs,
