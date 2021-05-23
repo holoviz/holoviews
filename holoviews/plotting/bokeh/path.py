@@ -201,13 +201,10 @@ class ContourPlot(PathPlot):
 
         interface = element.interface
         scalar_kwargs = {'per_geom': True} if interface.multi else {}
-        npath = len([vs for vs in data.values()][0])
         for d in element.vdims:
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
-                if element.level is not None:
-                    data[dim] = np.full(npath, element.level)
-                elif interface.isunique(element, d, **scalar_kwargs):
+                if interface.isunique(element, d, **scalar_kwargs):
                     data[dim] = element.dimension_values(d, expanded=False)
                 else:
                     data[dim] = element.split(datatype='array', dimensions=[d])
@@ -248,8 +245,6 @@ class ContourPlot(PathPlot):
         if (((isinstance(color, dim) and color.applies(element)) or color in element) or
             (isinstance(fill_color, dim) and fill_color.applies(element)) or fill_color in element):
             cdim = None
-        elif None not in [element.level, self.color_index] and element.vdims:
-            cdim = element.vdims[0]
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
             cdim = element.get_dimension(cidx)
@@ -257,12 +252,8 @@ class ContourPlot(PathPlot):
         if cdim is None:
             return data, mapping, style
 
-        ncontours = len(xs)
         dim_name = util.dimension_sanitizer(cdim.name)
-        if element.level is not None:
-            values = np.full(ncontours, float(element.level))
-        else:
-            values = element.dimension_values(cdim, expanded=False)
+        values = element.dimension_values(cdim, expanded=False)
         data[dim_name] = values
 
         factors = None
