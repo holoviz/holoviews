@@ -26,6 +26,7 @@ from bokeh.resources import CDN, INLINE
 from panel import config
 from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
+from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
@@ -416,7 +417,7 @@ class Renderer(Exporter):
         manager.client_comm_id = client_comm.id
         return render_mimebundle(model, doc, comm, manager)
     
-    def _render_ipywidget(self, plot)
+    def _render_ipywidget(self, plot):
         # Handle rendering object as ipywidget
         widget = ipywidget(plot, combine_events=True)
         if hasattr(widget, '_repr_mimebundle_'):

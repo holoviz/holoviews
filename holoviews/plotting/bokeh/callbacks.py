@@ -470,7 +470,6 @@ class PointerXYCallback(Callback):
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
-    extra_models= ['x_range', 'y_range']
     on_events = ['mousemove']
 
     def _process_out_of_bounds(self, value, start, end):
@@ -752,7 +751,6 @@ class BoundsCallback(Callback):
                   'y0': 'cb_obj.geometry.y0',
                   'y1': 'cb_obj.geometry.y1'}
     models = ['plot']
-    extra_models = ['box_select']
     on_events = ['selectiongeometry']
 
     skip_events = [lambda event: event.geometry['type'] != 'rect',
@@ -824,7 +822,6 @@ class BoundsXCallback(Callback):
 
     attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
     models = ['plot']
-    extra_models = ['xbox_select']
     on_events = ['selectiongeometry']
 
     skip_events = [lambda event: event.geometry['type'] != 'rect',
@@ -848,7 +845,6 @@ class BoundsYCallback(Callback):
 
     attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
     models = ['plot']
-    extra_models = ['ybox_select']
     on_events = ['selectiongeometry']
 
     skip_events = [lambda event: event.geometry['type'] != 'rect',
@@ -869,7 +865,6 @@ class LassoCallback(Callback):
 
     attributes = {'xs': 'cb_obj.geometry.x', 'ys': 'cb_obj.geometry.y'}
     models = ['plot']
-    extra_models = ['lasso_select']
     on_events = ['selectiongeometry']
     skip_events = [lambda event: event.geometry['type'] != 'poly',
                    lambda event: not event.final]
