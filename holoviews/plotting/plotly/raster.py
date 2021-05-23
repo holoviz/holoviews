@@ -25,7 +25,7 @@ class RasterPlot(ColorbarPlot):
         return {'type': 'heatmap'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(RasterPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         opts['zmin'] = copts.pop('cmin')
         opts['zmax'] = copts.pop('cmax')
@@ -53,7 +53,7 @@ class RasterPlot(ColorbarPlot):
 class HeatMapPlot(HeatMapMixin, RasterPlot):
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(HeatMapPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         gridded = element.gridded
         xdim, ydim = gridded.dimensions()[:2]
 

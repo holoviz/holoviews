@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:
@@ -1208,9 +1206,7 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        return super(Dataset, self).clone(
-            data, shared_data, new_type, *args, **overrides
-        )
+        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support

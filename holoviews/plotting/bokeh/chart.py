@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import numpy as np
@@ -268,10 +266,9 @@ class VectorFieldPlot(ColorbarPlot):
         return magnitudes
 
     def _glyph_properties(self, *args):
-        properties = super(VectorFieldPlot, self)._glyph_properties(*args)
+        properties = super()._glyph_properties(*args)
         properties.pop('scale', None)
         return properties
-
 
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
@@ -412,7 +409,6 @@ class CurvePlot(ElementPlot):
         return data, mapping, style
 
 
-
 class HistogramPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
@@ -445,8 +441,7 @@ class HistogramPlot(ColorbarPlot):
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.name]['soft'] = (s0, s1)
-        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
-
+        return super().get_extents(element, ranges, range_type)
 
 
 class SideHistogramPlot(HistogramPlot):
@@ -472,7 +467,7 @@ class SideHistogramPlot(HistogramPlot):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SideHistogramPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.invert_axes:
             self.default_tools.append('ybox_select')
         else:
@@ -506,7 +501,7 @@ class SideHistogramPlot(HistogramPlot):
         """
         Returns a Bokeh glyph object.
         """
-        ret = super(SideHistogramPlot, self)._init_glyph(plot, mapping, properties)
+        ret = super()._init_glyph(plot, mapping, properties)
         if not 'field' in mapping.get('fill_color', {}):
             return ret
         dim = mapping['fill_color']['field']
@@ -703,7 +698,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
     def _get_axis_dims(self, element):
         if 'spike_length' in self.lookup_options(element, 'plot').options:
             return  [element.dimensions()[0], None, None]
-        return super(SpikesPlot, self)._get_axis_dims(element)
+        return super()._get_axis_dims(element)
 
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
@@ -799,7 +794,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):
-        props = super(BarPlot, self)._axis_properties(axis, key, plot, dimension, ax_mapping)
+        props = super()._axis_properties(axis, key, plot, dimension, ax_mapping)
         if (not self.multi_level and not self.stacked and self.current_frame.ndims > 1 and
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):
             props['separator_line_width'] = 0
@@ -824,13 +819,11 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             xdims = element.kdims[0]
         return (xdims, element.vdims[0])
 
-
     def _get_factors(self, element, ranges):
         xvals, gvals = self._get_coords(element, ranges)
         if gvals is not None:
             xvals = [(x, g) for x in xvals for g in gvals]
         return ([], xvals) if self.invert_axes else (xvals, [])
-
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """
@@ -854,11 +847,9 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
             tops.append(top)
         return bottoms, tops
 
-
     def _glyph_properties(self, *args, **kwargs):
-        props = super(BarPlot, self)._glyph_properties(*args, **kwargs)
+        props = super()._glyph_properties(*args, **kwargs)
         return {k: v for k, v in props.items() if k not in ['width', 'bar_width']}
-
 
     def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
         cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
@@ -886,7 +877,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 data[k].append(cd)
             else:
                 data[k][-1] = cd
-
 
     def get_data(self, element, ranges, style):
         # Get x, y, group, stack and color dimensions

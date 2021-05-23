@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import copy
 import math
 import warnings
@@ -93,7 +91,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     _has_axes = True
 
     def __init__(self, element, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         check = self.hmap.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
@@ -106,7 +104,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             except Exception as e:
                 self.param.warning("Plotting hook %r could not be "
                                    "applied:\n\n %s" % (hook, e))
-
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
@@ -193,8 +190,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._finalize_artist(element)
 
         self._execute_hooks(element)
-        return super(ElementPlot, self)._finalize_axis(key)
-
+        return super()._finalize_axis(key)
 
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
         """
@@ -240,14 +236,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
-
     def _finalize_artist(self, element):
         """
         Allows extending the _finalize_axis method with Element
         specific options.
         """
         pass
-
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
         """
@@ -733,7 +727,7 @@ class ColorbarPlot(ElementPlot):
     _default_nan = '#8b8b8b'
 
     def __init__(self, *args, **kwargs):
-        super(ColorbarPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
@@ -1028,7 +1022,6 @@ class LegendPlot(ElementPlot):
                     'bottom_right': dict(loc=4)}
 
 
-
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
@@ -1049,8 +1042,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
             params['projection'] = self._get_projection(overlay)
-        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
-
+        super().__init__(overlay, ranges=ranges, **params)
 
     def _finalize_artist(self, element):
         for subplot in self.subplots.values():
@@ -1111,7 +1103,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             self.handles['bbox_extra_artists'].append(leg)
         self.handles['legend_data'] = data
 
-
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
@@ -1130,7 +1121,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
         return self._finalize_axis(key, element=element, ranges=ranges,
                                    title=self._format_title(key))
-
 
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):

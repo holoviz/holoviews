@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -49,7 +47,7 @@ class SurfacePlot(Chart3DPlot, ColorbarPlot):
         return {'type': 'surface'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(SurfacePlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         return dict(opts, **copts)
 
@@ -85,7 +83,7 @@ class Path3DPlot(Chart3DPlot, CurvePlot):
         return {'type': 'scatter3d', 'mode': 'lines'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(Path3DPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         opts['line'].pop('showscale', None)
         return opts
 
@@ -113,7 +111,7 @@ class TriSurfacePlot(Chart3DPlot, ColorbarPlot):
         return [dict(x=x, y=y, z=z, simplices=simplices)]
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(TriSurfacePlot, self).graph_options(
+        opts = super().graph_options(
             element, ranges, style, **kwargs
         )
         copts = self.get_color_opts(element.dimensions()[2], element, ranges, style)

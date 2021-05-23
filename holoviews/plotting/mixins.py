@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 
 from ..core import util, Dataset, Dimension
@@ -35,7 +33,7 @@ class GeomMixin(object):
                                                        for kd in [kdim0, kdim1]])
             ranges[kdim0] = new_range
             ranges[kdim1] = new_range
-        return super(GeomMixin, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
 
 class ChordMixin(object):
@@ -73,7 +71,7 @@ class HeatMapMixin(object):
                 y0, y1 = element.range(1)
             return (x0, y0, x1, y1)
         else:
-            return super(HeatMapMixin, self).get_extents(element, ranges, range_type)
+            return super().get_extents(element, ranges, range_type)
 
 
 class SpikesMixin(object):
@@ -107,9 +105,8 @@ class SpikesMixin(object):
                                   'hard':     (np.nan, np.nan),
                                   'soft':     proxy_range,
                                   'combined': proxy_range}
-        return super(SpikesMixin, self).get_extents(element, ranges, range_type,
-                                                    ydim=proxy_dim)
-
+        return super().get_extents(element, ranges, range_type,
+                                   ydim=proxy_dim)
 
 
 class AreaMixin(object):
@@ -128,7 +125,7 @@ class AreaMixin(object):
             s0 = min(s0, 0) if util.isfinite(s0) else 0
             s1 = max(s1, 0) if util.isfinite(s1) else 0
             ranges[vdim]['soft'] = (s0, s1)
-        return super(AreaMixin, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
 
 class BarsMixin(object):
@@ -152,7 +149,7 @@ class BarsMixin(object):
         s1 = max(s1, 0) if util.isfinite(s1) else 0
         ranges[vdim]['soft'] = (s0, s1)
         if range_type not in ('combined', 'data'):
-            return super(BarsMixin, self).get_extents(element, ranges, range_type)
+            return super().get_extents(element, ranges, range_type)
 
         # Compute stack heights
         xdim = element.kdims[0]

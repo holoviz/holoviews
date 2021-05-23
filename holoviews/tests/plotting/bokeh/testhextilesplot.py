@@ -13,7 +13,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 class TestHexTilesOperation(TestBokehPlot):
 
     def setUp(self):
-        super(TestHexTilesOperation, self).setUp()
+        super().setUp()
         if bokeh_version < '0.12.15':
             raise SkipTest("Bokeh >= 0.12.15 required to test HexTiles operation.")
 
@@ -41,7 +41,7 @@ class TestHexTilesOperation(TestBokehPlot):
 class TestHexTilesPlot(TestBokehPlot):
 
     def setUp(self):
-        super(TestHexTilesPlot, self).setUp()
+        super().setUp()
         if bokeh_version < '0.12.15':
             raise SkipTest("Bokeh >= 0.12.15 required to test HexTilesPlot.")
 

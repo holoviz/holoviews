@@ -2,8 +2,6 @@
 """
 Test cases for rendering exporters
 """
-from __future__ import unicode_literals
-
 import os
 import sys
 import subprocess

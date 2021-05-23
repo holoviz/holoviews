@@ -48,8 +48,7 @@ class Raster(Element2D):
         if extents is None:
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
-        super(Raster, self).__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
     def __getitem__(self, slices):
         if slices in self.dimensions(): return self.dimension_values(slices)
@@ -71,7 +70,6 @@ class Raster(Element2D):
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
                               extents=None)
 
-
     def range(self, dim, data_range=True, dimension_range=True):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
@@ -82,8 +80,7 @@ class Raster(Element2D):
             if not dimension_range:
                 return lower, upper
             return util.dimension_range(lower, upper, dimension.range, dimension.soft_range)
-        return super(Raster, self).range(dim, data_range, dimension_range)
-
+        return super().range(dim, data_range, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
         """
@@ -101,8 +98,7 @@ class Raster(Element2D):
             arr = self.data.T
             return arr.flatten() if flat else arr
         else:
-            return super(Raster, self).dimension_values(dim)
-
+            return super().dimension_values(dim)
 
     @classmethod
     def collapse_data(cls, data_list, function, kdims=None, **kwargs):
@@ -114,7 +110,6 @@ class Raster(Element2D):
             return function.reduce(data_list)
         else:
             return function(np.dstack(data_list), axis=-1, **kwargs)
-
 
     def sample(self, samples=[], bounds=None, **sample_values):
         """
@@ -398,7 +393,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
                              'are supplied, otherwise they must match the data. To change '
                              'the displayed extents set the range on the x- and y-dimensions.')
 
-
     def __setstate__(self, state):
         """
         Ensures old-style unpickled Image types without an interface
@@ -410,7 +404,6 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         if isinstance(self.data, np.ndarray):
             self.interface = ImageInterface
         super(Dataset, self).__setstate__(state)
-
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
@@ -426,14 +419,12 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             sheet_params = dict(bounds=self.bounds, xdensity=self.xdensity,
                                 ydensity=self.ydensity)
             overrides = dict(sheet_params, **overrides)
-        return super(Image, self).clone(data, shared_data, new_type, link,
+        return super().clone(data, shared_data, new_type, link,
                                         *args, **overrides)
 
-
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
-        agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
+        agg = super().aggregate(dimensions, function, spreadfn, **kwargs)
         return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
-
 
     def select(self, selection_specs=None, **selection):
         """
@@ -529,8 +520,7 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
             l, b, r, t = self.bounds.lbrt()
             return (b, t) if idx else (l, r)
         else:
-            return super(Image, self).range(dim, data_range, dimension_range)
-
+            return super().range(dim, data_range, dimension_range)
 
     def table(self, datatype=None):
         """
@@ -549,10 +539,8 @@ class Image(Selection2DExpr, Dataset, Raster, SheetCoordinateSystem):
         return self.clone(self.columns(), new_type=Table,
                           **(dict(datatype=datatype) if datatype else {}))
 
-
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
-
 
 
 class RGB(Image):
@@ -675,8 +663,7 @@ class RGB(Image):
             (isinstance(data, dict) and tuple(dimension_name(vd) for vd in vdims)+(alpha.name,) in data)):
             # Handle all forms of packed value dimensions
             vdims.append(alpha)
-        super(RGB, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class HSV(RGB):
@@ -781,14 +768,13 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
     def __init__(self, data, kdims=None, vdims=None, **params):
         if data is None or isinstance(data, list) and data == []:
             data = ([], [], np.zeros((0, 0)))
-        super(QuadMesh, self).__init__(data, kdims, vdims, **params)
+        super().__init__(data, kdims, vdims, **params)
         if not self.interface.gridded:
             raise DataError("%s type expects gridded data, %s is columnar. "
                             "To display columnar data as gridded use the HeatMap "
                             "element or aggregate the data (e.g. using "
                             "np.histogram2d)." %
                             (type(self).__name__, self.interface.__name__))
-
 
     def __setstate__(self, state):
         """
@@ -803,7 +789,6 @@ class QuadMesh(Selection2DExpr, Dataset, Element2D):
             data = state['data']
             state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
         super(Dataset, self).__setstate__(state)
-
 
     def trimesh(self):
         """
@@ -879,7 +864,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
     vdims = param.List(default=[Dimension('z')], constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
         self._gridded = None
 
     @property
@@ -913,7 +898,7 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
             try:
                 self.gridded._binned = True
                 if self.gridded is self:
-                    return super(HeatMap, self).range(dim, data_range, dimension_range)
+                    return super().range(dim, data_range, dimension_range)
                 else:
                     drange = self.gridded.range(dim, data_range, dimension_range)
             except:
@@ -922,4 +907,4 @@ class HeatMap(Selection2DExpr, Dataset, Element2D):
                 self.gridded._binned = False
             if drange is not None:
                 return drange
-        return super(HeatMap, self).range(dim, data_range, dimension_range)
+        return super().range(dim, data_range, dimension_range)

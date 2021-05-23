@@ -1,8 +1,6 @@
 """
 Tests for the spatialpandas interface.
 """
-from __future__ import absolute_import
-
 from unittest import SkipTest
 
 import numpy as np

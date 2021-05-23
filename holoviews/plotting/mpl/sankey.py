@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from matplotlib.patches import Rectangle
@@ -70,7 +68,7 @@ class SankeyPlot(GraphPlot):
         return (x0, y0, x1, y1)
 
     def get_data(self, element, ranges, style):
-        data, style, axis_kwargs = super(SankeyPlot, self).get_data(element, ranges, style)
+        data, style, axis_kwargs = super().get_data(element, ranges, style)
         rects, labels = [], []
 
         label_dim = element.nodes.get_dimension(self.label_index)
@@ -139,7 +137,7 @@ class SankeyPlot(GraphPlot):
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         fontsize = plot_kwargs.pop('label_text_font_size', 8)
-        artists = super(SankeyPlot, self).init_artists(ax, plot_args, plot_kwargs)
+        artists = super().init_artists(ax, plot_args, plot_kwargs)
         groups = [g for g in self._style_groups if g != 'node']
         node_opts = filter_styles(plot_kwargs, 'node', groups, ('s', 'node_s'))
         rects = [Rectangle(**rect) for rect in plot_args['rects']]

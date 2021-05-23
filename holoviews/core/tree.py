@@ -220,7 +220,7 @@ class AttrTree(object):
         if util.tree_attribute(identifier) and self.fixed and shallow:
             raise AttributeError(self._fixed_error % identifier)
 
-        super(AttrTree, self).__setattr__(identifier, val)
+        super().__setattr__(identifier, val)
 
         if util.tree_attribute(identifier):
             if not identifier in self.children:
@@ -234,8 +234,9 @@ class AttrTree(object):
         with the chosen attribute path.
         """
         try:
-            return super(AttrTree, self).__getattr__(identifier)
-        except AttributeError: pass
+            return super().__getattr__(identifier)
+        except AttributeError:
+            pass
 
         # Attributes starting with __ get name mangled
         if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):

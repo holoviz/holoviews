@@ -19,7 +19,7 @@ except:
 class TestHoloViewsDash(TestPlotlyPlot):
 
     def setUp(self):
-        super(TestHoloViewsDash, self).setUp()
+        super().setUp()
 
         # Build Dash app mock
         self.app = MagicMock()

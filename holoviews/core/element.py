@@ -438,7 +438,7 @@ class Collator(NdMapping):
             if 'vdims' not in params:
                 params['vdims'] = data.vdims
             data = data.mapping()
-        super(Collator, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
     def __call__(self):

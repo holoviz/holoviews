@@ -337,8 +337,9 @@ class IlocTestCase(DatasetPropertyTestCase):
 
 
 class NdlocTestCase(DatasetPropertyTestCase):
+
     def setUp(self):
-        super(NdlocTestCase, self).setUp()
+        super().setUp()
         self.ds_grid = Dataset(
             (np.arange(4),
              np.arange(3),
@@ -631,7 +632,7 @@ class AddDimensionTestCase(DatasetPropertyTestCase):
 class HistogramTestCase(DatasetPropertyTestCase):
 
     def setUp(self):
-        super(HistogramTestCase, self).setUp()
+        super().setUp()
         self.hist = self.ds.hist('a', adjoin=False, normed=False)
 
     def test_construction(self):
@@ -709,7 +710,7 @@ class HistogramTestCase(DatasetPropertyTestCase):
 class DistributionTestCase(DatasetPropertyTestCase):
 
     def setUp(self):
-        super(DistributionTestCase, self).setUp()
+        super().setUp()
         self.distribution = self.ds.to(Distribution, kdims='a', groupby=[])
 
     def test_distribution_dataset(self):
@@ -727,7 +728,7 @@ class DatashaderTestCase(DatasetPropertyTestCase):
     def setUp(self):
         if None in (rasterize, datashade, dynspread):
             raise SkipTest('Datashader could not be imported and cannot be tested.')
-        super(DatashaderTestCase, self).setUp()
+        super().setUp()
 
     def test_rasterize_curve(self):
         img = rasterize(

@@ -36,11 +36,11 @@ class TestOptions(ComparisonTestCase):
     def setUp(self):
         self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
-        super(TestOptions, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Options._option_groups = self.original_option_groups
-        super(TestOptions, self).tearDown()
+        super().tearDown()
 
     def test_options_init(self):
         Options('test')
@@ -133,11 +133,11 @@ class TestCycle(ComparisonTestCase):
     def setUp(self):
         self.original_option_groups = Options._option_groups
         Options._option_groups = ['test']
-        super(TestCycle, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Options._option_groups = self.original_option_groups
-        super(TestCycle, self).tearDown()
+        super().tearDown()
 
     def test_cycle_init(self):
         Cycle(values=['a', 'b', 'c'])
@@ -206,13 +206,13 @@ class TestOptionTree(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        super(TestOptionTree, self).setUp()
+        super().setUp()
         self.original_option_groups = Options._option_groups[:]
         Options._option_groups = ['group1', 'group2']
 
     def tearDown(self):
         Options._option_groups = self.original_option_groups
-        super(TestOptionTree, self).tearDown()
+        super().tearDown()
 
     def test_optiontree_init_1(self):
         OptionTree(groups=['group1', 'group2'])
@@ -296,12 +296,12 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
                                      groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.current_backend = self.backend
-        super(TestStoreInheritanceDynamic, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
-        super(TestStoreInheritanceDynamic, self).tearDown()
+        super().tearDown()
 
     def initialize_option_tree(self):
         Store.options(val=OptionTree(groups=['plot', 'style']))
@@ -505,7 +505,7 @@ class TestStoreInheritance(ComparisonTestCase):
         data = [np.random.normal() for i in range(10000)]
         frequencies, edges = np.histogram(data, 20)
         self.hist = Histogram((edges, frequencies))
-        super(TestStoreInheritance, self).setUp()
+        super().setUp()
 
 
     def lookup_options(self, obj, group):
@@ -514,7 +514,7 @@ class TestStoreInheritance(ComparisonTestCase):
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
-        super(TestStoreInheritance, self).tearDown()
+        super().tearDown()
 
     def test_original_style_options(self):
         self.assertEqual(self.lookup_options(self.hist, 'style').options,
@@ -579,7 +579,7 @@ class TestOptionsMethod(ComparisonTestCase):
                                      groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
-        super(TestOptionsMethod, self).setUp()
+        super().setUp()
 
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
@@ -587,7 +587,7 @@ class TestOptionsMethod(ComparisonTestCase):
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
-        super(TestOptionsMethod, self).tearDown()
+        super().tearDown()
 
     def test_plot_options_keywords(self):
         im = Image(np.random.rand(10,10))
@@ -632,7 +632,7 @@ class TestOptsMethod(ComparisonTestCase):
                                      groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
-        super(TestOptsMethod, self).setUp()
+        super().setUp()
 
     def lookup_options(self, obj, group):
         return Store.lookup_options(self.backend, obj, group)
@@ -640,7 +640,7 @@ class TestOptsMethod(ComparisonTestCase):
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
-        super(TestOptsMethod, self).tearDown()
+        super().tearDown()
 
     def test_old_opts_clone_disabled(self):
         im = Image(np.random.rand(10,10))
@@ -827,7 +827,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
                                     groups=Options._option_groups)
         self.clear_options()
-        super(TestCrossBackendOptions, self).setUp()
+        super().setUp()
 
 
     def clear_options(self):
@@ -1037,7 +1037,7 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
                                     groups=Options._option_groups)
         self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
                                     groups=Options._option_groups)
-        super(TestCrossBackendOptionSpecification, self).setUp()
+        super().setUp()
 
     def tearDown(self):
         Store.options(val=self.store_mpl, backend='matplotlib')
@@ -1048,7 +1048,7 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
         if self.plotly_options is not None:
             Store._options['plotly'] = self.plotly_options
 
-        super(TestCrossBackendOptionSpecification, self).tearDown()
+        super().tearDown()
 
     def assert_output_options_group_empty(self, obj):
         mpl_output_lookup = Store.lookup_options('matplotlib', obj, 'output').options
@@ -1205,7 +1205,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
     cleanup = ['test_raw_pickle.pkl', 'test_pickle_mpl_bokeh.pkl']
 
     def tearDown(self):
-        super(TestCrossBackendOptionPickling, self).tearDown()
+        super().tearDown()
         for f in self.cleanup:
             try:
                 os.remove(f)
@@ -1217,7 +1217,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Test usual pickle saving and loading (no style information preserved)
         """
         fname= 'test_raw_pickle.pkl'
-        raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
+        raw = super().test_mpl_bokeh_mpl()
         pickle.dump(raw, open(fname,'wb'))
         self.clear_options()
         img = pickle.load(open(fname,'rb'))
@@ -1237,7 +1237,7 @@ class TestCrossBackendOptionPickling(TestCrossBackendOptions):
         Test pickle saving and loading with Store (style information preserved)
         """
         fname = 'test_pickle_mpl_bokeh.pkl'
-        raw = super(TestCrossBackendOptionPickling, self).test_mpl_bokeh_mpl()
+        raw = super().test_mpl_bokeh_mpl()
         Store.dump(raw, open(fname,'wb'))
         self.clear_options()
         img = Store.load(open(fname,'rb'))

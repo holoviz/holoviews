@@ -31,7 +31,7 @@ class _SelectionExprLayers(Derived):
     exprs = param.List(constant=True)
 
     def __init__(self, expr_override, cross_filter_set, **params):
-        super(_SelectionExprLayers, self).__init__(
+        super().__init__(
             [expr_override, cross_filter_set], exclusive=True, **params
         )
 
@@ -44,8 +44,6 @@ class _SelectionExprLayers(Derived):
             return {"exprs": [True, override_expr_values["selection_expr"]]}
         else:
             return {"exprs": [True, cross_filter_set_values["selection_expr"]]}
-
-
 
 
 _Styles = Stream.define('Styles', colors=[], alpha=1.)
@@ -78,7 +76,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(_base_link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Init private properties
         inst._cross_filter_stream = CrossFilterSet(mode=inst.cross_filter_mode)
@@ -277,7 +275,7 @@ class link_selections(_base_link_selections):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Initialize private properties
         inst._obj_selections = {}

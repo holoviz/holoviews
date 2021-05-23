@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from holoviews.plotting.util import attach_streams
@@ -68,7 +66,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         disabled switches axiswise normalization option on globally.""")
 
     def __init__(self, layout, **params):
-        super(LayoutPlot, self).__init__(layout, **params)
+        super().__init__(layout, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
 
         if self.top_level:
@@ -252,8 +250,7 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, is_geo=False):
         """
@@ -264,7 +261,6 @@ class AdjointLayoutPlot(PlotlyPlot, GenericAdjointLayoutPlot):
         empty axes as necessary.
         """
         return self.generate_plot(self.keys[-1], ranges, is_geo=is_geo)
-
 
     def generate_plot(self, key, ranges=None, is_geo=False):
         adjoined_plots = []
@@ -298,7 +294,7 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)

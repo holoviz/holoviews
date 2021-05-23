@@ -358,7 +358,7 @@ class DaskGridInterfaceTests(GridInterfaceTests):
     def setUp(self):
         if da is None:
             raise SkipTest('DaskGridInterfaceTests requires dask.')
-        super(DaskGridInterfaceTests, self).setUp()
+        super().setUp()
 
     def init_column_data(self):
         self.xs = np.arange(11)

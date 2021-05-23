@@ -2,8 +2,6 @@
 """
 Test cases for rendering exporters
 """
-from __future__ import unicode_literals
-
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 

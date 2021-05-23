@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 from functools import partial
 
@@ -94,7 +92,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='box_color')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(BoxWhiskerPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -117,7 +115,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 element = agg
             else:
                 element = element.clone([(agg,)])
-        return super(BoxWhiskerPlot, self)._apply_transforms(element, data, ranges, style, group)
+        return super()._apply_transforms(element, data, ranges, style, group)
 
     def _get_factors(self, element, ranges):
         """
@@ -138,7 +136,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _postprocess_hover(self, renderer, source):
         if not isinstance(renderer.glyph, (Circle, VBar, HBar)):
             return
-        super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)
 
     def _box_stats(self, vals):
         is_finite = isfinite

@@ -60,7 +60,7 @@ class TestEllipsisTable(ComparisonTestCase):
         self.table =hv.Table(zip(keys,values),
                              kdims = ['Gender', 'Age'],
                              vdims=['Weight', 'Height'])
-        super(TestEllipsisTable, self).setUp()
+        super().setUp()
 
     def test_table_ellipsis_slice_value_weight(self):
         sliced = self.table[..., 'Weight']

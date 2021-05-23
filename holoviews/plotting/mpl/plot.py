@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import chain
 from contextlib import contextmanager
 
@@ -117,7 +115,7 @@ class MPLPlot(DimensionedPlot):
 
     def __init__(self, fig=None, axis=None, **params):
         self._create_fig = True
-        super(MPLPlot, self).__init__(**params)
+        super().__init__(**params)
         # List of handles to matplotlib objects for animation update
         self.fig_scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
@@ -338,8 +336,8 @@ class GridPlot(CompositePlot):
                  layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout, layout_num=layout_num,
-                                       ranges=ranges, keys=keys, **params)
+        super().__init__(layout, layout_num=layout_num,
+                         ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
@@ -639,8 +637,7 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
 
         # The supplied (axes, view) objects as indexed by position
         self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions)}
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
@@ -664,7 +661,6 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
 
         self.adjust_positions()
         self.drawn = True
-
 
     def adjust_positions(self, redraw=True):
         """
@@ -713,14 +709,12 @@ class AdjointLayoutPlot(MPLPlot, GenericAdjointLayoutPlot):
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
 
-
     @mpl_rc_context
     def update_frame(self, key, ranges=None):
         for pos in self.view_positions:
             subplot = self.subplots.get(pos)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-
 
     def __len__(self):
         return max([1 if self.keys is None else len(self.keys), 1])
@@ -767,13 +761,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     v17_layout_format = True
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout=layout, keys=keys, **params)
+        super().__init__(layout=layout, keys=keys, **params)
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
-
 
     def _compute_gridspec(self, layout):
         """
@@ -982,7 +975,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
         return layout_subplots, layout_axes, collapsed_layout
 
-
     def grid_situate(self, current_idx, layout_type, subgrid_width):
         """
         Situate the current AdjointLayoutPlot in a LayoutPlot. The
@@ -1015,7 +1007,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                               bottom_idx, bottom_idx+1]
 
         return start, inds
-
 
     def _create_subplots(self, layout, positions, layout_dimensions, ranges, axes={}, num=1, create=True):
         """

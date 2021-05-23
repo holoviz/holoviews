@@ -81,7 +81,7 @@ class Normalization(Operation):
 
     def __call__(self, element, ranges={}, keys=None, **params):
         params = dict(params,ranges=ranges, keys=keys)
-        return super(Normalization, self).__call__(element, **params)
+        return super().__call__(element, **params)
 
 
     def process_element(self, element, key, ranges={}, keys=None, **params):

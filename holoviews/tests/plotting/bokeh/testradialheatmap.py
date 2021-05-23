@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from itertools import product
 
 import numpy as np
@@ -19,7 +17,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 class BokehRadialHeatMapPlotTests(TestBokehPlot):
 
     def setUp(self):
-        super(BokehRadialHeatMapPlotTests, self).setUp()
+        super().setUp()
         # set up dummy data for convenient tests
         x = ["Seg {}".format(idx) for idx in range(2)]
         y = ["Ann {}".format(idx) for idx in range(2)]

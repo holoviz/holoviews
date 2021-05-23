@@ -290,7 +290,7 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         except:
             raise SkipTest('Dask could not be imported, cannot test '
                            'dask arrays with XArrayInterface')
-        super(DaskXArrayInterfaceTest, self).setUp()
+        super().setUp()
 
     def init_column_data(self):
         import dask.array

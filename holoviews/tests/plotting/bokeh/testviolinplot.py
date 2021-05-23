@@ -23,7 +23,7 @@ class TestBokehViolinPlot(TestBokehPlot):
             import scipy # noqa
         except:
             raise SkipTest('Violin plot requires SciPy to compute kde')
-        super(TestBokehViolinPlot, self).setUp()
+        super().setUp()
 
     def test_violin_simple(self):
         values = np.random.rand(100)

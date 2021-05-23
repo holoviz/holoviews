@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
 import matplotlib.cm as cm
@@ -84,8 +82,7 @@ class Plot3D(ColorbarPlot):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
-        return super(Plot3D, self)._finalize_axis(key, **kwargs)
-
+        return super()._finalize_axis(key, **kwargs)
 
     def _draw_colorbar(self, element=None, dim=None, redraw=True):
         if element is None:

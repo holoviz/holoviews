@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 
 from plotly.graph_objs.layout import Image as _Image

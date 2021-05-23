@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-
 import numpy as np
+
 from holoviews.core.data import Dataset
 from holoviews.element import Sankey
 

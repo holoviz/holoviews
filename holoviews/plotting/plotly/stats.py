@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from .selection import PlotlyOverlaySelectionDisplay
@@ -24,7 +22,7 @@ class BivariatePlot(ChartPlot, ColorbarPlot):
         return {'type': 'histogram2dcontour'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(BivariatePlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
 
         if self.ncontours:
@@ -99,7 +97,7 @@ class MultiDistributionPlot(ElementPlot):
         return plots
 
     def get_extents(self, element, ranges, range_type='combined'):
-        return super(MultiDistributionPlot, self).get_extents(
+        return super().get_extents(
             element, ranges, range_type, 'categorical', element.vdims[0]
         )
 
@@ -135,14 +133,13 @@ class BoxWhiskerPlot(MultiDistributionPlot):
         return {'type': 'box'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        options = super(BoxWhiskerPlot, self).graph_options(element, ranges, style, **kwargs)
+        options = super().graph_options(element, ranges, style, **kwargs)
         options['boxmean'] = self.mean
         options['jitter'] = self.jitter
         return options
 
 
 class ViolinPlot(MultiDistributionPlot):
-
 
     box = param.Boolean(default=True, doc="""
         Whether to draw a boxplot inside the violin""")
@@ -161,7 +158,7 @@ class ViolinPlot(MultiDistributionPlot):
         return {'type': 'violin'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        options = super(ViolinPlot, self).graph_options(
+        options = super().graph_options(
             element, ranges, style, **kwargs
         )
         options['meanline'] = {'visible': self.meanline}

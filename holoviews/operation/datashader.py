@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division
-
 import warnings
 
 from collections import Callable
@@ -656,7 +654,7 @@ class spread_aggregate(area_aggregate):
         df[y.name] = yvals+df[pos.name]
         df['_lower'] = yvals-df[neg.name]
         area = element.clone(df, vdims=[y, '_lower']+element.vdims[3:], new_type=Area)
-        return super(spread_aggregate, self)._process(area, key=None)
+        return super()._process(area, key=None)
 
 
 
@@ -965,7 +963,7 @@ class contours_rasterize(aggregate):
         agg = self.p.aggregator
         if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
             return ds.any()
-        return super(contours_rasterize, self)._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, add_field)
 
 
 
@@ -1103,11 +1101,11 @@ class quadmesh_rasterize(trimesh_rasterize):
 
     def _precompute(self, element, agg):
         if ds_version <= '0.7.0':
-            return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
+            return super()._precompute(element.trimesh(), agg)
 
     def _process(self, element, key=None):
         if ds_version <= '0.7.0':
-            return super(quadmesh_rasterize, self)._process(element, key)
+            return super()._process(element, key)
 
         if element.interface.datatype != 'xarray':
             element = element.clone(datatype=['xarray'])
@@ -1370,7 +1368,7 @@ class geometry_rasterize(AggregationOperation):
         if (not (element.vdims or isinstance(agg, basestring)) and
             agg.column is None and not isinstance(agg, (rd.count, rd.any))):
             return ds.count()
-        return super(geometry_rasterize, self)._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, add_field)
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)

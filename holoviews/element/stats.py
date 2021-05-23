@@ -28,7 +28,7 @@ class StatisticsElement(Dataset, Element2D):
             kdims = kdims or data.dimensions()[:len(self.kdims)]
             data = tuple(data.dimension_values(d) for d in kdims)
         params.update(dict(kdims=kdims, vdims=[], _validate_vdims=False))
-        super(StatisticsElement, self).__init__(data, **params)
+        super().__init__(data, **params)
         if not vdims:
             self.vdims = [Dimension('Density')]
         elif len(vdims) > 1:
@@ -52,7 +52,6 @@ class StatisticsElement(Dataset, Element2D):
             return Dataset(self, _validate_vdims=False, **self._dataset)
         return self._dataset
 
-
     def range(self, dim, data_range=True, dimension_range=True):
         """Return the lower and upper bounds of values along dimension.
 
@@ -67,8 +66,7 @@ class StatisticsElement(Dataset, Element2D):
             Tuple containing the lower and upper bound
         """
         iskdim = self.get_dimension(dim) not in self.vdims
-        return super(StatisticsElement, self).range(dim, iskdim, dimension_range)
-
+        return super().range(dim, iskdim, dimension_range)
 
     def dimension_values(self, dim, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -91,7 +89,6 @@ class StatisticsElement(Dataset, Element2D):
             return np.full(len(self), np.NaN)
         return self.interface.values(self, dim, expanded, flat)
 
-
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
 
@@ -112,7 +109,6 @@ class StatisticsElement(Dataset, Element2D):
         elif dim in self.vdims:
             return np.float64
         return self.interface.dimension_type(self, dim)
-
 
     def dframe(self, dimensions=None, multi_index=False):
         """Convert dimension values to DataFrame.
@@ -137,8 +133,7 @@ class StatisticsElement(Dataset, Element2D):
                              'dimensions. Could not return data for %s '
                              'dimension(s).' %
                              (type(self).__name__, ', '.join([d.name for d in vdims])))
-        return super(StatisticsElement, self).dframe(dimensions, False)
-
+        return super().dframe(dimensions, False)
 
     def columns(self, dimensions=None):
         """Convert dimension values to a dictionary.
@@ -165,7 +160,6 @@ class StatisticsElement(Dataset, Element2D):
         return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
-
 class Bivariate(Selection2DExpr, StatisticsElement):
     """
     Bivariate elements are containers for two dimensional data, which
@@ -181,7 +175,6 @@ class Bivariate(Selection2DExpr, StatisticsElement):
     vdims = param.List(default=[Dimension('Density')], bounds=(0,1))
 
 
-
 class Distribution(Selection1DExpr, StatisticsElement):
     """
     Distribution elements provides a representation for a
@@ -195,7 +188,6 @@ class Distribution(Selection1DExpr, StatisticsElement):
     kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
-
 
 
 class BoxWhisker(Selection1DExpr, Dataset, Element2D):
@@ -239,5 +231,3 @@ class HexTiles(Selection2DExpr, Dataset, Element2D):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
-
-

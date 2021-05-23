@@ -20,7 +20,7 @@ class TestLinkCallbacks(TestBokehPlot):
     def setUp(self):
         if not bokeh_renderer or bokeh_version < '0.13':
             raise SkipTest('RangeTool requires bokeh version >= 0.13')
-        super(TestLinkCallbacks, self).setUp()
+        super().setUp()
 
     def test_range_tool_link_callback_single_axis(self):
         from bokeh.models import RangeTool

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, unicode_literals
-
 import sys
 
 from collections import OrderedDict
@@ -158,7 +156,6 @@ class annotate(param.ParameterizedFunction):
         return self.compose(*layers)
 
 
-
 class Annotator(PaneBase):
     """
     An Annotator allows drawing, editing and annotating a specific
@@ -224,7 +221,7 @@ class Annotator(PaneBase):
         return self._element_type.__name__
 
     def __init__(self, object=None, **params):
-        super(Annotator, self).__init__(None, **params)
+        super().__init__(None, **params)
         self.object = self._process_element(object)
         self._table_row = Row()
         self.editor = Tabs(('%s' % param_name(self.name), self._table_row))
@@ -338,7 +335,7 @@ class PathAnnotator(Annotator):
 
     def __init__(self, object=None, **params):
         self._vertex_table_row = Row()
-        super(PathAnnotator, self).__init__(object, **params)
+        super().__init__(object, **params)
         self.editor.append(('%s Vertices' % param_name(self.name),
                             self._vertex_table_row))
 
@@ -395,7 +392,7 @@ class PathAnnotator(Annotator):
                                   if k not in element.opts.get('plot').kwargs})
 
     def _update_links(self):
-        super(PathAnnotator, self)._update_links()
+        super()._update_links()
         if hasattr(self, '_vertex_link'): self._vertex_link.unlink()
         self._vertex_link = self._vertex_table_link(self.plot, self._vertex_table)
 

@@ -21,13 +21,13 @@ class PlotlyCallbackMetaClass(type):
     """
 
     def __init__(cls, name, bases, attrs):
-        super(PlotlyCallbackMetaClass, cls).__init__(name, bases, attrs)
+        super().__init__(name, bases, attrs)
 
         # Create weak-value dictionary to hold instances of the class
         cls.instances = WeakValueDictionary()
 
     def __call__(cls, *args, **kwargs):
-        inst = super(PlotlyCallbackMetaClass, cls).__call__(*args, **kwargs)
+        inst = super().__call__(*args, **kwargs)
 
         # Store weak reference to the callback instance in the _instances
         # WeakValueDictionary. This will allow instances to be garbage collected and

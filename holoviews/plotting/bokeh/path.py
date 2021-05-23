@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import param
@@ -42,7 +40,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     def _element_transform(self, transform, element, ranges):
         if isinstance(element, Contours):
-            return super(PathPlot, self)._element_transform(transform, element, ranges)
+            return super()._element_transform(transform, element, ranges)
         return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
                                for el in element.split()])
 
@@ -183,7 +181,7 @@ class ContourPlot(PathPlot):
     _nonvectorized_styles = base_properties + ['cmap']
 
     def __init__(self, *args, **params):
-        super(ContourPlot, self).__init__(*args, **params)
+        super().__init__(*args, **params)
         self._has_holes = None
 
     def _hover_opts(self, element):

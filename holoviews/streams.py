@@ -273,7 +273,7 @@ class Stream(param.Parameterized):
         # indicate where the event originated from
         self._metadata = {}
 
-        super(Stream, self).__init__(**params)
+        super().__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
             if source in self.registry:
@@ -481,7 +481,7 @@ class Pipe(Stream):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data=None, memoize=False, **params):
-        super(Pipe, self).__init__(data=data, **params)
+        super().__init__(data=data, **params)
         self._memoize_counter = 0
 
     def send(self, data):
@@ -560,7 +560,7 @@ class Buffer(Pipe):
         if index and (util.pd and isinstance(example, util.pd.DataFrame)):
             example = example.reset_index()
         params['data'] = example
-        super(Buffer, self).__init__(**params)
+        super().__init__(**params)
         self.length = length
         self.following = following
         self._chunk_length = 0
@@ -651,7 +651,7 @@ class Buffer(Pipe):
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
-        return super(Buffer, self).update(**kwargs)
+        return super().update(**kwargs)
 
 
     @property
@@ -695,7 +695,7 @@ class Params(Stream):
             params['rename'] = rename
 
         self._watch_only = watch_only
-        super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        super().__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
         self._watchers = []
@@ -828,7 +828,7 @@ class ParamMethod(Params):
             parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
 
         params['watch_only'] = True
-        super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
+        super().__init__(parameterized, parameters, watch, **params)
 
 
 class Derived(Stream):
@@ -839,7 +839,7 @@ class Derived(Stream):
     If exclusive=True, then all streams except the most recently updated are cleared.
     """
     def __init__(self, input_streams, exclusive=False, **params):
-        super(Derived, self).__init__(**params)
+        super().__init__(**params)
         self.input_streams = []
         self._updating = set()
         self._register_streams(input_streams)
@@ -936,7 +936,7 @@ class History(Stream):
         List containing the historical values of the input stream""")
 
     def __init__(self, input_stream, **params):
-        super(History, self).__init__(**params)
+        super().__init__(**params)
         self.input_stream = input_stream
         self._register_input_stream()
         # Trigger event on input stream after registering so that current value is
@@ -993,7 +993,7 @@ class SelectionExpr(Derived):
             )
 
         input_streams = self._build_selection_streams(source)
-        super(SelectionExpr, self).__init__(
+        super().__init__(
             source=source, input_streams=input_streams, exclusive=True, **params
         )
 
@@ -1031,7 +1031,7 @@ class SelectionExpr(Derived):
             if (isinstance(stream, Selection1D) and stream._triggering
                 and not self._index_cols):
                 return
-        return super(SelectionExpr, self).transform()
+        return super().transform()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
@@ -1119,7 +1119,7 @@ class SelectionExprSequence(Derived):
         self.history_stream = History(sel_expr)
         input_streams = [self.history_stream]
 
-        super(SelectionExprSequence, self).__init__(
+        super().__init__(
             source=source, input_streams=input_streams, **params
         )
 
@@ -1133,7 +1133,7 @@ class SelectionExprSequence(Derived):
 
     def reset(self):
         self.input_streams[0].clear_history()
-        super(SelectionExprSequence, self).reset()
+        super().reset()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
@@ -1191,7 +1191,7 @@ class CrossFilterSet(Derived):
         self._index_cols = index_cols
         input_streams = list(selection_streams)
         exclusive = mode == "overwrite"
-        super(CrossFilterSet, self).__init__(
+        super().__init__(
             input_streams, exclusive=exclusive, **params
         )
 
@@ -1214,7 +1214,7 @@ class CrossFilterSet(Derived):
         }
 
     def reset(self):
-        super(CrossFilterSet, self).reset()
+        super().reset()
         for stream in self.input_streams:
             stream.reset()
 
@@ -1254,7 +1254,7 @@ class LinkedStream(Stream):
     """
 
     def __init__(self, linked=True, **params):
-        super(LinkedStream, self).__init__(linked=linked, **params)
+        super().__init__(linked=linked, **params)
 
 
 class PointerX(LinkedStream):
@@ -1553,7 +1553,7 @@ class PlotReset(LinkedStream):
         Whether a reset event is being signalled.""")
 
     def __init__(self, *args, **params):
-        super(PlotReset, self).__init__(self, *args, **dict(params, transient=True))
+        super().__init__(self, *args, **dict(params, transient=True))
 
 
 class CDSStream(LinkedStream):
@@ -1608,7 +1608,7 @@ class PointDraw(CDSStream):
         self.styles = styles
         self.tooltip = tooltip
         self.styles = styles
-        super(PointDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1696,7 +1696,7 @@ class PolyDraw(CDSStream):
         self.vertex_style = vertex_style
         self.styles = styles
         self.tooltip = tooltip
-        super(PolyDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1750,7 +1750,7 @@ class FreehandDraw(CDSStream):
         self.num_objects = num_objects
         self.styles = styles
         self.tooltip = tooltip
-        super(FreehandDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1804,7 +1804,7 @@ class BoxEdit(CDSStream):
         self.num_objects = num_objects
         self.styles = styles
         self.tooltip = tooltip
-        super(BoxEdit, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1863,4 +1863,4 @@ class PolyEdit(PolyDraw):
 
     def __init__(self, vertex_style={}, shared=True, **params):
         self.shared = shared
-        super(PolyEdit, self).__init__(vertex_style=vertex_style, **params)
+        super().__init__(vertex_style=vertex_style, **params)

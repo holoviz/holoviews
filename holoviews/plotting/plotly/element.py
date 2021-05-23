@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import uuid
 import numpy as np
 import param
@@ -109,7 +107,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     _nonvectorized_styles = []
 
     def __init__(self, element, plot=None, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks, self.source_streams = self._construct_callbacks()

@@ -1,8 +1,6 @@
 """
 Module for accessor objects for viewable HoloViews objects.
 """
-from __future__ import absolute_import, unicode_literals
-
 import copy
 import sys
 

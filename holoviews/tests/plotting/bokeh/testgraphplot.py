@@ -1,6 +1,5 @@
-from __future__ import absolute_import
-
 import numpy as np
+
 from holoviews.core.data import Dataset
 from holoviews.element import Graph, Nodes, TriMesh, Chord, VLine, circular_layout
 from holoviews.util.transform import dim
@@ -17,7 +16,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 class TestBokehGraphPlot(TestBokehPlot):
 
     def setUp(self):
-        super(TestBokehGraphPlot, self).setUp()
+        super().setUp()
 
         N = 8
         self.nodes = circular_layout(np.arange(N, dtype=np.int32))
@@ -289,7 +288,7 @@ class TestBokehGraphPlot(TestBokehPlot):
 class TestBokehTriMeshPlot(TestBokehPlot):
 
     def setUp(self):
-        super(TestBokehTriMeshPlot, self).setUp()
+        super().setUp()
 
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
         self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
@@ -504,7 +503,7 @@ class TestBokehTriMeshPlot(TestBokehPlot):
 class TestBokehChordPlot(TestBokehPlot):
 
     def setUp(self):
-        super(TestBokehChordPlot, self).setUp()
+        super().setUp()
         self.edges = [(0, 1, 1), (0, 2, 2), (1, 2, 3)]
         self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
         self.chord = Chord((self.edges, self.nodes))

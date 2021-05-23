@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from types import FunctionType
 
 import param
@@ -47,7 +45,7 @@ class Tiles(Element2D):
         elif data is not None and not isinstance(data, util.basestring):
             raise TypeError('%s data should be a tile service URL not a %s type.'
                             % (type(self).__name__, type(data).__name__) )
-        super(Tiles, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def range(self, dim, data_range=True, dimension_range=True):
         return np.nan, np.nan

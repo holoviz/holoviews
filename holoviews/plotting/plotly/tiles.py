@@ -45,7 +45,7 @@ class TilePlot(ElementPlot):
         return opts
 
     def get_extents(self, element, ranges, range_type='combined'):
-        extents = super(TilePlot, self).get_extents(element, ranges, range_type)
+        extents = super().get_extents(element, ranges, range_type)
         if (not self.overlaid and all(e is None or not np.isfinite(e) for e in extents)
             and range_type in ('combined', 'data')):
             x0, x1 = (-20037508.342789244, 20037508.342789244)
@@ -61,4 +61,4 @@ class TilePlot(ElementPlot):
         """
         Override to force is_geo to True
         """
-        return super(TilePlot, self).generate_plot(key, ranges, element, is_geo=True)
+        return super().generate_plot(key, ranges, element, is_geo=True)

@@ -2,8 +2,6 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from __future__ import division
-
 from distutils.version import LooseVersion
 
 import numpy as np

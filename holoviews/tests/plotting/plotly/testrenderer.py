@@ -2,8 +2,6 @@
 """
 Test cases for rendering exporters
 """
-from __future__ import unicode_literals
-
 from collections import OrderedDict
 from unittest import SkipTest
 
