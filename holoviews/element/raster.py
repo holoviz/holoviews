@@ -5,7 +5,7 @@ import colorsys
 import param
 
 from ..core import util, config, Dimension, Element2D, Overlay, Dataset
-from ..core.data import ImageInterface, GridInterface
+from ..core.data import ImageInterface
 from ..core.data.interface import DataError
 from ..core.dimension import dimension_name
 from ..core.boundingregion import BoundingRegion, BoundingBox

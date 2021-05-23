@@ -3,9 +3,7 @@
 Unit tests of the helper functions in utils
 """
 from unittest import SkipTest
-import numpy as np
 
-import holoviews as hv
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Store

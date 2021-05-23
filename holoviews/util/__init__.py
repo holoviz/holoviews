@@ -16,7 +16,7 @@ from ..core import (
     Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
     StoreOptions, Store
 )
-from ..core.options import options_policy, Keywords, Options
+from ..core.options import Keywords, Options
 from ..core.operation import Operation
 from ..core.overlay import Overlay
 from ..core.util import basestring, merge_options_to_dict, OrderedDict

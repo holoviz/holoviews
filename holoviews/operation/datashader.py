@@ -26,7 +26,8 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
     Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range
+)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
