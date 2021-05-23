@@ -339,7 +339,7 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        super().__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
+        super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
         # Handle _pipeline property
@@ -376,7 +376,7 @@ class Dataset(Element):
 
     def __getstate__(self):
         "Ensures pipelines are dropped"
-        obj_dict = super().__getstate__()
+        obj_dict = super(Dataset, self).__getstate__()
         if '_pipeline' in obj_dict:
             pipeline = obj_dict['_pipeline']
             obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
@@ -1206,20 +1206,20 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        return super().clone(data, shared_data, new_type, *args, **overrides)
+        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support
     def options(self, *args, **kwargs):
-        return super().options(*args, **kwargs)
+        return super(Dataset, self).options(*args, **kwargs)
     options.__doc__ = Dimensioned.options.__doc__
 
     def map(self, *args, **kwargs):
-        return super().map(*args, **kwargs)
+        return super(Dataset, self).map(*args, **kwargs)
     map.__doc__ = LabelledData.map.__doc__
 
     def relabel(self, *args, **kwargs):
-        return super().relabel(*args, **kwargs)
+        return super(Dataset, self).relabel(*args, **kwargs)
     relabel.__doc__ = LabelledData.relabel.__doc__
 
     @property
