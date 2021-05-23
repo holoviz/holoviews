@@ -38,6 +38,7 @@ from .geometry import SegmentPlot, RectanglesPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
+from .links import LinkCallback # noqa (API import)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot

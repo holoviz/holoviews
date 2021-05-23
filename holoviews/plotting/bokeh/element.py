@@ -38,7 +38,6 @@ from ...streams import Buffer, RangeXY, PlotSize
 from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
-from .callbacks import PlotSizeCallback
 from .plot import BokehPlot
 from .styles import (
     base_properties, legend_dimensions, line_properties, mpl_to_bokeh,
@@ -252,7 +251,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         cb_tools, tool_names = [], []
         hover = False
         for cb in callbacks:
-            for handle in cb.models+cb.extra_models:
+            for handle in cb.models:
                 if handle and handle in TOOLS_MAP:
                     tool_names.append(handle)
                     if handle == 'hover':
@@ -546,20 +545,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if aspect_props['aspect_ratio'] is None:
                 aspect_props['aspect_ratio'] = self.state.aspect_ratio
 
-        if self.dynamic and aspect_props['match_aspect']:
-            # Sync the plot size on dynamic plots to support accurate
-            # scaling of dimension ranges
-            plot_size = [s for s in self.streams if isinstance(s, PlotSize)]
-            callbacks = [c for c in self.callbacks if isinstance(c, PlotSizeCallback)]
-            if plot_size:
-                stream = plot_size[0]
-            elif callbacks:
-                stream = callbacks[0].streams[0]
-            else:
-                stream = PlotSize()
-                self.callbacks.append(PlotSizeCallback(self, [stream], None))
-            stream.add_subscriber(self._update_size)
-
         plot_props = {
             'align':         self.align,
             'margin':        self.margin,
@@ -582,9 +567,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['lod_'+lod_prop] = v
         return plot_props
 
-    def _update_size(self, width, height, scale):
-        self.state.frame_width = width
-        self.state.frame_height = height
 
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
@@ -834,6 +816,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xaxis, yaxis = self.handles['xaxis'], self.handles['yaxis']
         categorical = isinstance(xaxis, CategoricalAxis) or isinstance(yaxis, CategoricalAxis)
         datetime = isinstance(xaxis, DatetimeAxis) or isinstance(yaxis, CategoricalAxis)
+        range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
 
         if data_aspect and (categorical or datetime):
             ax_type = 'categorical' if categorical else 'datetime axes'
@@ -856,7 +839,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     frame_aspect = plot.frame_height/plot.frame_width
 
-                range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
                 if self.drawn:
                     current_l, current_r = plot.x_range.start, plot.x_range.end
                     current_b, current_t = plot.y_range.start, plot.y_range.end
@@ -925,6 +907,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 box_zoom.match_aspect = True
             if scroll_zoom:
                 scroll_zoom.zoom_on_axis = False
+        elif any(rs._triggering for rs in range_streams):
+            xupdate, yupdate = False, False
 
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
@@ -2370,13 +2354,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         self.drawn = True
         self.handles['plots'] = plots
 
-        self._update_callbacks(self.handles['plot'])
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
             self.handles['xaxis'] = plot.xaxis[0]
             self.handles['yaxis'] = plot.yaxis[0]
             self.handles['x_range'] = plot.x_range
             self.handles['y_range'] = plot.y_range
+
         for cb in self.callbacks:
             cb.initialize()
 

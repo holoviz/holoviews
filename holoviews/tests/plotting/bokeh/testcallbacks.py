@@ -4,16 +4,17 @@ from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
+import pyviz_comms as comms
 
-from holoviews.core import DynamicMap, NdOverlay
+from holoviews.core import DynamicMap
 from holoviews.core.options import Store
 from holoviews.core.util import pd
 from holoviews.element import Points, Polygons, Box, Curve, Table, Rectangles
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
-                               PointerXY, PointerX, PlotReset, Selection1D,
-                               RangeXY, PlotSize, CDSStream, SingleTap)
-import pyviz_comms as comms
+from holoviews.streams import (
+    PointDraw, PolyDraw, PolyEdit, BoxEdit, PointerXY, PointerX,
+    PlotReset, Selection1D, RangeXY, PlotSize, CDSStream, SingleTap
+)
 
 try:
     from bokeh.events import Tap
@@ -21,7 +22,7 @@ try:
     from bokeh.models import Range1d, Plot, ColumnDataSource, Selection, PolyEditTool
     from holoviews.plotting.bokeh.callbacks import (
         Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
-        BoxEditCallback, Selection1DCallback, PointerXCallback, TapCallback
+        BoxEditCallback, PointerXCallback, TapCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
     bokeh_server_renderer = BokehRenderer.instance(mode='server')
@@ -193,14 +194,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertEqual(plot.handles['source']._callbacks,
                          {'data': [plot.callbacks[0].on_change]})
 
-    def test_point_draw_callback_initialized_js(self):
-        points = Points([(0, 1)])
-        PointDraw(source=points)
-        plot = bokeh_renderer.get_plot(points)
-        cb = plot.callbacks[0].callbacks[0]
-        self.assertEqual(plot.handles['source'].js_property_callbacks,
-                         {'change:data': [cb], 'patching': [cb]})
-
     def test_point_draw_callback_with_vdims_initialization(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
         stream = PointDraw(source=points)
@@ -235,14 +228,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(polys)
         self.assertEqual(plot.handles['source']._callbacks,
                          {'data': [plot.callbacks[0].on_change]})
-
-    def test_poly_draw_callback_initialized_js(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
-        PolyDraw(source=polys)
-        plot = bokeh_renderer.get_plot(polys)
-        cb = plot.callbacks[0].callbacks[0]
-        self.assertEqual(plot.handles['source'].js_property_callbacks,
-                         {'change:data': [cb], 'patching': [cb]})
 
     def test_poly_draw_callback_with_vdims(self):
         polys = Polygons([{'x': [0, 2, 4], 'y': [0, 2, 0], 'A': 1}], vdims=['A'])
@@ -307,14 +292,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         self.assertEqual(plot.handles['cds']._callbacks,
                          {'data': [plot.callbacks[0].on_change]})
 
-    def test_box_edit_callback_initialized_js(self):
-        boxes = Polygons([Box(0, 0, 1)])
-        BoxEdit(source=boxes)
-        plot = bokeh_renderer.get_plot(boxes)
-        cb = plot.callbacks[0].callbacks[0]
-        self.assertEqual(plot.handles['cds'].js_property_callbacks,
-                         {'change:data': [cb], 'patching': [cb]})
-
     def test_poly_edit_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
         poly_edit = PolyEdit(source=polys)
@@ -332,14 +309,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         plot = bokeh_server_renderer.get_plot(polys)
         self.assertEqual(plot.handles['source']._callbacks,
                          {'data': [plot.callbacks[0].on_change]})
-
-    def test_poly_edit_callback_initialized_js(self):
-        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
-        PolyEdit(source=polys)
-        plot = bokeh_renderer.get_plot(polys)
-        cb = plot.callbacks[0].callbacks[0]
-        self.assertEqual(plot.handles['source'].js_property_callbacks,
-                         {'change:data': [cb], 'patching': [cb]})
 
     def test_poly_edit_shared_callback(self):
         polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
@@ -372,9 +341,6 @@ class TestEditToolCallbacks(CallbackTestCase):
         point_plot = plot.subplots[(0, 0)].subplots['main']
         table_plot = plot.subplots[(0, 1)].subplots['main']
         self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
-        self.assertIn(plot.id, point_plot.callbacks[0].callbacks[0].code)
-        self.assertNotIn('PLACEHOLDER_PLOT_ID', point_plot.callbacks[0].callbacks[0].code)
-
 
 
 class TestServerCallbacks(CallbackTestCase):
@@ -493,55 +459,3 @@ class TestServerCallbacks(CallbackTestCase):
         ))
         stream.event(x_range=(0, 3))
         self.assertEqual(stream.x_range, (0, 3))
-
-
-
-class TestBokehCustomJSCallbacks(CallbackTestCase):
-
-    def test_customjs_callback_attributes_js_for_model(self):
-        js_code = Callback.attributes_js({'x0': 'x_range.attributes.start',
-                                          'x1': 'x_range.attributes.end'})
-
-        code = (
-            'if ((x_range != undefined)) { data["x0"] = {id: x_range["id"], value: '
-            'x_range["attributes"]["start"]};\n }'
-            'if ((x_range != undefined)) { data["x1"] = {id: x_range["id"], value: '
-            'x_range["attributes"]["end"]};\n }'
-        )
-        self.assertEqual(js_code, code)
-
-    def test_customjs_callback_attributes_js_for_cb_obj(self):
-        js_code = Callback.attributes_js({'x': 'cb_obj.x',
-                                          'y': 'cb_obj.y'})
-        code = 'data["x"] = cb_obj["x"];\ndata["y"] = cb_obj["y"];\n'
-        self.assertEqual(js_code, code)
-
-    def test_customjs_callback_attributes_js_for_cb_data(self):
-        js_code = Callback.attributes_js({'x0': 'cb_data.geometry.x0',
-                                          'x1': 'cb_data.geometry.x1',
-                                          'y0': 'cb_data.geometry.y0',
-                                          'y1': 'cb_data.geometry.y1'})
-        code = ('data["x0"] = cb_data["geometry"]["x0"];\n'
-                'data["x1"] = cb_data["geometry"]["x1"];\n'
-                'data["y0"] = cb_data["geometry"]["y0"];\n'
-                'data["y1"] = cb_data["geometry"]["y1"];\n')
-        self.assertEqual(js_code, code)
-
-    def test_callback_on_ndoverlay_is_attached(self):
-        ndoverlay = NdOverlay({i: Curve([i]) for i in range(5)})
-        selection = Selection1D(source=ndoverlay)
-        plot = bokeh_renderer.get_plot(ndoverlay)
-        self.assertEqual(len(plot.callbacks), 1)
-        self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
-        self.assertIn(selection, plot.callbacks[0].streams)
-
-    def test_callback_on_table_is_attached(self):
-        table = Table([1, 2, 3], 'x')
-        selection = Selection1D(source=table)
-        plot = bokeh_renderer.get_plot(table)
-        self.assertEqual(len(plot.callbacks), 1)
-        self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
-        self.assertIn(selection, plot.callbacks[0].streams)
-        callbacks = plot.handles['selected'].js_property_callbacks
-        self.assertIn('change:indices', callbacks)
-        self.assertIn(plot.id, callbacks['change:indices'][0].code)

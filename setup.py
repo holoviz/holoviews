@@ -14,7 +14,7 @@ install_requires = [
     "param >=1.9.3,<2.0",
     "numpy >=1.0",
     "pyviz_comms >=0.7.4",
-    "panel >=0.8.0",
+    "panel >=0.9.5",
     "colorcet",
     "pandas >=0.20.0",
 ]
@@ -40,7 +40,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "streamz >=0.5.0",
     "datashader >=0.11.1",
     "ffmpeg",
-    "cftime",
+    "cftime <1.5.0", # cftime.utime deprecated
     "netcdf4",
     "dask",
     "scipy",
