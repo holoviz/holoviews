@@ -29,7 +29,6 @@ from ...streams import (
     BoxEdit, PointDraw, PolyDraw, PolyEdit, CDSStream, FreehandDraw,
     CurveEdit, SelectionXY, Lasso, SelectMode
 )
-from ..plot import GenericElementPlot, GenericOverlayPlot
 from .util import bokeh_version, convert_timestamp
 
 if bokeh_version >= '2.3.0':
