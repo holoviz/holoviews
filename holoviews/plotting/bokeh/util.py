@@ -1,11 +1,12 @@
-import re
-import time
 import calendar
 import datetime as dt
-from types import FunctionType
+import inspect
+import re
+import time
 
 from collections import defaultdict
 from contextlib import contextmanager
+from types import FunctionType
 
 import param
 import bokeh
@@ -39,8 +40,8 @@ except:
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
-    LooseVersion, _getargspec, callable_name, cftime_types,
-    cftime_to_timestamp, pd, unique_array, isnumeric, arraylike_types
+    LooseVersion, arraylike_types, callable_name, cftime_types,
+    cftime_to_timestamp, isnumeric, pd, unique_array
 )
 from ...core.spaces import get_nested_dmaps, DynamicMap
 from ..util import dim_axis_label
@@ -586,7 +587,7 @@ def py2js_tickformatter(formatter, msg=''):
         param.main.param.warning(msg+error)
         return
 
-    args = _getargspec(formatter).args
+    args = inspect.getfullargspec(formatter).args
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])

@@ -1,8 +1,10 @@
+import inspect
 import re
 import warnings
 
 import numpy as np
 import matplotlib
+
 from matplotlib import units as munits
 from matplotlib import ticker
 from matplotlib.colors import Normalize, cnames
@@ -29,7 +31,7 @@ except:
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, _getargspec, arraylike_types, cftime_types, is_number
+    LooseVersion, arraylike_types, cftime_types, is_number
 )
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
@@ -168,7 +170,7 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in _getargspec(formatter).args
+        args = [arg for arg in inspect.getfullargspec(formatter).args
                 if arg != 'self']
         wrapped = formatter
         if len(args) == 1:
