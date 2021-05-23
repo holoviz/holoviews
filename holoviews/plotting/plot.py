@@ -708,8 +708,6 @@ class DimensionedPlot(Plot):
                 if hasattr(el, 'interface'):
                     if isinstance(el, Graph) and el_dim in el.nodes.dimensions():
                         dtype = el.nodes.interface.dtype(el.nodes, el_dim)
-                    elif isinstance(el, Contours) and el.level is not None:
-                        dtype = np.array([el.level]).dtype # Remove when deprecating level
                     else:
                         dtype = el.interface.dtype(el, el_dim)
                 elif hasattr(el, '__len__') and len(el):

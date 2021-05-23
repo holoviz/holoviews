@@ -66,19 +66,6 @@ class TriSurface(Element3D, Points):
         return Points.__getitem__(self, slc)
 
 
-class Trisurface(TriSurface):
-    """
-    Old name for TriSurface. Retaining for backwards compatibility
-    until holoviews 2.0.
-    """
-
-    group = param.String(default='Trisurface', constant=True)
-
-    def __init__(self, *args, **kwargs):
-        self.param.warning('Deprecation: Please use TriSurface element instead')
-        super().__init__(*args, **kwargs)
-
-
 class Scatter3D(Element3D, Points):
     """
     Scatter3D is a 3D element representing the position of a collection

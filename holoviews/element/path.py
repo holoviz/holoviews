@@ -177,32 +177,6 @@ class Path(SelectionPolyExpr, Geometry):
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
 
-    # Deprecated methods
-
-    @classmethod
-    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
-        param.main.param.warning(
-            'Path.collapse_data is deprecated, collapsing may now '
-            'be performed through concatenation and aggregation.')
-        if function is None:
-            return [path for paths in data_list for path in paths]
-        else:
-            raise Exception("Path types are not uniformly sampled and"
-                            "therefore cannot be collapsed with a function.")
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Path types without an interface
-        use the MultiInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if 'interface' not in state:
-            self.interface = MultiInterface
-        super(Dataset, self).__setstate__(state)
-
-
 
 class Contours(Path):
     """
@@ -236,9 +210,6 @@ class Contours(Path):
     representation where all paths are separated by NaN values.
     """
 
-    level = param.Number(default=None, doc="""
-        Optional level associated with the set of Contours.""")
-
     vdims = param.List(default=[], constant=True, doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""")
@@ -249,27 +220,7 @@ class Contours(Path):
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
-        if params.get('level') is not None:
-            self.param.warning(
-                "The level parameter on %s elements is deprecated, "
-                "supply the value dimension(s) as columns in the data.",
-                type(self).__name__)
-            vdims = vdims or [self._level_vdim]
-            params['vdims'] = []
-        else:
-            params['vdims'] = vdims
-        super().__init__(data, kdims=kdims, **params)
-        if params.get('level') is not None:
-            with disable_constant(self):
-                self.vdims = [asdim(d) for d in vdims]
-
-    def dimension_values(self, dim, expanded=True, flat=True):
-        dimension = self.get_dimension(dim, strict=True)
-        if dimension in self.vdims and self.level is not None:
-            if expanded:
-                return np.full(len(self), self.level)
-            return np.array([self.level])
-        return super().dimension_values(dim, expanded, flat)
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 class Polygons(Contours):

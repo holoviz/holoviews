@@ -171,7 +171,6 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[TriSurface] =   cls.compare_trisurface
-        cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
         cls.equality_type_funcs[Spikes] =       cls.compare_spikes
@@ -302,10 +301,6 @@ class Comparison(ComparisonInterface):
         # 'Deep' equality of dimension metadata (all parameters)
         dim1_params = dict(dim1.param.get_param_values())
         dim2_params = dict(dim2.param.get_param_values())
-
-        # Special handling of deprecated 'initial' values argument
-        dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
-        dim2_params['values'] = [] if dim2.values=='initial' else dim2.values
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
             raise cls.failureException("Dimension parameter sets mismatched: %s != %s"

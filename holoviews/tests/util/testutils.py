@@ -97,40 +97,6 @@ class TestOptsUtil(LoggingComparisonTestCase):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
 
-    def test_cell_opts_util_style(self):
-        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
-        self.assertEqual(mat1.id, None)
-        opts("Image (cmap='hot')", mat1)
-        self.assertNotEqual(mat1.id, None)
-
-        self.assertEqual(
-             Store.lookup_options('matplotlib',
-                                  mat1, 'style').options.get('cmap',None),'hot')
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
-
-    def test_cell_opts_util_plot(self):
-
-        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
-
-        self.assertEqual(mat1.id, None)
-        opts("Image [show_title=False]", mat1)
-        self.assertNotEqual(mat1.id, None)
-        self.assertEqual(
-            Store.lookup_options('matplotlib',
-                                 mat1, 'plot').options.get('show_title',True), False)
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
-
-    def test_cell_opts_util_norm(self):
-        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
-        self.assertEqual(mat1.id, None)
-        opts("Image {+axiswise}", mat1)
-        self.assertNotEqual(mat1.id, None)
-
-        self.assertEqual(
-            Store.lookup_options('matplotlib',
-                                 mat1, 'norm').options.get('axiswise',True), True)
-        self.log_handler.assertContains('WARNING', 'Double positional argument signature of opts is deprecated')
-
     def test_opts_builder_repr(self):
         magic= "Bivariate [bandwidth=0.5] (cmap='jet') Points [logx=True] (size=2)"
         expected= ["opts.Bivariate(bandwidth=0.5, cmap='jet')",

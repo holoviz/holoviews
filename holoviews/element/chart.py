@@ -186,38 +186,14 @@ class Histogram(Selection1DExpr, Chart):
 
     _binned = True
 
-    def __init__(self, data, edges=None, **params):
+    def __init__(self, data, **params):
         if data is None:
             data = []
-        if edges is not None:
-            self.param.warning(
-                "Histogram edges should be supplied as a tuple "
-                "along with the values, passing the edges will "
-                "be deprecated in holoviews 2.0.")
-            data = (edges, data)
-        elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
+        if (isinstance(data, tuple) and len(data) == 2 and
+            len(data[0])+1 == len(data[1])):
             data = data[::-1]
 
         super().__init__(data, **params)
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style Histogram types without an interface can be unpickled.
-
-        Note: Deprecate as part of 2.0
-        """
-        if 'interface' not in state:
-            self.interface = GridInterface
-            x, y = state['_kdims_param_value'][0], state['_vdims_param_value'][0]
-            state['data'] = {x.name: state['data'][1], y.name: state['data'][0]}
-        super(Dataset, self).__setstate__(state)
-
-    @property
-    def values(self):
-        "Property to access the Histogram values provided for backward compatibility"
-        self.param.warning('Histogram.values is deprecated in favor of '
-                           'common dimension_values method.')
-        return self.dimension_values(1)
 
     @property
     def edges(self):

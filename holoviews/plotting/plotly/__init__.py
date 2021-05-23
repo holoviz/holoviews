@@ -63,7 +63,6 @@ Store.register({Points: ScatterPlot,
                 Surface: SurfacePlot,
                 Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,
