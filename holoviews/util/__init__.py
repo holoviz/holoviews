@@ -16,7 +16,7 @@ from ..core import (
     Dataset, DynamicMap, HoloMap, Dimensioned, ViewableElement,
     StoreOptions, Store
 )
-from ..core.options import Keywords, Options
+from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
 from ..core.overlay import Overlay
 from ..core.util import basestring, merge_options_to_dict, OrderedDict
@@ -243,6 +243,14 @@ class opts(param.ParameterizedFunction):
                 sys.stderr.write('Options specification will not be applied.')
                 return options, True
         return options, False
+
+    @classmethod
+    def _linemagic(cls, options, strict=False, backend=None):
+        backends = None if backend is None else [backend]
+        options, failure = cls._process_magic(options, strict, backends=backends)
+        if failure: return
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            StoreOptions.apply_customizations(options, Store.options(backend=backend))
 
     @classmethod
     def defaults(cls, *options, **kwargs):
