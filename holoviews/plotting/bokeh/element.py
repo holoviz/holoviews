@@ -2361,7 +2361,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['x_range'] = plot.x_range
             self.handles['y_range'] = plot.y_range
 
-        self._update_callbacks(plot)
         for cb in self.callbacks:
             cb.initialize()
 
