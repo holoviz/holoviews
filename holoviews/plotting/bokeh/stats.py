@@ -11,8 +11,8 @@ from ...core import NdOverlay
 from ...core.dimension import Dimension, Dimensioned
 from ...core.ndmapping import sorted_context
 from ...core.util import (
-    basestring, dimension_sanitizer, wrap_tuple, unique_iterator,
-    isfinite, is_dask_array, is_cupy_array
+    dimension_sanitizer, wrap_tuple, unique_iterator, isfinite,
+    is_dask_array, is_cupy_array
 )
 from ...operation.stats import univariate_kde
 from ...util.transform import dim
@@ -70,7 +70,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `box_color=dim('color')`""")
 
@@ -345,7 +345,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `violin_color=dim('color')`""")
 
@@ -369,7 +369,7 @@ class ViolinPlot(BoxWhiskerPlot):
     selection_display = BokehOverlaySelectionDisplay(color_prop='violin_fill_color')
 
     def _get_axis_dims(self, element):
-        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
         return kdims, element.vdims[0]
 
@@ -377,7 +377,7 @@ class ViolinPlot(BoxWhiskerPlot):
         """
         Get factors for categorical axes.
         """
-        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or kd != split_dim.dimension]
         if not kdims:
             xfactors, yfactors = [element.label], []
@@ -501,7 +501,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
 
     def get_data(self, element, ranges, style):
-        split_dim = dim(self.split) if isinstance(self.split, basestring) else self.split
+        split_dim = dim(self.split) if isinstance(self.split, str) else self.split
         kdims = [kd for kd in element.kdims if not split_dim or split_dim.dimension != kd]
 
         if kdims:

@@ -27,7 +27,7 @@ class DictDatasetTest(HeterogeneousColumnTests, ScalarColumnTests, InterfaceTest
 
     def test_dataset_dataset_ht_dtypes(self):
         ds = self.table
-        str_type = '<U1' if sys.version_info.major >= 3 else 'S1'
+        str_type = '<U1'
         self.assertEqual(ds.interface.dtype(ds, 'Gender'), np.dtype(str_type))
         self.assertEqual(ds.interface.dtype(ds, 'Age'), np.dtype(int))
         self.assertEqual(ds.interface.dtype(ds, 'Weight'), np.dtype(int))

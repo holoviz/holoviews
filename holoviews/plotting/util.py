@@ -8,15 +8,19 @@ from collections import defaultdict, namedtuple
 import numpy as np
 import param
 
-from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, NdOverlay, AdjointLayout)
+from ..core import (
+    HoloMap, DynamicMap, CompositeOverlay, Layout, Overlay, GridSpace,
+    NdLayout, NdOverlay, AdjointLayout
+)
 from ..core.options import CallbackError, Cycle
 from ..core.operation import Operation
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
-from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match, is_number, isfinite,
-                         python2sort, disable_constant, arraylike_types)
+from ..core.util import (
+    match_spec, wrap_tuple, get_overlay_spec, unique_iterator,
+    closest_match, is_number, isfinite, python2sort, disable_constant,
+    arraylike_types
+)
 from ..streams import LinkedStream
 from ..util.transform import dim
 
@@ -669,7 +673,7 @@ def _list_cmaps(provider=None, records=False):
     """
     if provider is None:
         provider = providers
-    elif isinstance(provider, basestring):
+    elif isinstance(provider, str):
         if provider not in providers:
             raise ValueError('Colormap provider %r not recognized, must '
                              'be one of %r' % (provider, providers))
@@ -894,7 +898,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         palette = list(cmap)
     elif isinstance(cmap, list):
         palette = cmap
-    elif isinstance(cmap, basestring):
+    elif isinstance(cmap, str):
         mpl_cmaps = _list_cmaps('matplotlib')
         bk_cmaps = _list_cmaps('bokeh')
         cet_cmaps = _list_cmaps('colorcet')
@@ -983,7 +987,7 @@ def scale_fontsize(size, scaling):
     Scales a numeric or string font size.
     """
     ext = None
-    if isinstance(size, basestring):
+    if isinstance(size, str):
         match = re.match(r"[-+]?\d*\.\d+|\d+", size)
         if match:
             value = match.group()

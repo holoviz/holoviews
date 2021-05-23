@@ -1,4 +1,3 @@
-import sys
 import warnings
 
 from types import FunctionType
@@ -189,11 +188,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         'left', 'right', None.""")
 
     xformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     yformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     _categorical = False
@@ -403,12 +402,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if xdims is not None and any(xdim.name in ranges and 'factors' in ranges[xdim.name] for xdim in xdims):
             categorical_x = True
         else:
-            categorical_x = any(isinstance(x, (util.basestring, bytes)) for x in (l, r))
+            categorical_x = any(isinstance(x, (str, bytes)) for x in (l, r))
 
         if ydims is not None and any(ydim.name in ranges and 'factors' in ranges[ydim.name] for ydim in ydims):
             categorical_y = True
         else:
-            categorical_y = any(isinstance(y, (util.basestring, bytes)) for y in (b, t))
+            categorical_y = any(isinstance(y, (str, bytes)) for y in (b, t))
 
         range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
@@ -565,7 +564,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _set_active_tools(self, plot):
         "Activates the list of active tools"
         for tool in self.active_tools:
-            if isinstance(tool, util.basestring):
+            if isinstance(tool, str):
                 tool_type = TOOL_TYPES[tool]
                 matching = [t for t in plot.toolbar.tools
                             if isinstance(t, tool_type)]
@@ -603,7 +602,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
-        elif isinstance(self.xaxis, util.basestring) and 'top' in self.xaxis:
+        elif isinstance(self.xaxis, str) and 'top' in self.xaxis:
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
@@ -612,7 +611,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif isinstance(self.yaxis, util.basestring) and'right' in self.yaxis:
+        elif isinstance(self.yaxis, str) and'right' in self.yaxis:
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
@@ -661,7 +660,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     # because in JS the lookup fails otherwise
                     ticks = [int(t) if isinstance(t, float) and t.is_integer() else t
                              for t in ticks]
-                    labels = [l if isinstance(l, util.basestring) else str(l)
+                    labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 else:
                     ticks, labels = ticker, None
@@ -1054,7 +1053,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         new_style = dict(style)
         prefix = group+'_' if group else ''
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
                 elif v in element or (isinstance(element, Graph) and v in element.nodes):
@@ -1304,7 +1303,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
-        if not isinstance(hover.tooltips, util.basestring) and 'hv_created' in hover.tags:
+        if not isinstance(hover.tooltips, str) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
                 key = '@{%s}' % k
                 if key in hover.formatters:
@@ -1696,13 +1695,12 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
-    color_levels = param.ClassSelector(default=None, class_=(
-        (int, list) + ((range,) if sys.version_info.major > 2 else ())), doc="""
+    color_levels = param.ClassSelector(default=None, class_=(int, list, range), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
 
     cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
 
     clabel = param.String(default=None, doc="""
@@ -1719,7 +1717,7 @@ class ColorbarPlot(ElementPlot):
         numerical percentile value.""")
 
     cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, TickFormatter, FunctionType), doc="""
+        default=None, class_=(str, TickFormatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
 
     cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
@@ -1911,7 +1909,7 @@ class ColorbarPlot(ElementPlot):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         color = style.get(name, None)
-        if cdim and ((isinstance(color, util.basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for '%s' option and "
                 "declare a color_index; ignoring the color_index."
@@ -2233,7 +2231,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
                 for tool in el_tools:
-                    if isinstance(tool, util.basestring):
+                    if isinstance(tool, str):
                         tool_type = TOOL_TYPES.get(tool)
                     else:
                         tool_type = type(tool)
@@ -2260,7 +2258,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self.handles['hover'] = subplot.handles['hover']
         elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
             hover = subplot.handles['hover']
-            if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
+            if hover.tooltips and not isinstance(hover.tooltips, str):
                 tooltips = tuple((name, spec.replace('{%F %T}', '')) for name, spec in hover.tooltips)
             else:
                 tooltips = ()

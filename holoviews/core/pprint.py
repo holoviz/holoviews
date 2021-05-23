@@ -277,12 +277,7 @@ class PrettyPrinter(param.Parameterized):
 
     @bothmethod
     def pprint(cls_or_slf, node):
-        reprval = cls_or_slf.serialize(cls_or_slf.recurse(node))
-        if sys.version_info.major == 2:
-            return str(reprval.encode("utf8"))
-        else:
-            return str(reprval)
-
+        return cls_or_slf.serialize(cls_or_slf.recurse(node))
 
     @bothmethod
     def serialize(cls_or_slf, lines):

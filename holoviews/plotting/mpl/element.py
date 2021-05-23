@@ -54,15 +54,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
          Whether to apply log scaling to the y-axis of the Chart.""")
 
     xformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     yformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the y-axis.""")
 
     zformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the z-axis.""")
 
     zaxis = param.Boolean(default=True, doc="""
@@ -295,7 +295,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.projection == '3d':
             return
 
-        if ((isinstance(aspect, util.basestring) and aspect != 'square') or
+        if ((isinstance(aspect, str) and aspect != 'square') or
             self.data_aspect):
             data_ratio = self.data_aspect or aspect
         else:
@@ -550,7 +550,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
                 elif v in element or (isinstance(element, Graph) and v in element.nodes):
@@ -677,7 +677,7 @@ class ColorbarPlot(ElementPlot):
         numerical percentile value.""")
 
     cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
 
     colorbar = param.Boolean(default=False, doc="""
@@ -950,7 +950,7 @@ class ColorbarPlot(ElementPlot):
             elif isinstance(val, tuple):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
-            elif isinstance(val, util.basestring):
+            elif isinstance(val, str):
                 color = val
                 alpha = 1
                 if color.startswith('#') and len(color) == 9:

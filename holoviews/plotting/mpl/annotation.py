@@ -5,7 +5,7 @@ import matplotlib
 from matplotlib import patches as patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec, basestring
+from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
@@ -165,7 +165,7 @@ class TextPlot(AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 

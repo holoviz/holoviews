@@ -12,7 +12,7 @@ from bokeh.transform import jitter
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
-    OrderedDict, basestring, dimension_sanitizer, isfinite
+    OrderedDict, dimension_sanitizer, isfinite
 )
 from ...operation import interpolate_curve
 from ...util.transform import dim
@@ -38,11 +38,11 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
@@ -72,7 +72,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data, mapping = {}, {}
         sdim = element.get_dimension(self.size_index)
         ms = style.get('size', np.sqrt(6))
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
+        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'size' option and "
                 "declare a size_index; ignoring the size_index.")
@@ -188,7 +188,7 @@ class VectorFieldPlot(ColorbarPlot):
     arrow_heads = param.Boolean(default=True, doc="""
         Whether or not to draw arrow heads.""")
 
-    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+    magnitude = param.ClassSelector(class_=(str, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
         of each vector. Magnitude is expected to be scaled between 0-1,
         by default the magnitudes are rescaled relative to the minimum
@@ -208,13 +208,13 @@ class VectorFieldPlot(ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of dimension value transform on color option,
         e.g. `color=dim('Magnitude')`.
         """)
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of the magnitude option, e.g.
         `magnitude=dim('Magnitude')`.
@@ -242,7 +242,7 @@ class VectorFieldPlot(ColorbarPlot):
                 "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
-        elif isinstance(mag_dim, basestring):
+        elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
 
         (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
@@ -684,7 +684,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
@@ -776,7 +776,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
@@ -969,7 +969,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for i, (k, ds) in enumerate(grouped.items()):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
-                gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
+                gval = k if isinstance(k, str) else group_dim.pprint_value(k)
             # Apply stacking or grouping
             if grouping == 'stacked':
                 for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
@@ -1024,7 +1024,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         for name, val in mapping.items():
             sanitized = None
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 sanitized = dimension_sanitizer(mapping[name])
                 mapping[name] = sanitized
             elif isinstance(val, dict) and 'field' in val:

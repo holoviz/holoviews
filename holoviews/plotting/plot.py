@@ -735,8 +735,8 @@ class DimensionedPlot(Plot):
                         dim(el_dim, np.nanpercentile, percentile).apply(el)
                     )
 
-                if (any(isinstance(r, util.basestring) for r in data_range) or
-                    (el_dim.type is not None and issubclass(el_dim.type, util.basestring)) or
+                if (any(isinstance(r, str) for r in data_range) or
+                    (el_dim.type is not None and issubclass(el_dim.type, str)) or
                     (dtype is not None and dtype.kind in 'SU')):
                     categorical_dims.append(el_dim)
 

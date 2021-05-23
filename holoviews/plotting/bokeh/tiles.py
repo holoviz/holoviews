@@ -2,7 +2,6 @@ import numpy as np
 
 from bokeh.models import WMTSTileSource, BBoxTileSource, QUADKEYTileSource
 
-from ...core import util
 from ...core.options import SkipRendering
 from ...element.tiles import _ATTRIBUTIONS
 from .element import ElementPlot
@@ -24,7 +23,7 @@ class TilePlot(ElementPlot):
         return extents
 
     def get_data(self, element, ranges, style):
-        if not isinstance(element.data, util.basestring):
+        if not isinstance(element.data, str):
             SkipRendering("WMTS element data must be a URL string, "
                           "bokeh cannot render %r" % element.data)
         if element.data is None:

@@ -34,7 +34,7 @@ class ChartPlot(ElementPlot):
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 

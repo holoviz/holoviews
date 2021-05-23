@@ -12,8 +12,10 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
+from .util import (
+    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
+    process_ellipses, get_ndmapping_label
+)
 
 class item_check(object):
     """
@@ -336,7 +338,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
+        if isinstance(dim_val, str) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):

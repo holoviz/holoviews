@@ -17,7 +17,7 @@ from ...core import (
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, cftime_to_timestamp, cftime_types, get_method_owner,
+    cftime_to_timestamp, cftime_types, get_method_owner,
     is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
     _STANDARD_CALENDARS
 )
@@ -237,7 +237,7 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         fontsize in pt.
         """
         size = super()._fontsize(key, label, common)
-        return {k: v if isinstance(v, basestring) else '%spt' % v
+        return {k: v if isinstance(v, str) else '%spt' % v
                 for k, v in size.items()}
 
     def _get_title_div(self, key, default_fontsize='15pt', width=450):

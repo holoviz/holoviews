@@ -25,7 +25,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
-    Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
+    Iterable, LooseVersion, cftime_types, cftime_to_timestamp,
     datetime_types, dt_to_int, isfinite, get_param_values, max_range
 )
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
@@ -222,7 +222,7 @@ class AggregationOperation(ResamplingOperation):
     aggregator parameter used to define a datashader Reduction.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
                                      default=ds.count(), doc="""
         Datashader reduction function used for aggregating the data.
         The aggregator may also define a column to aggregate; if
@@ -249,7 +249,7 @@ class AggregationOperation(ResamplingOperation):
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
-        if isinstance(agg, basestring):
+        if isinstance(agg, str):
             if agg not in self._agg_methods:
                 agg_methods = sorted(self._agg_methods)
                 raise ValueError("Aggregation method '%r' is not known; "
@@ -820,7 +820,7 @@ class regrid(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -958,7 +958,7 @@ class contours_rasterize(aggregate):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
@@ -977,7 +977,7 @@ class trimesh_rasterize(aggregate):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', 'linear', None, False], doc="""
@@ -1180,7 +1180,7 @@ class shade(LinkableOperation):
         between 0 and 1.""")
 
     cnorm = param.ClassSelector(default='eq_hist',
-                                class_=(basestring, Callable),
+                                class_=(str, Callable),
                                 doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
@@ -1305,7 +1305,7 @@ class shade(LinkableOperation):
         elif isinstance(self.p.cmap, Callable):
             colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
             shade_opts['cmap'] = map(self.rgb2hex, colors)
-        elif isinstance(self.p.cmap, basestring):
+        elif isinstance(self.p.cmap, str):
             if self.p.cmap.startswith('#') or self.p.cmap in color_lookup:
                 shade_opts['cmap'] = self.p.cmap
             else:
@@ -1344,11 +1344,11 @@ class geometry_rasterize(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
-        if (not (element.vdims or isinstance(agg, basestring)) and
+        if (not (element.vdims or isinstance(agg, str)) and
             agg.column is None and not isinstance(agg, (rd.count, rd.any))):
             return ds.count()
         return super()._get_aggregator(element, add_field)
@@ -1425,7 +1425,7 @@ class rasterize(AggregationOperation):
     dimensions of the linked plot and the ranges of the axes.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
                                      default='default')
 
     interpolation = param.ObjectSelector(

@@ -3,7 +3,6 @@
 Test cases for rendering exporters
 """
 import os
-import sys
 import subprocess
 
 from collections import OrderedDict
@@ -90,10 +89,7 @@ class MPLRendererTest(ComparisonTestCase):
         self.assertIn("<img src='data:image/gif", data['text/html'])
 
     def test_render_mp4(self):
-        if sys.version_info.major > 2:
-            devnull = subprocess.DEVNULL
-        else:
-            devnull = open(os.devnull, 'w')
+        devnull = subprocess.DEVNULL
         try:
             subprocess.call(['ffmpeg', '-h'], stdout=devnull, stderr=devnull)
         except:

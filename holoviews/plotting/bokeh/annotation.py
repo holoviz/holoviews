@@ -18,7 +18,7 @@ except:
                  '-': None}
 from bokeh.transform import dodge
 
-from ...core.util import datetime_types, dimension_sanitizer, basestring
+from ...core.util import datetime_types, dimension_sanitizer
 from ...element import HLine, VLine, VSpan
 from ..plot import GenericElementPlot
 from .element import AnnotationPlot, ElementPlot, CompositeElementPlot, ColorbarPlot
@@ -87,7 +87,7 @@ class LabelsPlot(ColorbarPlot, AnnotationPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 

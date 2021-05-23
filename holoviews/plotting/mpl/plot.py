@@ -14,7 +14,7 @@ from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
 from ...core.options import Store, SkipRendering
-from ...core.util import int_to_roman, int_to_alpha, basestring, wrap_tuple_streams
+from ...core.util import int_to_roman, int_to_alpha, wrap_tuple_streams
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot, GenericAdjointLayoutPlot)
 from ..util import attach_streams, collate, displayable
@@ -800,7 +800,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             main = layout_view.main
             main = main.last if isinstance(main, HoloMap) else main
             main_options = self.lookup_options(main, 'plot').options if main else {}
-            if main and not isinstance(main_options.get('aspect', 1), basestring):
+            if main and not isinstance(main_options.get('aspect', 1), str):
                 main_aspect = np.nan if isinstance(main, Empty) else main_options.get('aspect', 1)
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
@@ -831,7 +831,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             else:
                 height_ratios = [4]
 
-            if not isinstance(main_aspect, (basestring, type(None))):
+            if not isinstance(main_aspect, (str, type(None))):
                 width_ratios = [wratio * main_aspect for wratio in width_ratios]
                 height_ratios = [hratio * inv_aspect for hratio in height_ratios]
             layout_shape = (len(width_ratios), len(height_ratios))
