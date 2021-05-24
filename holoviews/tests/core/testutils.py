@@ -2,10 +2,11 @@
 """
 Unit tests of the helper functions in core.utils
 """
-import sys, math
-import unittest
 import datetime
-from unittest import SkipTest, skipIf
+import math
+import unittest
+
+from unittest import skipIf
 from itertools import product
 from collections import OrderedDict
 
@@ -24,8 +25,6 @@ from holoviews.core.util import (
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
 from holoviews.element.comparison import ComparisonTestCase
-
-py_version = sys.version_info.major
 
 sanitize_identifier = sanitize_identifier_fn.instance()
 
@@ -162,34 +161,16 @@ class TestAllowablePrefix(ComparisonTestCase):
     def test_allowable_true(self):
         self.assertEqual(sanitize_identifier.allowable('some_string'), True)
 
-    def test_prefix_test1_py2(self):
-        if py_version != 2: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('_some_string', version=2)
+    def test_prefix_test1(self):
+        prefixed = sanitize_identifier.prefixed('_some_string')
         self.assertEqual(prefixed, True)
 
-    def test_prefix_test2_py2(self):
-        if py_version != 2: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('some_string', version=2)
+    def test_prefix_test2(self):
+        prefixed = sanitize_identifier.prefixed('some_string')
         self.assertEqual(prefixed, False)
 
-    def test_prefix_test3_py2(self):
-        if py_version != 2: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('0some_string', version=2)
-        self.assertEqual(prefixed, True)
-
-    def test_prefix_test1_py3(self):
-        if py_version != 3: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('_some_string', version=3)
-        self.assertEqual(prefixed, True)
-
-    def test_prefix_test2_py3(self):
-        if py_version != 3: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('some_string', version=3)
-        self.assertEqual(prefixed, False)
-
-    def test_prefix_test3_py3(self):
-        if py_version != 3: raise SkipTest
-        prefixed = sanitize_identifier.prefixed('۵some_string', version=3)
+    def test_prefix_test3(self):
+        prefixed = sanitize_identifier.prefixed('۵some_string')
         self.assertEqual(prefixed, True)
 
 
@@ -201,198 +182,98 @@ class TestTreeAttribute(ComparisonTestCase):
     def test_simple_uppercase_string(self):
         self.assertEqual(tree_attribute('UPPERCASE'), True)
 
-    def test_unicode_string(self):
-        if py_version != 2: raise SkipTest
-        self.assertEqual(tree_attribute('𝜗unicode'), True)
-
     def test_underscore_string(self):
         self.assertEqual(tree_attribute('_underscore'), False)
 
 
-class TestSanitizationPy2(ComparisonTestCase):
-    """
-    Tests of sanitize_identifier (Python 2)
-    """
-    def setUp(self):
-        if py_version != 2: raise SkipTest
 
-    def test_simple_pound_sanitized_py2(self):
-        sanitized = sanitize_identifier('£', version=2)
+class TestSanitization(ComparisonTestCase):
+    """
+    Tests of sanitize_identifier
+    """
+    def test_simple_pound_sanitized(self):
+        sanitized = sanitize_identifier('£')
         self.assertEqual(sanitized, 'pound')
 
-    def test_simple_digit_sanitized_py2(self):
-        sanitized = sanitize_identifier('0', version=2)
+    def test_simple_digit_sanitized(self):
+        sanitized = sanitize_identifier('0')
         self.assertEqual(sanitized, 'A_0')
 
-    def test_simple_underscore_sanitized_py2(self):
-        sanitized = sanitize_identifier('_test', version=2)
+    def test_simple_underscore_sanitized(self):
+        sanitized = sanitize_identifier('_test')
         self.assertEqual(sanitized, 'A__test')
 
-    def test_simple_alpha_sanitized_py2(self):
-        sanitized = sanitize_identifier('α', version=2)
-        self.assertEqual(sanitized, 'alpha')
-
-    def test_simple_a_pound_sanitized_py2(self):
-        sanitized = sanitize_identifier('a £', version=2)
-        self.assertEqual(sanitized, 'A_pound')
-
-    def test_capital_delta_sanitized_py2(self):
-        sanitized = sanitize_identifier('Δ', version=2)
-        self.assertEqual(sanitized, 'Delta')
-
-    def test_lowercase_delta_sanitized_py2(self):
-        sanitized = sanitize_identifier('δ', version=2)
-        self.assertEqual(sanitized, 'delta')
-
-    def test_simple_alpha_beta_sanitized_py2(self):
-        sanitized = sanitize_identifier('α β', version=2)
-        self.assertEqual(sanitized, 'alpha_beta')
-
-    def test_simple_alpha_beta_underscore_sanitized_py2(self):
-        sanitized = sanitize_identifier('α_β', version=2)
-        self.assertEqual(sanitized, 'alpha_beta')
-
-    def test_simple_alpha_beta_double_underscore_sanitized_py2(self):
-        sanitized = sanitize_identifier('α__β', version=2)
-        self.assertEqual(sanitized, 'alpha__beta')
-
-    def test_simple_alpha_beta_mixed_underscore_space_sanitized_py2(self):
-        sanitized = sanitize_identifier('α__  β', version=2)
-        self.assertEqual(sanitized, 'alpha__beta')
-
-    def test_alpha_times_two_py2(self):
-        sanitized = sanitize_identifier('α*2', version=2)
-        self.assertEqual(sanitized,  'alpha_times_2')
-
-    def test_arabic_five_sanitized_py2(self):
-        """
-        Note: There would be a clash if you mixed the languages of
-        your digits! E.g. arabic ٥ five and urdu ۵ five
-        """
-        sanitized = sanitize_identifier('٥', version=2)
-        self.assertEqual(sanitized, 'five')
-
-    def test_urdu_five_sanitized_py2(self):
-        """
-        Note: There would be a clash if you mixed the languages of
-        your digits! E.g. arabic ٥ five and urdu ۵ five
-        """
-        sanitized = sanitize_identifier('۵', version=2)
-        self.assertEqual(sanitized, 'five')
-
-    def test_urdu_a_five_sanitized_py2(self):
-        """
-        Note: There would be a clash if you mixed the languages of
-        your digits! E.g. arabic ٥ five and urdu ۵ five
-        """
-        sanitized = sanitize_identifier('a ۵', version=2)
-        self.assertEqual(sanitized, 'A_five')
-
-    def test_umlaut_sanitized_py2(self):
-        sanitized = sanitize_identifier('Festkörperphysik', version=2)
-        self.assertEqual(sanitized, 'Festkorperphysik')
-
-    def test_power_umlaut_sanitized_py2(self):
-        sanitized = sanitize_identifier('^Festkörperphysik', version=2)
-        self.assertEqual(sanitized, 'power_Festkorperphysik')
-
-    def test_custom_dollar_removal_py2(self):
-        sanitize_identifier.eliminations.extend(['dollar'])
-        sanitized = sanitize_identifier('$E$', version=2)
-        self.assertEqual(sanitized, 'E')
-        sanitize_identifier.eliminations.remove('dollar')
-
-
-class TestSanitizationPy3(ComparisonTestCase):
-    """
-    Tests of sanitize_identifier (Python 3)
-    """
-    def setUp(self):
-        if py_version != 3: raise SkipTest
-
-    def test_simple_pound_sanitized_py3(self):
-        sanitized = sanitize_identifier('£', version=3)
-        self.assertEqual(sanitized, 'pound')
-
-    def test_simple_digit_sanitized_py3(self):
-        sanitized = sanitize_identifier('0', version=3)
-        self.assertEqual(sanitized, 'A_0')
-
-    def test_simple_underscore_sanitized_py3(self):
-        sanitized = sanitize_identifier('_test', version=3)
-        self.assertEqual(sanitized, 'A__test')
-
-    def test_simple_alpha_sanitized_py3(self):
-        sanitized = sanitize_identifier('α', version=3)
+    def test_simple_alpha_sanitized(self):
+        sanitized = sanitize_identifier('α')
         self.assertEqual(sanitized, 'α')
 
-    def test_simple_a_pound_sanitized_py3(self):
-        sanitized = sanitize_identifier('a £', version=3)
+    def test_simple_a_pound_sanitized(self):
+        sanitized = sanitize_identifier('a £')
         self.assertEqual(sanitized, 'A_pound')
 
-    def test_capital_delta_sanitized_py3(self):
-        sanitized = sanitize_identifier('Δ', version=3)
+    def test_capital_delta_sanitized(self):
+        sanitized = sanitize_identifier('Δ')
         self.assertEqual(sanitized, 'Δ')
 
-    def test_lowercase_delta_sanitized_py3(self):
-        sanitized = sanitize_identifier('δ', version=3)
+    def test_lowercase_delta_sanitized(self):
+        sanitized = sanitize_identifier('δ')
         self.assertEqual(sanitized, 'δ')
 
-    def test_simple_alpha_beta_sanitized_py3(self):
-        sanitized = sanitize_identifier('α β', version=3)
+    def test_simple_alpha_beta_sanitized(self):
+        sanitized = sanitize_identifier('α β')
         self.assertEqual(sanitized, 'α_β')
 
-    def test_simple_alpha_beta_underscore_sanitized_py3(self):
-        sanitized = sanitize_identifier('α_β', version=3)
+    def test_simple_alpha_beta_underscore_sanitized(self):
+        sanitized = sanitize_identifier('α_β')
         self.assertEqual(sanitized, 'α_β')
 
-    def test_simple_alpha_beta_double_underscore_sanitized_py3(self):
-        sanitized = sanitize_identifier('α__β', version=3)
+    def test_simple_alpha_beta_double_underscore_sanitized(self):
+        sanitized = sanitize_identifier('α__β')
         self.assertEqual(sanitized, 'α__β')
 
-    def test_simple_alpha_beta_mixed_underscore_space_sanitized_py3(self):
-        sanitized = sanitize_identifier('α__  β', version=3)
+    def test_simple_alpha_beta_mixed_underscore_space_sanitized(self):
+        sanitized = sanitize_identifier('α__  β')
         self.assertEqual(sanitized, 'α__β')
 
-    def test_alpha_times_two_py3(self):
-        sanitized = sanitize_identifier('α*2', version=3)
+    def test_alpha_times_two(self):
+        sanitized = sanitize_identifier('α*2')
         self.assertEqual(sanitized,  'α_times_2')
 
-    def test_arabic_five_sanitized_py3(self):
+    def test_arabic_five_sanitized(self):
         """
         Note: There would be a clash if you mixed the languages of
         your digits! E.g. arabic ٥ five and urdu ۵ five
         """
         try:
-            sanitize_identifier('٥', version=3)
+            sanitize_identifier('٥')
         except SyntaxError as e:
             assert str(e).startswith("String '٥' cannot be sanitized")
 
-    def test_urdu_five_sanitized_py3(self):
+    def test_urdu_five_sanitized(self):
         try:
-            sanitize_identifier('۵', version=3)
+            sanitize_identifier('۵')
         except SyntaxError as e:
             assert str(e).startswith("String '۵' cannot be sanitized")
 
-    def test_urdu_a_five_sanitized_py3(self):
+    def test_urdu_a_five_sanitized(self):
         """
         Note: There would be a clash if you mixed the languages of
         your digits! E.g. arabic ٥ five and urdu ۵ five
         """
-        sanitized = sanitize_identifier('a ۵', version=3)
+        sanitized = sanitize_identifier('a ۵')
         self.assertEqual(sanitized, 'A_۵')
 
-    def test_umlaut_sanitized_py3(self):
-        sanitized = sanitize_identifier('Festkörperphysik', version=3)
+    def test_umlaut_sanitized(self):
+        sanitized = sanitize_identifier('Festkörperphysik')
         self.assertEqual(sanitized, 'Festkörperphysik')
 
-    def test_power_umlaut_sanitized_py3(self):
-        sanitized = sanitize_identifier('^Festkörperphysik', version=3)
+    def test_power_umlaut_sanitized(self):
+        sanitized = sanitize_identifier('^Festkörperphysik')
         self.assertEqual(sanitized, 'power_Festkörperphysik')
 
     def test_custom_dollar_removal_py2(self):
         sanitize_identifier.eliminations.extend(['dollar'])
-        sanitized = sanitize_identifier('$E$', version=3)
+        sanitized = sanitize_identifier('$E$')
         self.assertEqual(sanitized, 'E')
         sanitize_identifier.eliminations.remove('dollar')
 
@@ -662,9 +543,6 @@ class TestDatetimeUtils(unittest.TestCase):
 
     @pd_skip
     def test_timezone_to_int(self):
-        if py_version != 3:
-            raise SkipTest
-
         import pytz
         timezone = pytz.timezone("Europe/Copenhagen")
 

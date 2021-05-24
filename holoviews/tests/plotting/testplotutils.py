@@ -1,6 +1,4 @@
-import sys
-
-from unittest import SkipTest, skipIf
+from unittest import SkipTest
 
 import numpy as np
 
@@ -23,9 +21,6 @@ try:
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
-
-py2_skip = skipIf(sys.version_info.major == 2, "Not supported in python2")
-
 
 
 class TestOverlayableZorders(ComparisonTestCase):
@@ -542,12 +537,10 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         for cat in categorical:
             self.assertTrue(len(set(bokeh_palette_to_palette(cat))) <= 20)
 
-    @py2_skip
     def test_bokeh_colormap_fire(self):
         colors = process_cmap('fire', 3, provider='bokeh')
         self.assertEqual(colors, ['#000000', '#eb1300', '#ffffff'])
 
-    @py2_skip
     def test_bokeh_colormap_fire_r(self):
         colors = process_cmap('fire_r', 3, provider='bokeh')
         self.assertEqual(colors, ['#ffffff', '#ed1400', '#000000'])

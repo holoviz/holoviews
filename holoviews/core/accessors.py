@@ -155,7 +155,7 @@ class Apply(object):
                 dynamic, per_element, **kwargs
             )
 
-        if isinstance(apply_function, util.basestring):
+        if isinstance(apply_function, str):
             args = kwargs.pop('_method_args', ())
             method_name = apply_function
             def apply_function(object, **kwargs):
@@ -327,7 +327,7 @@ class Redim(object):
 
             if override is None:
                 replaced.append(d)
-            elif isinstance(override, (util.basestring, tuple)):
+            elif isinstance(override, (str, tuple)):
                 replaced.append(d.clone(override))
             elif isinstance(override, Dimension):
                 replaced.append(override)

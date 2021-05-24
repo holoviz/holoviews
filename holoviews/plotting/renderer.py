@@ -34,7 +34,7 @@ from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import basestring, unbound_dimensions, LooseVersion
+from ..core.util import unbound_dimensions, LooseVersion
 from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
@@ -336,7 +336,7 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt, **kwargs)
-        if isinstance(resources, basestring):
+        if isinstance(resources, str):
             resources = resources.lower()
         if css is None: css = self.css
 
@@ -584,7 +584,7 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
-            if isinstance(basename, basestring):
+            if isinstance(basename, str):
                 if title is None:
                     title = os.path.basename(basename)
                 if fmt in MIME_TYPES:

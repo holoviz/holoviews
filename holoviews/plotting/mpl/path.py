@@ -18,7 +18,7 @@ class PathPlot(ColorbarPlot):
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -108,7 +108,7 @@ class PathPlot(ColorbarPlot):
 
 class ContourPlot(PathPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=0, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 

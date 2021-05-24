@@ -1,12 +1,11 @@
 import param
 import numpy as np
 
-from .selection import PlotlyOverlaySelectionDisplay
-from ...core import util
 from ...operation import interpolate_curve
 from ...element import Tiles
 from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class ChartPlot(ElementPlot):
@@ -34,7 +33,7 @@ class ChartPlot(ElementPlot):
 
 class ScatterPlot(ChartPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 

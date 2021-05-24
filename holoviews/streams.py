@@ -20,7 +20,7 @@ from .core import util
 from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, util.basestring, tuple)+util.datetime_types
+pointer_types = (Number, str, tuple)+util.datetime_types
 
 class _SkipTrigger(): pass
 

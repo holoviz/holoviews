@@ -2,9 +2,11 @@
 """
 Unit tests relating to notebook processing
 """
-import nbformat, nbconvert
+import os
 
-import os, sys
+import nbconvert
+import nbformat
+
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
 
@@ -23,43 +25,28 @@ class TestOptsPreprocessor(ComparisonTestCase):
 
     def test_opts_image_line_magic(self):
         nbname = 'test_opts_image_line_magic.ipynb'
-        if sys.version_info.major == 2:
-            expected = """hv.util.opts(u" Image [xaxis=None] (cmap='viridis')")"""
-        else:
-            expected = """hv.util.opts(" Image [xaxis=None] (cmap='viridis')")"""
+        expected = """hv.util.opts(" Image [xaxis=None] (cmap='viridis')")"""
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), True)
 
     def test_opts_image_cell_magic(self):
         nbname = 'test_opts_image_cell_magic.ipynb'
-        if sys.version_info.major == 2:
-            expected = ("""hv.util.opts(u" Image [xaxis=None] (cmap='viridis')", """
-                        + """hv.Image(np.random.rand(20,20)))""")
-        else:
-            expected = ("""hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
-                        + """hv.Image(np.random.rand(20,20)))""")
+        expected = ("""hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
+                    + """hv.Image(np.random.rand(20,20)))""")
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), True)
 
     def test_opts_image_cell_magic_offset(self):
         nbname = 'test_opts_image_cell_magic_offset.ipynb'
-        if sys.version_info.major == 2:
-            expected = (" 'An expression (literal) on the same line';\n" +
-                        """hv.util.opts(u" Image [xaxis=None] (cmap='viridis')","""
-                        + """hv.Image(np.random.rand(20,20)))""")
-        else:
-            # FIXME: Not quite right yet, shouldn't have a leading space or a newline
-            expected = (" 'An expression (literal) on the same line';\n"
-                        + """hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
-                        + """hv.Image(np.random.rand(20,20)))""")
+        # FIXME: Not quite right yet, shouldn't have a leading space or a newline
+        expected = (" 'An expression (literal) on the same line';\n"
+                    + """hv.util.opts(" Image [xaxis=None] (cmap='viridis')", """
+                    + """hv.Image(np.random.rand(20,20)))""")
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), False)
 
     def test_opts_image_line_magic_svg(self):
         nbname = 'test_output_svg_line_magic.ipynb'
-        if sys.version_info.major == 2:
-            expected = """hv.util.output(u" fig='svg'")"""
-        else:
-            expected = """hv.util.output(" fig='svg'")"""
+        expected = """hv.util.output(" fig='svg'")"""
         source = apply_preprocessors([OutputMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), True)

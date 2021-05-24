@@ -44,7 +44,7 @@ import numpy as np
 import param
 from .accessors import Opts # noqa (clean up in 2.0)
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring, OrderedDict
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer, OrderedDict
 from .pprint import InfoPrinter
 
 
@@ -260,7 +260,7 @@ class Keywords(param.Parameterized):
 
     def __init__(self, values=[], target=None):
 
-        strings = [isinstance(v, (str,basestring)) for v in values]
+        strings = [isinstance(v, str) for v in values]
         if False in strings:
             raise ValueError('All keywords must be strings: {0}'.format(values))
         super().__init__(values=sorted(values),
@@ -316,7 +316,7 @@ class Cycle(param.Parameterized):
 
     def __init__(self, cycle=None, **params):
         if cycle is not None:
-            if isinstance(cycle, basestring):
+            if isinstance(cycle, str):
                 params['key'] = cycle
             else:
                 params['values'] = cycle

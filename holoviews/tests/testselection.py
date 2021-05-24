@@ -3,7 +3,6 @@ from unittest import SkipTest, skip, skipIf
 import holoviews as hv
 import pandas as pd
 
-from holoviews.core.util import unicode, basestring
 from holoviews.core.options import Cycle, Store
 from holoviews.element import ErrorBars, Points, Rectangles, Table, VSpan
 from holoviews.plotting.util import linear_gradient
@@ -723,7 +722,7 @@ class TestLinkSelectionsPlotly(TestLinkSelections):
         else:
             color = element.opts.get('style').kwargs['color']
 
-        if isinstance(color, (Cycle, basestring, unicode)):
+        if isinstance(color, (Cycle, str)):
             return color
         else:
             return list(color)
@@ -748,7 +747,7 @@ class TestLinkSelectionsBokeh(TestLinkSelections):
     def element_color(self, element):
         color = element.opts.get('style').kwargs['color']
 
-        if isinstance(color, (basestring, unicode)):
+        if isinstance(color, str):
             return color
         else:
             return list(color)

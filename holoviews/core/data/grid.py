@@ -1,6 +1,3 @@
-import sys
-import datetime as dt
-
 from collections import OrderedDict, defaultdict
 
 try:
@@ -258,9 +255,6 @@ class GridInterface(DictInterface):
                [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
-        if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
-            # np.diff does not work on datetimes in python 2
-            coord = coord.astype('datetime64')
         if coord.shape[axis] == 0:
             return np.array([], dtype=coord.dtype)
         if coord.shape[axis] > 1:

@@ -3,7 +3,7 @@ import param
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
-from ...core.util import basestring, max_range
+from ...core.util import max_range
 from ...util.transform import dim
 from .graphs import GraphPlot
 from .util import filter_styles
@@ -11,7 +11,7 @@ from .util import filter_styles
 
 class SankeyPlot(GraphPlot):
 
-    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+    labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
     show_values = param.Boolean(default=True, doc="""
@@ -35,11 +35,11 @@ class SankeyPlot(GraphPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+    color_index = param.ClassSelector(default=2, class_=(str, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
 
-    label_index = param.ClassSelector(default=2, class_=(basestring, int),
+    label_index = param.ClassSelector(default=2, class_=(str, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
 
@@ -80,7 +80,7 @@ class SankeyPlot(GraphPlot):
                     "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
-        if isinstance(labels, basestring):
+        if isinstance(labels, str):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:

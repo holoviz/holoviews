@@ -334,7 +334,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
@@ -554,7 +554,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker)
-                labels = [l if isinstance(l, util.basestring) else str(l)
+                labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 axis_props['tickvals'] = ticks
                 axis_props['ticktext'] = labels

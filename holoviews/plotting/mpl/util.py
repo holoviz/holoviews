@@ -1,8 +1,10 @@
+import inspect
 import re
 import warnings
 
 import numpy as np
 import matplotlib
+
 from matplotlib import units as munits
 from matplotlib import ticker
 from matplotlib.colors import Normalize, cnames
@@ -29,8 +31,8 @@ except:
     nc_axis_available = False
 
 from ...core.util import (
-    LooseVersion, _getargspec, arraylike_types, basestring,
-    cftime_types, is_number,)
+    LooseVersion, arraylike_types, cftime_types, is_number
+)
 from ...element import Raster, RGB, Polygons
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX
 
@@ -41,7 +43,7 @@ def is_color(color):
     """
     Checks if supplied object is a valid color spec.
     """
-    if not isinstance(color, basestring):
+    if not isinstance(color, str):
         return False
     elif RGB_HEX_REGEX.match(color):
         return True
@@ -61,7 +63,7 @@ validators = {
     'joinstyle': validate_joinstyle,
     'marker': lambda x: (x in Line2D.markers or isinstance(x, MarkerStyle)
                          or isinstance(x, Path) or
-                         (isinstance(x, basestring) and x.startswith('$')
+                         (isinstance(x, str) and x.startswith('$')
                           and x.endswith('$'))),
     's': lambda x: is_number(x) and (x >= 0)
 }
@@ -168,14 +170,14 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in _getargspec(formatter).args
+        args = [arg for arg in inspect.getfullargspec(formatter).args
                 if arg != 'self']
         wrapped = formatter
         if len(args) == 1:
             def wrapped(val, pos=None):
                 return formatter(val)
         return ticker.FuncFormatter(wrapped)
-    elif isinstance(formatter, basestring):
+    elif isinstance(formatter, str):
         if re.findall(r"\{(\w+)\}", formatter):
             return ticker.StrMethodFormatter(formatter)
         else:

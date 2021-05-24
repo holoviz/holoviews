@@ -9,7 +9,7 @@ from matplotlib.dates import DateFormatter, date2num
 from ...core.dimension import Dimension, dimension_name
 from ...core.options import Store, abbreviated_exception
 from ...core.util import (
-    match_spec, basestring, isfinite, dt_to_int, dt64_to_dt, search_indices,
+    match_spec, isfinite, dt_to_int, dt64_to_dt, search_indices,
     unique_array, isscalar, isdatetime
 )
 from ...element import Raster, HeatMap
@@ -556,11 +556,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of size style mapping, e.g. `size=dim('size')`""")
 
@@ -601,7 +601,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         cmap = style.get('cmap', None)
 
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -620,7 +620,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         ms = style.get('s', mpl.rcParams['lines.markersize'])
         sdim = element.get_dimension(self.size_index)
-        if sdim and ((isinstance(ms, basestring) and ms in element) or isinstance(ms, dim)):
+        if sdim and ((isinstance(ms, str) and ms in element) or isinstance(ms, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 's' option and "
                 "declare a size_index; ignoring the size_index.")
@@ -692,7 +692,7 @@ class VectorFieldPlot(ColorbarPlot):
        they may be customized with the 'headlength' and
        'headaxislength' style options.""")
 
-    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+    magnitude = param.ClassSelector(class_=(str, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
         of each vector. Magnitude is expected to be scaled between 0-1,
         by default the magnitudes are rescaled relative to the minimum
@@ -707,13 +707,13 @@ class VectorFieldPlot(ColorbarPlot):
 
     # Deprecated parameters
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of dimension value transform on color option,
         e.g. `color=dim('Magnitude')`.
         """)
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
         Deprecated in favor of the magnitude option, e.g.
         `magnitude=dim('Magnitude')`.
@@ -744,7 +744,7 @@ class VectorFieldPlot(ColorbarPlot):
                 "and declare a size_index; ignoring the size_index.")
         elif size_dim:
             mag_dim = size_dim
-        elif isinstance(mag_dim, basestring):
+        elif isinstance(mag_dim, str):
             mag_dim = element.get_dimension(mag_dim)
         if mag_dim is not None:
             if isinstance(mag_dim, dim):
@@ -779,7 +779,7 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute color
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")
@@ -1020,7 +1020,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
         'square' and 'equal' options.""")
 
     color_index = param.ClassSelector(default=None, allow_None=True,
-                                      class_=(basestring, int), doc="""
+                                      class_=(str, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -1081,7 +1081,7 @@ class SpikesPlot(SpikesMixin, PathPlot, ColorbarPlot):
 
         cdim = element.get_dimension(self.color_index)
         color = style.get('color', None)
-        if cdim and ((isinstance(color, basestring) and color in element) or isinstance(color, dim)):
+        if cdim and ((isinstance(color, str) and color in element) or isinstance(color, dim)):
             self.param.warning(
                 "Cannot declare style mapping for 'color' option and "
                 "declare a color_index; ignoring the color_index.")

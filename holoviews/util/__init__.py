@@ -1,15 +1,12 @@
 import os, sys, inspect, shutil
 
 from collections import defaultdict
+from inspect import Parameter, Signature
 from types import FunctionType
-
-
-try:
-    from pathlib import Path
-except:
-    Path = None
+from pathlib import Path
 
 import param
+
 from pyviz_comms import extension as _pyviz_extension
 
 from ..core import (
@@ -19,7 +16,7 @@ from ..core import (
 from ..core.options import Keywords, Options, options_policy
 from ..core.operation import Operation
 from ..core.overlay import Overlay
-from ..core.util import basestring, merge_options_to_dict, OrderedDict
+from ..core.util import merge_options_to_dict, OrderedDict
 from ..core.operation import OperationCallable
 from ..core import util
 from ..operation.element import function
@@ -213,7 +210,7 @@ class opts(param.ParameterizedFunction):
         Returns:
             Returns the object or a clone with the options applied
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from ..util.parser import OptsSpec
             try:
                 options = OptsSpec.parse(options)
@@ -230,7 +227,7 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _process_magic(cls, options, strict, backends=None):
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
@@ -267,7 +264,6 @@ class opts(param.ParameterizedFunction):
             raise Exception('opts.defaults only accepts "backend" keyword argument')
 
         cls._linemagic(cls._expand_options(merge_options_to_dict(options)), backend=kwargs.get('backend'))
-
 
     @classmethod
     def _expand_by_backend(cls, options, backend):
@@ -408,7 +404,7 @@ class opts(param.ParameterizedFunction):
         namespace is typically given as 'hv' if fully qualified
         namespaces are desired.
         """
-        if isinstance(options, basestring):
+        if isinstance(options, str):
             from .parser import OptsSpec
             if ns is None:
                 try:     ns = get_ipython().user_ns  # noqa
@@ -478,15 +474,10 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in completions if k not in cls._no_completion]
         sorted_kw_set = sorted(set(filtered_keywords))
-        if sys.version_info.major == 2:
-            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
-            builder.__doc__ = '{element}({kws})'.format(element=element, kws=kws)
-        else:
-            from inspect import Parameter, Signature
-            signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
-                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
-                                     for kw in sorted_kw_set])
-            builder.__signature__ = signature
+        signature = Signature([Parameter('spec', Parameter.POSITIONAL_OR_KEYWORD)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        builder.__signature__ = signature
         return classmethod(builder)
 
     @classmethod
@@ -512,7 +503,6 @@ class opts(param.ParameterizedFunction):
 
     @classmethod
     def _update_backend(cls, backend):
-
         if cls.__original_docstring__ is None:
             cls.__original_docstring__ = cls.__doc__
 
@@ -526,17 +516,11 @@ class opts(param.ParameterizedFunction):
 
         filtered_keywords = [k for k in all_keywords if k not in cls._no_completion]
         sorted_kw_set = sorted(set(filtered_keywords))
-        if sys.version_info.major == 2:
-            kws = ', '.join('{opt}=None'.format(opt=opt) for opt in sorted_kw_set)
-            old_doc = cls.__original_docstring__.replace(
-                'params(strict=Boolean, name=String)','')
-            cls.__doc__ = '\n    opts({kws})'.format(kws=kws) + old_doc
-        else:
-            from inspect import Parameter, Signature
-            signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
-                                  + [Parameter(kw, Parameter.KEYWORD_ONLY)
-                                     for kw in sorted_kw_set])
-            cls.__init__.__signature__ = signature
+        from inspect import Parameter, Signature
+        signature = Signature([Parameter('args', Parameter.VAR_POSITIONAL)]
+                              + [Parameter(kw, Parameter.KEYWORD_ONLY)
+                                 for kw in sorted_kw_set])
+        cls.__init__.__signature__ = signature
 
 
 Store._backend_switch_hooks.append(opts._update_backend)
@@ -597,7 +581,7 @@ class output(param.ParameterizedFunction):
         line, obj = None,None
         if len(args) > 2:
             raise TypeError('The opts utility accepts one or two positional arguments.')
-        if len(args) == 1 and not isinstance(args[0], basestring):
+        if len(args) == 1 and not isinstance(args[0], str):
             obj = args[0]
         elif len(args) == 1:
             line = args[0]
@@ -625,11 +609,8 @@ class output(param.ParameterizedFunction):
         else:
             Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
-if sys.version_info.major == 2:
-    output.__doc__ = Store.output_settings._generate_docstring(signature=True)
-else:
-    output.__doc__ = Store.output_settings._generate_docstring(signature=False)
-    output.__init__.__signature__ = Store.output_settings._generate_signature()
+output.__doc__ = Store.output_settings._generate_docstring(signature=False)
+output.__init__.__signature__ = Store.output_settings._generate_signature()
 
 
 def renderer(name):
@@ -775,9 +756,9 @@ def save(obj, filename, fmt='auto', backend=None, resources='cdn', toolbar=None,
         obj = obj.opts(toolbar=None)
     if kwargs:
         renderer_obj = renderer_obj.instance(**kwargs)
-    if Path is not None and isinstance(filename, Path):
+    if isinstance(filename, Path):
         filename = str(filename.absolute())
-    if isinstance(filename, basestring):
+    if isinstance(filename, str):
         supported = [mfmt for tformats in renderer_obj.mode_formats.values()
                      for mfmt in tformats]
         formats = filename.split('.')

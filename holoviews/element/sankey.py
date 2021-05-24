@@ -8,7 +8,7 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, unique_array, RecursionError, get_param_values
+from ..core.util import OrderedDict, get_param_values, unique_array
 from .graphs import Graph, Nodes, EdgePaths
 from .util import quadratic_bezier
 

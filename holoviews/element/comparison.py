@@ -65,11 +65,8 @@ class ComparisonInterface(object):
         if type(first) is type(second):
             asserter = cls.equality_type_funcs.get(type(first))
 
-            try:              basestring = basestring # Python 2
-            except NameError: basestring = str        # Python 3
-
             if asserter is not None:
-                if isinstance(asserter, basestring):
+                if isinstance(asserter, str):
                     asserter = getattr(cls, asserter)
 
         if asserter is None:

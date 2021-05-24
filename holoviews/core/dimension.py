@@ -20,7 +20,7 @@ from .accessors import Opts, Apply, Redim
 from .options import Store, Options, cleanup_custom_options
 from .pprint import PrettyPrinter
 from .tree import AttrTree
-from .util import basestring, OrderedDict, bytes_to_unicode, unicode
+from .util import OrderedDict, bytes_to_unicode
 
 # Alias parameter support for pickle loading
 
@@ -58,7 +58,7 @@ def asdim(dimension):
     """
     if isinstance(dimension, Dimension):
         return dimension
-    elif isinstance(dimension, (tuple, dict, basestring)):
+    elif isinstance(dimension, (tuple, dict, str)):
         return Dimension(dimension)
     else:
         raise ValueError('%s type could not be interpreted as Dimension. '
@@ -77,7 +77,7 @@ def dimension_name(dimension):
     """
     if isinstance(dimension, Dimension):
         return dimension.name
-    elif isinstance(dimension, basestring):
+    elif isinstance(dimension, str):
         return dimension
     elif isinstance(dimension, tuple):
         return dimension[0]
@@ -111,7 +111,7 @@ def process_dimensions(kdims, vdims):
     for group, dims in [('kdims', kdims), ('vdims', vdims)]:
         if dims is None:
             continue
-        elif isinstance(dims, (tuple, basestring, Dimension, dict)):
+        elif isinstance(dims, (tuple, str, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
             raise ValueError("%s argument expects a Dimension or list of dimensions, "
@@ -119,7 +119,7 @@ def process_dimensions(kdims, vdims):
                              "instances, not a %s type. Ensure you passed the data as the "
                              "first argument." % (group, type(dims).__name__))
         for dim in dims:
-            if not isinstance(dim, (tuple, basestring, Dimension, dict)):
+            if not isinstance(dim, (tuple, str, Dimension, dict)):
                 raise ValueError('Dimensions must be defined as a tuple, '
                                  'string, dictionary or Dimension instance, '
                                  'found a %s type.' % type(dim).__name__)
@@ -257,7 +257,7 @@ class Dimension(param.Parameterized):
 
         all_params = dict(existing_params, **params)
         if isinstance(spec, tuple):
-            if not all(isinstance(s, basestring) for s in spec) or len(spec) != 2:
+            if not all(isinstance(s, str) for s in spec) or len(spec) != 2:
                 raise ValueError("Dimensions specified as a tuple must be a tuple "
                                  "consisting of the name and label not: %s" % str(spec))
             name, label = spec
@@ -269,7 +269,7 @@ class Dimension(param.Parameterized):
                         'Using label as supplied by keyword ({!r}), ignoring '
                         'tuple value {!r}'.format(params['label'], label))
                 all_params['label'] = params['label']
-        elif isinstance(spec, basestring):
+        elif isinstance(spec, str):
             all_params['name'] = spec
             all_params['label'] = params.get('label', spec)
 
@@ -279,7 +279,7 @@ class Dimension(param.Parameterized):
             raise ValueError('Dimension label cannot be None or the empty string')
 
         values = params.get('values', [])
-        if isinstance(values, basestring) and values == 'initial':
+        if isinstance(values, str) and values == 'initial':
             self.param.warning("The 'initial' string for dimension values "
                                "is no longer supported.")
             values = []
@@ -322,7 +322,7 @@ class Dimension(param.Parameterized):
 
         if spec is None:
             spec = (self.name, overrides.get('label', self.label))
-        if 'label' in overrides and isinstance(spec, basestring) :
+        if 'label' in overrides and isinstance(spec, str) :
             spec = (spec, overrides['label'])
         elif 'label' in overrides and isinstance(spec, tuple) :
             if overrides['label'] != spec[1]:
@@ -405,7 +405,7 @@ class Dimension(param.Parameterized):
         if formatter:
             if callable(formatter):
                 formatted_value = formatter(value)
-            elif isinstance(formatter, basestring):
+            elif isinstance(formatter, str):
                 if isinstance(value, (dt.datetime, dt.date)):
                     formatted_value = value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
@@ -415,7 +415,7 @@ class Dimension(param.Parameterized):
                 else:
                     formatted_value = formatter % value
         else:
-            formatted_value = unicode(bytes_to_unicode(value))
+            formatted_value = bytes_to_unicode(value)
 
         if print_unit and self.unit is not None:
             formatted_value = formatted_value + ' ' + bytes_to_unicode(self.unit)
@@ -948,7 +948,7 @@ class Dimensioned(LabelledData):
         Returns:
             Dimension object for the requested dimension or default
         """
-        if dimension is not None and not isinstance(dimension, (int, basestring, Dimension)):
+        if dimension is not None and not isinstance(dimension, (int, str, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
                             'and Dimension instances, cannot lookup '
                             'Dimensions using %s type.' % type(dimension).__name__)
@@ -1202,7 +1202,7 @@ class Dimensioned(LabelledData):
         return repr(self)
 
     def __unicode__(self):
-        return unicode(PrettyPrinter.pprint(self))
+        return PrettyPrinter.pprint(self)
 
     def options(self, *args, **kwargs):
         """Applies simplified option definition returning a new object.
@@ -1247,7 +1247,7 @@ class Dimensioned(LabelledData):
 
         if len(args) == 0 and len(kwargs)==0:
             options = None
-        elif args and isinstance(args[0], basestring):
+        elif args and isinstance(args[0], str):
             options = {args[0]: kwargs}
         elif args and isinstance(args[0], list):
             if kwargs:

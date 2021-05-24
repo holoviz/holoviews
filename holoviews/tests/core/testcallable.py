@@ -3,15 +3,16 @@
 Unit tests of the Callable object that wraps user callbacks. Also test
 how DynamicMap validates and invokes Callable based on its signature.
 """
+from functools import partial
+
 import param
-import sys
+
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Scatter
 from holoviews import streams
 from holoviews.core.spaces import Callable, Generator, DynamicMap
 from holoviews.core.operation import OperationCallable
 from holoviews.operation import contours
-from functools import partial
 
 from ..utils import LoggingComparisonTestCase
 
@@ -47,17 +48,11 @@ class TestCallableName(ComparisonTestCase):
         self.assertEqual(Callable(lambda x: x).name, '<lambda>')
 
     def test_partial_name(self):
-        py2match = '<functools.partial object'
-        py3match = 'functools.partial('
-        match = py2match if sys.version_info < (3,0) else py3match
         cb = Callable(partial(lambda x,y: x, y=4))
-        self.assertEqual(cb.name.startswith(match), True)
+        self.assertEqual(cb.name.startswith('functools.partial('), True)
 
     def test_generator_expression_name(self):
-        if sys.version_info < (3,0):
-            cb = Generator((i for i in xrange(10))) # noqa
-        else:
-            cb = Generator((i for i in range(10)))
+        cb = Generator((i for i in range(10)))
         self.assertEqual(cb.name, '<genexpr>')
 
     def test_generator_name(self):

@@ -27,7 +27,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 
@@ -71,7 +71,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring) and not validate('color', color):
+        if isinstance(color, str) and not validate('color', color):
             cdim = element.get_dimension(color)
         elif self.color_index is not None:
             cdim = element.get_dimension(self.color_index)
@@ -79,7 +79,7 @@ class PathPlot(LegendPlot, ColorbarPlot):
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
+            ((isinstance(v, str) and v in element) or isinstance(v, dim)) and
             not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
@@ -173,7 +173,7 @@ class ContourPlot(PathPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=0, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `color=dim('color')`""")
 

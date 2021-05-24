@@ -1,4 +1,5 @@
 import sys, warnings, operator
+import builtins as builtins   # noqa (compatibility)
 import json
 import time
 import types
@@ -9,9 +10,9 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict, Iterable # noqa (compatibility)
 from contextlib import contextmanager
-from distutils.version import LooseVersion as _LooseVersion
+from distutils.version import LooseVersion
 from functools import partial
 from threading import Thread, Event
 from types import FunctionType
@@ -19,54 +20,13 @@ from types import FunctionType
 import numpy as np
 import param
 
+# Python 2 builtins
+long = int
+unicode = str
+cmp = lambda a, b: (a>b)-(a<b)
 
-# Python3 compatibility
-if sys.version_info.major >= 3:
-    import builtins as builtins   # noqa (compatibility)
-
-    if sys.version_info.minor > 3:
-        from collections.abc import Iterable # noqa (compatibility)
-    else:
-        from collections import Iterable # noqa (compatibility)
-
-    basestring = str
-    unicode = str
-    long = int
-    cmp = lambda a, b: (a>b)-(a<b)
-    generator_types = (zip, range, types.GeneratorType)
-    RecursionError = RecursionError if sys.version_info.minor > 4 else RuntimeError # noqa
-    _getargspec = inspect.getfullargspec
-    get_keywords = operator.attrgetter('varkw')
-    LooseVersion = _LooseVersion
-else:
-    import __builtin__ as builtins # noqa (compatibility)
-    from collections import Iterable # noqa (compatibility)
-
-    basestring = basestring
-    unicode = unicode
-    from itertools import izip
-    generator_types = (izip, xrange, types.GeneratorType) # noqa
-    RecursionError = RuntimeError
-    _getargspec = inspect.getargspec
-    get_keywords = operator.attrgetter('keywords')
-
-    class LooseVersion(_LooseVersion):
-        """
-        Subclassed to avoid unicode issues in python2
-        """
-
-        def __init__ (self, vstring=None):
-            if isinstance(vstring, unicode):
-                vstring = str(vstring)
-            self.parse(vstring)
-
-        def __cmp__(self, other):
-            if isinstance(other, unicode):
-                other = str(other)
-            if isinstance(other, basestring):
-                other = LooseVersion(other)
-            return cmp(self.version, other.version)
-
+get_keywords = operator.attrgetter('varkw')
+generator_types = (zip, range, types.GeneratorType)
 numpy_version = LooseVersion(np.__version__)
 param_version = LooseVersion(param.__version__)
 
@@ -421,7 +381,6 @@ def argspec(callable_obj):
                            defaults=spec.defaults)
 
 
-
 def validate_dynamic_argspec(callback, kdims, streams):
     """
     Utility used by DynamicMap to ensure the supplied callback has an
@@ -508,14 +467,7 @@ def callable_name(callable_obj):
         elif inspect.isfunction(callable_obj):  # functions and staticmethods
             return callable_obj.__name__
         elif inspect.ismethod(callable_obj):    # instance and class methods
-            meth = callable_obj
-            if sys.version_info < (3,0):
-                owner =  meth.im_class if meth.im_self is None else meth.im_self
-                if meth.__name__ == '__call__':
-                    return type(owner).__name__
-                return '.'.join([owner.__name__, meth.__name__])
-            else:
-                return meth.__func__.__qualname__.replace('.__call__', '')
+            return callable_obj.__func__.__qualname__.replace('.__call__', '')
         elif isinstance(callable_obj, types.GeneratorType):
             return callable_obj.__name__
         else:
@@ -561,7 +513,7 @@ def bytes_to_unicode(value):
     Safely casts bytestring to unicode
     """
     if isinstance(value, bytes):
-        return unicode(value.decode('utf-8'))
+        return value.decode('utf-8')
     return value
 
 
@@ -571,7 +523,7 @@ def get_method_owner(method):
     """
     if isinstance(method, partial):
         method = method.func
-    return method.__self__ if sys.version_info.major >= 3 else method.im_self
+    return method.__self__
 
 
 def capitalize_unicode_name(s):
@@ -590,13 +542,7 @@ def capitalize_unicode_name(s):
 class sanitize_identifier_fn(param.ParameterizedFunction):
     """
     Sanitizes group/label values for use in AttrTree attribute
-    access. Depending on the version parameter, either sanitization
-    appropriate for Python 2 (no unicode gn identifiers allowed) or
-    Python 3 (some unicode allowed) is used.
-
-    Note that if you are using Python 3, you can switch to version 2
-    for compatibility but you cannot enable relaxed sanitization if
-    you are using Python 2.
+    access.
 
     Special characters are sanitized using their (lowercase) unicode
     name using the unicodedata module. For instance:
@@ -608,11 +554,6 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     allows filtered, substitutions and transforms to help shorten these
     names appropriately.
     """
-
-    version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
-        The sanitization version. If set to 2, more aggressive
-        sanitization appropriate for Python 2 is applied. Otherwise,
-        if set to 3, more relaxed, Python 3 sanitization is used.""")
 
     capitalize = param.Boolean(default=True, doc="""
        Whether the first letter should be converted to
@@ -695,15 +636,14 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        return (name not in self_or_cls.disallowed) and not isrepr
 
     @param.parameterized.bothmethod
-    def prefixed(self, identifier, version):
+    def prefixed(self, identifier):
         """
         Whether or not the identifier will be prefixed.
         Strings that require the prefix are generally not recommended.
         """
         invalid_starting = ['Mn', 'Mc', 'Nd', 'Pc']
         if identifier.startswith('_'):  return True
-        return((identifier[0] in string.digits) if version==2
-               else (unicodedata.category(identifier[0]) in invalid_starting))
+        return unicodedata.category(identifier[0]) in invalid_starting
 
     @param.parameterized.bothmethod
     def remove_diacritics(self_or_cls, identifier):
@@ -738,7 +678,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return ' '.join(name.strip().split()).replace(' ','_').replace('-','_')
 
 
-    def __call__(self, name, escape=True, version=None):
+    def __call__(self, name, escape=True):
         if name in [None, '']:
            return name
         elif name in self.aliases:
@@ -746,17 +686,14 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         elif name in self._lookup_table:
            return self._lookup_table[name]
         name = bytes_to_unicode(name)
-        version = self.version if version is None else version
         if not self.allowable(name):
             raise AttributeError("String %r is in the disallowed list of attribute names: %r" % (name, self.disallowed))
 
-        if version == 2:
-            name = self.remove_diacritics(name)
         if self.capitalize and name and name[0] in string.ascii_lowercase:
             name = name[0].upper()+name[1:]
 
-        sanitized = (self.sanitize_py2(name) if version==2 else self.sanitize_py3(name))
-        if self.prefixed(name, version):
+        sanitized = self.sanitize_py3(name)
+        if self.prefixed(name):
            sanitized = self.prefix + sanitized
         self._lookup_table[name] = sanitized
         return sanitized
@@ -776,12 +713,6 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
                 token = str(token[:-1])
             processed.append(token)
         return processed
-
-    def sanitize_py2(self, name):
-        # This fix works but masks an issue in self.sanitize (py2)
-        prefix = '_' if name.startswith('_') else ''
-        valid_chars = string.ascii_letters+string.digits+'_'
-        return prefix + str('_'.join(self.sanitize(name, lambda c: c in valid_chars)))
 
 
     def sanitize_py3(self, name):
@@ -828,7 +759,7 @@ def isscalar(val):
 
 
 def isnumeric(val):
-    if isinstance(val, (basestring, bool, np.bool_)):
+    if isinstance(val, (str, bool, np.bool_)):
         return False
     try:
         float(val)
@@ -906,7 +837,7 @@ def isfinite(val):
         return finite
     elif isinstance(val, datetime_types+timedelta_types):
         return not isnat(val)
-    elif isinstance(val, (basestring, bytes)):
+    elif isinstance(val, (str, bytes)):
         return True
     finite = np.isfinite(val)
     if pd and pandas_version >= '1.0.0':
@@ -1091,13 +1022,13 @@ def max_extents(extents, zrange=False):
             upper = [v for v in arr[uidx] if v is not None and not is_nan(v)]
             if lower and isinstance(lower[0], datetime_types):
                 extents[lidx] = np.min(lower)
-            elif any(isinstance(l, basestring) for l in lower):
+            elif any(isinstance(l, str) for l in lower):
                 extents[lidx] = np.sort(lower)[0]
             elif lower:
                 extents[lidx] = np.nanmin(lower)
             if upper and isinstance(upper[0], datetime_types):
                 extents[uidx] = np.max(upper)
-            elif any(isinstance(u, basestring) for u in upper):
+            elif any(isinstance(u, str) for u in upper):
                 extents[uidx] = np.sort(upper)[-1]
             elif upper:
                 extents[uidx] = np.nanmax(upper)
@@ -1277,10 +1208,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
        sortkws['key'] = lambda x: tuple(cached_values[dim.name].index(x[t][d])
                                         if dim.values else x[t][d]
                                         for i, (dim, t, d) in enumerate(indexes))
-    if sys.version_info.major == 3:
-        return python2sort(odict.items(), **sortkws)
-    else:
-        return sorted(odict.items(), **sortkws)
+    return python2sort(odict.items(), **sortkws)
 
 
 # Copied from param should make param version public
@@ -1644,7 +1572,7 @@ def get_ndmapping_label(ndmapping, attr):
     label attribute from an NdMapping.
     """
     label = None
-    els = itervalues(ndmapping.data)
+    els = iter(ndmapping.data.values())
     while label is None:
         try:
             el = next(els)
@@ -1794,16 +1722,6 @@ def drop_streams(streams, kdims, keys):
     get = operator.itemgetter(*inds) # itemgetter used for performance
     keys = (get(k) for k in keys)
     return dims, ([wrap_tuple(k) for k in keys] if len(inds) == 1 else list(keys))
-
-
-def itervalues(obj):
-    "Get value iterator from dictionary for Python 2 and 3"
-    return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
-
-
-def iterkeys(obj):
-    "Get key iterator from dictionary for Python 2 and 3"
-    return iter(obj.keys()) if sys.version_info.major == 3 else obj.iterkeys()
 
 
 def get_unique_keys(ndmapping, dimensions):
@@ -2105,15 +2023,15 @@ def parse_datetime_selection(sel):
     """
     Parses string selection specs as datetimes.
     """
-    if isinstance(sel, basestring) or isdatetime(sel):
+    if isinstance(sel, str) or isdatetime(sel):
         sel = parse_datetime(sel)
     if isinstance(sel, slice):
-        if isinstance(sel.start, basestring) or isdatetime(sel.start):
+        if isinstance(sel.start, str) or isdatetime(sel.start):
             sel = slice(parse_datetime(sel.start), sel.stop)
-        if isinstance(sel.stop, basestring) or isdatetime(sel.stop):
+        if isinstance(sel.stop, str) or isdatetime(sel.stop):
             sel = slice(sel.start, parse_datetime(sel.stop))
     if isinstance(sel, (set, list)):
-        sel = [parse_datetime(v) if isinstance(v, basestring) else v for v in sel]
+        sel = [parse_datetime(v) if isinstance(v, str) else v for v in sel]
     return sel
 
 
@@ -2248,7 +2166,7 @@ def closest_match(match, specs, depth=0):
         if spec[0] == match[0]:
             new_specs.append((i, spec[1:]))
         else:
-            if all(isinstance(s[0], basestring) for s in [spec, match]):
+            if all(isinstance(s[0], str) for s in [spec, match]):
                 match_length = max(i for i in range(len(match[0]))
                                    if match[0].startswith(spec[0][:i]))
             elif is_number(match[0]) and is_number(spec[0]):
