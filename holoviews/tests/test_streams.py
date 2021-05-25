@@ -71,24 +71,24 @@ class TestStreamsDefine(ComparisonTestCase):
 
     def test_XY_set_invalid_class_x(self):
         regexp = "Parameter 'x' only takes numeric values"
-        with self.assertRaisesRegexp(ValueError, regexp):
+        with self.assertRaisesRegex(ValueError, regexp):
             self.XY.x = 'string'
 
     def test_XY_set_invalid_class_y(self):
         regexp = "Parameter 'y' only takes numeric values"
-        with self.assertRaisesRegexp(ValueError, regexp):
+        with self.assertRaisesRegex(ValueError, regexp):
             self.XY.y = 'string'
 
     def test_XY_set_invalid_instance_x(self):
         xy = self.XY(x=1,y=2)
         regexp = "Parameter 'x' only takes numeric values"
-        with self.assertRaisesRegexp(ValueError, regexp):
+        with self.assertRaisesRegex(ValueError, regexp):
             xy.x = 'string'
 
     def test_XY_set_invalid_instance_y(self):
         xy = self.XY(x=1,y=2)
         regexp = "Parameter 'y' only takes numeric values"
-        with self.assertRaisesRegexp(ValueError, regexp):
+        with self.assertRaisesRegex(ValueError, regexp):
             xy.y = 'string'
 
     def test_XY_subscriber_triggered(self):
@@ -678,13 +678,13 @@ class TestParameterRenaming(ComparisonTestCase):
 
     def test_invalid_rename_constructor(self):
         regexp = '(.+?)is not a stream parameter'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             PointerXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
             self.assertEqual(str(cm).endswith(), True)
 
     def test_clashing_rename_constructor(self):
         regexp = '(.+?)parameter of the same name'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             PointerXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
 
     def test_simple_rename_method(self):
@@ -695,14 +695,14 @@ class TestParameterRenaming(ComparisonTestCase):
     def test_invalid_rename_method(self):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)is not a stream parameter'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             xy.rename(x='xtest', z='ytest')
 
 
     def test_clashing_rename_method(self):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)parameter of the same name'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             xy.rename(x='xtest', y='x')
 
     def test_update_rename_valid(self):
@@ -715,18 +715,18 @@ class TestParameterRenaming(ComparisonTestCase):
         xy = PointerXY(x=0, y=4)
         renamed = xy.rename(y='ytest')
         regexp = "ytest' is not a parameter of(.+?)"
-        with self.assertRaisesRegexp(ValueError, regexp):
+        with self.assertRaisesRegex(ValueError, regexp):
             renamed.event(ytest=8)
 
     def test_rename_suppression(self):
         renamed = PointerXY(x=0,y=0).rename(x=None)
-        self.assertEquals(renamed.contents, {'y':0})
+        self.assertEqual(renamed.contents, {'y':0})
 
     def test_rename_suppression_reenable(self):
         renamed = PointerXY(x=0,y=0).rename(x=None)
-        self.assertEquals(renamed.contents, {'y':0})
+        self.assertEqual(renamed.contents, {'y':0})
         reenabled = renamed.rename(x='foo')
-        self.assertEquals(reenabled.contents, {'foo':0, 'y':0})
+        self.assertEqual(reenabled.contents, {'foo':0, 'y':0})
 
 
 
@@ -789,7 +789,7 @@ class TestBufferArrayStream(ComparisonTestCase):
 
     def test_buffer_array_ndim_exception(self):
         error = "Only 2D array data may be streamed by Buffer."
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaisesRegex(ValueError, error):
             Buffer(np.array([0, 1]))
 
     def test_buffer_array_send(self):
@@ -810,19 +810,19 @@ class TestBufferArrayStream(ComparisonTestCase):
     def test_buffer_array_send_verify_ndim_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = 'Streamed array data must be two-dimensional'
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaisesRegex(ValueError, error):
             buff.send(np.array([1]))
 
     def test_buffer_array_send_verify_shape_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = "Streamed array data expeced to have 2 columns, got 3."
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaisesRegex(ValueError, error):
             buff.send(np.array([[1, 2, 3]]))
 
     def test_buffer_array_send_verify_type_fail(self):
         buff = Buffer(np.array([[0, 1]]))
         error = "Input expected to be of type ndarray, got list."
-        with self.assertRaisesRegexp(TypeError, error):
+        with self.assertRaisesRegex(TypeError, error):
             buff.send([1])
 
 
@@ -857,14 +857,14 @@ class TestBufferDictionaryStream(ComparisonTestCase):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
         error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
-        with self.assertRaisesRegexp(IndexError, error):
+        with self.assertRaisesRegex(IndexError, error):
             buff.send({'x': np.array([2])})
 
     def test_buffer_dict_send_verify_shape_fail(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
         error = "Input columns expected to have the same number of rows."
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaisesRegex(ValueError, error):
             buff.send({'x': np.array([2]), 'y': np.array([3, 4])})
 
 
@@ -918,7 +918,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, index=False)
         error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
-        with self.assertRaisesRegexp(IndexError, error):
+        with self.assertRaisesRegex(IndexError, error):
             buff.send(pd.DataFrame({'x': np.array([2])}))
 
     def test_clear_buffer_dframe_with_index(self):

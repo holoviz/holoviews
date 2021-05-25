@@ -213,5 +213,5 @@ class TestOverlayPlot(TestMPLPlot):
         ).options(legend_opts={'framealpha': 0.5, 'facecolor': 'red'})
         plot = mpl_renderer.get_plot(overlay)
         legend_frame = plot.handles['legend'].get_frame()
-        self.assertEquals(legend_frame.get_alpha(), 0.5)
-        self.assertEquals(legend_frame.get_facecolor(), (1.0, 0.0, 0.0, 0.5))
+        self.assertEqual(legend_frame.get_alpha(), 0.5)
+        self.assertEqual(legend_frame.get_facecolor(), (1.0, 0.0, 0.0, 0.5))

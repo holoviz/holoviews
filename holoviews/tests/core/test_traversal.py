@@ -24,7 +24,7 @@ class TestUniqueDimKeys(ComparisonTestCase):
         hmap2 = HoloMap({i: Curve(range(10)) for i in range(3, 10)})
         exception = ('When combining HoloMaps into a composite plot '
                      'their dimensions must be subsets of each other.')
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             dims, keys = unique_dimkeys(hmap1+hmap2)
 
     def test_unique_keys_no_overlap_dynamicmap_uninitialized(self):

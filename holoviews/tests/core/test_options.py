@@ -46,19 +46,19 @@ class TestOptions(ComparisonTestCase):
 
     def test_options_valid_keywords1(self):
         opts = Options('test', allowed_keywords=['kw1'], kw1='value')
-        self.assertEquals(opts.kwargs, {'kw1':'value'})
+        self.assertEqual(opts.kwargs, {'kw1':'value'})
 
     def test_options_valid_keywords2(self):
         opts = Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value')
-        self.assertEquals(opts.kwargs, {'kw1':'value'})
+        self.assertEqual(opts.kwargs, {'kw1':'value'})
 
     def test_options_valid_keywords3(self):
         opts = Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value1', kw2='value2')
-        self.assertEquals(opts.kwargs, {'kw1':'value1', 'kw2':'value2'})
+        self.assertEqual(opts.kwargs, {'kw1':'value1', 'kw2':'value2'})
 
     def test_options_any_keywords3(self):
         opts = Options('test', kw1='value1', kw2='value3')
-        self.assertEquals(opts.kwargs, {'kw1':'value1', 'kw2':'value3'})
+        self.assertEqual(opts.kwargs, {'kw1':'value1', 'kw2':'value3'})
 
     def test_options_invalid_keywords1(self):
         try:
@@ -923,14 +923,14 @@ class TestCrossBackendOptions(ComparisonTestCase):
         err = ("In opts.Curve\(...\),  keywords supplied are mixed across backends. "
                "Keyword\(s\) 'linewidth' are invalid for bokeh, "
                "'line_dash' are invalid for matplotlib")
-        with self.assertRaisesRegexp(ValueError, err):
+        with self.assertRaisesRegex(ValueError, err):
             opts.Curve(linewidth=10, line_dash='dotted') # Bokeh and MPL
 
         # Non-existent keyword across backends (bokeh active)
         err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve type "
                "across all extensions. Similar options for current "
                "extension \('bokeh'\) are: \['toolbar'\].")
-        with self.assertRaisesRegexp(ValueError, err):
+        with self.assertRaisesRegex(ValueError, err):
             opts.Curve(foobar=3)
 
         # Non-existent keyword across backends (matplotlib active)
@@ -938,7 +938,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
         err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve "
                "type across all extensions. No similar options found.")
-        with self.assertRaisesRegexp(ValueError, err):
+        with self.assertRaisesRegex(ValueError, err):
             opts.Curve(foobar=3)
 
 

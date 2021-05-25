@@ -46,12 +46,12 @@ class DimensionNameLabelTest(LoggingComparisonTestCase):
 
     def test_dimension_invalid_name(self):
         regexp = 'Dimension name must only be passed as the positional argument'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             Dimension('test', name='something else')
 
     def test_dimension_invalid_name_tuple(self):
         regexp = 'Dimension name must only be passed as the positional argument'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             Dimension(('test', 'test dimension'), name='something else')
 
 
@@ -230,12 +230,12 @@ class DimensionDefaultTest(ComparisonTestCase):
 
     def test_validate_default_against_values(self):
         msg = "Dimension\('A'\) default 1\.1 not found in declared values: \[0, 1\]"
-        with self.assertRaisesRegexp(ValueError, msg):
+        with self.assertRaisesRegex(ValueError, msg):
             Dimension('A', values=[0, 1], default=1.1)
 
     def test_validate_default_against_range(self):
         msg = "Dimension\('A'\) default 1\.1 not in declared range: \(0, 1\)"
-        with self.assertRaisesRegexp(ValueError, msg):
+        with self.assertRaisesRegex(ValueError, msg):
             Dimension('A', range=(0, 1), default=1.1)
 
 
@@ -265,7 +265,7 @@ class DimensionedTest(ComparisonTestCase):
 
     def test_dimensioned_redim_dict_label_existing_error(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=[('x', 'Test1')])
-        with self.assertRaisesRegexp(ValueError, 'Cannot override an existing Dimension label'):
+        with self.assertRaisesRegex(ValueError, 'Cannot override an existing Dimension label'):
             dimensioned.redim.label(x='Test2')
 
     def test_dimensioned_redim_dimension(self):

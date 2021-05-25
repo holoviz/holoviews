@@ -78,26 +78,26 @@ class BaseGridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Inte
     def test_dataset_sort_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             self.dataset_hm.sort('y')
 
     def test_dataset_sort_reverse_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             self.dataset_hm.sort('y', reverse=True)
 
     def test_dataset_sort_vdim_hm_alias(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             self.dataset_hm.sort('y')
 
     def test_dataset_groupby(self):
         self.assertEqual(self.dataset_hm.groupby('x').keys(), list(self.xs))
 
     def test_dataset_add_dimensions_value_hm(self):
-        with self.assertRaisesRegexp(Exception, 'Cannot add key dimension to a dense representation.'):
+        with self.assertRaisesRegex(Exception, 'Cannot add key dimension to a dense representation.'):
             self.dataset_hm.add_dimension('z', 1, 0)
 
     def test_dataset_add_dimensions_values_hm(self):

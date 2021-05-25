@@ -87,10 +87,10 @@ class NdIndexableMappingTest(ComparisonTestCase):
         ndmap_list = [(0.5, ndmap1), (1.5, ndmap2)]
         nested_ndmap = MultiDimensionalMapping(ndmap_list, kdims=[self.dim2])
         nested_ndmap[(0.5,)].update(dict([(0, 'c'), (1, 'd')]))
-        self.assertEquals(list(nested_ndmap[0.5].values()), ['c', 'd'])
+        self.assertEqual(list(nested_ndmap[0.5].values()), ['c', 'd'])
 
         nested_ndmap[1.5] = ndmap3
-        self.assertEquals(list(nested_ndmap[1.5].values()), ['e', 'f'])
+        self.assertEqual(list(nested_ndmap[1.5].values()), ['e', 'f'])
 
     def test_ndmapping_slice_lower_bound_inclusive_int(self):
         ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
@@ -127,19 +127,19 @@ class NdIndexableMappingTest(ComparisonTestCase):
     def test_idxmapping_unsorted(self):
         data = [('B', 1), ('C', 2), ('A', 3)]
         ndmap = MultiDimensionalMapping(data, sort=False)
-        self.assertEquals(ndmap.keys(), ['B', 'C', 'A'])
+        self.assertEqual(ndmap.keys(), ['B', 'C', 'A'])
 
     def test_idxmapping_unsorted_clone(self):
         data = [('B', 1), ('C', 2), ('A', 3)]
         ndmap = MultiDimensionalMapping(data, sort=False).clone()
-        self.assertEquals(ndmap.keys(), ['B', 'C', 'A'])
+        self.assertEqual(ndmap.keys(), ['B', 'C', 'A'])
 
     def test_idxmapping_groupby_unsorted(self):
         data = [(('B', 2), 1), (('C', 2), 2), (('A', 1), 3)]
         grouped = NdMapping(data, sort=False, kdims=['X', 'Y']).groupby('Y')
-        self.assertEquals(grouped.keys(), [2, 1])
-        self.assertEquals(grouped.values()[0].keys(), ['B', 'C'])
-        self.assertEquals(grouped.last.keys(), ['A'])
+        self.assertEqual(grouped.keys(), [2, 1])
+        self.assertEqual(grouped.values()[0].keys(), ['B', 'C'])
+        self.assertEqual(grouped.last.keys(), ['A'])
 
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]

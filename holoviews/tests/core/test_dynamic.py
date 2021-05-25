@@ -41,13 +41,13 @@ class DynamicMapConstructor(ComparisonTestCase):
     def test_simple_constructor_invalid_no_kdims(self):
         regexp = ("Callable '<lambda>' accepts more positional arguments than there are "
                   "kdims and stream parameters")
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
         regexp = ("Callback '<lambda>' signature over \['x'\] does not accommodate "
                   "required kdims \['x', 'y'\]")
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
 
     def test_simple_constructor_streams(self):
@@ -72,24 +72,24 @@ class DynamicMapConstructor(ComparisonTestCase):
 
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle value 3 in streams dictionary"
-        with self.assertRaisesRegexp(TypeError, regexp):
+        with self.assertRaisesRegex(TypeError, regexp):
             DynamicMap(lambda x: x, streams=dict(x=3))
 
     def test_simple_constructor_streams_invalid_uninstantiated(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegexp(TypeError, regexp):
+        with self.assertRaisesRegex(TypeError, regexp):
             DynamicMap(lambda x: x, streams=[PointerX])
 
     def test_simple_constructor_streams_invalid_type(self):
         regexp = ("The supplied streams list contains objects "
                   "that are not Stream instances:(.+?)")
-        with self.assertRaisesRegexp(TypeError, regexp):
+        with self.assertRaisesRegex(TypeError, regexp):
             DynamicMap(lambda x: x, streams=[3])
 
     def test_simple_constructor_streams_invalid_mismatch(self):
         regexp = "Callable '<lambda>' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
     def test_simple_constructor_positional_stream_args(self):
@@ -99,7 +99,7 @@ class DynamicMapConstructor(ComparisonTestCase):
 
         def foo(x): return x
         regexp = "Callable 'foo' missing keywords to accept stream parameters: y"
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(foo, streams=[PointerXY()])
 
 
@@ -407,7 +407,7 @@ class DynamicMapMethods(ComparisonTestCase):
         dmap = DynamicMap(history_callback, kdims=['x', 'y'])
         exception = ("DynamicMap does not allow dropping dimensions, "
                      "reindex may only be used to reorder dimensions.")
-        with self.assertRaisesRegexp(ValueError, exception):
+        with self.assertRaisesRegex(ValueError, exception):
             dmap.reindex(['x'])
 
     def test_dynamic_groupby_kdims_and_streams(self):
@@ -595,13 +595,13 @@ class DynamicTransferStreams(ComparisonTestCase):
     def test_dynamic_util_inherits_dim_streams_clash(self):
         exception = ("The supplied stream objects PointerX\(x=None\) and "
                      "PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=[PointerX])
 
     def test_dynamic_util_inherits_dim_streams_clash_dict(self):
         exception = ("The supplied stream objects PointerX\(x=None\) and "
                      "PointerX\(x=0\) clash on the following parameters: \['x'\]")
-        with self.assertRaisesRegexp(Exception, exception):
+        with self.assertRaisesRegex(Exception, exception):
             Dynamic(self.dmap, streams=dict(x=PointerX.param.x))
 
 
@@ -739,7 +739,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
         regexp = '(.+?)do not correspond to stream parameters'
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             dmap.event(x=1, y=2)
 
 
@@ -1020,7 +1020,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegexp(ValueError, 'The following streams are set to be automatically linked'):
+        with self.assertRaisesRegex(ValueError, 'The following streams are set to be automatically linked'):
             dmap.collate()
 
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
@@ -1029,7 +1029,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
-        with self.assertRaisesRegexp(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
+        with self.assertRaisesRegex(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
             dmap.collate()
 
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
@@ -1151,7 +1151,7 @@ class DynamicCollate(LoggingComparisonTestCase):
         layout = dmap.collate()
         dmap1, dmap2 = layout.values()
         err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
-        with self.assertRaisesRegexp(ValueError, err):
+        with self.assertRaisesRegex(ValueError, err):
             dmap1[4]
         self.log_handler.assertContains('WARNING', err)
 
@@ -1164,6 +1164,6 @@ class DynamicCollate(LoggingComparisonTestCase):
         dmap1, dmap2 = layout.values()
         err = ('The objects in a GridSpace returned by a DynamicMap must '
                'consistently return the same number of items of the same type.')
-        with self.assertRaisesRegexp(ValueError, err):
+        with self.assertRaisesRegex(ValueError, err):
             dmap1[3]
         self.log_handler.assertContains('WARNING', err)

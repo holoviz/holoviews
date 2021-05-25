@@ -117,7 +117,7 @@ class DimensionedSelectionTest(ComparisonTestCase):
     def test_selection_spec_positional_error_message(self):
         s, e = '1999-12-31', '2000-1-2'
         curve = self.datetime_fn()
-        with self.assertRaisesRegexp(
+        with self.assertRaisesRegex(
                 ValueError, "Use the selection_specs keyword"
         ):
             curve.select((Curve,), time=(s, e))

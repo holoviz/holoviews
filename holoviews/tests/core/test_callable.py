@@ -244,7 +244,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
             return Scatter([(A,2)], label=A)
 
         regexp="Callable 'fn' accepts more positional arguments than there are kdims and stream parameters"
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(fn, kdims=['A'])
 
 
@@ -293,7 +293,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
         xy = streams.PointerXY(x=1, y=2)
         regexp = "Callback 'fn' signature over (.+?) does not accommodate required kdims"
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_mismatched_kdims(self):
@@ -317,7 +317,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         xy = streams.PointerXY(x=1, y=2)
         regexp = ("Unmatched positional kdim arguments only allowed "
                   "at the start of the signature")
-        with self.assertRaisesRegexp(KeyError, regexp):
+        with self.assertRaisesRegex(KeyError, regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_args_and_kwargs(self):
