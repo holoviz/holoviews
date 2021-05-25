@@ -10,7 +10,8 @@ import string
 import unicodedata
 import datetime as dt
 
-from collections import defaultdict, OrderedDict, Iterable # noqa (compatibility)
+from collections.abc import Iterable # noqa
+from collections import defaultdict, OrderedDict # noqa (compatibility)
 from contextlib import contextmanager
 from distutils.version import LooseVersion
 from functools import partial

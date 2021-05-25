@@ -343,7 +343,7 @@ class Interface(param.Parameterized):
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
-        mask = np.ones(len(dataset), dtype=np.bool)
+        mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
             if isinstance(sel, tuple):
                 sel = slice(*sel)
@@ -373,7 +373,7 @@ class Interface(param.Parameterized):
                 index_mask = arr == sel
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
                     data_index = np.argmin(np.abs(arr - sel))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
+                    mask = np.zeros(len(dataset), dtype=np.bool_)
                     mask[data_index] = True
                 else:
                     mask &= index_mask

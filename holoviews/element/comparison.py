@@ -98,7 +98,6 @@ class Comparison(ComparisonInterface):
 
         # Float comparisons
         cls.equality_type_funcs[float] =        cls.compare_floats
-        cls.equality_type_funcs[np.float] =     cls.compare_floats
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
@@ -692,7 +691,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dataframe(cls, df1, df2, msg='DFrame'):
-        from pandas.util.testing import assert_frame_equal
+        from pandas.testing import assert_frame_equal
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:

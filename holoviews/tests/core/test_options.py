@@ -1,8 +1,11 @@
 import os
 import pickle
+
 from unittest import SkipTest
 
 import numpy as np
+import pytest
+
 from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
@@ -291,10 +294,10 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
+        self.backend = 'matplotlib'
+        Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        self.backend = 'matplotlib'
-        Store.current_backend = self.backend
         super().setUp()
 
     def tearDown(self):
@@ -487,10 +490,10 @@ class TestStoreInheritance(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
+        self.backend = 'matplotlib'
+        Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        self.backend = 'matplotlib'
-        Store.current_backend = self.backend
         Store.options(val=OptionTree(groups=['plot', 'style']))
 
         options = Store.options()
@@ -506,14 +509,13 @@ class TestStoreInheritance(ComparisonTestCase):
         self.hist = Histogram((edges, frequencies))
         super().setUp()
 
-
-    def lookup_options(self, obj, group):
-        return Store.lookup_options(self.backend, obj, group)
-
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
 
     def test_original_style_options(self):
         self.assertEqual(self.lookup_options(self.hist, 'style').options,
@@ -574,19 +576,19 @@ class TestOptionsMethod(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=Options._option_groups)
         super().setUp()
-
-    def lookup_options(self, obj, group):
-        return Store.lookup_options(self.backend, obj, group)
 
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
 
     def test_plot_options_keywords(self):
         im = Image(np.random.rand(10,10))
@@ -627,19 +629,19 @@ class TestOptsMethod(ComparisonTestCase):
     def setUp(self):
         if 'matplotlib' not in Store.renderers:
             raise SkipTest('Matplotlib backend not available.')
-        self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=Options._option_groups)
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=Options._option_groups)
         super().setUp()
-
-    def lookup_options(self, obj, group):
-        return Store.lookup_options(self.backend, obj, group)
 
     def tearDown(self):
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super().tearDown()
+
+    def lookup_options(self, obj, group):
+        return Store.lookup_options(self.backend, obj, group)
 
     def test_old_opts_clone_disabled(self):
         im = Image(np.random.rand(10,10))
@@ -759,9 +761,8 @@ class TestOptionTreeFind(ComparisonTestCase):
         options.XType.Bar = self.opts6
 
         self.options = options
-        self.original_options = Store.options()
-        Store.options(val = OptionTree(groups=['group']))
-
+        self.original_options=Store.options()
+        Store.options(val=OptionTree(groups=['group']))
 
     def tearDown(self):
         Options._option_groups = self.original_option_groups
@@ -821,10 +822,14 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
-        self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
-                                    groups=Options._option_groups)
-        self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
-                                    groups=Options._option_groups)
+        self.store_mpl = OptionTree(
+            sorted(Store.options(backend='matplotlib').items()),
+            groups=Options._option_groups
+        )
+        self.store_bokeh = OptionTree(
+            sorted(Store.options(backend='bokeh').items()),
+            groups=Options._option_groups
+        )
         self.clear_options()
         super().setUp()
 
@@ -920,26 +925,32 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.set_current_backend('bokeh')
         opts.Curve(line_dash='dotted') # Bokeh keyword
         opts.Curve(linewidth=10)       # MPL keyword
-        err = ("In opts.Curve\(...\),  keywords supplied are mixed across backends. "
-               "Keyword\(s\) 'linewidth' are invalid for bokeh, "
-               "'line_dash' are invalid for matplotlib")
-        with self.assertRaisesRegex(ValueError, err):
+    
+        err = (
+            "In opts.Curve(...), keywords supplied are mixed across backends. "
+            "Keyword(s) 'linewidth' are invalid for bokeh, "
+            "'line_dash' are invalid for matplotlib"
+        )
+        with pytest.raises(ValueError) as excinfo:
             opts.Curve(linewidth=10, line_dash='dotted') # Bokeh and MPL
+        assert err in str(excinfo.value)
 
         # Non-existent keyword across backends (bokeh active)
-        err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve type "
+        err = ("In opts.Curve(...), unexpected option 'foobar' for Curve type "
                "across all extensions. Similar options for current "
-               "extension \('bokeh'\) are: \['toolbar'\].")
-        with self.assertRaisesRegex(ValueError, err):
+               "extension ('bokeh') are: ['toolbar'].")
+        with pytest.raises(ValueError) as excinfo:
             opts.Curve(foobar=3)
+        assert err in str(excinfo.value)
 
         # Non-existent keyword across backends (matplotlib active)
         Store.set_current_backend('matplotlib')
 
-        err = ("In opts.Curve\(...\), unexpected option 'foobar' for Curve "
+        err = ("In opts.Curve(...), unexpected option 'foobar' for Curve "
                "type across all extensions. No similar options found.")
-        with self.assertRaisesRegex(ValueError, err):
+        with pytest.raises(ValueError) as excinfo:
             opts.Curve(foobar=3)
+        assert err in str(excinfo.value)
 
 
 class TestLookupOptions(ComparisonTestCase):

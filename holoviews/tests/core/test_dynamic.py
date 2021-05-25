@@ -17,7 +17,7 @@ from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
 from ..utils import LoggingComparisonTestCase
-from .test_dimensioned import CustomBackendTestCase, TestObj
+from .test_dimensioned import CustomBackendTestCase, ExampleElement
 
 XY = Stream.define('XY', x=0,y=0)
 X = Stream.define('X', x=0)
@@ -30,7 +30,7 @@ x,y = np.mgrid[-5:6, -5:6] * 0.1
 def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
 
-class TestParameters(param.Parameterized):
+class ExampleParameterized(param.Parameterized):
     example = param.Number(default=1)
 
 class DynamicMapConstructor(ComparisonTestCase):
@@ -64,11 +64,11 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, streams=dict(x=panel.widgets.FloatSlider()))
 
     def test_simple_constructor_streams_dict_parameter(self):
-        test = TestParameters()
+        test = ExampleParameterized()
         DynamicMap(lambda x: x, streams=dict(x=test.param.example))
 
     def test_simple_constructor_streams_dict_class_parameter(self):
-        DynamicMap(lambda x: x, streams=dict(x=TestParameters.param.example))
+        DynamicMap(lambda x: x, streams=dict(x=ExampleParameterized.param.example))
 
     def test_simple_constructor_streams_dict_invalid(self):
         regexp = "Cannot handle value 3 in streams dictionary"
@@ -482,13 +482,13 @@ class DynamicMapMethods(ComparisonTestCase):
 class DynamicMapOptionsTests(CustomBackendTestCase):
 
     def test_dynamic_options(self):
-        dmap = DynamicMap(lambda X: TestObj(None), kdims=['X']).redim.range(X=(0,10))
+        dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap = dmap.options(plot_opt1='red')
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
 
     def test_dynamic_options_no_clone(self):
-        dmap = DynamicMap(lambda X: TestObj(None), kdims=['X']).redim.range(X=(0,10))
+        dmap = DynamicMap(lambda X: ExampleElement(None), kdims=['X']).redim.range(X=(0,10))
         dmap.options(plot_opt1='red', clone=False)
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
         self.assertEqual(opts.options, {'plot_opt1': 'red'})
@@ -496,7 +496,7 @@ class DynamicMapOptionsTests(CustomBackendTestCase):
     def test_dynamic_opts_link_inputs(self):
         stream = LinkedStream()
         inputs = [DynamicMap(lambda: None, streams=[stream])]
-        dmap = DynamicMap(Callable(lambda X: TestObj(None), inputs=inputs),
+        dmap = DynamicMap(Callable(lambda X: ExampleElement(None), inputs=inputs),
                           kdims=['X']).redim.range(X=(0,10))
         styled_dmap = dmap.options(plot_opt1='red', clone=False)
         opts = Store.lookup_options('backend_1', dmap[0], 'plot')
