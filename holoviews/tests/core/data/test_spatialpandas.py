@@ -26,7 +26,7 @@ from holoviews.core.data.interface import DataError
 from holoviews.element import Path, Points, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 
-from .testmultiinterface import GeomTests
+from .test_multiinterface import GeomTests
 
 
 class RoundTripTests(ComparisonTestCase):

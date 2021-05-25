@@ -64,7 +64,8 @@ extras_require["extras"] = extras_require["examples"] + [
 
 # Test requirements
 extras_require['tests'] = [
-    'nose',
+    'pytest',
+    'pytest-cov',
     'mock',
     'flake8',
     'coveralls',

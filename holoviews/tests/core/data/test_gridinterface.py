@@ -21,7 +21,7 @@ pd_skip = skipIf(pd is None, "pandas is not available")
 from .base import (
     GriddedInterfaceTests, InterfaceTests, HomogeneousColumnTests, DatatypeContext
 )
-from .testimageinterface import (
+from .test_imageinterface import (
     BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
     BaseHSVElementInterfaceTests
 )

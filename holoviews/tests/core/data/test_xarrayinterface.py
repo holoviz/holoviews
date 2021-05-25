@@ -16,11 +16,11 @@ from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Image, RGB, HSV, QuadMesh
 
-from .testimageinterface import (
+from .test_imageinterface import (
     BaseImageElementInterfaceTests, BaseRGBElementInterfaceTests,
     BaseHSVElementInterfaceTests
 )
-from .testgridinterface import BaseGridInterfaceTests
+from .test_gridinterface import BaseGridInterfaceTests
 
 
 class XArrayInterfaceTests(BaseGridInterfaceTests):

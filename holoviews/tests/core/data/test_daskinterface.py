@@ -11,7 +11,7 @@ except:
 from holoviews.core.data import Dataset
 from holoviews.util.transform import dim
 
-from .testpandasinterface import BasePandasInterfaceTests
+from .test_pandasinterface import BasePandasInterfaceTests
 
 
 class DaskDatasetTest(BasePandasInterfaceTests):

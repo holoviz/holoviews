@@ -17,7 +17,7 @@ from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
 from ..utils import LoggingComparisonTestCase
-from .testdimensioned import CustomBackendTestCase, TestObj
+from .test_dimensioned import CustomBackendTestCase, TestObj
 
 XY = Stream.define('XY', x=0,y=0)
 X = Stream.define('X', x=0)
