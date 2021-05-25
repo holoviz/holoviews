@@ -27,7 +27,7 @@ PX = Stream.define("PX", px=1)
 
 class TestDecollation(ComparisonTestCase):
     def setUp(self):
-        from holoviews.tests.teststreams import Sum, Val
+        from holoviews.tests.test_streams import Sum, Val
 
         # kdims: a and b
         self.dmap_ab = DynamicMap(
@@ -309,7 +309,7 @@ class TestDecollation(ComparisonTestCase):
         self.assertEqual(expected, result)
 
     def test_traverse_derived_streams(self):
-        from holoviews.tests.teststreams import Val
+        from holoviews.tests.test_streams import Val
         decollated = self.dmap_derived.decollate()
 
         # Check decollated types
