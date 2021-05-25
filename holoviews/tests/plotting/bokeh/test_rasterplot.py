@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import Raster, Image, RGB
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestRasterPlot(TestBokehPlot):

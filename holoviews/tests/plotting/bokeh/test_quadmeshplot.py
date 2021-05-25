@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import QuadMesh, Image
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import ColorBar

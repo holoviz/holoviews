@@ -4,7 +4,7 @@ from holoviews.core import Overlay, NdOverlay, DynamicMap, HoloMap
 from holoviews.element import Curve, Scatter
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 try:
     from holoviews.plotting.mpl import OverlayPlot

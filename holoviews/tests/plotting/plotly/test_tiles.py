@@ -1,6 +1,6 @@
 from holoviews.element import RGB, Tiles, Points, Bounds
 from holoviews.element.tiles import StamenTerrain, _ATTRIBUTIONS
-from .testplot import TestPlotlyPlot, plotly_renderer
+from .test_plot import TestPlotlyPlot, plotly_renderer
 import numpy as np
 
 

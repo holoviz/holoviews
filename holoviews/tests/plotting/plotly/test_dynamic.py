@@ -14,7 +14,7 @@ from holoviews.streams import (
 from bokeh.document import Document
 from pyviz_comms import Comm
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestDynamicMap(TestPlotlyPlot):

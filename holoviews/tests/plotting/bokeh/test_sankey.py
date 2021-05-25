@@ -4,7 +4,7 @@ from holoviews.core.data import Dataset
 from holoviews.element import Sankey
 
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 class TestSankeyPlot(TestBokehPlot):
 

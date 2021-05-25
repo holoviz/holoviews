@@ -4,7 +4,7 @@ import numpy as np
 
 from holoviews.element import BoxWhisker
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import ColumnDataSource, CategoricalColorMapper, LinearColorMapper

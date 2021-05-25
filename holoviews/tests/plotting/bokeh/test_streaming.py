@@ -4,7 +4,7 @@ from holoviews.core import DynamicMap
 from holoviews.element import Curve 
 from holoviews.streams import Buffer
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestBufferStreamPlot(TestBokehPlot):

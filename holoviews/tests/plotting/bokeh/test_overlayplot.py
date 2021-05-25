@@ -7,7 +7,7 @@ from holoviews.streams import Stream
 from holoviews.util import Dynamic
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import FixedTicker, HoverTool, FactorRange, Range1d

@@ -8,7 +8,7 @@ from holoviews.operation import histogram
 from holoviews.plotting.util import hex2rgb
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestHistogramPlot(LoggingComparisonTestCase, TestMPLPlot):

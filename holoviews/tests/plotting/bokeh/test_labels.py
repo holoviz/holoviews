@@ -9,7 +9,7 @@ except:
     pass
 
 from ..utils import ParamLogStream
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestLabelsPlot(TestBokehPlot):

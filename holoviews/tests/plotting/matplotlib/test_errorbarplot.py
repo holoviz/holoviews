@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.core.spaces import HoloMap
 from holoviews.element import ErrorBars
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestErrorBarPlot(TestMPLPlot):

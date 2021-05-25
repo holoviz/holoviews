@@ -1,6 +1,6 @@
 from holoviews.element import Table
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestTablePlot(TestPlotlyPlot):

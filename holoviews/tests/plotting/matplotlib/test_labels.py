@@ -5,7 +5,7 @@ from holoviews.core.spaces import HoloMap
 from holoviews.element import Labels
 from holoviews.plotting.util import rgb2hex
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestLabelsPlot(TestMPLPlot):

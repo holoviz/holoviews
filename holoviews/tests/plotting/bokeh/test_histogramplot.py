@@ -9,7 +9,7 @@ from holoviews.operation import histogram
 from bokeh.models import DatetimeAxis, CategoricalColorMapper, LinearColorMapper
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSideHistogramPlot(LoggingComparisonTestCase, TestBokehPlot):

@@ -11,7 +11,7 @@ from holoviews.plotting.util import rgb2hex
 from holoviews.streams import PointerX
 from holoviews.util.transform import dim
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import FactorRange, FixedTicker

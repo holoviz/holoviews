@@ -6,7 +6,7 @@ from holoviews.element import Curve, Image, Points
 from holoviews.operation import gridmatrix
 from holoviews.streams import Stream
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.layouts import Column

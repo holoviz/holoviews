@@ -5,7 +5,7 @@ import numpy as np
 from holoviews.element import Area
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):

@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import Scatter3D
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestScatter3DPlot(TestPlotlyPlot):

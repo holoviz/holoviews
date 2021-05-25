@@ -9,7 +9,7 @@ from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.streams import Stream
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 from ..utils import ParamLogStream
 
 try:

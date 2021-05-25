@@ -4,7 +4,7 @@ from holoviews.element import (
     HLine, VLine, Text, Labels, Arrow, HSpan, VSpan, Slope
 )
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHVLinePlot(TestBokehPlot):

@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.element import Polygons
 from holoviews.plotting.mpl.util import polygons_to_path_patches
 
-from .testplot import TestMPLPlot
+from .test_plot import TestMPLPlot
 
 
 class TestUtils(TestMPLPlot):

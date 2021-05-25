@@ -12,7 +12,7 @@ try:
 except:
     pass
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestMplGraphPlot(TestMPLPlot):

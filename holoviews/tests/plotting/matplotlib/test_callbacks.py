@@ -7,7 +7,7 @@ from holoviews.element import Points, Curve
 from holoviews.streams import PointerXY, PointerX
 
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestCallbackPlot(TestMPLPlot):

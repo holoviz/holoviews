@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.core.spaces import GridSpace
 from holoviews.element import Scatter, Curve
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestGridPlot(TestPlotlyPlot):

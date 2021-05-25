@@ -8,7 +8,7 @@ from holoviews.core.util import pd
 from holoviews.element import Curve
 from holoviews.util.transform import dim
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 pd_skip = skipIf(pd is None, 'Pandas is not available')
 

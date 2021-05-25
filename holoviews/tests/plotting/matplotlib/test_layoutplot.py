@@ -5,7 +5,7 @@ from holoviews.element import Image, Curve
 from holoviews.streams import Stream
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestLayoutPlot(LoggingComparisonTestCase, TestMPLPlot):

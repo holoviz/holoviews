@@ -6,7 +6,7 @@ from holoviews.core.spaces import DynamicMap
 from holoviews.element import Curve, Scatter3D, Path3D
 from holoviews.streams import PointerX
 
-from .testplot import TestPlotlyPlot, plotly_renderer
+from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestElementPlot(TestPlotlyPlot):

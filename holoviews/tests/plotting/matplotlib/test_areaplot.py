@@ -1,7 +1,7 @@
 from holoviews.element import Area
 
 from ...utils import LoggingComparisonTestCase
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestAreaPlot(LoggingComparisonTestCase, TestMPLPlot):

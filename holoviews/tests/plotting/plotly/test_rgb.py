@@ -9,7 +9,7 @@ except:
 
 from holoviews.element import RGB, Tiles
 
-from .testplot import TestPlotlyPlot, plotly_renderer
+from .test_plot import TestPlotlyPlot, plotly_renderer
 
 
 class TestRGBPlot(TestPlotlyPlot):

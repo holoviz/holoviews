@@ -4,7 +4,7 @@ from holoviews.core.overlay import NdOverlay
 from holoviews.core.spaces import HoloMap
 from holoviews.element import Points
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 from ..utils import ParamLogStream
 
 try:

@@ -1,6 +1,6 @@
 from holoviews.element import Distribution
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestDistributionPlot(TestPlotlyPlot):

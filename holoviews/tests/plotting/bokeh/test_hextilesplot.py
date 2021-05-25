@@ -7,7 +7,7 @@ from holoviews.element import HexTiles
 from holoviews.plotting.bokeh.hex_tiles import hex_binning
 from holoviews.plotting.bokeh.util import bokeh_version
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHexTilesOperation(TestBokehPlot):

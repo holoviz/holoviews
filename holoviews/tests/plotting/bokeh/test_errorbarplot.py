@@ -4,7 +4,7 @@ from bokeh.models import CategoricalColorMapper, LinearColorMapper
 
 from holoviews.element import ErrorBars
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestErrorBarsPlot(TestBokehPlot):

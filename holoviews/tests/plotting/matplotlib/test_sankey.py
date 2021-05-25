@@ -3,7 +3,7 @@ import numpy as np
 from holoviews.core.data import Dataset
 from holoviews.element import Sankey
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestSankeyPlot(TestMPLPlot):

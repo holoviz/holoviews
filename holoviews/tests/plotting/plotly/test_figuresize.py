@@ -1,5 +1,5 @@
 from holoviews.element import Points
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestImagePlot(TestPlotlyPlot):

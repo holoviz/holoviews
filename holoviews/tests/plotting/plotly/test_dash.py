@@ -1,6 +1,6 @@
 from dash._callback_context import CallbackContext
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 from holoviews.plotting.plotly.dash import (
     to_dash, DashComponents, encode_store_data, decode_store_data
 )

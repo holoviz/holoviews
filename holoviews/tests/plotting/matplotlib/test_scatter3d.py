@@ -1,6 +1,6 @@
 from holoviews.element import Scatter3D
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestPointPlot(TestMPLPlot):

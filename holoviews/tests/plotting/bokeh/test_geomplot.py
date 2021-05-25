@@ -4,7 +4,7 @@ from holoviews.core import NdOverlay
 from holoviews.core.util import pd
 from holoviews.element import Segments
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import FactorRange

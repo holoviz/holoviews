@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import Spread
 
-from .testplot import TestPlotlyPlot
+from .test_plot import TestPlotlyPlot
 
 
 class TestSpreadPlot(TestPlotlyPlot):

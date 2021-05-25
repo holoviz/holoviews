@@ -4,7 +4,7 @@ from holoviews.core.spaces import DynamicMap
 from holoviews.element import Image, Curve, Scatter, Scatter3D
 from holoviews.streams import Stream
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 try:
     from matplotlib.ticker import FormatStrFormatter, FuncFormatter, PercentFormatter

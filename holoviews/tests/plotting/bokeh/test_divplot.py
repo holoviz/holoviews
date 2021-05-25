@@ -1,6 +1,6 @@
 from holoviews.element import Div
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestDivPlot(TestBokehPlot):

@@ -4,7 +4,7 @@ from holoviews.core.spaces import DynamicMap
 from holoviews.element import Spread
 from holoviews.streams import Buffer
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestSpreadPlot(TestBokehPlot):

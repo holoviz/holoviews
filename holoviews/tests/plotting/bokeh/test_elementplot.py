@@ -12,7 +12,7 @@ from holoviews.streams import Stream, PointDraw
 from holoviews.plotting.util import process_cmap
 from holoviews.util import render
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
 
 try:

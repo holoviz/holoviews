@@ -2,7 +2,7 @@ import numpy as np
 
 from holoviews.element import QuadMesh, Image, Dataset
 
-from .testplot import TestMPLPlot, mpl_renderer
+from .test_plot import TestMPLPlot, mpl_renderer
 
 
 class TestQuadMeshPlot(TestMPLPlot):

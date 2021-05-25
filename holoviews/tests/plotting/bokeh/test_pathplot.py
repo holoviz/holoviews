@@ -8,7 +8,7 @@ from holoviews.element import Path, Polygons, Contours
 from holoviews.streams import PolyDraw
 from holoviews.util.transform import dim
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.models import LinearColorMapper, CategoricalColorMapper

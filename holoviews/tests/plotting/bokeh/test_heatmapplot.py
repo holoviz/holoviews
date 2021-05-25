@@ -7,7 +7,7 @@ try:
 except:
     pass
 
-from .testplot import TestBokehPlot, bokeh_renderer
+from .test_plot import TestBokehPlot, bokeh_renderer
 
 
 class TestHeatMapPlot(TestBokehPlot):
