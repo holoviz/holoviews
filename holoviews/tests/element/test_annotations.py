@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from holoviews import HLine, VLine, Text, Arrow, Annotation, Spline
 from holoviews.element.comparison import ComparisonTestCase
@@ -12,9 +13,10 @@ class AnnotationTests(ComparisonTestCase):
     """
 
     def test_hline_invalid_constructor(self):
-         regexp = "Parameter 'y' only takes numeric values"
-         with self.assertRaisesRegex(ValueError, regexp):
-             hline = HLine(None)
+        err = "Parameter 'y' value must be an instance of"
+        with pytest.raises(ValueError) as excinfo:
+            HLine(None)
+        assert err in str(excinfo.value)
 
     def test_text_string_position(self):
         text = Text('A', 1, 'A')
