@@ -449,9 +449,9 @@ class opts(param.ParameterizedFunction):
                         return Options(spec, **kws)
                     mismatched[loaded_backend] = list(keys - valid)
 
-                invalid =  keys - all_valid_kws # Keys not found for any backend
+                invalid = keys - all_valid_kws # Keys not found for any backend
                 if mismatched and not invalid:  # Keys found across multiple backends
-                    msg = ('{prefix} keywords supplied are mixed across backends. '
+                    msg = ('{prefix}keywords supplied are mixed across backends. '
                            'Keyword(s) {info}')
                     info = ', '.join('%s are invalid for %s'
                                      % (', '.join(repr(el) for el in v), k)

@@ -606,9 +606,9 @@ class NdMapping(MultiDimensionalMapping):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
-        elif indexslice == () and not self.kdims:
+        elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
             return self.data[()]
-        elif indexslice in [Ellipsis, ()]:
+        elif (isinstance(indexslice, tuple) and indexslice == ()) or indexslice is Ellipsis:
             return self
         elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
             indexslice = process_ellipses(self, indexslice)

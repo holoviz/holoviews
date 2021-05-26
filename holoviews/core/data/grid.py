@@ -515,7 +515,7 @@ class GridInterface(DictInterface):
                 mask &= values < ind.stop
             # Expand empty mask
             if mask is True:
-                mask = np.ones(values.shape, dtype=np.bool)
+                mask = np.ones(values.shape, dtype=np.bool_)
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
@@ -529,7 +529,7 @@ class GridInterface(DictInterface):
             index_mask = values == ind
             if (dataset.ndims == 1 or dataset._binned) and np.sum(index_mask) == 0:
                 data_index = np.argmin(np.abs(values - ind))
-                mask = np.zeros(len(values), dtype=np.bool)
+                mask = np.zeros(len(values), dtype=np.bool_)
                 mask[data_index] = True
             else:
                 mask = index_mask
@@ -577,7 +577,7 @@ class GridInterface(DictInterface):
                         raise IndexError("Index %s more than or equal to upper bound "
                                          "of %s for %s dimension." % (ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
-                    mask = np.zeros(len(values), dtype=np.bool)
+                    mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True
                     values = edges[idx:idx+2]
                 elif len(inds):

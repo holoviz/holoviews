@@ -3,7 +3,7 @@ from holoviews.annotators import annotate, PointAnnotator, PathAnnotator
 from holoviews.element import Points, Path, Table
 from holoviews.element.tiles import Wikipedia, Tiles
 
-from holoviews.tests.plotting.bokeh.testplot import TestBokehPlot
+from holoviews.tests.plotting.bokeh.test_plot import TestBokehPlot
 
 
 class Test_annotate(TestBokehPlot):
