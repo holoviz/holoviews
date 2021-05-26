@@ -311,7 +311,7 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            if isinstance(agg_fn, ds.count_cat):
+            if isinstance(agg_fn, (ds.count, ds.count_cat)):
                 vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
