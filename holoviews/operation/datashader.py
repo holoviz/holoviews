@@ -229,7 +229,7 @@ class AggregationOperation(ResamplingOperation):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    vdim_prefix = param.String(default='{kdims} ', doc="""
+    vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
         templates in the names of the input element key dimensions.""")
 
@@ -297,8 +297,11 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        kdim_list = '_'.join(str(kd) for kd in params['kdims'])
-        vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        if self.vdim_prefix is not None:
+            kdim_list = '_'.join(str(kd) for kd in params['kdims'])
+            vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        else:
+            vdim_prefix = ''
 
         category = None
         if hasattr(agg_fn, 'reduction'):
