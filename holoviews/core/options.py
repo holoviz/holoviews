@@ -32,19 +32,23 @@ Store:
    extension together.
 
 """
-import pickle
-import traceback
 import difflib
 import inspect
+import functools
+import pickle
+import traceback
+
 from contextlib import contextmanager
 from collections import defaultdict
 
 import numpy as np
-
 import param
+
 from .accessors import Opts # noqa (clean up in 2.0)
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer, OrderedDict
+from .util import (
+    OrderedDict, group_sanitizer, label_sanitizer, sanitize_identifier
+)
 from .pprint import InfoPrinter
 
 
@@ -74,10 +78,12 @@ def cleanup_custom_options(id, weakref=None):
         if not weakrefs:
             Store._weakrefs.pop(id, None)
     except Exception as e:
-        raise Exception('Cleanup of custom options tree with id %s '
-                        'failed with the following exception: %s, '
-                        'an unreferenced orphan tree may persist in '
-                        'memory' % (e, id))
+        raise Exception(
+            f"Cleanup of custom options tree with id '{id}' failed "
+            f"with the following exception: {e}, an unreferenced "
+            "orphan tree may persist in memory."
+        )
+
 
 def lookup_options(obj, group, backend):
     """
@@ -100,7 +106,6 @@ def lookup_options(obj, group, backend):
         return node
 
 
-
 class CallbackError(RuntimeError):
     """
     An error raised during a callback.
@@ -118,7 +123,6 @@ class SkipRendering(Exception):
         super().__init__(message)
 
 
-
 class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
@@ -126,6 +130,7 @@ class OptionError(Exception):
     readable message for the user if caught and processed
     appropriately.
     """
+
     def __init__(self, invalid_keyword, allowed_keywords,
                  group_name=None, path=None):
         super().__init__(self.message(invalid_keyword,
@@ -136,13 +141,13 @@ class OptionError(Exception):
         self.group_name =group_name
         self.path = path
 
-
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
-        msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(allowed_keywords)))
+        msg = (
+            f"Invalid option {invalid_keyword!r}, valid options are: "
+            f"{allowed_keywords}."
+        )
         if path and group_name:
-            msg = ("Invalid key for group %r on path %r;\n"
-                    % (group_name, path)) + msg
+            msg = f"Invalid key for group {group_name!r} on path {path};\n{msg}"
         return msg
 
     def format_options_error(self):
@@ -159,30 +164,23 @@ class OptionError(Exception):
             similarity = 'Similar'
 
         loaded_backends = Store.loaded_backends()
-        target = 'for {0}'.format(target) if target else ''
+        target = f'for {target}' if target else ''
 
         if len(loaded_backends) == 1:
-            loaded=' in loaded backend {0!r}'.format(loaded_backends[0])
+            loaded = f' in loaded backend {loaded_backends[0]!r}'
         else:
-            backend_list = ', '.join(['%r'% b for b in loaded_backends[:-1]])
-            loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
-                                                            loaded_backends[-1])
+            backend_list = ', '.join([repr(b) for b in loaded_backends[:-1]])
+            loaded = f' in loaded backends {backend_list} and {loaded_backends[-1]!r}'
 
-        suggestion = ("If you believe this keyword is correct, please make sure "
-                      "the backend has been imported or loaded with the "
-                      "hv.extension.")
-
-        group = '{0} option'.format(self.group_name) if self.group_name else 'keyword'
-        msg=('Unexpected {group} {kw} {target}{loaded}.\n\n'
-             '{similarity} keywords in the currently active '
-             '{current_backend} renderer are: {matches}\n\n{suggestion}')
-        return msg.format(kw="'%s'" % self.invalid_keyword,
-                          target=target,
-                          group=group,
-                          loaded=loaded, similarity=similarity,
-                          current_backend=repr(Store.current_backend),
-                          matches=matches,
-                          suggestion=suggestion)
+        group = f'{self.group_name} option' if self.group_name else 'keyword'
+        return (
+            f"Unexpected {group} '{self.invalid_keyword}' {target}"
+            f"{loaded}.\n\n{similarity} keywords in the currently "
+            f"active '{Store.current_backend}' renderer are: "
+            f"{matches}\n\nIf you believe this keyword is correct, "
+            "please make sure the backend has been imported or loaded "
+            "with the hv.extension."
+        )
 
 
 class AbbreviatedException(Exception):
@@ -201,10 +199,11 @@ class AbbreviatedException(Exception):
         self.msg = str(value)
 
     def __str__(self):
-        abbrev = '%s: %s' % (self.etype.__name__, self.msg)
-        msg = ('To view the original traceback, catch this exception '
-               'and call print_traceback() method.')
-        return '%s\n\n%s' % (abbrev, msg)
+        return (
+            f'{self.etype.__name__}: {self.msg}\n\n'
+            'To view the original traceback, catch this exception and '
+            'call print_traceback() method.'
+        )
 
     def print_traceback(self):
         """
@@ -262,7 +261,7 @@ class Keywords(param.Parameterized):
 
         strings = [isinstance(v, str) for v in values]
         if False in strings:
-            raise ValueError('All keywords must be strings: {0}'.format(values))
+            raise ValueError(f'All keywords must be strings: {values}')
         super().__init__(values=sorted(values),
                                               target=target)
 
@@ -428,7 +427,7 @@ class Palette(Cycle):
 
 
 
-class Options(param.Parameterized):
+class Options:
     """
     An Options object holds a collection of keyword options. In
     addition, Options support (optional) keyword validation as well as
@@ -439,25 +438,14 @@ class Options(param.Parameterized):
     can create a new Options object inheriting the parent options.
     """
 
-    allowed_keywords = param.ClassSelector(class_=Keywords, doc="""
-       Optional list of strings corresponding to the allowed keywords.""")
+    # Whether all Options instances should skip invalid keywords or
+    # raise and exception.
+    skip_invalid = True
 
-    key = param.String(default=None, allow_None=True, doc="""
-       Optional specification of the options key name. For instance,
-       key could be 'plot' or 'style'.""")
-
-    merge_keywords = param.Boolean(default=True, doc="""
-       Whether to merge with the existing keywords if the corresponding
-       node already exists""")
-
-    skip_invalid = param.Boolean(default=True, doc="""
-       Whether all Options instances should skip invalid keywords or
-       raise and exception. May only be specified at the class level.""")
-
-    warn_on_skip = param.Boolean(default=True, doc="""
-       Whether all Options instances should generate warnings when
-       skipping over invalid keywords or not. May only be specified at
-       the class level.""")
+    # Whether all Options instances should generate warnings when
+    # skipping over invalid keywords or not. May only be specified at
+    # the class level.
+    warn_on_skip = True
 
     _option_groups = ['style', 'plot', 'norm', 'output']
 
@@ -491,8 +479,9 @@ class Options(param.Parameterized):
 
         allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
                             else Keywords(allowed_keywords))
-        super().__init__(allowed_keywords=allowed_keywords,
-                         merge_keywords=merge_keywords, key=key)
+        self.allowed_keywords = allowed_keywords
+        self.merge_keywords = merge_keywords
+        self.key = key
 
     def keywords_target(self, target):
         """
@@ -523,11 +512,9 @@ class Options(param.Parameterized):
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
         return self.__class__(**dict(self.kwargs, **inherited_style))
 
-
     def keys(self):
         "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
-
 
     def max_cycles(self, num):
         """
@@ -538,7 +525,6 @@ class Options(param.Parameterized):
         kwargs = {kw: (arg[num] if isinstance(arg, Palette) else arg)
                   for kw, arg in self.kwargs.items()}
         return self(max_cycles=num, **kwargs)
-
 
     @property
     def cyclic(self):
@@ -561,7 +547,6 @@ class Options(param.Parameterized):
         static = {k:v for k,v in self.kwargs.items() if not isinstance(v, Cycle)}
         return dict(static, **options)
 
-
     @property
     def options(self):
         "Access of the options keywords when no cycles are defined."
@@ -571,16 +556,15 @@ class Options(param.Parameterized):
             raise Exception("The options property may only be used"
                             " with non-cyclic Options.")
 
-
     def __repr__(self):
-        kws = ', '.join("%s=%r" % (k,self.kwargs[k]) for k in sorted(self.kwargs.keys()))
-
+        kws = ', '.join(f"{k}={self.kwargs[k]!r}" for k in sorted(self.kwargs.keys()))
+        cls_name = type(self).__name__
         if self.key and self.key[0].isupper() and kws:
-            return "%s(%s, %s)" % (self.__class__.__name__,  repr(self.key), kws)
+            return f"{cls_name}({self.key!r}, {kws})"
         elif self.key and self.key[0].isupper():
-            return "%s(%s)" % (self.__class__.__name__,  repr(self.key))
+            return f"{cls_name}({self.key!r})"
         else:
-            return "%s(%s)" % (self.__class__.__name__,  kws)
+            return f"{cls_name}({kws})"
 
     def __str__(self):
         return repr(self)
@@ -630,8 +614,10 @@ class OptionTree(AttrTree):
         if root_groups and isinstance(groups, list):
             self.__dict__['groups'] = {g:Options(**root_groups.get(g,{})) for g in _groups.keys()}
         elif root_groups:
-            raise Exception("Group specification as a dictionary only supported if "
-                            "the root node '.' syntax not used in the options.")
+            raise Exception(
+                "Group specification as a dictionary only supported if "
+                "the root node '.' syntax not used in the options."
+            )
         if options:
             StoreOptions.apply_customizations(options, self)
 
@@ -643,7 +629,7 @@ class OptionTree(AttrTree):
         new Options which are passed in.
         """
         if group_name not in self.groups:
-            raise KeyError("Group %s not defined on SettingTree" % group_name)
+            raise KeyError(f"Group {group_name} not defined on SettingTree.")
 
         if identifier in self.children:
             current_node = self[identifier]
@@ -658,8 +644,10 @@ class OptionTree(AttrTree):
         override_kwargs['allowed_keywords'] = options.allowed_keywords + old_allowed
 
         try:
-            return (group_options(**override_kwargs)
-                    if options.merge_keywords else Options(group_name, **override_kwargs))
+            if options.merge_keywords:
+                return group_options(**override_kwargs)
+            else:
+                return Options(group_name, **override_kwargs)
         except OptionError as e:
             raise OptionError(e.invalid_keyword,
                               e.allowed_keywords,
@@ -671,7 +659,6 @@ class OptionTree(AttrTree):
             return self.groups[item]
         return super().__getitem__(item)
 
-
     def __getattr__(self, identifier):
         """
         Allows creating sub OptionTree instances using attribute
@@ -679,10 +666,13 @@ class OptionTree(AttrTree):
         """
         try:
             return super(AttrTree, self).__getattr__(identifier)
-        except AttributeError: pass
+        except AttributeError:
+            pass
 
-        if identifier.startswith('_'):   raise AttributeError(str(identifier))
-        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
+        if identifier.startswith('_'):
+            raise AttributeError(str(identifier))
+        elif self.fixed==True:
+            raise AttributeError(self._fixed_error % identifier)
 
         valid_id = sanitize_identifier(identifier, escape=False)
         if valid_id in self.children:
@@ -700,10 +690,14 @@ class OptionTree(AttrTree):
         if isinstance(val, dict):
             group_items = val
         elif isinstance(val, Options) and val.key is None:
-            raise AttributeError("Options object needs to have a group name specified.")
+            raise AttributeError(
+                "Options object needs to have a group name specified."
+            )
         elif isinstance(val, Options) and val.key[0].isupper():
-            raise AttributeError("OptionTree only accepts Options using keys that are one of %s." %
-                                 ', '.join(repr(el) for el in Options._option_groups))
+            groups = ', '.join(repr(el) for el in Options._option_groups)
+            raise AttributeError(
+                "OptionTree only accepts Options using keys that are one of {groups}."
+            )
         elif isinstance(val, Options):
             group_items = {val.key: val}
         elif isinstance(val, OptionTree):
@@ -751,7 +745,6 @@ class OptionTree(AttrTree):
                 continue
         return item if mode == 'node' else item.path
 
-
     def closest(self, obj, group, defaults=True, backend=None):
         """
         This method is designed to be called from the root of the
@@ -761,13 +754,18 @@ class OptionTree(AttrTree):
         In addition, closest supports custom options by checking the
         object
         """
-        components = (obj.__class__.__name__,
-                      group_sanitizer(obj.group),
-                      label_sanitizer(obj.label))
-        target = '.'.join((c for c in components if c))
-        return self.find(components).options(
-            group, target=target, defaults=defaults, backend=backend)
+        opts_spec = (
+            obj.__class__.__name__,
+            group_sanitizer(obj.group),
+            label_sanitizer(obj.label)
+        )
+        return self._cached_closest(opts_spec, group, defaults, backend)
 
+    @functools.lru_cache()
+    def _cached_closest(self, opts_spec, group, defaults, backend):
+        target = '.'.join((c for c in opts_spec if c))
+        return self.find(opts_spec).options(
+            group, target=target, defaults=defaults, backend=backend)
 
     def options(self, group, target=None, defaults=True, backend=None):
         """
@@ -778,19 +776,20 @@ class OptionTree(AttrTree):
             target = self.path
         if self.groups.get(group, None) is None:
             return None
-        if self.parent is None and target and (self is not Store.options(backend=backend)) and defaults:
+        options = Store.options(backend=backend)
+        if self.parent is None and target and (self is not options) and defaults:
             root_name = self.__class__.__name__
             replacement = root_name + ('' if len(target) == len(root_name) else '.')
-            option_key = target.replace(replacement,'')
-            match = Store.options(backend=backend).find(option_key)
-            if match is not Store.options(backend=backend):
+            option_key = target.replace(replacement, '')
+            match = options.find(option_key)
+            if match is not options:
                 return match.options(group)
             else:
-                return Options()
+                return EMPTY_OPTIONS
         elif self.parent is None:
             return self.groups[group]
 
-        parent_opts = self.parent.options(group,target, defaults, backend=backend)
+        parent_opts = self.parent.options(group, target, defaults, backend=backend)
         return Options(**dict(parent_opts.kwargs, **self.groups[group].kwargs))
 
     def __repr__(self):
@@ -819,16 +818,19 @@ class OptionTree(AttrTree):
                     especs.append((t, kws))
 
             if especs:
-                format_kws = [(t,'dict(%s)'
-                               % ', '.join('%s=%r' % (k,v) for k,v in sorted(kws.items())))
-                              for t,kws in especs]
+                format_kws = [
+                    (t, 'dict(%s)' % ', '.join(f'{k}={v}' for k, v in sorted(kws.items())))
+                    for t, kws in especs
+                ]
                 ljust = max(len(t) for t,_ in format_kws)
                 sep = (tab*2) if len(format_kws) >1 else ''
-                entries = sep + esep.join([sep+'%r : %s' % (t.ljust(ljust),v) for t,v in format_kws])
-                gspecs.append(('%s%s={\n%s}' if len(format_kws)>1 else '%s%s={%s}') % (tab,group, entries))
+                entries = sep + esep.join([f'{sep}{t.ljust(ljust)} : {v}' for t,v in format_kws])
+                gspecs.append(('%s%s={\n%s}' if len(format_kws)>1 else '%s%s={%s}') % (tab, group, entries))
 
-        return 'OptionTree(groups=%s,\n%s\n)' % (groups.keys(), gsep.join(gspecs))
+        return f'OptionTree(groups={groups.keys()},\n{gsep.join(gspecs)}\n)'
 
+
+EMPTY_OPTIONS = Options()
 
 
 class Compositor(param.Parameterized):
@@ -892,12 +894,17 @@ class Compositor(param.Parameterized):
         The best match is defined as the compositor operation with the
         highest match value as returned by the match_level method.
         """
-        match_strength = [(op.match_level(overlay), op) for op in cls.definitions
-                          if op.mode == mode and (not op.backends or backend in op.backends)]
-        matches = [(match[0], op, match[1]) for (match, op) in match_strength if match is not None]
-        if matches == []: return None
-        else:             return sorted(matches)[0]
-
+        match_strength = [
+            (op.match_level(overlay), op) for op in cls.definitions
+            if op.mode == mode and (not op.backends or backend in op.backends)
+        ]
+        matches = [
+            (match[0], op, match[1]) for (match, op) in match_strength
+            if match is not None
+        ]
+        if matches == []:
+            return None
+        return sorted(matches)[0]
 
     @classmethod
     def collapse_element(cls, overlay, ranges=None, mode='data', backend=None):
@@ -948,7 +955,6 @@ class Compositor(param.Parameterized):
                 return overlay
             prev_ids = new_ids
 
-
     @classmethod
     def collapse(cls, holomap, ranges=None, mode='data'):
         """
@@ -964,7 +970,6 @@ class Compositor(param.Parameterized):
         for key, overlay in data:
             clone[key] = cls.collapse_element(overlay, ranges, mode)
         return clone
-
 
     @classmethod
     def map(cls, obj, mode='data', backend=None):
@@ -984,7 +989,6 @@ class Compositor(param.Parameterized):
                           element_patterns)
         return obj
 
-
     @classmethod
     def register(cls, compositor):
         defined_patterns = [op.pattern for op in cls.definitions]
@@ -993,7 +997,6 @@ class Compositor(param.Parameterized):
         cls.definitions.append(compositor)
         if compositor.operation not in cls.operations:
             cls.operations.append(compositor.operation)
-
 
     def __init__(self, pattern, operation, group, mode, transfer_options=False,
                  transfer_parameters=False, output_type=None, backends=None, **kwargs):
@@ -1023,7 +1026,6 @@ class Compositor(param.Parameterized):
                          transfer_options=transfer_options,
                          transfer_parameters=transfer_parameters)
 
-
     @property
     def output_type(self):
         """
@@ -1031,7 +1033,6 @@ class Compositor(param.Parameterized):
         in the kwargs.
         """
         return self._output_type or self.operation.output_type
-
 
     def _slice_match_level(self, overlay_items):
         """
@@ -1057,7 +1058,6 @@ class Compositor(param.Parameterized):
                     return None
         return level
 
-
     def match_level(self, overlay):
         """
         Given an overlay, return the match level and applicable slice
@@ -1081,7 +1081,6 @@ class Compositor(param.Parameterized):
                 match_slice = (i, i+slice_width)
 
         return (best_lvl, match_slice) if best_lvl != 0 else None
-
 
     def apply(self, value, input_ranges, backend=None):
         """
@@ -1251,7 +1250,6 @@ class Store(object):
                     listed.append(c)
         return info
 
-
     @classmethod
     def lookup_options(cls, backend, obj, group, defaults=True):
         # Current custom_options dict may not have entry for obj.id
@@ -1277,7 +1275,6 @@ class Store(object):
             raise Exception("Object contains elements combined across "
                             "multiple custom trees (ids %s)" % idlist)
         return cls._custom_options[backend][list(ids)[0]]
-
 
     @classmethod
     def transfer_options(cls, obj, new_obj, backend=None, names=None, level=3):
@@ -1305,7 +1302,6 @@ class Store(object):
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 
-
     @classmethod
     def add_style_opts(cls, component, new_options, backend=None):
         """
@@ -1319,18 +1315,23 @@ class Store(object):
         """
         backend = cls.current_backend if backend is None else backend
         if component not in cls.registry[backend]:
-            raise ValueError("Component %r not registered to a plotting class" % component)
+            raise ValueError(
+                f"Component {component!r} not registered to a plotting class."
+            )
 
         if not isinstance(new_options, list) or not all(isinstance(el, str) for el in new_options):
-            raise ValueError("Please supply a list of style option keyword strings")
+            raise ValueError(
+                "Please supply a list of style option keyword strings"
+            )
 
         with param.logging_level('CRITICAL'):
             for option in new_options:
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
                     plot_class.style_opts = sorted(plot_class.style_opts+[option])
-        cls._options[backend][component.name] = Options('style', merge_keywords=True, allowed_keywords=new_options)
-
+        cls._options[backend][component.name] = Options(
+            'style', merge_keywords=True, allowed_keywords=new_options
+        )
 
     @classmethod
     def register(cls, associations, backend, style_aliases={}):
@@ -1364,16 +1365,16 @@ class Store(object):
             plot_opts =  Keywords(plot_opts,  target=view_class.__name__)
             style_opts = Keywords(style_opts, target=view_class.__name__)
 
-            opt_groups = {'plot':   Options(allowed_keywords=plot_opts),
-                          'output': Options(allowed_keywords=Options._output_allowed_kws),
-                          'style': Options(allowed_keywords=style_opts),
-                          'norm':  Options(framewise=False, axiswise=False,
-                                           allowed_keywords=['framewise',
-                                                             'axiswise'])}
+            opt_groups = {
+                'plot':   Options(allowed_keywords=plot_opts),
+                'output': Options(allowed_keywords=Options._output_allowed_kws),
+                'style':  Options(allowed_keywords=style_opts),
+                'norm':   Options(framewise=False, axiswise=False,
+                                  allowed_keywords=['framewise', 'axiswise'])
+            }
 
             name = view_class.__name__
             cls._options[backend][name] = opt_groups
-
 
     @classmethod
     def set_display_hook(cls, group, objtype, hook):
@@ -1384,7 +1385,6 @@ class Store(object):
         each group.
         """
         cls._display_hooks[group][objtype] = hook
-
 
     @classmethod
     def render(cls, obj):
@@ -1409,7 +1409,6 @@ class Store(object):
             data.update(d)
             metadata.update(md)
         return data, metadata
-
 
 
 class StoreOptions(object):
@@ -1473,7 +1472,6 @@ class StoreOptions(object):
     def get_object_ids(cls, obj):
         return set(el for el
                    in obj.traverse(lambda x: getattr(x, 'id', None)))
-
 
     @classmethod
     def tree_to_dict(cls, tree):
@@ -1559,7 +1557,7 @@ class StoreOptions(object):
         Only useful when invalid keywords generate exceptions instead of
         skipping, i.e. Options.skip_invalid is False.
         """
-        loaded_backends =  Store.loaded_backends() if backends is None else backends
+        loaded_backends = Store.loaded_backends() if backends is None else backends
 
         error_info     = {}
         backend_errors = defaultdict(set)
@@ -1576,7 +1574,6 @@ class StoreOptions(object):
                              error.group_name)
                 error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
-
 
         for ((keyword, target, group_name), backends) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
@@ -1605,10 +1602,11 @@ class StoreOptions(object):
         keys. For instance a compositor operation returning a group
         string 'Image' of element type RGB expands to 'RGB.Image'.
         """
-        expanded_spec={}
+        expanded_spec = {}
         applied_keys = []
-        compositor_defs = {el.group:el.output_type.__name__
-                           for el in Compositor.definitions}
+        compositor_defs = {
+            el.group: el.output_type.__name__ for el in Compositor.definitions
+        }
         for key, val in spec.items():
             if key not in compositor_defs:
                 expanded_spec[key] = val
@@ -1618,7 +1616,6 @@ class StoreOptions(object):
                 type_name = compositor_defs[key]
                 expanded_spec[str(type_name+'.'+key)] = val
         return expanded_spec, applied_keys
-
 
     @classmethod
     def create_custom_trees(cls, obj, options=None):
@@ -1634,7 +1631,7 @@ class StoreOptions(object):
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
         offset = cls.id_offset()
-        obj_ids = [None] if len(obj_ids)==0 else obj_ids
+        obj_ids = [None] if len(obj_ids) == 0 else obj_ids
 
         used_obj_types = [(opt.split('.')[0],) for opt in options]
         available_options = Store.options()
@@ -1667,7 +1664,6 @@ class StoreOptions(object):
         return {k: cls.apply_customizations(options, t) if options else t
                 for k,t in clones.items()}, id_mapping
 
-
     @classmethod
     def merge_options(cls, groups, options=None,**kwargs):
         """
@@ -1684,8 +1680,9 @@ class StoreOptions(object):
         if (options is not None and set(options.keys()) <= groups):
             kwargs, options = options, None
         elif (options is not None and any(k in groups for k in options)):
-              raise Exception("All keys must be a subset of %s"
-                              % ', '.join(groups))
+              raise Exception(
+                  f"All keys must be a subset of {', '.join(groups)}."
+              )
 
         options = {} if (options is None) else dict(**options)
         all_keys = set(k for d in kwargs.values() for k in d)
@@ -1749,7 +1746,6 @@ class StoreOptions(object):
             Store._options_context = True
             cls.state(obj, state=optstate)
 
-
     @classmethod
     def id_offset(cls):
         """
@@ -1763,7 +1759,6 @@ class StoreOptions(object):
             max_ids.append(max_id)
         # If no backends defined (e.g. plotting not imported) return zero
         return max(max_ids) if len(max_ids) else 0
-
 
     @classmethod
     def update_backends(cls, id_mapping, custom_trees, backend=None):
@@ -1786,7 +1781,6 @@ class StoreOptions(object):
                 tree = backend_trees.get(old_id, None)
                 if tree is not None:
                     backend_trees[new_id] = tree
-
 
     @classmethod
     def set_options(cls, obj, options=None, backend=None, **kwargs):
@@ -1832,7 +1826,8 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
+        groups = Store.options(backend=backend).groups.keys()
+        options = cls.merge_options(groups, options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
@@ -1840,7 +1835,10 @@ class StoreOptions(object):
         # Propagate ids to the objects
         not_used = []
         for (match_id, new_id) in id_mapping:
-            applied = cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()), backend=backend)
+            key = compositor_applied+list(spec.keys())
+            applied = cls.propagate_ids(
+                obj, match_id, new_id, key, backend=backend
+            )
             if not applied:
                 not_used.append(new_id)
 
