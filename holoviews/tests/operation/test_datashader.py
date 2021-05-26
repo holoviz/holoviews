@@ -66,7 +66,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
         img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2, aggregator=ds.count('z'))
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[0, 0], [1, 0]]),
-                         vdims=[Dimension(' z Count', nodata=0)])
+                         vdims=[Dimension('z Count', nodata=0)])
         self.assertEqual(img, expected)
 
     @cudf_skip

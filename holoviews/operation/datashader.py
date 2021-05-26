@@ -315,7 +315,11 @@ class AggregationOperation(ResamplingOperation):
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
             if isinstance(agg_fn, (ds.count, ds.count_cat)):
-                vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
+                if vdim_prefix:
+                    vdim_name = '%s%s Count' % (vdim_prefix, column)
+                else:
+                    vdim_name = '%s Count' % column
+                vdims = dims[0].clone(vdim_name, nodata=0)
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
