@@ -694,6 +694,11 @@ class Params(Stream):
                     rename.update({(o, k): v for o in owners})
             params['rename'] = rename
 
+        if 'linked' not in params:
+            for p in parameters:
+                if isinstance(p.owner, (LinkedStream, Params)) and p.owner.linked:
+                    params['linked'] = True
+
         self._watch_only = watch_only
         super().__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
@@ -712,7 +717,6 @@ class Params(Stream):
         for watcher in self._watchers:
             watcher.inst.param.unwatch(watcher)
         self._watchers.clear()
-
 
     @classmethod
     def from_params(cls, params, **kwargs):
