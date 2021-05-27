@@ -21,7 +21,7 @@ from ..core.util import (
     closest_match, is_number, isfinite, python2sort, disable_constant,
     arraylike_types
 )
-from ..streams import LinkedStream
+from ..streams import LinkedStream, Params
 from ..util.transform import dim
 
 
@@ -183,7 +183,8 @@ def compute_overlayable_zorders(obj, path=[]):
     # If object branches but does not declare inputs (e.g. user defined
     # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
     found = any(isinstance(p, DynamicMap) and p.callback._is_overlay for p in path)
-    linked =  any(isinstance(s, LinkedStream) and s.linked for s in obj.streams)
+    linked =  any(isinstance(s, (LinkedStream, Params)) and s.linked
+                  for s in obj.streams)
     if (found or linked) and isoverlay and not isdynoverlay:
         offset = max(zorder_map.keys())
         for z, o in enumerate(obj.last):
