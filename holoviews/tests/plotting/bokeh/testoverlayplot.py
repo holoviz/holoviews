@@ -1,9 +1,10 @@
 import numpy as np
+import panel as pn
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap, Overlay
 from holoviews.core.options import Cycle
 from holoviews.element import Curve, Points, ErrorBars, Scatter, Text, VLine
-from holoviews.streams import Stream
+from holoviews.streams import Stream, Tap
 from holoviews.util import Dynamic
 
 from ...utils import LoggingComparisonTestCase
@@ -240,6 +241,29 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertFalse(unmuted.handles['glyph_renderer'].muted)
         self.assertTrue(muted.handles['glyph_renderer'].muted)
 
+    def test_overlay_params_bind_linked_stream(self):
+        tap = Tap()
+        def test(x):
+            return Curve([1, 2, 3]) * VLine(x or 0)
+        dmap = DynamicMap(pn.bind(test, x=tap.param.x))
+        plot = bokeh_renderer.get_plot(dmap)
+
+        tap.event(x=1)
+        _, vline_plot = plot.subplots.values()
+        assert vline_plot.handles['glyph'].location == 1
+
+    def test_overlay_params_dict_linked_stream(self):
+        tap = Tap()
+        def test(x):
+            return Curve([1, 2, 3]) * VLine(x or 0)
+        dmap = DynamicMap(test, streams={'x': tap.param.x})
+        plot = bokeh_renderer.get_plot(dmap)
+
+        tap.event(x=1)
+        _, vline_plot = plot.subplots.values()
+        assert vline_plot.handles['glyph'].location == 1
+
+        
 
 class TestLegends(TestBokehPlot):
 
@@ -315,7 +339,6 @@ class TestLegends(TestBokehPlot):
         plot.update((3,))
         legend_labels = [item.label for item in plot.state.legend[0].items]
         self.assertEqual(legend_labels, [{'value': 'A'}, {'value': 'B'}, {'value': 'C'}])
-
     def test_dynamicmap_ndoverlay_shrink_number_of_items(self):
         selected = Stream.define('selected', items=3)()
         def callback(items):
