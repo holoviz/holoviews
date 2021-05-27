@@ -34,7 +34,6 @@ Store:
 """
 import difflib
 import inspect
-import functools
 import pickle
 import traceback
 
