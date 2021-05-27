@@ -699,7 +699,7 @@ class OptionTree(AttrTree):
         elif isinstance(val, Options) and val.key[0].isupper():
             groups = ', '.join(repr(el) for el in Options._option_groups)
             raise AttributeError(
-                "OptionTree only accepts Options using keys that are one of {groups}."
+                f"OptionTree only accepts Options using keys that are one of {groups}."
             )
         elif isinstance(val, Options):
             group_items = {val.key: val}
