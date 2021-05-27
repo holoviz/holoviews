@@ -598,12 +598,13 @@ class OptionTree(AttrTree):
     """
 
     def __init__(self, items=None, identifier=None, parent=None,
-                 groups=None, options=None, **kwargs):
+                 groups=None, options=None, backend=None, **kwargs):
 
         if groups is None:
             raise ValueError('Please supply groups list or dictionary')
         _groups = {g:Options() for g in groups} if isinstance(groups, list) else groups
 
+        self.__dict__['backend'] = backend
         self.__dict__['groups'] = _groups
         self.__dict__['_instantiated'] = False
         AttrTree.__init__(self, items, identifier, parent)
@@ -621,7 +622,6 @@ class OptionTree(AttrTree):
         if options:
             StoreOptions.apply_customizations(options, self)
 
-
     def _merge_options(self, identifier, group_name, options):
         """
         Computes a merged Options object for the given group
@@ -635,9 +635,10 @@ class OptionTree(AttrTree):
             current_node = self[identifier]
             group_options = current_node.groups[group_name]
         else:
-            #When creating a node (nothing to merge with) ensure it is empty
-            group_options = Options(group_name,
-                     allowed_keywords=self.groups[group_name].allowed_keywords)
+            # When creating a node (nothing to merge with) ensure it is empty
+            group_options = Options(
+                group_name, allowed_keywords=self.groups[group_name].allowed_keywords
+            )
 
         override_kwargs = dict(options.kwargs)
         old_allowed = group_options.allowed_keywords
@@ -685,6 +686,9 @@ class OptionTree(AttrTree):
 
 
     def __setattr__(self, identifier, val):
+        # Invalidate the lookup cache whenever an option is changed
+        Store._lookup_cache[self.backend] = {}
+
         identifier = sanitize_identifier(identifier, escape=False)
         new_groups = {}
         if isinstance(val, dict):
@@ -713,7 +717,7 @@ class OptionTree(AttrTree):
 
         if new_groups:
             data = self[identifier].items() if identifier in self.children else None
-            new_node = OptionTree(data, identifier=identifier, parent=self, groups=new_groups)
+            new_node = OptionTree(data, identifier=identifier, parent=self, groups=new_groups, backend=self.backend)
         else:
             raise ValueError('OptionTree only accepts a dictionary of Options.')
 
@@ -722,7 +726,6 @@ class OptionTree(AttrTree):
         if isinstance(val, OptionTree):
             for subtree in val:
                 self[identifier].__setattr__(subtree.identifier, subtree)
-
 
     def find(self, path, mode='node'):
         """
@@ -759,13 +762,18 @@ class OptionTree(AttrTree):
             group_sanitizer(obj.group),
             label_sanitizer(obj.label)
         )
-        return self._cached_closest(opts_spec, group, defaults, backend)
+        # Try to get a cache hit in the backend lookup cache
+        backend = backend or Store.current_backend
+        cache = Store._lookup_cache[backend]
+        cache_key = opts_spec+(group, defaults,)
+        if cache_key in cache:
+            return cache[cache_key]
 
-    @functools.lru_cache()
-    def _cached_closest(self, opts_spec, group, defaults, backend):
         target = '.'.join((c for c in opts_spec if c))
-        return self.find(opts_spec).options(
+        options = self.find(opts_spec).options(
             group, target=target, defaults=defaults, backend=backend)
+        cache[cache_key] = options
+        return options
 
     def options(self, group, target=None, defaults=True, backend=None):
         """
@@ -1134,11 +1142,14 @@ class Store(object):
     _weakrefs = {}
     _options_context = False
 
+    # Backend option caches
+    _lookup_cache = {}
+
     # A list of hooks to call after registering the plot and style options
     option_setters = []
 
     # A dictionary of custom OptionTree by custom object id by backend
-    _custom_options = {'matplotlib':{}}
+    _custom_options = {'matplotlib': {}}
     load_counter_offset = None
     save_option_state = False
 
@@ -1345,7 +1356,7 @@ class Store(object):
 
         groups = Options._option_groups
         if backend not in cls._options:
-            cls._options[backend] = OptionTree([], groups=groups)
+            cls._options[backend] = OptionTree([], groups=groups, backend=backend)
         if backend not in cls._custom_options:
             cls._custom_options[backend] = {}
 
@@ -1527,7 +1538,6 @@ class StoreOptions(object):
         ids = iter(ids)
         obj.traverse(lambda o: setattr(o, 'id', next(ids)))
 
-
     @classmethod
     def apply_customizations(cls, spec, options):
         """
@@ -1535,13 +1545,13 @@ class StoreOptions(object):
         """
         for key in sorted(spec.keys()):
             if isinstance(spec[key], (list, tuple)):
-                customization = {v.key:v for v in spec[key]}
+                customization = {v.key: v for v in spec[key]}
             else:
-                customization = {k:(Options(**v) if isinstance(v, dict) else v)
+                customization = {k: (Options(**v) if isinstance(v, dict) else v)
                                  for k,v in spec[key].items()}
 
             # Set the Keywords target on Options from the {type} part of the key.
-            customization = {k:v.keywords_target(key.split('.')[0])
+            customization = {k: v.keywords_target(key.split('.')[0])
                              for k,v in customization.items()}
             options[str(key)] = customization
         return options
@@ -1564,8 +1574,11 @@ class StoreOptions(object):
         for backend in loaded_backends:
             cls.start_recording_skipped()
             with options_policy(skip_invalid=True, warn_on_skip=False):
-                options = OptionTree(items=Store.options(backend).data.items(),
-                                     groups=Store.options(backend).groups)
+                options = OptionTree(
+                    items=Store.options(backend).data.items(),
+                    groups=Store.options(backend).groups,
+                    backend=backend
+                )
                 cls.apply_customizations(spec, options)
 
             for error in cls.stop_recording_skipped():
@@ -1635,6 +1648,7 @@ class StoreOptions(object):
 
         used_obj_types = [(opt.split('.')[0],) for opt in options]
         available_options = Store.options()
+        backend = Store.current_backend
         used_options = {}
         for obj_type in available_options:
             if obj_type in used_obj_types:
@@ -1648,12 +1662,16 @@ class StoreOptions(object):
         for tree_id in obj_ids:
             if tree_id is not None and tree_id in custom_options:
                 original = custom_options[tree_id]
-                clone = OptionTree(items = original.items(),
-                                   groups = original.groups)
+                clone = OptionTree(
+                    items=original.items(),
+                    groups=original.groups,
+                    backend=original.backend
+                )
                 clones[tree_id + offset + 1] = clone
                 id_mapping.append((tree_id, tree_id + offset + 1))
             else:
-                clone = OptionTree(groups=available_options.groups)
+                clone = OptionTree(groups=available_options.groups,
+                                   backend=backend)
                 clones[offset] = clone
                 id_mapping.append((tree_id, offset))
 
