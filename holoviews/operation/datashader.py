@@ -297,7 +297,7 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        if self.vdim_prefix is not None:
+        if self.vdim_prefix:
             kdim_list = '_'.join(str(kd) for kd in params['kdims'])
             vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
         else:
