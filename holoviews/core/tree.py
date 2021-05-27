@@ -68,6 +68,13 @@ class AttrTree(object):
             self.set_path(path, item)
 
     @property
+    def root(self):
+        root = self
+        while root.parent is not None:
+            root = root.parent
+        return root
+
+    @property
     def path(self):
         "Returns the path up to the root for the current node."
         if self.parent:
