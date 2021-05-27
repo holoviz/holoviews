@@ -763,8 +763,8 @@ class OptionTree(AttrTree):
         )
         # Try to get a cache hit in the backend lookup cache
         backend = backend or Store.current_backend
-        cache = Store._lookup_cache[backend]
-        cache_key = opts_spec+(group, defaults,)
+        cache = Store._lookup_cache.get(backend, {})
+        cache_key = opts_spec+(group, defaults, id(self.root))
         if cache_key in cache:
             return cache[cache_key]
 
@@ -1169,6 +1169,7 @@ class Store(object):
         if val is None:
             return cls._options[backend]
         else:
+            cls._lookup_cache[backend] = {}
             cls._options[backend] = val
 
     @classmethod
@@ -1788,6 +1789,7 @@ class StoreOptions(object):
         backend = Store.current_backend if backend is None else backend
         # Update the custom option entries for the current backend
         Store.custom_options(backend=backend).update(custom_trees)
+        Store._lookup_cache[backend] = {}
 
         # Propagate option ids for non-selected backends
         for b in Store.loaded_backends():

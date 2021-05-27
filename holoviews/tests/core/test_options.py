@@ -67,13 +67,13 @@ class TestOptions(ComparisonTestCase):
         try:
             Options('test', allowed_keywords=['kw1'], kw='value')
         except OptionError as e:
-            self.assertEqual(str(e), "Invalid option 'kw', valid options are: ['kw1']")
+            self.assertEqual(str(e), "Invalid option 'kw', valid options are: ['kw1'].")
 
     def test_options_invalid_keywords2(self):
         try:
             Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
         except OptionError as e:
-            self.assertEqual(str(e), "Invalid option 'kw3', valid options are: ['kw2']")
+            self.assertEqual(str(e), "Invalid option 'kw3', valid options are: ['kw2'].")
 
     def test_options_invalid_keywords_skip1(self):
         with options_policy(skip_invalid=True, warn_on_skip=False):
@@ -126,7 +126,7 @@ class TestOptions(ComparisonTestCase):
         try:
             opts(**new_kws)
         except OptionError as e:
-            self.assertEqual(str(e), "Invalid option 'kw4', valid options are: ['kw2', 'kw3']")
+            self.assertEqual(str(e), "Invalid option 'kw4', valid options are: ['kw2', 'kw3'].")
 
 
 
@@ -296,8 +296,10 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
             raise SkipTest('Matplotlib backend not available.')
         self.backend = 'matplotlib'
         Store.set_current_backend(self.backend)
-        self.store_copy = OptionTree(sorted(Store.options().items()),
-                                     groups=Options._option_groups)
+        options = Store.options()
+        self.store_copy = OptionTree(sorted(options.items()),
+                                     groups=Options._option_groups,
+                                     backend=options.backend)
         super().setUp()
 
     def tearDown(self):
@@ -494,7 +496,9 @@ class TestStoreInheritance(ComparisonTestCase):
         Store.set_current_backend(self.backend)
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=Options._option_groups)
-        Store.options(val=OptionTree(groups=['plot', 'style']))
+        Store.options(val=OptionTree(
+            groups=['plot', 'style'], backend=self.backend
+        ))
 
         options = Store.options()
 
@@ -824,11 +828,13 @@ class TestCrossBackendOptions(ComparisonTestCase):
         self.plotly_options = Store._options.pop('plotly', None)
         self.store_mpl = OptionTree(
             sorted(Store.options(backend='matplotlib').items()),
-            groups=Options._option_groups
+            groups=Options._option_groups,
+            backend='matplotlib'
         )
         self.store_bokeh = OptionTree(
             sorted(Store.options(backend='bokeh').items()),
-            groups=Options._option_groups
+            groups=Options._option_groups,
+            backend='bokeh'
         )
         self.clear_options()
         super().setUp()
@@ -836,8 +842,10 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
     def clear_options(self):
         # Clear global options..
-        Store.options(val=OptionTree(groups=['plot', 'style']), backend='matplotlib')
-        Store.options(val=OptionTree(groups=['plot', 'style']), backend='bokeh')
+        Store.options(val=OptionTree(groups=['plot', 'style'], backend='matplotlib'),
+                      backend='matplotlib')
+        Store.options(val=OptionTree(groups=['plot', 'style'], backend='bokeh'),
+                      backend='bokeh')
         # ... and custom options
         Store.custom_options({}, backend='matplotlib')
         Store.custom_options({}, backend='bokeh')
@@ -1022,10 +1030,14 @@ class TestCrossBackendOptionSpecification(ComparisonTestCase):
 
         # Some tests require that plotly isn't loaded
         self.plotly_options = Store._options.pop('plotly', None)
-        self.store_mpl = OptionTree(sorted(Store.options(backend='matplotlib').items()),
-                                    groups=Options._option_groups)
-        self.store_bokeh = OptionTree(sorted(Store.options(backend='bokeh').items()),
-                                    groups=Options._option_groups)
+        self.store_mpl = OptionTree(
+            sorted(Store.options(backend='matplotlib').items()),
+            groups=Options._option_groups, backend='matplotlib'
+        )
+        self.store_bokeh = OptionTree(
+            sorted(Store.options(backend='bokeh').items()),
+            groups=Options._option_groups, backend='bokeh'
+        )
         super().setUp()
 
     def tearDown(self):
