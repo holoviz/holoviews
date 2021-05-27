@@ -229,7 +229,7 @@ class AggregationOperation(ResamplingOperation):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    vdim_prefix = param.String(default='{kdims} ', doc="""
+    vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
         templates in the names of the input element key dimensions.""")
 
@@ -297,8 +297,11 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        kdim_list = '_'.join(str(kd) for kd in params['kdims'])
-        vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        if self.vdim_prefix:
+            kdim_list = '_'.join(str(kd) for kd in params['kdims'])
+            vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        else:
+            vdim_prefix = ''
 
         category = None
         if hasattr(agg_fn, 'reduction'):
@@ -311,8 +314,12 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            if isinstance(agg_fn, ds.count_cat):
-                vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
+            if isinstance(agg_fn, (ds.count, ds.count_cat)):
+                if vdim_prefix:
+                    vdim_name = '%s%s Count' % (vdim_prefix, column)
+                else:
+                    vdim_name = '%s Count' % column
+                vdims = dims[0].clone(vdim_name, nodata=0)
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
