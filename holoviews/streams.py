@@ -707,7 +707,7 @@ class Params(Stream):
         if watch:
             # Subscribe to parameters
             keyfn = lambda x: id(x.owner)
-            for _, group in groupby(sorted(parameters, key=keyfn)):
+            for _, group in groupby(sorted(parameters, key=keyfn), key=keyfn):
                 group = list(group)
                 watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
                 self._watchers.append(watcher)

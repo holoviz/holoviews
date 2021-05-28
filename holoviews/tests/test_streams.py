@@ -295,6 +295,22 @@ class TestParamsStream(LoggingComparisonTestCase):
         inner.x = 0
         self.assertEqual(values, [{'action': inner.action, 'x': 0}])
 
+    def test_params_stream_batch_watch(self):
+        tap = Tap(x=0, y=1)
+        params = Params(parameters=[tap.param.x, tap.param.y])
+
+        values = []
+        def subscriber(**kwargs):
+            values.append(kwargs)
+        params.add_subscriber(subscriber)
+
+        tap.param.trigger('x', 'y')
+
+        assert values == [{'x': 0, 'y': 1}]
+
+        tap.event(x=1, y=2)
+
+        assert values == [{'x': 0, 'y': 1}, {'x': 1, 'y': 2}]
 
 
 class TestParamMethodStream(ComparisonTestCase):
