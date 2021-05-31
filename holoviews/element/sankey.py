@@ -254,12 +254,17 @@ class _layout_sankey(Operation):
 
     @classmethod
     def resolveCollisionsBottomToTop(cls, nodes, y, i, alpha, py):
-        for node in nodes[i::-1]:
+        # NOTE: DON'T CHANGE THE `WHILE` LOOP TO `FOR`
+        # For example, `for node in nodes[i::-1]` is INCORRECT, because it
+        # creates a non-empty loop for i=-1, while it must be empty
+        while i >= 0:
+            node = nodes[i]
             dy = (node['y1'] - y) * alpha
             if dy > _Y_EPS:
                 node['y0'] -= dy
                 node['y1'] -= dy
             y = node['y0'] - py
+            i -= 1
 
     def resolveCollisions(self, nodes, alpha, py):
         _, y0, _, y1 = self.p.bounds
@@ -291,7 +296,7 @@ class _layout_sankey(Operation):
                     v = link['value'] * (target['column'] - source['column'])
                     y += self.targetTop(source, target, py) * v
                     w += v
-                if not w:
+                if w <= 0:
                     continue
                 dy = (y / w - target['y0']) * alpha
                 target['y0'] += dy
@@ -313,7 +318,7 @@ class _layout_sankey(Operation):
                     v = link['value'] * (target['column'] - source['column'])
                     y += self.sourceTop(source, target, py) * v
                     w += v
-                if not w:
+                if w <= 0:
                     continue
                 dy = (y / w - source['y0']) * alpha
                 source['y0'] += dy
