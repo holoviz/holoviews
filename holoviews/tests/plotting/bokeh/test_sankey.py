@@ -23,8 +23,10 @@ class TestSankeyPlot(TestBokehPlot):
         self.assertEqual(scatter_source.data['index'], scatter_index)
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303]),
+                     'y': np.array([1649.49068662, 1899.49068658, 1587.02936107, 1767.33239136, 1968.54451237]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
+        with open('a.txt', 'w') as f:
+            f.write(str(text_source.data) + '\n')
         for k in text_data:
             self.assertEqual(text_source.data[k], text_data[k])
 
@@ -32,8 +34,8 @@ class TestSankeyPlot(TestBokehPlot):
             'index': scatter_index,
             'x0': [0, 0, 985.0, 985.0, 985.0],
             'x1': [15, 15, 1000.0, 1000.0, 1000.0],
-            'y0': [0.0, 270.9090909090908, -7.105427357601002e-15, 117.57575757575756, 360.6060606060606],
-            'y1': [250.909091, 480.0, 97.575758, 340.606061, 500.0]
+            'y0': [1524.036141243766, 1794.945232152857, 1538.2414821428135, 1655.8172397185713, 1898.8475427488745],
+            'y1': [1774.945232, 2004.036141, 1635.81724, 1878.847543, 2038.241482]
         }
         for k in quad_data:
             self.assertEqual(quad_source.data[k], quad_data[k])
@@ -64,7 +66,7 @@ class TestSankeyPlot(TestBokehPlot):
         self.assertEqual(scatter_source.data['index'], scatter_index)
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
-                     'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303]),
+                     'y': np.array([1649.490687, 1899.490687, 1587.029361, 1767.332391, 1968.544512]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
         for k in text_data:
             self.assertEqual(text_source.data[k], text_data[k])
