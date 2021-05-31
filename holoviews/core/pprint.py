@@ -9,17 +9,17 @@ can be evaluated with eval; such representations would typically be
 far too large to be practical. Instead, all HoloViews objects can be
 represented as tree structures, showing how to access and index into
 your data.
-
-In addition, there are several different ways of
 """
 
-import sys, re
+import re
 import textwrap
+
 import param
-# IPython not required to import ParamPager
+
 from param.ipython import ParamPager
 from param.parameterized import bothmethod
-from holoviews.core.util import group_sanitizer, label_sanitizer
+
+from .util import group_sanitizer, label_sanitizer
 
 
 
@@ -277,12 +277,7 @@ class PrettyPrinter(param.Parameterized):
 
     @bothmethod
     def pprint(cls_or_slf, node):
-        reprval = cls_or_slf.serialize(cls_or_slf.recurse(node))
-        if sys.version_info.major == 2:
-            return str(reprval.encode("utf8"))
-        else:
-            return str(reprval)
-
+        return cls_or_slf.serialize(cls_or_slf.recurse(node))
 
     @bothmethod
     def serialize(cls_or_slf, lines):

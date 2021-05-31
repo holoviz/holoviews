@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from itertools import groupby
 from collections import defaultdict
 
@@ -19,7 +17,7 @@ from ...core import (
 )
 from ...core.options import SkipRendering
 from ...core.util import (
-    basestring, cftime_to_timestamp, cftime_types, get_method_owner,
+    cftime_to_timestamp, cftime_types, get_method_owner,
     is_param_method, unique_iterator, wrap_tuple, wrap_tuple_streams,
     _STANDARD_CALENDARS
 )
@@ -30,11 +28,10 @@ from ..plot import (
     CallbackPlot
 )
 from ..util import attach_streams, displayable, collate
-from .callbacks import LinkCallback
+from .links import LinkCallback
 from .util import (
-    TOOL_TYPES, filter_toolboxes, make_axis, update_shared_sources,
-    empty_plot, decode_bytes, theme_attr_json, cds_column_replace,
-    get_default
+    filter_toolboxes, make_axis, update_shared_sources, empty_plot,
+    decode_bytes, theme_attr_json, cds_column_replace, get_default
 )
 
 
@@ -168,25 +165,6 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
             self._update_selected(source)
 
 
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing
-        subplots into a CompositePlot and sets the plot id to match
-        the root level bokeh model.
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOL_TYPES[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-                    if self.top_level:
-                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
-
     @property
     def state(self):
         """
@@ -258,8 +236,8 @@ class BokehPlot(DimensionedPlot, CallbackPlot):
         Converts integer fontsizes to a string specifying
         fontsize in pt.
         """
-        size = super(BokehPlot, self)._fontsize(key, label, common)
-        return {k: v if isinstance(v, basestring) else '%spt' % v
+        size = super()._fontsize(key, label, common)
+        return {k: v if isinstance(v, str) else '%spt' % v
                 for k, v in size.items()}
 
     def _get_title_div(self, key, default_fontsize='15pt', width=450):
@@ -492,7 +470,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+        super().__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
@@ -615,7 +593,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.handles['plot'] = plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -704,7 +681,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         Whether to display overlaid plots in separate panes""")
 
     def __init__(self, layout, keys=None, **params):
-        super(LayoutPlot, self).__init__(layout, keys=keys, **params)
+        super().__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
@@ -988,7 +965,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
 
-        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
@@ -1029,8 +1005,7 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.view_positions = self.layout_dict[self.layout_type]['positions']
 
         # The supplied (axes, view) objects as indexed by position
-        super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
-
+        super().__init__(subplots=subplots, **params)
 
     def initialize_plot(self, ranges=None, plots=[]):
         """
@@ -1054,7 +1029,6 @@ class AdjointLayoutPlot(BokehPlot, GenericAdjointLayoutPlot):
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
-
 
     def update_frame(self, key, ranges=None):
         plot = None

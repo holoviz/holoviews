@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
+import sys
 
 import numpy as np
 
@@ -36,6 +36,7 @@ from .geometry import SegmentPlot, RectanglesPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
+from .links import LinkCallback # noqa (API import)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
@@ -150,7 +151,9 @@ point_size = np.sqrt(6) # Matches matplotlib default
 
 # Register bokeh.palettes with Palette and Cycle
 def colormap_generator(palette):
-    return lambda value: palette[int(value*(len(palette)-1))]
+    # Epsilon ensures float precision doesn't cause issues (#4911)
+    epsilon = sys.float_info.epsilon*10
+    return lambda value: palette[int(value*(len(palette)-1)+epsilon)]
 
 Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
                           for name, p in all_palettes.items()})

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 
 import numpy as np
@@ -37,7 +35,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         import dask.dataframe as dd
-        data, dims, params = super(DaskSpatialPandasInterface, cls).init(
+        data, dims, params = super().init(
             eltype, data, kdims, vdims
         )
         if not isinstance(data, cls.frame_type()):
@@ -58,7 +56,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
                 cls.partition_values, meta=meta, dataset=dataset,
                 dimension=dimension, expanded=expanded, flat=flat
             ).compute()
-        values = super(DaskSpatialPandasInterface, cls).values(
+        values = super().values(
             dataset, dimension, expanded, flat, compute, keep_index
         )
         if compute and not keep_index and hasattr(values, 'compute'):
@@ -75,7 +73,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
         rows, cols = index
         if rows is not None:
             raise NotImplementedError
-        return super(DaskSpatialPandasInterface, cls).iloc(dataset, index)
+        return super().iloc(dataset, index)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):

@@ -1,8 +1,7 @@
-
 from collections import defaultdict
 from ..core import OrderedDict
 from ..core import Store
-from ..core.util import basestring
+
 
 class KeywordSettings(object):
     """
@@ -157,7 +156,7 @@ class OutputSettings(KeywordSettings):
                    'left', 'bottom', 'right', 'top', 'top_left', 'top_right',
                    'bottom_left', 'bottom_right', 'left_top', 'left_bottom',
                    'right_top', 'right_bottom'],
-               'css'           : {k: basestring
+               'css'           : {k: str
                                   for k in ['width', 'height', 'padding', 'margin',
                                             'max-width', 'min-width', 'max-height',
                                             'min-height', 'outline', 'float']}}

@@ -15,7 +15,7 @@ except ImportError:
     cm, colors = None, None
 
 from ...core.options import abbreviated_exception
-from ...core.util import basestring, arraylike_types
+from ...core.util import arraylike_types
 from ...util.transform import dim
 from ..util import COLOR_ALIASES, RGB_HEX_REGEX, rgb2hex
 
@@ -100,7 +100,7 @@ validators = {
     'angle'     : angle.is_valid,
     'alpha'     : alpha.is_valid,
     'color'     : lambda x: (
-        color.is_valid(x) or (isinstance(x, basestring) and RGB_HEX_REGEX.match(x))
+        color.is_valid(x) or (isinstance(x, str) and RGB_HEX_REGEX.match(x))
     ),
     'font_size' : font_size.is_valid,
     'line_dash' : dash_pattern.is_valid,

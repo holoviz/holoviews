@@ -16,7 +16,7 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+      PKG_TEST_PYTHON: "--test-python=py37"
       PYTHON_VERSION: "3.7"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
@@ -31,6 +31,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+          python-version: 3.8
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: Set output
@@ -57,7 +58,7 @@ jobs:
         shell: bash -l {0}
     env:
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      PKG_TEST_PYTHON: "--test-python=py37 --test-python=py27"
+      PKG_TEST_PYTHON: "--test-python=py37"
       PYTHON_VERSION: "3.7"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
@@ -74,6 +75,7 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
+          python-version: 3.8
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow -f
       - name: conda setup
@@ -89,13 +91,6 @@ jobs:
           doit develop_install $CHANS_DEV -o unit_tests
           pip uninstall -y holoviews
           doit pip_on_conda
-      - name: matplotlib patch
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda uninstall matplotlib matplotlib-base --force
-          conda install matplotlib=3.0.3 --no-deps
-          python -c "import matplotlib; print(matplotlib.__version__);"
       - name: pip build
         run: |
           eval "$(conda shell.bash hook)"

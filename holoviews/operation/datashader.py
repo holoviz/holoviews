@@ -1,8 +1,6 @@
-from __future__ import absolute_import, division
-
 import warnings
 
-from collections import Callable
+from collections.abc import Callable
 from functools import partial
 
 import param
@@ -24,11 +22,12 @@ except:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset, Overlay, OrderedDict)
+                    CompositeOverlay, Dataset, Overlay, OrderedDict, Store)
 from ..core.data import PandasInterface, XArrayInterface, DaskInterface, cuDFInterface
 from ..core.util import (
-    Iterable, LooseVersion, basestring, cftime_types, cftime_to_timestamp,
-    datetime_types, dt_to_int, isfinite, get_param_values, max_range, config)
+    Iterable, LooseVersion, cftime_types, cftime_to_timestamp,
+    datetime_types, dt_to_int, isfinite, get_param_values, max_range
+)
 from ..element import (Image, Path, Curve, RGB, Graph, TriMesh,
                        QuadMesh, Contours, Spikes, Area, Rectangles,
                        Spread, Segments, Scatter, Points, Polygons)
@@ -223,14 +222,14 @@ class AggregationOperation(ResamplingOperation):
     aggregator parameter used to define a datashader Reduction.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
                                      default=ds.count(), doc="""
         Datashader reduction function used for aggregating the data.
         The aggregator may also define a column to aggregate; if
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    vdim_prefix = param.String(default='{kdims} ', doc="""
+    vdim_prefix = param.String(default='{kdims} ', allow_None=True, doc="""
         Prefix to prepend to value dimension name where {kdims}
         templates in the names of the input element key dimensions.""")
 
@@ -250,7 +249,7 @@ class AggregationOperation(ResamplingOperation):
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
-        if isinstance(agg, basestring):
+        if isinstance(agg, str):
             if agg not in self._agg_methods:
                 agg_methods = sorted(self._agg_methods)
                 raise ValueError("Aggregation method '%r' is not known; "
@@ -298,8 +297,11 @@ class AggregationOperation(ResamplingOperation):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)
 
-        kdim_list = '_'.join(str(kd) for kd in params['kdims'])
-        vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        if self.vdim_prefix:
+            kdim_list = '_'.join(str(kd) for kd in params['kdims'])
+            vdim_prefix = self.vdim_prefix.format(kdims=kdim_list)
+        else:
+            vdim_prefix = ''
 
         category = None
         if hasattr(agg_fn, 'reduction'):
@@ -312,8 +314,12 @@ class AggregationOperation(ResamplingOperation):
                 raise ValueError("Aggregation column '%s' not found on '%s' element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            if isinstance(agg_fn, ds.count_cat):
-                vdims = dims[0].clone('%s %s Count' % (vdim_prefix, column), nodata=0)
+            if isinstance(agg_fn, (ds.count, ds.count_cat)):
+                if vdim_prefix:
+                    vdim_name = '%s%s Count' % (vdim_prefix, column)
+                else:
+                    vdim_name = '%s Count' % column
+                vdims = dims[0].clone(vdim_name, nodata=0)
             else:
                 vdims = dims[0].clone(vdim_prefix + column)
         elif category:
@@ -656,7 +662,7 @@ class spread_aggregate(area_aggregate):
         df[y.name] = yvals+df[pos.name]
         df['_lower'] = yvals-df[neg.name]
         area = element.clone(df, vdims=[y, '_lower']+element.vdims[3:], new_type=Area)
-        return super(spread_aggregate, self)._process(area, key=None)
+        return super()._process(area, key=None)
 
 
 
@@ -821,7 +827,7 @@ class regrid(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -959,13 +965,13 @@ class contours_rasterize(aggregate):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
         if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
             return ds.any()
-        return super(contours_rasterize, self)._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, add_field)
 
 
 
@@ -978,7 +984,7 @@ class trimesh_rasterize(aggregate):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', 'linear', None, False], doc="""
@@ -987,16 +993,42 @@ class trimesh_rasterize(aggregate):
     def _precompute(self, element, agg):
         from datashader.utils import mesh
         if element.vdims and getattr(agg, 'column', None) not in element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2, 3])
-            verts = element.nodes.dframe([0, 1])
+            simplex_dims = [0, 1, 2, 3]
+            vert_dims = [0, 1]
         elif element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2])
-            verts = element.nodes.dframe([0, 1, 3])
+            simplex_dims = [0, 1, 2]
+            vert_dims = [0, 1, 3]
+        else:
+            raise ValueError("Cannot shade TriMesh without value dimension.")
+        datatypes = [element.interface.datatype, element.nodes.interface.datatype]
+        if set(datatypes) == {'dask'}:
+            dims, node_dims = element.dimensions(), element.nodes.dimensions()
+            simplices = element.data[[dims[sd].name for sd in simplex_dims]]
+            verts = element.nodes.data[[node_dims[vd].name for vd in vert_dims]]
+        else:
+            if 'dask' in datatypes:
+                if datatypes[0] == 'dask':
+                    p, n = 'simplexes', 'vertices'
+                else:
+                    p, n = 'vertices', 'simplexes'
+                self.param.warning(
+                    "TriMesh %s were provided as dask DataFrame but %s "
+                    "were not. Datashader will not use dask to parallelize "
+                    "rasterization unless both are provided as dask "
+                    "DataFrames." % (p, n))
+            simplices = element.dframe(simplex_dims)
+            verts = element.nodes.dframe(vert_dims)
         for c, dtype in zip(simplices.columns[:3], simplices.dtypes):
             if dtype.kind != 'i':
                 simplices[c] = simplices[c].astype('int')
-        return {'mesh': mesh(verts, simplices), 'simplices': simplices,
-                'vertices': verts}
+        mesh = mesh(verts, simplices)
+        if hasattr(mesh, 'persist'):
+            mesh = mesh.persist()
+        return {
+            'mesh': mesh,
+            'simplices': simplices,
+            'vertices': verts
+        }
 
     def _precompute_wireframe(self, element, agg):
         if hasattr(element, '_wireframe'):
@@ -1037,7 +1069,6 @@ class trimesh_rasterize(aggregate):
             precomputed = self._precompute_wireframe(element, agg)
         else:
             precomputed = self._precompute(element, agg)
-
         bounds = (x_range[0], y_range[0], x_range[1], y_range[1])
         params = self._get_agg_params(element, x, y, agg, bounds)
 
@@ -1078,11 +1109,11 @@ class quadmesh_rasterize(trimesh_rasterize):
 
     def _precompute(self, element, agg):
         if ds_version <= '0.7.0':
-            return super(quadmesh_rasterize, self)._precompute(element.trimesh(), agg)
+            return super()._precompute(element.trimesh(), agg)
 
     def _process(self, element, key=None):
         if ds_version <= '0.7.0':
-            return super(quadmesh_rasterize, self)._process(element, key)
+            return super()._process(element, key)
 
         if element.interface.datatype != 'xarray':
             element = element.clone(datatype=['xarray'])
@@ -1156,17 +1187,12 @@ class shade(LinkableOperation):
         between 0 and 1.""")
 
     cnorm = param.ClassSelector(default='eq_hist',
-                                class_=(basestring, Callable),
+                                class_=(str, Callable),
                                 doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
-
-    normalization = param.ClassSelector(default='eq_hist',
-                                        precedence=-1,
-                                        class_=(basestring, Callable),
-                                        doc="Deprecated parameter (use cnorm instead)")
 
     clims = param.NumericTuple(default=None, length=2, doc="""
         Min and max data values to use for colormap interpolation, when
@@ -1263,22 +1289,9 @@ class shade(LinkableOperation):
         array = element.data[vdim]
         kdims = element.kdims
 
-        overrides = dict(self.p.items())
-        if 'normalization' in overrides:
-            if 'cnorm' in overrides:
-                self.param.warning("Both the 'cnorm' and 'normalization' keywords"
-                                   "specified; 'cnorm' value taking precedence over "
-                                   "deprecated 'normalization' option")
-            elif config.future_deprecations:
-                self.param.warning("Shading 'normalization' parameter deprecated, "
-                                   "use 'cnorm' parameter instead'")
-            cnorm = overrides.get('cnorm', overrides['normalization'])
-        else:
-            cnorm = self.p.cnorm
-
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=cnorm,
+        shade_opts = dict(how=self.p.cnorm,
                           min_alpha=self.p.min_alpha,
                           alpha=self.p.alpha)
         if element.ndims > 2:
@@ -1299,7 +1312,7 @@ class shade(LinkableOperation):
         elif isinstance(self.p.cmap, Callable):
             colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
             shade_opts['cmap'] = map(self.rgb2hex, colors)
-        elif isinstance(self.p.cmap, basestring):
+        elif isinstance(self.p.cmap, str):
             if self.p.cmap.startswith('#') or self.p.cmap in color_lookup:
                 shade_opts['cmap'] = self.p.cmap
             else:
@@ -1310,7 +1323,7 @@ class shade(LinkableOperation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif ds_version > '0.5.0' and cnorm != 'eq_hist':
+        elif ds_version > '0.5.0' and self.p.cnorm != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         params = dict(get_param_values(element), kdims=kdims,
@@ -1338,14 +1351,14 @@ class geometry_rasterize(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring))
+                                     class_=(ds.reductions.Reduction, str))
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
-        if (not (element.vdims or isinstance(agg, basestring)) and
+        if (not (element.vdims or isinstance(agg, str)) and
             agg.column is None and not isinstance(agg, (rd.count, rd.any))):
             return ds.count()
-        return super(geometry_rasterize, self)._get_aggregator(element, add_field)
+        return super()._get_aggregator(element, add_field)
 
     def _process(self, element, key=None):
         agg_fn = self._get_aggregator(element)
@@ -1419,7 +1432,7 @@ class rasterize(AggregationOperation):
     dimensions of the linked plot and the ranges of the axes.
     """
 
-    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, str),
                                      default='default')
 
     interpolation = param.ObjectSelector(
@@ -1768,11 +1781,10 @@ class inspect_mask(Operation):
         return Polygons(data, kdims=kdims)
 
 
-
-class inspect_base(Operation):
+class inspect(Operation):
     """
-    Given datashaded aggregate (Image) output, return a set of
-    (hoverable) points sampled from those near the cursor.
+    Generalized inspect operation that detects the appropriate indicator
+    type.
     """
 
     pixels = param.Integer(default=3, doc="""
@@ -1810,12 +1822,57 @@ class inspect_base(Operation):
     streams = param.ClassSelector(default=dict(x=PointerXY.param.x,
                                                y=PointerXY.param.y),
                                   class_=(dict, list))
-    x = param.Number(default=0)
-    y = param.Number(default=0)
+
+    x = param.Number(default=0, doc="x-position to inspect.")
+
+    y = param.Number(default=0, doc="y-position to inspect.")
+
+    _dispatch = {}
 
     @property
     def mask(self):
         return inspect_mask.instance(pixels=self.p.pixels)
+
+    def _update_hits(self, event):
+        self.hits = event.obj.hits
+
+    @bothmethod
+    def instance(self_or_cls, **params):
+        inst = super(inspect, self_or_cls).instance(**params)
+        inst._op = None
+        return inst
+
+    def _process(self, raster, key=None):
+        input_type = self._get_input_type(raster.pipeline.operations)
+        inspect_operation = self._dispatch[input_type]
+        if self._op is None:
+            self._op = inspect_operation.instance()
+            self._op.param.watch(self._update_hits, 'hits')
+        elif not isinstance(self._op, inspect_operation):
+            raise ValueError("Cannot reuse inspect instance on different "
+                             "datashader input type.")
+        self._op.p = self.p
+        return self._op._process(raster)
+
+    def _get_input_type(self, operations):
+        for op in operations:
+            output_type = getattr(op, 'output_type', None)
+            if output_type is not None:
+                if output_type in [el[0] for el in rasterize._transforms]:
+                    # Datashader output types that are also input types e.g for regrid
+                    if issubclass(output_type, (Image, RGB)):
+                        continue
+                    return output_type
+        raise RuntimeError('Could not establish input element type '
+                           'for datashader pipeline in the inspect operation.')
+
+
+
+class inspect_base(inspect):
+    """
+    Given datashaded aggregate (Image) output, return a set of
+    (hoverable) points sampled from those near the cursor.
+    """
 
     def _process(self, raster, key=None):
         self._validate(raster)
@@ -1905,17 +1962,20 @@ class inspect_points(inspect_base):
 
 
 
-class inspect_poly(inspect_base):
+class inspect_polygons(inspect_base):
 
     @classmethod
     def _validate(cls, raster):
         if 'spatialpandas' not in raster.dataset.interface.datatype:
-            raise ValueError("inspect_poly only supports spatialpandas datatypes.")
+            raise ValueError("inspect_polygons only supports spatialpandas datatypes.")
 
     @classmethod
     def _element(cls, raster, df):
-        return Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df)).opts(
-            color_index=None)
+        polygons = Polygons(df, kdims=raster.kdims, vdims=cls._vdims(raster, df))
+        if Store.loaded_backends() != []:
+            return polygons.opts(color_index=None)
+        else:
+            return polygons
 
     @classmethod
     def _sort_by_distance(cls, raster, df, x, y):
@@ -1935,3 +1995,10 @@ class inspect_poly(inspect_base):
         dx, dy = np.array(xs) - x, np.array(ys) - y
         distances = pd.Series(dx*dx + dy*dy)
         return df.iloc[distances.argsort().values]
+
+
+
+inspect._dispatch = {
+    Points: inspect_points,
+    Polygons: inspect_polygons
+}

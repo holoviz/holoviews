@@ -5,7 +5,7 @@ elements.
 
 import numpy as np
 
-from ..core import util, NdOverlay
+from ..core import Dataset, NdOverlay, util
 from ..streams import SelectionXY, Selection1D, Lasso
 from ..util.transform import dim
 from .annotation import HSpan, VSpan
@@ -18,7 +18,7 @@ class SelectionIndexExpr(object):
     _selection_streams = (Selection1D,)
 
     def __init__(self, *args, **kwargs):
-        super(SelectionIndexExpr, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self._index_skip = False
 
     def _empty_region(self):
@@ -26,15 +26,20 @@ class SelectionIndexExpr(object):
 
     def _get_index_selection(self, index, index_cols):
         self._index_skip = True
+        if not index:
+            return None, None, None
+        ds = self.clone(kdims=index_cols, new_type=Dataset)
         if len(index_cols) == 1:
             index_dim = index_cols[0]
-            vals = dim(index_dim).apply(self.iloc[index], expanded=False)
+            vals = dim(index_dim).apply(ds.iloc[index], expanded=False)
+            if vals.dtype.kind == 'O' and all(isinstance(v, np.ndarray) for v in vals):
+                vals = [v for arr in vals for v in util.unique_iterator(arr)]
             expr = dim(index_dim).isin(list(util.unique_iterator(vals)))
         else:
             get_shape = dim(self.dataset.get_dimension(index_cols[0]), np.shape)
             index_cols = [dim(self.dataset.get_dimension(c), np.ravel) for c in index_cols]
             vals = dim(index_cols[0], util.unique_zip, *index_cols[1:]).apply(
-                self.iloc[index], expanded=True, flat=True
+                ds.iloc[index], expanded=True, flat=True
             )
             contains = dim(index_cols[0], util.lzip, *index_cols[1:]).isin(vals, object=True)
             expr = dim(contains, np.reshape, get_shape)

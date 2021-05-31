@@ -6,7 +6,7 @@ import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.accessors import Redim
-from ..core.util import max_range, search_indices
+from ..core.util import is_dataframe, max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
@@ -21,15 +21,13 @@ class RedimGraph(Redim):
     """
 
     def __call__(self, specs=None, **dimensions):
-        redimmed = super(RedimGraph, self).__call__(specs, **dimensions)
+        redimmed = super().__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self._obj.nodes:
             new_data = new_data + (self._obj.nodes.redim(specs, **dimensions),)
         if self._obj._edgepaths:
             new_data = new_data + (self._obj.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
-
-redim_graph = RedimGraph # pickle compatibility - remove in 2.0
 
 
 class layout_nodes(Operation):
@@ -152,16 +150,14 @@ class Graph(Dataset, Element2D):
 
         self._nodes = nodes
         self._edgepaths = edgepaths
-        super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+        super().__init__(edges, kdims=kdims, vdims=vdims, **params)
         if node_info is not None:
             self._add_node_info(node_info)
         self._validate()
 
-
     @property
     def redim(self):
         return RedimGraph(self, mode='dataset')
-
 
     def _add_node_info(self, node_info):
         nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
@@ -240,7 +236,6 @@ class Graph(Dataset, Element2D):
                                  'to the Graph (%d) matches the number of '
                                  'edgepaths (%d)' % (nedges, npaths))
 
-
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
         if data is None:
@@ -252,9 +247,8 @@ class Graph(Dataset, Element2D):
             data = (data, self.nodes)
             if self._edgepaths:
                 data = data + (self.edgepaths,)
-        return super(Graph, self).clone(data, shared_data, new_type, link,
-                                        *args, **overrides)
-
+        return super().clone(data, shared_data, new_type, link,
+                             *args, **overrides)
 
     def select(self, selection_expr=None, selection_specs=None, selection_mode='edges', **selection):
         """
@@ -340,14 +334,12 @@ argument to specify a selection specification""")
             paths = self._edgepaths
         return self.clone((data, nodes, paths))
 
-
     @property
     def _split_edgepaths(self):
         if len(self) == len(self.edgepaths.data):
             return self.edgepaths
         else:
             return self.edgepaths.clone(split_path(self.edgepaths))
-
 
     def range(self, dimension, data_range=True, dimension_range=True):
         if self.nodes and dimension in self.nodes.dimensions():
@@ -356,11 +348,10 @@ argument to specify a selection specification""")
                 path_range = self._edgepaths.range(dimension, data_range, dimension_range)
                 return max_range([node_range, path_range])
             return node_range
-        return super(Graph, self).range(dimension, data_range, dimension_range)
-
+        return super().range(dimension, data_range, dimension_range)
 
     def dimensions(self, selection='all', label=False):
-        dimensions = super(Graph, self).dimensions(selection, label)
+        dimensions = super().dimensions(selection, label)
         if selection == 'ranges':
             if self._nodes is not None:
                 node_dims = self.nodes.dimensions(selection, label)
@@ -372,7 +363,6 @@ argument to specify a selection specification""")
                     node_dims = [d.label for d in node_dims]
             return dimensions+node_dims
         return dimensions
-
 
     @property
     def nodes(self):
@@ -388,7 +378,6 @@ argument to specify a selection specification""")
             self._nodes._pipeline = chain.instance()
         return self._nodes
 
-
     @property
     def edgepaths(self):
         """
@@ -402,7 +391,6 @@ argument to specify a selection specification""")
         else:
             paths = connect_edges_pd(self)
         return self.edge_type(paths, kdims=self.nodes.kdims[:2])
-
 
     @classmethod
     def from_networkx(cls, G, positions, nodes=None, **kwargs):
@@ -499,7 +487,6 @@ argument to specify a selection specification""")
         return cls((edge_data, nodes), vdims=edge_vdims)
 
 
-
 class TriMesh(Graph):
     """
     A TriMesh represents a mesh of triangles represented as the
@@ -531,7 +518,7 @@ class TriMesh(Graph):
         else:
             edges, nodes, edgepaths = data, None, None
 
-        super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+        super().__init__(edges, kdims=kdims, vdims=vdims, **params)
         if nodes is None:
             if len(self) == 0:
                 nodes = []
@@ -545,15 +532,20 @@ class TriMesh(Graph):
             # Add index to make it a valid Nodes object
             nodes = self.node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
-            # Try assuming data contains just coordinates (2 columns)
-            try:
-                points = self.point_type(nodes)
-                ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
-                nodes = self.node_type(ds)
-            except:
-                raise ValueError("Nodes argument could not be interpreted, expected "
-                                 "data with two or three columns representing the "
-                                 "x/y positions and optionally the node indices.")
+            if is_dataframe(nodes):
+                coords = list(nodes.columns)[:2]
+                index = nodes.index.name or 'index'
+                nodes = self.node_type(nodes, coords+[index])
+            else:
+                try:
+                    points = self.point_type(nodes)
+                    ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
+                    nodes = self.node_type(ds)
+                except Exception:
+                    raise ValueError(
+                        "Nodes argument could not be interpreted, expected "
+                        "data with two or three columns representing the "
+                        "x/y positions and optionally the node indices.")
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
 
@@ -614,9 +606,9 @@ class TriMesh(Graph):
         """
         # Ensure that edgepaths are initialized so they can be selected on
         self.edgepaths
-        return super(TriMesh, self).select(selection_specs=None,
-                                           selection_mode='nodes',
-                                           **selection)
+        return super().select(selection_specs=None,
+                              selection_mode='nodes',
+                              **selection)
 
 
 
@@ -802,11 +794,9 @@ class Chord(Graph):
             self._edgepaths = edgepaths
         self._validate()
 
-
     @property
     def edgepaths(self):
         return self._edgepaths
-
 
     @property
     def nodes(self):

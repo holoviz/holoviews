@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -7,7 +5,7 @@ from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.data import Dataset
 from ...core.options import Cycle, abbreviated_exception
-from ...core.util import basestring, unique_array, search_indices, is_number, isscalar
+from ...core.util import unique_array, search_indices, is_number, isscalar
 from ...util.transform import dim
 from ..mixins import ChordMixin
 from ..util import process_cmap, get_directed_graph_paths
@@ -27,12 +25,12 @@ class GraphPlot(ColorbarPlot):
 
     # Deprecated options
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `node_color=dim('color')`""")
 
 
-    edge_color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    edge_color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
         Deprecated in favor of color style mapping, e.g. `edge_color=dim('color')`""")
 
@@ -116,7 +114,6 @@ class GraphPlot(ColorbarPlot):
             style.pop('edge_cmap', None)
         return style
 
-
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
             style = self._apply_transforms(element, ranges, style)
@@ -144,10 +141,8 @@ class GraphPlot(ColorbarPlot):
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
-
     def get_extents(self, element, ranges, range_type='combined'):
         return super(GraphPlot, self).get_extents(element.nodes, ranges, range_type)
-
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
@@ -177,7 +172,6 @@ class GraphPlot(ColorbarPlot):
 
         return {'nodes': nodes, 'edges': edges}
 
-
     def _update_nodes(self, element, data, style):
         nodes = self.handles['nodes']
         xs, ys = data['nodes']
@@ -200,7 +194,6 @@ class GraphPlot(ColorbarPlot):
                 nodes.set_sizes([sizes])
             else:
                 nodes.set_sizes(sizes)
-
 
     def _update_edges(self, element, data, style):
         edges = self.handles['edges']
@@ -225,13 +218,11 @@ class GraphPlot(ColorbarPlot):
         if 'edge_linewidth' in style:
             edges.set_linewidths(style['edge_linewidth'])
 
-
     def update_handles(self, key, axis, element, ranges, style):
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         self._update_nodes(element, data, style)
         self._update_edges(element, data, style)
         return axis_kwargs
-
 
 
 class TriMeshPlot(GraphPlot):
@@ -254,18 +245,17 @@ class TriMeshPlot(GraphPlot):
             element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
         # Ensure the edgepaths for the triangles are generated before plotting
         element.edgepaths
-        return super(TriMeshPlot, self).get_data(element, ranges, style)
-
+        return super().get_data(element, ranges, style)
 
 
 class ChordPlot(ChordMixin, GraphPlot):
 
-    labels = param.ClassSelector(class_=(basestring, dim), doc="""
+    labels = param.ClassSelector(class_=(str, dim), doc="""
         The dimension or dimension value transform used to draw labels from.""")
 
     # Deprecated options
 
-    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+    label_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the node labels will be drawn""")
 
@@ -274,7 +264,7 @@ class ChordPlot(ChordMixin, GraphPlot):
     _style_groups = ['edge', 'node', 'arc']
 
     def get_data(self, element, ranges, style):
-        data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
+        data, style, plot_kwargs = super().get_data(element, ranges, style)
         angles = element._angles
         paths = []
         for i in range(len(element.nodes)):
@@ -298,7 +288,7 @@ class ChordPlot(ChordMixin, GraphPlot):
                 "and declare a label_index; ignoring the label_index.")
         elif label_dim:
             labels = label_dim
-        if isinstance(labels, basestring):
+        if isinstance(labels, str):
             labels = element.nodes.get_dimension(labels)
 
         if labels is None:
@@ -334,7 +324,7 @@ class ChordPlot(ChordMixin, GraphPlot):
             ax.add_collection(edges)
             artists['arcs'] = edges
 
-        artists.update(super(ChordPlot, self).init_artists(ax, plot_args, plot_kwargs))
+        artists.update(super().init_artists(ax, plot_args, plot_kwargs))
         if 'text' in plot_args:
             fontsize = plot_kwargs.get('text_font_size', 8)
             labels = []

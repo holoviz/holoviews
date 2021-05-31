@@ -31,7 +31,7 @@ class _SelectionExprLayers(Derived):
     exprs = param.List(constant=True)
 
     def __init__(self, expr_override, cross_filter_set, **params):
-        super(_SelectionExprLayers, self).__init__(
+        super().__init__(
             [expr_override, cross_filter_set], exclusive=True, **params
         )
 
@@ -44,8 +44,6 @@ class _SelectionExprLayers(Derived):
             return {"exprs": [True, override_expr_values["selection_expr"]]}
         else:
             return {"exprs": [True, cross_filter_set_values["selection_expr"]]}
-
-
 
 
 _Styles = Stream.define('Styles', colors=[], alpha=1.)
@@ -78,7 +76,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(_base_link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Init private properties
         inst._cross_filter_stream = CrossFilterSet(mode=inst.cross_filter_mode)
@@ -110,11 +108,12 @@ class _base_link_selections(param.ParameterizedFunction):
 
         # Create stream that produces element that displays region of selection
         selection_expr_seq = SelectionExprSequence(
-            hvobj, mode=self.selection_mode, include_region=self.show_regions,
+            hvobj, mode=self.selection_mode,
+            include_region=self.show_regions,
             index_cols=self.index_cols
         )
         self._selection_expr_streams[hvobj] = selection_expr_seq
-        self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
+        self._cross_filter_stream.append_input_stream(selection_expr_seq)
 
         self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
 
@@ -173,6 +172,10 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_transform(el, operations=operations)
                     for el in callback.inputs
                 ]).collate()
+            elif getattr(hvobj.callback, "name", None) == "dynamic_operation":
+                obj = callback.inputs[0]
+                return self._selection_transform(obj, operations=operations).apply(
+                    callback.operation)
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
                 return hvobj
@@ -272,7 +275,7 @@ class link_selections(_base_link_selections):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Initialize private properties
         inst._obj_selections = {}

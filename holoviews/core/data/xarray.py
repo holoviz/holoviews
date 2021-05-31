@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 import types
 
@@ -83,6 +81,8 @@ class XArrayInterface(GridInterface):
             dim = asdim(dim)
             coord = data[dim.name]
             unit = coord.attrs.get('units') if dim.unit is None else dim.unit
+            if isinstance(unit, tuple):
+                unit = unit[0]
             if 'long_name' in coord.attrs:
                 spec = (dim.name, coord.attrs['long_name'])
             else:
@@ -537,6 +537,9 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            return dataset.data.where(selection_mask, drop=True)
+
         validated = {}
         for k, v in selection.items():
             dim = dataset.get_dimension(k, strict=True)
@@ -667,7 +670,7 @@ class XArrayInterface(GridInterface):
                 data = data.assign(vars)
             used_coords = set.intersection(*[set(var.coords) for var in data.data_vars.values()])
         drop_coords =  set.symmetric_difference(used_coords, prev_coords)
-        return data.drop([c for c in drop_coords if c in data.coords]), list(drop_coords)
+        return data.drop_vars([c for c in drop_coords if c in data.coords]), list(drop_coords)
 
 
 Interface.register(XArrayInterface)

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import numpy as np
 import param
 import matplotlib.cm as cm
@@ -7,7 +5,6 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 
 from ...core import Dimension
 from ...core.options import abbreviated_exception
-from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
@@ -84,8 +81,7 @@ class Plot3D(ColorbarPlot):
             axis.set_axis_bgcolor(self.bgcolor)
         else:
             axis.set_facecolor(self.bgcolor)
-        return super(Plot3D, self)._finalize_axis(key, **kwargs)
-
+        return super()._finalize_axis(key, **kwargs)
 
     def _draw_colorbar(self, element=None, dim=None, redraw=True):
         if element is None:
@@ -116,11 +112,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(str, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 

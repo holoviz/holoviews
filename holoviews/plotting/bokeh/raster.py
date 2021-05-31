@@ -46,7 +46,7 @@ class RasterPlot(ColorbarPlot):
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
-        super(RasterPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)
         hover = self.handles.get('hover')
         if not (hover and isinstance(hover.tooltips, list)):
             return
@@ -76,7 +76,7 @@ class RasterPlot(ColorbarPlot):
         hover.formatters = formatters
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -196,12 +196,10 @@ class RGBPlot(ElementPlot):
         return (data, mapping, style)
 
 
-
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges, style):
-        return super(HSVPlot, self).get_data(element.rgb, ranges, style)
-
+        return super().get_data(element.rgb, ranges, style)
 
 
 class QuadMeshPlot(ColorbarPlot):

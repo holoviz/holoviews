@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import plotly
 
 from param import concrete_descendents
@@ -65,7 +63,6 @@ Store.register({Points: ScatterPlot,
                 Surface: SurfacePlot,
                 Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,

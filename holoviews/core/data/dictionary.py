@@ -440,7 +440,7 @@ class DictInterface(Interface):
                 holes.append(subholes)
             return [holes]
         else:
-            return super(DictInterface, cls).holes(dataset)
+            return super().holes(dataset)
 
 
 Interface.register(DictInterface)

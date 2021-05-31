@@ -50,8 +50,7 @@ class ItemTable(Element):
         if not 'vdims' in params:
             params['vdims'] = list(data.keys())
         str_keys = OrderedDict((dimension_name(k), v) for (k,v) in data.items())
-        super(ItemTable, self).__init__(str_keys, **params)
-
+        super().__init__(str_keys, **params)
 
     def __getitem__(self, heading):
         """
@@ -63,23 +62,12 @@ class ItemTable(Element):
             raise KeyError("%r not in available headings." % heading)
         return np.array(self.data.get(heading, np.NaN))
 
-
-    @classmethod
-    def collapse_data(cls, data, function, **kwargs):
-        param.main.param.warning(
-            'ItemTable.collapse_data is deprecated and '
-            'should no longer be used.')
-        groups = np.vstack([np.array(odict.values()) for odict in data]).T
-        return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
-
-
     def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
             return np.array([self.data.get(dimension, np.NaN)])
         else:
-            return super(ItemTable, self).dimension_values(dimension)
-
+            return super().dimension_values(dimension)
 
     def sample(self, samples=[]):
         if callable(samples):
@@ -93,7 +81,6 @@ class ItemTable(Element):
     def reduce(self, dimensions=None, function=None, **reduce_map):
         raise NotImplementedError('ItemTables are for heterogeneous data, which'
                                   'cannot be reduced.')
-
 
     def pprint_cell(self, row, col):
         """
@@ -110,11 +97,9 @@ class ItemTable(Element):
             heading = self.vdims[row]
             return dim.pprint_value(self.data.get(heading.name, np.NaN))
 
-
     def hist(self, *args, **kwargs):
         raise NotImplementedError("ItemTables are not homogeneous and "
                                   "don't support histograms.")
-
 
     def cell_type(self, row, col):
         """

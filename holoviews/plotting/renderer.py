@@ -3,8 +3,6 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
-from __future__ import unicode_literals, absolute_import
-
 import base64
 import os
 
@@ -26,6 +24,7 @@ from bokeh.resources import CDN, INLINE
 from panel import config
 from panel.io.notebook import ipywidget, load_notebook, render_model, render_mimebundle
 from panel.io.state import state
+from panel.models.comm_manager import CommManager as PnCommManager
 from panel.pane import HoloViews as HoloViewsPane
 from panel.widgets.player import PlayerBase
 from panel.viewable import Viewable
@@ -35,7 +34,7 @@ from ..core import Layout, HoloMap, AdjointLayout, DynamicMap
 from ..core.data import disable_pipeline
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
-from ..core.util import basestring, unbound_dimensions, LooseVersion
+from ..core.util import unbound_dimensions, LooseVersion
 from ..streams import Stream
 from . import Plot
 from .util import displayable, collate, initialize_dynamic
@@ -184,8 +183,7 @@ class Renderer(Exporter):
 
     def __init__(self, **params):
         self.last_plot = None
-        super(Renderer, self).__init__(**params)
-
+        super().__init__(**params)
 
     def __call__(self, obj, fmt='auto', **kwargs):
         plot, fmt = self._validate(obj, fmt)
@@ -201,7 +199,6 @@ class Renderer(Exporter):
             data = self._figure_data(plot, fmt, **kwargs)
             data = self._apply_post_render_hooks(data, obj, fmt)
             return data, info
-
 
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None, comm=None, **kwargs):
@@ -268,7 +265,6 @@ class Renderer(Exporter):
             plot.document = doc
         return plot
 
-
     @bothmethod
     def get_plot_state(self_or_cls, obj, renderer=None, **kwargs):
         """
@@ -277,7 +273,6 @@ class Renderer(Exporter):
         if not isinstance(obj, Plot):
             obj = self_or_cls.get_plot(obj, renderer, **kwargs)
         return obj.state
-
 
     def _validate(self, obj, fmt, **kwargs):
         """
@@ -320,7 +315,6 @@ class Renderer(Exporter):
         self.last_plot = plot
         return plot, fmt
 
-
     def _apply_post_render_hooks(self, data, obj, fmt):
         """
         Apply the post-render hooks to the data.
@@ -334,7 +328,6 @@ class Renderer(Exporter):
                                    "be applied:\n\n %s" % (hook, e))
         return data
 
-
     def html(self, obj, fmt=None, css=None, resources='CDN', **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
@@ -343,7 +336,7 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt, **kwargs)
-        if isinstance(resources, basestring):
+        if isinstance(resources, str):
             resources = resources.lower()
         if css is None: css = self.css
 
@@ -375,7 +368,6 @@ class Renderer(Exporter):
         html = tag.format(src=src, mime_type=mime_type, css=css)
         return html
 
-
     def components(self, obj, fmt=None, comm=True, **kwargs):
         """
         Returns data and metadata dictionaries containing HTML and JS
@@ -387,70 +379,63 @@ class Renderer(Exporter):
         else:
             plot, fmt = self._validate(obj, fmt)
 
-        data, metadata = {}, {}
-        if isinstance(plot, Viewable):
-            registry = list(Stream.registry.items())
-            objects = plot.object.traverse(lambda x: x)
-            dynamic, streams = False, False
-            for source in objects:
-                dynamic |= isinstance(source, DynamicMap)
-                streams |= any(
-                    src is source or (src._plot_id is not None and src._plot_id == source._plot_id)
-                    for src, streams in registry for s in streams
-                )
-            embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
-
-            # This part should be factored out in Panel and then imported
-            # here for HoloViews 2.0, which will be able to require a
-            # recent Panel version.
-            if embed or config.comms == 'default':
-                comm = self.comm_manager.get_server_comm() if comm else None
-                doc = Document()
-                with config.set(embed=embed):
-                    model = plot.layout._render_model(doc, comm)
-                if embed:
-                    return render_model(model, comm)
-                args = (model, doc, comm)
-                if panel_version > '0.9.3':
-                    from panel.models.comm_manager import CommManager
-                    ref = model.ref['id']
-                    manager = CommManager(comm_id=comm.id, plot_id=ref)
-                    client_comm = self.comm_manager.get_client_comm(
-                        on_msg=partial(plot._on_msg, ref, manager),
-                        on_error=partial(plot._on_error, ref),
-                        on_stdout=partial(plot._on_stdout, ref)
-                    )
-                    manager.client_comm_id = client_comm.id
-                    args = args + (manager,)
-                return render_mimebundle(*args)
-
-            # Handle rendering object as ipywidget
-            widget = ipywidget(plot, combine_events=True)
-            if hasattr(widget, '_repr_mimebundle_'):
-                return widget._repr_mimebundle()
-            plaintext = repr(widget)
-            if len(plaintext) > 110:
-                plaintext = plaintext[:110] + '…'
-            data = {
-                'text/plain': plaintext,
-            }
-            if widget._view_name is not None:
-                data['application/vnd.jupyter.widget-view+json'] = {
-                    'version_major': 2,
-                    'version_minor': 0,
-                    'model_id': widget._model_id
-                }
-            if config.comms == 'vscode':
-                # Unfortunately VSCode does not yet handle _repr_mimebundle_
-                from IPython.display import display
-                display(data, raw=True)
-                return {'text/html': '<div style="display: none"></div>'}, {}
-            return data, {}
-        else:
+        if not isinstance(plot, Viewable):
             html = self._figure_data(plot, fmt, as_script=True, **kwargs)
-        data['text/html'] = html
+            return {'text/html': html}, {MIME_TYPES['jlab-hv-exec']: {}}
 
-        return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
+        registry = list(Stream.registry.items())
+        objects = plot.object.traverse(lambda x: x)
+        dynamic, streams = False, False
+        for source in objects:
+            dynamic |= isinstance(source, DynamicMap)
+            streams |= any(
+                src is source or (src._plot_id is not None and src._plot_id == source._plot_id)
+                for src, streams in registry for s in streams
+            )
+        embed = (not (dynamic or streams or self.widget_mode == 'live') or config.embed)
+
+        if embed or config.comms == 'default':
+            return self._render_panel(plot, embed, comm)
+        return self._render_ipywidget(plot)
+
+    def _render_panel(self, plot, embed=False, comm=True):
+        comm = self.comm_manager.get_server_comm() if comm else None
+        doc = Document()
+        with config.set(embed=embed):
+            model = plot.layout._render_model(doc, comm)
+        if embed:
+            return render_model(model, comm)
+        ref = model.ref['id']
+        manager = PnCommManager(comm_id=comm.id, plot_id=ref)
+        client_comm = self.comm_manager.get_client_comm(
+            on_msg=partial(plot._on_msg, ref, manager),
+            on_error=partial(plot._on_error, ref),
+            on_stdout=partial(plot._on_stdout, ref)
+        )
+        manager.client_comm_id = client_comm.id
+        return render_mimebundle(model, doc, comm, manager)
+    
+    def _render_ipywidget(self, plot):
+        # Handle rendering object as ipywidget
+        widget = ipywidget(plot, combine_events=True)
+        if hasattr(widget, '_repr_mimebundle_'):
+            return widget._repr_mimebundle()
+        plaintext = repr(widget)
+        if len(plaintext) > 110:
+            plaintext = plaintext[:110] + '…'
+        data = {'text/plain': plaintext}
+        if widget._view_name is not None:
+            data['application/vnd.jupyter.widget-view+json'] = {
+                'version_major': 2,
+                'version_minor': 0,
+                'model_id': widget._model_id
+            }
+        if config.comms == 'vscode':
+            # Unfortunately VSCode does not yet handle _repr_mimebundle_
+            from IPython.display import display
+            display(data, raw=True)
+            return {'text/html': '<div style="display: none"></div>'}, {}
+        return data, {}
 
     def static_html(self, obj, fmt=None, template=None):
         """
@@ -462,7 +447,6 @@ class Renderer(Exporter):
         self.save(obj, html_bytes, fmt)
         html_bytes.seek(0)
         return html_bytes.read()
-
 
     @bothmethod
     def get_widget(self_or_cls, plot, widget_type, **kwargs):
@@ -478,7 +462,6 @@ class Renderer(Exporter):
         for player in layout.layout.select(PlayerBase):
             player.interval = interval
         return layout
-
 
     @bothmethod
     def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
@@ -496,7 +479,6 @@ class Renderer(Exporter):
                              "registered widget types.")
         self_or_cls.get_widget(obj, fmt).save(filename)
 
-
     @bothmethod
     def _widget_kwargs(self_or_cls):
         if self_or_cls.holomap in ('auto', 'widgets'):
@@ -506,7 +488,6 @@ class Renderer(Exporter):
             widget_type = 'scrubber'
             loc = self_or_cls.widget_location or 'bottom'
         return {'widget_location': loc, 'widget_type': widget_type, 'center': True}
-
 
     @bothmethod
     def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
@@ -533,7 +514,6 @@ class Renderer(Exporter):
             kwargs = {'notebook_url': websocket_origin} if websocket_origin else {}
             return pane.app(port=port, **kwargs)
 
-
     @bothmethod
     def server_doc(self_or_cls, obj, doc=None):
         """
@@ -545,7 +525,6 @@ class Renderer(Exporter):
             obj = HoloViewsPane(obj, renderer=self_or_cls, backend=self_or_cls.backend,
                                 **self_or_cls._widget_kwargs())
         return obj.layout.server_doc(doc)
-
 
     @classmethod
     def plotting_class(cls, obj):
@@ -566,16 +545,6 @@ class Renderer(Exporter):
                                 "found".format(element_type.__name__))
         return plotclass
 
-
-    @classmethod
-    def html_assets(cls, core=True, extras=True, backends=None, script=False):
-        """
-        Deprecated: No longer needed
-        """
-        param.main.warning("Renderer.html_assets is deprecated as all "
-                           "JS and CSS dependencies are now handled by "
-                           "Panel.")
-
     @classmethod
     def plot_options(cls, obj, percent_size):
         """
@@ -587,7 +556,6 @@ class Renderer(Exporter):
         into account.
         """
         raise NotImplementedError
-
 
     @bothmethod
     def save(self_or_cls, obj, basename, fmt='auto', key={}, info={},
@@ -616,7 +584,7 @@ class Renderer(Exporter):
                 resources = CDN
             elif resources.lower() == 'inline':
                 resources = INLINE
-            if isinstance(basename, basestring):
+            if isinstance(basename, str):
                 if title is None:
                     title = os.path.basename(basename)
                 if fmt in MIME_TYPES:
@@ -644,7 +612,6 @@ class Renderer(Exporter):
         "Hook to prefix content for instance JS when saving HTML"
         return
 
-
     @bothmethod
     def get_size(self_or_cls, plot):
         """
@@ -665,14 +632,12 @@ class Renderer(Exporter):
         """
         yield
 
-
     @classmethod
     def validate(cls, options):
         """
         Validate an options dictionary for the renderer.
         """
         return options
-
 
     @classmethod
     def load_nb(cls, inline=True):
@@ -691,7 +656,6 @@ class Renderer(Exporter):
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager
             state._comm_manager = JupyterCommManager
-
 
     @classmethod
     def _delete_plot(cls, plot_id):

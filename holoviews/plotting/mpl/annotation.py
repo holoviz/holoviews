@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 import matplotlib
@@ -7,7 +5,7 @@ import matplotlib
 from matplotlib import patches as patches
 from matplotlib.lines import Line2D
 
-from ...core.util import match_spec, basestring
+from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
@@ -24,7 +22,7 @@ class ABLine2D(Line2D):
         ax = kwargs['axes']
 
         # init the line, add it to the axes
-        super(ABLine2D, self).__init__([], [], *args, **kwargs)
+        super().__init__([], [], *args, **kwargs)
         self._slope = slope
         self._intercept = intercept
         ax.add_line(self)
@@ -55,7 +53,7 @@ class AnnotationPlot(ElementPlot):
 
     def __init__(self, annotation, **params):
         self._annotation = annotation
-        super(AnnotationPlot, self).__init__(annotation, **params)
+        super().__init__(annotation, **params)
         self.handles['annotations'] = []
 
     @mpl_rc_context
@@ -167,7 +165,7 @@ class TextPlot(AnnotationPlot):
 
 class LabelsPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(str, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 

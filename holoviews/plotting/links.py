@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import weakref
 
 from collections import defaultdict
@@ -45,7 +43,7 @@ class Link(param.Parameterized):
         # Source is stored as a weakref to allow it to be garbage collected
         self._source = None if source is None else weakref.ref(source)
         self._target = None if target is None else weakref.ref(target)
-        super(Link, self).__init__(**params)
+        super().__init__(**params)
         self.link()
 
     @classmethod
@@ -138,7 +136,7 @@ class VertexTableLink(Link):
         if 'vertex_columns' not in params:
             dimensions = [dimension_sanitizer(d.name) for d in target.dimensions()[:2]]
             params['vertex_columns'] = dimensions
-        super(VertexTableLink, self).__init__(source, target, **params)
+        super().__init__(source, target, **params)
 
 
 class RectanglesTableLink(Link):

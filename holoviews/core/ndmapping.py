@@ -12,8 +12,10 @@ import param
 
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement, asdim
-from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
+from .util import (
+    unique_iterator, sanitize_identifier, dimension_sort, wrap_tuple,
+    process_ellipses, get_ndmapping_label
+)
 
 class item_check(object):
     """
@@ -99,7 +101,7 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items), **dict(params))
         if kdims is not None:
             params['kdims'] = kdims
-        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **dict(params))
+        super().__init__(OrderedDict(), **dict(params))
         if type(initial_items) is dict and not self.sort:
             raise ValueError('If sort=False the data must define a fixed '
                              'ordering, please supply a list of items or '
@@ -266,8 +268,7 @@ class MultiDimensionalMapping(Dimensioned):
             Cloned object
         """
         with item_check(not shared_data and self._check_items):
-            return super(MultiDimensionalMapping, self).clone(data, shared_data,
-                                                              *args, **overrides)
+            return super().clone(data, shared_data, *args, **overrides)
 
 
     def groupby(self, dimensions, container_type=None, group_type=None, **kwargs):
@@ -337,7 +338,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
+        if isinstance(dim_val, str) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
@@ -579,47 +580,6 @@ class MultiDimensionalMapping(Dimensioned):
     def __len__(self):
         return len(self.data)
 
-    ######################
-    #    Deprecations    #
-    ######################
-
-    def table(self, datatype=None, **kwargs):
-        """
-        Deprecated method to convert an MultiDimensionalMapping of
-        Elements to a Table.
-        """
-        self.param.warning("The table method is deprecated and should no "
-                           "longer be used. If using a HoloMap use "
-                           "HoloMap.collapse() instead to return a Dataset.")
-
-        from .data.interface import Interface
-        from ..element.tabular import Table
-        new_data = [(key, value.table(datatype=datatype, **kwargs))
-                    for key, value in self.data.items()]
-        tables = self.clone(new_data)
-        return Interface.concatenate(tables, new_type=Table)
-
-
-    def dframe(self):
-        """
-        Deprecated method to convert a MultiDimensionalMapping to
-        a pandas DataFrame. Conversion to a dataframe now only
-        supported by specific subclasses such as UniformNdMapping
-        types.
-        """
-        self.param.warning("The MultiDimensionalMapping.dframe method is "
-                           "deprecated and should no longer be used. "
-                           "Use a more specific subclass which does support "
-                           "the dframe method instead, e.g. a HoloMap.")
-        try:
-            import pandas
-        except ImportError:
-            raise Exception("Cannot build a DataFrame without the pandas library.")
-        labels = self.dimensions('key', True) + [self.group]
-        return pandas.DataFrame(
-            [dict(zip(labels, k + (v,))) for (k, v) in self.data.items()])
-
-
 
 class NdMapping(MultiDimensionalMapping):
     """
@@ -646,9 +606,9 @@ class NdMapping(MultiDimensionalMapping):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
-        elif indexslice == () and not self.kdims:
+        elif isinstance(indexslice, tuple) and indexslice == () and not self.kdims:
             return self.data[()]
-        elif indexslice in [Ellipsis, ()]:
+        elif (isinstance(indexslice, tuple) and indexslice == ()) or indexslice is Ellipsis:
             return self
         elif any(Ellipsis is sl for sl in wrap_tuple(indexslice)):
             indexslice = process_ellipses(self, indexslice)
@@ -808,7 +768,7 @@ class UniformNdMapping(NdMapping):
         self._type = None
         self._group_check, self.group = None, group
         self._label_check, self.label = None, label
-        super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
+        super().__init__(initial_items, kdims=kdims, **params)
 
     def clone(self, data=None, shared_data=True, new_type=None, link=True,
               *args, **overrides):
@@ -1015,7 +975,7 @@ class UniformNdMapping(NdMapping):
         elif self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
-        super(UniformNdMapping, self)._item_check(dim_vals, data)
+        super()._item_check(dim_vals, data)
 
 
     def __mul__(self, other, reverse=False):

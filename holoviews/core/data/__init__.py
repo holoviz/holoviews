@@ -1,11 +1,8 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:
     pass
 
-import sys
 import types
 import copy
 
@@ -315,12 +312,12 @@ class Dataset(Element):
         if isinstance(data, Element):
             if 'kdims' in kwargs:
                 kwargs['kdims'] = [
-                    data.get_dimension(kd) if isinstance(kd, util.basestring) else kd
+                    data.get_dimension(kd) if isinstance(kd, str) else kd
                     for kd in kwargs['kdims']
                 ]
             if 'kdims' in kwargs:
                 kwargs['vdims'] = [
-                    data.get_dimension(vd) if isinstance(vd, util.basestring) else vd
+                    data.get_dimension(vd) if isinstance(vd, str) else vd
                     for vd in kwargs['vdims']
                 ]
             pvals = util.get_param_values(data)
@@ -539,7 +536,7 @@ class Dataset(Element):
         Returns:
             Cloned object containing the new dimension
         """
-        if isinstance(dimension, (util.basestring, tuple)):
+        if isinstance(dimension, (str, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
@@ -1105,8 +1102,6 @@ argument to specify a selection specification""")
         values = self.interface.values(self, dim, expanded, flat)
         if dim.nodata is not None:
             # Ensure nodata applies to boolean data in py2
-            if sys.version_info.major == 2 and values.dtype.kind == 'b':
-                values = values.astype('int')
             values = np.where(values==dim.nodata, np.NaN, values)
         return values
 
@@ -1208,9 +1203,7 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        return super(Dataset, self).clone(
-            data, shared_data, new_type, *args, **overrides
-        )
+        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support

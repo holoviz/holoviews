@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import uuid
 import numpy as np
 import param
@@ -109,7 +107,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     _nonvectorized_styles = []
 
     def __init__(self, element, plot=None, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks, self.source_streams = self._construct_callbacks()
@@ -336,7 +334,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
@@ -556,7 +554,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker)
-                labels = [l if isinstance(l, util.basestring) else str(l)
+                labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 axis_props['tickvals'] = ticks
                 axis_props['ticktext'] = labels

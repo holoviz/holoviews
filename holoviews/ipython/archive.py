@@ -83,7 +83,7 @@ class NotebookArchive(FileArchive):
     efields = FileArchive.efields.union({'notebook'})
 
     def __init__(self, **params):
-        super(NotebookArchive, self).__init__(**params)
+        super().__init__(**params)
         self.nbversion = None
         self.notebook_name = None
         self.export_success = None
@@ -159,8 +159,8 @@ class NotebookArchive(FileArchive):
         if self._timestamp is None:
             raise Exception("No timestamp set. Has the archive been initialized?")
         if self.skip_notebook_export:
-            super(NotebookArchive, self).export(timestamp=self._timestamp,
-                                                info={'notebook':self.notebook_name})
+            super().export(timestamp=self._timestamp,
+                           info={'notebook':self.notebook_name})
             return
 
         self.export_success = None
@@ -191,9 +191,8 @@ class NotebookArchive(FileArchive):
             # Can only associate html for one exporter at a time
             for exporter in exporters:
                 self.exporters = [exporter]
-                super(NotebookArchive, self).add(obj, filename, data,
-                                                 info=dict(info,
-                                                           notebook=self.notebook_name))
+                info = dict(info, notebook=self.notebook_name)
+                super().add(obj, filename, data, info=info)
                 # Only add substitution if file successfully added to archive.
                 new_last_key = list(self._files.keys())[-1] if len(self) else None
                 if new_last_key != initial_last_key:
@@ -258,19 +257,19 @@ class NotebookArchive(FileArchive):
             export_filename = self.snapshot_name
 
             # Add the html snapshot
-            super(NotebookArchive, self).add(filename=export_filename,
-                                             data=html, info={'file-ext':'html',
-                                                              'mime_type':'text/html',
-                                                              'notebook':self.notebook_name})
+            info = {'file-ext': 'html',
+                    'mime_type':'text/html',
+                    'notebook':self.notebook_name}
+            super().add(filename=export_filename, data=html, info=info)
             # Add cleared notebook
             cleared = self._clear_notebook(node)
-            super(NotebookArchive, self).add(filename=export_filename,
-                                             data=cleared, info={'file-ext':'ipynb',
-                                                                 'mime_type':'text/json',
-                                                                 'notebook':self.notebook_name})
+            info = {'file-ext':'ipynb',
+                    'mime_type':'text/json',
+                    'notebook':self.notebook_name}
+            super().add(filename=export_filename, data=cleared, info=info)
             # If store cleared_notebook... save here
-            super(NotebookArchive, self).export(timestamp=self._timestamp,
-                                                info={'notebook':self.notebook_name})
+            super().export(timestamp=self._timestamp,
+                           info={'notebook':self.notebook_name})
         except:
             self.traceback = traceback.format_exc()
         else:

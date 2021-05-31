@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import os
 
 from matplotlib import rc_params_from_file
@@ -140,7 +138,6 @@ Store.register({Curve: CurvePlot,
                 # Chart 3D
                 Surface: SurfacePlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
                 Scatter3D: Scatter3DPlot,
                 Path3D: Path3DPlot,
 

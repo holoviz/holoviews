@@ -4,8 +4,168 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.4
+**************
+
+This release primarily focuses on a number of bug fixes. Many thanks to
+@Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar, @jlstevens
+and @philippjfr for contributing.
+
+Enhancements:
+
+- Reenable ``SaveTool`` for plots with ``Tiles``
+  (`#4922 <https://github.com/holoviz/holoviews/pull/4922>`_)
+- Enable dask ``TriMesh`` rasterization using datashader
+  (`#4935 <https://github.com/holoviz/holoviews/pull/4935>`_)
+- Use dataframe index for ``TriMesh`` node indices
+  (`#4936 <https://github.com/holoviz/holoviews/pull/4936>`_)
+
+Bug fixes:
+
+- Fix hover for stacked ``Bars``
+  (`#4892 <https://github.com/holoviz/holoviews/pull/4892>`_)
+- Check before dereferencing Bokeh colormappers
+  (`#4902 <https://github.com/holoviz/holoviews/pull/4902>`_)
+- Fix multiple parameterized inputs to ``dim``
+  (`#4903 <https://github.com/holoviz/holoviews/pull/4903>`_)
+- Fix floating point error when generating bokeh Palettes
+  (`#4911 <https://github.com/holoviz/holoviews/pull/4911>`_)
+- Fix bug using dimensions with label on ``Bars``
+  (`#4929 <https://github.com/holoviz/holoviews/pull/4929>`_)
+- Do not reverse colormaps with '_r' suffix a second time
+  (`#4931 <https://github.com/holoviz/holoviews/pull/4931>`_)
+- Fix remapping of ``Params`` stream parameter names
+  (`#4932 <https://github.com/holoviz/holoviews/pull/4932>`_)
+- Ensure ``Area.stack`` keeps labels
+  (`#4937 <https://github.com/holoviz/holoviews/pull/4937>`_)
+
+Documentation:
+
+- Updated Dashboards user guide to show ``pn.bind`` first
+  (`#4907 <https://github.com/holoviz/holoviews/pull/4907>`_)
+- Updated docs to correctly declare Scatter kdims
+  (`#4914 <https://github.com/holoviz/holoviews/pull/4914>`_)
+
+Compatibility:
+
+Unfortunately a number of tile sources are no longer publicly available.
+Attempting to use these tile sources will now issue warnings unless
+``hv.config.raise_deprecated_tilesource_exception`` is set to ``True``
+in which case exceptions will be raised instead.
+
+-  The ``Wikipedia`` tile source is no longer available as it is no
+   longer being served outside the wikimedia domain. As one of the most
+   frequently used tile sources, HoloViews now issues a warning and
+   switches to the OpenStreetMap (OSM) tile source instead.
+-  The ``CartoMidnight`` and ``CartoEco`` tile sources are no longer
+   publicly available. Attempting to use these tile sources will result
+   in a deprecation warning.
+
+
+Version 1.14.3
+**************
+
+This release contains a small number of bug fixes, enhancements and
+compatibility for the latest release of matplotlib. Many thanks to
+@stonebig, @Hoxbro, @jlstevens, @jbednar and @philippjfr.
+
+Enhancements:
+
+- Allow applying linked selections to chained ``DynamicMap``
+  (`#4870 <https://github.com/holoviz/holoviews/pull/4870>`__)
+- Issuing improved error message when ``__radd__`` called with an
+  integer (`#4868 <https://github.com/holoviz/holoviews/pull/4868>`__)
+- Implement ``MultiInterface.assign``
+  (`#4880 <https://github.com/holoviz/holoviews/pull/4880>`__)
+- Handle tuple unit on xarray attribute
+  (`#4881 <https://github.com/holoviz/holoviews/pull/4881>`__)
+- Support selection masks and expressions on gridded data
+  (`#4882 <https://github.com/holoviz/holoviews/pull/4882>`__)
+
+Bug fixes:
+
+- Handle empty renderers when merging ``HoverTool.renderers``
+  (`#4856 <https://github.com/holoviz/holoviews/pull/4856>`__)
+
+Compatibility:
+
+- Support matplotlib versions >=3.4
+  (`#4878 <https://github.com/holoviz/holoviews/pull/4878>`__)
+
+
+Version 1.14.2
+**************
+
+Date: 2021-03-02
+
+This release adds support for Bokeh 2.3, introduces a number of minor
+enhancements, miscellaneous documentation improvements and a good number
+of bug fixes.
+
+Many thanks to the many contributors to this release, whether directly
+by submitting PRs or by reporting issues and making suggestions.
+Specifically, we would like to thank @philippjfr for the Bokeh 2.3
+compatibility updates, @kcpevey, @timgates42, and @scottstanie for
+documentation improvements as well as @Hoxbro and @LunarLanding for
+various bug fixes. In addition, thanks to the maintainers @jbednar,
+@jlstevens and @philippjfr for contributing to this release.
+
+Enhancements:
+
+-  Bokeh 2.3 compatibility
+   (`#4805 <https://github.com/holoviz/holoviews/pull/4805>`__,
+   `#4809 <https://github.com/holoviz/holoviews/pull/4809>`__)
+-  Supporting dictionary streams parameter in DynamicMaps and operations
+   (`#4787 <https://github.com/holoviz/holoviews/pull/4787>`__,
+   `#4818 <https://github.com/holoviz/holoviews/pull/4818>`__,
+   `#4822 <https://github.com/holoviz/holoviews/pull/4822>`__)
+-  Support spatialpandas DaskGeoDataFrame
+   (`#4792 <https://github.com/holoviz/holoviews/pull/4792>`__)
+-  Disable zoom on axis for geographic plots
+   (`#4812 <https://github.com/holoviz/holoviews/pull/4812>`__
+-  Add support for non-aligned data in Area stack classmethod
+   (`#4836 <https://github.com/holoviz/holoviews/pull/4836>`__)
+-  Handle arrays and datetime ticks
+   (`#4831 <https://github.com/holoviz/holoviews/pull/4831>`__)
+-  Support single-value numpy array as input to HLine and VLine
+   (`#4798 <https://github.com/holoviz/holoviews/pull/4798>`__)
+
+Bug fixes:
+
+-  Ensure link_inputs parameter on operations is passed to apply
+   (`#4795 <https://github.com/holoviz/holoviews/pull/4795>`__)
+-  Fix for muted option on overlaid Bokeh plots
+   (`#4830 <https://github.com/holoviz/holoviews/pull/4830>`__)
+-  Check for nested dim dependencies
+   (`#4785 <https://github.com/holoviz/holoviews/pull/4785>`__)
+-  Fixed np.nanmax call when computing ranges
+   (`#4847 <https://github.com/holoviz/holoviews/pull/4847>`__)
+-  Fix for Dimension pickling
+   (`#4843 <https://github.com/holoviz/holoviews/pull/4843>`__)
+-  Fixes for dask backed elements in plotting
+   (`#4813 <https://github.com/holoviz/holoviews/pull/4813>`__)
+-  Handle isfinite for NumPy and Pandas masked arrays
+   (`#4817 <https://github.com/holoviz/holoviews/pull/4817>`__)
+-  Fix plotting Graph on top of Tiles/Annotation
+   (`#4828 <https://github.com/holoviz/holoviews/pull/4828>`__)
+-  Miscellaneous fixes for the Bokeh plotting extension
+   (`#4814 <https://github.com/holoviz/holoviews/pull/4814>`__,
+   `#4839 <https://github.com/holoviz/holoviews/pull/4839>`__)
+-  Miscellaneous fixes for index based linked selections
+   (`#4776 <https://github.com/holoviz/holoviews/pull/4776>`__)
+
+Documentation:
+
+-  Expanded on Tap Stream example in Reference Gallery
+   `#4782 <https://github.com/holoviz/holoviews/pull/4782>`__
+-  Miscellaneous typo and broken link fixes
+   (`#4783 <https://github.com/holoviz/holoviews/pull/4783>`__,
+   `#4827 <https://github.com/holoviz/holoviews/pull/4827>`__,
+   `#4844 <https://github.com/holoviz/holoviews/pull/4844>`__,
+   `#4811 <https://github.com/holoviz/holoviews/pull/4811>`__)
+
 Version 1.14.1
-==============
+**************
 
 Date: 2020-12-22
 

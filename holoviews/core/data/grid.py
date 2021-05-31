@@ -1,8 +1,3 @@
-from __future__ import absolute_import
-
-import sys
-import datetime as dt
-
 from collections import OrderedDict, defaultdict
 
 try:
@@ -260,9 +255,6 @@ class GridInterface(DictInterface):
                [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
-        if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
-            # np.diff does not work on datetimes in python 2
-            coord = coord.astype('datetime64')
         if coord.shape[axis] == 0:
             return np.array([], dtype=coord.dtype)
         if coord.shape[axis] > 1:
@@ -523,7 +515,7 @@ class GridInterface(DictInterface):
                 mask &= values < ind.stop
             # Expand empty mask
             if mask is True:
-                mask = np.ones(values.shape, dtype=np.bool)
+                mask = np.ones(values.shape, dtype=np.bool_)
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
@@ -537,7 +529,7 @@ class GridInterface(DictInterface):
             index_mask = values == ind
             if (dataset.ndims == 1 or dataset._binned) and np.sum(index_mask) == 0:
                 data_index = np.argmin(np.abs(values - ind))
-                mask = np.zeros(len(values), dtype=np.bool)
+                mask = np.zeros(len(values), dtype=np.bool_)
                 mask[data_index] = True
             else:
                 mask = index_mask
@@ -548,6 +540,9 @@ class GridInterface(DictInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            raise ValueError("Masked selections currently not supported for {0}.".format(cls.__name__))
+
         dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
         if val_dims:
@@ -582,7 +577,7 @@ class GridInterface(DictInterface):
                         raise IndexError("Index %s more than or equal to upper bound "
                                          "of %s for %s dimension." % (ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
-                    mask = np.zeros(len(values), dtype=np.bool)
+                    mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True
                     values = edges[idx:idx+2]
                 elif len(inds):

@@ -2,8 +2,6 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from __future__ import division
-
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -15,10 +13,10 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.data.util import dask_array_module
-from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int,
-                         isdatetime, is_dask_array, is_cupy_array,
-                         is_ibis_expr)
+from ..core.util import (
+    group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -659,7 +657,7 @@ class histogram(Operation):
     frequency_label = param.String(default=None, doc="""
       Format string defining the label of the frequency dimension of the Histogram.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     log = param.Boolean(default=False, doc="""
@@ -1056,7 +1054,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, basestring, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_)+datetime_types
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

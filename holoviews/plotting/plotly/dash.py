@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 # standard library imports
 import uuid
 import copy

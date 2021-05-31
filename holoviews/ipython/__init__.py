@@ -37,7 +37,7 @@ class IPTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(IPTestCase, self).setUp()
+        super().setUp()
         try:
             import IPython
             from IPython.display import HTML, SVG
@@ -113,7 +113,7 @@ class notebook_extension(extension):
 
     def __call__(self, *args, **params):
         comms = params.pop('comms', None)
-        super(notebook_extension, self).__call__(*args, **params)
+        super().__call__(*args, **params)
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
