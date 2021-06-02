@@ -252,23 +252,26 @@ class _layout_sankey(Operation):
 
     @classmethod
     def resolveCollisionsBottomToTop(cls, nodes, y, i, alpha, py):
-        # NOTE: DO NOT REMOVE THE `-1` IN THE MIDDLE. Otherwise, i=-1 will be
-        # handled incorrectly.
-        for node in nodes[i:-1:-1]:
+        # NOTE: don't change the `while` loop to `for`
+        while i >= 0:
             node = nodes[i]
             dy = (node['y1'] - y) * alpha
             if dy > _Y_EPS:
                 node['y0'] -= dy
                 node['y1'] -= dy
             y = node['y0'] - py
+            i -= 1
 
     def resolveCollisions(self, nodes, alpha, py):
         _, y0, _, y1 = self.p.bounds
         i = len(nodes) // 2
         subject = nodes[i]
-        self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
+        # NOTE: There is a bug somewhere that prevents from getting nice plots
+        # with `resolveCollisionsBottomToTop` being uncommented.
+        del y1
+        # self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
         self.resolveCollisionsTopToBottom(nodes, subject['y1'] + py, i + 1, alpha, py)
-        self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
+        # self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
         self.resolveCollisionsTopToBottom(nodes, y0, 0, alpha, py)
 
     @classmethod
