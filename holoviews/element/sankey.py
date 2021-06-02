@@ -266,12 +266,9 @@ class _layout_sankey(Operation):
         _, y0, _, y1 = self.p.bounds
         i = len(nodes) // 2
         subject = nodes[i]
-        # NOTE: in the original implementation (d3-sankey) all four calls are
-        # performed and none are commented.
-        del y1
-        # self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
+        self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
         self.resolveCollisionsTopToBottom(nodes, subject['y1'] + py, i + 1, alpha, py)
-        # self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
+        self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
         self.resolveCollisionsTopToBottom(nodes, y0, 0, alpha, py)
 
     @classmethod
