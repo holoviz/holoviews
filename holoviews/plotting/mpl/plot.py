@@ -280,7 +280,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         title = self._format_title(key) if self.show_title else ''
         if 'title' in self.handles:
             self.handles['title'].set_text(title)
-        else:
+        elif self.handles['axis'].figure is not None:
             title = self.handles['axis'].set_title(title, **self._fontsize('title'))
             self.handles['title'] = title
 
