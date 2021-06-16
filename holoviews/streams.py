@@ -263,7 +263,7 @@ class Stream(param.Parameterized):
             self.add_subscriber(subscriber)
 
         self.linked = linked
-        self.transient = transient
+        self._transient = transient
 
         # Whether this stream is currently triggering its subscribers
         self._triggering = False
@@ -280,6 +280,10 @@ class Stream(param.Parameterized):
                 self.registry[source].append(self)
             else:
                 self.registry[source] = [self]
+
+    @property
+    def transient(self):
+        return self._transient
 
     def clone(self):
         """Return new stream with identical properties and no subscribers"""
@@ -767,6 +771,16 @@ class Params(Stream):
             raise
         finally:
             self._events = []
+
+    @property
+    def transient(self):
+        "Any Event parameter that is True indicates a transient e.g. button press"
+        for ev in self._events:
+            p = ev.obj.param[ev.name]
+            if isinstance(p, param.Event) and (ev.new is True):
+                return True
+        return False
+
 
     def _on_trigger(self):
         if any(e.type == 'triggered' for e in self._events):
