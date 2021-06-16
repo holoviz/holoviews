@@ -675,6 +675,10 @@ class Params(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
+
+        if [parameterized, parameters] ==[None, None]:
+            raise ValueError('Please specify either parameterized or parameters'
+                             ' (or both) in Params stream constructor')
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
