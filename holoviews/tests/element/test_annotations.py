@@ -13,7 +13,7 @@ class AnnotationTests(ComparisonTestCase):
     """
 
     def test_hline_invalid_constructor(self):
-        err = "ClassSelector 'y' value must be an instance of"
+        err = "ClassSelector parameter 'y' value must be an instance of"
         with pytest.raises(ValueError) as excinfo:
             HLine(None)
         assert err in str(excinfo.value)
