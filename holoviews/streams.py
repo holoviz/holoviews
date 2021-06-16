@@ -776,6 +776,8 @@ class Params(Stream):
     def hashkey(self):
         hashkey = {}
         for p in self.parameters:
+            if isinstance(p, param.Event):
+                continue
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
             key = ' '.join([p.owner.name, pname])
