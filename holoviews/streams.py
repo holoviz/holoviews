@@ -688,6 +688,10 @@ class Params(Stream):
             parameters = [p if isinstance(p, param.Parameter) else parameterized.param[p]
                           for p in parameters]
 
+        transient = params.pop('transient', None)
+        if transient is not None:
+            param.main.param.warning('Params transient property dynamic and not settable through the constructor. Ignoring transient=%r' % transient)
+
         if 'rename' in params:
             rename = {}
             owners = [p.owner for p in parameters]
