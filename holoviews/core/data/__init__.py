@@ -795,7 +795,7 @@ argument to specify a selection specification""")
 
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
-        # see https://github.com/ioam/holoviews/issues/1173
+        # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Table, Curve
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
         if len(samples) == 1:

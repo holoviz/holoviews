@@ -15,7 +15,7 @@ This directory contains all the notebooks built as part of the
 ## Contributing to examples
 
 If you have improvements to suggest regarding the existing set of
-notebooks, please tell us on [gitter](https://gitter.im/ioam/holoviews)
+notebooks, please tell us on [gitter](https://gitter.im/pyviz/pyviz)
 or submit a pull request. We are happy to consider user submissions for
 ``/topics`` so if you have an interesting notebook using HoloViews that
 isn't too long and about a domain not already in ``/topics``, please
@@ -23,4 +23,4 @@ consider submitting a PR.
 
 Lastly, if you find a particular notebook that does not seem to be
 working, please file an
-[issue](https://github.com/ioam/holoviews/issues).
+[issue](https://github.com/holoviz/holoviews/issues).
