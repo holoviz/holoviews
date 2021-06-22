@@ -16,7 +16,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestMPLPlot):
 
     def test_interleaved_overlay(self):
         """
-        Test to avoid regression after fix of https://github.com/ioam/holoviews/issues/41
+        Test to avoid regression after fix of https://github.com/holoviz/holoviews/issues/41
         """
         o = Overlay([Curve(np.array([[0, 1]])) , Scatter([[1,1]]) , Curve(np.array([[0, 1]]))])
         OverlayPlot(o)
