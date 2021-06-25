@@ -4,6 +4,7 @@ from collections.abc import Callable
 from functools import partial
 
 import param
+import numba as nb
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -1868,11 +1869,28 @@ class inspect(Operation):
 
 
 
+
+def _between(array, lower, upper):
+    return (array >= lower) & (array <= upper)
+
+def _between_bounds(vals, x0, x1, y0, y1, res):
+    for i in range(vals.shape[0]):
+        res[i] = (vals[i, 0] >= x0) & (vals[i, 0] <= x1) &  (vals[i, 1] >= y0) & (vals[i, 1] <= y1)
+
 class inspect_base(inspect):
     """
     Given datashaded aggregate (Image) output, return a set of
     (hoverable) points sampled from those near the cursor.
     """
+
+    _between_funcs = {}
+
+    _numba_types = {
+        np.float32: np.float32,
+        np.float64: nb.float64,
+        np.int32: nb.int32,
+        np.int64: nb.int64
+    }
 
     def _process(self, raster, key=None):
         self._validate(raster)
@@ -1913,6 +1931,39 @@ class inspect_base(inspect):
         return dataset.iloc[:0].dframe()
 
     @classmethod
+    def _get_between_func(cls, dtype):
+        if dtype not in cls._numba_types:
+            return _between
+        dtype = cls._numba_types[dtype]
+        if dtype in cls._between_funcs:
+            return cls._between_funcs[dtype]
+        try:
+            cls._between_funcs[dtype] = between_fn = (
+                nb.vectorize([nb.bool_(dtype, dtype, dtype)])(_between)
+            )
+        except Exception:
+            between_fn = _between_bounds
+        return between_fn
+
+    @classmethod
+    def _get_bounds_func(cls, dtype):
+        if dtype not in cls._numba_types:
+            return _between
+        dtype = cls._numba_types[dtype]
+        key = (dtype, dtype)
+        if key in cls._between_funcs:
+            return cls._between_funcs[key]
+        signature = '(n,m),(),(),(),()->(n)'
+        try:
+            cls._between_funcs[key] = between_fn = (
+                nb.guvectorize([(dtype[:, :], dtype, dtype, dtype, dtype, nb.bool_[:])], signature)(_between_bounds)
+            )
+        except Exception as e:
+            print(e)
+            between_fn = _between_bounds
+        return between_fn
+
+    @classmethod
     def _mask_dataframe(cls, raster, x, y, xdelta, ydelta):
         """
         Mask the dataframe around the specified x and y position with
@@ -1924,6 +1975,20 @@ class inspect_base(inspect):
             df = ds.data.cx[x0:x1, y0:y1]
             return df.compute() if hasattr(df, 'compute') else df
         xdim, ydim = raster.kdims
+        if ds.interface.datatype == 'dataframe':
+            xs, ys = ds.data[xdim.name], ds.data[ydim.name]
+            xt, yt = xs.dtype.type, ys.dtype.type
+            if xs.values.base is ys.values.base:
+                array = ds.data[[xdim.name, xdim.name]].values
+                if not len(array):
+                    return ds.data
+                mask = np.empty(len(array), dtype='bool')
+                cls._get_bounds_func(xt)(array, xt(x0), xt(x1), yt(y0), yt(y1), mask)
+                return ds.data[mask]
+            else:
+                xmask = cls._get_between_func(xt)(xs.values, xt(x0), xt(x1))
+                ymask = cls._get_between_func(yt)(ys.values, yt(y0), yt(y1))
+                return ds.data[xmask & ymask]
         query = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         return ds.select(**query).dframe()
 
