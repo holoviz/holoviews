@@ -366,7 +366,7 @@ class opts(param.ParameterizedFunction):
             else:
                 raise ValueError('Unexpected option %r for %s type '
                                  'when using the %r extension. No '
-                                 'similar options founds.' %
+                                 'similar options found.' %
                                  (opt, objtype, backend))
 
         # Check option is invalid for all backends
