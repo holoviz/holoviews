@@ -1873,9 +1873,12 @@ class inspect(Operation):
 def _between(array, lower, upper):
     return (array >= lower) & (array <= upper)
 
+
 def _between_bounds(vals, x0, x1, y0, y1, res):
     for i in range(vals.shape[0]):
-        res[i] = (vals[i, 0] >= x0) & (vals[i, 0] <= x1) &  (vals[i, 1] >= y0) & (vals[i, 1] <= y1)
+        res[i] = ((vals[i, 0] >= x0) & (vals[i, 0] <= x1) &
+                  (vals[i, 1] >= y0) & (vals[i, 1] <= y1))
+
 
 class inspect_base(inspect):
     """
@@ -1942,7 +1945,7 @@ class inspect_base(inspect):
                 nb.vectorize([nb.bool_(dtype, dtype, dtype)])(_between)
             )
         except Exception:
-            between_fn = _between_bounds
+            between_fn = _between
         return between_fn
 
     @classmethod
@@ -1953,13 +1956,13 @@ class inspect_base(inspect):
         key = (dtype, dtype)
         if key in cls._between_funcs:
             return cls._between_funcs[key]
+        args = (dtype[:, :], dtype, dtype, dtype, dtype, nb.bool_[:])
         signature = '(n,m),(),(),(),()->(n)'
         try:
             cls._between_funcs[key] = between_fn = (
-                nb.guvectorize([(dtype[:, :], dtype, dtype, dtype, dtype, nb.bool_[:])], signature)(_between_bounds)
+                nb.guvectorize([args], signature)(_between_bounds)
             )
         except Exception as e:
-            print(e)
             between_fn = _between_bounds
         return between_fn
 
