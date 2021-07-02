@@ -340,7 +340,7 @@ class link_selections(_base_link_selections):
             return data
         if not isinstance(data, Dataset):
             data = Dataset(data)
-        return data[self.selection_expr.apply(Dataset(data))]
+        return data[self.selection_expr.apply(data)]
 
     @bothmethod
     def _install_param_callbacks(self_or_cls, inst):
