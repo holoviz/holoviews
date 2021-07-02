@@ -5,7 +5,6 @@ from types import BuiltinFunctionType, BuiltinMethodType, FunctionType, MethodTy
 
 import numpy as np
 import param
-import panel as pn
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
