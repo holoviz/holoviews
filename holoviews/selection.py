@@ -339,7 +339,6 @@ class link_selections(_base_link_selections):
         if self.selection_expr is None:
             return data
         if not isinstance(data, Dataset):
-            raw = True
             data = Dataset(data)
         return data[self.selection_expr.apply(Dataset(data))]
 
