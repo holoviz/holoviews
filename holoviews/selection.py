@@ -325,6 +325,24 @@ class link_selections(_base_link_selections):
         self._datasets.append((pipe, data, raw))
         return pipe.param.data
 
+    def filter(self, data):
+        """
+        Filters the provided data based on the current state of the
+        current selection expression.
+
+        Args:
+            data: A Dataset type or data which can be cast to a Dataset
+
+        Returns:
+            The filtered data
+        """
+        if self.selection_expr is None:
+            return data
+        if not isinstance(data, Dataset):
+            raw = True
+            data = Dataset(data)
+        return data[self.selection_expr.apply(Dataset(data))]
+
     @bothmethod
     def _install_param_callbacks(self_or_cls, inst):
         def update_selection_mode(*_):
