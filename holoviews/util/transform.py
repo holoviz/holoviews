@@ -219,6 +219,7 @@ class dim(object):
     _accessor = None
 
     def __init__(self, obj, *args, **kwargs):
+        from panel.widgets import Widget
         ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
@@ -226,6 +227,10 @@ class dim(object):
             self.dimension = Dimension(obj)
         elif isinstance(obj, Dimension):
             self.dimension = obj
+        elif isinstance(obj, param.Parameter):
+            self.dimension = obj
+        elif isinstance(obj, Widget):
+            self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
             ops = obj.ops
@@ -267,11 +272,17 @@ class dim(object):
             new_op = dict(op, args=args, kwargs=kwargs)
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
-    def __getattr__(self, attr):
-        if attr in dir(self):
+    def __getattribute__(self, attr):
+        self_dict = super().__getattribute__('__dict__')
+        ns = self_dict['_ns']
+        ops = super().__getattribute__('ops')
+        if ops and ops[-1]['kwargs'].get('accessor'):
+            ns = getattr(ns, ops[-1]['fn'])
+        extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
+        if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
-        raise AttributeError("%r object has no attribute %r" %
-                             (type(self).__name__, attr))
+        else:
+            return super().__getattribute__(attr)
 
     def __dir__(self):
         ns = self._ns
@@ -330,11 +341,10 @@ class dim(object):
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
                     params[op_arg.name+str(id(op_arg))] = op_arg
-                
+
         return params
 
     # Namespace properties
-
     @property
     def df(self):
         return self.clone(dim_type=df_dim)
@@ -346,6 +356,9 @@ class dim(object):
     @property
     def xr(self):
         return self.clone(dim_type=xr_dim)
+
+    def __getitem__(self, *index):
+        return type(self)(self, operator.getitem, *index)
 
     # Builtin functions
     def __abs__(self):            return type(self)(self, abs)
@@ -511,7 +524,9 @@ class dim(object):
         """
         from ..element import Graph
 
-        if isinstance(self.dimension, dim):
+        if isinstance(self.dimension, param.Parameter):
+            applies = True
+        elif isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         elif self.dimension.name == '*':
             applies = True
@@ -695,6 +710,9 @@ class dim(object):
         if dimension.name == '*':
             data = dataset.data
             eldim = None
+        elif isinstance(dimension, param.Parameter):
+            data = getattr(dimension.owner, dimension.name)
+            eldim = None
         else:
             lookup = dimension if strict else dimension.name
             eldim = dataset.get_dimension(lookup).name
@@ -792,7 +810,7 @@ class dim(object):
                     format_string += '{kwargs}'
 
             # Insert accessor
-            if i == 0 and self._accessor:
+            if i == 0 and self._accessor and ')' in format_string:
                 idx = format_string.index(')')
                 format_string = ''.join([
                     format_string[:idx], ').', self._accessor,
