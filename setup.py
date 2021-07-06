@@ -12,7 +12,7 @@ import pyct.build
 setup_args = {}
 install_requires = [
     "param >=1.9.3,<2.0",
-    "numpy >=1.0",
+    "numpy ==1.20.3",
     "pyviz_comms >=0.7.4",
     "panel ==0.11.3",
     "colorcet",
