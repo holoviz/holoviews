@@ -263,7 +263,7 @@ class Stream(param.Parameterized):
             self.add_subscriber(subscriber)
 
         self.linked = linked
-        self._transient = transient
+        self.transient = transient
 
         # Whether this stream is currently triggering its subscribers
         self._triggering = False
@@ -280,10 +280,6 @@ class Stream(param.Parameterized):
                 self.registry[source].append(self)
             else:
                 self.registry[source] = [self]
-
-    @property
-    def transient(self):
-        return self._transient
 
     def clone(self):
         """Return new stream with identical properties and no subscribers"""
@@ -679,10 +675,6 @@ class Params(Stream):
         Parameters on the parameterized to watch.""")
 
     def __init__(self, parameterized=None, parameters=None, watch=True, watch_only=False, **params):
-
-        if [parameterized, parameters] ==[None, None]:
-            raise ValueError('Please specify either parameterized or parameters'
-                             ' (or both) in Params stream constructor')
         if util.param_version < '1.8.0' and watch:
             raise RuntimeError('Params stream requires param version >= 1.8.0, '
                                'to support watching parameters.')
@@ -691,10 +683,6 @@ class Params(Stream):
         else:
             parameters = [p if isinstance(p, param.Parameter) else parameterized.param[p]
                           for p in parameters]
-
-        transient = params.pop('transient', None)
-        if transient is not None:
-            param.main.param.warning('Params transient property dynamic and not settable through the constructor. Ignoring transient=%r' % transient)
 
         if 'rename' in params:
             rename = {}
@@ -772,16 +760,6 @@ class Params(Stream):
         finally:
             self._events = []
 
-    @property
-    def transient(self):
-        "Any Event parameter that is True indicates a transient e.g. button press"
-        for ev in self._events:
-            p = ev.obj.param[ev.name]
-            if isinstance(p, param.Event) and (ev.new is True):
-                return True
-        return False
-
-
     def _on_trigger(self):
         if any(e.type == 'triggered' for e in self._events):
             self._memoize_counter += 1
@@ -790,8 +768,6 @@ class Params(Stream):
     def hashkey(self):
         hashkey = {}
         for p in self.parameters:
-            if isinstance(p, param.Event):
-                continue
             pkey = (p.owner, p.name)
             pname = self._rename.get(pkey, p.name)
             key = ' '.join([p.owner.name, pname])
