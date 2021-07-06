@@ -272,6 +272,8 @@ class dim(object):
 
     def __getattribute__(self, attr):
         self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
         ns = self_dict['_ns']
         ops = super().__getattribute__('ops')
         if ops and ops[-1]['kwargs'].get('accessor'):
