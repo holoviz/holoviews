@@ -280,7 +280,10 @@ class dim(object):
             try:
                 ns = getattr(ns, ops[-1]['fn'])
             except Exception as e:
-                pass
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None 
         extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
         if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
