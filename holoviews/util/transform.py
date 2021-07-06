@@ -275,7 +275,10 @@ class dim(object):
         ns = self_dict['_ns']
         ops = super().__getattribute__('ops')
         if ops and ops[-1]['kwargs'].get('accessor'):
-            ns = getattr(ns, ops[-1]['fn'])
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception as e:
+                pass
         extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
         if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
