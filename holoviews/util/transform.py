@@ -274,10 +274,18 @@ class dim(object):
 
     def __getattribute__(self, attr):
         self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
         ns = self_dict['_ns']
         ops = super().__getattribute__('ops')
         if ops and ops[-1]['kwargs'].get('accessor'):
-            ns = getattr(ns, ops[-1]['fn'])
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception:
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None
         extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
         if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
