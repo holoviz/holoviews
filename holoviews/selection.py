@@ -340,9 +340,11 @@ class link_selections(_base_link_selections):
         """
         if self.selection_expr is None:
             return data
-        if not isinstance(data, Dataset):
+        is_dataset = isinstance(data, Dataset)
+        if not is_dataset:
             data = Dataset(data)
-        return data[self.selection_expr.apply(data)]
+        filtered = data[self.selection_expr.apply(data)]
+        return filtered if is_dataset else filtered.data
 
     @bothmethod
     def _install_param_callbacks(self_or_cls, inst):
