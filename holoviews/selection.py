@@ -338,9 +338,9 @@ class link_selections(_base_link_selections):
         Returns:
             The filtered data
         """
-        is_dataset = isinstance(data, Dataset)
         if self.selection_expr is None:
-            return data if is_dataset else Dataset(data)
+            return data
+        is_dataset = isinstance(data, Dataset)
         if not is_dataset:
             data = Dataset(data)
         filtered = data[self.selection_expr.apply(data)]
