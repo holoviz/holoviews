@@ -327,23 +327,25 @@ class link_selections(_base_link_selections):
         self._datasets.append((pipe, data, raw))
         return pipe.param.data
 
-    def filter(self, data):
+    def filter(self, data, selection_expr=None):
         """
         Filters the provided data based on the current state of the
         current selection expression.
 
         Args:
             data: A Dataset type or data which can be cast to a Dataset
+            selection_expr: Optionally provide your own selection expression
 
         Returns:
             The filtered data
         """
-        if self.selection_expr is None:
+        expr = self.selection_expr if selection_expr is None else selection_expr
+        if expr is None:
             return data
         is_dataset = isinstance(data, Dataset)
         if not is_dataset:
             data = Dataset(data)
-        filtered = data[self.selection_expr.apply(data)]
+        filtered = data[expr.apply(data)]
         return filtered if is_dataset else filtered.data
 
     @bothmethod
