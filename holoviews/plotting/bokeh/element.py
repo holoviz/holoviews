@@ -853,8 +853,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = 1
                 elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
-                else:
+                elif plot.frame_height and plot.frame_width:
                     frame_aspect = plot.frame_height/plot.frame_width
+                else:
+                    # Cannot force an aspect until we know the frame size
+                    return
 
                 range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
                 if self.drawn:
