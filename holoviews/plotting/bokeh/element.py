@@ -583,6 +583,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot_props
 
     def _update_size(self, width, height, scale):
+        if self.renderer.mode == 'server':
+            return
         self.state.frame_width = width
         self.state.frame_height = height
 
