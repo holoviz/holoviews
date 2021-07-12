@@ -44,7 +44,10 @@ except ImportError:
 if pd:
     pandas_version = LooseVersion(pd.__version__)
     try:
-        if pandas_version >= '0.24.0':
+        if pandas_version >= '1.3.0':
+            from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
+            from pandas.core.dtypes.generic import ABCSeries, ABCIndex as ABCIndexClass
+        elif pandas_version >= '0.24.0':
             from pandas.core.dtypes.dtypes import DatetimeTZDtype as DatetimeTZDtypeType
             from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
         elif pandas_version > '0.20.0':

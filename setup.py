@@ -16,7 +16,7 @@ install_requires = [
     "pyviz_comms >=0.7.4",
     "panel >=0.9.5",
     "colorcet",
-    "pandas <1.3.0",
+    "pandas >=0.20.0",
 ]
 
 extras_require = {}
