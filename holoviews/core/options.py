@@ -1631,7 +1631,7 @@ class StoreOptions(object):
         return expanded_spec, applied_keys
 
     @classmethod
-    def create_custom_trees(cls, obj, options=None):
+    def create_custom_trees(cls, obj, options=None, backend=None):
         """
         Returns the appropriate set of customized subtree clones for
         an object, suitable for merging with Store.custom_options (i.e
@@ -1647,18 +1647,21 @@ class StoreOptions(object):
         obj_ids = [None] if len(obj_ids) == 0 else obj_ids
 
         used_obj_types = [(opt.split('.')[0],) for opt in options]
-        available_options = Store.options()
-        backend = Store.current_backend
+        backend = backend or Store.current_backend
+        available_options = Store.options(backend=backend)
         used_options = {}
         for obj_type in available_options:
             if obj_type in used_obj_types:
                 opts_groups = available_options[obj_type].groups
                 used_options[obj_type] = {
-                    grp: Options(allowed_keywords=opt.allowed_keywords)
+                    grp: Options(
+                        allowed_keywords=opt.allowed_keywords,
+                        backend=backend,
+                    )
                     for (grp, opt) in opts_groups.items()
                 }
 
-        custom_options = Store.custom_options()
+        custom_options = Store.custom_options(backend=backend)
         for tree_id in obj_ids:
             if tree_id is not None and tree_id in custom_options:
                 original = custom_options[tree_id]
@@ -1848,7 +1851,7 @@ class StoreOptions(object):
         groups = Store.options(backend=backend).groups.keys()
         options = cls.merge_options(groups, options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
-        custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
+        custom_trees, id_mapping = cls.create_custom_trees(obj, spec, backend=backend)
         cls.update_backends(id_mapping, custom_trees, backend=backend)
 
         # Propagate ids to the objects
