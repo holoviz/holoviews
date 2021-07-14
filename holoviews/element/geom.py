@@ -79,4 +79,3 @@ class Rectangles(SelectionGeomExpr, Geometry):
         The key dimensions of the Rectangles element represent the
         bottom-left (x0, y0) and top right (x1, y1) coordinates
         of each box.""")
-
