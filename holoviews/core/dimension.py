@@ -1244,7 +1244,7 @@ class Dimensioned(LabelledData):
         """
         backend = kwargs.get('backend', None)
 
-        if len(args) == 0 and len(kwargs)==0:
+        if not (args or kwargs):
             options = None
         elif args and isinstance(args[0], str):
             options = {args[0]: kwargs}
