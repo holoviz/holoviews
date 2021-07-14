@@ -133,7 +133,7 @@ options.HSpan = Options('style', fillcolor=Cycle(), opacity=0.5)
 options.Labels = Options('style', color=Cycle())
 
 # Shapes
-options.Rectangles = Options('style', line_color=dflt_shape_line_color)
+options.Rectangles = Options('style', fillcolor=Cycle(), line_color=dflt_shape_line_color)
 options.Bounds = Options('style', line_color=dflt_shape_line_color)
 options.Path = Options('style', line_color=dflt_shape_line_color)
 options.Segments = Options('style', line_color=dflt_shape_line_color)
