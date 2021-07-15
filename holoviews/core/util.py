@@ -1563,8 +1563,6 @@ def disable_constant(parameterized):
         p.constant = False
     try:
         yield
-    except:
-        raise
     finally:
         for (p, const) in zip(params, constants):
             p.constant = const

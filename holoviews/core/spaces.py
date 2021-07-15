@@ -671,8 +671,6 @@ def dynamicmap_memoization(callable_obj, streams):
     callable_obj._stream_memoization &= not any(s.transient and s._triggering for s in streams)
     try:
         yield
-    except:
-        raise
     finally:
         callable_obj._stream_memoization = memoization_state
 
