@@ -642,7 +642,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
             if ticksize:
                 ticksize = ticksize if bokeh_version > '2.2.3' else value(ticksize)
-                axis_props['major_label_text_font_size'] = ticksize 
+                axis_props['major_label_text_font_size'] = ticksize
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)

@@ -263,7 +263,7 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         _, vline_plot = plot.subplots.values()
         assert vline_plot.handles['glyph'].location == 1
 
-        
+
 
 class TestLegends(TestBokehPlot):
 

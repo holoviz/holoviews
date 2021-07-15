@@ -334,7 +334,7 @@ class Interface(param.Parameterized):
         if hasattr(data, 'where'):
             return data.where(mask, np.NaN)
         return np.where(mask, data, np.NaN)
-        
+
     @classmethod
     def select_mask(cls, dataset, selection):
         """

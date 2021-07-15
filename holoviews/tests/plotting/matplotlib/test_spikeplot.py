@@ -118,7 +118,7 @@ class TestSpikesPlot(TestMPLPlot):
         self.assertEqual(artist.get_edgecolors(), np.array([
             [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
         ))
-        
+
     def test_spikes_linear_color_op(self):
         spikes = Spikes([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims=['y', 'color']).options(color='color')

@@ -547,7 +547,7 @@ class TestMplChordPlot(TestMPLPlot):
 
     def test_chord_node_color_linear_style_mapping_update(self):
         hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(node_color='Label', framewise=True)
-        plot = mpl_renderer.get_plot(hmap)        
+        plot = mpl_renderer.get_plot(hmap)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
         self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))

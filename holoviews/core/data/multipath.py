@@ -561,7 +561,7 @@ def ensure_ring(geom, values=None):
     """
     if values is None:
         values = geom
-    
+
     breaks = np.where(np.isnan(geom.astype('float')).sum(axis=1))[0]
     starts = [0] + list(breaks+1)
     ends = list(breaks-1) + [len(geom)-1]

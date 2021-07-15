@@ -43,11 +43,11 @@ class TestRGB(ComparisonTestCase):
     def test_construct_from_tuple_with_alpha(self):
         rgb = RGB(([0, 1, 2], [0, 1, 2], self.rgb_array))
         self.assertEqual(len(rgb.vdims), 4)
-    
+
     def test_construct_from_dict_with_alpha(self):
         rgb = RGB({'x': [1, 2, 3], 'y': [1, 2, 3], ('R', 'G', 'B', 'A'): self.rgb_array})
         self.assertEqual(len(rgb.vdims), 4)
-        
+
 
 class TestQuadMesh(ComparisonTestCase):
 

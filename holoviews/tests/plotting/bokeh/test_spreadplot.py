@@ -79,7 +79,7 @@ class TestSpreadPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 3.3483695221017129)
         self.assertEqual(y_range.start, 0.19999999999999996)
         self.assertEqual(y_range.end, 3.8)
-    
+
     def test_spread_padding_logy(self):
         spread = Spread([(1, 1, 0.5), (2, 2, 0.5), (3, 3, 0.5)]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(spread)

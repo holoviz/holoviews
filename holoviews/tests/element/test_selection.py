@@ -458,7 +458,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([True, True, True]))
         self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]) * Path([]))
-        
+
     def test_rect_selection_numeric_inverted(self):
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))

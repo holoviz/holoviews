@@ -77,7 +77,7 @@ class TestGridPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis2']['domain'], [0, 0.5])
         self.assertEqual(state['layout']['yaxis3']['domain'], [0.5, 1.0])
 
-    
+
     def test_grid_state(self):
         grid = GridSpace({(i, j): Curve([i, j]) for i in [0, 1]
                           for j in [0, 1]})

@@ -39,7 +39,7 @@ class TestHVLinePlot(TestBokehPlot):
 
 
 class TestHVSpanPlot(TestBokehPlot):
-    
+
     def test_hspan_invert_axes(self):
         hspan = HSpan(1.1, 1.5).opts(invert_axes=True)
         plot = bokeh_renderer.get_plot(hspan)
@@ -94,7 +94,7 @@ class TestSlopePlot(TestBokehPlot):
         slope = plot.handles['glyph']
         self.assertEqual(slope.gradient, 0.5)
         self.assertEqual(slope.y_intercept, -5)
-        
+
 
 
 class TestTextPlot(TestBokehPlot):
@@ -131,7 +131,7 @@ class TestArrowPlot(TestBokehPlot):
         arrow_glyph = plot.handles['arrow_1_glyph']
         arrow_cds = plot.handles['arrow_1_source']
         label_glyph = plot.handles['text_1_glyph']
-        
+
         label_cds = plot.handles['text_1_source']
         x0, y0 = start
         x1, y1 = end

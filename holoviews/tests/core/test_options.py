@@ -933,7 +933,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.set_current_backend('bokeh')
         opts.Curve(line_dash='dotted') # Bokeh keyword
         opts.Curve(linewidth=10)       # MPL keyword
-    
+
         err = (
             "In opts.Curve(...), keywords supplied are mixed across backends. "
             "Keyword(s) 'linewidth' are invalid for bokeh, "

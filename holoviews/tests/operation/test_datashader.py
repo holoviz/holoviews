@@ -1021,7 +1021,7 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         ])
         image = Image(array, bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
-        
+
     def test_rasterize_trimesh_node_vdim_precedence(self):
         nodes = Points(self.vertices_vdim, vdims=['node_z'])
         trimesh = TriMesh((self.simplexes_vdim, nodes), vdims=['z'])

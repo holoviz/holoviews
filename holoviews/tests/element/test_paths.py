@@ -83,7 +83,7 @@ class PathTests(ComparisonTestCase):
         self.assertEqual(subpaths[0], Path([(0, 1), (1, 2)]))
         self.assertEqual(subpaths[1], Path([(2, 3), (3, 4)]))
 
-                         
+
 class PolygonsTests(ComparisonTestCase):
 
     def setUp(self):

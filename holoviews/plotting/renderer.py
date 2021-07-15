@@ -414,7 +414,7 @@ class Renderer(Exporter):
         )
         manager.client_comm_id = client_comm.id
         return render_mimebundle(model, doc, comm, manager)
-    
+
     def _render_ipywidget(self, plot):
         # Handle rendering object as ipywidget
         widget = ipywidget(plot, combine_events=True)

@@ -601,7 +601,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_boxes(cls, el1, el2, msg='Rectangles'):
         cls.compare_dataset(el1, el2, msg)
-        
+
     #=========#
     # Graphs  #
     #=========#

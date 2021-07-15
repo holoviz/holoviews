@@ -90,7 +90,7 @@ class TestVectorFieldPlot(TestMPLPlot):
         self.assertEqual(artist.get_linewidths(), [1, 4, 8])
         plot.update((1,))
         self.assertEqual(artist.get_linewidths(), [3, 2, 5])
-        
+
     def test_vectorfield_color_index_color_clash(self):
         vectorfield = VectorField([(0, 0, 0, 1, 0), (0, 1, 0, 1, 1), (0, 2, 0, 1, 2)],
                                   vdims=['A', 'M', 'color']).options(color='color', color_index='A')

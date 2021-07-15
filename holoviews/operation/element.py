@@ -717,7 +717,7 @@ class histogram(Operation):
         if is_cupy:
             import cupy
             full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
-            if not full_cupy_support and (normed or self.p.weight_dimension): 
+            if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False
             else:

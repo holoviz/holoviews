@@ -108,9 +108,9 @@ extension::
 
   jupyter labextension install @pyviz/jupyterlab_pyviz
 
-For more details on installing and configuring HoloViews see `the installing and configuring guide <user_guide/Installing_and_Configuring.html>`_. 
+For more details on installing and configuring HoloViews see `the installing and configuring guide <user_guide/Installing_and_Configuring.html>`_.
 
-After you have successfully installed and configured HoloViews, please see `Getting Started <getting_started/index.html>`_. 
+After you have successfully installed and configured HoloViews, please see `Getting Started <getting_started/index.html>`_.
 
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg

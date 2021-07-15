@@ -34,7 +34,7 @@ class TextPlot(ElementPlot, AnnotationPlot):
     _plot_methods = dict(single='text', batched='text')
 
     selection_display = None
-    
+
     def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y', text='text')
         if self.static_source:

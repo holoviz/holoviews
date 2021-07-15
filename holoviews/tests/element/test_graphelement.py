@@ -202,7 +202,7 @@ class FromNetworkXTests(ComparisonTestCase):
         graph = Graph.from_networkx(G, positions)
         self.assertEqual(graph.nodes.dimension_values(2), np.array([1, 2, 3]))
 
-        
+
 
 class ChordTests(ComparisonTestCase):
 

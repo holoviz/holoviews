@@ -69,7 +69,7 @@ class TriSurface(Element3D, Points):
 class Scatter3D(Element3D, Points):
     """
     Scatter3D is a 3D element representing the position of a collection
-    of coordinates in a 3D space. The key dimensions represent the 
+    of coordinates in a 3D space. The key dimensions represent the
     position of each coordinate along the x-, y- and z-axis while the
     value dimensions can optionally supply additional information.
     """

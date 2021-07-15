@@ -131,7 +131,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(cmapper.low, 994)
         self.assertEqual(cmapper.high, 999)
         self.assertEqual(cmapper.palette, colors[-1:])
-        
+
     def test_path_continuously_varying_alpha_op(self):
         xs = [1, 2, 3, 4]
         ys = xs[::-1]
@@ -173,7 +173,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(item.label, legend)
         self.assertEqual(item.renderers, [plot.handles['glyph_renderer']])
 
-        
+
 
 class TestPolygonPlot(TestBokehPlot):
 
