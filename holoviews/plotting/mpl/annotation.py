@@ -219,8 +219,7 @@ class LabelsPlot(ColorbarPlot):
 
         vectorized = {k: v for k, v in plot_kwargs.items() if isinstance(v, np.ndarray)}
 
-        texts = []
-        for i, item in enumerate(zip(*plot_args)):
+        def text_spec(i, item):
             x, y, text = item[:3]
             if len(item) == 4 and cmap is not None:
                 color = item[3]
@@ -231,8 +230,27 @@ class LabelsPlot(ColorbarPlot):
                     color = colors.index(color) if color in colors else np.NaN
                     plot_kwargs['color'] = cmap(color)
             kwargs = dict(plot_kwargs, **{k: v[i] for k, v in vectorized.items()})
-            texts.append(ax.text(x, y, text, **kwargs))
-        return {'artist': texts}
+            return (x, y, text, kwargs)
+
+        text_specs = [
+            text_spec(i, item)
+            for i, item in enumerate(zip(*plot_args))
+        ]
+        if text_specs:
+            xs, ys, *_ = zip(*text_specs)
+
+            # Matplotlib needs to initialize the units of the axis for categorical
+            # units, before ax.text() is called. Otherwise it will result in a
+            # ConversionError. Therefore, we use a zero-sized scatter plot to make
+            # matplotlib aware of the data and then annotate it with text
+            ax.scatter(xs, ys, s=0, alpha=0)
+
+        return {
+            'artist': [
+                ax.text(x, y, text, **kwargs)
+                for x, y, text, kwargs in text_specs
+            ]
+        }
 
     def teardown_handles(self):
         if 'artist' in self.handles:
