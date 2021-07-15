@@ -117,16 +117,11 @@ def dynamic_optstate(element, state=None):
 @contextmanager
 def option_state(element):
     optstate = dynamic_optstate(element)
-    raised_exception = False
     try:
         yield
     except Exception:
-        raised_exception = True
+        dynamic_optstate(element, state=optstate)
         raise
-    finally:
-        if raised_exception:
-            dynamic_optstate(element, state=optstate)
-
 
 
 def display_hook(fn):
