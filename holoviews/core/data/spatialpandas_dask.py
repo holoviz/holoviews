@@ -21,7 +21,7 @@ class DaskSpatialPandasInterface(SpatialPandasInterface):
     def data_types(cls):
         from spatialpandas.dask import DaskGeoDataFrame, DaskGeoSeries
         return (DaskGeoDataFrame, DaskGeoSeries)
-        
+
     @classmethod
     def series_type(cls):
         from spatialpandas.dask import DaskGeoSeries

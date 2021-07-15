@@ -145,7 +145,7 @@ class TestSpikesPlot(TestBokehPlot):
         hover = plot.handles['hover']
         self.assertEqual(hover.tooltips, [('x', '@{x}{%F %T}'), ('y', '@{y}')])
         self.assertEqual(hover.formatters, {'@{x}': "datetime"})
-        
+
     ###########################
     #    Styling mapping      #
     ###########################

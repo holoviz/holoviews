@@ -92,7 +92,7 @@ class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.end, 3.2)
         self.assertEqual(y_range.start, -2.5)
         self.assertEqual(y_range.end, 3.5)
-        
+
     def test_area_padding_hard_range(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).redim.range(y=(0, 4)).options(padding=0.1)
         plot = bokeh_renderer.get_plot(area)
@@ -128,7 +128,7 @@ class TestAreaPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertEqual(x_range.end, 3.3483695221017129)
         self.assertEqual(y_range.start, 0)
         self.assertEqual(y_range.end, 3.2)
-    
+
     def test_area_padding_logy(self):
         area = Area([(1, 1), (2, 2), (3, 3)]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(area)

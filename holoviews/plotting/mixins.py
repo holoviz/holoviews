@@ -75,7 +75,7 @@ class HeatMapMixin(object):
 
 
 class SpikesMixin(object):
-    
+
     def get_extents(self, element, ranges, range_type='combined'):
         opts = self.lookup_options(element, 'plot').options
         if len(element.dimensions()) > 1 and 'spike_length' not in opts:
@@ -110,7 +110,7 @@ class SpikesMixin(object):
 
 
 class AreaMixin(object):
-    
+
     def get_extents(self, element, ranges, range_type='combined'):
         vdims = element.vdims[:2]
         vdim = vdims[0].name

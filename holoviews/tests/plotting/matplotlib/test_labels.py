@@ -62,7 +62,7 @@ class TestLabelsPlot(TestMPLPlot):
             self.assertEqual(text._y, expected['y'][i])
             self.assertEqual(text.get_text(), expected['Label'][i])
             self.assertEqual(text.get_color(), colors[i])
-    
+
     ###########################
     #    Styling mapping      #
     ###########################
@@ -89,7 +89,7 @@ class TestLabelsPlot(TestMPLPlot):
         artist = plot.handles['artist']
         self.assertEqual([a.get_color() for a in artist],
                          ['#FF0000', '#00FF00', '#0000FF'])
-        
+
     def test_label_linear_color_op(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
                         vdims='color').options(color='color')

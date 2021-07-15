@@ -20,7 +20,7 @@ class TestLayoutPlot(TestPlotlyPlot):
         plot = plotly_renderer.get_plot(layout.options(transpose=True))
         positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
-    
+
     def test_layout_state(self):
         layout = Curve([1, 2, 3]) + Curve([2, 4, 6])
         state = self._get_plot_state(layout)

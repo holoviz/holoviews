@@ -33,7 +33,7 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(plot.state['layout']['title'], 'Called')
 
     ### Axis labelling ###
-        
+
     def test_element_plot_xlabel(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
         state = self._get_plot_state(curve)
@@ -50,7 +50,7 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['title']['text'], 'Z-Axis')
 
     ### Axis ranges ###
-        
+
     def test_element_plot_xrange(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)])
         state = self._get_plot_state(curve)
@@ -127,7 +127,7 @@ class TestElementPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['range'], [1.7, 5.3])
 
     ### Axis log ###
-        
+
     def test_element_plot_logx(self):
         curve = Curve([(10, 1), (100, 2), (1000, 3)]).options(logx=True)
         state = self._get_plot_state(curve)
@@ -182,7 +182,7 @@ class TestElementPlot(TestPlotlyPlot):
 
 
 class TestOverlayPlot(TestPlotlyPlot):
-    
+
     def test_overlay_state(self):
         layout = Curve([1, 2, 3]) * Curve([2, 4, 6])
         state = self._get_plot_state(layout)
@@ -191,7 +191,7 @@ class TestOverlayPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['yaxis']['range'], [1, 6])
 
     ### Axis log ###
-        
+
     def test_overlay_plot_logx(self):
         curve = (Curve([(10, 1), (100, 2), (1000, 3)]) * Curve([])).options(logx=True)
         state = self._get_plot_state(curve)
@@ -208,7 +208,7 @@ class TestOverlayPlot(TestPlotlyPlot):
         self.assertEqual(state['layout']['scene']['zaxis']['type'], 'log')
 
     ### Axis labelling ###
-        
+
     def test_overlay_plot_xlabel(self):
         overlay = Curve([]) * Curve([(10, 1), (100, 2), (1000, 3)]).options(xlabel='X-Axis')
         state = self._get_plot_state(overlay)

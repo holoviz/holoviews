@@ -857,5 +857,5 @@ class FileArchive(Archive):
         "Clears the file archive"
         self._files.clear()
 
-    
+
 

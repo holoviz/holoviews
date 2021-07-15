@@ -29,7 +29,7 @@ class ProgressBar(ProgressIndicator):
         Parameter to control display of the progress bar. By default,
         progress is shown on stdout but this may be disabled e.g. for
         jobs that log standard output to file.
- 
+
         If the output mode is set to 'broadcast', a socket is opened on
         a stated port to broadcast the completion percentage. The
         RemoteProgress class may then be used to view the progress from

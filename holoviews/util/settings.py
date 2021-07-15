@@ -230,7 +230,7 @@ class OutputSettings(KeywordSettings):
                 % cls.defaults['info'])
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
         widget_location = "widget_location : The position of the widgets relative to the plot"
-        
+
         descriptions = [backend, fig, holomap, widgets, fps, max_frames, size,
                         dpi, filename, info, css, widget_location]
         keywords = ['backend', 'fig', 'holomap', 'widgets', 'fps', 'max_frames',

@@ -65,7 +65,7 @@ class MockLoggingHandler(logging.Handler):
                                             substring=repr(substring)))
         else:
             self.messages[level].pop(-1)
-            
+
 
     def assertContains(self, level, substring):
         """

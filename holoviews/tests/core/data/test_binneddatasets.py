@@ -167,7 +167,7 @@ class Binned2DTest(ComparisonTestCase):
         expected = QuadMesh((self.xs, self.ys, self.zs*2))
         self.assertEqual(expected, transformed)
 
-        
+
 
 class Irregular2DBinsTest(ComparisonTestCase):
 

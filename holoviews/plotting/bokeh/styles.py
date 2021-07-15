@@ -122,7 +122,7 @@ def validate(style, value, scalar=False):
     ---------
     style: str
        The style to validate (e.g. 'color', 'size' or 'marker')
-    value: 
+    value:
        The style value to validate
     scalar: bool
 

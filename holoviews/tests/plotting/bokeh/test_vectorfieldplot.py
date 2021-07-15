@@ -72,7 +72,7 @@ class TestVectorFieldPlot(TestBokehPlot):
 
     def test_vectorfield_color_index_color_clash(self):
         vectorfield = VectorField([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(line_color='color', color_index='color')        
+                        vdims='color').options(line_color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(vectorfield)
         log_msg = log.stream.read()

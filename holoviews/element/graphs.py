@@ -270,7 +270,7 @@ class Graph(Dataset, Element2D):
 The first positional argument to the Dataset.select method is expected to be a
 holoviews.util.transform.dim expression. Use the selection_specs keyword
 argument to specify a selection specification""")
-        
+
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions('ranges')+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
@@ -370,7 +370,7 @@ argument to specify a selection specification""")
         Computes the node positions the first time they are requested
         if no explicit node information was supplied.
         """
-        
+
         if self._nodes is None:
             from ..operation.element import chain
             self._nodes = layout_nodes(self, only_nodes=True)

@@ -25,7 +25,7 @@ class TestMPLViolinPlot(TestMPLPlot):
                          p2.handles['boxes'][0].get_path().vertices)
         for b1, b2 in zip(p1.handles['bodies'][0].get_paths(), p2.handles['bodies'][0].get_paths()):
             self.assertEqual(b1.vertices, b2.vertices)
-        
+
     def test_violin_multi(self):
         violin = Violin((np.random.randint(0, 2, 100), np.random.rand(100)), kdims=['A']).sort()
         r1, r2 = violin.range(1)

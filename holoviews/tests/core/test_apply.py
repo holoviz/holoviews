@@ -188,7 +188,7 @@ class TestApplyDynamicMap(ComparisonTestCase):
     def test_dmap_apply_not_dynamic_unsampled(self):
         with self.assertRaises(ValueError):
             self.dmap_unsampled.apply(lambda x: x.relabel('Test'), dynamic=False)
-        
+
     def test_dmap_apply_not_dynamic(self):
         applied = self.dmap.apply(lambda x: x.relabel('Test'), dynamic=False)
         self.assertEqual(applied, HoloMap(self.dmap[[0, 1, 2]]).relabel('Test'))

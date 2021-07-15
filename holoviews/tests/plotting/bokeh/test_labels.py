@@ -177,7 +177,7 @@ class TestLabelsPlot(TestBokehPlot):
 
     def test_labels_color_index_color_clash(self):
         labels = Labels([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(text_color='color', color_index='color')        
+                        vdims='color').options(text_color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(labels)
         log_msg = log.stream.read()

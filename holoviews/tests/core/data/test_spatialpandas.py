@@ -76,7 +76,7 @@ class RoundTripTests(ComparisonTestCase):
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 2}],
                         ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
-    
+
     def test_multi_line_roundtrip(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
@@ -90,7 +90,7 @@ class RoundTripTests(ComparisonTestCase):
                          {'x': xs[::-1], 'y': ys[::-1], 'z': 1}],
                         ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
-    
+
     def test_polygon_roundtrip(self):
         xs = [1, 2, 3]
         ys = [2, 0, 7]
@@ -104,7 +104,7 @@ class RoundTripTests(ComparisonTestCase):
                              {'x': [3]+xs, 'y': [7]+ys, 'z': 1}],
                             ['x', 'y'], 'z', datatype=['multitabular'])
         self.assertEqual(roundtrip, expected)
-    
+
     def test_multi_polygon_roundtrip(self):
         xs = [1, 2, 3, np.nan, 6, 7, 3]
         ys = [2, 0, 7, np.nan, 7, 5, 2]
@@ -256,7 +256,7 @@ class DaskSpatialPandasTest(GeomTests, RoundTripTests):
 
     def test_array_points_iloc_slice_rows_no_start(self):
         raise SkipTest("Not supported")
-    
+
     def test_array_points_iloc_slice_rows_no_end(self):
         raise SkipTest("Not supported")
 

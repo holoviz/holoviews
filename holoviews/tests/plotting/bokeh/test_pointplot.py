@@ -265,7 +265,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 3.3483695221017129)
         self.assertEqual(y_range.start, 0.8)
         self.assertEqual(y_range.end, 3.2)
-    
+
     def test_points_padding_logy(self):
         points = Points([1, 2, 3]).options(padding=0.1, logy=True)
         plot = bokeh_renderer.get_plot(points)
@@ -274,7 +274,7 @@ class TestPointPlot(TestBokehPlot):
         self.assertEqual(x_range.end, 2.2)
         self.assertEqual(y_range.start, 0.89595845984076228)
         self.assertEqual(y_range.end, 3.3483695221017129)
-        
+
     def test_points_padding_datetime_square(self):
         points = Points([(np.datetime64('2016-04-0%d' % i), i) for i in range(1, 4)]).options(
             padding=0.1
@@ -503,7 +503,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_color_index_color_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(color='color', color_index='color')        
+                        vdims='color').options(color='color', color_index='color')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
@@ -513,7 +513,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_color_index_color_no_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='color').options(fill_color='color', color_index='color')        
+                        vdims='color').options(fill_color='color', color_index='color')
         plot = bokeh_renderer.get_plot(points)
         glyph = plot.handles['glyph']
         cmapper = plot.handles['fill_color_color_mapper']
@@ -523,7 +523,7 @@ class TestPointPlot(TestBokehPlot):
 
     def test_point_size_index_size_clash(self):
         points = Points([(0, 0, 0), (0, 1, 1), (0, 2, 2)],
-                        vdims='size').options(size='size', size_index='size')        
+                        vdims='size').options(size='size', size_index='size')
         with ParamLogStream() as log:
             bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
