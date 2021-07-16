@@ -21,7 +21,7 @@ except:
     ds = None
 
 try:
-    import spatialpandas as spd
+    spd = None
 except:
     spd = None
 

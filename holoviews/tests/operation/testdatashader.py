@@ -33,7 +33,7 @@ except:
     cudf = None
 
 try:
-    import spatialpandas
+    spatialpandas = None
 except:
     spatialpandas = None
 
