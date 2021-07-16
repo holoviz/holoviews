@@ -38,8 +38,6 @@ def triggering_streams(streams):
         stream._triggering = True
     try:
         yield
-    except:
-        raise
     finally:
         for stream in streams:
             stream._triggering = False

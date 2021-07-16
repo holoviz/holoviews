@@ -233,8 +233,10 @@ def options_policy(skip_invalid, warn_on_skip):
     """
     settings = (Options.skip_invalid, Options.warn_on_skip)
     (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
-    yield
-    (Options.skip_invalid, Options.warn_on_skip) = settings
+    try:
+        yield
+    finally:
+        (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
 class Keywords(param.Parameterized):
@@ -1752,17 +1754,19 @@ class StoreOptions(object):
         See holoviews.core.options.set_options function for more
         information on the options specification format.
         """
-        if (options is None) and kwargs == {}: yield
-        else:
+        if (options is not None) or kwargs:
             Store._options_context = True
             optstate = cls.state(obj)
             groups = Store.options().groups.keys()
             options = cls.merge_options(groups, options, **kwargs)
             cls.set_options(obj, options)
+
+        try:
             yield
-        if options is not None:
-            Store._options_context = True
-            cls.state(obj, state=optstate)
+        finally:
+            if options is not None:
+                Store._options_context = True
+                cls.state(obj, state=optstate)
 
     @classmethod
     def id_offset(cls):
