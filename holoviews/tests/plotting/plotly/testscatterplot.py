@@ -112,16 +112,19 @@ class TestMapboxScatterPlot(TestPlotlyPlot):
             (0, 1, 'red'), (1, 2, 'green'), (2, 3, 'blue')
         ], vdims=['y', 'color']).options(color='color')
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['data'][1]['marker']['color'],
-                         np.array(['red', 'green', 'blue']))
+        self.assertEqual(np.array_equal(state['data'][1]['marker']['color'],
+                                        np.array(['red', 'green', 'blue'])), True)
+
 
     def test_scatter_markers(self):
         scatter = Tiles('') * Scatter([
-            (0, 1, 'square'), (1, 2, 'circle'), (2, 3, 'triangle-up')
+            (0, 1, 'square'), (1, 2, 'circle'), (2, 3, 'triangle-up') #
         ], vdims=['y', 'marker']).options(marker='marker')
         state = self._get_plot_state(scatter)
-        self.assertEqual(state['data'][1]['marker']['symbol'],
-                         np.array(['square', 'circle', 'triangle-up']))
+        self.assertEqual(
+            np.array_equal(
+                state['data'][1]['marker']['symbol'],
+                np.array(['square', 'circle', 'triangle-up'])), True)
 
     def test_scatter_selectedpoints(self):
         scatter = Tiles('') * Scatter([
