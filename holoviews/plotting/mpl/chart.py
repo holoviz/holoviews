@@ -955,7 +955,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 yalign = -0.04 if cdim and self.multi_level else 0
                 xticks.append((gidx+0.5, grp_label, yalign))
             for cidx, cat in enumerate(values.get('category', [None])):
-                xpos = gidx+self.bar_padding+(cidx*width)
+                xpos = gidx+self.bar_padding+(cidx*width) - 0.5
                 if cat is not None:
                     label = cdim.pprint_value(cat)
                     sel_key[cdim.name] = [cat]
