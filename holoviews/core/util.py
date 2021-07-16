@@ -2178,13 +2178,13 @@ def cftime_to_timestamp(date, time_unit='us'):
         time_unit since 1970-01-01 00:00:00
     """
     import cftime
-    utime = cftime.utime('microseconds since 1970-01-01 00:00:00')
     if time_unit == 'us':
         tscale = 1
     else:
         tscale = (np.timedelta64(1, 'us')/np.timedelta64(1, time_unit))
-    return utime.date2num(date)*tscale
 
+    return cftime.date2num(date,'microseconds since 1970-01-01 00:00:00',
+                           calendar='standard')*tscale
 
 def search_indices(values, source):
     """
