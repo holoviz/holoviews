@@ -51,7 +51,6 @@ extras_require["examples"] = extras_require["recommended"] + [
 if sys.version_info.major > 2:
     extras_require["examples"].extend(
         [
-            "spatialpandas",
             "pyarrow",
             "ibis-framework >=1.3",
         ]  # spatialpandas incompatibility
