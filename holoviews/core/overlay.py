@@ -7,6 +7,7 @@ Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
 
+from collections import OrderedDict
 from functools import reduce
 import numpy as np
 
@@ -52,44 +53,70 @@ class CompositeOverlay(ViewableElement, Composable):
     _deep_indexable = True
 
     def hist(self, dimension=None, num_bins=20, bin_range=None,
-             adjoin=True, index=0, **kwargs):
+             adjoin=True, index=None, show_legend=False, **kwargs):
         """Computes and adjoins histogram along specified dimension(s).
 
         Defaults to first value dimension if present otherwise falls
         back to first key dimension.
 
         Args:
-            dimension: Dimension(s) to compute histogram on
+            dimension: Dimension(s) to compute histogram on,
+                Falls back the plot dimensions by default.
             num_bins (int, optional): Number of bins
             bin_range (tuple optional): Lower and upper bounds of bins
             adjoin (bool, optional): Whether to adjoin histogram
             index (int, optional): Index of layer to apply hist to
+            show_legend (bool, optional): Show legend in histogram 
+                (don't show legend by default).
 
         Returns:
             AdjointLayout of element and histogram or just the
             histogram
         """
-        valid_ind = isinstance(index, int) and (0 <= index < len(self))
-        valid_label = index in [el.label for el in self]
-        if not any([valid_ind, valid_label]):
-            raise TypeError("Please supply a suitable index or label for the histogram data")
-
-        hists = self.get(index).hist(
-            adjoin=False, dimension=dimension, bin_range=bin_range,
-            num_bins=num_bins, **kwargs)
-        if not isinstance(hists, Layout):
-            hists = [hists]
-        if not isinstance(dimension, list):
-            dimension = ['Default']
+        # Get main layer to get plot dimensions
+        main_layer_int_index = getattr(self, "main_layer", None) or 0
+        # Validate index, and extract as integer if not None
+        if index is not None:
+            valid_ind = isinstance(index, int) and (0 <= index < len(self))
+            valid_label = index in [el.label for el in self]
+            if not any([valid_ind, valid_label]):
+                raise TypeError("Please supply a suitable index or label for the histogram data")
+            if valid_ind:
+                main_layer_int_index = index
+            if valid_label:
+                main_layer_int_index = self.keys().index(index)
+        if dimension is None:
+            # Fallback to default dimensions of main element
+            dimension = [dim.name for dim in self.values()[main_layer_int_index].kdims]
+        # Compute histogram for each dimension and each element in OverLay
+        hists_per_dim = {
+            dim: OrderedDict([  # All histograms for a given dimension
+                (
+                    elem_key, elem.hist(
+                        adjoin=False, dimension=dim, bin_range=bin_range,
+                        num_bins=num_bins, **kwargs
+                    )
+                )
+                for i, (elem_key, elem) in enumerate(self.items())
+                if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
+            ]) 
+            for dim in dimension
+        }
+        # Create new Overlays of histograms
+        hists_overlay_per_dim = {
+            dim: self.clone(hists).opts(show_legend=show_legend)
+            for dim, hists in hists_per_dim.items()
+        }
         if adjoin:
             layout = self
-            for hist in hists:
-                layout = layout << hist
-            layout.main_layer = index
+            for dim in reversed(self.values()[main_layer_int_index].kdims):
+                if dim.name in hists_overlay_per_dim:
+                    layout = layout << hists_overlay_per_dim[dim.name]
+            layout.main_layer = main_layer_int_index
         elif len(dimension) > 1:
-            layout = hists
+            layout = Layout(list(hists_overlay_per_dim.values()))
         else:
-            layout = hists[0]
+            layout = hists_overlay_per_dim[0]
         return layout
 
 
