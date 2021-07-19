@@ -4,6 +4,25 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.5
+**************
+
+This is a hotfix release with a number of important bug fixes. Most
+importantly, this version supports for the recent pandas 1.3.0 release.
+Many thanks to @kgullikson88, @philippjfr and @jlstevens for
+contributing the fixes in this release.
+
+Bug fixes:
+
+-  Support for pandas>=1.3
+   (`#5013 <https://github.com/holoviz/holoviews/pull/5013>`__)
+-  Various bug fixes relating to dim transforms including the use of
+   parameters in slices and the use of getattribute
+   (`#4993 <https://github.com/holoviz/holoviews/pull/4993>`__,
+   `#5001 <https://github.com/holoviz/holoviews/pull/5001>`__,
+   `#5005 <https://github.com/holoviz/holoviews/pull/5005>`__)
+
+   
 Version 1.14.4
 **************
 
