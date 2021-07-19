@@ -1,6 +1,8 @@
 Version 1.14.5
 ==============
+**July 16, 2021**
 
+	
 This is a hotfix release with a number of important bug fixes. Most
 importantly, this version supports for the recent pandas 1.3.0
 release. Many thanks to @kgullikson88, @philippjfr and @jlstevens for
