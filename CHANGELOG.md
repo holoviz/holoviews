@@ -1,5 +1,6 @@
 Version 1.14.4
 ==============
+**May 18, 2021**
 
 This release primarily focuses on a number of bug fixes. Many thanks to
 @Hoxbro, @nitrocalcite, @brl0, @hyamanieu, @rafiyr, @jbednar, @jlstevens
@@ -57,6 +58,7 @@ unless `hv.config.raise_deprecated_tilesource_exception` is set to
 
 Version 1.14.3
 ==============
+**April 8, 2021**
 
 This release contains a small number of bug fixes, enhancements and
 compatibility for the latest release of matplotlib. Many thanks to
@@ -87,6 +89,7 @@ Compatibility:
 
 Version 1.14.2
 ==============
+**March 2, 2021**
 
 This release adds support for Bokeh 2.3, introduces a number of minor
 enhancements, miscellaneous documentation improvements and a good number
@@ -156,6 +159,7 @@ Documentation:
 
 Version 1.14.1
 ==============
+**December 28, 2020**
 
 This release contains a small number of bug fixes addressing
 regressions. Many thanks to the contributors to this release including
@@ -180,6 +184,7 @@ Documentation:
 
 Version 1.14.0
 ==============
+**December 1, 2020**
 
 This release brings a number of major features including a new
 IbisInterface, new Plotly Dash support and greatly improved Plotly
@@ -285,6 +290,7 @@ Compatibility:
 
 Version 1.13.5
 ==============
+**October 23, 2020**
 
 This version contains numerous bug fixes and a number of enhancements.
 Many thanks for contribution by @bryevdv, @jbednar, @jlstevens,
@@ -327,6 +333,7 @@ Documentation:
 
 Version 1.13.4
 ==============
+**September 8, 2020**
 
 This version fixes a large number of bugs particularly relating to
 linked selections. Additionally it introduces some enhancements laying
@@ -398,6 +405,7 @@ Enhancements:
 
 Version 1.13.3
 ==============
+**June 23, 2020**
 
 This version introduces a number of enhancements of existing
 functionality, particularly for features introduced in 1.13.0,
@@ -467,6 +475,7 @@ Bug fixes:
 
 Version 1.13.2
 ==============
+**April 2, 2020**
 
 This is a minor patch release fixing a number of regressions
 introduced as part of the 1.13.x releases. Many thanks to the
@@ -493,6 +502,7 @@ Bug fixes:
 
 Version 1.13.1
 ==============
+**March 25, 2020**
 
 This is a minor patch release to fix issues compatibility with the
 about to be released Bokeh 2.0.1 release. Additionally this release
@@ -538,6 +548,7 @@ Documentation:
 
 Version 1.13.0
 ==============
+**March 20, 2020**
 
 This release is packed full of features and includes a general
 refactoring of how HoloViews renders widgets now built on top of the
@@ -689,6 +700,7 @@ Migration notes:
 
 Version 1.12.7
 ==============
+**November 22, 2019**
 
 This a very minor hotfix release fixing an important bug related to
 axiswise normalization between plots. Many thanks to @srp3003 and
@@ -708,6 +720,7 @@ Bug fixes:
 
 Version 1.12.6
 ==============
+**October 8, 2019**
 
 This is a minor release containing a large number of bug fixes thanks
 to the contributions from @joelostblom, @ahuang11, @chbrandt,
@@ -773,6 +786,7 @@ Compatibility:
 
 Version 1.12.5
 ==============
+**August 14, 2019**
 
 This is a very minor bug fix release ensuring compatibility with recent
 releases of dask.
@@ -787,6 +801,7 @@ Compatibility:
 
 Version 1.12.4
 ==============
+**August 4, 2019**
 
 This is a minor release with a number of bug and compatibility fixes
 as well as a number of enhancements.
@@ -855,6 +870,7 @@ Backwards incompatible changes:
 
 Version 1.12.3
 ==============
+**May 20, 2019**
 
 This is a minor release primarily focused on a number of important bug
 fixes. Thanks to our users for reporting issues, and special thanks to
@@ -889,6 +905,7 @@ Bug fixes:
 
 Version 1.12.2
 ==============
+**May 1, 2019**
 
 This is a minor release with a number of important bug fixes and a
 small number of enhancements. Many thanks to our users for reporting
@@ -935,6 +952,7 @@ Backward compatibility:
 
 Version 1.12.1
 ==============
+**April 10, 2019**
 
 This is a minor release that pins to the newly released Bokeh 1.1 and
 adds support for parameter instances as streams:
@@ -946,6 +964,7 @@ Enhancements:
 
 Version 1.12.0
 ==============
+**April 2, 2019**
 
 This release provides a number of exciting new features as well as a set
 of important bug fixes. Many thanks to our users for reporting these
@@ -998,6 +1017,7 @@ Bug fixes:
 
 Version 1.11.3
 ==============
+**February 25, 2019**
 
 This is the last micro-release in the 1.11 series providing a number
 of important fixes. Many thanks to our users for reporting these
@@ -1042,6 +1062,7 @@ Enhancements:
 
 Version 1.11.2
 ==============
+**January 28, 2019**
 
 This is a minor bug fix release with a number of small but important
 bug fixes. Special thanks to @darynwhite for his contributions.
@@ -1067,6 +1088,7 @@ Enhancements:
 
 Version 1.11.1
 ==============
+**January 17, 2019**
 
 This is a minor bug fix release with a number of important bug fixes,
 enhancements and updates to the documentation. Special thanks to
@@ -1109,6 +1131,7 @@ Documentation:
 
 Version 1.11.0
 ==============
+**December 24, 2018**
 
 This is a major release containing a large number of features and API
 improvements. Specifically this release was devoted to improving the
@@ -1211,6 +1234,8 @@ Deprecations:
 
 Version 1.10.8
 ==============
+**October 29, 2018**
+
 
 This a likely the last hotfix release in the 1.10.x series containing
 fixes for compatibility with bokeh 1.0 and matplotlib 3.0. It also
@@ -1285,6 +1310,7 @@ Documentation:
 
 Version 1.10.7
 ==============
+**July 8, 2018**
 
 This a very minor hotfix release mostly containing fixes for datashader
 aggregation of empty datasets:
@@ -1304,6 +1330,7 @@ Fixes:
 
 Version 1.10.6
 ==============
+**June 29, 2018**
 
 This another minor bug fix release in the 1.10 series and likely the
 last one before the upcoming 1.11 release. In addition to some important
@@ -1336,6 +1363,7 @@ Fixes:
 
 Version 1.10.5
 ==============
+**June 5, 2018**
 
 This is a minor bug fix release containing a mixture of small
 enhancements, a number of important fixes and improved compatibility
@@ -1381,6 +1409,7 @@ Compatibility:
 
 Version 1.10.4
 ==============
+**May 14, 2018**
 
 This is a minor bug fix release including a number of crucial fixes
 for issues reported by our users.
@@ -1401,6 +1430,7 @@ Fixes:
 
 Version 1.10.3
 ==============
+**May 8, 2018**
 
 This is a minor bug fix release including a number of crucial fixes
 for issues reported by our users.
@@ -1435,6 +1465,7 @@ API:
 
 Version 1.10.2
 ==============
+**April 30, 2018**
 
 This is a minor bug fix release with a number of small fixes for
 features and regressions introduced in 1.10:
@@ -1468,6 +1499,7 @@ Deprecations:
 
 Version 1.10.1
 ==============
+**April 20, 2018**
 
 This is a minor bug fix release with a number of fixes for regressions
 and minor bugs introduced in the 1.10.0 release:
@@ -1486,6 +1518,7 @@ Fixes:
 
 Version 1.10.0
 ==============
+**April 17, 2018**
 
 This is a major release with a large number of new features and bug
 fixes, as well as a small number of API changes. Many thanks to the
@@ -1627,6 +1660,7 @@ Changes affecting backwards compatibility:
 
 Version 1.9.5
 =============
+**March 2, 2018**
 
 This release includes a very small number of minor bugfixes and a new
 feature to simplify setting options in python:
@@ -1648,6 +1682,7 @@ Fixes:
 
 Version 1.9.4
 =============
+**February 16, 2018**
 
 This release contains a small number of important bug fixes:
 
@@ -1663,6 +1698,7 @@ This release contains a small number of important bug fixes:
 
 Version 1.9.3
 =============
+**February 11, 2018**
 
 This release contains a number of important bug fixes and minor
 enhancements.
@@ -1719,6 +1755,7 @@ API Changes:
 
 Version 1.9.2
 =============
+**December 11, 2017**
 
 This release is a minor bug fix release patching various issues
 which were found in the 1.9.1 release.
@@ -1753,6 +1790,7 @@ Fixes:
 
 Version 1.9.1
 =============
+**November 13, 2017**
 
 This release is a minor bug fix release patching various issues
 which were found in the 1.9.0 release.
@@ -1778,6 +1816,7 @@ Fixes:
 
 Version 1.9.0
 =============
+**November 3, 2017**
 
 This release includes a large number of long awaited features,
 improvements and bug fixes, including streaming and graph support,
@@ -1864,6 +1903,7 @@ Changes affecting backwards compatibility:
 
 Version 1.8.4
 =============
+**September 13, 2017**
 
 This bugfix release includes a number of critical fixes for compatiblity
 with Bokeh 0.12.9 along with various other bug fixes. Many thanks to our
@@ -1890,6 +1930,7 @@ Fixes:
 
 Version 1.8.3
 =============
+**August 21, 2017**
 
 This bugfix release fixes a number of minor issues identified since the
 last release:
@@ -1917,6 +1958,7 @@ Fixes:
 
 Version 1.8.2
 =============
+**August 4, 2017**
 
 This bugfix release addresses a number of minor issues identified since
 the 1.8.1 release:
@@ -1943,6 +1985,7 @@ Fixes:
 
 Version 1.8.1
 =============
+**July 7, 2017**
 
 This bugfix release addresses a number of minor issues identified since
 the 1.8 release:
@@ -1983,6 +2026,7 @@ Fixes:
 
 Version 1.8.0
 =============
+**June 29, 2017**
 
 This release includes a complete and long awaited overhaul of the
 HoloViews documentation and website, with a new gallery, getting-started
@@ -2103,6 +2147,7 @@ Changes affecting backwards compatibility:
 
 Version 1.7.0
 =============
+**April 25, 2017**
 
 This version is a major new release incorporating seven months of work
 involving several hundred PRs and over 1700 commits. Highlights include
@@ -2477,6 +2522,7 @@ Changes affecting backwards compatibility:
 
 Version 1.6.2
 =============
+**August 23, 2016**
 
 Bug fix release with various fixes for gridded data backends and
 optimizations for Bokeh.
@@ -2511,6 +2557,7 @@ LayoutPlot.vspace = 0.3
 
 Version 1.6.1
 =============
+**July 27, 2016**
 
 Bug fix release following the 1.6 major release with major bug fixes for
 the grid data interfaces and improvements to the options system.
@@ -2530,6 +2577,7 @@ the grid data interfaces and improvements to the options system.
 
 Version 1.6
 ===========
+**July 14, 2016**
 
 A major release with an optional new data interface based on xarray,
 support for batching Bokeh plots for huge increases in performance,
@@ -2561,6 +2609,7 @@ Features and improvements:
 
 Version 1.5
 ===========
+**May 12, 2016**
 
 A major release with a large number of new features including new data
 interfaces for grid based data, major improvements for DynamicMaps and a
@@ -2615,6 +2664,7 @@ Backwards compatibility:
 
 Version 1.4.3
 =============
+**February 11, 2016**
 
 A minor bugfix release to patch a number of small but important issues.
 
@@ -2654,6 +2704,7 @@ Backwards compatibility:
 
 Version 1.4.2
 =============
+**February 7, 2016**
 
 Over the past month since the 1.4.1 release, we have improved our
 infrastructure for building documentation, updated the main website and
@@ -2699,6 +2750,7 @@ Fixes and improvements:
 
 Version 1.4.1
 =============
+**December 22, 2015**
 
 Over the past two weeks since the 1.4 release, we have implemented
 several important bug fixes and have made several usability
@@ -2746,6 +2798,7 @@ Notable bug fixes:
 
 Version 1.4.0
 =============
+**December 4, 2015**
 
 Over the past few months we have added several major new features and
 with the help of our users have been able to address a number of bugs
@@ -2819,6 +2872,7 @@ API Changes:
 
 Version 1.3.2
 =============
+**July 6, 2015**
 
 Minor bugfix release to address a small number of issues:
 
@@ -2836,6 +2890,7 @@ Bug fixes:
 
 Version 1.3.1
 =============
+**July 1, 2015**
 
 Minor bugfix release to address a number of issues that weren't caught
 in time for the 1.3.0 release with the addition of a small number of
@@ -2858,6 +2913,7 @@ Bug fixes:
 
 Version 1.3.0
 =============
+**June 27, 2015**
 
 Since the last release we closed over 34 issues and have made 380
 commits mostly focused on fixing bugs, cleaning up the API and working
@@ -2922,6 +2978,7 @@ API Changes
 
 Version 1.2.0
 =============
+**May 27, 2015**
 
 Since the last release we closed over 20 issues and have made 334
 commits, adding a ton of functionality and fixing a large range of bugs
@@ -2982,6 +3039,7 @@ Important bug fixes:
 
 Version 1.1.0
 =============
+**April 15, 2015**
 
 Highlights:
 
@@ -3008,6 +3066,7 @@ made.
 
 Version 1.0.1
 =============
+**March 26, 2015**
 
 Minor release addressing bugs and issues with 1.0.0.
 
@@ -3029,5 +3088,6 @@ Highlights:
 
 Version 1.0.0
 =============
+**March 16, 2015**
 
 First public release available on GitHub and PyPI.
