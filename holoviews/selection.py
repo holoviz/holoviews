@@ -10,6 +10,7 @@ from .core.dimension import OrderedDict
 from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
+from .core.layout import AdjointLayout
 from .core.spaces import GridSpace
 from .streams import (
     Stream, SelectionExprSequence, CrossFilterSet,
@@ -190,7 +191,7 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
-        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
+        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
             data = OrderedDict([(k, self._selection_transform(v, operations))
                                  for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
