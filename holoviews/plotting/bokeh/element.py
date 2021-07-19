@@ -583,6 +583,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return plot_props
 
     def _update_size(self, width, height, scale):
+        if self.renderer.mode == 'server':
+            return
         self.state.frame_width = width
         self.state.frame_height = height
 
@@ -853,8 +855,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     frame_aspect = 1
                 elif self.aspect and self.aspect != 'equal':
                     frame_aspect = self.aspect
-                else:
+                elif plot.frame_height and plot.frame_width:
                     frame_aspect = plot.frame_height/plot.frame_width
+                else:
+                    # Cannot force an aspect until we know the frame size
+                    return
 
                 range_streams = [s for s in self.streams if isinstance(s, RangeXY)]
                 if self.drawn:

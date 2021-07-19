@@ -11,6 +11,8 @@ from ..core.element import Element2D
 from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lon_lat
 
 
+WEB_MERCATOR_LIMITS=(-20037508.342789244, 20037508.342789244)
+
 class Tiles(Element2D):
     """
     The Tiles element represents tile sources, specified as URL
@@ -190,4 +192,4 @@ Wikipedia = wikimedia_replacement
 
 tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
                 ['ESRI', 'lon_lat_to_easting_northing', 'easting_northing_to_lon_lat',
-                 'deprecation_warning', 'wikimedia_replacement']}
+                 'deprecation_warning', 'wikimedia_replacement', 'WEB_MERCATOR_LIMITS']}
