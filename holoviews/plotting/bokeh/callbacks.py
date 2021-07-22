@@ -375,6 +375,8 @@ class Callback(object):
         self._history = self._history[-w:] + [diff]
         if self.plot.renderer.mode == 'server':
             self._schedule_callback(self.process_on_event)
+        else:
+            self._active = False
 
     @gen.coroutine
     def process_on_change_coroutine(self):
@@ -386,7 +388,7 @@ class Callback(object):
             self._set_busy(False)
             return
         throttled = self.throttled()
-        if throttled:
+        if throttled and pn.state.curdoc:
             self._schedule_callback(self.process_on_change, throttled)
             return
         self._queue = []
