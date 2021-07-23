@@ -1,6 +1,7 @@
 import itertools
 import types
 import inspect
+from functools import partial
 
 from numbers import Number
 from itertools import groupby
@@ -1289,7 +1290,7 @@ class DynamicMap(HoloMap):
         self[key] = val
 
 
-    def map(self, map_fn, specs=None, clone=True, link_inputs=True):
+    def map(self, map_fn, specs=None, clone=True, link_inputs=True, streams=None):
         """Map a function to all objects matching the specs
 
         Recursively replaces elements using a map function when the
@@ -1309,12 +1310,18 @@ class DynamicMap(HoloMap):
         Returns:
             Returns the object after the map_fn has been applied
         """
+        
+        if streams is None:
+            streams = []
         deep_mapped = super().map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
             from ..util import Dynamic
             def apply_map(obj, **dynkwargs):
-                return obj.map(map_fn, specs, clone)
-            dmap = Dynamic(self, operation=apply_map, streams=self.streams,
+                return obj.map(
+                    partial(map_fn, **dynkwargs),
+                    specs, clone
+                )
+            dmap = Dynamic(self, operation=apply_map, streams=self.streams+streams,
                            link_inputs=link_inputs)
             dmap.data = deep_mapped.data
             return dmap
