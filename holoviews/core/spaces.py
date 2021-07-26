@@ -1665,8 +1665,13 @@ class DynamicMap(HoloMap):
             if isinstance(obj, (NdOverlay, Overlay)):
                 index = kwargs.get('index', 0)
                 obj = obj.get(index)
-            return obj.hist(num_bins=num_bins, bin_range=bin_range,
-                            adjoin=False, **kwargs)
+            return obj.hist(
+                dimension=dimension,
+                num_bins=num_bins,
+                bin_range=bin_range,
+                adjoin=False,
+                **kwargs
+            )
 
         from ..util import Dynamic
         hist = Dynamic(self, streams=self.streams, link_inputs=False,
