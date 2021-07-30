@@ -165,6 +165,10 @@ class BasePandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         ds = Dataset(df.groupby(['x', 'y']).mean(), [('x', 'X'), ('y', 'Y')])
         self.assertEqual(ds, Dataset(df, [('x', 'X'), ('y', 'Y')]))
 
+    def test_dataset_with_interface_column(self):
+        df = pd.DataFrame([1], columns=['interface'])
+        ds = Dataset(df)
+        self.assertEqual(list(ds.data.columns), ['interface'])
 
 
 class PandasInterfaceTests(BasePandasInterfaceTests):
