@@ -334,16 +334,17 @@ class opts(param.ParameterizedFunction):
             obj_options = backend_options[objtype]
             expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
-                found = False
-                valid_options = []
                 for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
-                        found = True
                         break
-                    valid_options += group_opts.allowed_keywords
-                if found: continue
-                cls._options_error(opt, objtype, backend, valid_options)
+                else:
+                    valid_options = sorted({
+                        keyword
+                        for group_opts in obj_options.groups.values()
+                        for keyword in group_opts.allowed_keywords
+                    })
+                    cls._options_error(opt, objtype, backend, valid_options)
         return expanded
 
 
