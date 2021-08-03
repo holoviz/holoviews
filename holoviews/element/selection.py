@@ -3,6 +3,8 @@ Defines mix-in classes to handle support for linked brushing on
 elements.
 """
 
+import sys
+
 import numpy as np
 
 from ..core import Dataset, NdOverlay, util
@@ -77,6 +79,25 @@ def spatial_select_gridded(xvals, yvals, geometry):
         return mask.reshape(xvals.shape)
 
 def spatial_select_columnar(xvals, yvals, geometry):
+    if 'cudf' in sys.modules:
+        import cudf
+        if isinstance(xvals, cudf.Series):
+            xvals = xvals.values.astype('float')
+            yvals = yvals.values.astype('float')
+            try:
+                import cuspatial
+                result = cuspatial.point_in_polygon(
+                    xvals,
+                    yvals,
+                    cudf.Series([0], index=["selection"]),
+                    [0],
+                    geometry[:, 0],
+                    geometry[:, 1],
+                )
+                return result.values
+            except Exception:
+                xvals = np.asarray(xvals)
+                yvals = np.asarray(yvals)
     try:
         from spatialpandas.geometry import Polygon, PointArray
         points = PointArray((xvals.astype('float'), yvals.astype('float')))

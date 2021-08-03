@@ -40,7 +40,7 @@ extras_require["examples"] = extras_require["recommended"] + [
     "streamz >=0.5.0",
     "datashader >=0.11.1",
     "ffmpeg",
-    "cftime <1.5.0", # cftime.utime deprecated
+    "cftime",
     "netcdf4",
     "dask",
     "scipy",

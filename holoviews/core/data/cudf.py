@@ -237,7 +237,6 @@ class cuDFInterface(PandasInterface):
                 mask &= new_mask
         return mask
 
-
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         df = dataset.data
@@ -246,17 +245,15 @@ class cuDFInterface(PandasInterface):
 
         indexed = cls.indexed(dataset, selection)
         if selection_mask is not None:
-            df = df[selection_mask]
+            df = df.loc[selection_mask]
         if indexed and len(df) == 1 and len(dataset.vdims) == 1:
             return df[dataset.vdims[0].name].iloc[0]
         return df
-
 
     @classmethod
     def concat_fn(cls, dataframes, **kwargs):
         import cudf
         return cudf.concat(dataframes, **kwargs)
-
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -264,7 +261,6 @@ class cuDFInterface(PandasInterface):
         if dimension.name not in data:
             data[dimension.name] = values
         return data
-
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
