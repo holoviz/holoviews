@@ -179,6 +179,10 @@ class _base_link_selections(param.ParameterizedFunction):
                     callback.operation)
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
+                self.param.warning(
+                    "linked selection: Encountered DynamicMap that we don't know "
+                    "how to recurse into:\n{!r}".format(hvobj)
+                )
                 return hvobj
         elif isinstance(hvobj, Element):
             # Register hvobj to receive selection expression callbacks
