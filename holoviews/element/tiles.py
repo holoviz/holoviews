@@ -184,6 +184,7 @@ def wikimedia_replacement():
 
 # Miscellaneous
 OSM = lambda: Tiles('https://c.tile.openstreetmap.org/{Z}/{X}/{Y}.png', name="OSM")
+OpenTopoMap = lambda: Tiles('https://a.tile.opentopomap.org/{Z}/{X}/{Y}.png', name="OpenTopoMap")
 Wikipedia = wikimedia_replacement
 
 tile_sources = {k: v for k, v in locals().items() if isinstance(v, FunctionType) and k not in
