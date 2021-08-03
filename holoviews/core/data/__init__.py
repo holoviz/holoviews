@@ -10,6 +10,7 @@ import types
 import copy
 
 from contextlib import contextmanager
+from functools import wraps
 
 import numpy as np
 import param
@@ -193,6 +194,7 @@ class PipelineMeta(ParameterizedMetaclass):
 
     @staticmethod
     def pipelined(method_fn, method_name):
+        @wraps(method_fn)
         def pipelined_fn(*args, **kwargs):
             from ...operation.element import method as method_op
             inst = args[0]
@@ -238,8 +240,6 @@ class PipelineMeta(ParameterizedMetaclass):
                 if not in_method:
                     inst._in_method = False
             return result
-
-        pipelined_fn.__doc__ = method_fn.__doc__
 
         return pipelined_fn
 
@@ -1214,17 +1214,17 @@ argument to specify a selection specification""")
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support
+    @wraps(Dimensioned.options)
     def options(self, *args, **kwargs):
         return super(Dataset, self).options(*args, **kwargs)
-    options.__doc__ = Dimensioned.options.__doc__
 
+    @wraps(LabelledData.map)
     def map(self, *args, **kwargs):
         return super(Dataset, self).map(*args, **kwargs)
-    map.__doc__ = LabelledData.map.__doc__
 
+    @wraps(LabelledData.relabel)
     def relabel(self, *args, **kwargs):
         return super(Dataset, self).relabel(*args, **kwargs)
-    relabel.__doc__ = LabelledData.relabel.__doc__
 
     @property
     def iloc(self):
