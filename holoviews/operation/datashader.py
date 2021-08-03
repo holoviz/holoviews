@@ -1870,9 +1870,10 @@ class inspect(Operation):
 
 
 
-def _between(array, lower, upper):
-    return (array >= lower) & (array <= upper)
-
+def _between(vals, lower, upper, res):
+    for i in range(vals.shape[0]):
+        val = vals[i]
+        res[i] = (val >= upper) & (val <= upper)
 
 def _between_bounds(vals, x0, x1, y0, y1, res):
     for i in range(vals.shape[0]):
@@ -1889,7 +1890,7 @@ class inspect_base(inspect):
     _between_funcs = {}
 
     _numba_types = {
-        np.float32: np.float32,
+        np.float32: nb.float32,
         np.float64: nb.float64,
         np.int32: nb.int32,
         np.int64: nb.int64
@@ -1920,7 +1921,7 @@ class inspect_base(inspect):
 
     @classmethod
     def _distance_args(cls, element, x_range, y_range,  pixels):
-        ycount, xcount =  element.interface.shape(element, gridded=True)
+        ycount, xcount = element.interface.shape(element, gridded=True)
         x_delta = abs(x_range[1] - x_range[0]) / xcount
         y_delta = abs(y_range[1] - y_range[0]) / ycount
         return (x_delta*pixels, y_delta*pixels)
@@ -1940,12 +1941,14 @@ class inspect_base(inspect):
         dtype = cls._numba_types[dtype]
         if dtype in cls._between_funcs:
             return cls._between_funcs[dtype]
+        args = (dtype[:], dtype, dtype, nb.bool_[:])
+        signature = '(n),(),()->(n)'
         try:
             cls._between_funcs[dtype] = between_fn = (
-                nb.vectorize([nb.bool_(dtype, dtype, dtype)])(_between)
+                nb.guvectorize([args], signature)(_between)
             )
-        except Exception:
-            between_fn = _between
+        except Exception as e:
+            return None
         return between_fn
 
     @classmethod
@@ -1963,7 +1966,7 @@ class inspect_base(inspect):
                 nb.guvectorize([args], signature)(_between_bounds)
             )
         except Exception as e:
-            between_fn = _between_bounds
+            return None
         return between_fn
 
     @classmethod
@@ -1985,13 +1988,24 @@ class inspect_base(inspect):
                 array = ds.data[[xdim.name, xdim.name]].values
                 if not len(array):
                     return ds.data
-                mask = np.empty(len(array), dtype='bool')
-                cls._get_bounds_func(xt)(array, xt(x0), xt(x1), yt(y0), yt(y1), mask)
-                return ds.data[mask]
+                func = cls._get_bounds_func(xt)
+                if func:
+                    mask = np.empty(len(array), dtype='bool')
+                    func(array, xt(x0), xt(x1), yt(y0), yt(y1), mask)
+                    return ds.data[mask]
+            xfunc = cls._get_between_func(xt)
+            if xfunc:
+                xmask = np.empty(len(array), dtype='bool')
+                xfunc(xs.values, xt(x0), xt(x1), xmask)
             else:
-                xmask = cls._get_between_func(xt)(xs.values, xt(x0), xt(x1))
-                ymask = cls._get_between_func(yt)(ys.values, yt(y0), yt(y1))
-                return ds.data[xmask & ymask]
+                xmask = (xs.values >= x0) & (xs.values <= x1)
+            yfunc = cls._get_between_func(yt)
+            if yfunc:
+                ymask = np.empty(len(array), dtype='bool')
+                yfunc(ys.values, yt(y0), yt(y1), ymask)
+            else:
+                ymask = (ys.values >= y0) & (ys.values <= y1)
+            return ds.data[xmask & ymask]
         query = {xdim.name: (x0, x1), ydim.name: (y0, y1)}
         return ds.select(**query).dframe()
 
