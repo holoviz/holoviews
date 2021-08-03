@@ -3,6 +3,8 @@ Defines mix-in classes to handle support for linked brushing on
 elements.
 """
 
+import sys
+
 import numpy as np
 
 from ..core import Dataset, NdOverlay, util
