@@ -1233,9 +1233,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for gtype in ((glyph_type, '') if glyph_type else ('',)):
             for prop in ('color', 'alpha'):
                 glyph_prop = properties.get(gtype+prop)
-                if glyph_prop and ('line_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('line_'+prop not in glyph_props or gtype):
                     glyph_props['line_'+prop] = glyph_prop
-                if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('fill_'+prop not in glyph_props or gtype):
                     glyph_props['fill_'+prop] = glyph_prop
 
             props = {k[len(gtype):]: v for k, v in glyph_props.items()
