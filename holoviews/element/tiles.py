@@ -12,8 +12,8 @@ from ..util.transform import lon_lat_to_easting_northing, easting_northing_to_lo
 class Tiles(Element2D):
     """
     The Tiles element represents tile sources, specified as URL
-    containing different template variables. These variables
-    correspond to three different formats for specifying the spatial
+    containing different template variables or xyzservices.TileProvider.
+    These variables correspond to three different formats for specifying the spatial
     location and zoom level of the requested tiles:
 
       * Web mapping tiles sources containing {x}, {y}, and {z} variables

@@ -35,6 +35,8 @@ class TilePlot(ElementPlot):
             if isinstance(element.data, dict):
                 layer["source"] = [element.data.build_url(scale_factor="@2x")]
                 layer['sourceattribution'] = element.data.html_attribution
+                layer['minzoom'] = element.data.get("min_zoom", 0)
+                layer['maxzoom'] = element.data.get("max_zoom", 20)
             else:
                 for v in ["X", "Y", "Z"]:
                     url = url.replace("{%s}" % v, "{%s}" % v.lower())
