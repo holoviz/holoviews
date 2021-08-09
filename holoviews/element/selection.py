@@ -98,21 +98,29 @@ def spatial_select_columnar(xvals, yvals, geometry):
             except Exception:
                 xvals = np.asarray(xvals)
                 yvals = np.asarray(yvals)
+    x0, x1 = geometry[:, 0].min(), geometry[:, 0].max()
+    y0, y1 = geometry[:, 1].min(), geometry[:, 1].max()
+    mask = (xvals>=x0) & (xvals<=x1) & (yvals>=y0) & (yvals<=y1)
+    masked_xvals = xvals[mask]
+    masked_yvals = yvals[mask]
     try:
         from spatialpandas.geometry import Polygon, PointArray
-        points = PointArray((xvals.astype('float'), yvals.astype('float')))
+        points = PointArray((masked_xvals.astype('float'), masked_yvals.astype('float')))
         poly = Polygon([np.concatenate([geometry, geometry[:1]]).flatten()])
-        return points.intersects(poly)
+        geom_mask = points.intersects(poly)
     except Exception:
         pass
     try:
         from shapely.geometry import Point, Polygon
-        points = (Point(x, y) for x, y in zip(xvals, yvals))
+        points = (Point(x, y) for x, y in zip(masked_xvals, masked_yvals))
         poly = Polygon(geometry)
-        return np.array([poly.contains(p) for p in points])
+        geom_mask = np.array([poly.contains(p) for p in points])
     except ImportError:
         raise ImportError("Lasso selection on tabular data requires "
                           "either spatialpandas or shapely to be available.")
+    mask[np.where(mask)[0]] = geom_mask
+    return mask
+
 
 def spatial_select(xvals, yvals, geometry):
     if xvals.ndim > 1:
