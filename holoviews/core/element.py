@@ -85,28 +85,15 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         return True
 
-
     def __contains__(self, dimension):
         "Whether element contains the Dimension"
         return dimension in self.dimensions()
-
 
     def __iter__(self):
         "Disable iterator interface."
         raise NotImplementedError('Iteration on Elements is not supported.')
 
-
     __bool__ = __nonzero__
-
-
-    @classmethod
-    def collapse_data(cls, data, function=None, kdims=None, **kwargs):
-        """
-        Deprecated method to perform collapse operations, which may
-        now be performed through concatenation and aggregation.
-        """
-        raise NotImplementedError("Collapsing not implemented for %s." % cls.__name__)
-
 
     def closest(self, coords, **kwargs):
         """Snap list or dict of coordinates to closest position.
@@ -122,7 +109,6 @@ class Element(ViewableElement, Composable, Overlayable):
             NotImplementedError: Raised if snapping is not supported
         """
         raise NotImplementedError
-
 
     def sample(self, samples=[], bounds=None, closest=False, **sample_values):
         """Samples values at supplied coordinates.
@@ -257,48 +243,6 @@ class Element(ViewableElement, Composable, Overlayable):
         if len(set(types)) > 1:
             columns = [c.astype('object') for c in columns]
         return np.column_stack(columns)
-
-
-    ######################
-    #    Deprecations    #
-    ######################
-
-    def table(self, datatype=None):
-        "Deprecated method to convert any Element to a Table."
-        self.param.warning(
-            "The table method is deprecated and should no "
-            "longer be used. Instead cast the %s to a "
-            "a Table directly." % type(self).__name__)
-
-        if datatype and not isinstance(datatype, list):
-            datatype = [datatype]
-        from ..element import Table
-        return Table(self, **(dict(datatype=datatype) if datatype else {}))
-
-
-    def mapping(self, kdims=None, vdims=None, **kwargs):
-        "Deprecated method to convert data to dictionary"
-        self.param.warning(
-            "The mapping method is deprecated and should no "
-            "longer be used. Use another one of the common "
-            "formats instead, e.g. .dframe, .array or .columns.")
-
-        length = len(self)
-        if not kdims: kdims = self.kdims
-        if kdims:
-            keys = zip(*[self.dimension_values(dim.name)
-                         for dim in self.kdims])
-        else:
-            keys = [()]*length
-
-        if not vdims: vdims = self.vdims
-        if vdims:
-            values = zip(*[self.dimension_values(dim.name)
-                           for dim in vdims])
-        else:
-            values = [()]*length
-        return OrderedDict(zip(keys, values))
-
 
 
 class Tabular(Element):
@@ -438,7 +382,7 @@ class Collator(NdMapping):
             if 'vdims' not in params:
                 params['vdims'] = data.vdims
             data = data.mapping()
-        super(Collator, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
     def __call__(self):

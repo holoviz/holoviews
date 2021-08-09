@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import plotly
 
 from param import concrete_descendents
@@ -65,7 +63,6 @@ Store.register({Points: ScatterPlot,
                 Surface: SurfacePlot,
                 Path3D: Path3DPlot,
                 TriSurface: TriSurfacePlot,
-                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,
@@ -103,7 +100,7 @@ if config.no_padding:
     for plot in concrete_descendents(ElementPlot).values():
         plot.padding = 0
 
-dflt_cmap = 'fire'
+dflt_cmap = config.default_cmap
 dflt_shape_line_color = '#2a3f5f'  # Line color of default plotly template
 
 point_size = np.sqrt(6) # Matches matplotlib default
@@ -113,18 +110,18 @@ Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.ErrorBars = Options('style', color='black')
-options.Scatter = Options('style', color=Cycle())
-options.Points = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Area = Options('style', color=Cycle(), line_width=2)
 options.Spread = Options('style', color=Cycle(), line_width=2)
-options.TriSurface = Options('style', cmap='viridis')
+options.TriSurface = Options('style', cmap=dflt_cmap)
 options.Histogram = Options('style', color=Cycle(), line_width=1, line_color='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap)
-options.Raster = Options('style', cmap=dflt_cmap)
-options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdBu_r')
+options.Image = Options('style', cmap=config.default_gridded_cmap)
+options.Raster = Options('style', cmap=config.default_gridded_cmap)
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap)
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap)
 
 # Disable padding for image-like elements
 options.Image = Options("plot", padding=0)

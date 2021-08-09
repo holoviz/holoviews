@@ -8,10 +8,10 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
-from __future__ import division
-import param
 from itertools import groupby
+
 import numpy as np
+import param
 import pyparsing as pp
 
 from ..core.options import Options, Cycle, Palette
@@ -96,7 +96,7 @@ class Parser(object):
             if val is False:
                 elements =list(items)
                 # Assume anything before ) or } can be joined with commas
-                # (e.g tuples with spaces in them)
+                # (e.g. tuples with spaces in them)
                 joiner=',' if any(((')' in el) or ('}' in el))
                                   for el in elements) else ''
                 grouped[-1] += joiner + joiner.join(elements)

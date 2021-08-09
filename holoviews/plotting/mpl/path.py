@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -24,6 +22,19 @@ class PathPlot(ColorbarPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
+
+    _collection = LineCollection
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        if 'c' in plot_kwargs:
+            plot_kwargs['array'] = plot_kwargs.pop('c')
+        if 'vmin' in plot_kwargs and 'vmax' in plot_kwargs:
+            plot_kwargs['clim'] = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
+        if not 'array' in plot_kwargs and 'cmap' in plot_kwargs:
+            del plot_kwargs['cmap']
+        collection = self._collection(*plot_args, **plot_kwargs)
+        ax.add_collection(collection)
+        return {'artist': collection}
 
     def get_data(self, element, ranges, style):
         with abbreviated_exception():
@@ -61,17 +72,15 @@ class PathPlot(ColorbarPlot):
             style['clim'] = style.pop('vmin', None), style.pop('vmax', None)
         return (paths,), style, {'dimensions': dims}
 
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        line_segments = LineCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(line_segments)
-        return {'artist': line_segments}
-
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data[0])
         if 'array' in style:
             artist.set_array(style['array'])
+        if 'vmin' in style and 'vmax' in style:
+            artist.set_clim((style['vmin'], style['vmax']))
+        if 'clim' in style:
             artist.set_clim(style['clim'])
         if 'norm' in style:
             artist.set_norm(style['norm'])
@@ -135,7 +144,4 @@ class PolygonPlot(ContourPlot):
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle',
                   'color']
 
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        polys = PatchCollection(*plot_args, **plot_kwargs)
-        ax.add_collection(polys)
-        return {'artist': polys}
+    _collection = PatchCollection

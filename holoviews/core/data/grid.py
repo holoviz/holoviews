@@ -1,8 +1,3 @@
-from __future__ import absolute_import
-
-import sys
-import datetime as dt
-
 from collections import OrderedDict, defaultdict
 
 try:
@@ -19,7 +14,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
-from .interface import is_dask, dask_array_module, get_array_types
+from .util import finite_range, is_dask, dask_array_module, get_array_types
 
 
 
@@ -28,7 +23,7 @@ class GridInterface(DictInterface):
     Interface for simple dictionary-based dataset format using a
     compressed representation that uses the cartesian product between
     key dimensions. As with DictInterface, the dictionary keys correspond
-    to the column (i.e dimension) names and the values are NumPy arrays
+    to the column (i.e. dimension) names and the values are NumPy arrays
     representing the values in that column.
 
     To use this compressed format, the key dimensions must be orthogonal
@@ -260,9 +255,6 @@ class GridInterface(DictInterface):
                [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
-        if sys.version_info.major == 2 and len(coord) and isinstance(coord[0], (dt.datetime, dt.date)):
-            # np.diff does not work on datetimes in python 2
-            coord = coord.astype('datetime64')
         if coord.shape[axis] == 0:
             return np.array([], dtype=coord.dtype)
         if coord.shape[axis] > 1:
@@ -523,7 +515,7 @@ class GridInterface(DictInterface):
                 mask &= values < ind.stop
             # Expand empty mask
             if mask is True:
-                mask = np.ones(values.shape, dtype=np.bool)
+                mask = np.ones(values.shape, dtype=np.bool_)
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
@@ -537,7 +529,7 @@ class GridInterface(DictInterface):
             index_mask = values == ind
             if (dataset.ndims == 1 or dataset._binned) and np.sum(index_mask) == 0:
                 data_index = np.argmin(np.abs(values - ind))
-                mask = np.zeros(len(values), dtype=np.bool)
+                mask = np.zeros(len(values), dtype=np.bool_)
                 mask[data_index] = True
             else:
                 mask = index_mask
@@ -548,6 +540,9 @@ class GridInterface(DictInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            raise ValueError("Masked selections currently not supported for {0}.".format(cls.__name__))
+
         dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
         if val_dims:
@@ -582,7 +577,7 @@ class GridInterface(DictInterface):
                         raise IndexError("Index %s more than or equal to upper bound "
                                          "of %s for %s dimension." % (ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
-                    mask = np.zeros(len(values), dtype=np.bool)
+                    mask = np.zeros(len(values), dtype=np.bool_)
                     mask[idx] = True
                     values = edges[idx:idx+2]
                 elif len(inds):
@@ -787,29 +782,30 @@ class GridInterface(DictInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
+        dimension = dataset.get_dimension(dimension, strict=True)
         if dataset._binned and dimension in dataset.kdims:
             expanded = cls.irregular(dataset, dimension)
-            column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
+            array = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
-            column = cls.values(dataset, dimension, expanded=False, flat=False)
+            array = cls.values(dataset, dimension, expanded=False, flat=False)
+
+        if dimension.nodata is not None:
+            array = cls.replace_value(array, dimension.nodata)
 
         da = dask_array_module()
-        if column.dtype.kind == 'M':
-            dmin, dmax = column.min(), column.max()
-            if da and isinstance(column, da.Array):
-                return da.compute(dmin, dmax)
-            return dmin, dmax
-        elif len(column) == 0:
+        if len(array) == 0:
             return np.NaN, np.NaN
+
+        if array.dtype.kind == 'M':
+            dmin, dmax = array.min(), array.max()
         else:
             try:
-                dmin, dmax = (np.nanmin(column), np.nanmax(column))
-                if da and isinstance(column, da.Array):
-                    return da.compute(dmin, dmax)
-                return dmin, dmax
+                dmin, dmax = (np.nanmin(array), np.nanmax(array))
             except TypeError:
-                column.sort()
-                return column[0], column[-1]
+                return np.NaN, np.NaN
+        if da and isinstance(array, da.Array):
+            return finite_range(array, *da.compute(dmin, dmax))
+        return finite_range(array, dmin, dmax)
 
     @classmethod
     def assign(cls, dataset, new_data):
@@ -824,6 +820,6 @@ class GridInterface(DictInterface):
                 data[k] = cls.canonicalize(dataset, v)
         return data
 
-            
+
 
 Interface.register(GridInterface)

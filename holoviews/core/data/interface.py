@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
 
@@ -10,40 +8,7 @@ import numpy as np
 from .. import util
 from ..element import Element
 from ..ndmapping import NdMapping
-
-
-def get_array_types():
-    array_types = (np.ndarray,)
-    da = dask_array_module()
-    if da is not None:
-        array_types += (da.Array,)
-    return array_types
-
-def dask_array_module():
-    try:
-        import dask.array as da
-        return da
-    except:
-        return None
-
-def is_dask(array):
-    da = dask_array_module()
-    if da is None:
-        return False
-    return da and isinstance(array, da.Array)
-
-def cached(method):
-    """
-    Decorates an Interface method and using a cached version
-    """
-    def cached(*args, **kwargs):
-        cache = getattr(args[1], '_cached')
-        if cache is None:
-            return method(*args, **kwargs)
-        else:
-            args = (cache,)+args[2:]
-            return getattr(cache.interface, method.__name__)(*args, **kwargs)
-    return cached
+from .util import finite_range
 
 
 class DataError(ValueError):
@@ -52,7 +17,7 @@ class DataError(ValueError):
     def __init__(self, msg, interface=None):
         if interface is not None:
             msg = '\n\n'.join([msg, interface.error()])
-        super(DataError, self).__init__(msg)
+        super().__init__(msg)
 
 
 class Accessor(object):
@@ -238,7 +203,7 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:
@@ -359,16 +324,26 @@ class Interface(param.Parameterized):
         else:
             return data.dtype
 
+    @classmethod
+    def replace_value(cls, data, nodata):
+        """
+        Replace `nodata` value in data with NaN
+        """
+        data = data.astype('float64')
+        mask = data != nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
 
     @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
-        mask = np.ones(len(dataset), dtype=np.bool)
+        mask = np.ones(len(dataset), dtype=np.bool_)
         for dim, sel in selection.items():
             if isinstance(sel, tuple):
                 sel = slice(*sel)
@@ -398,7 +373,7 @@ class Interface(param.Parameterized):
                 index_mask = arr == sel
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
                     data_index = np.argmin(np.abs(arr - sel))
-                    mask = np.zeros(len(dataset), dtype=np.bool)
+                    mask = np.zeros(len(dataset), dtype=np.bool_)
                     mask[data_index] = True
                 else:
                     mask &= index_mask
@@ -430,7 +405,7 @@ class Interface(param.Parameterized):
                 assert column.dtype.kind not in 'SUO'
                 with warnings.catch_warnings():
                     warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-                    return (np.nanmin(column), np.nanmax(column))
+                    return finite_range(column, np.nanmin(column), np.nanmax(column))
             except (AssertionError, TypeError):
                 column = [v for v in util.python2sort(column) if v is not None]
                 if not len(column):

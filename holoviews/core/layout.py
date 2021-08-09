@@ -23,6 +23,13 @@ class Composable(object):
         "Compose objects into a Layout"
         return Layout([self, obj])
 
+    def __radd__(self, other):
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are trying to use a reduction like `sum(elements)` "
+                            "to combine a list of elements, we recommend you use "
+                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                            "making an overlay from a list) instead.")
 
     def __lshift__(self, other):
         "Compose objects into an AdjointLayout"
@@ -46,7 +53,7 @@ class Empty(Dimensioned, Composable):
     group = param.String(default='Empty')
 
     def __init__(self):
-        super(Empty, self).__init__(None)
+        super().__init__(None)
 
 
 
@@ -91,7 +98,7 @@ class AdjointLayout(Dimensioned):
         else:
             data = OrderedDict()
 
-        super(AdjointLayout, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
     def __mul__(self, other, reverse=False):
@@ -180,7 +187,7 @@ class AdjointLayout(Dimensioned):
         Returns:
             Returns relabelled object
         """
-        return super(AdjointLayout, self).relabel(label=label, group=group, depth=depth)
+        return super().relabel(label=label, group=group, depth=depth)
 
 
     def get(self, key, default=None):
@@ -309,6 +316,14 @@ class AdjointLayout(Dimensioned):
         "Composes plot into a Layout with another object."
         return Layout([self, obj])
 
+    def __radd__(self, other):
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are trying to use a reduction like `sum(elements)` "
+                            "to combine a list of elements, we recommend you use "
+                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                            "making an overlay from a list) instead.")
+        return super().__radd__(self, other)
 
     def __len__(self):
         "Number of items in the AdjointLayout"
@@ -329,8 +344,8 @@ class NdLayout(UniformNdMapping):
     def __init__(self, initial_items=None, kdims=None, **params):
         self._max_cols = 4
         self._style = None
-        super(NdLayout, self).__init__(initial_items=initial_items, kdims=kdims,
-                                       **params)
+        super().__init__(initial_items=initial_items, kdims=kdims,
+                         **params)
 
 
     @property
@@ -379,6 +394,15 @@ class NdLayout(UniformNdMapping):
         return Layout([self, obj])
 
 
+    def __radd__(self, other):
+        if isinstance(other, int):
+            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+                            "If you are trying to use a reduction like `sum(elements)` "
+                            "to combine a list of elements, we recommend you use "
+                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
+                            "making an overlay from a list) instead.")
+        return super().__radd__(self, other)
+
     @property
     def last(self):
         """
@@ -410,7 +434,7 @@ class NdLayout(UniformNdMapping):
         Returns:
             Cloned NdLayout object
         """
-        clone = super(NdLayout, self).clone(*args, **overrides)
+        clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
         clone.id = self.id
         return clone
@@ -434,7 +458,7 @@ class Layout(ViewableTree):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
-        super(Layout, self).__init__(items, identifier, parent, **kwargs)
+        super().__init__(items, identifier, parent, **kwargs)
 
     def decollate(self):
         """Packs Layout of DynamicMaps into a single DynamicMap that returns a Layout
@@ -482,7 +506,7 @@ class Layout(ViewableTree):
             if idx >= len(keys) or col >= self._max_cols:
                 raise KeyError('Index %s is outside available item range' % str(key))
             key = keys[idx]
-        return super(Layout, self).__getitem__(key)
+        return super().__getitem__(key)
 
 
     def clone(self, *args, **overrides):
@@ -498,7 +522,7 @@ class Layout(ViewableTree):
         Returns:
             Cloned Layout object
         """
-        clone = super(Layout, self).clone(*args, **overrides)
+        clone = super().clone(*args, **overrides)
         clone._max_cols = self._max_cols
         return clone
 
@@ -531,7 +555,7 @@ class Layout(ViewableTree):
         Returns:
             Returns relabelled object
         """
-        return super(Layout, self).relabel(label, group, depth)
+        return super().relabel(label, group, depth)
 
     def grid_items(self):
         return {tuple(np.unravel_index(idx, self.shape)): (path, item)

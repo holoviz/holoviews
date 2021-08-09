@@ -12,8 +12,6 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-from __future__ import absolute_import
-
 import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
 from collections import defaultdict
 
@@ -82,7 +80,7 @@ class Exporter(param.ParameterizedFunction):
 
     Pickling:   Native Python, supported by HoloViews.
     Rendering:  Any plotting backend may be used (default uses matplotlib)
-    Storage:    Saving to a database (e.g SQL), HDF5 etc.
+    Storage:    Saving to a database (e.g. SQL), HDF5 etc.
     """
 
     # Mime-types that need encoding as utf-8 upon export
@@ -177,7 +175,7 @@ class Importer(param.ParameterizedFunction):
 
     Unpickling: Native Python, supported by HoloViews.
     Servers:    Loading data over a network connection.
-    Storage:    Loading from a database (e.g SQL), HDF5 etc.
+    Storage:    Loading from a database (e.g. SQL), HDF5 etc.
     """
 
     def __call__(self, data):
@@ -575,7 +573,7 @@ class FileArchive(Archive):
 
     export_name = param.String(default='{timestamp}', doc="""
         The name assigned to the overall export. If an archive file is
-        used, this is the correspond filename (e.g of the exporter zip
+        used, this is the correspond filename (e.g. of the exporter zip
         file). Alternatively, if unpack=False, this is the name of the
         output directory. Lastly, for archives of a single file, this
         is the basename of the output file.
@@ -612,7 +610,7 @@ class FileArchive(Archive):
             raise SyntaxError("Could not parse formatter %r" % formatter)
 
     def __init__(self, **params):
-        super(FileArchive, self).__init__(**params)
+        super().__init__(**params)
         #  Items with key: (basename,ext) and value: (data, info)
         self._files = OrderedDict()
         self._validate_formatters()
@@ -859,5 +857,5 @@ class FileArchive(Archive):
         "Clears the file archive"
         self._files.clear()
 
-    
+
 

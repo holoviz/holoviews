@@ -1,5 +1,3 @@
-from __future__ import division
-
 from collections import Counter
 from functools import cmp_to_key
 from itertools import cycle
@@ -10,7 +8,7 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, unique_array, RecursionError, get_param_values
+from ..core.util import OrderedDict, get_param_values, unique_array
 from .graphs import Graph, Nodes, EdgePaths
 from .util import quadratic_bezier
 
@@ -366,5 +364,5 @@ class Sankey(Graph):
               *args, **overrides):
         if data is None:
             overrides['sankey'] = self._sankey
-        return super(Sankey, self).clone(data, shared_data, new_type, link,
-                                         *args, **overrides)
+        return super().clone(data, shared_data, new_type, link,
+                             *args, **overrides)

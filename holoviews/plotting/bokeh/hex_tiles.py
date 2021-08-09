@@ -1,4 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
 import types
 
 import param
@@ -142,7 +141,7 @@ class HexTilesPlot(ColorbarPlot):
         if yd and ydim.name in ranges:
             ranges[ydim.name]['hard'] = yd.range
             ranges[ydim.name]['hard'] = max_range([yd.soft_range, ranges[ydim.name]['soft']])
-        return super(HexTilesPlot, self).get_extents(element, ranges, range_type)
+        return super().get_extents(element, ranges, range_type)
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:

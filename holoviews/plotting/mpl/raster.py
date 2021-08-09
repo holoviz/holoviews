@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -19,6 +17,11 @@ class RasterBasePlot(ElementPlot):
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
@@ -30,7 +33,7 @@ class RasterBasePlot(ElementPlot):
     _plot_methods = dict(single='imshow')
 
     def get_extents(self, element, ranges, range_type='combined'):
-        extents = super(RasterBasePlot, self).get_extents(element, ranges, range_type)
+        extents = super().get_extents(element, ranges, range_type)
         if self.situate_axes or range_type not in ('combined', 'data'):
             return extents
         else:
@@ -97,7 +100,6 @@ class RasterPlot(RasterBasePlot, ColorbarPlot):
         return axis_kwargs
 
 
-
 class RGBPlot(RasterBasePlot):
 
     style_opts = ['alpha', 'interpolation', 'visible', 'filterrad']
@@ -123,10 +125,14 @@ class RGBPlot(RasterBasePlot):
         return axis_kwargs
 
 
-
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -141,6 +147,7 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
+
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
         coords = [element.interface.coords(element, d, ordered=True,
@@ -155,7 +162,6 @@ class QuadMeshPlot(ColorbarPlot):
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}
-
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop('locs', None)
@@ -172,7 +178,6 @@ class QuadMeshPlot(ColorbarPlot):
             colorbar.update_normal(artist)
 
         return {'artist': artist, 'locs': locs}
-
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):

@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:
@@ -8,13 +6,14 @@ except ImportError:
 import types
 import copy
 
+from contextlib import contextmanager
+
 import numpy as np
 import param
 import pandas as pd # noqa
 
 from param.parameterized import add_metaclass, ParameterizedMetaclass
 
-from .. import util
 from ..accessors import Redim
 from ..dimension import (
     Dimension, Dimensioned, LabelledData, dimension_name, process_dimensions
@@ -33,13 +32,18 @@ from .interface import Interface, iloc, ndloc # noqa (API import)
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
 from .pandas import PandasInterface           # noqa (API import)
-from .spatialpandas import SpatialPandasInterface # noqa (API import)
+from .spatialpandas import SpatialPandasInterface     # noqa (API import)
+from .spatialpandas_dask import DaskSpatialPandasInterface # noqa (API import)
 from .xarray import XArrayInterface           # noqa (API import)
+
+# Ensures correct holoviews.core.util is sourced
+from .. import util
 
 default_datatype = 'dataframe'
 
-datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'dask',
-             'cuDF', 'spatialpandas', 'array', 'multitabular', 'ibis']
+datatypes = ['dataframe', 'dictionary', 'grid', 'xarray', 'multitabular',
+             'spatialpandas', 'dask_spatialpandas', 'dask', 'cuDF', 'array',
+             'ibis']
 
 
 def concat(datasets, datatype=None):
@@ -153,10 +157,24 @@ class DataConversion(object):
             return group
 
 
+@contextmanager
+def disable_pipeline():
+    """
+    Disable PipelineMeta class from storing pipelines.
+    """
+    PipelineMeta.disable = True
+    try:
+        yield
+    finally:
+        PipelineMeta.disable = False
+
+
 class PipelineMeta(ParameterizedMetaclass):
 
     # Public methods that should not be wrapped
     blacklist = ['__init__', 'clone']
+
+    disable = False
 
     def __new__(mcs, classname, bases, classdict):
 
@@ -182,6 +200,8 @@ class PipelineMeta(ParameterizedMetaclass):
 
             try:
                 result = method_fn(*args, **kwargs)
+                if PipelineMeta.disable:
+                    return result
 
                 op = method_op.instance(
                     input_type=type(inst),
@@ -292,12 +312,12 @@ class Dataset(Element):
         if isinstance(data, Element):
             if 'kdims' in kwargs:
                 kwargs['kdims'] = [
-                    data.get_dimension(kd) if isinstance(kd, util.basestring) else kd
+                    data.get_dimension(kd) if isinstance(kd, str) else kd
                     for kd in kwargs['kdims']
                 ]
             if 'kdims' in kwargs:
                 kwargs['vdims'] = [
-                    data.get_dimension(vd) if isinstance(vd, util.basestring) else vd
+                    data.get_dimension(vd) if isinstance(vd, str) else vd
                     for vd in kwargs['vdims']
                 ]
             pvals = util.get_param_values(data)
@@ -352,6 +372,16 @@ class Dataset(Element):
                                         transforms=None, _validate_vdims=False)
                 if hasattr(self, '_binned'):
                     self._dataset._binned = self._binned
+
+    def __getstate__(self):
+        "Ensures pipelines are dropped"
+        obj_dict = super(Dataset, self).__getstate__()
+        if '_pipeline' in obj_dict:
+            pipeline = obj_dict['_pipeline']
+            obj_dict['_pipeline'] = pipeline.instance(operations=pipeline.operations[:1])
+        if '_transforms' in obj_dict:
+            obj_dict['_transforms'] = []
+        return obj_dict
 
     @property
     def redim(self):
@@ -506,7 +536,7 @@ class Dataset(Element):
         Returns:
             Cloned object containing the new dimension
         """
-        if isinstance(dimension, (util.basestring, tuple)):
+        if isinstance(dimension, (str, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
@@ -765,7 +795,7 @@ argument to specify a selection specification""")
 
         # Note: Special handling sampling of gridded 2D data as Curve
         # may be replaced with more general handling
-        # see https://github.com/ioam/holoviews/issues/1173
+        # see https://github.com/holoviz/holoviews/issues/1173
         from ...element import Table, Curve
         datatype = ['dataframe', 'dictionary', 'dask', 'ibis']
         if len(samples) == 1:
@@ -874,6 +904,11 @@ argument to specify a selection specification""")
                 transformed = transformed.collapse()
             return transformed.clone(new_type=type(self))
 
+        ndims = len(dimensions)
+        min_d, max_d = self.param.objects('existing')['kdims'].bounds
+        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
+        new_type = Dataset if generic_type else None
+
         # Handle functions
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
         if not self:
@@ -882,16 +917,14 @@ argument to specify a selection specification""")
                 vdims = [d for vd in self.vdims for d in [vd, vd.clone('_'.join([vd.name, spread_name]))]]
             else:
                 vdims = self.vdims
-            return self.clone([], kdims=kdims, vdims=vdims)
+            if not kdims and len(vdims) == 1:
+                return np.nan
+            return self.clone([], kdims=kdims, vdims=vdims, new_type=new_type)
 
         vdims = self.vdims
         aggregated, dropped = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
         vdims = [vd for vd in vdims if vd not in dropped]
-
-        ndims = len(dimensions)
-        min_d, max_d = self.param.objects('existing')['kdims'].bounds
-        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
 
         if spreadfn:
             error, _ = self.interface.aggregate(self, dimensions, spreadfn)
@@ -905,7 +938,7 @@ argument to specify a selection specification""")
                 idx = vdims.index(d)
                 combined = combined.add_dimension(dim, idx+1, dvals, True)
                 vdims = combined.vdims
-            return combined.clone(new_type=Dataset if generic_type else type(self))
+            return combined.clone(new_type=new_type)
 
         if np.isscalar(aggregated):
             return aggregated
@@ -916,8 +949,7 @@ argument to specify a selection specification""")
             except:
                 datatype = self.param.objects('existing')['datatype'].default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=Dataset if generic_type else None,
-                                  datatype=datatype)
+                                  new_type=new_type, datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
@@ -1067,8 +1099,11 @@ argument to specify a selection specification""")
             NumPy array of values along the requested dimension
         """
         dim = self.get_dimension(dimension, strict=True)
-        return self.interface.values(self, dim, expanded, flat)
-
+        values = self.interface.values(self, dim, expanded, flat)
+        if dim.nodata is not None:
+            # Ensure nodata applies to boolean data in py2
+            values = np.where(values==dim.nodata, np.NaN, values)
+        return values
 
     def get_dimension_type(self, dim):
         """Get the type of the requested dimension.
@@ -1168,9 +1203,7 @@ argument to specify a selection specification""")
         elif self._in_method and 'dataset' not in overrides:
             overrides['dataset'] = self.dataset
 
-        return super(Dataset, self).clone(
-            data, shared_data, new_type, *args, **overrides
-        )
+        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
     # Overrides of superclass methods that are needed so that PipelineMeta
     # will find them to wrap with pipeline support

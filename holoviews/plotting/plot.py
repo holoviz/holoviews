@@ -3,8 +3,6 @@ Public API for all plots supported by HoloViews, regardless of
 plotting package or backend. Every plotting classes must be a subclass
 of this Plot baseclass.
 """
-from __future__ import absolute_import
-
 import threading
 import uuid
 import warnings
@@ -25,7 +23,7 @@ from pyviz_comms import JupyterComm
 from ..selection import NoOpSelectionDisplay
 from ..core import OrderedDict
 from ..core import util, traversal
-from ..core.data import Dataset
+from ..core.data import Dataset, disable_pipeline
 from ..core.element import Element, Element3D
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
@@ -63,7 +61,7 @@ class Plot(param.Parameterized):
     def __init__(self, renderer=None, root=None, **params):
         params = {k: v for k, v in params.items()
                   if k in self.param}
-        super(Plot, self).__init__(**params)
+        super().__init__(**params)
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self._force = False
         self._comm = None
@@ -200,10 +198,8 @@ class Plot(param.Parameterized):
                     util.get_method_owner(subscriber) not in plots
                 ]
 
-
     def _session_destroy(self, session_context):
         self.cleanup()
-
 
     def refresh(self, **kwargs):
         """
@@ -256,7 +252,6 @@ class Plot(param.Parameterized):
             with unlocked():
                 self.update(key)
 
-
     def push(self):
         """
         Pushes plot updates to the frontend.
@@ -274,18 +269,15 @@ class Plot(param.Parameterized):
               'embedded' not in root.tags and self.document and self.comm):
             push(self.document, self.comm)
 
-
     @property
     def id(self):
         return self.comm.id if self.comm else id(self.state)
-
 
     def __len__(self):
         """
         Returns the total number of available frames.
         """
         raise NotImplementedError
-
 
     @classmethod
     def lookup_options(cls, obj, group):
@@ -331,11 +323,9 @@ class PlotSelector(object):
         plot_params = {p: v for params in parameters for p, v in params.items()}
         return [s for style in styles for s in style], plot_params
 
-
     def __call__(self, obj, **kwargs):
         plot_class = self.get_plot_class(obj)
         return plot_class(obj, **kwargs)
-
 
     def get_plot_class(self, obj):
         key = self.selector(obj)
@@ -344,10 +334,9 @@ class PlotSelector(object):
             raise Exception(msg  % (key, ', '.join(self.plot_classes.keys())))
         return self.plot_classes[key]
 
-
     def __setattr__(self, label, value):
         try:
-            return super(PlotSelector, self).__setattr__(label, value)
+            return super().__setattr__(label, value)
         except:
             raise Exception("Please set class parameters directly on classes %s"
                             % ', '.join(str(cls) for cls in self.__dict__['plot_classes'].values()))
@@ -431,8 +420,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self._updated = False # Whether the plot should be marked as updated
-        super(DimensionedPlot, self).__init__(**params)
-
+        super().__init__(**params)
 
     def __getitem__(self, frame):
         """
@@ -446,14 +434,12 @@ class DimensionedPlot(Plot):
         self.update_frame(frame)
         return self.state
 
-
     def _get_frame(self, key):
         """
         Required on each MPLPlot type to get the data corresponding
         just to the current frame out from the object.
         """
         pass
-
 
     def matches(self, spec):
         """
@@ -490,7 +476,6 @@ class DimensionedPlot(Plot):
                 if not full_breadth: break
         return accumulator
 
-
     def _frame_title(self, key, group_size=2, separator='\n'):
         """
         Returns the formatted dimension group strings
@@ -508,7 +493,6 @@ class DimensionedPlot(Plot):
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
         return util.bytes_to_unicode(separator.join(g for g in groups if g))
-
 
     def _format_title(self, key, dimensions=True, separator='\n'):
         if self.title_format:
@@ -534,7 +518,6 @@ class DimensionedPlot(Plot):
         )
         return title.strip(' \n')
 
-
     def _format_title_components(self, key, dimensions=True, separator='\n'):
         """
         Determine components of title as used by _format_title method.
@@ -544,7 +527,6 @@ class DimensionedPlot(Plot):
         Return signature: (label, group, type_name, dim_title)
         """
         return (self.label, self.group, type(self).__name__, '')
-
 
     def _get_fontsize_defaults(self):
         """
@@ -561,7 +543,6 @@ class DimensionedPlot(Plot):
         specific axis label or ticks, e.g. clabel or xticks.
         """
         return {}
-
 
     def _fontsize(self, key, label='fontsize', common=True):
         if not self.fontsize and not self.fontscale:
@@ -594,7 +575,6 @@ class DimensionedPlot(Plot):
 
         return {label: scale_fontsize(size, self.fontscale)}
 
-
     def compute_ranges(self, obj, key, ranges):
         """
         Given an object, a specific key, and the normalization options,
@@ -604,6 +584,7 @@ class DimensionedPlot(Plot):
         over the whole animation) and finally compute the dimension
         ranges in each group. The new set of ranges is returned.
         """
+        prev_frame = getattr(self, 'prev_frame', None)
         all_table = all(isinstance(el, Table) for el in obj.traverse(lambda x: x, [Element]))
         if obj is None or not self.normalize or all_table:
             return OrderedDict()
@@ -618,7 +599,7 @@ class DimensionedPlot(Plot):
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
         return_fn = lambda x: x if isinstance(x, Element) else None
-        for group, (axiswise, framewise) in norm_opts.items():
+        for group, (axiswise, framewise, robust) in norm_opts.items():
             axiswise = (not getattr(self, 'shared_axes', True)) or (axiswise)
             elements = []
             # Skip if ranges are cached or already computed by a
@@ -629,15 +610,16 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
-            
+
             # Only compute ranges if not axiswise on a composite plot
             # or not framewise on a Overlay or ElementPlot
             if (not (axiswise and not isinstance(obj, HoloMap)) or
                 (not framewise and isinstance(obj, HoloMap))):
-                self._compute_group_range(group, elements, ranges, framewise, self.top_level)
+                self._compute_group_range(group, elements, ranges, framewise,
+                                          axiswise, robust, self.top_level,
+                                          prev_frame)
         self.ranges.update(ranges)
         return ranges
-
 
     def _get_norm_opts(self, obj):
         """
@@ -676,21 +658,50 @@ class DimensionedPlot(Plot):
                               for i in range(1, 4))
                 if applies and 'norm' in opts.groups:
                     nopts = opts['norm'].options
-                    if 'axiswise' in nopts or 'framewise' in nopts:
+                    popts = opts['plot'].options
+                    if 'axiswise' in nopts or 'framewise' in nopts or 'clim_percentile' in popts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
-                                                 nopts.get('framewise', False))})
+                                                 nopts.get('framewise', False),
+                                                 popts.get('clim_percentile', False))})
         element_specs = [spec for _, spec in element_specs]
-        norm_opts.update({spec: (False, False) for spec in element_specs
+        norm_opts.update({spec: (False, False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
 
+    @classmethod
+    def _merge_group_ranges(cls, ranges):
+        hard_range = util.max_range(ranges['hard'], combined=False)
+        soft_range = util.max_range(ranges['soft'])
+        robust_range = util.max_range(ranges.get('robust', []))
+        data_range = util.max_range(ranges['data'])
+        combined = util.dimension_range(data_range[0], data_range[1],
+                                        hard_range, soft_range)
+        dranges = {'data': data_range, 'hard': hard_range,
+                   'soft': soft_range, 'combined': combined,
+                   'robust': robust_range, 'values': ranges}
+        if 'factors' in ranges:
+            all_factors = ranges['factors']
+            factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
+            dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
+            expanded = [v for fctrs in all_factors for v in fctrs]
+            if dtype is not None:
+                try:
+                    # Try to keep the same dtype
+                    expanded = np.array(expanded, dtype=dtype)
+                except Exception:
+                    pass
+            dranges['factors'] = util.unique_array(expanded)
+        return dranges
 
     @classmethod
-    def _compute_group_range(cls, group, elements, ranges, framewise, top_level):
+    def _compute_group_range(cls, group, elements, ranges, framewise,
+                             axiswise, robust, top_level, prev_frame):
         # Iterate over all elements in a normalization group
         # and accumulate their ranges into the supplied dictionary.
         elements = [el for el in elements if el is not None]
+
         data_ranges = {}
+        robust_ranges = {}
         categorical_dims = []
         for el in elements:
             for el_dim in el.dimensions('ranges'):
@@ -717,9 +728,15 @@ class DimensionedPlot(Plot):
                     data_range = el.range(el_dim, dimension_range=False)
 
                 data_ranges[(el, el_dim)] = data_range
+                if dtype is not None and dtype.kind == 'uif' and robust:
+                    percentile = 2 if isinstance(robust, bool) else robust
+                    robust_ranges[(el, el_dim)] = (
+                        dim(el_dim, np.nanpercentile, percentile).apply(el),
+                        dim(el_dim, np.nanpercentile, percentile).apply(el)
+                    )
 
-                if (any(isinstance(r, util.basestring) for r in data_range) or
-                    (el_dim.type is not None and issubclass(el_dim.type, util.basestring)) or
+                if (any(isinstance(r, str) for r in data_range) or
+                    (el_dim.type is not None and issubclass(el_dim.type, str)) or
                     (dtype is not None and dtype.kind in 'SU')):
                     categorical_dims.append(el_dim)
 
@@ -757,7 +774,9 @@ class DimensionedPlot(Plot):
                         except:
                             factors = util.unique_array(values)
                     if dim_name not in group_ranges:
-                        group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                        group_ranges[dim_name] = {
+                            'id': [], 'data': [], 'hard': [], 'soft': []
+                        }
 
                     if factors is not None:
                         if 'factors' not in group_ranges[dim_name]:
@@ -765,6 +784,7 @@ class DimensionedPlot(Plot):
                         group_ranges[dim_name]['factors'].append(factors)
                     else:
                         group_ranges[dim_name]['data'].append(drange)
+                    group_ranges[dim_name]['id'].append(id(el))
 
             # Compute dimension normalization
             for el_dim in el.dimensions('ranges'):
@@ -772,11 +792,15 @@ class DimensionedPlot(Plot):
                 if dim_name in prev_ranges and not framewise:
                     continue
                 data_range = data_ranges[(el, el_dim)]
-                if el_dim.name not in group_ranges:
-                    group_ranges[dim_name] = {'data': [], 'hard': [], 'soft': []}
+                if dim_name not in group_ranges:
+                    group_ranges[dim_name] = {
+                        'id': [], 'data': [], 'hard': [], 'soft': [], 'robust': []
+                    }
                 group_ranges[dim_name]['data'].append(data_range)
                 group_ranges[dim_name]['hard'].append(el_dim.range)
                 group_ranges[dim_name]['soft'].append(el_dim.soft_range)
+                if (el, el_dim) in robust_ranges:
+                    group_ranges[dim_name]['robust'].append(robust_ranges[(el, el_dim)])
                 if el_dim in categorical_dims:
                     if 'factors' not in group_ranges[dim_name]:
                         group_ranges[dim_name]['factors'] = []
@@ -795,12 +819,14 @@ class DimensionedPlot(Plot):
                         values = np.concatenate(values) if len(values) else []
                     factors = util.unique_array(values)
                     group_ranges[dim_name]['factors'].append(factors)
+                group_ranges[dim_name]['id'].append(id(el))
 
+        # Avoid merging ranges with non-matching types
         group_dim_ranges = defaultdict(dict)
         for gdim, values in group_ranges.items():
             matching = True
             for t, rs in values.items():
-                if t == 'factors':
+                if t in ('factors', 'id'):
                     continue
                 matching &= (
                     len({'date' if isinstance(v, util.datetime_types) else 'number'
@@ -809,29 +835,37 @@ class DimensionedPlot(Plot):
             if matching:
                 group_dim_ranges[gdim] = values
 
+        # Merge ranges across elements
         dim_ranges = []
         for gdim, values in group_dim_ranges.items():
-            hard_range = util.max_range(values['hard'], combined=False)
-            soft_range = util.max_range(values['soft'])
-            data_range = util.max_range(values['data'])
-            combined = util.dimension_range(data_range[0], data_range[1],
-                                            hard_range, soft_range)
-            dranges = {'data': data_range, 'hard': hard_range,
-                       'soft': soft_range, 'combined': combined}
-            if 'factors' in values:
-                all_factors = values['factors']
-                factor_dtypes = {fs.dtype for fs in all_factors} if all_factors else []
-                dtype = list(factor_dtypes)[0] if len(factor_dtypes) == 1 else None
-                expanded = [v for fctrs in all_factors for v in fctrs]
-                if dtype is not None:
-                    try:
-                        # Try to keep the same dtype
-                        expanded = np.array(expanded, dtype=dtype)
-                    except Exception:
-                        pass
-                dranges['factors'] = util.unique_array(expanded)
+            dranges = cls._merge_group_ranges(values)
             dim_ranges.append((gdim, dranges))
-        if prev_ranges and not (framewise and top_level):
+
+        # Merge local ranges into global range dictionary
+        if prev_ranges and not (top_level or axiswise) and framewise and prev_frame is not None:
+            # Partially update global ranges with local changes
+            prev_ids = prev_frame.traverse(lambda o: id(o))
+            for d, dranges in dim_ranges:
+                values = prev_ranges.get(d, {}).get('values', None)
+
+                if values is None or 'id' not in values:
+                    for g, drange in dranges.items():
+                        if d not in prev_ranges:
+                            prev_ranges[d] = {}
+                        prev_ranges[d][g] = drange
+                    continue
+
+                ids = values.get('id')
+
+                # Filter out ranges of updated elements and append new ranges
+                merged = {}
+                for g, drange in dranges['values'].items():
+                    filtered = [r for i, r in zip(ids, values[g]) if i not in prev_ids]
+                    filtered += drange
+                    merged[g] = filtered
+                prev_ranges[d] = cls._merge_group_ranges(merged)
+        elif prev_ranges and not (framewise and (top_level or axiswise)):
+            # Combine local with global range
             for d, dranges in dim_ranges:
                 for g, drange in dranges.items():
                     prange = prev_ranges.get(d, {}).get(g, None)
@@ -839,14 +873,14 @@ class DimensionedPlot(Plot):
                         if d not in prev_ranges:
                             prev_ranges[d] = {}
                         prev_ranges[d][g] = drange
-                    elif g == 'factors':
+                    elif g in ('factors', 'values'):
                         prev_ranges[d][g] = drange
                     else:
                         prev_ranges[d][g] = util.max_range([prange, drange],
                                                            combined=g=='hard')
         else:
+            # Override global range
             ranges[group] = OrderedDict(dim_ranges)
-
 
     @classmethod
     def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=True):
@@ -894,7 +928,6 @@ class DimensionedPlot(Plot):
                     options[key][opt] = v
         return options if keyfn else options[None]
 
-
     def _get_projection(cls, obj):
         """
         Uses traversal to find the appropriate projection
@@ -918,7 +951,6 @@ class DimensionedPlot(Plot):
             raise Exception("An axis may only be assigned one projection type")
         return custom_projs[0] if custom_projs else None
 
-
     def update(self, key):
         if len(self) == 1 and ((key == 0) or (key == self.keys[0])) and not self.drawn:
             return self.initialize_plot()
@@ -926,13 +958,11 @@ class DimensionedPlot(Plot):
         self.traverse(lambda x: setattr(x, '_updated', True))
         return item
 
-
     def __len__(self):
         """
         Returns the total number of available frames.
         """
         return len(self.keys)
-
 
 
 class CallbackPlot(object):
@@ -944,6 +974,7 @@ class CallbackPlot(object):
         Initializes any callbacks for streams which have defined
         the plotted object as a source.
         """
+        source_streams = []
         cb_classes = set()
         registry = list(Stream.registry.items())
         callbacks = Stream._callbacks[self.backend]
@@ -959,8 +990,11 @@ class CallbackPlot(object):
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):
             cb_streams = [s for _, s in group]
+            for cb_stream in cb_streams:
+                if cb_stream not in source_streams:
+                    source_streams.append(cb_stream)
             cbs.append(cb(self, cb_streams, source))
-        return cbs
+        return cbs, source_streams
 
     @property
     def link_sources(self):
@@ -1164,9 +1198,8 @@ class GenericElementPlot(DimensionedPlot):
             plot_opts.update(**{k: v[0] for k, v in inherited.items()
                                 if k not in plot_opts})
 
-        super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                                 dynamic=dynamic,
-                                                 **dict(params, **plot_opts))
+        super().__init__(keys=keys, dimensions=dimensions,
+                         dynamic=dynamic, **dict(params, **plot_opts))
         self.streams = get_nested_streams(self.hmap) if streams is None else streams
 
         # Attach streams if not overlaid and not a batched ElementPlot
@@ -1183,7 +1216,6 @@ class GenericElementPlot(DimensionedPlot):
         else:
             self.ordering = []
 
-
     def get_zorder(self, overlay, key, el):
         """
         Computes the z-order of element in the NdOverlay
@@ -1192,13 +1224,11 @@ class GenericElementPlot(DimensionedPlot):
         spec = util.get_overlay_spec(overlay, key, el)
         return self.ordering.index(spec)
 
-
     def _updated_zorders(self, overlay):
         specs = [util.get_overlay_spec(overlay, key, el)
                  for key, el in overlay.data.items()]
         self.ordering = sorted(set(self.ordering+specs))
         return [self.ordering.index(spec) for spec in specs]
-
 
     def _get_frame(self, key):
         if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
@@ -1217,7 +1247,6 @@ class GenericElementPlot(DimensionedPlot):
         self.current_frame = frame
         self.current_key = key
         return frame
-
 
     def _execute_hooks(self, element):
         """
@@ -1239,12 +1268,10 @@ class GenericElementPlot(DimensionedPlot):
                 self.param.warning("Plotting hook %r could not be "
                                    "applied:\n\n %s" % (hook, e))
 
-
     def get_aspect(self, xspan, yspan):
         """
         Should define the aspect ratio of the plot.
         """
-
 
     def get_padding(self, obj, extents):
         """
@@ -1279,7 +1306,6 @@ class GenericElementPlot(DimensionedPlot):
                 ypad = tuple(yp*aspect for yp in ypad) if isinstance(ypad, tuple) else ypad*aspect
         return xpad, ypad, zpad
 
-
     def _get_range_extents(self, element, ranges, range_type, xdim, ydim, zdim):
         dims = element.dimensions()
         ndims = len(dims)
@@ -1294,27 +1320,17 @@ class GenericElementPlot(DimensionedPlot):
         (y0, y1), ysrange, yhrange = get_range(element, ranges, ydim)
         (z0, z1), zsrange, zhrange = get_range(element, ranges, zdim)
 
+        trigger = False
         if not self.overlaid and not self.batched:
             xspan, yspan, zspan = (v/2. for v in get_axis_padding(self.default_span))
             mx0, mx1 = get_minimum_span(x0, x1, xspan)
-
-            # If auto-padding is enabled ensure RangeXY dependent plots
-            # are recomputed before initial render
             if x0 != mx0 or x1 != mx1:
-                for stream in self.streams:
-                    if isinstance(stream, (RangeX, RangeXY)):
-                        stream.update(x_range=(mx0, mx1))
-                        if stream not in self._trigger:
-                            self._trigger.append(stream)
                 x0, x1 = mx0, mx1
+                trigger = True
             my0, my1 = get_minimum_span(y0, y1, yspan)
             if y0 != my0 or y1 != my1:
-                for stream in self.streams:
-                    if isinstance(stream, (RangeY, RangeXY)):
-                        stream.update(y_range=(my0, my1))
-                        if stream not in self._trigger:
-                            self._trigger.append(stream)
                 y0, y1 = my0, my1
+                trigger = True
 
             mz0, mz1 = get_minimum_span(z0, z1, zspan)
         xpad, ypad, zpad = self.get_padding(element, (x0, y0, z0, x1, y1, z1))
@@ -1351,8 +1367,14 @@ class GenericElementPlot(DimensionedPlot):
             elif zdim is None:
                 z0, z1 = np.NaN, np.NaN
             return (x0, y0, z0, x1, y1, z1)
-        return (x0, y0, x1, y1)
 
+        if not self.drawn:
+            for stream in getattr(self, 'source_streams', []):
+                if (isinstance(stream, (RangeX, RangeY, RangeXY)) and
+                    trigger and stream not in self._trigger):
+                    self._trigger.append(stream)
+
+        return (x0, y0, x1, y1)
 
     def get_extents(self, element, ranges, range_type='combined', xdim=None, ydim=None, zdim=None):
         """
@@ -1413,11 +1435,26 @@ class GenericElementPlot(DimensionedPlot):
 
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
+
+        if not self.drawn:
+            x_range, y_range = ((y0, y1), (x0, x1)) if self.invert_axes else ((x0, x1), (y0, y1))
+            for stream in getattr(self, 'source_streams', []):
+                if isinstance(stream, RangeX):
+                    params = {'x_range': x_range}
+                elif isinstance(stream, RangeY):
+                    params = {'y_range': y_range}
+                elif isinstance(stream, RangeXY):
+                    params = {'x_range': x_range, 'y_range': y_range}
+                else:
+                    continue
+                stream.update(**params)
+                if stream not in self._trigger and (self.xlim or self.ylim):
+                    self._trigger.append(stream)
+
         if self.projection == '3d':
             z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
             return (x0, y0, z0, x1, y1, z1)
         return (x0, y0, x1, y1)
-
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
         if self.xlabel is not None:
@@ -1438,7 +1475,6 @@ class GenericElementPlot(DimensionedPlot):
             zlabel = dim_axis_label(dimensions[2]) if dimensions[2] else ''
         return xlabel, ylabel, zlabel
 
-
     def _format_title_components(self, key, dimensions=True, separator='\n'):
         frame = self._get_frame(key)
         if frame is None:
@@ -1453,7 +1489,6 @@ class GenericElementPlot(DimensionedPlot):
             dim_title = ''
 
         return (label, group, type_name, dim_title)
-
 
     def update_frame(self, key, ranges=None):
         """
@@ -1496,8 +1531,8 @@ class GenericOverlayPlot(GenericElementPlot):
         if 'projection' not in params:
             params['projection'] = self._get_projection(overlay)
 
-        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, keys=keys,
-                                                 batched=batched, **params)
+        super().__init__(overlay, ranges=ranges, keys=keys,
+                         batched=batched, **params)
 
         # Apply data collapse
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
@@ -1512,7 +1547,6 @@ class GenericOverlayPlot(GenericElementPlot):
         if self.top_level:
             self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
-
 
     def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
         """
@@ -1534,8 +1568,9 @@ class GenericOverlayPlot(GenericElementPlot):
                                         for key in holomap.data.keys()])
         ranges = frame_ranges.values()
 
-        return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
-
+        with disable_pipeline():
+            collapsed = Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
+        return collapsed
 
     def _create_subplots(self, ranges):
         # Check if plot should be batched
@@ -1578,7 +1613,6 @@ class GenericOverlayPlot(GenericElementPlot):
             raise SkipRendering("%s backend could not plot any Elements "
                                 "in the Overlay." % self.renderer.backend)
         return subplots
-
 
     def _create_subplot(self, key, obj, streams, ranges):
         registry = Store.registry[self.renderer.backend]
@@ -1693,7 +1727,6 @@ class GenericOverlayPlot(GenericElementPlot):
             subplot.update_frame(key, ranges, element=obj)
             self.dynamic_subplots.append(subplot)
 
-
     def _update_subplot(self, subplot, spec):
         """
         Updates existing subplots when the subplot has been assigned
@@ -1716,7 +1749,6 @@ class GenericOverlayPlot(GenericElementPlot):
             odim_key = util.wrap_tuple(spec[-1])
             new_dims = zip(subplot.overlay_dims, odim_key)
             subplot.overlay_dims = util.OrderedDict(new_dims)
-
 
     def _get_subplot_extents(self, overlay, ranges, range_type):
         """
@@ -1756,7 +1788,6 @@ class GenericOverlayPlot(GenericElementPlot):
                 extent = subplot.get_extents(layer, sp_ranges, range_type=rt)
                 extents[rt].append(extent)
         return extents
-
 
     def get_extents(self, overlay, ranges, range_type='combined'):
         subplot_extents = self._get_subplot_extents(overlay, ranges, range_type)
@@ -1822,10 +1853,8 @@ class GenericCompositePlot(DimensionedPlot):
         if unbounded:
             initialize_unbounded(layout, dimensions, keys[0])
         self.layout = layout
-        super(GenericCompositePlot, self).__init__(keys=keys,
-                                                   dynamic=dynamic,
-                                                   dimensions=dimensions,
-                                                   **params)
+        super().__init__(keys=keys, dynamic=dynamic,
+                         dimensions=dimensions, **params)
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
         self.streams = list(set([s for streams in nested_streams for s in streams]))
@@ -1886,7 +1915,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         if len(layout.values()) == 0:
             raise SkipRendering(warn=False)
 
-        super(GenericLayoutPlot, self).__init__(layout, **params)
+        super().__init__(layout, **params)
         self.subplots = {}
         self.rows, self.cols = layout.shape[::-1] if self.transpose else layout.shape
         self.coords = list(product(range(self.rows),

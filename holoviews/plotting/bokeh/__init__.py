@@ -1,4 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
+import sys
 
 import numpy as np
 
@@ -36,6 +36,7 @@ from .geometry import SegmentPlot, RectanglesPlot
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .hex_tiles import HexTilesPlot
+from .links import LinkCallback # noqa (API import)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
@@ -150,7 +151,9 @@ point_size = np.sqrt(6) # Matches matplotlib default
 
 # Register bokeh.palettes with Palette and Cycle
 def colormap_generator(palette):
-    return lambda value: palette[int(value*(len(palette)-1))]
+    # Epsilon ensures float precision doesn't cause issues (#4911)
+    epsilon = sys.float_info.epsilon*10
+    return lambda value: palette[int(value*(len(palette)-1)+epsilon)]
 
 Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
                           for name, p in all_palettes.items()})
@@ -158,7 +161,7 @@ Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
 Cycle.default_cycles.update({name: p[max(p.keys())] for name, p in all_palettes.items()
                              if max(p.keys()) < 256})
 
-dflt_cmap = 'fire'
+dflt_cmap = config.default_cmap
 all_palettes['fire'] = {len(fire): fire}
 
 options = Store.options(backend='bokeh')
@@ -175,28 +178,30 @@ options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black', muted_alpha=0.2)
 options.Bars = Options('style', color=Cycle(), line_color='black', bar_width=0.8, muted_alpha=0.2)
 
-options.Spikes = Options('style', color='black', cmap='fire', muted_alpha=0.2)
+options.Spikes = Options('style', color='black', cmap=dflt_cmap, muted_alpha=0.2)
 options.Area = Options('style', color=Cycle(), alpha=1, line_color='black', muted_alpha=0.2)
 options.VectorField = Options('style', color='black', muted_alpha=0.2)
 
 # Paths
 options.Contours = Options('plot', show_legend=True)
-options.Contours = Options('style', color=Cycle(), cmap='viridis')
-options.Path = Options('style', color=Cycle(), cmap='viridis')
+options.Contours = Options('style', color=Cycle(), cmap=dflt_cmap)
+options.Path = Options('style', color=Cycle(), cmap=dflt_cmap)
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle(), line_color='black',
-                           cmap='viridis')
+                           cmap=dflt_cmap)
+options.Rectangles = Options('style', cmap=dflt_cmap)
+options.Segments = Options('style', cmap=dflt_cmap)
 
 # Geometries
 options.Rectangles = Options('style', line_color='black')
 
 # Rasters
-options.Image = Options('style', cmap=dflt_cmap)
-options.Raster = Options('style', cmap=dflt_cmap)
-options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
-options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
+options.Image = Options('style', cmap=config.default_gridded_cmap)
+options.Raster = Options('style', cmap=config.default_gridded_cmap)
+options.QuadMesh = Options('style', cmap=config.default_gridded_cmap, line_alpha=0)
+options.HeatMap = Options('style', cmap=config.default_heatmap_cmap, annular_line_alpha=0,
                           xmarks_line_color="#FFFFFF", xmarks_line_width=3,
                           ymarks_line_color="#FFFFFF", ymarks_line_width=3)
 
@@ -223,7 +228,7 @@ options.TriMesh = Options(
     edge_line_color='black', node_hover_fill_color='limegreen',
     edge_line_width=1, edge_hover_line_color='limegreen',
     edge_nonselection_alpha=0.2, edge_nonselection_line_color='black',
-    node_nonselection_alpha=0.2,
+    node_nonselection_alpha=0.2, cmap=dflt_cmap
 )
 options.TriMesh = Options('plot', tools=[])
 options.Chord = Options('style', node_size=15, node_color=Cycle(),

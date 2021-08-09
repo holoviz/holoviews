@@ -37,7 +37,7 @@ class IPTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(IPTestCase, self).setUp()
+        super().setUp()
         try:
             import IPython
             from IPython.display import HTML, SVG
@@ -84,7 +84,7 @@ class notebook_extension(extension):
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
     inline = param.Boolean(default=True, doc="""
-        Whether to inline JS and CSS resources. 
+        Whether to inline JS and CSS resources.
         If disabled, resources are loaded from CDN if one is available.""")
 
     width = param.Number(default=None, bounds=(0, 100), doc="""
@@ -96,9 +96,9 @@ class notebook_extension(extension):
         format will be displayed).
 
         Although the 'html' format is supported across backends, other
-        formats supported by the current backend (e.g 'png' and 'svg'
+        formats supported by the current backend (e.g. 'png' and 'svg'
         using the matplotlib backend) may be used. This may be useful to
-        export figures to other formats such as PDF with nbconvert. """)
+        export figures to other formats such as PDF with nbconvert.""")
 
     allow_jedi_completion = param.Boolean(default=False, doc="""
        Whether to allow jedi tab-completion to be enabled in IPython.
@@ -113,7 +113,7 @@ class notebook_extension(extension):
 
     def __call__(self, *args, **params):
         comms = params.pop('comms', None)
-        super(notebook_extension, self).__call__(*args, **params)
+        super().__call__(*args, **params)
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)

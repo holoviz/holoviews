@@ -1,5 +1,4 @@
-from __future__ import absolute_import, division, unicode_literals
-
+import copy
 import math
 import warnings
 from types import FunctionType
@@ -22,7 +21,7 @@ from ...util.transform import dim
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import process_cmap, color_intervals, dim_range_key
 from .plot import MPLPlot, mpl_rc_context
-from .util import mpl_version, validate, wrap_formatter
+from .util import EqHistNormalize, mpl_version, validate, wrap_formatter
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -55,15 +54,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
          Whether to apply log scaling to the y-axis of the Chart.""")
 
     xformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the x-axis.""")
 
     yformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the y-axis.""")
 
     zformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the z-axis.""")
 
     zaxis = param.Boolean(default=True, doc="""
@@ -92,7 +91,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     _has_axes = True
 
     def __init__(self, element, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         check = self.hmap.last
         if isinstance(check, CompositeOverlay):
             check = check.values()[0] # Should check if any are 3D plots
@@ -105,7 +104,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             except Exception as e:
                 self.param.warning("Plotting hook %r could not be "
                                    "applied:\n\n %s" % (hook, e))
-
 
     def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
@@ -192,8 +190,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._finalize_artist(element)
 
         self._execute_hooks(element)
-        return super(ElementPlot, self)._finalize_axis(key)
-
+        return super()._finalize_axis(key)
 
     def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
         """
@@ -239,14 +236,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
-
     def _finalize_artist(self, element):
         """
         Allows extending the _finalize_axis method with Element
         specific options.
         """
         pass
-
 
     def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
         """
@@ -300,7 +295,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.projection == '3d':
             return
 
-        if ((isinstance(aspect, util.basestring) and aspect != 'square') or
+        if ((isinstance(aspect, str) and aspect != 'square') or
             self.data_aspect):
             data_ratio = self.data_aspect or aspect
         else:
@@ -417,12 +412,14 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if an integer number of ticks is supplied and setting a
         rotation for the ticks.
         """
+        if isinstance(ticks, np.ndarray):
+            ticks = list(ticks)
         if isinstance(ticks, (list, tuple)) and all(isinstance(l, list) for l in ticks):
             axis.set_ticks(ticks[0])
             axis.set_ticklabels(ticks[1])
         elif isinstance(ticks, ticker.Locator):
             axis.set_major_locator(ticks)
-        elif not ticks and ticks is not None:
+        elif ticks is not None and not ticks:
             axis.set_ticks([])
         elif isinstance(ticks, int):
             if log:
@@ -453,6 +450,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         using the last available frame.
         """
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:
@@ -528,6 +526,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         plot_fn = getattr(ax, plot_method)
+        if 'norm' in plot_kwargs: # vmin/vmax should now be exclusively in norm
+             plot_kwargs.pop('vmin', None)
+             plot_kwargs.pop('vmax', None)
         artist = plot_fn(*plot_args, **plot_kwargs)
         return {'artist': artist[0] if isinstance(artist, list) and
                 len(artist) == 1 else artist}
@@ -549,7 +550,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in style.items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if validate(k, v) == True:
                     continue
                 elif v in element or (isinstance(element, Graph) and v in element.nodes):
@@ -666,11 +667,17 @@ class ColorbarPlot(ElementPlot):
         over the title key in colorbar_opts.""")
 
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a
+        tuple (low,high). If specified, takes precedence over data
+        and dimension ranges.""")
+
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     cformatter = param.ClassSelector(
-        default=None, class_=(util.basestring, ticker.Formatter, FunctionType), doc="""
+        default=None, class_=(str, ticker.Formatter, FunctionType), doc="""
         Formatter for ticks along the colorbar axis.""")
 
     colorbar = param.Boolean(default=False, doc="""
@@ -682,6 +689,9 @@ class ColorbarPlot(ElementPlot):
     color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
         Number of discrete colors to use when colormapping or a set of color
         intervals defining the range of values to map each color to.""")
+
+    cnorm = param.ObjectSelector(default='linear', objects=['linear', 'log', 'eq_hist'], doc="""
+        Color normalization to be applied during colormapping.""")
 
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -717,7 +727,7 @@ class ColorbarPlot(ElementPlot):
     _default_nan = '#8b8b8b'
 
     def __init__(self, *args, **kwargs):
-        super(ColorbarPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
@@ -850,7 +860,10 @@ class ColorbarPlot(ElementPlot):
                 categorical = False
             elif values.dtype.kind in 'uif':
                 if dim_name in ranges:
-                    clim = ranges[dim_name]['combined']
+                    if self.clim_percentile and 'robust' in ranges[dim_name]:
+                        clim = ranges[dim_name]['robust']
+                    else:
+                        clim = ranges[dim_name]['combined']
                 elif isinstance(vdim, dim):
                     if values.dtype.kind == 'M':
                         clim = values.min(), values.max()
@@ -885,7 +898,10 @@ class ColorbarPlot(ElementPlot):
         else:
             categorical = values.dtype.kind not in 'uif'
 
-        if self.logz:
+        if self.cnorm == 'eq_hist':
+            opts[prefix+'norm'] = EqHistNormalize(
+                vmin=clim[0], vmax=clim[1])
+        if self.cnorm == 'log' or self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                              linthresh=clim[1]/np.e)
@@ -934,7 +950,7 @@ class ColorbarPlot(ElementPlot):
             elif isinstance(val, tuple):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
-            elif isinstance(val, util.basestring):
+            elif isinstance(val, str):
                 color = val
                 alpha = 1
                 if color.startswith('#') and len(color) == 9:
@@ -958,11 +974,12 @@ class ColorbarPlot(ElementPlot):
                 if isinstance(self.color_levels, list):
                     palette, (vmin, vmax) = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
             cmap = mpl_colors.ListedColormap(palette)
+
+        cmap = copy.copy(cmap)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
         opts[prefix+'cmap'] = cmap
-
 
 
 class LegendPlot(ElementPlot):
@@ -1005,7 +1022,6 @@ class LegendPlot(ElementPlot):
                     'bottom_right': dict(loc=4)}
 
 
-
 class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
     OverlayPlot supports compositors processing of Overlays across maps.
@@ -1026,8 +1042,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
             params['projection'] = self._get_projection(overlay)
-        super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
-
+        super().__init__(overlay, ranges=ranges, **params)
 
     def _finalize_artist(self, element):
         for subplot in self.subplots.values():
@@ -1088,7 +1103,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             self.handles['bbox_extra_artists'].append(leg)
         self.handles['legend_data'] = data
 
-
     @mpl_rc_context
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
@@ -1108,11 +1122,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         return self._finalize_axis(key, element=element, ranges=ranges,
                                    title=self._format_title(key))
 
-
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if element is None and not reused:
             element = self._get_frame(key)
         elif element is not None:

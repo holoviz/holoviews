@@ -65,11 +65,8 @@ class ComparisonInterface(object):
         if type(first) is type(second):
             asserter = cls.equality_type_funcs.get(type(first))
 
-            try:              basestring = basestring # Python 2
-            except NameError: basestring = str        # Python 3
-
             if asserter is not None:
-                if isinstance(asserter, basestring):
+                if isinstance(asserter, str):
                     asserter = getattr(cls, asserter)
 
         if asserter is None:
@@ -101,7 +98,6 @@ class Comparison(ComparisonInterface):
 
         # Float comparisons
         cls.equality_type_funcs[float] =        cls.compare_floats
-        cls.equality_type_funcs[np.float] =     cls.compare_floats
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
@@ -171,7 +167,6 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[TriSurface] =   cls.compare_trisurface
-        cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
         cls.equality_type_funcs[Spikes] =       cls.compare_spikes
@@ -302,10 +297,6 @@ class Comparison(ComparisonInterface):
         # 'Deep' equality of dimension metadata (all parameters)
         dim1_params = dict(dim1.param.get_param_values())
         dim2_params = dict(dim2.param.get_param_values())
-
-        # Special handling of deprecated 'initial' values argument
-        dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
-        dim2_params['values'] = [] if dim2.values=='initial' else dim2.values
 
         if set(dim1_params.keys()) != set(dim2_params.keys()):
             raise cls.failureException("Dimension parameter sets mismatched: %s != %s"
@@ -610,7 +601,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_boxes(cls, el1, el2, msg='Rectangles'):
         cls.compare_dataset(el1, el2, msg)
-        
+
     #=========#
     # Graphs  #
     #=========#
@@ -700,7 +691,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dataframe(cls, df1, df2, msg='DFrame'):
-        from pandas.util.testing import assert_frame_equal
+        from pandas.testing import assert_frame_equal
         try:
             assert_frame_equal(df1, df2)
         except AssertionError as e:

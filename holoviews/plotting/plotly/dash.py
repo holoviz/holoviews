@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 # standard library imports
 import uuid
 import copy
@@ -62,7 +60,9 @@ def get_layout_ranges(plot):
     return layout_ranges
 
 
-def plot_to_figure(plot, reset_nclicks=0, layout_ranges=None, responsive=True):
+def plot_to_figure(
+        plot, reset_nclicks=0, layout_ranges=None, responsive=True, use_ranges=True
+):
     """
     Convert a HoloViews plotly plot to a plotly.py Figure.
 
@@ -82,7 +82,7 @@ def plot_to_figure(plot, reset_nclicks=0, layout_ranges=None, responsive=True):
     fig_dict['layout']['uirevision'] = "reset-" + str(reset_nclicks)
 
     # Remove range specification so plotly.js autorange + uirevision is in control
-    if layout_ranges:
+    if layout_ranges and use_ranges:
         for k in fig_dict['layout']:
             if k.startswith('xaxis') or k.startswith('yaxis'):
                 fig_dict['layout'][k].pop('range', None)
@@ -103,7 +103,7 @@ def plot_to_figure(plot, reset_nclicks=0, layout_ranges=None, responsive=True):
     # Pass to figure constructor to expand magic underscore notation
     fig = go.Figure(fig_dict)
 
-    if layout_ranges:
+    if layout_ranges and use_ranges:
         fig.update_layout(layout_ranges)
 
     return fig
@@ -284,7 +284,7 @@ def decode_store_data(store_data):
 
 def to_dash(
         app, hvobjs, reset_button=False, graph_class=dcc.Graph,
-        button_class=html.Button, responsive="width",
+        button_class=html.Button, responsive="width", use_ranges=True,
 ):
     """
     Build Dash components and callbacks from a collection of HoloViews objects
@@ -304,6 +304,9 @@ def to_dash(
             HoloViews size. If "width" (default), the width is responsive but
             height matches the HoloViews size. If "height", the height is responsive
             but the width matches the HoloViews size.
+        use_ranges: If True, initialize graphs with the dimension ranges specified
+            in the HoloViews objects. If False, allow Dash to perform its own
+            auto-range calculations.
     Returns:
         DashComponents named tuple with properties:
             - graphs: List of graph components (with type matching the input
@@ -366,7 +369,8 @@ def to_dash(
 
         layout_ranges.append(get_layout_ranges(plot))
         fig = plot_to_figure(
-            plot, reset_nclicks=0, layout_ranges=layout_ranges[-1], responsive=responsive
+            plot, reset_nclicks=0, layout_ranges=layout_ranges[-1],
+            responsive=responsive, use_ranges=use_ranges,
         ).to_dict()
         initial_fig_dicts.append(fig)
 
@@ -591,7 +595,8 @@ def to_dash(
             plot = PlotlyRenderer.get_plot(hvobj)
             fig = plot_to_figure(
                 plot, reset_nclicks=reset_nclicks,
-                layout_ranges=layout_ranges[fig_ind], responsive=responsive
+                layout_ranges=layout_ranges[fig_ind], responsive=responsive,
+                use_ranges=use_ranges,
             ).to_dict()
             figs[fig_ind] = fig
 

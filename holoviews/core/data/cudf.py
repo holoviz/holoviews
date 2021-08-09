@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 import warnings
 
@@ -18,6 +16,7 @@ from ..element import Element
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .interface import DataError, Interface
 from .pandas import PandasInterface
+from .util import finite_range
 
 
 class cuDFInterface(PandasInterface):
@@ -123,11 +122,14 @@ class cuDFInterface(PandasInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
+        if dimension.nodata is not None:
+            column = cls.replace_value(column, dimension.nodata)
         if column.dtype.kind == 'O':
             return np.NaN, np.NaN
         else:
-            return (column.min(), column.max())
+            return finite_range(column, column.min(), column.max())
 
 
     @classmethod
@@ -188,7 +190,7 @@ class cuDFInterface(PandasInterface):
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists, or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """

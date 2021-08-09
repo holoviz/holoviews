@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 
@@ -8,6 +6,7 @@ from ...operation import interpolate_curve
 from ...element import Tiles
 from ..mixins import AreaMixin, BarsMixin
 from .element import ElementPlot, ColorbarPlot
+from .selection import PlotlyOverlaySelectionDisplay
 
 
 class ChartPlot(ElementPlot):
@@ -100,7 +99,7 @@ class CurvePlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style, **kwargs):
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
-        return super(CurvePlot, self).get_data(element, ranges, style, **kwargs)
+        return super().get_data(element, ranges, style, **kwargs)
 
 
 class AreaPlot(AreaMixin, ChartPlot):
@@ -118,7 +117,7 @@ class AreaPlot(AreaMixin, ChartPlot):
     def get_data(self, element, ranges, style, **kwargs):
         x, y = ('y', 'x') if self.invert_axes else ('x', 'y')
         if len(element.vdims) == 1:
-            kwargs = super(AreaPlot, self).get_data(element, ranges, style, **kwargs)[0]
+            kwargs = super().get_data(element, ranges, style, **kwargs)[0]
             kwargs['fill'] = 'tozero'+y
             return [kwargs]
         xs = element.dimension_values(0)
@@ -274,7 +273,7 @@ class BarPlot(BarsMixin, ElementPlot):
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(BarPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         stack_dim = None
         if element.ndims > 1 and self.stacked:
             stack_dim = element.get_dimension(1)
@@ -317,6 +316,6 @@ class HistogramPlot(ElementPlot):
         return [{'x': xs, 'y': ys, 'width': binwidth, 'orientation': orientation}]
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(HistogramPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         layout['barmode'] = 'overlay'
         return layout

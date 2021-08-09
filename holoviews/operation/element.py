@@ -2,8 +2,6 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
-from __future__ import division
-
 from distutils.version import LooseVersion
 
 import numpy as np
@@ -14,11 +12,11 @@ from param import _is_number
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface, default_datatype
-from ..core.data.interface import dask_array_module
-from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite, dt_to_int,
-                         isdatetime, is_dask_array, is_cupy_array,
-                         is_ibis_expr)
+from ..core.data.util import dask_array_module
+from ..core.util import (
+    group_sanitizer, label_sanitizer, pd, datetime_types, isfinite,
+    dt_to_int, isdatetime, is_dask_array, is_cupy_array, is_ibis_expr
+)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Image, RGB
 from ..element.path import Contours, Polygons
@@ -55,7 +53,7 @@ class operation(Operation):
        checking.
 
        May be used to declare useful information to other code in
-       HoloViews e.g required for tab-completion support of operations
+       HoloViews, e.g. required for tab-completion support of operations
        registered with compositors.""")
 
     group = param.String(default='Operation', doc="""
@@ -659,7 +657,7 @@ class histogram(Operation):
     frequency_label = param.String(default=None, doc="""
       Format string defining the label of the frequency dimension of the Histogram.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     log = param.Boolean(default=False, doc="""
@@ -668,7 +666,7 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=True,
+    normed = param.ObjectSelector(default=False,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
       Controls normalization behavior.  If `True` or `'integral'`, then
@@ -719,7 +717,7 @@ class histogram(Operation):
         if is_cupy:
             import cupy
             full_cupy_support = LooseVersion(cupy.__version__) > '8.0'
-            if not full_cupy_support and (normed or self.p.weight_dimension): 
+            if not full_cupy_support and (normed or self.p.weight_dimension):
                 data = cupy.asnumpy(data)
                 is_cupy = False
             else:
@@ -857,7 +855,8 @@ class decimate(Operation):
     random_seed = param.Integer(default=42, doc="""
         Seed used to initialize randomization.""")
 
-    streams = param.List(default=[RangeXY], doc="""
+    streams = param.ClassSelector(default=[RangeXY], class_=(dict, list),
+                                   doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
@@ -1027,8 +1026,8 @@ class gridmatrix(param.ParameterizedFunction):
        or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
-       If a HoloMap is supplied this will allow overlaying one or
-       more of it's key dimensions.""")
+       If a HoloMap is supplied, this will allow overlaying one or
+       more of its key dimensions.""")
 
     def __call__(self, data, **params):
         p = param.ParamOverrides(self, params)
@@ -1055,7 +1054,7 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, basestring, np.str_, np.object_)+datetime_types
+        types = (str, np.str_, np.object_)+datetime_types
         dims = [d for d in element.dimensions()
                 if _is_number(element.range(d)[0]) and
                 not issubclass(element.get_dimension_type(d), types)]

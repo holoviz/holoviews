@@ -4,6 +4,7 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
+import sys
 import weakref
 from numbers import Number
 from collections import defaultdict
@@ -19,7 +20,7 @@ from .core import util
 from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
-pointer_types = (Number, util.basestring, tuple)+util.datetime_types
+pointer_types = (Number, str, tuple)+util.datetime_types
 
 class _SkipTrigger(): pass
 
@@ -37,11 +38,23 @@ def triggering_streams(streams):
         stream._triggering = True
     try:
         yield
-    except:
-        raise
     finally:
         for stream in streams:
             stream._triggering = False
+
+
+def streams_list_from_dict(streams):
+    "Converts a streams dictionary into a streams list"
+    params = {}
+    for k, v in streams.items():
+        if 'panel' in sys.modules:
+            from panel.depends import param_value_if_widget
+            v = param_value_if_widget(v)
+        if isinstance(v, param.Parameter) and v.owner is not None:
+            params[k] = v
+        else:
+            raise TypeError('Cannot handle value %r in streams dictionary' % v)
+    return Params.from_params(params)
 
 
 class Stream(param.Parameterized):
@@ -258,7 +271,7 @@ class Stream(param.Parameterized):
         # indicate where the event originated from
         self._metadata = {}
 
-        super(Stream, self).__init__(**params)
+        super().__init__(**params)
         self._rename = self._validate_rename(rename)
         if source is not None:
             if source in self.registry:
@@ -466,7 +479,7 @@ class Pipe(Stream):
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, data=None, memoize=False, **params):
-        super(Pipe, self).__init__(data=data, **params)
+        super().__init__(data=data, **params)
         self._memoize_counter = 0
 
     def send(self, data):
@@ -507,6 +520,9 @@ class Buffer(Pipe):
     is allowed while streaming.
     """
 
+    data = param.Parameter(default=None, constant=True, doc="""
+        Arbitrary data being streamed to a DynamicMap callback.""")
+
     def __init__(self, data, length=1000, index=True, following=True, **params):
         if (util.pd and isinstance(data, util.pd.DataFrame)):
             example = data
@@ -542,7 +558,7 @@ class Buffer(Pipe):
         if index and (util.pd and isinstance(example, util.pd.DataFrame)):
             example = example.reset_index()
         params['data'] = example
-        super(Buffer, self).__init__(**params)
+        super().__init__(**params)
         self.length = length
         self.following = following
         self._chunk_length = 0
@@ -633,7 +649,7 @@ class Buffer(Pipe):
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
-        return super(Buffer, self).update(**kwargs)
+        return super().update(**kwargs)
 
 
     @property
@@ -676,15 +692,20 @@ class Params(Stream):
                     rename.update({(o, k): v for o in owners})
             params['rename'] = rename
 
+        if 'linked' not in params:
+            for p in parameters:
+                if isinstance(p.owner, (LinkedStream, Params)) and p.owner.linked:
+                    params['linked'] = True
+
         self._watch_only = watch_only
-        super(Params, self).__init__(parameterized=parameterized, parameters=parameters, **params)
+        super().__init__(parameterized=parameterized, parameters=parameters, **params)
         self._memoize_counter = 0
         self._events = []
         self._watchers = []
         if watch:
             # Subscribe to parameters
             keyfn = lambda x: id(x.owner)
-            for _, group in groupby(sorted(parameters, key=keyfn)):
+            for _, group in groupby(sorted(parameters, key=keyfn), key=keyfn):
                 group = list(group)
                 watcher = group[0].owner.param.watch(self._watcher, [p.name for p in group])
                 self._watchers.append(watcher)
@@ -694,7 +715,6 @@ class Params(Stream):
         for watcher in self._watchers:
             watcher.inst.param.unwatch(watcher)
         self._watchers.clear()
-
 
     @classmethod
     def from_params(cls, params, **kwargs):
@@ -711,7 +731,7 @@ class Params(Stream):
         for _, group in groupby(sorted(params.items(), key=key_fn), key_fn):
             group = list(group)
             inst = [p.owner for _, p in group][0]
-            if not isinstance(inst, param.Parameterized):
+            if inst is None:
                 continue
             names = [p.name for _, p in group]
             rename = {p.name: n for n, p in group}
@@ -758,8 +778,21 @@ class Params(Stream):
         pass
 
     def update(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self.parameterized, k, v)
+        if self._rename:
+            owner_updates = defaultdict(dict)
+            for (owner, pname), rname in self._rename.items():
+                if rname in kwargs:
+                    owner_updates[owner][pname] = kwargs[rname]
+            for owner, updates in owner_updates.items():
+                if isinstance(owner, Stream):
+                    owner.update(**updates)
+                else:
+                    owner.param.set_param(**updates)
+        elif isinstance(self.parameterized, Stream):
+            self.parameterized.update(**kwargs)
+            return
+        else:
+            self.parameterized.param.set_param(**kwargs)
 
     @property
     def contents(self):
@@ -778,6 +811,14 @@ class ParamMethod(Params):
     change.
     """
 
+    parameterized = param.ClassSelector(class_=(param.Parameterized,
+                                                param.parameterized.ParameterizedMetaclass),
+                                        constant=True, allow_None=True, doc="""
+        Parameterized instance to watch for parameter changes.""")
+
+    parameters = param.List([], constant=True, doc="""
+        Parameters on the parameterized to watch.""")
+
     def __init__(self, parameterized, parameters=None, watch=True, **params):
         if not util.is_param_method(parameterized):
             raise ValueError('ParamMethod stream expects a method on a '
@@ -789,7 +830,7 @@ class ParamMethod(Params):
             parameters = [p.pobj for p in parameterized.param.params_depended_on(method.__name__)]
 
         params['watch_only'] = True
-        super(ParamMethod, self).__init__(parameterized, parameters, watch, **params)
+        super().__init__(parameterized, parameters, watch, **params)
 
 
 class Derived(Stream):
@@ -800,7 +841,7 @@ class Derived(Stream):
     If exclusive=True, then all streams except the most recently updated are cleared.
     """
     def __init__(self, input_streams, exclusive=False, **params):
-        super(Derived, self).__init__(**params)
+        super().__init__(**params)
         self.input_streams = []
         self._updating = set()
         self._register_streams(input_streams)
@@ -897,7 +938,7 @@ class History(Stream):
         List containing the historical values of the input stream""")
 
     def __init__(self, input_stream, **params):
-        super(History, self).__init__(**params)
+        super().__init__(**params)
         self.input_stream = input_stream
         self._register_input_stream()
         # Trigger event on input stream after registering so that current value is
@@ -954,7 +995,7 @@ class SelectionExpr(Derived):
             )
 
         input_streams = self._build_selection_streams(source)
-        super(SelectionExpr, self).__init__(
+        super().__init__(
             source=source, input_streams=input_streams, exclusive=True, **params
         )
 
@@ -992,7 +1033,7 @@ class SelectionExpr(Derived):
             if (isinstance(stream, Selection1D) and stream._triggering
                 and not self._index_cols):
                 return
-        return super(SelectionExpr, self).transform()
+        return super().transform()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
@@ -1080,7 +1121,7 @@ class SelectionExprSequence(Derived):
         self.history_stream = History(sel_expr)
         input_streams = [self.history_stream]
 
-        super(SelectionExprSequence, self).__init__(
+        super().__init__(
             source=source, input_streams=input_streams, **params
         )
 
@@ -1094,7 +1135,7 @@ class SelectionExprSequence(Derived):
 
     def reset(self):
         self.input_streams[0].clear_history()
-        super(SelectionExprSequence, self).reset()
+        super().reset()
 
     @classmethod
     def transform_function(cls, stream_values, constants):
@@ -1152,7 +1193,7 @@ class CrossFilterSet(Derived):
         self._index_cols = index_cols
         input_streams = list(selection_streams)
         exclusive = mode == "overwrite"
-        super(CrossFilterSet, self).__init__(
+        super().__init__(
             input_streams, exclusive=exclusive, **params
         )
 
@@ -1175,7 +1216,7 @@ class CrossFilterSet(Derived):
         }
 
     def reset(self):
-        super(CrossFilterSet, self).reset()
+        super().reset()
         for stream in self.input_streams:
             stream.reset()
 
@@ -1215,7 +1256,7 @@ class LinkedStream(Stream):
     """
 
     def __init__(self, linked=True, **params):
-        super(LinkedStream, self).__init__(linked=linked, **params)
+        super().__init__(linked=linked, **params)
 
 
 class PointerX(LinkedStream):
@@ -1273,6 +1314,13 @@ class Draw(PointerXY):
     A series of updating x/y-positions when drawing, together with the
     current stroke count
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
     stroke_count = param.Integer(default=0, constant=True, doc="""
        The current drawing stroke count. Increments every time a new
@@ -1283,32 +1331,74 @@ class SingleTap(PointerXY):
     The x/y-position of a single tap or click in data coordinates.
     """
 
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class DoubleTap(PointerXY):
     """
     The x/y-position of a double-tap or -click in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class PressUp(PointerXY):
     """
     The x/y position of a mouse pressup event in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class PanEnd(PointerXY):
     """The x/y position of a the end of a pan event in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 class MouseEnter(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class MouseLeave(PointerXY):
@@ -1316,6 +1406,13 @@ class MouseLeave(PointerXY):
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
+    x = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=pointer_types, default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
 
 
 class PlotSize(LinkedStream):
@@ -1403,6 +1500,10 @@ class SelectionXY(BoundsXY):
     selections.
     """
 
+    bounds = param.Tuple(default=None, constant=True, length=4,
+                         allow_None=True, doc="""
+        Bounds defined as (left, bottom, right, top) tuple.""")
+
     x_selection = param.ClassSelector(class_=(tuple, list), allow_None=True,
                                       constant=True, doc="""
       The current selection along the x-axis, either a numerical range
@@ -1454,7 +1555,7 @@ class PlotReset(LinkedStream):
         Whether a reset event is being signalled.""")
 
     def __init__(self, *args, **params):
-        super(PlotReset, self).__init__(self, *args, **dict(params, transient=True))
+        super().__init__(self, *args, **dict(params, transient=True))
 
 
 class CDSStream(LinkedStream):
@@ -1494,6 +1595,12 @@ class PointDraw(CDSStream):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, add=True, drag=True, num_objects=0,
                  styles={}, tooltip=None, **params):
         self.add = add
@@ -1503,7 +1610,7 @@ class PointDraw(CDSStream):
         self.styles = styles
         self.tooltip = tooltip
         self.styles = styles
-        super(PointDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1531,6 +1638,12 @@ class CurveEdit(PointDraw):
     tooltip: str
         An optional tooltip to override the default
     """
+
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
 
     def __init__(self, style={}, tooltip=None, **params):
         self.style = style or {'size': 10}
@@ -1569,6 +1682,12 @@ class PolyDraw(CDSStream):
         line_alpha, size, etc.
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, drag=True, num_objects=0,
                  show_vertices=False, vertex_style={}, styles={},
                  tooltip=None, **params):
@@ -1579,7 +1698,7 @@ class PolyDraw(CDSStream):
         self.vertex_style = vertex_style
         self.styles = styles
         self.tooltip = tooltip
-        super(PolyDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1622,12 +1741,18 @@ class FreehandDraw(CDSStream):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
         self.tooltip = tooltip
-        super(FreehandDraw, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1670,12 +1795,18 @@ class BoxEdit(CDSStream):
         An optional tooltip to override the default
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, empty_value=None, num_objects=0, styles={}, tooltip=None, **params):
         self.empty_value = empty_value
         self.num_objects = num_objects
         self.styles = styles
         self.tooltip = tooltip
-        super(BoxEdit, self).__init__(**params)
+        super().__init__(**params)
 
     @property
     def element(self):
@@ -1726,6 +1857,12 @@ class PolyEdit(PolyDraw):
         line_alpha, size, etc.
     """
 
+    data = param.Dict(constant=True, doc="""
+        Data synced from Bokeh ColumnDataSource supplied as a
+        dictionary of columns, where each column is a list of values
+        (for point-like data) or list of lists of values (for
+        path-like data).""")
+
     def __init__(self, vertex_style={}, shared=True, **params):
         self.shared = shared
-        super(PolyEdit, self).__init__(vertex_style=vertex_style, **params)
+        super().__init__(vertex_style=vertex_style, **params)

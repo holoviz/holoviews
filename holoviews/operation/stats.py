@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Dimension, Dataset, NdOverlay
 from ..core.operation import Operation
-from ..core.util import basestring, cartesian_product, isfinite
+from ..core.util import cartesian_product, isfinite
 from ..element import (Curve, Area, Image, Distribution, Bivariate,
                        Contours, Polygons)
 
@@ -53,7 +53,7 @@ class univariate_kde(Operation):
     n_samples = param.Integer(default=100, doc="""
         Number of samples to compute the KDE over.""")
 
-    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+    groupby = param.ClassSelector(default=None, class_=(str, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     _per_element = True

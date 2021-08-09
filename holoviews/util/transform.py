@@ -1,5 +1,3 @@
-from __future__ import division
-
 import operator
 import sys
 
@@ -10,7 +8,7 @@ import param
 
 from ..core.data import PandasInterface
 from ..core.dimension import Dimension
-from ..core.util import basestring, pd, resolve_dependent_value, unique_iterator
+from ..core.util import pd, resolve_dependent_value, unique_iterator
 
 
 def _maybe_map(numpy_fn):
@@ -219,13 +217,18 @@ class dim(object):
     _accessor = None
 
     def __init__(self, obj, *args, **kwargs):
+        from panel.widgets import Widget
         ops = []
         self._ns = np.ndarray
         self.coerce = kwargs.get('coerce', True)
-        if isinstance(obj, basestring):
+        if isinstance(obj, str):
             self.dimension = Dimension(obj)
         elif isinstance(obj, (Dimension, int)):
             self.dimension = obj
+        elif isinstance(obj, param.Parameter):
+            self.dimension = obj
+        elif isinstance(obj, Widget):
+            self.dimension = obj.param.value
         else:
             self.dimension = obj.dimension
             ops = obj.ops
@@ -234,7 +237,7 @@ class dim(object):
         else:
             fn = None
         if fn is not None:
-            if not (isinstance(fn, function_types+(basestring,)) or
+            if not (isinstance(fn, function_types+(str,)) or
                     any(fn in funcs for funcs in self._all_funcs)):
                 raise ValueError('Second argument must be a function, '
                                  'found %s type' % type(fn))
@@ -254,7 +257,7 @@ class dim(object):
             return self.ops[-1]['fn']
 
     def __call__(self, *args, **kwargs):
-        if (not self.ops or not isinstance(self.ops[-1]['fn'], basestring) or
+        if (not self.ops or not isinstance(self.ops[-1]['fn'], str) or
             'accessor' not in self.ops[-1]['kwargs']):
             raise ValueError("Cannot call method on %r expression. "
                              "Only methods accessed via namspaces, "
@@ -267,11 +270,25 @@ class dim(object):
             new_op = dict(op, args=args, kwargs=kwargs)
         return self.clone(self.dimension, self.ops[:-1]+[new_op])
 
-    def __getattr__(self, attr):
-        if attr in dir(self):
+    def __getattribute__(self, attr):
+        self_dict = super().__getattribute__('__dict__')
+        if '_ns' not in self_dict: # Not yet initialized
+            return super().__getattribute__(attr)
+        ns = self_dict['_ns']
+        ops = super().__getattribute__('ops')
+        if ops and ops[-1]['kwargs'].get('accessor'):
+            try:
+                ns = getattr(ns, ops[-1]['fn'])
+            except Exception:
+                # If the namespace doesn't know the method we are
+                # calling then we are using custom API of the dim
+                # transform itself, so set namespace to None
+                ns = None
+        extras = {ns_attr for ns_attr in dir(ns) if not ns_attr.startswith('_')}
+        if attr in extras and attr not in super(dim, self).__dir__():
             return type(self)(self, attr, accessor=True)
-        raise AttributeError("%r object has no attribute %r" %
-                             (type(self).__name__, attr))
+        else:
+            return super().__getattribute__(attr)
 
     def __dir__(self):
         ns = self._ns
@@ -318,13 +335,22 @@ class dim(object):
                     from panel.widgets.base import Widget
                     if isinstance(op_arg, Widget):
                         op_arg = op_arg.param.value
+                if isinstance(op_arg, dim):
+                    params.update(op_arg.params)
+                elif isinstance(op_arg, slice):
+                    if isinstance(op_arg.start, param.Parameter):
+                        params[op_arg.start.name+str(id(op_arg.start))] = op_arg.start
+                    if isinstance(op_arg.stop, param.Parameter):
+                        params[op_arg.stop.name+str(id(op_arg.stop))] = op_arg.stop
+                    if isinstance(op_arg.step, param.Parameter):
+                        params[op_arg.step.name+str(id(op_arg.step))] = op_arg.step
                 if (isinstance(op_arg, param.Parameter) and
                     isinstance(op_arg.owner, param.Parameterized)):
-                    params[op_arg.name+str(id(op))] = op_arg
+                    params[op_arg.name+str(id(op_arg))] = op_arg
+
         return params
 
     # Namespace properties
-
     @property
     def df(self):
         return self.clone(dim_type=df_dim)
@@ -336,6 +362,9 @@ class dim(object):
     @property
     def xr(self):
         return self.clone(dim_type=xr_dim)
+
+    def __getitem__(self, *index):
+        return type(self)(self, operator.getitem, *index)
 
     # Builtin functions
     def __abs__(self):            return type(self)(self, abs)
@@ -397,7 +426,9 @@ class dim(object):
     def any(self, *args, **kwargs):      return type(self)(self, np.any, *args, **kwargs)
     def all(self, *args, **kwargs):      return type(self)(self, np.all, *args, **kwargs)
     def cumprod(self, *args, **kwargs):  return type(self)(self, np.cumprod,  *args, **kwargs)
-    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args, **kwargs)
+    def cumsum(self, *args, **kwargs):   return type(self)(self, np.cumsum,  *args,
+                                                           axis=kwargs.pop('axis',0),
+                                                           **kwargs)
     def max(self, *args, **kwargs):      return type(self)(self, np.max, *args, **kwargs)
     def mean(self, *args, **kwargs):     return type(self)(self, np.mean, *args, **kwargs)
     def min(self, *args, **kwargs):      return type(self)(self, np.min, *args, **kwargs)
@@ -480,7 +511,7 @@ class dim(object):
         """
         args = list(args) # make mutable
         for k, arg in enumerate(args):
-            if isinstance(arg, basestring):
+            if isinstance(arg, str):
                 args[k] = cls(arg)
         return cls(args[0], func, *args[1:], **kwargs)
 
@@ -499,7 +530,9 @@ class dim(object):
         """
         from ..element import Graph
 
-        if isinstance(self.dimension, dim):
+        if isinstance(self.dimension, param.Parameter):
+            applies = True
+        elif isinstance(self.dimension, dim):
             applies = self.dimension.applies(dataset)
         elif self.dimension.name == '*':
             applies = True
@@ -536,7 +569,7 @@ class dim(object):
                 kwargs['axis'] = None
             fn = fn_name
 
-        if isinstance(fn, basestring):
+        if isinstance(fn, str):
             accessor = kwargs.pop('accessor', None)
             fn_args = []
         else:
@@ -549,6 +582,12 @@ class dim(object):
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
                 )
+            elif isinstance(arg, slice):
+                arg = slice(
+                    resolve_dependent_value(arg.start),
+                    resolve_dependent_value(arg.stop),
+                    resolve_dependent_value(arg.step)
+                )
             arg = resolve_dependent_value(arg)
             fn_args.append(arg)
         fn_kwargs = {}
@@ -557,6 +596,12 @@ class dim(object):
                 v = v.apply(
                     dataset, flat, expanded, ranges, all_values,
                     keep_index, compute, strict
+                )
+            elif isinstance(v, slice):
+                v = slice(
+                    resolve_dependent_value(v.start),
+                    resolve_dependent_value(v.stop),
+                    resolve_dependent_value(v.step)
                 )
             fn_kwargs[k] = resolve_dependent_value(v)
         args = tuple(fn_args[::-1] if op['reverse'] else fn_args)
@@ -567,7 +612,7 @@ class dim(object):
         if (((fn is norm) or (fn is lognorm)) and drange != {} and
             not ('min' in kwargs and 'max' in kwargs)):
             data = fn(data, *drange)
-        elif isinstance(fn, basestring):
+        elif isinstance(fn, str):
             method = getattr(data, fn, None)
             if method is None:
                 mtype = 'attribute' if accessor else 'method'
@@ -673,6 +718,9 @@ class dim(object):
         if dimension.name == '*':
             data = dataset.data
             eldim = None
+        elif isinstance(dimension, param.Parameter):
+            data = getattr(dimension.owner, dimension.name)
+            eldim = None
         else:
             lookup = dimension if strict else dimension.name
             eldim = dataset.get_dimension(lookup).name
@@ -725,14 +773,14 @@ class dim(object):
                 fn_name = self._unary_funcs[fn]
                 format_string = '{fn}' + prev
             else:
-                if isinstance(fn, basestring):
+                if isinstance(fn, str):
                     fn_name = fn
                 else:
                     fn_name = fn.__name__
                 if fn in self._builtin_funcs:
                     fn_name = self._builtin_funcs[fn]
                     format_string = '{fn}'+prev
-                elif isinstance(fn, basestring):
+                elif isinstance(fn, str):
                     if accessor:
                         sep = '' if op_repr.endswith(')') or prev_accessor else ')'
                         format_string = prev+sep+'.{fn}'
@@ -770,7 +818,7 @@ class dim(object):
                     format_string += '{kwargs}'
 
             # Insert accessor
-            if i == 0 and self._accessor:
+            if i == 0 and self._accessor and ')' in format_string:
                 idx = format_string.index(')')
                 format_string = ''.join([
                     format_string[:idx], ').', self._accessor,
@@ -800,7 +848,7 @@ class df_dim(dim):
     _accessor = 'pd'
 
     def __init__(self, obj, *args, **kwargs):
-        super(df_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = pd.Series
 
     def interface_applies(self, dataset, coerce):
@@ -843,7 +891,7 @@ class xr_dim(dim):
         except ImportError:
             raise ImportError("XArray could not be imported, dim().xr "
                               "requires the xarray to be available.")
-        super(xr_dim, self).__init__(obj, *args, **kwargs)
+        super().__init__(obj, *args, **kwargs)
         self._ns = xr.DataArray
 
     def interface_applies(self, dataset, coerce):

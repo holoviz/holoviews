@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 import types
 
@@ -12,14 +10,15 @@ from ..dimension import Dimension, asdim, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface, DataError, dask_array_module
+from .interface import Interface, DataError
+from .util import dask_array_module, finite_range
 
 
 def is_cupy(array):
     if 'cupy' not in sys.modules:
         return False
     from cupy import ndarray
-    return isinstance(array, ndarray) 
+    return isinstance(array, ndarray)
 
 
 class XArrayInterface(GridInterface):
@@ -82,11 +81,14 @@ class XArrayInterface(GridInterface):
             dim = asdim(dim)
             coord = data[dim.name]
             unit = coord.attrs.get('units') if dim.unit is None else dim.unit
+            if isinstance(unit, tuple):
+                unit = unit[0]
             if 'long_name' in coord.attrs:
                 spec = (dim.name, coord.attrs['long_name'])
             else:
                 spec = (dim.name, dim.label)
-            return dim.clone(spec, unit=unit)
+            nodata = coord.attrs.get('NODATA')
+            return dim.clone(spec, unit=unit, nodata=nodata)
 
         packed = False
         if isinstance(data, xr.DataArray):
@@ -99,8 +101,9 @@ class XArrayInterface(GridInterface):
             elif data.name:
                 vdim = Dimension(data.name)
                 vdim.unit = data.attrs.get('units')
+                vdim.nodata = data.attrs.get('NODATA')
                 label = data.attrs.get('long_name')
-                if label is not None:
+                if 'long_name' in data.attrs:
                     vdim.label = label
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
@@ -246,22 +249,27 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension, strict=True).name
-        if dataset._binned and dimension in dataset.kdims:
+        dimension = dataset.get_dimension(dimension, strict=True)
+        dim = dimension.name
+        edges = dataset._binned and dimension in dataset.kdims
+        if edges:
             data = cls.coords(dataset, dim, edges=True)
-            if data.dtype.kind == 'M':
-                dmin, dmax = data.min(), data.max()
-            else:
-                dmin, dmax = np.nanmin(data), np.nanmax(data)
         else:
             if cls.packed(dataset) and dim in dataset.vdims:
                 data = dataset.data.values[..., dataset.vdims.index(dim)]
             else:
                 data = dataset.data[dim]
-            if len(data):
-                dmin, dmax = data.min().data, data.max().data
-            else:
-                dmin, dmax = np.NaN, np.NaN
+            if dimension.nodata is not None:
+                data = cls.replace_value(data, dimension.nodata)
+
+        if not len(data):
+            dmin, dmax = np.NaN, np.NaN
+        elif data.dtype.kind == 'M' or not edges:
+            dmin, dmax = data.min(), data.max()
+            if not edges:
+                dmin, dmax = dmin.data, dmax.data
+        else:
+            dmin, dmax = np.nanmin(data), np.nanmax(data)
 
         da = dask_array_module()
         if da and isinstance(dmin, da.Array):
@@ -272,7 +280,7 @@ class XArrayInterface(GridInterface):
             dmax = dmax[()]
         dmin = dmin if np.isscalar(dmin) or isinstance(dmin, util.datetime_types) else dmin.item()
         dmax = dmax if np.isscalar(dmax) or isinstance(dmax, util.datetime_types) else dmax.item()
-        return dmin, dmax
+        return finite_range(data, dmin, dmax)
 
 
     @classmethod
@@ -405,9 +413,10 @@ class XArrayInterface(GridInterface):
         Given a dataset object and data in the appropriate format for
         the interface, return a simple scalar.
         """
-        if (not cls.packed(dataset) and len(data.data_vars) == 1 and
-            len(data[dataset.vdims[0].name].shape) == 0):
-            return data[dataset.vdims[0].name].item()
+        if not cls.packed(dataset) and len(data.data_vars) == 1:
+            array = data[dataset.vdims[0].name].squeeze()
+            if len(array.shape) == 0:
+                return array.item()
         return data
 
 
@@ -528,6 +537,9 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
+        if selection_mask is not None:
+            return dataset.data.where(selection_mask, drop=True)
+
         validated = {}
         for k, v in selection.items():
             dim = dataset.get_dimension(k, strict=True)
@@ -658,7 +670,7 @@ class XArrayInterface(GridInterface):
                 data = data.assign(vars)
             used_coords = set.intersection(*[set(var.coords) for var in data.data_vars.values()])
         drop_coords =  set.symmetric_difference(used_coords, prev_coords)
-        return data.drop([c for c in drop_coords if c in data.coords]), list(drop_coords)
+        return data.drop_vars([c for c in drop_coords if c in data.coords]), list(drop_coords)
 
 
 Interface.register(XArrayInterface)

@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 import numpy as np
 import matplotlib
@@ -24,7 +22,7 @@ class ABLine2D(Line2D):
         ax = kwargs['axes']
 
         # init the line, add it to the axes
-        super(ABLine2D, self).__init__([], [], *args, **kwargs)
+        super().__init__([], [], *args, **kwargs)
         self._slope = slope
         self._intercept = intercept
         ax.add_line(self)
@@ -55,7 +53,7 @@ class AnnotationPlot(ElementPlot):
 
     def __init__(self, annotation, **params):
         self._annotation = annotation
-        super(AnnotationPlot, self).__init__(annotation, **params)
+        super().__init__(annotation, **params)
         self.handles['annotations'] = []
 
     @mpl_rc_context
@@ -251,7 +249,7 @@ class ArrowPlot(AnnotationPlot):
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
         if 'fontsize' in textopts:
-            self.param.warning('Arrow textsize style option is deprecated, '
+            self.param.warning('Arrow fontsize style option is deprecated, '
                                'use textsize option instead.')
         if 'textsize' in textopts:
             textopts['fontsize'] = textopts.pop('textsize')

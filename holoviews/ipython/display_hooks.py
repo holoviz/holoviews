@@ -117,16 +117,11 @@ def dynamic_optstate(element, state=None):
 @contextmanager
 def option_state(element):
     optstate = dynamic_optstate(element)
-    raised_exception = False
     try:
         yield
     except Exception:
-        raised_exception = True
+        dynamic_optstate(element, state=optstate)
         raise
-    finally:
-        if raised_exception:
-            dynamic_optstate(element, state=optstate)
-
 
 
 def display_hook(fn):
@@ -209,7 +204,7 @@ def map_display(vmap, max_frames):
 @display_hook
 def layout_display(layout, max_frames):
     if isinstance(layout, AdjointLayout):
-        layout = Layout(layout).opts(layout.opts.get('plot')) 
+        layout = Layout(layout).opts(layout.opts.get('plot'))
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     nframes = len(unique_dimkeys(layout)[1])

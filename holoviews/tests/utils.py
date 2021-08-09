@@ -29,7 +29,7 @@ class MockLoggingHandler(logging.Handler):
             'INFO':'param.param.message()',
             'VERBOSE':'param.param.verbose()',
             'DEBUG':'param.param.debug()'}
-        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def emit(self, record):
         "Store a message to the instance's messages dictionary"
@@ -65,7 +65,7 @@ class MockLoggingHandler(logging.Handler):
                                             substring=repr(substring)))
         else:
             self.messages[level].pop(-1)
-            
+
 
     def assertContains(self, level, substring):
         """
@@ -95,7 +95,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
     """
 
     def setUp(self):
-        super(LoggingComparisonTestCase, self).setUp()
+        super().setUp()
         log = param.parameterized.get_logger()
         self.handlers = log.handlers
         log.handlers = []
@@ -103,7 +103,7 @@ class LoggingComparisonTestCase(ComparisonTestCase):
         log.addHandler(self.log_handler)
 
     def tearDown(self):
-        super(LoggingComparisonTestCase, self).tearDown()
+        super().tearDown()
         log = param.parameterized.get_logger()
         log.handlers = self.handlers
         messages = self.log_handler.messages

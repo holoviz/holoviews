@@ -2,7 +2,7 @@ from numbers import Number
 import numpy as np
 import param
 
-from ..core.util import datetime_types, basestring
+from ..core.util import datetime_types
 from ..core import Dimension, Element2D, Element
 from ..core.data import Dataset
 
@@ -30,7 +30,7 @@ class Annotation(Element2D):
     _auxiliary_component = True
 
     def __init__(self, data, **params):
-        super(Annotation, self).__init__(data, **params)
+        super().__init__(data, **params)
 
     def __len__(self):
         return 1
@@ -68,7 +68,7 @@ class Annotation(Element2D):
         elif index == 1:
             return [] if np.isscalar(self.data) else np.array([self.data[1]])
         else:
-            return super(Annotation, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
     # Note: This version of clone is identical in path.BaseShape
     # Consider implementing a mix-in class if it is needed again.
@@ -95,7 +95,9 @@ class VLine(Annotation):
     __pos_params = ['x']
 
     def __init__(self, x, **params):
-        super(VLine, self).__init__(x, x=x, **params)
+        if isinstance(x, np.ndarray) and x.size == 1:
+            x = np.atleast_1d(x)[0]
+        super().__init__(x, x=x, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -114,7 +116,7 @@ class VLine(Annotation):
         elif index == 1:
             return np.array([np.nan])
         else:
-            return super(VLine, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 class HLine(Annotation):
@@ -128,7 +130,9 @@ class HLine(Annotation):
     __pos_params = ['y']
 
     def __init__(self, y, **params):
-        super(HLine, self).__init__(y, y=y, **params)
+        if isinstance(y, np.ndarray) and y.size == 1:
+            y = np.atleast_1d(y)[0]
+        super().__init__(y, y=y, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -147,7 +151,7 @@ class HLine(Annotation):
         elif index == 1:
             return np.array([self.data])
         else:
-            return super(HLine, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 class Slope(Annotation):
@@ -160,7 +164,7 @@ class Slope(Annotation):
     __pos_params = ['slope', 'y_intercept']
 
     def __init__(self, slope, y_intercept, kdims=None, vdims=None, **params):
-        super(Slope, self).__init__(
+        super().__init__(
             (slope, y_intercept), slope=slope, y_intercept=y_intercept,
             kdims=kdims, vdims=vdims, **params)
 
@@ -200,7 +204,7 @@ class VSpan(Annotation):
     __pos_params = ['x1', 'x2']
 
     def __init__(self, x1=None, x2=None, **params):
-        super(VSpan, self).__init__([x1, x2], x1=x1, x2=x2, **params)
+        super().__init__([x1, x2], x1=x1, x2=x2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -219,7 +223,7 @@ class VSpan(Annotation):
         elif index == 1:
             return np.array([np.nan, np.nan])
         else:
-            return super(VSpan, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 class HSpan(Annotation):
@@ -236,7 +240,7 @@ class HSpan(Annotation):
     __pos_params = ['y1', 'y2']
 
     def __init__(self, y1=None, y2=None, **params):
-        super(HSpan, self).__init__([y1, y2], y1=y1, y2=y2, **params)
+        super().__init__([y1, y2], y1=y1, y2=y2, **params)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -255,7 +259,7 @@ class HSpan(Annotation):
         elif index == 1:
             return np.array(self.data)
         else:
-            return super(HSpan, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 
@@ -278,8 +282,7 @@ class Spline(Annotation):
     group = param.String(default='Spline', constant=True)
 
     def __init__(self, spline_points, **params):
-        super(Spline, self).__init__(spline_points, **params)
-
+        super().__init__(spline_points, **params)
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """Clones the object, overriding data and parameters.
@@ -312,7 +315,7 @@ class Spline(Annotation):
         if index in [0, 1]:
             return np.array([point[index] for point in self.data[0]])
         else:
-            return super(Spline, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 
@@ -352,21 +355,20 @@ class Arrow(Annotation):
                  points=40, arrowstyle='->', **params):
 
         info = (x, y, text, direction, points, arrowstyle)
-        super(Arrow, self).__init__(info, x=x, y=y,
-                                    text=text, direction=direction,
-                                    points=points, arrowstyle=arrowstyle,
-                                    **params)
+        super().__init__(info, x=x, y=y,
+                         text=text, direction=direction,
+                         points=points, arrowstyle=arrowstyle,
+                         **params)
 
     def __setstate__(self, d):
         """
         Add compatibility for unpickling old Arrow types with different
         .data format.
         """
-        super(Arrow, self).__setstate__(d)
+        super().__setstate__(d)
         if len(self.data) == 5:
             direction, text, (x, y), points, arrowstyle = self.data
             self.data = (x, y, text, direction, points, arrowstyle)
-
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         """Return the values along the requested dimension.
@@ -385,7 +387,7 @@ class Arrow(Annotation):
         elif index == 1:
             return np.array([self.y])
         else:
-            return super(Arrow, self).dimension_values(dimension)
+            return super().dimension_values(dimension)
 
 
 
@@ -394,10 +396,10 @@ class Text(Annotation):
     Draw a text annotation at the specified position with custom
     fontsize, alignment and rotation.
     """
-    x = param.ClassSelector(default=0, class_=(Number, basestring) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=(Number, str) + datetime_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_=(Number, basestring) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=(Number, str) + datetime_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")
@@ -423,9 +425,9 @@ class Text(Annotation):
     def __init__(self, x, y, text, fontsize=12,
                  halign='center', valign='center', rotation=0, **params):
         info = (x, y, text, fontsize, halign, valign, rotation)
-        super(Text, self).__init__(info, x=x, y=y, text=text,
-                                   fontsize=fontsize, rotation=rotation,
-                                   halign=halign, valign=valign, **params)
+        super().__init__(info, x=x, y=y, text=text,
+                         fontsize=fontsize, rotation=rotation,
+                         halign=halign, valign=valign, **params)
 
 
 
@@ -440,10 +442,10 @@ class Div(Element):
     def __init__(self, data, **params):
         if data is None:
             data = ''
-        if not isinstance(data, basestring):
+        if not isinstance(data, str):
             raise ValueError("Div element html data must be a string "
                              "type, found %s type." % type(data).__name__)
-        super(Div, self).__init__(data, **params)
+        super().__init__(data, **params)
 
 
 

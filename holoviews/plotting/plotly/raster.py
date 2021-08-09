@@ -11,6 +11,11 @@ from .element import ColorbarPlot
 
 class RasterPlot(ColorbarPlot):
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     style_opts = ['visible', 'cmap', 'alpha']
@@ -20,7 +25,7 @@ class RasterPlot(ColorbarPlot):
         return {'type': 'heatmap'}
 
     def graph_options(self, element, ranges, style, **kwargs):
-        opts = super(RasterPlot, self).graph_options(element, ranges, style, **kwargs)
+        opts = super().graph_options(element, ranges, style, **kwargs)
         copts = self.get_color_opts(element.vdims[0], element, ranges, style)
         opts['zmin'] = copts.pop('cmin')
         opts['zmax'] = copts.pop('cmax')
@@ -41,13 +46,14 @@ class RasterPlot(ColorbarPlot):
         if self.invert_axes:
             x0, y0, dx, dy = y0, x0, dy, dx
             array = array.T
+
         return [dict(x0=x0, y0=y0, dx=dx, dy=dy, z=array)]
 
 
 class HeatMapPlot(HeatMapMixin, RasterPlot):
 
     def init_layout(self, key, element, ranges, **kwargs):
-        layout = super(HeatMapPlot, self).init_layout(key, element, ranges)
+        layout = super().init_layout(key, element, ranges)
         gridded = element.gridded
         xdim, ydim = gridded.dimensions()[:2]
 
@@ -101,6 +107,11 @@ class HeatMapPlot(HeatMapMixin, RasterPlot):
 
 class QuadMeshPlot(RasterPlot):
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     def get_data(self, element, ranges, style, **kwargs):
         x, y, z = element.dimensions()[:3]
         irregular = element.interface.irregular(element, x)
@@ -113,4 +124,5 @@ class QuadMeshPlot(RasterPlot):
         if self.invert_axes:
             y, x = 'x', 'y'
             zdata = zdata.T
+
         return [{x: xc, y: yc, 'z': zdata}]

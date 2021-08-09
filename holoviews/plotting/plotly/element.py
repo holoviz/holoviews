@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import uuid
 import numpy as np
 import param
@@ -109,10 +107,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     _nonvectorized_styles = []
 
     def __init__(self, element, plot=None, **params):
-        super(ElementPlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.trace_uid = str(uuid.uuid4())
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
 
     @classmethod
     def trace_kwargs(cls, **kwargs):
@@ -134,8 +132,11 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
 
     def generate_plot(self, key, ranges, element=None, is_geo=False):
+        self.prev_frame =  self.current_frame
         if element is None:
             element = self._get_frame(key)
+        else:
+            self.current_frame = element
 
         if is_geo and not self._supports_geo:
             raise ValueError(
@@ -333,7 +334,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def _apply_transforms(self, element, ranges, style):
         new_style = dict(style)
         for k, v in dict(style).items():
-            if isinstance(v, util.basestring):
+            if isinstance(v, str):
                 if k == 'marker' and v in 'xsdo':
                     continue
                 elif v in element:
@@ -553,7 +554,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(ticker, (tuple, list)):
             if all(isinstance(t, tuple) for t in ticker):
                 ticks, labels = zip(*ticker)
-                labels = [l if isinstance(l, util.basestring) else str(l)
+                labels = [l if isinstance(l, str) else str(l)
                               for l in labels]
                 axis_props['tickvals'] = ticks
                 axis_props['ticktext'] = labels
@@ -572,8 +573,14 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 class ColorbarPlot(ElementPlot):
 
     clim = param.NumericTuple(default=(np.nan, np.nan), length=2, doc="""
-       User-specified colorbar axis range limits for the plot, as a tuple (low,high).
-       If specified, takes precedence over data and dimension ranges.""")
+        User-specified colorbar axis range limits for the plot, as a
+        tuple (low,high). If specified, takes precedence over data
+        and dimension ranges.""")
+
+    clim_percentile = param.ClassSelector(default=False, class_=(int, float, bool), doc="""
+        Percentile value to compute colorscale robust to outliers. If
+        True, uses 2nd and 98th percentile; otherwise uses the specified
+        numerical percentile value.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
@@ -608,7 +615,10 @@ class ColorbarPlot(ElementPlot):
             if util.isfinite(self.clim).all():
                 cmin, cmax = self.clim
             elif dim_name in ranges:
-                cmin, cmax = ranges[dim_name]['combined']
+                if self.clim_percentile and 'robust' in ranges[dim_name]:
+                    low, high = ranges[dim_name]['robust']
+                else:
+                    cmin, cmax = ranges[dim_name]['combined']
             elif isinstance(eldim, dim):
                 cmin, cmax = np.nan, np.nan
                 auto = True
@@ -714,8 +724,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return figure
 
     def update_frame(self, key, ranges=None, element=None, is_geo=False):
-
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        self.prev_frame =  self.current_frame
         if not reused and element is None:
             element = self._get_frame(key)
         elif element is not None:

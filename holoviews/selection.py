@@ -10,6 +10,7 @@ from .core.dimension import OrderedDict
 from .core.element import Element, Layout
 from .core.options import CallbackError, Store
 from .core.overlay import NdOverlay, Overlay
+from .core.layout import AdjointLayout
 from .core.spaces import GridSpace
 from .streams import (
     Stream, SelectionExprSequence, CrossFilterSet,
@@ -31,7 +32,7 @@ class _SelectionExprLayers(Derived):
     exprs = param.List(constant=True)
 
     def __init__(self, expr_override, cross_filter_set, **params):
-        super(_SelectionExprLayers, self).__init__(
+        super().__init__(
             [expr_override, cross_filter_set], exclusive=True, **params
         )
 
@@ -44,8 +45,6 @@ class _SelectionExprLayers(Derived):
             return {"exprs": [True, override_expr_values["selection_expr"]]}
         else:
             return {"exprs": [True, cross_filter_set_values["selection_expr"]]}
-
-
 
 
 _Styles = Stream.define('Styles', colors=[], alpha=1.)
@@ -78,7 +77,7 @@ class _base_link_selections(param.ParameterizedFunction):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(_base_link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Init private properties
         inst._cross_filter_stream = CrossFilterSet(mode=inst.cross_filter_mode)
@@ -106,13 +105,16 @@ class _base_link_selections(param.ParameterizedFunction):
         Register an Element or DynamicMap that may be capable of generating
         selection expressions in response to user interaction events
         """
+        from .element import Table
+
         # Create stream that produces element that displays region of selection
         selection_expr_seq = SelectionExprSequence(
-            hvobj, mode=self.selection_mode, include_region=self.show_regions,
+            hvobj, mode=self.selection_mode,
+            include_region=self.show_regions,
             index_cols=self.index_cols
         )
         self._selection_expr_streams[hvobj] = selection_expr_seq
-        self._cross_filter_stream.append_input_stream(self._selection_expr_streams[hvobj])
+        self._cross_filter_stream.append_input_stream(selection_expr_seq)
 
         self._plot_reset_streams[hvobj] = PlotReset(source=hvobj)
 
@@ -122,8 +124,9 @@ class _base_link_selections(param.ParameterizedFunction):
                 stream.clear_history()
                 stream.event()
 
-        mode_stream = SelectMode(source=hvobj)
-        mode_stream.param.watch(self._update_mode, 'mode')
+        if not isinstance(hvobj, Table):
+            mode_stream = SelectMode(source=hvobj)
+            mode_stream.param.watch(self._update_mode, 'mode')
 
         self._plot_reset_streams[hvobj].param.watch(
             clear_stream_history, ['resetting']
@@ -170,6 +173,10 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_transform(el, operations=operations)
                     for el in callback.inputs
                 ]).collate()
+            elif getattr(hvobj.callback, "name", None) == "dynamic_operation":
+                obj = callback.inputs[0]
+                return self._selection_transform(obj, operations=operations).apply(
+                    callback.operation)
             else:
                 # This is a DynamicMap that we don't know how to recurse into.
                 return hvobj
@@ -184,7 +191,7 @@ class _base_link_selections(param.ParameterizedFunction):
                     self._selection_expr_streams.get(element, None), cache=self._cache
                 )
             return hvobj
-        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace)):
+        elif isinstance(hvobj, (Layout, Overlay, NdOverlay, GridSpace, AdjointLayout)):
             data = OrderedDict([(k, self._selection_transform(v, operations))
                                  for k, v in hvobj.items()])
             if isinstance(hvobj, NdOverlay):
@@ -269,7 +276,7 @@ class link_selections(_base_link_selections):
 
     @bothmethod
     def instance(self_or_cls, **params):
-        inst = super(link_selections, self_or_cls).instance(**params)
+        inst = super().instance(**params)
 
         # Initialize private properties
         inst._obj_selections = {}
@@ -318,6 +325,27 @@ class link_selections(_base_link_selections):
         pipe = Pipe(data=data.data)
         self._datasets.append((pipe, data, raw))
         return pipe.param.data
+
+    def filter(self, data, selection_expr=None):
+        """
+        Filters the provided data based on the current state of the
+        current selection expression.
+
+        Args:
+            data: A Dataset type or data which can be cast to a Dataset
+            selection_expr: Optionally provide your own selection expression
+
+        Returns:
+            The filtered data
+        """
+        expr = self.selection_expr if selection_expr is None else selection_expr
+        if expr is None:
+            return data
+        is_dataset = isinstance(data, Dataset)
+        if not is_dataset:
+            data = Dataset(data)
+        filtered = data[expr.apply(data)]
+        return filtered if is_dataset else filtered.data
 
     @bothmethod
     def _install_param_callbacks(self_or_cls, inst):

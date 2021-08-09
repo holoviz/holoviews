@@ -13,9 +13,10 @@ setup_args = {}
 install_requires = [
     "param >=1.9.3,<2.0",
     "numpy >=1.0",
-    "pyviz_comms >=0.7.3",
-    "panel >=0.8.0",
-    "pandas",
+    "pyviz_comms >=0.7.4",
+    "panel >=0.9.5",
+    "colorcet",
+    "pandas >=0.20.0",
 ]
 
 extras_require = {}
@@ -25,7 +26,7 @@ extras_require["notebook"] = ["ipython >=5.4.0", "notebook"]
 
 # IPython Notebook + pandas + matplotlib + bokeh
 extras_require["recommended"] = extras_require["notebook"] + [
-    "matplotlib >=2.2",
+    "matplotlib >=3",
     "bokeh >=1.1.0",
 ]
 
@@ -37,9 +38,9 @@ extras_require["examples"] = extras_require["recommended"] + [
     "plotly >=4.0",
     'dash >=1.16',
     "streamz >=0.5.0",
-    "datashader ==0.11.1",
+    "datashader >=0.11.1",
     "ffmpeg",
-    "cftime",
+    "cftime <1.5.0", # cftime.utime deprecated
     "netcdf4",
     "dask",
     "scipy",
@@ -50,29 +51,26 @@ extras_require["examples"] = extras_require["recommended"] + [
 if sys.version_info.major > 2:
     extras_require["examples"].extend(
         [
-            "spatialpandas",
-            "pyarrow <1.0",
+            "pyarrow",
             "ibis-framework >=1.3",
         ]  # spatialpandas incompatibility
     )
 
 # Extra third-party libraries
 extras_require["extras"] = extras_require["examples"] + [
-    "cyordereddict",
     "pscript ==0.7.1",
 ]
 
 # Test requirements
 extras_require['tests'] = [
-    'nose',
+    'pytest',
+    'pytest-cov',
     'mock',
-    'flake8 ==3.6.0',
+    'flake8',
     'coveralls',
     'path.py',
-    'matplotlib >=2.2,<3.1',
+    'matplotlib >=3',
     'nbsmoke >=0.2.0',
-    'pytest-cov ==2.5.1',
-    'pytest <6.0',
     'nbconvert <6',
     'twine',
     'rfc3986',
@@ -83,7 +81,7 @@ extras_require["unit_tests"] = extras_require["examples"] + extras_require["test
 
 extras_require["basic_tests"] = (
     extras_require["tests"]
-    + ["matplotlib >=2.1", "bokeh >=1.1.0", "pandas"]
+    + ["matplotlib >=3", "bokeh >=1.1.0", "pandas"]
     + extras_require["notebook"]
 )
 
@@ -93,12 +91,11 @@ extras_require["nbtests"] = extras_require["recommended"] + [
     "deepdiff",
     "nbconvert ==5.3.1",
     "jsonschema ==2.6.0",
-    "cyordereddict",
     "ipython ==5.4.1",
 ]
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >0.5.2',
+    'nbsite >=0.6.8a36',
     'sphinx',
     'sphinx_holoviz_theme',
     'mpl_sample_data >=3.1.3',
@@ -113,14 +110,14 @@ extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
-    "python <3.8",
+    "python <3.9",
+    "pip",
 ]
 
-# Everything including cyordereddict (optimization) and nosetests
+# Everything for examples and nosetests
 extras_require["all"] = list(
     set(extras_require["unit_tests"]) | set(extras_require["nbtests"])
 )
-
 
 def get_setup_version(reponame):
     """
@@ -131,7 +128,7 @@ def get_setup_version(reponame):
     version_file_path = os.path.join(basepath, reponame, ".version")
     try:
         from param import version
-    except:
+    except ImportError:
         version = None
     if version is not None:
         return version.Version.setup_version(
@@ -167,8 +164,6 @@ setup_args.update(
         classifiers=[
             "License :: OSI Approved :: BSD License",
             "Development Status :: 5 - Production/Stable",
-            "Programming Language :: Python :: 2.7",
-            "Programming Language :: Python :: 3.5",
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",

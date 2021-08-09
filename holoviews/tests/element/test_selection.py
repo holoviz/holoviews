@@ -44,7 +44,7 @@ class TestSelection1DExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelection1DExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -226,7 +226,7 @@ class TestSelection2DExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelection2DExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -350,10 +350,10 @@ class TestSelection2DExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x': np.array([-0.4, 0.6, 0.4, -0.1]),
                                 'y': np.array([-0.1, -0.1, 1.7, 1.7])})
         self.assertEqual(expr.apply(img, expanded=True, flat=False), np.array([
-            [ True,  False, False],
-            [ True, False, False],
-            [ False,  False, False],
-            [False, False, False]
+            [    1., np.nan, np.nan],
+            [    1., np.nan, np.nan],
+            [np.nan, np.nan, np.nan],
+            [np.nan, np.nan, np.nan]
         ]))
         self.assertEqual(region, Rectangles([]) * Path([list(geom)+[(-0.4, -0.1)]]))
 
@@ -441,7 +441,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelectionGeomExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 
@@ -458,7 +458,7 @@ class TestSelectionGeomExpr(ComparisonTestCase):
         self.assertEqual(bbox, {'x0': (0, 3.5), 'y0': (0.9, 4.9), 'x1': (0, 3.5), 'y1': (0.9, 4.9)})
         self.assertEqual(expr.apply(rect), np.array([True, True, True]))
         self.assertEqual(region, Rectangles([(0, 0.9, 3.5, 4.9)]) * Path([]))
-        
+
     def test_rect_selection_numeric_inverted(self):
         rect = Rectangles([(0, 1, 2, 3), (1, 3, 1.5, 4), (2.5, 4.2, 3.5, 4.8)]).opts(invert_axes=True)
         expr, bbox, region = rect._get_selection_expr_for_stream_value(bounds=(0.9, 0.5, 4.9, 3.4))
@@ -548,7 +548,7 @@ class TestSelectionPolyExpr(ComparisonTestCase):
             import holoviews.plotting.bokeh # noqa
         except:
             raise SkipTest("Bokeh selection tests require bokeh.")
-        super(TestSelectionPolyExpr, self).setUp()
+        super().setUp()
         self._backend = Store.current_backend
         Store.set_current_backend('bokeh')
 

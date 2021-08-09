@@ -1,8 +1,6 @@
 """
 Module for accessor objects for viewable HoloViews objects.
 """
-from __future__ import absolute_import, unicode_literals
-
 import copy
 import sys
 
@@ -157,7 +155,7 @@ class Apply(object):
                 dynamic, per_element, **kwargs
             )
 
-        if isinstance(apply_function, util.basestring):
+        if isinstance(apply_function, str):
             args = kwargs.pop('_method_args', ())
             method_name = apply_function
             def apply_function(object, **kwargs):
@@ -329,7 +327,7 @@ class Redim(object):
 
             if override is None:
                 replaced.append(d)
-            elif isinstance(override, (util.basestring, tuple)):
+            elif isinstance(override, (str, tuple)):
                 replaced.append(d.clone(override))
             elif isinstance(override, Dimension):
                 replaced.append(override)
@@ -474,6 +472,9 @@ class Redim(object):
     def type(self, specs=None, **values):
         return self._redim('type', specs, **values)
 
+    def nodata(self, specs=None, **values):
+        return self._redim('nodata', specs, **values)
+
     def step(self, specs=None, **values):
         return self._redim('step', specs, **values)
 
@@ -560,12 +561,12 @@ class Opts(object):
         """
         if self._mode is None:
             apply_groups, _, _ = util.deprecated_opts_signature(args, kwargs)
-            if apply_groups and util.config.future_deprecations:
+            if apply_groups:
                 msg = ("Calling the .opts method with options broken down by options "
                        "group (i.e. separate plot, style and norm groups) is deprecated. "
                        "Use the .options method converting to the simplified format "
                        "instead or use hv.opts.apply_groups for backward compatibility.")
-                param.main.warning(msg)
+                param.main.param.warning(msg)
 
         return self._dispatch_opts( *args, **kwargs)
 

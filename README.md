@@ -1,8 +1,9 @@
 [![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
 [![Conda](https://anaconda.org/pyviz/holoviews/badges/installer/conda.svg)](https://anaconda.org/pyviz/holoviews)
 [![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/pyviz/holoviews)
-[![BuildStatus](https://travis-ci.org/holoviz/holoviews.svg?branch=master)](https://travis-ci.org/holoviz/holoviews)
-[![Coveralls](https://img.shields.io/coveralls/pyviz/holoviews.svg)](https://coveralls.io/r/pyviz/holoviews)
+[![BuildStatus](https://github.com/holoviz/holoviews/workflows/pytest/badge.svg?query=branch%3Amaster)](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest+branch%3Amaster)
+[![DocBuildStatus](https://github.com/holoviz/holoviews/workflows/docs/badge.svg?query=branch%3Amaster)](https://github.com/holoviz/holoviews/actions?query=workflow%3Adocs+branch%3Amaster)
+[![Coveralls](https://coveralls.io/repos/github/holoviz/holoviews/badge.svg?branch=master)](https://coveralls.io/github/holoviz/holoviews?branch=master)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/pyviz/pyviz?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Binder](https://img.shields.io/badge/Launch%20JupyterLab-v1.13.2-579ACA.svg?logo=data:image/png;base64,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)](https://mybinder.org/v2/gh/holoviz/holoviews/v1.13.2?urlpath=lab/tree/examples)
 
@@ -55,22 +56,22 @@ Installation
 ============
 
 HoloViews works with 
-[Python 2.7 and Python 3](https://travis-ci.org/holoviz/holoviews)
-on Linux, Windows, or Mac, and provides optional extensions for working with the 
-[Jupyter/IPython Notebook](http://jupyter.org).
+[Python 2.7 and Python 3](https://github.com/holoviz/holoviews/actions?query=workflow%3Apytest)
+on Linux, Windows, or Mac, and works seamlessly with 
+[Jupyter Notebook and JupyterLab](https://jupyter.org).
 
 The recommended way to install HoloViews is using the
-[conda](http://conda.pydata.org/docs/) command provided by
-[Anaconda](http://docs.continuum.io/anaconda/install) or
-[Miniconda](http://conda.pydata.org/miniconda.html):
+[conda](https://docs.conda.io/projects/conda/en/latest/index.html) command provided by
+[Anaconda](https://docs.anaconda.com/anaconda/install/) or
+[Miniconda](https://docs.conda.io/en/latest/miniconda.html):
 
     conda install -c pyviz holoviews bokeh
 
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
-[Numpy](http://numpy.org) and [Param](https://param.holoviz.org).
+[Numpy](https://numpy.org) [Pandas](https://pandas.pydata.org) and [Param](https://param.holoviz.org).
 Additional installation and configuration options are described in the
-[user guide](http://holoviews.org/user_guide/Installing_and_Configuring.html).
+[user guide](https://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 You can also clone holoviews directly from GitHub and install it with:
 
@@ -81,29 +82,25 @@ You can also clone holoviews directly from GitHub and install it with:
 Usage
 -----
 
-Once you've installed HoloViews, you can get a copy of all the
-examples shown on the website:
+Once you've installed HoloViews, you can get a copy of all the examples shown on this website:
 
     holoviews --install-examples
     cd holoviews-examples
 
-And then you can launch Jupyter Notebook to explore them:
+Now you can launch Jupyter Notebook or JupyterLab to explore them:
 
     jupyter notebook
 
-To work with JupyterLab you will also need the PyViz JupyterLab
+    jupyter lab
+
+If you are working with a JupyterLab version <2.0 you will also need the PyViz JupyterLab
 extension:
 
-    conda install -c conda-forge jupyterlab
     jupyter labextension install @pyviz/jupyterlab_pyviz
 
-Once you have installed JupyterLab and the extension launch it with::
-
-    jupyter-lab
-
-For more details on setup and configuration see [our website](http://holoviews.org/user_guide/Installing_and_Configuring.html).
+For more details on setup and configuration see [our website](https://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 For general discussion, we have a [gitter channel](https://gitter.im/pyviz/pyviz).
 If you find any bugs or have any feature suggestions please file a GitHub 
-[issue](https://github.com/pyviz/holoviews/issues)
+[issue](https://github.com/holoviz/holoviews/issues)
 or submit a [pull request](https://help.github.com/articles/about-pull-requests).

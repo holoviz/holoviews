@@ -1,12 +1,10 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import param
 import numpy as np
 
 from ...core import util
-from ...element import Polygons
+from ...element import Contours, Polygons
 from ...util.transform import dim
 from .callbacks import PolyDrawCallback, PolyEditCallback
 from .element import ColorbarPlot, LegendPlot, OverlayPlot
@@ -35,6 +33,12 @@ class PathPlot(LegendPlot, ColorbarPlot):
     _nonvectorized_styles = base_properties + ['cmap']
     _batched_style_opts = line_properties
 
+    def _element_transform(self, transform, element, ranges):
+        if isinstance(element, Contours):
+            return super()._element_transform(transform, element, ranges)
+        return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
+                               for el in element.split()])
+
     def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
@@ -59,13 +63,13 @@ class PathPlot(LegendPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         color = style.get('color', None)
         cdim = None
-        if isinstance(color, util.basestring) and not validate('color', color) == False:
+        if isinstance(color, str) and not validate('color', color) == False:
             cdim = element.get_dimension(color)
 
         scalar = element.interface.isunique(element, cdim, per_geom=True) if cdim else False
         style_mapping = {
             (s, v) for s, v in style.items() if (s not in self._nonvectorized_styles) and
-            ((isinstance(v, util.basestring) and v in element) or isinstance(v, dim)) and
+            ((isinstance(v, str) and v in element) or isinstance(v, dim)) and
             not (not isinstance(v, dim) and v == color and s == 'color')}
         mapping = dict(self._mapping)
 
@@ -152,7 +156,7 @@ class ContourPlot(PathPlot):
     _nonvectorized_styles = base_properties + ['cmap']
 
     def __init__(self, *args, **params):
-        super(ContourPlot, self).__init__(*args, **params)
+        super().__init__(*args, **params)
         self._has_holes = None
 
     def _hover_opts(self, element):

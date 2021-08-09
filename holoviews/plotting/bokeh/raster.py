@@ -17,6 +17,11 @@ class RasterPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
     show_legend = param.Boolean(default=False, doc="""
@@ -41,7 +46,7 @@ class RasterPlot(ColorbarPlot):
         return tooltips, {}
 
     def _postprocess_hover(self, renderer, source):
-        super(RasterPlot, self)._postprocess_hover(renderer, source)
+        super()._postprocess_hover(renderer, source)
         hover = self.handles.get('hover')
         if not (hover and isinstance(hover.tooltips, list)):
             return
@@ -71,7 +76,7 @@ class RasterPlot(ColorbarPlot):
         hover.formatters = formatters
 
     def __init__(self, *args, **kwargs):
-        super(RasterPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.hmap.type == Raster:
             self.invert_yaxis = not self.invert_yaxis
 
@@ -175,7 +180,7 @@ class RGBPlot(ElementPlot):
         if self.invert_axes:
             img = img.T
             l, b, r, t = b, l, t, r
-            
+
         dh, dw = t-b, r-l
         if self.invert_xaxis:
             l, r = r, l
@@ -191,17 +196,20 @@ class RGBPlot(ElementPlot):
         return (data, mapping, style)
 
 
-
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges, style):
-        return super(HSVPlot, self).get_data(element.rgb, ranges, style)
-
+        return super().get_data(element.rgb, ranges, style)
 
 
 class QuadMeshPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
 
     padding = param.ClassSelector(default=0, class_=(int, float, tuple))
 
@@ -238,6 +246,7 @@ class QuadMeshPlot(ColorbarPlot):
         x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
 
         zdata = element.dimension_values(z, flat=False)
+
         if irregular:
             dims = element.kdims
             if self.invert_axes: dims = dims[::-1]

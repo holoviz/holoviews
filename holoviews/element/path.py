@@ -55,7 +55,9 @@ class Path(SelectionPolyExpr, Geometry):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multitabular', 'spatialpandas'])
+    datatype = param.ObjectSelector(default=[
+        'multitabular', 'spatialpandas', 'dask_spatialpandas']
+    )
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple) and len(data) == 2:
@@ -79,8 +81,7 @@ class Path(SelectionPolyExpr, Geometry):
                     paths.append(path.data)
             data = paths
 
-        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
-
+        super().__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def __getitem__(self, key):
         if isinstance(key, np.ndarray):
@@ -96,7 +97,6 @@ class Path(SelectionPolyExpr, Geometry):
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
         return self.clone(extents=(xstart, ystart, xstop, ystop))
-
 
     def select(self, selection_expr=None, selection_specs=None, **selection):
         """Applies selection by dimension name
@@ -146,8 +146,8 @@ class Path(SelectionPolyExpr, Geometry):
         xdim, ydim = self.kdims[:2]
         x_range = selection.pop(xdim.name, None)
         y_range = selection.pop(ydim.name, None)
-        sel = super(Path, self).select(selection_expr, selection_specs,
-                                       **selection)
+        sel = super().select(selection_expr, selection_specs,
+                             **selection)
         if x_range is None and y_range is None:
             return sel
         x_range = x_range if isinstance(x_range, slice) else slice(None)
@@ -175,33 +175,6 @@ class Path(SelectionPolyExpr, Geometry):
                 raise ValueError("%s datatype not support" % datatype)
             return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
-
-    # Deprecated methods
-
-    @classmethod
-    def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
-        param.main.param.warning(
-            'Path.collapse_data is deprecated, collapsing may now '
-            'be performed through concatenation and aggregation.')
-        if function is None:
-            return [path for paths in data_list for path in paths]
-        else:
-            raise Exception("Path types are not uniformly sampled and"
-                            "therefore cannot be collapsed with a function.")
-
-
-    def __setstate__(self, state):
-        """
-        Ensures old-style unpickled Path types without an interface
-        use the MultiInterface.
-
-        Note: Deprecate as part of 2.0
-        """
-        self.__dict__ = state
-        if 'interface' not in state:
-            self.interface = MultiInterface
-        super(Dataset, self).__setstate__(state)
-
 
 
 class Contours(Path):
@@ -340,7 +313,7 @@ class BaseShape(Path):
         return super(Dataset, cls).__new__(cls)
 
     def __init__(self, **params):
-        super(BaseShape, self).__init__([], **params)
+        super().__init__([], **params)
         self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
@@ -390,7 +363,6 @@ class Box(BaseShape):
     __pos_params = ['x','y', 'height']
 
     def __init__(self, x, y, spec, **params):
-
         if isinstance(spec, tuple):
             if 'aspect' in params:
                 raise ValueError('Aspect parameter not supported when supplying '
@@ -400,7 +372,7 @@ class Box(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Box, self).__init__(x=x, y=y, height=height, **params)
+        super().__init__(x=x, y=y, height=height, **params)
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -469,7 +441,7 @@ class Ellipse(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Ellipse, self).__init__(x=x, y=y, height=height, **params)
+        super().__init__(x=x, y=y, height=height, **params)
         angles = np.linspace(0, 2*np.pi, self.samples)
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -504,7 +476,7 @@ class Bounds(BaseShape):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
-        super(Bounds, self).__init__(lbrt=lbrt, **params)
+        super().__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
         xdim, ydim = self.kdims
         self.data = [OrderedDict([(xdim.name, np.array([l, l, r, r, l])),

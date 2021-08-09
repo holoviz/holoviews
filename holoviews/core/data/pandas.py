@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 try:
     import itertools.izip as zip
 except ImportError:
@@ -14,6 +12,7 @@ from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check, sorted_context
 from .. import util
+from .util import finite_range
 
 
 class PandasInterface(Interface):
@@ -159,7 +158,8 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        column = dataset.data[dataset.get_dimension(dimension, strict=True).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             if (not isinstance(dataset.data, pd.DataFrame) or
                 util.LooseVersion(pd.__version__) < '0.17.0'):
@@ -174,7 +174,13 @@ class PandasInterface(Interface):
                 return np.NaN, np.NaN
             return column.iloc[0], column.iloc[-1]
         else:
-            return (column.min(), column.max())
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
+            cmin, cmax = finite_range(column, column.min(), column.max())
+            if column.dtype.kind == 'M' and getattr(column.dtype, 'tz', None):
+                return (cmin.to_pydatetime().replace(tzinfo=None),
+                        cmax.to_pydatetime().replace(tzinfo=None))
+            return cmin, cmax
 
 
     @classmethod
@@ -317,10 +323,14 @@ class PandasInterface(Interface):
     ):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name]
+        if keep_index:
+            return data
+        if data.dtype.kind == 'M' and getattr(data.dtype, 'tz', None):
+            dts = [dt.replace(tzinfo=None) for dt in data.dt.to_pydatetime()]
+            data = np.array(dts, dtype=data.dtype.base)
         if not expanded:
-            return data.unique()
-
-        return data if keep_index else data.values
+            return pd.unique(data)
+        return data.values if hasattr(data, 'values') else data
 
 
     @classmethod

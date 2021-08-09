@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 import param
 
 from bokeh.models import Column
@@ -44,18 +42,17 @@ class TablePlot(BokehPlot, GenericElementPlot):
     _stream_data = True
 
     def __init__(self, element, plot=None, **params):
-        super(TablePlot, self).__init__(element, **params)
+        super().__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._construct_callbacks()
+        self.callbacks, self.source_streams = self._construct_callbacks()
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.static_source = False
 
     def get_data(self, element, ranges, style):
         return ({dimension_sanitizer(d.name): element.dimension_values(d)
                  for d in element.dimensions()}, {}, style)
-
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """

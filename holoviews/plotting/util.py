@@ -1,5 +1,3 @@
-from __future__ import unicode_literals, absolute_import, division
-
 import re
 import traceback
 import warnings
@@ -10,22 +8,27 @@ from collections import defaultdict, namedtuple
 import numpy as np
 import param
 
-from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, NdOverlay, AdjointLayout)
+from ..core import (
+    HoloMap, DynamicMap, CompositeOverlay, Layout, Overlay, GridSpace,
+    NdLayout, NdOverlay, AdjointLayout
+)
 from ..core.options import CallbackError, Cycle
+from ..core.operation import Operation
 from ..core.ndmapping import item_check
 from ..core.spaces import get_nested_streams
-from ..core.util import (match_spec, wrap_tuple, basestring, get_overlay_spec,
-                         unique_iterator, closest_match, is_number, isfinite,
-                         python2sort, disable_constant, arraylike_types)
-from ..streams import LinkedStream
+from ..core.util import (
+    match_spec, wrap_tuple, get_overlay_spec, unique_iterator,
+    closest_match, is_number, isfinite, python2sort, disable_constant,
+    arraylike_types
+)
+from ..streams import LinkedStream, Params
 from ..util.transform import dim
 
 
 def displayable(obj):
     """
     Predicate that returns whether the object is displayable or not
-    (i.e whether the object obeys the nesting hierarchy
+    (i.e. whether the object obeys the nesting hierarchy)
     """
     if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace, AdjointLayout))
                                         for o in obj):
@@ -180,7 +183,8 @@ def compute_overlayable_zorders(obj, path=[]):
     # If object branches but does not declare inputs (e.g. user defined
     # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
     found = any(isinstance(p, DynamicMap) and p.callback._is_overlay for p in path)
-    linked =  any(isinstance(s, LinkedStream) and s.linked for s in obj.streams)
+    linked =  any(isinstance(s, (LinkedStream, Params)) and s.linked
+                  for s in obj.streams)
     if (found or linked) and isoverlay and not isdynoverlay:
         offset = max(zorder_map.keys())
         for z, o in enumerate(obj.last):
@@ -410,7 +414,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
     """
     key = plot.current_key
     dims = element.dimensions()
-    dim = dims[0] if 'frequency' in dims[1].name else dims[1]
+    dim = dims[0] if 'frequency' in dims[1].name or 'count' in dims[1].name else dims[1]
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
@@ -670,7 +674,7 @@ def _list_cmaps(provider=None, records=False):
     """
     if provider is None:
         provider = providers
-    elif isinstance(provider, basestring):
+    elif isinstance(provider, str):
         if provider not in providers:
             raise ValueError('Colormap provider %r not recognized, must '
                              'be one of %r' % (provider, providers))
@@ -690,14 +694,16 @@ def _list_cmaps(provider=None, records=False):
             else:
                 mpl_cmaps = list(cm.cmaps_listed)+list(cm.datad)
             cmaps += info('matplotlib', mpl_cmaps)
-            cmaps += info('matplotlib', [cmap+'_r' for cmap in mpl_cmaps])
+            cmaps += info('matplotlib', [cmap+'_r' for cmap in mpl_cmaps
+                                         if not cmap.endswith('_r')])
         except:
             pass
     if 'bokeh' in provider:
         try:
             from bokeh import palettes
             cmaps += info('bokeh', palettes.all_palettes)
-            cmaps += info('bokeh', [p+'_r' for p in palettes.all_palettes])
+            cmaps += info('bokeh', [p+'_r' for p in palettes.all_palettes
+                                    if not p.endswith('_r')])
         except:
             pass
     if 'colorcet' in provider:
@@ -705,8 +711,8 @@ def _list_cmaps(provider=None, records=False):
             from colorcet import palette_n, glasbey_hv
             cet_maps = palette_n.copy()
             cet_maps['glasbey_hv'] = glasbey_hv # Add special hv-specific map
-            cmaps += info('colorcet', cet_maps) 
-            cmaps += info('colorcet', [p+'_r' for p in cet_maps])
+            cmaps += info('colorcet', cet_maps)
+            cmaps += info('colorcet', [p+'_r' for p in cet_maps if not p.endswith('_r')])
         except:
             pass
     return sorted(unique_iterator(cmaps))
@@ -893,7 +899,7 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
         palette = list(cmap)
     elif isinstance(cmap, list):
         palette = cmap
-    elif isinstance(cmap, basestring):
+    elif isinstance(cmap, str):
         mpl_cmaps = _list_cmaps('matplotlib')
         bk_cmaps = _list_cmaps('bokeh')
         cet_cmaps = _list_cmaps('colorcet')
@@ -982,7 +988,7 @@ def scale_fontsize(size, scaling):
     Scales a numeric or string font size.
     """
     ext = None
-    if isinstance(size, basestring):
+    if isinstance(size, str):
         match = re.match(r"[-+]?\d*\.\d+|\d+", size)
         if match:
             value = match.group()
@@ -1094,6 +1100,39 @@ def hex2rgb(hex):
   ''' "#FFFFFF" -> [255,255,255] '''
   # Pass 16 to the integer function for change of base
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+
+
+class apply_nodata(Operation):
+
+    nodata = param.Integer(default=None, doc="""
+        Optional missing-data value for integer data.
+        If non-None, data with this value will be replaced with NaN so
+        that it is transparent (by default) when plotted.""")
+
+    def _replace_value(self, data):
+        "Replace `nodata` value in data with NaN, if specified in opts"
+        data = data.astype('float64')
+        mask = data!=self.p.nodata
+        if hasattr(data, 'where'):
+            return data.where(mask, np.NaN)
+        return np.where(mask, data, np.NaN)
+
+    def _process(self, element, key=None):
+        if self.p.nodata is None:
+            return element
+        if hasattr(element, 'interface'):
+            vdim = element.vdims[0]
+            dtype = element.interface.dtype(element, vdim)
+            if dtype.kind not in 'iu':
+                return element
+            transform = dim(vdim, self._replace_value)
+            return element.transform(**{vdim.name: transform})
+        else:
+            array = element.dimension_values(2, flat=False).T
+            if array.dtype.kind not in 'iu':
+                return element
+            array = array.astype('float64')
+            return element.clone(self._replace_value(array))
 
 
 RGB_HEX_REGEX = re.compile(r'^#(?:[0-9a-fA-F]{3}){1,2}$')

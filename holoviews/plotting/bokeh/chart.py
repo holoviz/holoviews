@@ -1,5 +1,3 @@
-from __future__ import absolute_import, division, unicode_literals
-
 from collections import defaultdict
 
 import numpy as np
@@ -14,7 +12,7 @@ from bokeh.transform import jitter
 from ...core.data import Dataset
 from ...core.dimension import dimension_name
 from ...core.util import (
-    OrderedDict, basestring, dimension_sanitizer, isfinite
+    OrderedDict, dimension_sanitizer, isfinite
 )
 from ...operation import interpolate_curve
 from ...util.transform import dim
@@ -129,7 +127,7 @@ class VectorFieldPlot(ColorbarPlot):
     arrow_heads = param.Boolean(default=True, doc="""
         Whether or not to draw arrow heads.""")
 
-    magnitude = param.ClassSelector(class_=(basestring, dim), doc="""
+    magnitude = param.ClassSelector(class_=(str, dim), doc="""
         Dimension or dimension value transform that declares the magnitude
         of each vector. Magnitude is expected to be scaled between 0-1,
         by default the magnitudes are rescaled relative to the minimum
@@ -181,10 +179,9 @@ class VectorFieldPlot(ColorbarPlot):
         return magnitudes
 
     def _glyph_properties(self, *args):
-        properties = super(VectorFieldPlot, self)._glyph_properties(*args)
+        properties = super()._glyph_properties(*args)
         properties.pop('scale', None)
         return properties
-
 
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
@@ -313,7 +310,6 @@ class CurvePlot(ElementPlot):
         return data, mapping, style
 
 
-
 class HistogramPlot(ColorbarPlot):
 
     selection_display = BokehOverlaySelectionDisplay(color_prop=['color', 'fill_color'])
@@ -334,6 +330,8 @@ class HistogramPlot(ColorbarPlot):
             x = element.kdims[0]
             values = element.dimension_values(1)
             edges = element.interface.coords(element, x, edges=True)
+            if hasattr(edges, 'compute'):
+                edges = edges.compute()
             data = dict(top=values, left=edges[:-1], right=edges[1:])
             self._get_hover_data(data, element)
         return (data, mapping, style)
@@ -344,8 +342,7 @@ class HistogramPlot(ColorbarPlot):
         s0 = min(s0, 0) if isfinite(s0) else 0
         s1 = max(s1, 0) if isfinite(s1) else 0
         ranges[ydim.name]['soft'] = (s0, s1)
-        return super(HistogramPlot, self).get_extents(element, ranges, range_type)
-
+        return super().get_extents(element, ranges, range_type)
 
 
 class SideHistogramPlot(HistogramPlot):
@@ -371,7 +368,7 @@ class SideHistogramPlot(HistogramPlot):
     """
 
     def __init__(self, *args, **kwargs):
-        super(SideHistogramPlot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if self.invert_axes:
             self.default_tools.append('ybox_select')
         else:
@@ -384,15 +381,20 @@ class SideHistogramPlot(HistogramPlot):
                       if d is not None]
         dimension = color_dims[0] if color_dims else None
         cmapper = self._get_colormapper(dimension, element, {}, {})
-        if cmapper and dimension in element.dimensions():
+        if cmapper:
+            cvals = None
             if isinstance(dimension, dim):
-                dim_name = dimension.dimension.name
-                data[dim_name] = [] if self.static_source else dimension.apply(element)
+                if dimension.applies(element):
+                    dim_name = dimension.dimension.name
+                    cvals = [] if self.static_source else dimension.apply(element)
             else:
-                dim_name = dimension.name
-                data[dim_name] = [] if self.static_source else element.dimension_values(dimension)
-            mapping['fill_color'] = {'field': dim_name,
-                                     'transform': cmapper}
+                if dimension in element.dimensions():
+                    dim_name = dimension.name
+                    cvals = [] if self.static_source else element.dimension_values(dimension)
+            if cvals is not None:
+                data[dim_name] = cvals
+                mapping['fill_color'] = {'field': dim_name,
+                                         'transform': cmapper}
         return (data, mapping, style)
 
 
@@ -400,7 +402,7 @@ class SideHistogramPlot(HistogramPlot):
         """
         Returns a Bokeh glyph object.
         """
-        ret = super(SideHistogramPlot, self)._init_glyph(plot, mapping, properties)
+        ret = super()._init_glyph(plot, mapping, properties)
         if not 'field' in mapping.get('fill_color', {}):
             return ret
         dim = mapping['fill_color']['field']
@@ -591,7 +593,7 @@ class SpikesPlot(SpikesMixin, ColorbarPlot):
     def _get_axis_dims(self, element):
         if 'spike_length' in self.lookup_options(element, 'plot').options:
             return  [element.dimensions()[0], None, None]
-        return super(SpikesPlot, self)._get_axis_dims(element)
+        return super()._get_axis_dims(element)
 
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
@@ -678,7 +680,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
     def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):
-        props = super(BarPlot, self)._axis_properties(axis, key, plot, dimension, ax_mapping)
+        props = super()._axis_properties(axis, key, plot, dimension, ax_mapping)
         if (not self.multi_level and not self.stacked and self.current_frame.ndims > 1 and
             ((not self.invert_axes and axis == 'x') or (self.invert_axes and axis =='y'))):
             props['separator_line_width'] = 0
@@ -736,7 +738,6 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         if gvals is not None:
             xvals = [(x, g) for x in xvals for g in gvals]
         return ([], xvals) if self.invert_axes else (xvals, [])
-
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """
@@ -841,7 +842,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
         for i, (k, ds) in enumerate(grouped.items()):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
-                gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
+                gval = k if isinstance(k, str) else group_dim.pprint_value(k)
             # Apply stacking or grouping
             if grouping == 'stacked':
                 for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
@@ -856,7 +857,10 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                     data['top'].append(ts)
                     data[xdim.name].append(xs)
                     data[stack_dim.name].append(slc_ds.dimension_values(stack_dim))
-                    if hover: data[ydim.name].append(ys)
+                    if hover:
+                        data[ydim.name].append(ys)
+                        for vd in slc_ds.vdims[1:]:
+                            data[vd.name].append(slc_ds.dimension_values(vd))
                     if not style_mapping:
                         self._add_color_data(slc_ds, ranges, style, cdim, data,
                                              mapping, factors, colors)
@@ -869,13 +873,13 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
                 if group_dim not in ds.dimensions():
-                    ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
+                    ds = ds.add_dimension(group_dim, ds.ndims, gval)
                 data[group_dim.name].append(ds.dimension_values(group_dim))
             else:
                 data[xdim.name].append(ds.dimension_values(xdim))
                 data[ydim.name].append(ds.dimension_values(ydim))
 
-            if hover:
+            if hover and grouping != 'stacked':
                 for vd in ds.vdims[1:]:
                     data[vd.name].append(ds.dimension_values(vd))
 
@@ -893,7 +897,7 @@ class BarPlot(BarsMixin, ColorbarPlot, LegendPlot):
 
         for name, val in mapping.items():
             sanitized = None
-            if isinstance(val, basestring):
+            if isinstance(val, str):
                 sanitized = dimension_sanitizer(mapping[name])
                 mapping[name] = sanitized
             elif isinstance(val, dict) and 'field' in val:

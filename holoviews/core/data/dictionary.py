@@ -19,7 +19,7 @@ from .. import util
 class DictInterface(Interface):
     """
     Interface for simple dictionary-based dataset format. The dictionary
-    keys correspond to the column (i.e dimension) names and the values
+    keys correspond to the column (i.e. dimension) names and the values
     are collections representing the values in that column.
     """
 
@@ -248,7 +248,7 @@ class DictInterface(Interface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension)
+        dim = dataset.get_dimension(dimension, strict=True)
         column = dataset.data[dim.name]
         if isscalar(column):
             return column, column
@@ -440,7 +440,7 @@ class DictInterface(Interface):
                 holes.append(subholes)
             return [holes]
         else:
-            return super(DictInterface, cls).holes(dataset)
+            return super().holes(dataset)
 
 
 Interface.register(DictInterface)

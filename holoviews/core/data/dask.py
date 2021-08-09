@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 import sys
 try:
     import itertools.izip as zip
@@ -85,11 +83,14 @@ class DaskInterface(PandasInterface):
     @classmethod
     def range(cls, dataset, dimension):
         import dask.dataframe as dd
-        column = dataset.data[dataset.get_dimension(dimension).name]
+        dimension = dataset.get_dimension(dimension, strict=True)
+        column = dataset.data[dimension.name]
         if column.dtype.kind == 'O':
             column = np.sort(column[column.notnull()].compute())
             return (column[0], column[-1]) if len(column) else (None, None)
         else:
+            if dimension.nodata is not None:
+                column = cls.replace_value(column, dimension.nodata)
             return dd.compute(column.min(), column.max())
 
     @classmethod
@@ -112,7 +113,7 @@ class DaskInterface(PandasInterface):
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and
-        selection keys (i.e tuple ranges, slices, sets, lists or literals)
+        selection keys (i.e. tuple ranges, slices, sets, lists. or literals)
         return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
