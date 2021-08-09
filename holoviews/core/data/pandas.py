@@ -33,7 +33,8 @@ class PandasInterface(Interface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_series(data):
-            data = data.to_frame()
+            name = data.name or util.anonymous_dimension_label
+            data = data.to_frame(name=name)
         if util.is_dataframe(data):
             ncols = len(data.columns)
             index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]

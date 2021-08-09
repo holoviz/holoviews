@@ -36,6 +36,8 @@ timedelta_types = (np.timedelta64, dt.timedelta,)
 arraylike_types = (np.ndarray,)
 masked_types = ()
 
+anonymous_dimension_label = '_'
+
 try:
     import pandas as pd
 except ImportError:
