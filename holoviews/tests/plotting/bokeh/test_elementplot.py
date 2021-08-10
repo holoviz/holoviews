@@ -16,6 +16,8 @@ from .test_plot import TestBokehPlot, bokeh_renderer
 from ...utils import LoggingComparisonTestCase
 
 try:
+    import panel as pn
+
     from bokeh.document import Document
     from bokeh.models import tools
     from bokeh.models import (FuncTickFormatter, PrintfTickFormatter,
@@ -185,6 +187,16 @@ class TestElementPlot(LoggingComparisonTestCase, TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.state.title.text, 'Called')
 
+    def test_element_update_visible(self):
+        checkbox = pn.widgets.Checkbox(value=True)
+        scatter = Scatter([]).apply.opts(visible=checkbox)
+        plot = bokeh_renderer.get_plot(scatter)
+        assert plot.handles['glyph_renderer'].visible
+        checkbox.value = False
+        assert not plot.handles['glyph_renderer'].visible
+        checkbox.value = True
+        assert plot.handles['glyph_renderer'].visible
+        
     def test_element_xformatter_string(self):
         curve = Curve(range(10)).options(xformatter='%d')
         plot = bokeh_renderer.get_plot(curve)

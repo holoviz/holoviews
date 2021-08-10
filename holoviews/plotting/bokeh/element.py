@@ -1435,6 +1435,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
+            if 'visible' in style and hasattr(renderer, 'visible'):
+                renderer.visible = style['visible']
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph, source, data)
         elif not self.static_source:
