@@ -103,7 +103,7 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'net/t')])
 
     # xyzservices input
-    def test_xyzservies_tileprovider(self):
+    def test_xyzservices_tileprovider(self):
         xyzservices = pytest.importorskip("xyzservices")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
         tiles = Tiles(osm, name="xyzservices").redim.range(
