@@ -22,6 +22,7 @@ import numpy as np
 import param
 
 # Python 2 builtins
+basestring = str
 long = int
 unicode = str
 cmp = lambda a, b: (a>b)-(a<b)
