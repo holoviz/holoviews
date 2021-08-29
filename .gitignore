@@ -23,6 +23,7 @@
 /release
 /doc/Tutorials-WIP/*.ipynb
 .idea
+.vscode
 holoviews.rc
 /examples/assets/
 ghostdriver.log
