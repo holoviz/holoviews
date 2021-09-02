@@ -544,9 +544,10 @@ class Layout(Layoutable, ViewableTree):
 
     def __mul__(self, other, reverse=False):
         from .spaces import HoloMap
-        if not isinstance(other, (ViewableElement, HoloMap)):
+        if isinstance(other, (ViewableElement, HoloMap)):
+            return Layout([other*v if reverse else v*other for v in self])
+        else:
             return NotImplemented
-        return Layout([other*v if reverse else v*other for v in self])
 
     def __rmul__(self, other):
         return self.__mul__(other, reverse=True)
