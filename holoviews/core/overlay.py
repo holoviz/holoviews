@@ -14,7 +14,7 @@ import numpy as np
 import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
-from .layout import Composable, Layout, AdjointLayout
+from .layout import Composable, Layout, AdjointLayout, Layoutable
 from .util import sanitize_identifier, unique_array, dimensioned_streams
 
 
@@ -66,7 +66,7 @@ class CompositeOverlay(ViewableElement, Composable):
             bin_range (tuple optional): Lower and upper bounds of bins
             adjoin (bool, optional): Whether to adjoin histogram
             index (int, optional): Index of layer to apply hist to
-            show_legend (bool, optional): Show legend in histogram 
+            show_legend (bool, optional): Show legend in histogram
                 (don't show legend by default).
 
         Returns:
@@ -99,7 +99,7 @@ class CompositeOverlay(ViewableElement, Composable):
                 )
                 for i, (elem_key, elem) in enumerate(self.items())
                 if (index is None) or (getattr(elem, "label", None) == index) or (index == i)
-            ]) 
+            ])
             for dim in dimension
         }
         # Create new Overlays of histograms
@@ -151,7 +151,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return vals if expanded else unique_array(vals)
 
 
-class Overlay(ViewableTree, CompositeOverlay):
+class Overlay(ViewableTree, CompositeOverlay, Layoutable):
     """
     An Overlay consists of multiple Elements (potentially of
     heterogeneous type) presented one on top each other with a
@@ -197,12 +197,6 @@ class Overlay(ViewableTree, CompositeOverlay):
             else:
                 return default
         return super().get(identifier, default)
-
-
-    def __add__(self, other):
-        "Composes Overlay with other object into a Layout"
-        return Layout([self, other])
-
 
     def __mul__(self, other):
         "Adds layer(s) from other object to Overlay"
