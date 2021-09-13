@@ -34,11 +34,6 @@ try:
 except:
     built_in_themes = {}
 
-try:
-    from bkcharts import Chart
-except:
-    Chart = type(None) # Create stub for isinstance check
-
 from ...core.ndmapping import NdMapping
 from ...core.overlay import Overlay
 from ...core.util import (
@@ -174,7 +169,7 @@ def compute_plot_size(plot):
             w_agg, h_agg = (np.max, np.sum)
         widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
         return w_agg(widths), h_agg(heights)
-    elif isinstance(plot, (Figure, Chart)):
+    elif isinstance(plot, Figure):
         if plot.plot_width:
             width = plot.plot_width
         else:
@@ -673,13 +668,19 @@ def hold_policy(document, policy, server=False):
     """
     Context manager to temporary override the hold policy.
     """
-    old_policy = document._hold
-    document._hold = policy
+    if bokeh_version >= '2.4':
+        old_policy = document.callbacks.hold_value
+        document.callbacks._hold = policy
+    else:
+        old_policy = document._hold
+        document._hold = policy
     try:
         yield
     finally:
         if server and not old_policy:
             document.unhold()
+        elif bokeh_version >= '2.4':
+            document.callbacks._hold = old_policy
         else:
             document._hold = old_policy
 
@@ -724,10 +725,12 @@ def update_shared_sources(f):
     def wrapper(self, *args, **kwargs):
         source_cols = self.handles.get('source_cols', {})
         shared_sources = self.handles.get('shared_sources', [])
+        doc = self.document
         for source in shared_sources:
             source.data.clear()
-            if self.document and self.document._held_events:
-                self.document._held_events = self.document._held_events[:-1]
+            if doc:
+                event_obj = doc.callbacks if bokeh_version >= '2.4' else doc
+                event_obj._held_events = event_obj._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
 
