@@ -89,9 +89,6 @@ extras_require["nbtests"] = extras_require["recommended"] + [
     "nose",
     "awscli",
     "deepdiff",
-    "nbconvert ==5.3.1",
-    "jsonschema ==2.6.0",
-    "ipython ==5.4.1",
 ]
 
 extras_require['doc'] = extras_require['examples'] + [
@@ -102,15 +99,13 @@ extras_require['doc'] = extras_require['examples'] + [
     'awscli',
     'pscript',
     'graphviz',
-    'bokeh >2.2',
-    'nbconvert <6.0',
+    'bokeh >2.2'
 ]
 
 extras_require["build"] = [
     "param >=1.7.0",
     "setuptools >=30.3.0",
     "pyct >=0.4.4",
-    "python <3.9",
     "pip",
 ]
 
