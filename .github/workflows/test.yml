@@ -25,7 +25,6 @@ jobs:
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
       CHANS_DEV: "-c pyviz/label/dev -c bokeh"
-      CHANS: "-c pyviz -c conda-forge"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -38,7 +37,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          channels: conda-forge,defaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
