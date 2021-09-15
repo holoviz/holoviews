@@ -49,7 +49,7 @@ jobs:
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1" "panel=0.12.1"
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
