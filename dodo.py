@@ -15,10 +15,3 @@ def task_pip_on_conda():
         # this interferes with pip-installed nose
         'conda remove -y --force nose'
     ]}
-
-# Temporary task to be removed
-def task_condainfo():
-    """Experimental: provide pip build env via conda"""
-    return {'actions':[
-        'conda info -a',
-    ]}
