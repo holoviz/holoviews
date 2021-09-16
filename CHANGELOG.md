@@ -11,7 +11,7 @@ fixes in this release.
 Bug fixes:
 
 - Compatibility for bokeh 2.4 and fixes to processing of falsey
-  properties and visible style property.
+  properties and visible style property
   ([#5059](https://github.com/holoviz/holoviews/pull/5059),
   [#5063](https://github.com/holoviz/holoviews/pull/5063))
 - Stricter validation of data.interface before calling subclass
