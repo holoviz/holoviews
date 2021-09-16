@@ -39,7 +39,7 @@ from .util import (
     attach_streams, traverse_setter, get_nested_streams,
     compute_overlayable_zorders, get_nested_plot_frame,
     split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
-    get_plot_frame, scale_fontsize, dynamic_update
+    get_plot_frame, scale_fontsize, dynamic_update, bokeh_version
 )
 
 
@@ -112,7 +112,13 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
-            if self._document:
+            if self._document and bokeh_version >= '2.4.0':
+                if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
+                    self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
+                else:
+                    self._document.callbacks._session_destroyed_callbacks.pop(self._session_destroy, None)
+
+            elif self._document:
                 if isinstance(self._document._session_destroyed_callbacks, set):
                     self._document._session_destroyed_callbacks.discard(self._session_destroy)
                 else:
