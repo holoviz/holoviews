@@ -39,9 +39,9 @@ from .util import (
     attach_streams, traverse_setter, get_nested_streams,
     compute_overlayable_zorders, get_nested_plot_frame,
     split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
-    get_plot_frame, scale_fontsize, dynamic_update, bokeh_version
+    get_plot_frame, scale_fontsize, dynamic_update
 )
-
+from panel.util import bokeh_version
 
 class Plot(param.Parameterized):
     """
