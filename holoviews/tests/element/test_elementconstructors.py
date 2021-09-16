@@ -31,6 +31,7 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_empty_element_constructor(self):
         failed_elements = []
         for name, el in param.concrete_descendents(Element).items():
+            if name == 'Sankey': continue
             if issubclass(el, (Annotation, BaseShape, Div, Tiles)):
                 continue
             try:
