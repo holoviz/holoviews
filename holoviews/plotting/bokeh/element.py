@@ -1271,7 +1271,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 event = ModelChangedEvent(self.document, source, 'data',
                                           source.data, empty_data, empty_data,
                                           setter='empty')
-                self.document._held_events.append(event)
+                self.document.callbacks._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
