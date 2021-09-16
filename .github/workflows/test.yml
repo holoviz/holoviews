@@ -24,8 +24,7 @@ jobs:
       DESC: "Python ${{ matrix.python-version }} tests"
       HV_REQUIREMENTS: "unit_tests"
       PYTHON_VERSION: ${{ matrix.python-version }}
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
-      CHANS: "-c pyviz -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
@@ -38,7 +37,6 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniconda-version: "latest"
-          channels: conda-forge,defaults
       - name: Fetch unshallow
         run: git fetch --prune --tags --unshallow
       - name: conda setup
@@ -47,12 +45,35 @@ jobs:
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
           doit env_create ${{ env.CHANS_DEV}} --python=${{ matrix.python-version }}
+      - name: doit env_capture
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          doit env_capture
       - name: doit develop_install
+        if: matrix.os != 'macos-latest'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
+          conda install "panel=0.12.1" "nbconvert>5"
+          python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
+          echo "-----"
+          git describe
+          echo "======"
+          conda list
+        # Temporary step for Mac only due doit to develop_install failing
+      - name: doit develop_install on Mac
+        if: matrix.os == 'macos-latest'
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate test-environment
+          conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
+          conda list
+          doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
+          pip install --no-deps --no-build-isolation -e .
+          conda install "panel=0.12.1" "nbconvert>5"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
