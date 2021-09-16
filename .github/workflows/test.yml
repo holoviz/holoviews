@@ -58,7 +58,7 @@ jobs:
           conda install ${{ env.CHANS_DEV }} "pip<21.2.1"
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }}
-          conda install "panel=0.12.2" "nbconvert>5"
+          conda install -c pyviz "panel=0.12.2" "nbconvert>5"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
@@ -74,7 +74,7 @@ jobs:
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o ${{ env.HV_REQUIREMENTS }} || echo "Keep going"
           pip install --no-deps --no-build-isolation -e .
-          conda install "panel=0.12.2" "nbconvert>5"
+          conda install -c pyviz "panel=0.12.2" "nbconvert>5"
           python -c "from param import version; print(version.Version.setup_version('.', 'holoviews', archive_commit='$Format:%h$'))"
           echo "-----"
           git describe
