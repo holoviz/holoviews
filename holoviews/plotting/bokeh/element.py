@@ -1233,9 +1233,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for gtype in ((glyph_type, '') if glyph_type else ('',)):
             for prop in ('color', 'alpha'):
                 glyph_prop = properties.get(gtype+prop)
-                if glyph_prop and ('line_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('line_'+prop not in glyph_props or gtype):
                     glyph_props['line_'+prop] = glyph_prop
-                if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
+                if glyph_prop is not None and ('fill_'+prop not in glyph_props or gtype):
                     glyph_props['fill_'+prop] = glyph_prop
 
             props = {k[len(gtype):]: v for k, v in glyph_props.items()
@@ -1334,15 +1334,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not isinstance(hover.tooltips, util.basestring) and 'hv_created' in hover.tags:
             for k, values in source.data.items():
                 key = '@{%s}' % k
-                if key in hover.formatters:
-                    continue
                 if ((isinstance(value, np.ndarray) and value.dtype.kind == 'M') or
                     (len(values) and isinstance(values[0], util.datetime_types))):
                     hover.tooltips = [(l, f+'{%F %T}' if f == key else f) for l, f in hover.tooltips]
                     hover.formatters[key] = "datetime"
+
         if hover.renderers == 'auto':
             hover.renderers = []
-        hover.renderers.append(renderer)
+        if renderer not in hover.renderers:
+            hover.renderers.append(renderer)
 
     def _init_glyphs(self, plot, element, ranges, source):
         style_element = element.last if self.batched else element
@@ -1463,6 +1463,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
+            if 'visible' in style and hasattr(renderer, 'visible'):
+                renderer.visible = style['visible']
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph, source, data)
         elif not self.static_source:
@@ -1539,6 +1541,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if 'hover' in self.handles:
             self._update_hover(element)
+            if 'cds' in self.handles:
+                cds = self.handles['cds']
+                self._postprocess_hover(renderer, cds)
 
         self._update_glyphs(element, ranges, self.style[self.cyclic_index])
         self._execute_hooks(element)

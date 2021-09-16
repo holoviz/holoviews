@@ -205,7 +205,7 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if hasattr(data, 'interface') and isinstance(data.interface, type) and issubclass(data.interface, Interface):
             if datatype is None:
                 datatype = [dt for dt in data.datatype if dt in eltype.datatype]
                 if not datatype:

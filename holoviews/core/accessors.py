@@ -7,6 +7,7 @@ import copy
 import sys
 
 from collections import OrderedDict
+from functools import wraps
 from types import FunctionType
 
 import param
@@ -27,6 +28,7 @@ class AccessorPipelineMeta(type):
 
     @classmethod
     def pipelined(mcs, __call__):
+        @wraps(__call__)
         def pipelined_call(*args, **kwargs):
             from ..operation.element import method as method_op, factory
             from .data import Dataset, MultiDimensionalMapping
@@ -81,8 +83,6 @@ class AccessorPipelineMeta(type):
                     inst._obj._in_method = False
 
             return result
-
-        pipelined_call.__doc__ = __call__.__doc__
 
         return pipelined_call
 

@@ -282,7 +282,7 @@ class Area(Curve):
         baseline = None
         stacked = areas.clone(shared_data=False)
         for key, sdf in df.groupby(level=levels):
-            sdf = sdf.droplevel(levels).reindex(index=df.index.levels[-1], fill_value=0)
+            sdf = sdf.droplevel(levels).reindex(index=df.index.unique(-1), fill_value=0)
             if baseline is None:
                 sdf[baseline_name] = 0
             else:

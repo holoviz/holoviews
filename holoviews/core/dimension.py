@@ -1227,7 +1227,7 @@ class Dimensioned(LabelledData):
 
         return self.opts(options, **kwargs)
 
-    def options(self, *args, **kwargs):
+    def options(self, *args, clone=True, **kwargs):
         """Applies simplified option definition returning a new object.
 
         Applies options on an object or nested group of objects in a
@@ -1266,9 +1266,8 @@ class Dimensioned(LabelledData):
             Returns the cloned object with the options applied
         """
         backend = kwargs.get('backend', None)
-        clone = kwargs.pop('clone', True)
 
-        if len(args) == 0 and len(kwargs)==0:
+        if not (args or kwargs):
             options = None
         elif args and isinstance(args[0], basestring):
             options = {args[0]: kwargs}
