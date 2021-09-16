@@ -3,7 +3,7 @@ Version 1.14.6
 **September 16, 2021**
 
 This is a hotfix release with a number of important bug fixes. Most
-importantly, this version supports for the recent bokeh 2.4.0
+importantly, this version supports the recent bokeh 2.4.0
 release. Many thanks to @geronimos, @peterroelants,
 @douglas-raillard-arm, @philippjfr and @jlstevens for contributing the
 fixes in this release.
