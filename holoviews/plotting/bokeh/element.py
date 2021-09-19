@@ -1271,7 +1271,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 event = ModelChangedEvent(self.document, source, 'data',
                                           source.data, empty_data, empty_data,
                                           setter='empty')
-                self.document._held_events.append(event)
+                if bokeh_version >= '2.4.0':
+                    self.document.callbacks._held_events.append(event)
+                else:
+                    self.document._held_events.append(event)
 
         if legend is not None:
             for leg in self.state.legend:
@@ -1435,6 +1438,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
+            if 'visible' in style and hasattr(renderer, 'visible'):
+                renderer.visible = style['visible']
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph, source, data)
         elif not self.static_source:

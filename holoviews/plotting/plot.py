@@ -41,7 +41,7 @@ from .util import (
     split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
     get_plot_frame, scale_fontsize, dynamic_update
 )
-
+from panel.util import bokeh_version
 
 class Plot(param.Parameterized):
     """
@@ -112,7 +112,13 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
-            if self._document:
+            if self._document and bokeh_version >= '2.4.0':
+                if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
+                    self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
+                else:
+                    self._document.callbacks._session_destroyed_callbacks.pop(self._session_destroy, None)
+
+            elif self._document:
                 if isinstance(self._document._session_destroyed_callbacks, set):
                     self._document._session_destroyed_callbacks.discard(self._session_destroy)
                 else:
@@ -746,9 +752,12 @@ class DimensionedPlot(Plot):
             if isinstance(el, (Empty, Table)): continue
             opts = cls.lookup_options(el, 'style')
             plot_opts = cls.lookup_options(el, 'plot')
+            opt_kwargs = dict(opts.kwargs, **plot_opts.kwargs)
+            if not opt_kwargs.get('apply_ranges', True):
+                continue
 
             # Compute normalization for color dim transforms
-            for k, v in dict(opts.kwargs, **plot_opts.kwargs).items():
+            for k, v in opt_kwargs.items():
                 if not isinstance(v, dim) or ('color' not in k and k != 'magnitude'):
                     continue
 

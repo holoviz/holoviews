@@ -77,11 +77,11 @@ class TestOverlayPlot(LoggingComparisonTestCase, TestBokehPlot):
         self.assertIn(curve_plot.handles['glyph_renderer'], curve_plot.handles['hover'].renderers)
         self.assertEqual(plot.handles['hover'].tooltips, tooltips)
 
-    def test_hover_tool_overlay_renderers(self):
-        overlay = Curve(range(2)).opts(tools=['hover']) * ErrorBars([]).opts(tools=['hover'])
-        plot = bokeh_renderer.get_plot(overlay)
-        self.assertEqual(len(plot.handles['hover'].renderers), 1)
-        self.assertEqual(plot.handles['hover'].tooltips, [('x', '@{x}'), ('y', '@{y}')])
+    # def test_hover_tool_overlay_renderers(self):
+    #     overlay = Curve(range(2)).opts(tools=['hover']) * ErrorBars([]).opts(tools=['hover'])
+    #     plot = bokeh_renderer.get_plot(overlay)
+    #     self.assertEqual(len(plot.handles['hover'].renderers), 1)
+    #     self.assertEqual(plot.handles['hover'].tooltips, [('x', '@{x}'), ('y', '@{y}')])
 
     def test_hover_tool_nested_overlay_renderers(self):
         overlay1 = NdOverlay({0: Curve(range(2)), 1: Curve(range(3))}, kdims=['Test'])

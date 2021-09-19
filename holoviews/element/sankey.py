@@ -1,4 +1,4 @@
-from collections import Counter
+import math
 from functools import cmp_to_key
 from itertools import cycle
 
@@ -8,9 +8,13 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, get_param_values, unique_array
+from ..core.util import get_param_values, unique_array
 from .graphs import Graph, Nodes, EdgePaths
 from .util import quadratic_bezier
+
+
+_Y_N_DECIMAL_DIGITS = 6
+_Y_EPS = 10 ** -_Y_N_DECIMAL_DIGITS
 
 
 class _layout_sankey(Operation):
@@ -19,6 +23,8 @@ class _layout_sankey(Operation):
     the Sankey element constructor.
 
     Adapted from d3-sankey under BSD-3 license.
+
+    Source: https://github.com/d3/d3-sankey/tree/v0.12.3
     """
 
     bounds = param.NumericTuple(default=(0, 0, 1000, 500))
@@ -46,6 +52,7 @@ class _layout_sankey(Operation):
         self.computeNodeLinks(element, graph)
         self.computeNodeValues(graph)
         self.computeNodeDepths(graph)
+        self.computeNodeHeights(graph)
         self.computeNodeBreadths(graph)
         self.computeLinkBreadths(graph)
         paths = self.computePaths(graph)
@@ -64,60 +71,6 @@ class _layout_sankey(Operation):
         nodes = element.node_type(node_data, kdims=kdims, vdims=element.nodes.vdims)
         edges = element.edge_type(paths)
         return nodes, edges, graph
-
-
-    def computePaths(self, graph):
-        paths = []
-        for link in graph['links']:
-            source, target = link['source'], link['target']
-            x0, y0 = source['x1'], link['y0']
-            x1, y1 = target['x0'], link['y1']
-            start = np.array([(x0, link['width']+y0),
-                              (x0, y0)])
-            src = (x0, y0)
-            ctr1 = ((x0+x1)/2., y0)
-            ctr2 = ((x0+x1)/2., y1)
-            tgt = (x1, y1)
-            bottom = quadratic_bezier(src, tgt, ctr1, ctr2)
-            mid = np.array([(x1, y1),
-                            (x1, y1+link['width'])])
-
-            xmid = (x0+x1)/2.
-            y0 = y0+link['width']
-            y1 = y1+link['width']
-            src = (x1, y1)
-            ctr1 = (xmid, y1)
-            ctr2 = (xmid, y0)
-            tgt = (x0, y0)
-            top = quadratic_bezier(src, tgt, ctr1, ctr2)
-            spline = np.concatenate([start, bottom, mid, top])
-            paths.append(spline)
-        return paths
-
-
-    @classmethod
-    def weightedSource(cls, link):
-        return cls.nodeCenter(link['source']) * link['value']
-
-    @classmethod
-    def weightedTarget(cls, link):
-        return cls.nodeCenter(link['target']) * link['value']
-
-    @classmethod
-    def nodeCenter(cls, node):
-        return (node['y0'] + node['y1']) / 2
-
-    @classmethod
-    def ascendingBreadth(cls, a, b):
-        return int(a['y0'] - b['y0'])
-
-    @classmethod
-    def ascendingSourceBreadth(cls, a, b):
-        return cls.ascendingBreadth(a['source'], b['source']) | a['index'] - b['index']
-
-    @classmethod
-    def ascendingTargetBreadth(cls, a, b):
-        return cls.ascendingBreadth(a['target'], b['target']) | a['index'] - b['index']
 
     @classmethod
     def computeNodeLinks(cls, element, graph):
@@ -155,13 +108,8 @@ class _layout_sankey(Operation):
             target_val = np.sum([l['value'] for l in node['targetLinks']])
             node['value'] = max([source_val, target_val])
 
-    def computeNodeDepths(self, graph):
-        """
-        Iteratively assign the depth (x-position) for each node.
-        Nodes are assigned the maximum depth of incoming neighbors plus one;
-        nodes with no incoming links are assigned depth zero, while
-        nodes with no outgoing links are assigned the maximum depth.
-        """
+    @classmethod
+    def computeNodeDepths(cls, graph):
         nodes = graph['nodes']
         depth = 0
         while nodes:
@@ -169,126 +117,234 @@ class _layout_sankey(Operation):
             for node in nodes:
                 node['depth'] = depth
                 for link in node['sourceLinks']:
-                    if not any(link['target'] is node for node in next_nodes):
-                        next_nodes.append(link['target'])
+                    next_nodes.append(link['target'])
             nodes = next_nodes
             depth += 1
-            if depth > 10000:
+            if depth > len(graph['nodes']):
                 raise RecursionError('Sankey diagrams only support acyclic graphs.')
+        return depth
 
+    @classmethod
+    def computeNodeHeights(cls, graph):
         nodes = graph['nodes']
-        depth = 0
+        height = 0
         while nodes:
             next_nodes = []
             for node in nodes:
-                node['height'] = depth
+                node['height'] = height
                 for link in node['targetLinks']:
-                    if not any(link['source'] is node for node in next_nodes):
-                        next_nodes.append(link['source'])
+                    next_nodes.append(link['source'])
             nodes = next_nodes
-            depth += 1
-            if depth > 10000:
+            height += 1
+            if height > len(graph['nodes']):
                 raise RecursionError('Sankey diagrams only support acyclic graphs.')
+        return height
 
-        x0, _, x1, _ = self.p.bounds
+    def computeNodeColumns(self, graph):
+        depth_upper_bound = max(x['depth'] for x in graph['nodes']) + 1
+        x0, x1 = self.p.bounds[0], self.p.bounds[2]
         dx = self.p.node_width
-        kx = (x1 - x0 - dx) / (depth - 1)
+        kx = (x1 - x0 - dx) / (depth_upper_bound - 1)
+        columns = [[] for _ in range(depth_upper_bound)]
         for node in graph['nodes']:
-            d  = node['depth'] if node['sourceLinks'] else depth - 1
-            node['x0'] = x0 + max([0, min([depth-1, np.floor(d)]) * kx])
+            node['column'] = max(
+                0,
+                min(
+                    depth_upper_bound - 1,
+                    math.floor(
+                        node['depth']
+                        if node['sourceLinks']
+                        else depth_upper_bound - 1
+                    )
+                )
+            )
+            node['x0'] = x0 + node['column'] * kx
             node['x1'] = node['x0'] + dx
+            columns[node['column']].append(node)
+        return columns
+
+    @classmethod
+    def ascendingBreadth(cls, a, b):
+        return int(a['y0'] - b['y0'])
+
+    @classmethod
+    def ascendingSourceBreadth(cls, a, b):
+        return (
+            (
+                cls.ascendingBreadth(a['source'], b['source'])
+                if 'y0' in a['source'] and 'y0' in b['source']
+                else None
+            )
+            or a['index'] - b['index']
+        )
+
+    @classmethod
+    def ascendingTargetBreadth(cls, a, b):
+        return (
+            (
+                cls.ascendingBreadth(a['target'], b['target'])
+                if 'y0' in a['target'] and 'y0' in b['target']
+                else None
+            )
+            or a['index'] - b['index']
+        )
+
+    @classmethod
+    def reorderLinks(cls, nodes):
+        for x in nodes:
+            x['sourceLinks'].sort(key=cmp_to_key(cls.ascendingTargetBreadth))
+            x['targetLinks'].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
+
+    def initializeNodeBreadths(self, columns, py):
+        _, y0, _, y1 = self.p.bounds
+        ky = min(
+            (y1 - y0 - (len(c) - 1) * py) / sum(node['value'] for node in c)
+            for c in columns
+        )
+        for nodes in columns:
+            y = y0
+            for node in nodes:
+                node['y0'] = y
+                node['y1'] = y + node['value'] * ky
+                y = node['y1'] + py
+                for link in node['sourceLinks']:
+                    link['width'] = link['value'] * ky
+            y = (y1 - y + py) / (len(nodes) + 1)
+            for i, node in enumerate(nodes):
+                node['y0'] += y * (i + 1)
+                node['y1'] += y * (i + 1)
+            self.reorderLinks(nodes)
+
+    @classmethod
+    def sourceTop(cls, source, target, py):
+        y = target['y0'] - (len(target['targetLinks']) - 1) * py / 2
+        for link in target['targetLinks']:
+            if link['source'] is source:
+                break
+            y += link['width'] + py
+        for link in source['sourceLinks']:
+            if link['target'] is target:
+                break
+            y -= link['width']
+        return y
+
+    @classmethod
+    def targetTop(cls, source, target, py):
+        y = source['y0'] - (len(source['sourceLinks']) - 1) * py / 2
+        for link in source['sourceLinks']:
+            if link['target'] is target:
+                break
+            y += link['width'] + py
+        for link in target['targetLinks']:
+            if link['source'] is source:
+                break
+            y -= link['width']
+        return y
+
+    @classmethod
+    def resolveCollisionsTopToBottom(cls, nodes, y, i, alpha, py):
+        for node in nodes[i:]:
+            dy = (y - node['y0']) * alpha
+            if dy > _Y_EPS:
+                node['y0'] += dy
+                node['y1'] += dy
+            y = node['y1'] + py
+
+    @classmethod
+    def resolveCollisionsBottomToTop(cls, nodes, y, i, alpha, py):
+        # NOTE: don't change the `while` loop to `for`
+        while i >= 0:
+            node = nodes[i]
+            dy = (node['y1'] - y) * alpha
+            if dy > _Y_EPS:
+                node['y0'] -= dy
+                node['y1'] -= dy
+            y = node['y0'] - py
+            i -= 1
+
+    def resolveCollisions(self, nodes, alpha, py):
+        _, y0, _, y1 = self.p.bounds
+        i = len(nodes) // 2
+        subject = nodes[i]
+        self.resolveCollisionsBottomToTop(nodes, subject['y0'] - py, i - 1, alpha, py)
+        self.resolveCollisionsTopToBottom(nodes, subject['y1'] + py, i + 1, alpha, py)
+        self.resolveCollisionsBottomToTop(nodes, y1, len(nodes) - 1, alpha, py)
+        self.resolveCollisionsTopToBottom(nodes, y0, 0, alpha, py)
+
+    @classmethod
+    def reorderNodeLinks(cls, node):
+        for link in node['targetLinks']:
+            link['source']['sourceLinks'].sort(
+                key=cmp_to_key(cls.ascendingTargetBreadth)
+            )
+        for link in node['sourceLinks']:
+            link['target']['targetLinks'].sort(
+                key=cmp_to_key(cls.ascendingSourceBreadth)
+            )
+
+    def relaxLeftToRight(self, columns, alpha, beta, py):
+        for column in columns[1:]:
+            for target in column:
+                y = 0
+                w = 0
+                for link in target['targetLinks']:
+                    source = link['source']
+                    v = link['value'] * (target['column'] - source['column'])
+                    y += self.targetTop(source, target, py) * v
+                    w += v
+                if w <= 0:
+                    continue
+                dy = (y / w - target['y0']) * alpha
+                target['y0'] += dy
+                target['y1'] += dy
+                self.reorderNodeLinks(target)
+            if self.p.node_sort:
+                # TODO is the comparison operator valid?
+                column.sort(key=cmp_to_key(self.ascendingBreadth))
+            self.resolveCollisions(column, beta, py)
+
+    def relaxRightToLeft(self, columns, alpha, beta, py):
+        """Reposition each node based on its outgoing (source) links."""
+        for column in columns[-2::-1]:
+            for source in column:
+                y = 0
+                w = 0
+                for link in source['sourceLinks']:
+                    target = link['target']
+                    v = link['value'] * (target['column'] - source['column'])
+                    y += self.sourceTop(source, target, py) * v
+                    w += v
+                if w <= 0:
+                    continue
+                dy = (y / w - source['y0']) * alpha
+                source['y0'] += dy
+                source['y1'] += dy
+                self.reorderNodeLinks(source)
+            if self.p.node_sort:
+                column.sort(key=cmp_to_key(self.ascendingBreadth))
+            self.resolveCollisions(column, beta, py)
 
     def computeNodeBreadths(self, graph):
-        node_map = OrderedDict()
-        depths = Counter()
-        for n in graph['nodes']:
-            if n['x0'] not in node_map:
-                node_map[n['x0']] = []
-            node_map[n['x0']].append(n)
-            depths[n['depth']] += 1
-
+        columns = self.computeNodeColumns(graph)
         _, y0, _, y1 = self.p.bounds
-        py = self.p.node_padding
-        if py is None:
-            max_depth = max(depths.values()) - 1 if depths else 1
-            height = self.p.bounds[3] - self.p.bounds[1]
-            py = min((height * 0.1) / max_depth, 20) if max_depth else 20
-
-        def initializeNodeBreadth():
-            kys = []
-            for nodes in node_map.values():
-                nsum = np.sum([node['value'] for node in nodes])
-                ky = (y1 - y0 - (len(nodes)-1) * py) / nsum
-                kys.append(ky)
-            ky = np.min(kys) if len(kys) else np.nan
-
-            for nodes in node_map.values():
-                for i, node in enumerate(nodes):
-                    node['y0'] = i
-                    node['y1'] = i + node['value'] * ky
-
-            for link in graph['links']:
-                link['width'] = link['value'] * ky
-
-        def relaxLeftToRight(alpha):
-            for nodes in node_map.values():
-                for node in nodes:
-                    if not node['targetLinks']:
-                        continue
-                    weighted = sum([self.weightedSource(l) for l in node['targetLinks']])
-                    tsum = sum([l['value'] for l in node['targetLinks']])
-                    center = self.nodeCenter(node)
-                    dy = (weighted/tsum - center)*alpha
-                    node['y0'] += dy
-                    node['y1'] += dy
-
-
-        def relaxRightToLeft(alpha):
-            for nodes in list(node_map.values())[::-1]:
-                for node in nodes:
-                    if not node['sourceLinks']:
-                        continue
-                    weighted = sum([self.weightedTarget(l) for l in node['sourceLinks']])
-                    tsum = sum([l['value'] for l in node['sourceLinks']])
-                    center = self.nodeCenter(node)
-                    dy = (weighted/tsum - center)*alpha
-                    node['y0'] += dy
-                    node['y1'] += dy
-
-
-        def resolveCollisions():
-            for nodes in node_map.values():
-                y = y0
-                if self.p.node_sort:
-                    nodes.sort(key=cmp_to_key(self.ascendingBreadth))
-                for node in nodes:
-                    dy = y-node['y0']
-                    if dy > 0:
-                        node['y0'] += dy
-                        node['y1'] += dy
-                    y = node['y1'] + py
-
-                dy = y-py-y1
-                if dy > 0:
-                    node['y0'] -= dy
-                    node['y1'] -= dy
-                    y = node['y0']
-                    for node in nodes[:-1][::-1]:
-                        dy = node['y1'] + py - y;
-                        if dy>0:
-                            node['y0'] -= dy
-                            node['y1'] -= dy
-                        y = node['y0']
-
-        initializeNodeBreadth()
-        resolveCollisions()
-        alpha = 1
-        for _ in range(self.p.iterations):
-            alpha = alpha*0.99
-            relaxRightToLeft(alpha)
-            resolveCollisions()
-            relaxLeftToRight(alpha)
-            resolveCollisions()
+        max_column_size = max(map(len, columns))
+        # NOTE: the `max_default_padding` thing is a holoviews-specific hack
+        max_default_padding = 20
+        py = (
+            self.p.node_padding
+            if self.p.node_padding is not None
+            else min((y1 - y0) / (max_column_size - 1), max_default_padding)
+            if max_column_size > 1
+            else max_default_padding
+        )
+        self.initializeNodeBreadths(columns, py)
+        for i in range(self.p.iterations):
+            alpha = 0.99 ** i
+            beta = max(1 - alpha, (i + 1) / self.p.iterations)
+            self.relaxRightToLeft(columns, alpha, beta, py)
+            self.relaxLeftToRight(columns, alpha, beta, py)
+        for node in graph['nodes']:
+            node['y1'] = round(node['y1'], _Y_N_DECIMAL_DIGITS)
 
     @classmethod
     def computeLinkBreadths(cls, graph):
@@ -297,14 +353,50 @@ class _layout_sankey(Operation):
             node['targetLinks'].sort(key=cmp_to_key(cls.ascendingSourceBreadth))
 
         for node in graph['nodes']:
-            y0 = y1 = node['y0']
+            y0 = node['y0']
+            y1 = y0
             for link in node['sourceLinks']:
-                link['y0'] = y0
+                link['y0'] = y0 + link['width'] / 2
                 y0 += link['width']
             for link in node['targetLinks']:
-                link['y1'] = y1
+                link['y1'] = y1 + link['width'] / 2
                 y1 += link['width']
 
+    def computePaths(self, graph):
+        paths = []
+        for link in graph['links']:
+            source, target = link['source'], link['target']
+            x0 = source['x1']
+            x1 = target['x0']
+            xmid = (x0 + x1) / 2
+            y0_upper = link['y0'] + link['width'] / 2
+            y0_lower = link['y0'] - link['width'] / 2
+            y1_upper = link['y1'] + link['width'] / 2
+            y1_lower = link['y1'] - link['width'] / 2
+
+            start = np.array([
+                [x0, y0_upper],
+                [x0, y0_lower],
+            ])
+            bottom = quadratic_bezier(
+                (x0, y0_lower),
+                (x1, y1_lower),
+                (xmid, y0_lower),
+                (xmid, y1_lower),
+            )
+            mid = np.array([
+                [x1, y1_lower],
+                [x1, y1_upper],
+            ])
+            top = quadratic_bezier(
+                (x1, y1_upper),
+                (x0, y0_upper),
+                (xmid, y1_upper),
+                (xmid, y0_upper),
+            )
+            spline = np.concatenate([start, bottom, mid, top])
+            paths.append(spline)
+        return paths
 
 
 class Sankey(Graph):
