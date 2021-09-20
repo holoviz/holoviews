@@ -87,7 +87,6 @@ extras_require["basic_tests"] = (
 
 extras_require["nbtests"] = extras_require["recommended"] + [
     "nose",
-    "awscli",
     "deepdiff",
 ]
 
@@ -96,7 +95,6 @@ extras_require['doc'] = extras_require['examples'] + [
     'sphinx',
     'sphinx_holoviz_theme',
     'mpl_sample_data >=3.1.3',
-    'awscli',
     'pscript',
     'graphviz',
     'bokeh >2.2'
