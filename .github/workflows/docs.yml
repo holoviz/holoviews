@@ -11,8 +11,6 @@ jobs:
   test_suite:
     name: Documentation
     runs-on: 'ubuntu-latest'
-    strategy:
-      fail-fast: false
     timeout-minutes: 120
     defaults:
       run:
