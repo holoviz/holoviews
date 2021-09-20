@@ -57,6 +57,7 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc
+          conda install -c pyviz "jupyter_client<7"
           conda install -c conda-forge geckodriver selenium awscli
       - name: doit env_capture
         run: |
