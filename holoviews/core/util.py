@@ -1964,7 +1964,9 @@ def bound_range(vals, density, time_unit='us'):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
             full_precision_density = compute_density(low, high, len(vals)-1)
+            error = np.seterr(over="ignore")
             density = round(full_precision_density, sys.float_info.dig)
+            np.seterr(**error)
         if density == 0 or density == np.inf:
             density = full_precision_density
     if density == 0:
