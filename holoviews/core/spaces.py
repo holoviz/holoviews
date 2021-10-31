@@ -762,7 +762,7 @@ class DynamicMap(HoloMap):
        will then be automatically converted to the equivalent list
        format.""")
 
-    cache_size = param.Integer(default=500, doc="""
+    cache_size = param.Integer(default=500, bounds=(1, None), doc="""
        The number of entries to cache for fast access. This is an LRU
        cache where the least recently used item is overwritten once
        the cache is full.""")
