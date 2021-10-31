@@ -853,6 +853,11 @@ class DynamicMap(HoloMap):
                 unbounded_dims.append(str(kdim))
         return unbounded_dims
 
+    @property
+    def current_key(self):
+        """Returns the current key value."""
+        return getattr(self, '_current_key', None)
+
     def _stream_parameters(self):
         return util.stream_parameters(
             self.streams, no_duplicates=not self.positional_stream_args
@@ -1170,6 +1175,8 @@ class DynamicMap(HoloMap):
             otherwise returns cloned DynamicMap containing the cross-
             product of evaluated items.
         """
+        self._current_key = key
+
         # Split key dimensions and data slices
         sample = False
         if key is Ellipsis:
