@@ -826,6 +826,8 @@ class DynamicMap(HoloMap):
 
         self.periodic = periodic(self)
 
+        self._current_key = None
+
     @property
     def opts(self):
         return Opts(self, mode='dynamicmap')
@@ -856,7 +858,7 @@ class DynamicMap(HoloMap):
     @property
     def current_key(self):
         """Returns the current key value."""
-        return getattr(self, '_current_key', None)
+        return self._current_key
 
     def _stream_parameters(self):
         return util.stream_parameters(
