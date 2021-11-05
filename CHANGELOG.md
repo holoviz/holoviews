@@ -1,7 +1,37 @@
+Version 1.14.6
+==============
+**September 16, 2021**
+
+This is a hotfix release with a number of important bug fixes. Most
+importantly, this version supports the recent bokeh 2.4.0
+release. Many thanks to @geronimos, @peterroelants,
+@douglas-raillard-arm, @philippjfr and @jlstevens for contributing the
+fixes in this release.
+
+Bug fixes:
+
+- Compatibility for bokeh 2.4 and fixes to processing of falsey
+  properties and visible style property
+  ([#5059](https://github.com/holoviz/holoviews/pull/5059),
+  [#5063](https://github.com/holoviz/holoviews/pull/5063))
+- Stricter validation of data.interface before calling subclass
+  ([#5050](https://github.com/holoviz/holoviews/pull/5050))
+- Fix to prevent options being ignored in some cases
+  ([#5016](https://github.com/holoviz/holoviews/pull/5016))
+- Improvements to linked selections including support for linked
+  selection lasso for cudf and improved warnings
+  ([#5044](https://github.com/holoviz/holoviews/pull/5044),
+   [#5051](https://github.com/holoviz/holoviews/pull/5051)) 
+- Respect apply_ranges at range computation level
+  ([#5081](https://github.com/holoviz/holoviews/pull/5081))
+- Keep ordering of kdim when stacking Areas
+  ([#4971](https://github.com/holoviz/holoviews/pull/4971))
+- Apply hover postprocessor on updates
+  ([#5039](https://github.com/holoviz/holoviews/pull/5039))
+
 Version 1.14.5
 ==============
 **July 16, 2021**
-
 	
 This is a hotfix release with a number of important bug fixes. Most
 importantly, this version supports for the recent pandas 1.3.0
