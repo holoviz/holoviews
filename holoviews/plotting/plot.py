@@ -41,7 +41,6 @@ from .util import (
     split_dmap_overlay, get_axis_padding, get_range, get_minimum_span,
     get_plot_frame, scale_fontsize, dynamic_update
 )
-from panel.util import bokeh_version
 
 class Plot(param.Parameterized):
     """
@@ -112,6 +111,7 @@ class Plot(param.Parameterized):
             self.root is self.handles.get('plot') and
             not isinstance(self, GenericAdjointLayoutPlot)):
             doc.on_session_destroyed(self._session_destroy)
+            from .bokeh.util import bokeh_version
             if self._document and bokeh_version >= '2.4.0':
                 if isinstance(self._document.callbacks._session_destroyed_callbacks, set):
                     self._document.callbacks._session_destroyed_callbacks.discard(self._session_destroy)
