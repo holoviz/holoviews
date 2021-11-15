@@ -440,6 +440,7 @@ class Callback(object):
 
     def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
+        cb_handles = []
         for handle_name in self.models:
             if handle_name not in handles:
                 warn_args = (handle_name, type(self.plot).__name__,
@@ -447,21 +448,24 @@ class Callback(object):
                 print('%s handle not found on %s, cannot '
                       'attach %s callback' % warn_args)
                 continue
-            handle = handles[handle_name]
+            cb_handles.append(handles[handle_name])
 
-            # Hash the plot handle with Callback type allowing multiple
-            # callbacks on one handle to be merged
-            cb_hash = (id(handle), id(type(self)))
-            if cb_hash in self._callbacks:
-                # Merge callbacks if another callback has already been attached
-                cb = self._callbacks[cb_hash]
-                cb.streams = list(set(cb.streams+self.streams))
-                for k, v in self.handle_ids.items():
-                    cb.handle_ids[k].update(v)
-                continue
+        # Hash the plot handle with Callback type allowing multiple
+        # callbacks on one handle to be merged
+        handle_ids = [id(h) for h in cb_handles]
+        cb_hash = tuple(handle_ids)+(id(type(self)),)
+        if cb_hash in self._callbacks:
+            # Merge callbacks if another callback has already been attached
+            cb = self._callbacks[cb_hash]
+            cb.streams = list(set(cb.streams+self.streams))
+            for k, v in self.handle_ids.items():
+                cb.handle_ids[k].update(v)
+            self.cleanup()
+            return
 
+        for handle in cb_handles:
             self.set_callback(handle)
-            self._callbacks[cb_hash] = self
+        self._callbacks[cb_hash] = self
 
 
 
