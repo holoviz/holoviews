@@ -454,12 +454,14 @@ class Callback(object):
         # callbacks on one handle to be merged
         handle_ids = [id(h) for h in cb_handles]
         cb_hash = tuple(handle_ids)+(id(type(self)),)
+        print(cb_hash in self._callbacks)
         if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[cb_hash]
             cb.streams = list(set(cb.streams+self.streams))
             for k, v in self.handle_ids.items():
                 cb.handle_ids[k].update(v)
+            self.cleanup()
             return
 
         for handle in cb_handles:
