@@ -346,7 +346,7 @@ def tree_attribute(identifier):
     These custom attributes start with a capitalized character when
     applicable (not applicable to underscore or certain unicode characters)
     """
-    if not identifier:
+    if identifier == '':
         return True
     if identifier[0].upper().isupper() is False and identifier[0] != '_':
         return True
