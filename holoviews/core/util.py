@@ -382,6 +382,8 @@ def tree_attribute(identifier):
     These custom attributes start with a capitalized character when
     applicable (not applicable to underscore or certain unicode characters)
     """
+    if identifier == '':
+        return True
     if identifier[0].upper().isupper() is False and identifier[0] != '_':
         return True
     else:
@@ -1826,7 +1828,10 @@ def capitalize(string):
     """
     Capitalizes the first letter of a string.
     """
-    return string[0].upper() + string[1:]
+    if string:
+        return string[0].upper() + string[1:]
+    else:
+        return string
 
 
 def get_path(item):
