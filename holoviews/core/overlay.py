@@ -13,19 +13,21 @@ import numpy as np
 import param
 from .dimension import Dimension, Dimensioned, ViewableElement, ViewableTree
 from .ndmapping import UniformNdMapping
-from .layout import Composable, Layout, AdjointLayout
+from .layout import Composable, Layout, AdjointLayout, Layoutable
 from .util import sanitize_identifier, unique_array, dimensioned_streams
 
 
-class Overlayable(object):
+class Overlayable:
     """
     Overlayable provides a mix-in class to support the
     mul operation for overlaying multiple elements.
     """
-
     def __mul__(self, other):
         "Overlay object with other object."
-        if type(other).__name__ == 'DynamicMap':
+        # Local import to break the import cyclic dependency
+        from .spaces import DynamicMap
+
+        if isinstance(other, DynamicMap):
             from .spaces import Callable
             def dynamic_mul(*args, **kwargs):
                 element = other[args]
@@ -34,14 +36,21 @@ class Overlayable(object):
             callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
                                streams=dimensioned_streams(other))
-        if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
-            items = [(k, self * v) for (k, v) in other.items()]
-            return other.clone(items)
-        elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
-            return NotImplemented
+        else:
+            if isinstance(self, Overlay):
+                if not isinstance(other, ViewableElement):
+                    return NotImplemented
+            else:
+                if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
+                    items = [(k, self * v) for (k, v) in other.items()]
+                    return other.clone(items)
+                elif isinstance(other, (AdjointLayout, ViewableTree)) and not isinstance(other, Overlay):
+                    return NotImplemented
 
-        return Overlay([self, other])
-
+            try:
+                return Overlay([self, other])
+            except NotImplementedError:
+                return NotImplemented
 
 
 class CompositeOverlay(ViewableElement, Composable):
@@ -124,7 +133,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return vals if expanded else unique_array(vals)
 
 
-class Overlay(ViewableTree, CompositeOverlay):
+class Overlay(ViewableTree, CompositeOverlay, Layoutable, Overlayable):
     """
     An Overlay consists of multiple Elements (potentially of
     heterogeneous type) presented one on top each other with a
@@ -170,28 +179,6 @@ class Overlay(ViewableTree, CompositeOverlay):
             else:
                 return default
         return super(Overlay, self).get(identifier, default)
-
-
-    def __add__(self, other):
-        "Composes Overlay with other object into a Layout"
-        return Layout([self, other])
-
-
-    def __mul__(self, other):
-        "Adds layer(s) from other object to Overlay"
-        if type(other).__name__ == 'DynamicMap':
-            from .spaces import Callable
-            def dynamic_mul(*args, **kwargs):
-                element = other[args]
-                return self * element
-            callback = Callable(dynamic_mul, inputs=[self, other])
-            callback._is_overlay = True
-            return other.clone(shared_data=False, callback=callback,
-                               streams=dimensioned_streams(other))
-        elif not isinstance(other, ViewableElement):
-            return NotImplemented
-        return Overlay([self, other])
-
 
     def collate(self):
         """
