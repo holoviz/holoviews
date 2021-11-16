@@ -1086,7 +1086,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for handle, label in zip(all_handles, all_labels):
             # Ensure that artists with multiple handles are supported
             if isinstance(handle, list): handle = tuple(handle)
-            handle = tuple(h for h in handle if not isinstance(h, AxesImage))
+            handle = tuple(h for h in handle if not isinstance(h, (AxesImage, list)))
             if not handle:
                 continue
             if handle and (handle not in data) and label and label not in used_labels:
