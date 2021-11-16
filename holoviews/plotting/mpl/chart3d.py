@@ -8,6 +8,7 @@ from mpl_toolkits.mplot3d.art3d import Line3DCollection
 from ...core import Dimension
 from ...core.options import abbreviated_exception
 from ...core.util import basestring
+from ...util.transform import dim as dim_expr
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
@@ -95,6 +96,8 @@ class Plot3D(ColorbarPlot):
         fig = self.handles['fig']
         ax = self.handles['axis']
         # Get colorbar label
+        if isinstance(dim, dim_expr):
+            dim = dim.dimension
         if dim is None:
             if hasattr(self, 'color_index'):
                 dim = element.get_dimension(self.color_index)
@@ -104,6 +107,7 @@ class Plot3D(ColorbarPlot):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cbar'] = cbar
         self.handles['cax'] = cbar.ax
         self._adjust_cbar(cbar, label, dim)
 

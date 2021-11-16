@@ -5,6 +5,11 @@ from .testplot import TestMPLPlot, mpl_renderer
 
 class TestPointPlot(TestMPLPlot):
 
+    def test_scatter3d_colorbar_label(self):
+        scatter3d = Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 4)]).options(color='z', colorbar=True)
+        plot = mpl_renderer.get_plot(scatter3d)
+        assert plot.handles['cax'].get_ylabel() == 'z'
+
     def test_scatter3d_padding_square(self):
         scatter3d = Scatter3D([(0, 1, 2), (1, 2, 3), (2, 3, 4)]).options(padding=0.1)
         plot = mpl_renderer.get_plot(scatter3d)
