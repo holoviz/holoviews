@@ -239,7 +239,7 @@ def deprecated_opts_signature(args, kwargs):
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
         if (not set(args[0]).issubset(groups) and
-            all(isinstance(v, dict) and not set(v).issubset(groups)
+            all(isinstance(v, dict) and (not set(v).issubset(groups) or not v)
                 for v in args[0].values())):
             apply_groups = False
         elif set(args[0].keys()) <= groups:
