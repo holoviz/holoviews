@@ -13,23 +13,33 @@ from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from . import traversal
 
 
-class Composable(object):
+class Layoutable:
     """
-    Composable is a mix-in class to allow Dimensioned objects to be
-    embedded within Layouts and GridSpaces.
+    Layoutable provides a mix-in class to support the
+    add operation for creating a layout from the operands.
     """
-
-    def __add__(self, obj):
+    def __add__(x, y):
         "Compose objects into a Layout"
-        return Layout([self, obj])
-
-    def __radd__(self, other):
-        if isinstance(other, int):
-            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
+        if any(isinstance(arg, int) for arg in (x, y)):
+            raise TypeError(f"unsupported operand type(s) for +: {x.__class__.__name__} and {y.__class__.__name__}. "
                             "If you are trying to use a reduction like `sum(elements)` "
                             "to combine a list of elements, we recommend you use "
                             "`Layout(elements)` (and similarly `Overlay(elements)` for "
                             "making an overlay from a list) instead.")
+        try:
+            return Layout([x, y])
+        except NotImplementedError:
+            return NotImplemented
+
+    def __radd__(self, other):
+        return self.__class__.__add__(other, self)
+
+
+class Composable(Layoutable):
+    """
+    Composable is a mix-in class to allow Dimensioned objects to be
+    embedded within Layouts and GridSpaces.
+    """
 
     def __lshift__(self, other):
         "Compose objects into an AdjointLayout"
@@ -57,7 +67,7 @@ class Empty(Dimensioned, Composable):
 
 
 
-class AdjointLayout(Dimensioned):
+class AdjointLayout(Layoutable, Dimensioned):
     """
     An AdjointLayout provides a convenient container to lay out some
     marginal plots next to a primary plot. This is often useful to
@@ -311,27 +321,13 @@ class AdjointLayout(Dimensioned):
             yield self[i]
             i += 1
 
-
-    def __add__(self, obj):
-        "Composes plot into a Layout with another object."
-        return Layout([self, obj])
-
-    def __radd__(self, other):
-        if isinstance(other, int):
-            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
-                            "If you are trying to use a reduction like `sum(elements)` "
-                            "to combine a list of elements, we recommend you use "
-                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
-                            "making an overlay from a list) instead.")
-        return super().__radd__(self, other)
-
     def __len__(self):
         "Number of items in the AdjointLayout"
         return len(self.data)
 
 
 
-class NdLayout(UniformNdMapping):
+class NdLayout(Layoutable, UniformNdMapping):
     """
     NdLayout is a UniformNdMapping providing an n-dimensional
     data structure to display the contained Elements and containers
@@ -388,21 +384,6 @@ class NdLayout(UniformNdMapping):
         self._max_cols = ncols
         return self
 
-
-    def __add__(self, obj):
-        "Composes the NdLayout with another object into a Layout"
-        return Layout([self, obj])
-
-
-    def __radd__(self, other):
-        if isinstance(other, int):
-            raise TypeError("unsupported operand type(s) for +: 'int' and 'Overlay'. "
-                            "If you are trying to use a reduction like `sum(elements)` "
-                            "to combine a list of elements, we recommend you use "
-                            "`Layout(elements)` (and similarly `Overlay(elements)` for "
-                            "making an overlay from a list) instead.")
-        return super().__radd__(self, other)
-
     @property
     def last(self):
         """
@@ -440,7 +421,7 @@ class NdLayout(UniformNdMapping):
         return clone
 
 
-class Layout(ViewableTree):
+class Layout(Layoutable, ViewableTree):
     """
     A Layout is an ViewableTree with ViewableElement objects as leaf
     values. Unlike ViewableTree, a Layout supports a rich display,
@@ -560,11 +541,6 @@ class Layout(ViewableTree):
     def grid_items(self):
         return {tuple(np.unravel_index(idx, self.shape)): (path, item)
                 for idx, (path, item) in enumerate(self.items())}
-
-
-    def __add__(self, other):
-        "Composes the Layout with another object returning a merged Layout."
-        return Layout([self, other])
 
     def __mul__(self, other, reverse=False):
         from .spaces import HoloMap
