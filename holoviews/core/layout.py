@@ -544,10 +544,11 @@ class Layout(Layoutable, ViewableTree):
 
     def __mul__(self, other, reverse=False):
         from .spaces import HoloMap
-        if isinstance(other, (ViewableElement, HoloMap)):
-            return Layout([other*v if reverse else v*other for v in self])
-        else:
+        if not isinstance(other, (ViewableElement, HoloMap)):
             return NotImplemented
+        layout = Layout([other*v if reverse else v*other for v in self])
+        layout._max_cols = self._max_cols
+        return layout
 
     def __rmul__(self, other):
         return self.__mul__(other, reverse=True)
