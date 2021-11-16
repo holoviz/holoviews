@@ -1224,29 +1224,33 @@ class GlyphDrawCallback(CDSCallback):
 
     _style_callback = """
       var types = Bokeh.require("core/util/types");
-      var length = cb_obj.data[length_var].length;
-      for (var i = 0; i < length; i++) {
+      var changed = false
+      for (var i = 0; i < cb_obj.length; i++) {
         for (var style in styles) {
           var value = styles[style];
           if (types.isArray(value)) {
             value = value[i % value.length];
           }
-          cb_obj.data[style][i] = value;
+          if (cb_obj.data[style][i] !== value) {
+            cb_obj.data[style][i] = value;
+            changed = true;
+          }
         }
       }
+      if (changed)
+        cb_obj.change.emit()
     """
 
-    def _create_style_callback(self, cds, glyph, length_var):
+    def _create_style_callback(self, cds, glyph):
         stream = self.streams[0]
+        col = cds.column_names[0]
+        length = len(cds.data[col])
         for style, values in stream.styles.items():
-            cds.data[style] = [
-                values[i % len(values)]
-                for i in range(len(cds.data[length_var]))]
+            cds.data[style] = [values[i % len(values)] for i in range(length)]
             setattr(glyph, style, style)
         cb = CustomJS(code=self._style_callback,
                       args={'styles': stream.styles,
-                            'empty': stream.empty_value,
-                            'length_var': length_var})
+                            'empty': stream.empty_value})
         cds.js_on_change('data', cb)
 
     def _update_cds_vdims(self, data):
@@ -1280,7 +1284,7 @@ class PointDrawCallback(GlyphDrawCallback):
         if stream.tooltip:
             kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'x')
+            self._create_style_callback(cds, glyph)
         if stream.empty_value is not None:
             kwargs['empty_value'] = stream.empty_value
         point_tool = PointDrawTool(
@@ -1355,7 +1359,7 @@ class PolyDrawCallback(GlyphDrawCallback):
             r1 = plot.state.scatter([], [], **vertex_style)
             kwargs['vertex_renderer'] = r1
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'xs')
+            self._create_style_callback(cds, glyph)
         if stream.tooltip:
             kwargs[CUSTOM_TOOLTIP] = stream.tooltip
         if stream.empty_value is not None:
@@ -1402,7 +1406,7 @@ class FreehandDrawCallback(PolyDrawCallback):
         glyph = plot.handles['glyph']
         stream = self.streams[0]
         if stream.styles:
-            self._create_style_callback(cds, glyph, 'xs')
+            self._create_style_callback(cds, glyph)
         kwargs = {}
         if stream.tooltip:
             kwargs[CUSTOM_TOOLTIP] = stream.tooltip
@@ -1466,7 +1470,7 @@ class BoxEditCallback(GlyphDrawCallback):
         if isinstance(self.plot, PathPlot):
             renderer = self._path_initialize()
         if stream.styles:
-            self._create_style_callback(cds, renderer.glyph, 'x')
+            self._create_style_callback(cds, renderer.glyph)
         box_tool = BoxEditTool(renderers=[renderer], **kwargs)
         self.plot.state.tools.append(box_tool)
         self._update_cds_vdims(cds.data)
