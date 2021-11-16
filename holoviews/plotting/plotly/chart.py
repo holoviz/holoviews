@@ -260,7 +260,7 @@ class BarPlot(BarsMixin, ElementPlot):
             bars.append({
                 'orientation': orientation, 'showlegend': False,
                 x: [xdim.pprint_value(v) for v in xvals],
-                y: values})
+                y: np.nan_to_num(values)})
         elif stack_dim or not self.multi_level:
             group_dim = stack_dim or group_dim
             order = list(svals if stack_dim else gvals)
@@ -275,13 +275,14 @@ class BarPlot(BarsMixin, ElementPlot):
                 bars.append({
                     'orientation': orientation, 'name': group_dim.pprint_value(k),
                     x: [xdim.pprint_value(v) for v in xvals],
-                    y: values})
+                    y: np.nan_to_num(values)})
         else:
+            values = element.dimension_values(vdim)
             bars.append({
                 'orientation': orientation,
                 x: [[d.pprint_value(v) for v in element.dimension_values(d)]
                     for d in (xdim, group_dim)],
-                y: element.dimension_values(vdim)})
+                y: np.nan_to_num(values)})
         return bars
 
     def init_layout(self, key, element, ranges, **kwargs):
