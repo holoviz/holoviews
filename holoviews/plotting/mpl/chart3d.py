@@ -103,6 +103,7 @@ class Plot3D(ColorbarPlot):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
+        self.handles['cbar'] = cbar
         self.handles['cax'] = cbar.ax
         self._adjust_cbar(cbar, label, dim)
 
