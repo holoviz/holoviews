@@ -208,10 +208,16 @@ class XArrayInterface(GridInterface):
                             % not_found, cls)
 
         for vdim in vdims:
+            if packed:
+                continue
             da = data[vdim.name]
+            # Do not enforce validation for irregular arrays since they
+            # not need to be canonicalized
+            if any(len(da.coords[c].shape) > 1 for c in da.coords):
+                continue
             undeclared = [
-                c for c in da.coords if c not in kdims and da[c].shape and
-                np.multiply.reduce(da[c].shape)>1]
+                c for c in da.coords if c not in kdims and len(da[c].shape) == 1 and
+                da[c].shape[0] > 1]
             if undeclared:
                 raise DataError(
                     'The coordinates on the %r DataArray do not match the '
