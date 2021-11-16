@@ -1969,8 +1969,9 @@ def bound_range(vals, density, time_unit='us'):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
             full_precision_density = compute_density(low, high, len(vals)-1)
-            density = round(full_precision_density, sys.float_info.dig)
-        if density == 0:
+            with np.errstate(over='ignore'):
+                density = round(full_precision_density, sys.float_info.dig)
+        if density == 0 or density == np.inf:
             density = full_precision_density
     if density == 0:
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
