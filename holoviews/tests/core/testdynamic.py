@@ -543,6 +543,36 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
         self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
 
 
+class DynamicMapCurrentKeyProperty(ComparisonTestCase):
+
+    def test_current_key_None_on_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertIsNone(dmap.current_key)
+
+    def test_current_key_one_dimension(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        dmap[1]
+        self.assertEqual(dmap.current_key, 1)
+        dmap[0]
+        self.assertEqual(dmap.current_key, 0)
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+    def test_current_key_multiple_dimensions(self):
+        fn = lambda i, j: Curve([i, j])
+        dmap=DynamicMap(fn, kdims=[Dimension('i', range=(0,5)), Dimension('j', range=(0,5))])
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        dmap[5, 5]
+        self.assertEqual(dmap.current_key, (5, 5))
+        dmap[0, 2]
+        self.assertEqual(dmap.current_key, (0, 2))
+        self.assertNotEqual(dmap.current_key, dmap.last_key)
+
+
 class DynamicTransferStreams(ComparisonTestCase):
 
     def setUp(self):
