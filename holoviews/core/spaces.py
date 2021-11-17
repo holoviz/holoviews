@@ -820,6 +820,8 @@ class DynamicMap(HoloMap):
 
         self.periodic = periodic(self)
 
+        self._current_key = None
+
     @property
     def opts(self):
         return Opts(self, mode='dynamicmap')
@@ -846,6 +848,11 @@ class DynamicMap(HoloMap):
             if None in kdim.range:
                 unbounded_dims.append(str(kdim))
         return unbounded_dims
+
+    @property
+    def current_key(self):
+        """Returns the current key value."""
+        return self._current_key
 
     def _stream_parameters(self):
         return util.stream_parameters(
@@ -1164,6 +1171,8 @@ class DynamicMap(HoloMap):
             otherwise returns cloned DynamicMap containing the cross-
             product of evaluated items.
         """
+        self._current_key = key
+
         # Split key dimensions and data slices
         sample = False
         if key is Ellipsis:
