@@ -427,8 +427,10 @@ class aggregate(AggregationOperation):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif df[d.name].dtype.kind == 'M':
+            elif vals.dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
+            elif vals.dtype.kind == 'u':
+                vals = vals.astype('int64')
             else:
                 continue
             df[d.name] = vals.astype('int64')
