@@ -420,7 +420,7 @@ class aggregate(AggregationOperation):
 
         is_custom = isinstance(df, dd.DataFrame) or cuDFInterface.applies(df)
         if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-               df[d.name].dtype.kind == 'M' for d in (x, y)):
+               df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
             df = df.copy()
 
         for d in (x, y):
