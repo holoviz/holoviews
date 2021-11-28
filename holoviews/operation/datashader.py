@@ -429,8 +429,10 @@ class aggregate(AggregationOperation):
                 vals = cftime_to_timestamp(vals, 'ns')
             elif vals.dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
+            elif vals.dtype == np.uint64:
+                raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
             elif vals.dtype.kind == 'u':
-                vals = vals.astype('int64')
+                pass  # To convert to int64
             else:
                 continue
             df[d.name] = vals.astype('int64')
