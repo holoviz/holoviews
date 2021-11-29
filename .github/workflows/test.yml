@@ -79,18 +79,18 @@ jobs:
           echo "======"
           conda list
       # Temporarily pin panel and nbconvert
-      - name: Pin panel and nbconvert on py36
+      - name: Pin panel on py36
         if: matrix.python-version == '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install -c pyviz "panel=0.12.1" "nbconvert>5"
+          conda install -c pyviz "panel=0.12.1"
       - name: Pin panel and nbconvert on py>36
         if: matrix.python-version != '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install -c pyviz "panel=0.12.2" "nbconvert>5"
+          conda install -c pyviz "panel=0.12.2"
       - name: Patch - do not install cffi 1.15.0 on macos and for python != 3.6
         if: matrix.os == 'macos-latest' && matrix.python-version != '3.6'
         run: |
