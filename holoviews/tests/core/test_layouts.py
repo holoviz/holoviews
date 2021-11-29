@@ -29,6 +29,12 @@ class CompositeTest(ComparisonTestCase):
         elements = list(layout)
         self.assertEqual(len(elements), 2)
 
+    def test_layout_overlay_ncols_preserved(self):
+        assert ((self.view1 + self.view2).cols(1) * self.view3)._max_cols == 1
+
+    def test_layout_rmul_overlay_ncols_preserved(self):
+        assert (self.view3 * (self.view1 + self.view2).cols(1))._max_cols == 1
+
 
 class AdjointLayoutTest(CompositeTest):
 
