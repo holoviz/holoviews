@@ -2,6 +2,7 @@ from holoviews.element import RGB, Tiles, Points, Bounds
 from holoviews.element.tiles import StamenTerrain, _ATTRIBUTIONS
 from .testplot import TestPlotlyPlot, plotly_renderer
 import numpy as np
+import pytest
 
 
 class TestMapboxTilesPlot(TestPlotlyPlot):
@@ -100,6 +101,23 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
         self.assertEqual(layer["minzoom"], 3)
         self.assertEqual(layer["maxzoom"], 7)
         self.assertEqual(layer["sourceattribution"], _ATTRIBUTIONS[('stamen', 'net/t')])
+
+    # xyzservices input
+    def test_xyzservices_tileprovider(self):
+        xyzservices = pytest.importorskip("xyzservices")
+        osm = xyzservices.providers.OpenStreetMap.Mapnik
+        tiles = Tiles(osm, name="xyzservices").redim.range(
+            x=self.x_range, y=self.y_range
+        )
+
+        fig_dict = plotly_renderer.get_plot_state(tiles)
+        # Check mapbox subplot
+        layers = fig_dict["layout"]["mapbox"].get("layers", [])
+        self.assertEqual(len(layers), 1)
+        layer = layers[0]
+        self.assertEqual(layer["source"][0].lower(), osm.build_url(scale_factor="@2x"))
+        self.assertEqual(layer["maxzoom"], osm.max_zoom)
+        self.assertEqual(layer["sourceattribution"], osm.html_attribution)
 
     def test_overlay(self):
         # Base layer is mapbox vector layer

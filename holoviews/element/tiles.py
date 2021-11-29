@@ -16,8 +16,8 @@ WEB_MERCATOR_LIMITS=(-20037508.342789244, 20037508.342789244)
 class Tiles(Element2D):
     """
     The Tiles element represents tile sources, specified as URL
-    containing different template variables. These variables
-    correspond to three different formats for specifying the spatial
+    containing different template variables or xyzservices.TileProvider.
+    These variables correspond to three different formats for specifying the spatial
     location and zoom level of the requested tiles:
 
       * Web mapping tiles sources containing {x}, {y}, and {z} variables
@@ -46,8 +46,9 @@ class Tiles(Element2D):
             MercatorTileSource = None
         if MercatorTileSource and isinstance(data, MercatorTileSource):
             data = data.url
-        elif data is not None and not isinstance(data, util.basestring):
-            raise TypeError('%s data should be a tile service URL not a %s type.'
+        elif data is not None and not isinstance(data, (str, dict)):
+            raise TypeError('%s data should be a tile service URL or '
+                            'xyzservices.TileProvider not a %s type.'
                             % (type(self).__name__, type(data).__name__) )
         super(Tiles, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
