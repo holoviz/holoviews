@@ -239,7 +239,7 @@ def deprecated_opts_signature(args, kwargs):
     if len(args) > 0 and isinstance(args[0], dict):
         apply_groups = True
         if (not set(args[0]).issubset(groups) and
-            all(isinstance(v, dict) and not set(v).issubset(groups)
+            all(isinstance(v, dict) and (not set(v).issubset(groups) or not v)
                 for v in args[0].values())):
             apply_groups = False
         elif set(args[0].keys()) <= groups:
@@ -346,6 +346,8 @@ def tree_attribute(identifier):
     These custom attributes start with a capitalized character when
     applicable (not applicable to underscore or certain unicode characters)
     """
+    if identifier == '':
+        return True
     if identifier[0].upper().isupper() is False and identifier[0] != '_':
         return True
     else:
@@ -1750,7 +1752,10 @@ def capitalize(string):
     """
     Capitalizes the first letter of a string.
     """
-    return string[0].upper() + string[1:]
+    if string:
+        return string[0].upper() + string[1:]
+    else:
+        return string
 
 
 def get_path(item):
@@ -1964,8 +1969,9 @@ def bound_range(vals, density, time_unit='us'):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
             full_precision_density = compute_density(low, high, len(vals)-1)
-            density = round(full_precision_density, sys.float_info.dig)
-        if density == 0:
+            with np.errstate(over='ignore'):
+                density = round(full_precision_density, sys.float_info.dig)
+        if density == 0 or density == np.inf:
             density = full_precision_density
     if density == 0:
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')

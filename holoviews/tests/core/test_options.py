@@ -6,6 +6,7 @@ from unittest import SkipTest
 import numpy as np
 import pytest
 
+from holoviews import util
 from holoviews import Store, Histogram, Image, Curve, Points, DynamicMap, opts
 from holoviews.core.options import (
     OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
@@ -312,6 +313,12 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         options = Store.options()
         options.Image = Options('style', cmap='hot', interpolation='nearest')
         return options
+
+    def test_empty_group(self):
+        "Test to prevent regression of issue fixed in #5131"
+        ls = np.linspace(0, 10, 200)
+        xx, yy = np.meshgrid(ls, ls)
+        util.render(Image(np.sin(xx)*np.cos(yy), group="").opts(cmap="greys"))
 
     def test_merge_keywords(self):
         options = self.initialize_option_tree()
