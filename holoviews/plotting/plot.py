@@ -1320,7 +1320,7 @@ class GenericElementPlot(DimensionedPlot):
         ndims = len(dims)
         xdim = xdim or (dims[0] if ndims else None)
         ydim = ydim or (dims[1] if ndims > 1 else None)
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             zdim = zdim or (dims[2] if ndims > 2 else None)
         else:
             zdim = None
@@ -1364,7 +1364,7 @@ class GenericElementPlot(DimensionedPlot):
         elif ydim is None:
             y0, y1 = np.NaN, np.NaN
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             if range_type == 'soft':
                 z0, z1 = zsrange
             elif range_type == 'data':
@@ -1407,14 +1407,17 @@ class GenericElementPlot(DimensionedPlot):
         This allows Overlay plots to obtain each range and combine them
         appropriately for all the objects in the overlay.
         """
-        num = 6 if self.projection == '3d' else 4
+        num = 6 if (isinstance(self.projection, str) and self.projection == '3d') else 4
         if self.apply_extents and range_type in ('combined', 'extents'):
             norm_opts = self.lookup_options(element, 'norm').options
             if norm_opts.get('framewise', False) or self.dynamic:
                 extents = element.extents
             else:
                 extent_list = self.hmap.traverse(lambda x: x.extents, [Element])
-                extents = util.max_extents(extent_list, self.projection == '3d')
+                extents = util.max_extents(
+                    extent_list,
+                    isinstance(self.projection, str) and self.projection == '3d'
+                )
         else:
             extents = (np.NaN,) * num
 
@@ -1427,7 +1430,10 @@ class GenericElementPlot(DimensionedPlot):
             range_extents = (np.NaN,) * num
 
         if getattr(self, 'shared_axes', False) and self.subplot:
-            combined = util.max_extents([range_extents, extents], self.projection == '3d')
+            combined = util.max_extents(
+                [range_extents, extents],
+                isinstance(self.projection, str) and self.projection == '3d'
+            )
         else:
             max_extent = []
             for l1, l2 in zip(range_extents, extents):
@@ -1437,7 +1443,7 @@ class GenericElementPlot(DimensionedPlot):
                     max_extent.append(l1)
             combined = tuple(max_extent)
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             x0, y0, z0, x1, y1, z1 = combined
         else:
             x0, y0, x1, y1 = combined
@@ -1460,7 +1466,7 @@ class GenericElementPlot(DimensionedPlot):
                 if stream not in self._trigger and (self.xlim or self.ylim):
                     self._trigger.append(stream)
 
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             z0, z1 = util.dimension_range(z0, z1, self.zlim, (None, None))
             return (x0, y0, z0, x1, y1, z1)
         return (x0, y0, x1, y1)
@@ -1480,7 +1486,8 @@ class GenericElementPlot(DimensionedPlot):
 
         if getattr(self, 'zlabel', None) is not None:
             zlabel = self.zlabel
-        elif self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
+        elif (isinstance(self.projection, str) and self.projection == '3d'
+              and len(dimensions) >= 3 and zlabel is None):
             zlabel = dim_axis_label(dimensions[2]) if dimensions[2] else ''
         return xlabel, ylabel, zlabel
 
@@ -1800,7 +1807,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
     def get_extents(self, overlay, ranges, range_type='combined'):
         subplot_extents = self._get_subplot_extents(overlay, ranges, range_type)
-        zrange = self.projection == '3d'
+        zrange = isinstance(self.projection, str) and self.projection == '3d'
         extents = {k: util.max_extents(rs, zrange) for k, rs in subplot_extents.items()}
         if range_type != 'combined':
             return extents[range_type]
@@ -1834,7 +1841,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         # Combine with Element.extents
         combined = util.max_extents([padded, extents['extents']], zrange)
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             x0, y0, z0, x1, y1, z1 = combined
         else:
             x0, y0, x1, y1 = combined
@@ -1842,7 +1849,7 @@ class GenericOverlayPlot(GenericElementPlot):
         # Apply xlim, ylim, zlim plot option
         x0, x1 = util.dimension_range(x0, x1, self.xlim, (None, None))
         y0, y1 = util.dimension_range(y0, y1, self.ylim, (None, None))
-        if self.projection == '3d':
+        if isinstance(self.projection, str) and self.projection == '3d':
             z0, z1 = util.dimension_range(z0, z1, getattr(self, 'zlim', (None, None)), (None, None))
             return (x0, y0, z0, x1, y1, z1)
         return (x0, y0, x1, y1)
