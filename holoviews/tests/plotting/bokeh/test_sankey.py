@@ -25,8 +25,6 @@ class TestSankeyPlot(TestBokehPlot):
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
                      'y': np.array([125.454545, 375.454545,  48.787879, 229.090909, 430.30303 ]),
                      'text': ['A - 18', 'B - 15', 'X - 7', 'Y - 16', 'Z - 10']}
-        with open('a.txt', 'w') as f:
-            f.write(str(text_source.data) + '\n')
         for k in text_data:
             self.assertEqual(text_source.data[k], text_data[k])
 
