@@ -3,6 +3,7 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+import pytest
 
 from holoviews import (
     Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
@@ -1322,3 +1323,18 @@ class InspectorTests(ComparisonTestCase):
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
         self.assertEqual(polys, Polygons([], vdims='z'))
+
+
+@pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32])
+def test_uint_dtype(dtype):
+    df = pd.DataFrame(np.arange(2, dtype=dtype), columns=["A"])
+    curve = Curve(df)
+    img = rasterize(curve, dynamic=False, height=10, width=10)
+    assert (img.data["Count"].to_numpy() == np.eye(10)).all()
+
+
+def test_uint64_dtype():
+    df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
+    curve = Curve(df)
+    with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
+        rasterize(curve, dynamic=False, height=10, width=10)
