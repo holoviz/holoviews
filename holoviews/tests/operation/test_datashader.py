@@ -849,8 +849,6 @@ class DatashaderRegridTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
     def test_regrid_upsampling_linear(self):
-        ### This test causes a numba error using 0.35.0 - temporarily disabled ###
-        return
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
