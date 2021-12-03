@@ -321,7 +321,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
-        coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+        coords = [coord if isinstance(coord, np.datetime64) or np.isreal(coord) else np.NaN for coord in extents]
         coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
                   for c in coords]
         if isinstance(self.projection, str) and self.projection == '3d' or len(extents) == 6:
