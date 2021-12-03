@@ -473,7 +473,13 @@ class aggregate(AggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
-        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
+        # Suppress numpy warning emitted by datashader
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                action='ignore', message='casting datetime64',
+                category=FutureWarning
+            )
+            agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
