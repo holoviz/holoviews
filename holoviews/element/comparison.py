@@ -28,7 +28,7 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import pd, datetime_types, dt_to_int
+from ..core.util import pd, cast_array_to_int64, datetime_types, dt_to_int
 
 
 class ComparisonInterface(object):
@@ -252,9 +252,9 @@ class Comparison(ComparisonInterface):
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
             if arr1.dtype.kind == 'M':
-                arr1 = arr1.astype('datetime64[ns]').astype('int64')
+                arr1 = cast_array_to_int64(arr1.astype('datetime64[ns]'))
             if arr2.dtype.kind == 'M':
-                arr2 = arr2.astype('datetime64[ns]').astype('int64')
+                arr2 = cast_array_to_int64(arr2.astype('datetime64[ns]'))
             assert_array_equal(arr1, arr2)
         except:
             try:
