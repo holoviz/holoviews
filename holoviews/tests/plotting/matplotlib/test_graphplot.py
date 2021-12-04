@@ -81,7 +81,7 @@ class TestMplGraphPlot(TestMPLPlot):
                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), self.weights)
+        self.assertEqual(np.asarray(edges.get_array()), self.weights)
         self.assertEqual(edges.get_clim(), (self.weights.min(), self.weights.max()))
 
     ###########################
@@ -136,10 +136,10 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = HoloMap({0: get_graph(0), 1: get_graph(1)}).options(node_color='color', framewise=True)
         plot = mpl_renderer.get_plot(graph)
         artist = plot.handles['nodes']
-        self.assertEqual(artist.get_array(), np.array([0.5, 1.5, 2.5]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0.5, 1.5, 2.5]))
         self.assertEqual(artist.get_clim(), (0.5, 2.5))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([3, 2, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([3, 2, 1]))
         self.assertEqual(artist.get_clim(), (1, 3))
 
     def test_graph_op_node_color_categorical(self):
@@ -248,7 +248,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph(edges, vdims='color').options(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([2, 0.5, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 0.5, 3]))
         self.assertEqual(edges.get_clim(), (0.5, 3))
 
     def test_graph_op_edge_color_linear_update(self):
@@ -259,10 +259,10 @@ class TestMplGraphPlot(TestMPLPlot):
                      vdims='color')}).options(edge_color='color', framewise=True)
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([2, 0.5, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 0.5, 3]))
         self.assertEqual(edges.get_clim(), (0.5, 3))
         plot.update((1,))
-        self.assertEqual(edges.get_array(), np.array([4.3, 1.4, 2.6]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([4.3, 1.4, 2.6]))
         self.assertEqual(edges.get_clim(), (1.4, 4.3))
 
     def test_graph_op_edge_color_categorical(self):
@@ -270,7 +270,7 @@ class TestMplGraphPlot(TestMPLPlot):
         graph = Graph(edges, vdims='color').options(edge_color='color')
         plot = mpl_renderer.get_plot(graph)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([0, 1, 2]))
         self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_graph_op_edge_alpha(self):
@@ -424,7 +424,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, Nodes(nodes, vdims='color'))).options(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([2, 8/3.]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 8/3.]))
         self.assertEqual(artist.get_clim(), (1, 4))
 
     def test_trimesh_op_edge_color(self):
@@ -442,7 +442,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([2.4, 3.6]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2.4, 3.6]))
         self.assertEqual(artist.get_clim(), (2.4, 3.6))
 
     def test_trimesh_op_edge_color_categorical(self):
@@ -451,7 +451,7 @@ class TestMplTriMeshPlot(TestMPLPlot):
         trimesh = TriMesh((edges, nodes), vdims='color').options(edge_color='color')
         plot = mpl_renderer.get_plot(trimesh)
         artist = plot.handles['edges']
-        self.assertEqual(artist.get_array(), np.array([0, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_trimesh_op_edge_alpha(self):
@@ -514,7 +514,7 @@ class TestMplChordPlot(TestMPLPlot):
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
         self.assertEqual(np.asarray(nodes.get_array()), np.array([0, 1, 2]))
-        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([0, 1, 2]))
         self.assertEqual(nodes.get_clim(), (0, 2))
         self.assertEqual(arcs.get_clim(), (0, 2))
 
@@ -532,17 +532,17 @@ class TestMplChordPlot(TestMPLPlot):
         g = self.chord.opts(style=dict(edge_color=dim('start').astype(str), edge_cmap=['#FFFFFF', '#000000']))
         plot = mpl_renderer.get_plot(g)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([0, 0, 1]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([0, 0, 1]))
         self.assertEqual(edges.get_clim(), (0, 2))
 
     def test_chord_edge_color_linear_style_mapping_update(self):
         hmap = HoloMap({0: self.make_chord(0), 1: self.make_chord(1)}).options(edge_color='weight', framewise=True)
         plot = mpl_renderer.get_plot(hmap)
         edges = plot.handles['edges']
-        self.assertEqual(edges.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([1, 2, 3]))
         self.assertEqual(edges.get_clim(), (1, 3))
         plot.update((1,))
-        self.assertEqual(edges.get_array(), np.array([2, 3, 4]))
+        self.assertEqual(np.asarray(edges.get_array()), np.array([2, 3, 4]))
         self.assertEqual(edges.get_clim(), (2, 4))
 
     def test_chord_node_color_linear_style_mapping_update(self):
@@ -550,13 +550,13 @@ class TestMplChordPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(hmap)
         arcs = plot.handles['arcs']
         nodes = plot.handles['nodes']
-        self.assertEqual(nodes.get_array(), np.array([0, 1, 2]))
-        self.assertEqual(arcs.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(nodes.get_array()), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([0, 1, 2]))
         self.assertEqual(nodes.get_clim(), (0, 2))
         self.assertEqual(arcs.get_clim(), (0, 2))
         plot.update((1,))
-        self.assertEqual(nodes.get_array(), np.array([1, 2, 3]))
-        self.assertEqual(arcs.get_array(), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(nodes.get_array()), np.array([1, 2, 3]))
+        self.assertEqual(np.asarray(arcs.get_array()), np.array([1, 2, 3]))
         self.assertEqual(nodes.get_clim(), (1, 3))
         self.assertEqual(arcs.get_clim(), (1, 3))
 
