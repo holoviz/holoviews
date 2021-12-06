@@ -4,7 +4,6 @@ from holoviews.element import RGB, Tiles, Points, Bounds
 from holoviews.element.tiles import StamenTerrain, _ATTRIBUTIONS
 from .testplot import TestPlotlyPlot, plotly_renderer
 import numpy as np
-import pytest
 
 try:
     import xyzservices
