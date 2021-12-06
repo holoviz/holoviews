@@ -20,7 +20,7 @@ class TestPathPlot(TestMPLPlot):
             color='color', color_levels=levels, cmap=colors)
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array(color))
+        self.assertEqual(np.asarray(artist.get_array()), np.array(color))
         self.assertEqual(artist.get_clim(), (994, 999))
 
     def test_path_continuously_varying_alpha_op(self):
@@ -64,7 +64,7 @@ class TestPolygonPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(polygons)
         for j, splot in enumerate(plot.subplots.values()):
             artist = splot.handles['artist']
-            self.assertEqual(artist.get_array(), np.array([j]))
+            self.assertEqual(np.asarray(artist.get_array()), np.array([j]))
             self.assertEqual(artist.get_clim(), (0, 4))
 
     def test_polygon_with_hole_plot(self):
@@ -93,7 +93,7 @@ class TestPolygonPlot(TestMPLPlot):
         poly = Polygons([{'x': xs, 'y': ys, 'holes': holes, 'value': 1}], vdims=['value'])
         plot = mpl_renderer.get_plot(poly)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([1, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([1, 1]))
         paths = artist.get_paths()
         self.assertEqual(len(paths), 2)
         path = paths[0]
@@ -145,7 +145,7 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
         self.assertEqual(artist.get_clim(), (3, 7))
 
     def test_polygons_linear_color_op_update(self):
@@ -161,10 +161,10 @@ class TestPolygonPlot(TestMPLPlot):
         }).options(color='color', framewise=True)
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
         self.assertEqual(artist.get_clim(), (3, 7))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([2, 5]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 5]))
         self.assertEqual(artist.get_clim(), (2, 5))
 
     def test_polygons_categorical_color_op(self):
@@ -174,7 +174,7 @@ class TestPolygonPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(polygons)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_polygons_alpha_op(self):
@@ -204,7 +204,7 @@ class TestContoursPlot(TestMPLPlot):
                     vdims='z').opts(plot=dict(color_index='z'))
         plot = mpl_renderer.get_plot(path)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_contours_color_op(self):
@@ -246,7 +246,7 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
         self.assertEqual(artist.get_clim(), (3, 7))
 
     def test_contours_linear_color_op_update(self):
@@ -262,10 +262,10 @@ class TestContoursPlot(TestMPLPlot):
         }).options(color='color', framewise=True)
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([7, 3]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([7, 3]))
         self.assertEqual(artist.get_clim(), (3, 7))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([2, 5]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2, 5]))
         self.assertEqual(artist.get_clim(), (2, 5))
 
     def test_contours_categorical_color_op(self):
@@ -275,7 +275,7 @@ class TestContoursPlot(TestMPLPlot):
         ], vdims='color').options(color='color')
         plot = mpl_renderer.get_plot(contours)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_contours_alpha_op(self):
