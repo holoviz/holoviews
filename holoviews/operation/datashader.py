@@ -473,7 +473,8 @@ class aggregate(AggregationOperation):
                         x_range=x_range, y_range=y_range)
 
         dfdata = PandasInterface.as_dframe(data)
-        # Suppress numpy warning emitted by datashader
+        # Suppress numpy warning emitted by dask:
+        # https://github.com/dask/dask/issues/8439
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 action='ignore', message='casting datetime64',
