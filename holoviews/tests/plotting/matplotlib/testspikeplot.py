@@ -124,7 +124,7 @@ class TestSpikesPlot(TestMPLPlot):
                         vdims=['y', 'color']).options(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
         self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_spikes_linear_color_op_update(self):
@@ -135,10 +135,10 @@ class TestSpikesPlot(TestMPLPlot):
                       vdims=['y', 'color'])}).options(color='color', framewise=True)
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0.5, 3.2, 1.8]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0.5, 3.2, 1.8]))
         self.assertEqual(artist.get_clim(), (0.5, 3.2))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([0.1, 0.8, 0.3]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0.1, 0.8, 0.3]))
         self.assertEqual(artist.get_clim(), (0.1, 0.8))
 
     def test_spikes_categorical_color_op(self):
@@ -146,7 +146,7 @@ class TestSpikesPlot(TestMPLPlot):
                         vdims=['y', 'color']).options(color='color')
         plot = mpl_renderer.get_plot(spikes)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 0]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 0]))
         self.assertEqual(artist.get_clim(), (0, 1))
 
     def test_spikes_alpha_op(self):

@@ -78,25 +78,15 @@ jobs:
           git describe
           echo "======"
           conda list
-      # Temporarily pin panel and nbconvert
-      - name: Pin panel and nbconvert on py36
+      # Pin panel on Python 3.6 because one or more dev releases on the 0.13.* series
+      # can be installed on Python 3.6 but are actually not compatible with Python 3.6
+      # Panel 0.13 will support Python >= 3.7 only so the pin here can stay indefinitely.
+      - name: Pin panel on py36
         if: matrix.python-version == '3.6'
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
-          conda install -c pyviz "panel=0.12.1" "nbconvert>5"
-      - name: Pin panel and nbconvert on py>36
-        if: matrix.python-version != '3.6'
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install -c pyviz "panel=0.12.2" "nbconvert>5"
-      - name: Patch with an older version of freetype since 2.11.0 is broken with Matplotlib on Windows
-        if: (matrix.os == 'windows-latest')
-        run: |
-          eval "$(conda shell.bash hook)"
-          conda activate test-environment
-          conda install ${{ env.CHANS_DEV}} "freetype=2.10.4"
+          conda install -c pyviz "panel=0.12"
       - name: Patch - do not install cffi 1.15.0 on macos and for python != 3.6
         if: matrix.os == 'macos-latest' && matrix.python-version != '3.6'
         run: |

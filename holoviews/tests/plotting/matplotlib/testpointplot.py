@@ -229,7 +229,7 @@ class TestPointPlot(TestMPLPlot):
         artist = plot.handles['artist']
         self.assertEqual(artist.get_clim(), (0, 2))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([2.5, 3, 1.2]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([2.5, 3, 1.2]))
         self.assertEqual(artist.get_clim(), (1.2, 3))
 
     def test_point_categorical_color_op(self):
