@@ -71,7 +71,7 @@ extras_require['tests'] = [
     'path.py',
     'matplotlib >=3',
     'nbsmoke >=0.2.0',
-    'nbconvert <6',
+    'nbconvert',
     'twine',
     'rfc3986',
     'keyring'

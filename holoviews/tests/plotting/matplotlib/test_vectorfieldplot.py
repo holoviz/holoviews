@@ -52,10 +52,10 @@ class TestVectorFieldPlot(TestMPLPlot):
                            vdims=['A', 'M', 'color'])}).options(color='color', framewise=True)
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
         self.assertEqual(artist.get_clim(), (0, 2))
         plot.update((1,))
-        self.assertEqual(artist.get_array(), np.array([3.2, 2, 4]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([3.2, 2, 4]))
         self.assertEqual(artist.get_clim(), (2, 4))
 
     def test_vectorfield_categorical_color_op(self):
@@ -63,7 +63,7 @@ class TestVectorFieldPlot(TestMPLPlot):
                                   vdims=['A', 'M', 'color']).options(color='color')
         plot = mpl_renderer.get_plot(vectorfield)
         artist = plot.handles['artist']
-        self.assertEqual(artist.get_array(), np.array([0, 1, 2]))
+        self.assertEqual(np.asarray(artist.get_array()), np.array([0, 1, 2]))
         self.assertEqual(artist.get_clim(), (0, 2))
 
     def test_vectorfield_alpha_op(self):
