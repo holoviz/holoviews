@@ -5,7 +5,6 @@ from unittest import SkipTest
 
 import numpy as np
 import pytest
-import pyviz_comms as comms
 
 from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store

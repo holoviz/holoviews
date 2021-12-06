@@ -1,9 +1,15 @@
+from unittest import SkipTest
+
 from holoviews.element import RGB, Tiles, Points, Bounds
 from holoviews.element.tiles import StamenTerrain, _ATTRIBUTIONS
 from .testplot import TestPlotlyPlot, plotly_renderer
 import numpy as np
 import pytest
 
+try:
+    import xyzservices
+except ImportError:
+    xyzservices = None
 
 class TestMapboxTilesPlot(TestPlotlyPlot):
     def setUp(self):
@@ -104,7 +110,8 @@ class TestMapboxTilesPlot(TestPlotlyPlot):
 
     # xyzservices input
     def test_xyzservices_tileprovider(self):
-        xyzservices = pytest.importorskip("xyzservices")
+        if xyzservices is None:
+            raise SkipTest("xyzservices not available")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
         tiles = Tiles(osm, name="xyzservices").redim.range(
             x=self.x_range, y=self.y_range

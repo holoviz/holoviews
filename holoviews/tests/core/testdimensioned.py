@@ -83,7 +83,7 @@ class TestDimensioned_options(CustomBackendTestCase):
 
     def test_apply_options_explicit_backend_style_invalid_no_match(self):
         err = ("Unexpected option 'zxy' for TestObj type when using the "
-               r"'backend_2' extension. No similar options found\.")
+               r"'backend_2' extension. No similar options found.")
         with self.assertRaisesRegex(ValueError, err):
             TestObj([]).options(zxy='A', backend='backend_2')
 

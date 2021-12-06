@@ -1,13 +1,19 @@
-import pytest
+from unittest import SkipTest
 
 from holoviews.element import Tiles
 
-from .test_plot import TestBokehPlot, bokeh_renderer
+from .testplot import TestBokehPlot, bokeh_renderer
+
+try:
+    import xyzservices
+except ImportError:
+    xyzservices = None
 
 class TestTilePlot(TestBokehPlot):
 
     def test_xyzservices_tileprovider(self):
-        xyzservices = pytest.importorskip("xyzservices")
+        if xyzservices is None:
+            raise SkipTest("xyzservices not available")
         osm = xyzservices.providers.OpenStreetMap.Mapnik
 
         tiles = Tiles(osm)
