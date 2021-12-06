@@ -761,7 +761,7 @@ class histogram(Operation):
                 edges = edges.astype('datetime64[ns]').astype('int64')
         else:
             hist_range = self.p.bin_range or element.range(selected_dim)
-            # Suppress a warning emitted by Numby when datetime or timedelta scalars
+            # Suppress a warning emitted by Numpy when datetime or timedelta scalars
             # are compared. See https://github.com/numpy/numpy/issues/10095 and
             # https://github.com/numpy/numpy/issues/9210. 
             with warnings.catch_warnings():
