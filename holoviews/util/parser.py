@@ -20,7 +20,7 @@ from ..operation import Compositor
 from .transform import dim
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-allowed = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
+allowed = r'0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!#$%&\()*+,-./:;<=>?@\\^_`{|}~'
 
 
 # To generate warning in the standard param style

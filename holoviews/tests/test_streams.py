@@ -872,7 +872,7 @@ class TestBufferDictionaryStream(ComparisonTestCase):
     def test_buffer_dict_send_verify_column_fail(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
-        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with self.assertRaisesRegex(IndexError, error):
             buff.send({'x': np.array([2])})
 
@@ -933,7 +933,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
     def test_buffer_dframe_send_verify_column_fail(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, index=False)
-        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with self.assertRaisesRegex(IndexError, error):
             buff.send(pd.DataFrame({'x': np.array([2])}))
 
