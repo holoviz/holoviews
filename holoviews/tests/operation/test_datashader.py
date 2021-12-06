@@ -1328,7 +1328,7 @@ def test_uint_dtype(dtype):
     df = pd.DataFrame(np.arange(2, dtype=dtype), columns=["A"])
     curve = Curve(df)
     img = rasterize(curve, dynamic=False, height=10, width=10)
-    assert (img.data["Count"].to_numpy() == np.eye(10)).all()
+    assert (np.asarray(img.data["Count"]) == np.eye(10)).all()
 
 
 def test_uint64_dtype():
