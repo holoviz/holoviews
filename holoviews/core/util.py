@@ -734,7 +734,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         "Accumulate blocks of hex and separate blocks by underscores"
         invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
         for cc in filter(lambda el: el in name, invalid.keys()):
-            raise Exception("Please use a raw string or escape control code '\%s'"
+            raise Exception(r"Please use a raw string or escape control code '\%s'"
                             % invalid[cc])
         sanitized, chars = [], ''
         for split in name.split():
@@ -2198,3 +2198,23 @@ def closest_match(match, specs, depth=0):
             return None
         else:
             return sorted(match_lengths, key=lambda x: -x[1])[0][0]
+
+
+def cast_array_to_int64(array):
+    """
+    Convert a numpy array  to `int64`. Suppress the following warning
+    emitted by Numpy, which as of 12/2021 has been extensively discussed
+    (https://github.com/pandas-dev/pandas/issues/22384)
+    and whose fate (possible revert) has not yet been settled:
+
+        FutureWarning: casting datetime64[ns] values to int64 with .astype(...)
+        is deprecated and will raise in a future version. Use .view(...) instead.
+
+    """
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action='ignore',
+            message='casting datetime64',
+            category=FutureWarning,
+        )
+        return array.astype('int64')

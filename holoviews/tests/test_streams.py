@@ -118,7 +118,7 @@ class TestStreamsDefine(ComparisonTestCase):
         self.assertEqual(self.ExplicitTest.param['test'].doc, 'Test docstring')
 
 
-class TestSubscriber(object):
+class _TestSubscriber(object):
 
     def __init__(self, cb=None):
         self.call_count = 0
@@ -577,22 +577,22 @@ class TestParamMethodStream(ComparisonTestCase):
 class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):
-        subscriber = TestSubscriber()
+        subscriber = _TestSubscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
         self.assertEqual(subscriber.kwargs, kwargs)
 
     def test_subscriber_disabled(self):
-        subscriber = TestSubscriber()
+        subscriber = _TestSubscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.update(**kwargs)
         self.assertEqual(subscriber.kwargs, None)
 
     def test_subscribers(self):
-        subscriber1 = TestSubscriber()
-        subscriber2 = TestSubscriber()
+        subscriber1 = _TestSubscriber()
+        subscriber2 = _TestSubscriber()
         position = PointerXY(subscribers=[subscriber1, subscriber2])
         kwargs = dict(x=3, y=4)
         position.event(**kwargs)
@@ -600,7 +600,7 @@ class TestSubscribers(ComparisonTestCase):
         self.assertEqual(subscriber2.kwargs, kwargs)
 
     def test_batch_subscriber(self):
-        subscriber = TestSubscriber()
+        subscriber = _TestSubscriber()
 
         positionX = PointerX(subscribers=[subscriber])
         positionY = PointerY(subscribers=[subscriber])
@@ -613,8 +613,8 @@ class TestSubscribers(ComparisonTestCase):
         self.assertEqual(subscriber.call_count, 1)
 
     def test_batch_subscribers(self):
-        subscriber1 = TestSubscriber()
-        subscriber2 = TestSubscriber()
+        subscriber1 = _TestSubscriber()
+        subscriber2 = _TestSubscriber()
 
         positionX = PointerX(subscribers=[subscriber1, subscriber2])
         positionY = PointerY(subscribers=[subscriber1, subscriber2])
@@ -639,7 +639,7 @@ class TestSubscribers(ComparisonTestCase):
         dmap = DynamicMap(points, streams=[stream])
         def cb():
             dmap[()]
-        subscriber = TestSubscriber(cb)
+        subscriber = _TestSubscriber(cb)
         stream.add_subscriber(subscriber)
         dmap[()]
         stream.send(1)
@@ -872,7 +872,7 @@ class TestBufferDictionaryStream(ComparisonTestCase):
     def test_buffer_dict_send_verify_column_fail(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
-        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with self.assertRaisesRegex(IndexError, error):
             buff.send({'x': np.array([2])})
 
@@ -933,7 +933,7 @@ class TestBufferDataFrameStream(ComparisonTestCase):
     def test_buffer_dframe_send_verify_column_fail(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, index=False)
-        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        error = r"Input expected to have columns \['x', 'y'\], got \['x'\]"
         with self.assertRaisesRegex(IndexError, error):
             buff.send(pd.DataFrame({'x': np.array([2])}))
 
