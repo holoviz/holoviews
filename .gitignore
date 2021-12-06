@@ -19,6 +19,7 @@
 !/doc/Reference_Manual/index.rst
 .ipynb_checkpoints
 .coverage
+.pytest_cache
 
 /release
 /doc/Tutorials-WIP/*.ipynb

@@ -107,7 +107,7 @@ class TestCoordinateConversion(ComparisonTestCase):
         self.check_array_type_preserved(
             pd.Series, pd.Series,
             lambda a, b: pd.testing.assert_series_equal(
-                a, b, check_exact=False, check_less_precise=True,
+                a, b, check_exact=False,
             )
         )
 
