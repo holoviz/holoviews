@@ -693,7 +693,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         elif axis == 'y':
             axis_obj = plot.yaxis[0]
 
-        if self.geographic and self.projection == 'mercator':
+        if (self.geographic and isinstance(self.projection, str)
+            and self.projection == 'mercator'):
             dimension = 'lon' if axis == 'x' else 'lat'
             axis_props['ticker'] = MercatorTicker(dimension=dimension)
             axis_props['formatter'] = MercatorTickFormatter(dimension=dimension)
