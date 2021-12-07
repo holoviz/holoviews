@@ -4,6 +4,66 @@ Releases
 Version 1.14
 ~~~~~~~~~~~~
 
+Version 1.14.7
+**************
+
+**December 7, 2021**
+
+This release contains a small number of important bug fixes. Many thanks
+to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt, 
+@jlstevens, @jbednar, and @philippjfr.
+
+## Bug fixes:
+
+- Support xyzservices.TileProvider as hv.Tiles input
+  (`#5062 <https://github.com/holoviz/holoviews/pull/5062>`__)
+- Allow reversed layout/overlay binary operators for `+` and `*` to be used with custom objects
+  (`#5073 <https://github.com/holoviz/holoviews/pull/5073>`__)
+- Fix internal numpy.round usage
+  (`#5095 <https://github.com/holoviz/holoviews/pull/5095>`__)
+- Remove dependency on recent Panel release by importing bokeh version from util module
+  (`#5103 <https://github.com/holoviz/holoviews/pull/5103>`__)
+- Add missing bounds for the cache_size Parameter
+  (`#5105 <https://github.com/holoviz/holoviews/pull/5105>`__)
+- Add current_key property to DynamicMap
+  (`#5106 <https://github.com/holoviz/holoviews/pull/5106>`__)
+- Pin freetype on Windows to avoid matplotlib error
+  (`#5109 <https://github.com/holoviz/holoviews/pull/5109>`__)
+- Handle the empty string as a group name
+  (`#5131 <https://github.com/holoviz/holoviews/pull/5131>`__)
+- Do not merge partially overlapping Stream callbacks
+  (`#5133 <https://github.com/holoviz/holoviews/pull/5133>`__)
+- Fix Violin matplotlib rendering with non-finite values
+  (`#5135 <https://github.com/holoviz/holoviews/pull/5135>`__)
+- Fix matplotlib colorbar labeling for dim expressions
+  (`#5137 <https://github.com/holoviz/holoviews/pull/5137>`__)
+- Fix datetime clipping on RangeXY stream
+  (`#5138 <https://github.com/holoviz/holoviews/pull/5138>`__)
+- Ensure FreehandDraw renders when styles are set
+  (`#5139 <https://github.com/holoviz/holoviews/pull/5139>`__)
+- Validate dimensionality of xarray interface data
+  (`#5140 <https://github.com/holoviz/holoviews/pull/5140>`__)
+- Preserve cols when overlaying on layout
+  (`#5141 <https://github.com/holoviz/holoviews/pull/5141>`__)
+- Fix Bars legend error when overlaid with annotation
+  (`#5142 <https://github.com/holoviz/holoviews/pull/5142>`__)
+- Fix plotly Bar plots containing NaNs
+  (`#5143 <https://github.com/holoviz/holoviews/pull/5143>`__)
+- Do not raise deprecated .opts warning for empty groups
+  (`#5144 <https://github.com/holoviz/holoviews/pull/5144>`__)
+- Handle unsigned integer dtype in datashader aggregate operation
+  (`#5149 <https://github.com/holoviz/holoviews/pull/5149>`__)
+- Delay projection comparison to optimize geoviews
+  (`#5152 <https://github.com/holoviz/holoviews/pull/5152>`__)
+- Utility to convert datetime64 to int64 and test suite maintenance
+  (`#5157 <https://github.com/holoviz/holoviews/pull/5157>`__)
+- Fixed docs:
+    * Fix `fig_bounds` description in Plotting_with_Matplotlib.ipynb
+      (`#4983 <https://github.com/holoviz/holoviews/pull/4983>`__)
+    * Fix broken link in Gridded user guide
+      (`#5098 <https://github.com/holoviz/holoviews/pull/5098>`__)
+
+
 Version 1.14.6
 **************
 
