@@ -91,7 +91,7 @@ extras_require["nbtests"] = extras_require["recommended"] + [
 ]
 
 extras_require['doc'] = extras_require['examples'] + [
-    'nbsite >=0.6.8a36',
+    'nbsite >=0.7.1',
     'sphinx',
     'sphinx_holoviz_theme',
     'mpl_sample_data >=3.1.3',

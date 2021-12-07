@@ -24,7 +24,8 @@ jobs:
     env:
       DESC: "Documentation build"
       HV_REQUIREMENTS: "doc"
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh"
+      # conda-forge to install myst-nb ...
+      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,7 +63,6 @@ jobs:
           conda activate test-environment
           conda list
           doit develop_install ${{ env.CHANS_DEV}} -o doc
-          conda install -c pyviz "jupyter_client<7"
           conda install -c conda-forge geckodriver selenium awscli
       - name: doit env_capture
         run: |
