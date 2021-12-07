@@ -7,7 +7,12 @@ on:
     - 'v[0-9]+.[0-9]+.[0-9]+b[0-9]+'
     - 'v[0-9]+.[0-9]+.[0-9]+rc[0-9]+'
   workflow_dispatch:
-    
+    inputs:
+      target:
+        description: 'dev or main'     
+        required: true
+        default: 'dev'
+
 jobs:
   build_docs:
     name: Documentation
@@ -85,13 +90,13 @@ jobs:
           conda activate test-environment
           nbsite build --what=html --output=builtdocs --org holoviz --project-name holoviews
       - name: upload dev
-        if: (contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
+        if: (github.event.inputs.target == 'dev' || contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc'))
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
           aws s3 sync --quiet ./builtdocs s3://dev.holoviews.org/
       - name: upload main
-        if: (!(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
+        if: (github.event.inputs.target == 'main' || !(contains(steps.vars.outputs.tag, 'a') || contains(steps.vars.outputs.tag, 'b') || contains(steps.vars.outputs.tag, 'rc')))
         run: |
           eval "$(conda shell.bash hook)"
           conda activate test-environment
