@@ -420,15 +420,19 @@ class aggregate(AggregationOperation):
 
         is_custom = isinstance(df, dd.DataFrame) or cuDFInterface.applies(df)
         if any((not is_custom and len(df[d.name]) and isinstance(df[d.name].values[0], cftime_types)) or
-               df[d.name].dtype.kind == 'M' for d in (x, y)):
+               df[d.name].dtype.kind in ["M", "u"] for d in (x, y)):
             df = df.copy()
 
         for d in (x, y):
             vals = df[d.name]
             if not is_custom and len(vals) and isinstance(vals.values[0], cftime_types):
                 vals = cftime_to_timestamp(vals, 'ns')
-            elif df[d.name].dtype.kind == 'M':
+            elif vals.dtype.kind == 'M':
                 vals = vals.astype('datetime64[ns]')
+            elif vals.dtype == np.uint64:
+                raise TypeError(f"Dtype of uint64 for column {d.name} is not supported.")
+            elif vals.dtype.kind == 'u':
+                pass  # To convert to int64
             else:
                 continue
             df[d.name] = cast_array_to_int64(vals)

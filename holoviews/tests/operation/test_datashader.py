@@ -3,6 +3,7 @@ import datetime as dt
 from unittest import SkipTest, skipIf
 
 import numpy as np
+import pytest
 
 from holoviews import (
     Dimension, Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh,
@@ -848,8 +849,6 @@ class DatashaderRegridTests(ComparisonTestCase):
         self.assertEqual(regridded, expected)
 
     def test_regrid_upsampling_linear(self):
-        ### This test causes a numba error using 0.35.0 - temporarily disabled ###
-        return
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
@@ -1322,3 +1321,18 @@ class InspectorTests(ComparisonTestCase):
         polys = inspect_polygons(self.polysrgb,
                                  max_indicators=3, dynamic=False, pixels=1, x=0, y=0)
         self.assertEqual(polys, Polygons([], vdims='z'))
+
+
+@pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32])
+def test_uint_dtype(dtype):
+    df = pd.DataFrame(np.arange(2, dtype=dtype), columns=["A"])
+    curve = Curve(df)
+    img = rasterize(curve, dynamic=False, height=10, width=10)
+    assert (np.asarray(img.data["Count"]) == np.eye(10)).all()
+
+
+def test_uint64_dtype():
+    df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
+    curve = Curve(df)
+    with pytest.raises(TypeError, match="Dtype of uint64 for column A is not supported."):
+        rasterize(curve, dynamic=False, height=10, width=10)
