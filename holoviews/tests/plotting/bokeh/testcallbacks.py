@@ -4,7 +4,6 @@ from collections import deque, namedtuple
 from unittest import SkipTest
 
 import numpy as np
-import pytest
 
 from holoviews.core import DynamicMap, NdOverlay
 from holoviews.core.options import Store
@@ -466,7 +465,6 @@ class TestServerCallbacks(CallbackTestCase):
         self.assertEqual(resolved, {'id': cds.ref['id'],
                                     'value': points.columns()})
 
-    @pytest.mark.filterwarnings("ignore::FutureWarning")
     def test_rangexy_datetime(self):
         # Raises a warning because makeTimeDataFrame isn't part of the public API.
         curve = Curve(pd.util.testing.makeTimeDataFrame(), 'index', 'C')
