@@ -724,7 +724,7 @@ class DatashaderAggregateTests(ComparisonTestCase):
     def test_uint64_dtype(self):
         df = pd.DataFrame(np.arange(2, dtype=np.uint64), columns=["A"])
         curve = Curve(df)
-        with self.assertRaisesRegex(TypeError, match="Dtype of uint64 for column A is not supported"):
+        with self.assertRaisesRegex(TypeError, "Dtype of uint64 for column A is not supported"):
             rasterize(curve, dynamic=False, height=10, width=10)
 
 
