@@ -16,7 +16,6 @@ except:
     pass
 
 
-
 class TestPathPlot(TestBokehPlot):
 
     def test_batched_path_line_color_and_color(self):
@@ -401,6 +400,20 @@ class TestContoursPlot(TestBokehPlot):
         self.assertIsInstance(cmapper, LinearColorMapper)
         self.assertEqual(cmapper.low, 3)
         self.assertEqual(cmapper.high, 7)
+
+    def test_contours_empty_path(self):
+        import pandas as pd
+        contours = Contours([
+            pd.DataFrame([], columns=['x', 'y', 'color', 'line_width']),
+            pd.DataFrame({'x': np.random.rand(10), 'y': np.random.rand(10),
+                          'color': ['red']*10, 'line_width': [3]*10},
+                         columns=['x', 'y', 'color', 'line_width'])
+        ], vdims=['color', 'line_width']).opts(
+            color='color', line_width='line_width')
+        plot = bokeh_renderer.get_plot(contours)
+        cds = plot.handles['source']
+        self.assertEqual(cds.data['color'], np.array(['red']))
+
 
     def test_contours_linear_color_op_update(self):
         contours = HoloMap({
