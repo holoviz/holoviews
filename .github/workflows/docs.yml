@@ -25,7 +25,7 @@ jobs:
       DESC: "Documentation build"
       HV_REQUIREMENTS: "doc"
       # conda-forge to install myst-nb ...
-      CHANS_DEV: "-c pyviz/label/dev -c bokeh -c conda-forge"
+      CHANS_DEV: "-c pyviz/label/dev -c conda-forge"
       CHANS: "-c pyviz"
       MPLBACKEND: "Agg"
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -56,7 +56,7 @@ jobs:
           conda config --set always_yes True
           conda install -c pyviz "pyctdev>=0.5"
           doit ecosystem_setup
-          doit env_create ${{ env.CHANS_DEV}} --python=3.7
+          doit env_create ${{ env.CHANS_DEV}} --python=3.8
       - name: doit develop_install
         run: |
           eval "$(conda shell.bash hook)"
