@@ -411,8 +411,9 @@ class TestContoursPlot(TestBokehPlot):
         ], vdims=['color', 'line_width']).opts(
             color='color', line_width='line_width')
         plot = bokeh_renderer.get_plot(contours)
-        cds = plot.handles['source']
-        self.assertEqual(cds.data['color'], np.array(['red']))
+        glyph = plot.handles['glyph']
+        self.assertEqual(glyph.line_color, 'red')
+        self.assertEqual(glyph.line_width, 3)
 
 
     def test_contours_linear_color_op_update(self):
