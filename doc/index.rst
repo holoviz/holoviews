@@ -133,6 +133,7 @@ After you have successfully installed and configured HoloViews, please see `Gett
    Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
+   Gallery <gallery/index>
    Reference Gallery <reference/index>
    Releases <releases>
    API <reference_manual/index>
