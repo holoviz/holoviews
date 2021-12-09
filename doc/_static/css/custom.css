@@ -72,3 +72,8 @@ button.toggle-button {
 .toggle-hidden + .cell_output {
     margin-top: 0 !important;
 }
+
+/* Missing in nbsite.css, for the gallery toggle buttons */
+ul.tab {
+    overflow: hidden;
+}
