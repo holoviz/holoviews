@@ -40,7 +40,14 @@ class PathPlot(LegendPlot, ColorbarPlot):
 
     def _element_transform(self, transform, element, ranges):
         if isinstance(element, Contours):
-            return super()._element_transform(transform, element, ranges)
+            data = super()._element_transform(transform, element, ranges)
+            new_data = []
+            for d in data:
+                if isinstance(d, np.ndarray) and len(d) == 1:
+                    new_data.append(d[0])
+                else:
+                    new_data.append(d)
+            return np.array(new_data)
         return np.concatenate([transform.apply(el, ranges=ranges, flat=True)
                                for el in element.split()])
 
