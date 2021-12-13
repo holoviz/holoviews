@@ -19,7 +19,6 @@
 {% endif %}
 {% endblock %}
 
-{% if pagename != 'index' %}
 {% block docs_toc %}
 <div class="d-none d-xl-block col-xl-2 bd-toc">
   {% if meta is defined and not (meta is not none and 'notoc' in meta) %}
@@ -34,7 +33,6 @@
   {% endif %}
 </div>
 {% endblock %}
-{% endif %}
 
 {% block docs_main %}
 {% if sidebars %}
