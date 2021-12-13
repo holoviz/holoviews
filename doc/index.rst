@@ -69,7 +69,7 @@ If you have any `issues <https://github.com/holoviz/holoviews/issues>`_ or wish 
 
 
 Installation
-____________
+------------
 
 |CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
