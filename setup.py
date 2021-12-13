@@ -104,6 +104,7 @@ extras_require['doc'] = extras_require['examples'] + [
     'bokeh >2.2',
     'pydata-sphinx-theme',
     'sphinx-copybutton',
+    'pooch',
 ]
 
 extras_require["build"] = [
