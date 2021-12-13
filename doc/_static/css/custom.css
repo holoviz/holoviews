@@ -64,3 +64,11 @@ button.toggle-button {
 .toggle-hidden + .cell_output {
     margin-top: 0 !important;
 }
+
+#binder-link {
+    display: inline-block;
+    font-size: 0.9rem;
+    padding-left: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
