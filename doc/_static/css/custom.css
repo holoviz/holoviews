@@ -49,14 +49,6 @@
     }
 }
 
-#navbar-icon-links i.fa-github-square:before {
-    color: white;
-}
-
-.fa-discourse:before {
-    color: white;
-}
-
 button.toggle-button {
     display: none;
 }
