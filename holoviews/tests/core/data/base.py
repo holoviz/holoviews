@@ -463,7 +463,7 @@ class HeterogeneousColumnTests(HomogeneousColumnTests):
     # Test literal formats
 
     def test_dataset_expanded_dimvals_ht(self):
-        # This will runs unique(), which for pandas return
+        # This will run unique(), which for pandas return
         # in order of appearance, but can be sorted for other
         # interface like cudf.
         #   pd.Series(["M", "M", "F"]).unique()   -> ["M", "F"]
