@@ -98,11 +98,13 @@ extras_require["nbtests"] = extras_require["recommended"] + [
 extras_require['doc'] = extras_require['examples'] + [
     'nbsite >=0.7.1',
     'sphinx',
-    'sphinx_holoviz_theme',
     'mpl_sample_data >=3.1.3',
     'pscript',
     'graphviz',
-    'bokeh >2.2'
+    'bokeh >2.2',
+    'pydata-sphinx-theme',
+    'sphinx-copybutton',
+    'pooch',
 ]
 
 extras_require["build"] = [

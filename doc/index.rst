@@ -69,7 +69,7 @@ If you have any `issues <https://github.com/holoviz/holoviews/issues>`_ or wish 
 
 
 Installation
-____________
+------------
 
 |CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
@@ -133,6 +133,7 @@ After you have successfully installed and configured HoloViews, please see `Gett
    Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
+   Gallery <gallery/index>
    Reference Gallery <reference/index>
    Releases <releases>
    API <reference_manual/index>
