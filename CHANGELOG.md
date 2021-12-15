@@ -1,6 +1,6 @@
 Version 1.14.7
 ==============
-**December 7, 2021**
+**December 16, 2021**
 
 This release contains a small number of important bug fixes. Many thanks
 to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt, 
@@ -50,11 +50,16 @@ Bug fixes:
   ([#5152](https://github.com/holoviz/holoviews/pull/5152))
 - Utility to convert datetime64 to int64 and test suite maintenance
   ([#5157](https://github.com/holoviz/holoviews/pull/5157))
+- Fix for Contours consistent of empty and nonempty paths
+  ([#5162](https://github.com/holoviz/holoviews/pull/5162))
 - Fixed docs:
     * Fix `fig_bounds` description in Plotting_with_Matplotlib.ipynb
-      ([#4983](https://github.com/holoviz/holoviews/pull/4983>))
+      ([#4983](https://github.com/holoviz/holoviews/pull/4983))
     * Fix broken link in Gridded user guide
-      ([#5098](https://github.com/holoviz/holoviews/pull/5098>))
+      ([#5098](https://github.com/holoviz/holoviews/pull/5098))
+- Improved docs:
+    * Switch to the Pydata Sphinx theme
+      ([#5163](https://github.com/holoviz/holoviews/pull/5163)) 
 
 Version 1.14.6
 ==============
