@@ -215,9 +215,11 @@ class XArrayInterface(GridInterface):
             # not need to be canonicalized
             if any(len(da.coords[c].shape) > 1 for c in da.coords):
                 continue
+            # Do not enforce validation for coords which reference
+            # dimensions already declared as part of another kdim
             undeclared = [
                 c for c in da.coords if c not in kdims and len(da[c].shape) == 1 and
-                da[c].shape[0] > 1]
+                da[c].shape[0] > 1 and not all(d in kdims for d in da[c].dims)]
             if undeclared:
                 raise DataError(
                     'The coordinates on the %r DataArray do not match the '
