@@ -65,8 +65,8 @@ class XArrayInterfaceTests(BaseGridInterfaceTests):
         da = xr.DataArray(np.arange(8).reshape((2, 2, 2)),
                           coords, ['time', 'lat', 'lon']).assign_coords(
                               lat1=xr.DataArray([2,3], dims=['lat']))
-        ds = Dataset(da, ['time', 'lat', 'lon'], vdims='value')
-        assert ds.kdims == ['time', 'lat', 'lon']
+        assert Dataset(da, ['time', 'lat', 'lon'], vdims='value').kdims == ['time', 'lat', 'lon']
+        assert Dataset(da, ['time', 'lat1', 'lon'], vdims='value').kdims == ['time', 'lat1', 'lon']
 
     def test_xarray_dataset_irregular_shape(self):
         ds = Dataset(self.get_multi_dim_irregular_dataset())
