@@ -13,7 +13,7 @@ This release contains a small number of important bug fixes. Many thanks
 to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt, 
 @jlstevens, @jbednar, and @philippjfr.
 
-## Bug fixes:
+Bug fixes:
 
 - Support xyzservices.TileProvider as hv.Tiles input
   (`#5062 <https://github.com/holoviz/holoviews/pull/5062>`__)
@@ -58,9 +58,9 @@ to @douglas-raillard-arm, @jenssss, @w31t1, @Hoxbro, @martinfleis, @maximlt,
 - Utility to convert datetime64 to int64 and test suite maintenance
   (`#5157 <https://github.com/holoviz/holoviews/pull/5157>`__)
 - Fix for Contours consistent of empty and nonempty paths
-  (`#5162 <https://github.com/holoviz/holoviews/pull/5162>__`)
+  (`#5162 <https://github.com/holoviz/holoviews/pull/5162>`__)
 - Fixed docs:
-    * Fix `fig_bounds` description in Plotting_with_Matplotlib.ipynb
+    * Fix ``fig_bounds`` description in Plotting_with_Matplotlib.ipynb
       (`#4983 <https://github.com/holoviz/holoviews/pull/4983>`__)
     * Fix broken link in Gridded user guide
       (`#5098 <https://github.com/holoviz/holoviews/pull/5098>`__)
